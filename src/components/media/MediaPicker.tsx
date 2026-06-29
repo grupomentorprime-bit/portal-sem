@@ -88,8 +88,9 @@ export function MediaField({
         try {
           const res = await fetch(`/api/cms/media/${encodeURIComponent(value)}`);
           const data = await res.json();
-          if (!cancelled && data.ok && data.asset) {
-            setPreviewUrl(data.asset.thumbnail || data.asset.url);
+          if (!cancelled && data.ok && (data.asset || data.media)) {
+            const asset = data.asset ?? data.media;
+            setPreviewUrl(asset.thumbnail || asset.url);
           }
         } catch {
           if (!cancelled) setPreviewUrl("");

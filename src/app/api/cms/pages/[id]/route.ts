@@ -8,6 +8,7 @@ import {
 } from "@/lib/cms/pages";
 import { validatePageUpdate } from "@/lib/cms/page-validation";
 import { normalizeSlug } from "@/lib/cms/page-utils";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsPageUpdate } from "@/types/page";
 
 interface RouteParams {
@@ -33,6 +34,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
+    const denied = await authorizeApiWrite("cms.pages.update", {
+      action: "page.update",
+      entity: "cms_pages",
+    });
+    if (denied) return denied;
+
     const { id } = await params;
     const body = (await request.json()) as CmsPageUpdate & {
       duplicateAs?: { newId: string; newTitle: string; newSlug: string };
@@ -94,6 +101,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
   try {
+    const denied = await authorizeApiWrite("cms.pages.delete", {
+      action: "page.delete",
+      entity: "cms_pages",
+    });
+    if (denied) return denied;
+
     const { id } = await params;
     const deleted = await deletePage(id);
     if (!deleted) {

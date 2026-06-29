@@ -5,6 +5,7 @@ import {
   menuExists,
 } from "@/lib/cms/menus";
 import { validateMenuCreate } from "@/lib/cms/menu-validation";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsMenuCreate } from "@/types/menu";
 
 export async function GET() {
@@ -22,6 +23,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const denied = await authorizeApiWrite("cms.menus.manage", {
+      action: "menu.create",
+      entity: "cms_menus",
+    });
+    if (denied) return denied;
+
     const body = (await request.json()) as CmsMenuCreate;
     const errors = validateMenuCreate(body);
 

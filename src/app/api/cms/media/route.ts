@@ -9,6 +9,7 @@ import {
   validateMediaListQuery,
   validateMediaUpload,
 } from "@/lib/cms/media-validation";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { MediaFolder, MediaListQuery } from "@/types/media";
 
 export async function GET(request: Request) {
@@ -53,6 +54,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const denied = await authorizeApiWrite("cms.media.upload", {
+      action: "media.upload",
+      entity: "cms_media",
+    });
+    if (denied) return denied;
+
     const formData = await request.formData();
     const file = formData.get("file");
     const tenantParam = String(formData.get("tenant") ?? "");

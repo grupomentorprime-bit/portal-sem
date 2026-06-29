@@ -5,6 +5,7 @@ import {
   updateMenu,
 } from "@/lib/cms/menus";
 import { validateMenuUpdate } from "@/lib/cms/menu-validation";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsMenuUpdate } from "@/types/menu";
 
 interface RouteContext {
@@ -35,6 +36,12 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
+    const denied = await authorizeApiWrite("cms.menus.manage", {
+      action: "menu.update",
+      entity: "cms_menus",
+    });
+    if (denied) return denied;
+
     const { id } = await context.params;
     const body = (await request.json()) as CmsMenuUpdate;
     const errors = validateMenuUpdate(body);
@@ -64,6 +71,12 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const denied = await authorizeApiWrite("cms.menus.manage", {
+      action: "menu.delete",
+      entity: "cms_menus",
+    });
+    if (denied) return denied;
+
     const { id } = await context.params;
     const deleted = await deleteMenu(id);
 

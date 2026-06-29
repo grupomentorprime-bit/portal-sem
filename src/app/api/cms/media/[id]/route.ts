@@ -7,6 +7,7 @@ import {
   updateMedia,
 } from "@/lib/cms/media";
 import { validateMediaUpdate } from "@/lib/cms/media-validation";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsMediaUpdate } from "@/types/media";
 
 interface RouteParams {
@@ -32,6 +33,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
+    const denied = await authorizeApiWrite("cms.media.update", {
+      action: "media.update",
+      entity: "cms_media",
+    });
+    if (denied) return denied;
+
     const { id } = await params;
     const body = (await request.json()) as CmsMediaUpdate & { restore?: boolean };
     const errors = validateMediaUpdate(body);
@@ -59,6 +66,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
+    const denied = await authorizeApiWrite("cms.media.delete", {
+      action: "media.delete",
+      entity: "cms_media",
+    });
+    if (denied) return denied;
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const permanent = searchParams.get("permanent") === "true";

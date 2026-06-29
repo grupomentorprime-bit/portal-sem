@@ -21,10 +21,16 @@
 ### Decisiones (ADR)
 
 - [ADR-003 — Media Library desacoplada](./architecture/ADR-003.md)
+- [ADR-004 — Identity Core (IAM)](./architecture/ADR-004.md)
 
 ### Core Media
 
 - [OT-CORE-MEDIA-001 — Asset Engine (mediaId)](./ot/OT-CORE-MEDIA-001.md)
+
+### Identity
+
+- [OT-CORE-IDENTITY-001 — Identity & Access Management](./ot/OT-CORE-IDENTITY-001.md)
+- [IDENTITY.md](./core/IDENTITY.md)
 
 ## UX
 

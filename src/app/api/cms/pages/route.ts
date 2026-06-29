@@ -6,6 +6,7 @@ import {
 } from "@/lib/cms/pages";
 import { validatePageCreate } from "@/lib/cms/page-validation";
 import { normalizeSlug } from "@/lib/cms/page-utils";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsPageCreate } from "@/types/page";
 
 export async function GET(request: Request) {
@@ -25,6 +26,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const denied = await authorizeApiWrite("cms.pages.create", {
+      action: "page.create",
+      entity: "cms_pages",
+    });
+    if (denied) return denied;
+
     const body = (await request.json()) as CmsPageCreate;
     body.slug = normalizeSlug(body.slug);
     const errors = validatePageCreate(body);

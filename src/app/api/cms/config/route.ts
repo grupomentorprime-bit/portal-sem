@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSiteConfigUncached, updateSiteConfig } from "@/lib/cms/config";
 import { validateSiteConfigUpdate } from "@/lib/cms/validation";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { SiteConfigUpdate } from "@/types/cms";
 
 export async function GET() {
@@ -30,6 +31,13 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    const denied = await authorizeApiWrite("settings.update", {
+      action: "settings.update",
+      entity: "cms_config",
+      entityId: "site",
+    });
+    if (denied) return denied;
+
     const body = (await request.json()) as SiteConfigUpdate;
     const errors = validateSiteConfigUpdate(body);
 

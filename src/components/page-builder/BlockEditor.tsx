@@ -122,14 +122,74 @@ export function BlockEditor({ block, onChange, tenant }: BlockEditorProps) {
           <Field label="Título">
             <Input value={String(s.title ?? "")} onChange={(e) => updateSetting(block, "title", e.target.value, onChange)} />
           </Field>
+          <Field label="Subtítulo">
+            <Input value={String(s.subtitle ?? "")} onChange={(e) => updateSetting(block, "subtitle", e.target.value, onChange)} />
+          </Field>
           <Field label="Descripción">
             <Textarea value={String(s.description ?? "")} onChange={(e) => updateSetting(block, "description", e.target.value, onChange)} />
           </Field>
-          <Field label="Texto del versículo">
-            <Textarea value={String(s.verseText ?? "")} onChange={(e) => updateSetting(block, "verseText", e.target.value, onChange)} />
+          <Field label="Puntos destacados (JSON)">
+            <Textarea
+              className="min-h-48 font-mono text-xs"
+              value={JSON.stringify(s.highlights ?? [], null, 2)}
+              onChange={(e) => {
+                try {
+                  updateSetting(block, "highlights", JSON.parse(e.target.value), onChange);
+                } catch {
+                  /* ignore invalid json while typing */
+                }
+              }}
+            />
           </Field>
-          <Field label="Referencia">
-            <Input value={String(s.verseReference ?? "")} onChange={(e) => updateSetting(block, "verseReference", e.target.value, onChange)} />
+        </div>
+      );
+
+    case "modality":
+      return (
+        <div className="space-y-4">
+          <Field label="Overline">
+            <Input value={String(s.overline ?? "")} onChange={(e) => updateSetting(block, "overline", e.target.value, onChange)} />
+          </Field>
+          <Field label="Título">
+            <Input value={String(s.title ?? "")} onChange={(e) => updateSetting(block, "title", e.target.value, onChange)} />
+          </Field>
+          <Field label="Subtítulo">
+            <Input value={String(s.subtitle ?? "")} onChange={(e) => updateSetting(block, "subtitle", e.target.value, onChange)} />
+          </Field>
+          <Field label="Descripción">
+            <Textarea value={String(s.description ?? "")} onChange={(e) => updateSetting(block, "description", e.target.value, onChange)} />
+          </Field>
+          <MediaField
+            label="Imagen"
+            value={String(s.imageMediaId ?? s.image ?? "")}
+            onChange={(mediaId) =>
+              onChange({
+                ...block,
+                settings: { ...s, imageMediaId: mediaId, image: "" },
+              })
+            }
+            tenant={tenant}
+            folder="Otros"
+            category="Imagen"
+          />
+          <Field label="Puntos de modalidad (JSON)">
+            <Textarea
+              className="min-h-48 font-mono text-xs"
+              value={JSON.stringify(s.items ?? [], null, 2)}
+              onChange={(e) => {
+                try {
+                  updateSetting(block, "items", JSON.parse(e.target.value), onChange);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            />
+          </Field>
+          <Field label="Botón — etiqueta">
+            <Input value={String(s.buttonLabel ?? "")} onChange={(e) => updateSetting(block, "buttonLabel", e.target.value, onChange)} />
+          </Field>
+          <Field label="Botón — enlace">
+            <Input value={String(s.buttonHref ?? "")} onChange={(e) => updateSetting(block, "buttonHref", e.target.value, onChange)} />
           </Field>
         </div>
       );
@@ -164,6 +224,9 @@ export function BlockEditor({ block, onChange, tenant }: BlockEditorProps) {
     case "stats":
       return (
         <div className="space-y-4">
+          <Field label="Overline">
+            <Input value={String(s.overline ?? "")} onChange={(e) => updateSetting(block, "overline", e.target.value, onChange)} />
+          </Field>
           <Field label="Título de sección">
             <Input value={String(s.title ?? "")} onChange={(e) => updateSetting(block, "title", e.target.value, onChange)} />
           </Field>
@@ -192,6 +255,22 @@ export function BlockEditor({ block, onChange, tenant }: BlockEditorProps) {
           <Field label="Referencia">
             <Input value={String(s.reference ?? "")} onChange={(e) => updateSetting(block, "reference", e.target.value, onChange)} />
           </Field>
+          <Field label="Fondo (gradient | primary | soft)">
+            <Input value={String(s.background ?? "gradient")} onChange={(e) => updateSetting(block, "background", e.target.value, onChange)} />
+          </Field>
+          <MediaField
+            label="Imagen de fondo (opcional)"
+            value={String(s.imageMediaId ?? s.image ?? "")}
+            onChange={(mediaId) =>
+              onChange({
+                ...block,
+                settings: { ...s, imageMediaId: mediaId, image: "" },
+              })
+            }
+            tenant={tenant}
+            folder="Otros"
+            category="Imagen"
+          />
         </div>
       );
 
