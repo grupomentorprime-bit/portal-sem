@@ -1,8 +1,14 @@
-import { ServerBlockRenderer } from "@/components/page-builder/ServerBlockRenderer";
+import { PortalRenderer } from "@/components/portal/PortalRenderer";
 import { PortalBreadcrumb, PortalContainer, PortalSection } from "@/components/portal/layout";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 import { PortalPageHeader } from "@/components/portal/PortalSectionHeader";
-import { getPublishedPageBySlug } from "@/lib/cms/pages";
+import {
+  buildRenderContext,
+  consolidatePageSeo,
+  loadPublishedPage,
+  preparePageBlocks,
+  seoToMetadata,
+} from "@/core/portal";
 import { getActivePortal } from "@/lib/portal/site";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -22,7 +28,7 @@ export async function PortalCmsPage({
   if (!ctx) notFound();
 
   const pageSlug = slug.startsWith("/") ? slug : `/${slug}`;
-  const page = await getPublishedPageBySlug(pageSlug, ctx.tenant);
+  const page = await loadPublishedPage(pageSlug, ctx.tenant);
 
   if (page?.blocks?.length) {
     return (
@@ -33,11 +39,7 @@ export async function PortalCmsPage({
             { label: page.title || fallbackTitle },
           ]}
         />
-        <ServerBlockRenderer
-          blocks={page.blocks}
-          config={ctx.config}
-          tenant={ctx.tenant}
-        />
+        <PortalRenderer page={page} ctx={ctx} />
       </>
     );
   }
@@ -71,10 +73,18 @@ export async function buildPortalPageMetadata(
   if (!ctx) return { title: fallbackTitle };
 
   const pageSlug = slug.startsWith("/") ? slug : `/${slug}`;
-  const page = await getPublishedPageBySlug(pageSlug, ctx.tenant);
+  const page = await loadPublishedPage(pageSlug, ctx.tenant);
 
-  return {
-    title: page?.seo.title ?? `${fallbackTitle} | ${ctx.config.institution.shortName}`,
-    description: page?.seo.description ?? ctx.config.seo.description,
-  };
+  if (!page) {
+    return {
+      title: `${fallbackTitle} | ${ctx.config.institution.shortName}`,
+      description: ctx.config.seo.description,
+    };
+  }
+
+  const renderCtx = buildRenderContext({ tenantId: ctx.tenant, config: ctx.config });
+  const blocks = preparePageBlocks(page, renderCtx);
+  const seo = consolidatePageSeo(page, ctx.config, blocks);
+
+  return seoToMetadata(seo);
 }

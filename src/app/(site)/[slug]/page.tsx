@@ -1,6 +1,12 @@
-import { ServerBlockRenderer } from "@/components/page-builder/ServerBlockRenderer";
-import { getSiteConfig } from "@/lib/cms/config";
-import { getPublishedPageBySlug } from "@/lib/cms/pages";
+import { PortalRenderer } from "@/components/portal/PortalRenderer";
+import {
+  buildRenderContext,
+  consolidatePageSeo,
+  loadPublishedPage,
+  preparePageBlocks,
+  seoToMetadata,
+} from "@/core/portal";
+import { getPortalContext } from "@/lib/portal/site";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -10,35 +16,30 @@ interface PageProps {
 
 export default async function CmsDynamicPage({ params }: PageProps) {
   const { slug } = await params;
-  const config = await getSiteConfig();
+  const ctx = await getPortalContext();
 
-  if (!config || config.institution.status !== "active") {
+  if (!ctx || ctx.config.institution.status !== "active") {
     notFound();
   }
 
   const pageSlug = `/${slug}`;
-  const page = await getPublishedPageBySlug(pageSlug, config.institution.tenant);
+  const page = await loadPublishedPage(pageSlug, ctx.tenant);
   if (!page) notFound();
 
-  return (
-    <ServerBlockRenderer
-      blocks={page.blocks}
-      config={config}
-      tenant={config.institution.tenant}
-    />
-  );
+  return <PortalRenderer page={page} ctx={ctx} />;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const config = await getSiteConfig();
-  if (!config) return { title: "Portal Institucional" };
+  const ctx = await getPortalContext();
+  if (!ctx) return { title: "Portal Institucional" };
 
-  const page = await getPublishedPageBySlug(`/${slug}`, config.institution.tenant);
-  if (!page) return { title: config.seo.title };
+  const page = await loadPublishedPage(`/${slug}`, ctx.tenant);
+  if (!page) return { title: ctx.config.seo.title };
 
-  return {
-    title: page.seo.title ?? page.title,
-    description: page.seo.description ?? page.description,
-  };
+  const renderCtx = buildRenderContext({ tenantId: ctx.tenant, config: ctx.config });
+  const blocks = preparePageBlocks(page, renderCtx);
+  const seo = consolidatePageSeo(page, ctx.config, blocks);
+
+  return seoToMetadata(seo);
 }

@@ -21,6 +21,10 @@ export const DOMAIN_EVENT_TYPES = [
   "UserLoggedIn",
   "InvitationCreated",
   "InvitationAccepted",
+  // Portal analytics
+  "PageViewed",
+  "BlockRendered",
+  "CTAViewed",
   // Futuro
   "EnrollmentCreated",
   "PaymentReceived",

@@ -25,6 +25,7 @@ function toUpdate(config: SiteConfig): SiteConfigUpdate {
     contact: config.contact,
     social: config.social,
     features: config.features,
+    portalCopy: config.portalCopy,
   };
 }
 

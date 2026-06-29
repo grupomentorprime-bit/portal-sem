@@ -1,7 +1,9 @@
 import { PortalHome } from "@/components/portal/PortalHome";
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
+import { loadHomePage } from "@/core/portal";
 import { getPortalContext } from "@/lib/portal/site";
 import type { Metadata } from "next";
+import { consolidatePageSeo, seoToMetadata, buildRenderContext, preparePageBlocks } from "@/core/portal";
 
 export default async function HomePage() {
   const ctx = await getPortalContext();
@@ -49,8 +51,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const ctx = await getPortalContext();
   if (!ctx) return { title: "Portal Institucional" };
 
-  return {
-    title: ctx.config.seo.title,
-    description: ctx.config.seo.description,
-  };
+  const page = await loadHomePage(ctx.tenant);
+  const renderCtx = buildRenderContext({ tenantId: ctx.tenant, config: ctx.config });
+  const blocks = preparePageBlocks(page, renderCtx);
+  const seo = consolidatePageSeo(page, ctx.config, blocks);
+
+  return seoToMetadata(seo);
 }
