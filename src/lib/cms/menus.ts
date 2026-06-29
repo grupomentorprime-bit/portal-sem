@@ -5,20 +5,30 @@ import type { CmsMenu, CmsMenuCreate, CmsMenuUpdate } from "@/types/menu";
 
 const CMS_MENUS_TAG = "cms-menus";
 
-async function fetchAllMenusFromDb(): Promise<CmsMenu[]> {
+function menuTenantFilter(tenant?: string) {
+  if (!tenant) return {};
+  return {
+    $or: [{ tenant }, { tenant: { $exists: false } }, { tenant: "" }],
+  };
+}
+
+async function fetchAllMenusFromDb(tenant?: string): Promise<CmsMenu[]> {
   const db = await getDatabase();
   const menus = await db
     .collection<CmsMenu>("cms_menus")
-    .find({})
+    .find({ ...menuTenantFilter(tenant) })
     .sort({ name: 1 })
     .toArray();
 
   return menus.map(normalizeMenu);
 }
 
-async function fetchMenuByIdFromDb(id: string): Promise<CmsMenu | null> {
+async function fetchMenuByIdFromDb(id: string, tenant?: string): Promise<CmsMenu | null> {
   const db = await getDatabase();
-  const menu = await db.collection<CmsMenu>("cms_menus").findOne({ _id: id });
+  const menu = await db.collection<CmsMenu>("cms_menus").findOne({
+    _id: id,
+    ...menuTenantFilter(tenant),
+  });
   return menu ? normalizeMenu(menu) : null;
 }
 
@@ -35,23 +45,23 @@ export const getAllMenus = unstable_cache(
   { tags: [CMS_MENUS_TAG], revalidate: 60 }
 );
 
-export async function getAllMenusUncached(): Promise<CmsMenu[]> {
-  return fetchAllMenusFromDb();
+export async function getAllMenusUncached(tenant?: string): Promise<CmsMenu[]> {
+  return fetchAllMenusFromDb(tenant);
 }
 
-export const getMenuById = (id: string) =>
+export const getMenuById = (id: string, tenant?: string) =>
   unstable_cache(
-    async () => fetchMenuByIdFromDb(id),
-    [`cms-menu-${id}`],
+    async () => fetchMenuByIdFromDb(id, tenant),
+    [`cms-menu-${id}-${tenant ?? "default"}`],
     { tags: [CMS_MENUS_TAG, `cms-menu-${id}`], revalidate: 60 }
   );
 
-export async function getMenuByIdUncached(id: string): Promise<CmsMenu | null> {
-  return fetchMenuByIdFromDb(id);
+export async function getMenuByIdUncached(id: string, tenant?: string): Promise<CmsMenu | null> {
+  return fetchMenuByIdFromDb(id, tenant);
 }
 
-export async function getActiveMenuById(id: string): Promise<CmsMenu | null> {
-  const menu = await getMenuById(id)();
+export async function getActiveMenuById(id: string, tenant?: string): Promise<CmsMenu | null> {
+  const menu = await getMenuById(id, tenant)();
   if (!menu || !menu.active) return null;
   return menu;
 }
@@ -62,6 +72,7 @@ export async function createMenu(data: CmsMenuCreate): Promise<CmsMenu> {
 
   const document: CmsMenu = {
     _id: data._id,
+    tenant: data.tenant,
     name: data.name,
     location: data.location,
     active: data.active ?? true,
@@ -89,6 +100,7 @@ export async function updateMenu(
   const now = new Date().toISOString();
   const document: CmsMenu = {
     _id: id,
+    tenant: existing.tenant,
     name: data.name,
     location: data.location,
     active: data.active,
@@ -127,6 +139,7 @@ export async function duplicateMenu(
 
   return createMenu({
     _id: newId,
+    tenant: source.tenant,
     name: newName,
     location: source.location,
     active: false,

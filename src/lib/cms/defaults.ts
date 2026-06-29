@@ -16,6 +16,7 @@ export function createDefaultSiteConfig(): SiteConfig {
     },
     branding: {
       logo: "",
+      secondaryLogo: "",
       favicon: "",
       heroImage: "",
       primaryColor: "#002A47",

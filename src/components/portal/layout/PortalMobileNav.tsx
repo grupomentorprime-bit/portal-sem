@@ -12,8 +12,10 @@ interface PortalMobileNavProps {
   open: boolean;
   onClose: () => void;
   links: NavLinkItem[];
-  applyHref: string;
-  campusHref: string;
+  applyHref?: string;
+  applyLabel?: string;
+  campusHref?: string;
+  campusLabel?: string;
 }
 
 export function PortalMobileNav({
@@ -21,7 +23,9 @@ export function PortalMobileNav({
   onClose,
   links,
   applyHref,
+  applyLabel = "Postular",
   campusHref,
+  campusLabel = "Aula virtual",
 }: PortalMobileNavProps) {
   if (!open) return null;
 
@@ -60,14 +64,20 @@ export function PortalMobileNav({
             ))}
           </ul>
         </nav>
-        <div className="space-y-2 border-t border-border p-4">
-          <Button href={campusHref} variant="outline" className="w-full" onClick={onClose}>
-            Aula virtual
-          </Button>
-          <Button href={applyHref} variant="primary" className="w-full" onClick={onClose}>
-            Postula ahora
-          </Button>
-        </div>
+        {(campusHref || applyHref) ? (
+          <div className="space-y-2 border-t border-border p-4">
+            {campusHref ? (
+              <Button href={campusHref} variant="outline" className="w-full" onClick={onClose}>
+                {campusLabel}
+              </Button>
+            ) : null}
+            {applyHref ? (
+              <Button href={applyHref} variant="primary" className="w-full" onClick={onClose}>
+                {applyLabel}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

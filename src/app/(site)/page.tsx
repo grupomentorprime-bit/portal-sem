@@ -47,7 +47,7 @@ export default async function HomePage() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const ctx = await getPortalContext();
-  if (!ctx) return { title: "Portal SEM" };
+  if (!ctx) return { title: "Portal Institucional" };
 
   return {
     title: ctx.config.seo.title,

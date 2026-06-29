@@ -41,13 +41,13 @@ export async function SiteShell({ children }: SiteShellProps) {
     <>
       <NavbarPremium
         links={navLinks}
-        institutionShortName={config?.institution.shortName || "SEM"}
+        institutionShortName={config?.institution.shortName || ""}
         logoSem={config?.branding.logo || undefined}
         logoIpn={undefined}
       />
       <main className="flex-1">{children}</main>
       <InstitutionalFooter
-        institutionName={config?.institution.name || "Seminario Eclesiástico Mayor"}
+        institutionName={config?.institution.name || "Institución"}
         organization={config?.institution.organization}
         contact={config?.contact}
         social={config?.social}

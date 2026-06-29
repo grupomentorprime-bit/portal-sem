@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   listMedia,
   uploadMedia,
@@ -13,8 +14,12 @@ import type { MediaFolder, MediaListQuery } from "@/types/media";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const tenantParam = searchParams.get("tenant") ?? "";
+    const tenantCheck = await assertActiveTenant(tenantParam);
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const query: MediaListQuery = {
-      tenant: searchParams.get("tenant") ?? "",
+      tenant: tenantCheck.tenant,
       folder: searchParams.get("folder") ?? undefined,
       category: searchParams.get("category") ?? undefined,
       visibility: (searchParams.get("visibility") as MediaListQuery["visibility"]) ?? "active",
@@ -50,7 +55,11 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-    const tenant = String(formData.get("tenant") ?? "");
+    const tenantParam = String(formData.get("tenant") ?? "");
+    const tenantCheck = await assertActiveTenant(tenantParam);
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
+    const tenant = tenantCheck.tenant;
     const folder = formData.get("folder") ? String(formData.get("folder")) : undefined;
     const alt = formData.get("alt") ? String(formData.get("alt")) : undefined;
     const tagsRaw = formData.get("tags") ? String(formData.get("tags")) : "";

@@ -17,20 +17,24 @@ export interface NavLinkItem {
 
 interface PortalHeaderProps {
   links: NavLinkItem[];
-  logoSem: string;
-  logoIpn?: string;
+  logoPrimary: string;
+  logoSecondary?: string;
   institutionShortName?: string;
   applyHref?: string;
+  applyLabel?: string;
   campusHref?: string;
+  campusLabel?: string;
 }
 
 export function PortalHeader({
   links,
-  logoSem,
-  logoIpn,
-  institutionShortName = "SEM",
-  applyHref = "/contacto",
-  campusHref = "https://campus.aprendehoy.cl",
+  logoPrimary,
+  logoSecondary,
+  institutionShortName = "",
+  applyHref,
+  applyLabel = "Postular",
+  campusHref,
+  campusLabel = "Aula virtual",
 }: PortalHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,13 +69,13 @@ export function PortalHeader({
           <Link
             href="/"
             className={cn("flex shrink-0 items-center gap-3", focusRing, "rounded-[var(--radius-sm)]")}
-            aria-label={`${institutionShortName} — Inicio`}
+            aria-label={institutionShortName ? `${institutionShortName} — Inicio` : "Inicio"}
           >
-            {logoIpn ? (
+            {logoSecondary ? (
               <>
                 <Image
-                  src={logoIpn}
-                  alt="Instituto Patrístico Nacional"
+                  src={logoSecondary}
+                  alt=""
                   width={36}
                   height={36}
                   className="h-8 w-auto brightness-0 invert sm:h-9"
@@ -83,8 +87,8 @@ export function PortalHeader({
               </>
             ) : null}
             <Image
-              src={logoSem}
-              alt="Logo institucional"
+              src={logoPrimary}
+              alt={institutionShortName || "Logo institucional"}
               width={36}
               height={36}
               className={cn("h-8 w-auto sm:h-9", !scrolled && "brightness-0 invert")}
@@ -110,17 +114,21 @@ export function PortalHeader({
           </nav>
 
           <div className="hidden items-center gap-2 lg:flex">
-            <Button
-              href={campusHref}
-              variant={scrolled ? "outline" : "ghost"}
-              size="sm"
-              className={!scrolled ? "border-text-inverse/30 text-text-inverse hover:bg-text-inverse/10" : undefined}
-            >
-              Aula virtual
-            </Button>
-            <Button href={applyHref} variant="secondary" size="sm">
-              Postula ahora
-            </Button>
+            {campusHref ? (
+              <Button
+                href={campusHref}
+                variant={scrolled ? "outline" : "ghost"}
+                size="sm"
+                className={!scrolled ? "border-text-inverse/30 text-text-inverse hover:bg-text-inverse/10" : undefined}
+              >
+                {campusLabel}
+              </Button>
+            ) : null}
+            {applyHref ? (
+              <Button href={applyHref} variant="secondary" size="sm">
+                {applyLabel}
+              </Button>
+            ) : null}
           </div>
 
           <button
@@ -144,7 +152,9 @@ export function PortalHeader({
         onClose={() => setMobileOpen(false)}
         links={links}
         applyHref={applyHref}
+        applyLabel={applyLabel}
         campusHref={campusHref}
+        campusLabel={campusLabel}
       />
     </>
   );

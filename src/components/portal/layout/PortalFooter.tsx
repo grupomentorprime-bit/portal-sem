@@ -2,13 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone, Share2 } from "lucide-react";
 import { iconSizes } from "@/design";
+import type { FooterColumn } from "@/core/navigation";
 import { PortalContainer } from "./PortalContainer";
 import type { ContactInfo, SocialLinks } from "@/types/cms";
-
-interface FooterColumn {
-  title: string;
-  links: Array<{ label: string; href: string }>;
-}
 
 interface PortalFooterProps {
   institutionName: string;
@@ -16,30 +12,11 @@ interface PortalFooterProps {
   organization?: string;
   contact?: ContactInfo;
   social?: SocialLinks;
-  logoSem: string;
-  logoIpn?: string;
+  logoPrimary: string;
+  logoSecondary?: string;
   columns?: FooterColumn[];
+  legalLinks?: Array<{ label: string; href: string }>;
 }
-
-const defaultColumns: FooterColumn[] = [
-  {
-    title: "Portal",
-    links: [
-      { label: "Programas", href: "/programas" },
-      { label: "Noticias", href: "/noticias" },
-      { label: "Eventos", href: "/eventos" },
-      { label: "Equipo", href: "/equipo" },
-    ],
-  },
-  {
-    title: "Institución",
-    links: [
-      { label: "Quiénes somos", href: "/institucion" },
-      { label: "IPN Chile", href: "/ipn-chile" },
-      { label: "Contacto", href: "/contacto" },
-    ],
-  },
-];
 
 const socialConfig = [
   { key: "facebook" as const, label: "Facebook" },
@@ -54,9 +31,10 @@ export function PortalFooter({
   organization,
   contact,
   social,
-  logoSem,
-  logoIpn,
-  columns = defaultColumns,
+  logoPrimary,
+  logoSecondary,
+  columns = [],
+  legalLinks = [],
 }: PortalFooterProps) {
   const year = new Date().getFullYear();
   const activeSocial = social
@@ -69,17 +47,17 @@ export function PortalFooter({
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <div className="flex items-center gap-3">
-              {logoIpn ? (
+              {logoSecondary ? (
                 <Image
-                  src={logoIpn}
-                  alt="IPN Chile"
+                  src={logoSecondary}
+                  alt=""
                   width={40}
                   height={40}
                   className="h-9 w-auto brightness-0 invert"
                 />
               ) : null}
               <Image
-                src={logoSem}
+                src={logoPrimary}
                 alt={institutionName}
                 width={40}
                 height={40}
@@ -120,7 +98,7 @@ export function PortalFooter({
               </h3>
               <ul className="mt-4 space-y-2">
                 {col.links.map((link) => (
-                  <li key={link.href}>
+                  <li key={`${col.title}-${link.href}`}>
                     <Link
                       href={link.href}
                       className="text-sm text-text-inverse/70 transition-colors hover:text-accent"
@@ -169,16 +147,27 @@ export function PortalFooter({
       </PortalContainer>
 
       <div className="border-t border-text-inverse/10">
-        <PortalContainer className="flex flex-col items-center justify-between gap-2 py-6 sm:flex-row">
+        <PortalContainer className="flex flex-col items-center justify-between gap-3 py-6 sm:flex-row">
           <p className="text-center text-xs text-text-inverse/50 sm:text-left">
             © {year} {institutionName}. Todos los derechos reservados.
           </p>
-          <Link
-            href="/admin/config"
-            className="text-[10px] text-text-inverse/30 transition-colors hover:text-text-inverse/50"
-          >
-            Administración
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-xs text-text-inverse/50 transition-colors hover:text-text-inverse/70"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link
+              href="/admin/config"
+              className="text-[10px] text-text-inverse/30 transition-colors hover:text-text-inverse/50"
+            >
+              Administración
+            </Link>
+          </div>
         </PortalContainer>
       </div>
     </footer>

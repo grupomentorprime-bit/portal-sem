@@ -13,6 +13,7 @@ export interface Institution {
 
 export interface Branding {
   logo: string;
+  secondaryLogo?: string;
   favicon: string;
   heroImage: string;
   primaryColor: string;

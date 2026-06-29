@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Button } from "@/components/ui";
-import { CMS_ASSET_PATHS } from "@/lib/cms/asset-paths";
+import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
 
 interface PortalHeroProps {
   badge?: string;
@@ -22,13 +22,13 @@ export function PortalHero({
   description,
   heroImage,
   logoSrc,
-  primaryLabel = "Postula ahora",
-  primaryHref = "/contacto",
-  secondaryLabel = "Ver programas",
-  secondaryHref = "/programas",
+  primaryLabel,
+  primaryHref,
+  secondaryLabel,
+  secondaryHref,
 }: PortalHeroProps) {
-  const imageSrc = heroImage || CMS_ASSET_PATHS.hero;
-  const logo = logoSrc || CMS_ASSET_PATHS.logoSem;
+  const imageSrc = heroImage || PLATFORM_ASSET_FALLBACKS.hero;
+  const logo = logoSrc || PLATFORM_ASSET_FALLBACKS.logo;
 
   return (
     <section className="relative flex min-h-[85dvh] items-center overflow-hidden" aria-label="Presentación">
@@ -82,19 +82,25 @@ export function PortalHero({
           </p>
         ) : null}
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 animate-slide-up sm:flex-row">
-          <Button href={primaryHref} variant="secondary" size="lg">
-            {primaryLabel}
-          </Button>
-          <Button
-            href={secondaryHref}
-            variant="outline"
-            size="lg"
-            className="border-text-inverse/30 text-text-inverse hover:bg-text-inverse/10"
-          >
-            {secondaryLabel}
-          </Button>
-        </div>
+        {(primaryLabel && primaryHref) || (secondaryLabel && secondaryHref) ? (
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 animate-slide-up sm:flex-row">
+            {primaryLabel && primaryHref ? (
+              <Button href={primaryHref} variant="secondary" size="lg">
+                {primaryLabel}
+              </Button>
+            ) : null}
+            {secondaryLabel && secondaryHref ? (
+              <Button
+                href={secondaryHref}
+                variant="outline"
+                size="lg"
+                className="border-text-inverse/30 text-text-inverse hover:bg-text-inverse/10"
+              >
+                {secondaryLabel}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
   );

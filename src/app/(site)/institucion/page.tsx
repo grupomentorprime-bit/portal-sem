@@ -10,7 +10,6 @@ export default function InstitucionPage() {
     <PortalCmsPage
       slug="institucion"
       fallbackTitle="Institución"
-      fallbackDescription="Historia, misión y valores del Seminario Eclesiástico Mayor."
     />
   );
 }

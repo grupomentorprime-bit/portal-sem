@@ -12,16 +12,23 @@ export async function PortalShell({ children }: PortalShellProps) {
     return <main>{children}</main>;
   }
 
-  const { config, navLinks, logos } = ctx;
+  const { config, navLinks, navigation, logos } = ctx;
   const { institution, contact, seo } = config;
+
+  const applyLink = navigation.quickLinks.find((l) => l.highlighted) ?? navigation.quickLinks[0];
+  const campusLink = navigation.quickLinks.find((l) => l.target === "_blank") ?? navigation.quickLinks[1];
 
   return (
     <>
       <PortalHeader
-        links={navLinks}
-        logoSem={logos.sem}
-        logoIpn={logos.ipn}
+        links={navigation.mobile.length ? navigation.mobile : navLinks}
+        logoPrimary={logos.primary}
+        logoSecondary={logos.secondary}
         institutionShortName={institution.shortName}
+        applyHref={applyLink?.href}
+        applyLabel={applyLink?.label}
+        campusHref={campusLink?.href}
+        campusLabel={campusLink?.label}
       />
       <main className="flex-1 pt-16 sm:pt-[4.5rem]">{children}</main>
       <PortalFooter
@@ -30,8 +37,10 @@ export async function PortalShell({ children }: PortalShellProps) {
         organization={institution.organization}
         contact={contact}
         social={config.social}
-        logoSem={logos.sem}
-        logoIpn={logos.ipn}
+        logoPrimary={logos.primary}
+        logoSecondary={logos.secondary}
+        columns={navigation.footer}
+        legalLinks={navigation.legal}
       />
     </>
   );

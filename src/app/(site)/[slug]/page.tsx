@@ -32,7 +32,7 @@ export default async function CmsDynamicPage({ params }: PageProps) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const config = await getSiteConfig();
-  if (!config) return { title: "Portal SEM" };
+  if (!config) return { title: "Portal Institucional" };
 
   const page = await getPublishedPageBySlug(`/${slug}`, config.institution.tenant);
   if (!page) return { title: config.seo.title };

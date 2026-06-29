@@ -3,6 +3,8 @@ export const MENU_LOCATIONS = [
   "footer",
   "mobile",
   "sidebar",
+  "legal",
+  "quick-links",
   "top",
   "academic",
   "intranet",
@@ -51,6 +53,7 @@ export interface MenuItem {
 
 export interface CmsMenu {
   _id: string;
+  tenant?: string;
   name: string;
   location: MenuLocation;
   active: boolean;
@@ -59,7 +62,7 @@ export interface CmsMenu {
   updatedAt: string;
 }
 
-export type CmsMenuCreate = Pick<CmsMenu, "name" | "location" | "active" | "items"> & {
+export type CmsMenuCreate = Pick<CmsMenu, "name" | "location" | "active" | "items" | "tenant"> & {
   _id: string;
 };
 

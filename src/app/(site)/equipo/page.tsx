@@ -62,7 +62,7 @@ export default async function EquipoPage() {
       />
       <PortalPageHeader
         title="Equipo institucional"
-        description="Conoce a quienes lideran y acompañan la formación en el SEM."
+        description={ctx.config.seo.description}
       />
 
       {team.length === 0 ? (

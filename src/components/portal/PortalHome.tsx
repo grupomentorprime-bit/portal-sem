@@ -32,7 +32,7 @@ interface PortalHomeProps {
 }
 
 export async function PortalHome({ ctx }: PortalHomeProps) {
-  const { config, tenant, logos } = ctx;
+  const { config, tenant, logos, navigation } = ctx;
   const { institution, seo } = config;
 
   const [programs, news, team, homePage] = await Promise.all([
@@ -45,6 +45,9 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
   const statsBlock = findBlock(homePage?.blocks, "stats");
   const ctaBlock = findBlock(homePage?.blocks, "cta");
   const heroBlock = findBlock(homePage?.blocks, "hero");
+  const programsBlock = findBlock(homePage?.blocks, "programs");
+  const teachersBlock = findBlock(homePage?.blocks, "teachers");
+  const newsBlock = findBlock(homePage?.blocks, "news");
   const presentationBlock = findBlock(homePage?.blocks, "presentation");
   const textBlock = findBlock(homePage?.blocks, "text");
 
@@ -53,7 +56,34 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
     ctaLabel?: string;
     ctaHref?: string;
     badge?: string;
+    primaryLabel?: string;
+    primaryHref?: string;
+    secondaryLabel?: string;
+    secondaryHref?: string;
   }>(heroBlock);
+
+  const programsSettings = blockSettings<{
+    overline?: string;
+    title?: string;
+    description?: string;
+    buttonHref?: string;
+    buttonLabel?: string;
+  }>(programsBlock);
+
+  const teachersSettings = blockSettings<{
+    overline?: string;
+    title?: string;
+    description?: string;
+    buttonHref?: string;
+    buttonLabel?: string;
+  }>(teachersBlock);
+
+  const newsSettings = blockSettings<{
+    overline?: string;
+    title?: string;
+    buttonHref?: string;
+    buttonLabel?: string;
+  }>(newsBlock);
 
   const stats = extractStats(statsBlock);
   const ctaSettings = blockSettings<{
@@ -77,6 +107,7 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
     overline?: string;
   }>(textBlock);
 
+  const applyQuickLink = navigation.quickLinks.find((l) => l.highlighted) ?? navigation.quickLinks[0];
   const teamPreview = team.slice(0, 4);
 
   return (
@@ -87,22 +118,24 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
         subtitle={heroSettings.motto || seo.description}
         description={presentation.description || undefined}
         heroImage={logos.hero}
-        logoSrc={logos.sem}
-        primaryLabel="Postula ahora"
-        primaryHref="/contacto"
-        secondaryLabel={heroSettings.ctaLabel || "Ver programas"}
-        secondaryHref={heroSettings.ctaHref || "/programas"}
+        logoSrc={logos.primary}
+        primaryLabel={heroSettings.primaryLabel || applyQuickLink?.label}
+        primaryHref={heroSettings.primaryHref || applyQuickLink?.href}
+        secondaryLabel={heroSettings.secondaryLabel || heroSettings.ctaLabel}
+        secondaryHref={heroSettings.secondaryHref || heroSettings.ctaHref || programsSettings.buttonHref}
       />
 
       <PortalSection id="programas-destacados">
         <PortalContainer>
-          <PortalSectionHeader
-            overline="Académico"
-            title="Programas destacados"
-            description="Formación bíblica, teológica y ministerial al servicio de la Iglesia."
-            href="/programas"
-            linkLabel="Ver todos"
-          />
+          {programsSettings.title ? (
+            <PortalSectionHeader
+              overline={programsSettings.overline}
+              title={programsSettings.title}
+              description={programsSettings.description}
+              href={programsSettings.buttonHref}
+              linkLabel={programsSettings.buttonLabel}
+            />
+          ) : null}
           {programs.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {programs.map((program) => (
@@ -113,76 +146,78 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
             <PortalEmptyState
               title="Programas en preparación"
               description="Los programas académicos se publicarán desde el panel de administración."
-              actionLabel="Contactar"
-              actionHref="/contacto"
             />
           )}
         </PortalContainer>
       </PortalSection>
 
-      <PortalSection muted id="por-que-estudiar">
-        <PortalContainer>
-          <PortalSectionHeader
-            overline="Ventajas"
-            title={presentation.title || "Por qué estudiar con nosotros"}
-            description={
-              presentation.description ||
-              "Descubre una formación diseñada para líderes y ministros de la Iglesia."
-            }
-          />
-          {stats.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {stats.map((stat) => (
-                <StatCard key={stat.id} value={stat.value} label={stat.label} />
-              ))}
-            </div>
-          ) : (
-            <PortalEmptyState
-              title="Información próximamente"
-              description="Las ventajas institucionales se configurarán desde el CMS."
-            />
-          )}
-        </PortalContainer>
-      </PortalSection>
-
-      <PortalSection id="modalidad-online">
-        <PortalContainer>
-          <div className="grid items-center gap-10 lg:grid-cols-2">
-            <div>
+      {(presentation.title || presentation.description || stats.length > 0) ? (
+        <PortalSection muted id="presentacion">
+          <PortalContainer>
+            {(presentation.title || presentation.description) ? (
               <PortalSectionHeader
-                overline={textSettings.overline || "Modalidad"}
-                title={textSettings.title || "Estudia 100% online"}
-                description={
-                  textSettings.body ||
-                  "Accede a la formación desde cualquier lugar, con acompañamiento pastoral y comunidad de aprendizaje."
-                }
+                overline={presentation.overline}
+                title={presentation.title ?? ""}
+                description={presentation.description}
               />
-              <Button href="/programas" variant="primary">
-                Conocer programas
-              </Button>
-            </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-2xl)] bg-background-soft">
-              <Image
-                src={logos.hero}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
+            ) : null}
+            {stats.length > 0 ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat) => (
+                  <StatCard key={stat.id} value={stat.value} label={stat.label} />
+                ))}
+              </div>
+            ) : (
+              <PortalEmptyState
+                title="Información próximamente"
+                description="Las ventajas institucionales se configurarán desde el CMS."
               />
+            )}
+          </PortalContainer>
+        </PortalSection>
+      ) : null}
+
+      {(textSettings.title || textSettings.body) ? (
+        <PortalSection id="contenido-destacado">
+          <PortalContainer>
+            <div className="grid items-center gap-10 lg:grid-cols-2">
+              <div>
+                <PortalSectionHeader
+                  overline={textSettings.overline}
+                  title={textSettings.title ?? ""}
+                  description={textSettings.body}
+                />
+                {programsSettings.buttonHref ? (
+                  <Button href={programsSettings.buttonHref} variant="primary">
+                    {programsSettings.buttonLabel || "Ver más"}
+                  </Button>
+                ) : null}
+              </div>
+              <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-2xl)] bg-background-soft">
+                <Image
+                  src={logos.hero}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              </div>
             </div>
-          </div>
-        </PortalContainer>
-      </PortalSection>
+          </PortalContainer>
+        </PortalSection>
+      ) : null}
 
       <PortalSection muted id="equipo">
         <PortalContainer>
-          <PortalSectionHeader
-            overline="Equipo"
-            title="Nuestro equipo SEM"
-            description="Formadores comprometidos con la excelencia académica y pastoral."
-            href="/equipo"
-            linkLabel="Ver equipo completo"
-          />
+          {teachersSettings.title ? (
+            <PortalSectionHeader
+              overline={teachersSettings.overline}
+              title={teachersSettings.title}
+              description={teachersSettings.description}
+              href={teachersSettings.buttonHref || "/equipo"}
+              linkLabel={teachersSettings.buttonLabel}
+            />
+          ) : null}
           {teamPreview.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {teamPreview.map((member) => (
@@ -200,12 +235,14 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
 
       <PortalSection id="noticias">
         <PortalContainer>
-          <PortalSectionHeader
-            overline="Actualidad"
-            title="Noticias recientes"
-            href="/noticias"
-            linkLabel="Ver todas"
-          />
+          {newsSettings.title ? (
+            <PortalSectionHeader
+              overline={newsSettings.overline}
+              title={newsSettings.title}
+              href={newsSettings.buttonHref}
+              linkLabel={newsSettings.buttonLabel}
+            />
+          ) : null}
           {news.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {news.map((item) => (
@@ -221,47 +258,39 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
         </PortalContainer>
       </PortalSection>
 
-      <PortalSection muted id="ipn-chile">
-        <PortalContainer>
-          <div className="flex flex-col items-center gap-8 rounded-[var(--radius-2xl)] border border-border bg-background p-8 text-center sm:p-12 lg:flex-row lg:text-left">
-            {logos.ipn ? (
+      {(institution.organization && logos.secondary) ? (
+        <PortalSection muted id="alianza-institucional">
+          <PortalContainer>
+            <div className="flex flex-col items-center gap-8 rounded-[var(--radius-2xl)] border border-border bg-background p-8 text-center sm:p-12 lg:flex-row lg:text-left">
               <Image
-                src={logos.ipn}
-                alt="IPN Chile"
+                src={logos.secondary}
+                alt=""
                 width={120}
                 height={120}
                 className="h-24 w-auto shrink-0"
               />
-            ) : null}
-            <div className="flex-1">
-              <h2 className="text-display-s font-semibold text-foreground">
-                Vinculación con IPN Chile
-              </h2>
-              <p className="mt-3 text-body text-muted">
-                {institution.organization ||
-                  "Formación en alianza con el Instituto Patrístico Nacional de Chile."}
-              </p>
-              <Button href="/ipn-chile" variant="outline" className="mt-6">
-                Conocer la vinculación
-              </Button>
+              <div className="flex-1">
+                <h2 className="text-display-s font-semibold text-foreground">
+                  {institution.organization}
+                </h2>
+              </div>
             </div>
-          </div>
-        </PortalContainer>
-      </PortalSection>
+          </PortalContainer>
+        </PortalSection>
+      ) : null}
 
       <PortalSection id="cta-final">
         <PortalContainer>
-          <PortalCTA
-            title={ctaSettings.title || "¿Sientes el llamado al ministerio?"}
-            description={
-              ctaSettings.description ||
-              "Inicia tu proceso de postulación y forma parte de nuestra comunidad de aprendizaje."
-            }
-            primaryLabel={ctaSettings.primaryLabel || "Postula ahora"}
-            primaryHref={ctaSettings.primaryHref || "/contacto"}
-            secondaryLabel={ctaSettings.secondaryLabel || "Solicitar información"}
-            secondaryHref={ctaSettings.secondaryHref || "/contacto"}
-          />
+          {(ctaSettings.title || ctaSettings.primaryLabel) ? (
+            <PortalCTA
+              title={ctaSettings.title ?? ""}
+              description={ctaSettings.description}
+              primaryLabel={ctaSettings.primaryLabel ?? applyQuickLink?.label ?? "Contacto"}
+              primaryHref={ctaSettings.primaryHref ?? applyQuickLink?.href ?? "/contacto"}
+              secondaryLabel={ctaSettings.secondaryLabel}
+              secondaryHref={ctaSettings.secondaryHref}
+            />
+          ) : null}
         </PortalContainer>
       </PortalSection>
     </>

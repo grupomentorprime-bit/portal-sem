@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   executeContentQuery,
   toContentQuery,
@@ -10,11 +11,14 @@ import { ALLOWED_COLLECTIONS } from "@/lib/content/types";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const tenant = searchParams.get("tenant") ?? "";
+    const tenantParam = searchParams.get("tenant") ?? "";
+    const tenantCheck = await assertActiveTenant(tenantParam);
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const collection = searchParams.get("collection") ?? "";
 
     const body: ContentQueryRequest = {
-      tenant,
+      tenant: tenantCheck.tenant,
       collection,
       filters: {
         ...(searchParams.get("featured") === "true" ? { featured: true } : {}),
@@ -57,15 +61,19 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ContentQueryRequest;
-    const errors = validateContentQuery(body);
+    const tenantCheck = await assertActiveTenant(body.tenant);
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
+    const securedBody = { ...body, tenant: tenantCheck.tenant };
+    const errors = validateContentQuery(securedBody);
 
     if (errors.length > 0) {
       return NextResponse.json({ ok: false, errors }, { status: 400 });
     }
 
-    const query = toContentQuery(body);
-    const includeDraft = body.preview === true;
-    const mapItems = body.mapItems !== false;
+    const query = toContentQuery(securedBody);
+    const includeDraft = securedBody.preview === true;
+    const mapItems = securedBody.mapItems !== false;
     const result = await executeContentQuery(query, { includeDraft, mapItems });
 
     return NextResponse.json({ ok: true, ...result });
