@@ -49,6 +49,9 @@ export async function PUT(request: Request) {
       );
     }
 
+    const { syncBrandingMediaUsage } = await import("@/lib/cms/media-usage");
+    await syncBrandingMediaUsage(config.institution.tenant, config.branding);
+
     return NextResponse.json({ ok: true, config });
   } catch (error) {
     console.error(error);

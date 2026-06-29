@@ -71,6 +71,9 @@ export function ContentHubClient({ tenant, initialCounts }: ContentHubClientProp
             <p className="text-sm text-zinc-500">Content Engine — tenant: {tenant}</p>
           </div>
           <div className="flex gap-2">
+            <Link href="/admin/media">
+              <Button variant="secondary">Medios</Button>
+            </Link>
             <Link href="/admin/pages">
               <Button variant="secondary">Páginas</Button>
             </Link>

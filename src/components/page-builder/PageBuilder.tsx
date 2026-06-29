@@ -176,6 +176,7 @@ export function PageBuilder({
             <div className="mt-4">
               <BlockEditor
                 block={selectedBlock}
+                tenant={page.tenant}
                 onChange={(updated) =>
                   updateBlocks(page.blocks.map((b) => (b.id === updated.id ? updated : b)))
                 }

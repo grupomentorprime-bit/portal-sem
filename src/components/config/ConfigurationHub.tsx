@@ -105,6 +105,7 @@ export function ConfigurationHub({ initialConfig }: ConfigurationHubProps) {
         <BrandingPanel
           value={config.branding}
           onChange={(branding) => setConfig((prev) => ({ ...prev, branding }))}
+          tenant={config.institution.tenant}
         />
       ) : null}
 

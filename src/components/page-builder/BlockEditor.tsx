@@ -1,12 +1,14 @@
 "use client";
 
 import { Input, Label, Textarea } from "@/components/ui";
+import { MediaField } from "@/components/media/MediaPicker";
 import { BlockDataSourceEditor } from "./BlockDataSourceEditor";
 import type { PageBlock } from "@/types/page";
 
 interface BlockEditorProps {
   block: PageBlock;
   onChange: (block: PageBlock) => void;
+  tenant: string;
 }
 
 function updateSetting(
@@ -36,7 +38,7 @@ function Field({
   );
 }
 
-export function BlockEditor({ block, onChange }: BlockEditorProps) {
+export function BlockEditor({ block, onChange, tenant }: BlockEditorProps) {
   const s = block.settings;
 
   switch (block.type) {
@@ -55,18 +57,22 @@ export function BlockEditor({ block, onChange }: BlockEditorProps) {
               onChange={(e) => updateSetting(block, "motto", e.target.value, onChange)}
             />
           </Field>
-          <Field label="Imagen (URL)">
-            <Input
-              value={String(s.heroImage ?? "")}
-              onChange={(e) => updateSetting(block, "heroImage", e.target.value, onChange)}
-            />
-          </Field>
-          <Field label="Logo (URL)">
-            <Input
-              value={String(s.logoSrc ?? "")}
-              onChange={(e) => updateSetting(block, "logoSrc", e.target.value, onChange)}
-            />
-          </Field>
+          <MediaField
+            label="Imagen hero"
+            value={String(s.heroImage ?? "")}
+            onChange={(v) => updateSetting(block, "heroImage", v, onChange)}
+            tenant={tenant}
+            folder="Hero"
+            category="Imagen"
+          />
+          <MediaField
+            label="Logo"
+            value={String(s.logoSrc ?? "")}
+            onChange={(v) => updateSetting(block, "logoSrc", v, onChange)}
+            tenant={tenant}
+            folder="Logos"
+            category="Imagen"
+          />
           <Field label="Texto del botón">
             <Input
               value={String(s.ctaLabel ?? "")}

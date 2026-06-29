@@ -12,9 +12,10 @@ import type { Branding } from "@/types/cms";
 interface BrandingPanelProps {
   value: Branding;
   onChange: (value: Branding) => void;
+  tenant: string;
 }
 
-export function BrandingPanel({ value, onChange }: BrandingPanelProps) {
+export function BrandingPanel({ value, onChange, tenant }: BrandingPanelProps) {
   const update = <K extends keyof Branding>(key: K, fieldValue: Branding[K]) => {
     onChange({ ...value, [key]: fieldValue });
   };
@@ -27,9 +28,9 @@ export function BrandingPanel({ value, onChange }: BrandingPanelProps) {
           <CardDescription>Logotipos, favicon e imagen principal del portal.</CardDescription>
         </CardHeader>
         <div className="space-y-6">
-          <LogoUploader value={value.logo} onChange={(v) => update("logo", v)} />
-          <FaviconUploader value={value.favicon} onChange={(v) => update("favicon", v)} />
-          <HeroUploader value={value.heroImage} onChange={(v) => update("heroImage", v)} />
+          <LogoUploader value={value.logo} onChange={(v) => update("logo", v)} tenant={tenant} />
+          <FaviconUploader value={value.favicon} onChange={(v) => update("favicon", v)} tenant={tenant} />
+          <HeroUploader value={value.heroImage} onChange={(v) => update("heroImage", v)} tenant={tenant} />
         </div>
       </Card>
 

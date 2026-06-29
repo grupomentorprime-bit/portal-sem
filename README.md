@@ -8,7 +8,8 @@ Portal web del **Seminario Eclesiástico Mayor (SEM)**, construido con Next.js y
 | Código OT (CMS config) | OT-SEM-CMS-001 — Configuration Hub |
 | Código OT (CMS menús) | OT-SEM-CMS-002 — Menu Engine v1.1 |
 | Código OT (Content Engine) | OT-SEM-CMS-004 — v1.2-content-engine |
-| Versión | 1.2.0 |
+| Código OT (Media Library) | OT-SEM-CMS-005 — v1.3.0-media-library |
+| Versión | 1.3.0 |
 
 ## Arquitectura
 

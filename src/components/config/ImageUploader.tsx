@@ -1,13 +1,16 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { MediaField } from "@/components/media/MediaPicker";
+import type { MediaFolder } from "@/types/media";
 
 interface ImageUploaderProps {
   label: string;
   description: string;
   value: string;
   onChange: (value: string) => void;
+  tenant: string;
+  folder?: MediaFolder;
+  category?: string;
   previewClassName?: string;
 }
 
@@ -16,49 +19,33 @@ export function ImageUploader({
   description,
   value,
   onChange,
+  tenant,
+  folder,
+  category,
   previewClassName,
 }: ImageUploaderProps) {
   return (
-    <div className="space-y-3">
-      <div>
-        <Label className="mb-1 block">{label}</Label>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{description}</p>
-      </div>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div
-          className={`flex h-28 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 sm:w-40 ${previewClassName ?? ""}`}
-        >
-          {value ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt={label} className="h-full w-full object-contain" />
-          ) : (
-            <span className="text-xs text-zinc-400">Sin imagen</span>
-          )}
-        </div>
-
-        <div className="flex-1 space-y-2">
-          <Input
-            type="url"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="https://..."
-          />
-          <p className="text-xs text-zinc-400">
-            Ingresa la URL de la imagen. La carga directa de archivos se habilitará en una fase posterior.
-          </p>
-        </div>
-      </div>
-    </div>
+    <MediaField
+      label={label}
+      description={description}
+      value={value}
+      onChange={onChange}
+      tenant={tenant}
+      folder={folder}
+      category={category}
+      previewClassName={previewClassName}
+    />
   );
 }
 
 export function LogoUploader({
   value,
   onChange,
+  tenant,
 }: {
   value: string;
   onChange: (value: string) => void;
+  tenant: string;
 }) {
   return (
     <ImageUploader
@@ -66,6 +53,9 @@ export function LogoUploader({
       description="Logo principal del portal. Se recomienda formato PNG con fondo transparente."
       value={value}
       onChange={onChange}
+      tenant={tenant}
+      folder="Logos"
+      category="Imagen"
     />
   );
 }
@@ -73,9 +63,11 @@ export function LogoUploader({
 export function FaviconUploader({
   value,
   onChange,
+  tenant,
 }: {
   value: string;
   onChange: (value: string) => void;
+  tenant: string;
 }) {
   return (
     <ImageUploader
@@ -83,6 +75,9 @@ export function FaviconUploader({
       description="Ícono del sitio mostrado en la pestaña del navegador."
       value={value}
       onChange={onChange}
+      tenant={tenant}
+      folder="Iconos"
+      category="Icono"
       previewClassName="h-20 w-20"
     />
   );
@@ -91,9 +86,11 @@ export function FaviconUploader({
 export function HeroUploader({
   value,
   onChange,
+  tenant,
 }: {
   value: string;
   onChange: (value: string) => void;
+  tenant: string;
 }) {
   return (
     <ImageUploader
@@ -101,6 +98,9 @@ export function HeroUploader({
       description="Imagen destacada para la portada y metadatos Open Graph."
       value={value}
       onChange={onChange}
+      tenant={tenant}
+      folder="Hero"
+      category="Imagen"
       previewClassName="h-32"
     />
   );
