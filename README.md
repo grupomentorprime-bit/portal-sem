@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portal Institucional SEM
 
-## Getting Started
+Portal web del **Seminario Eclesiástico Mayor (SEM)**, construido con Next.js y MongoDB, integrado al ecosistema **AprendeHoy** bajo la separación oficial entre Portal Web y Core Académico.
 
-First, run the development server:
+| Campo | Valor |
+| --- | --- |
+| Código OT | OT-SEM-INFRA-001 |
+| Versión base | v1.0-base |
+| Base de datos | SeminarioIPN |
+
+## Arquitectura
+
+```
+Usuario
+   ↓
+Portal SEM (Next.js — App Router)
+   ↓
+API Routes (/api/*)
+   ↓
+MongoDB (SeminarioIPN)
+   ↓
+AprendeHoy (integración futura)
+```
+
+### Principios
+
+- **Portal Web** y **Core Académico** permanecen separados.
+- Toda lectura/escritura de datos ocurre exclusivamente en **API Routes** del servidor.
+- Los componentes React **no** acceden directamente a MongoDB.
+- La información institucional se obtiene de la colección `cms_config`.
+- No se almacena información académica en este portal.
+- Una única instancia reutilizable de conexión MongoDB (patrón singleton en desarrollo).
+
+### Estructura del proyecto
+
+```
+portal-sem/
+├── docs/
+│   └── INFRAESTRUCTURA.md    # Documentación técnica detallada
+├── public/                   # Assets estáticos
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── test/         # Validación de infraestructura
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   └── globals.css
+│   └── lib/
+│       └── mongodb.ts        # Conexión reutilizable a MongoDB
+├── .env.example              # Plantilla de variables de entorno
+└── .env.local                # Credenciales locales (no versionado)
+```
+
+## Requisitos
+
+- Node.js 20+
+- npm
+- Acceso a la base MongoDB `SeminarioIPN`
+
+## Configuración
+
+1. Clonar el repositorio e instalar dependencias:
+
+```bash
+npm install
+```
+
+2. Copiar la plantilla de variables de entorno:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Completar `.env.local` con las credenciales reales:
+
+```env
+MONGODB_URI=mongodb://usuario:contraseña@host:27017/?authSource=admin
+MONGODB_DB=SeminarioIPN
+```
+
+## Desarrollo
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Validación de infraestructura
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Endpoint de prueba:
 
-## Learn More
+```
+GET /api/test
+```
 
-To learn more about Next.js, take a look at the following resources:
+Verifica conexión MongoDB, variables de entorno y lectura de `cms_config` (`_id: "site"`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Respuesta exitosa (ejemplo):
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```json
+{
+  "ok": true,
+  "database": "SeminarioIPN",
+  "sitio": { ... }
+}
+```
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Comando | Descripción |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compilación de producción |
+| `npm run start` | Servidor de producción |
+| `npm run lint` | Verificación ESLint |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Integraciones futuras
+
+Preparado para:
+
+- AprendeHoy API (Core Académico)
+- Mercado Pago
+- SMTP
+- WhatsApp Business
+
+## Documentación
+
+- [Infraestructura técnica](./docs/INFRAESTRUCTURA.md)
+- Arquitecturas de referencia: ARQ-001, ARQ-002
+
+## Licencia
+
+Proyecto privado — Seminario Eclesiástico Mayor.
