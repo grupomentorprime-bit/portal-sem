@@ -12,9 +12,18 @@ import { QUERY_BLOCK_TYPES, blockTypeToDefaultQuery } from "@/lib/content/block-
 
 const PAGE_ID_PATTERN = /^[a-z0-9_-]+$/;
 
+function isValidMediaId(value: unknown): boolean {
+  return typeof value === "string" && value.startsWith("media-");
+}
+
 function isValidUrl(value: unknown): boolean {
   if (typeof value !== "string" || !value) return true;
   return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/");
+}
+
+function isValidMediaRef(mediaId: unknown, legacyUrl: unknown): boolean {
+  if (isValidMediaId(mediaId)) return true;
+  return isValidUrl(legacyUrl);
 }
 
 function validateBlock(block: PageBlock, index: number): PageValidationError[] {
@@ -38,9 +47,12 @@ function validateBlock(block: PageBlock, index: number): PageValidationError[] {
   }
 
   if (block.type === "hero") {
-    const heroImage = block.settings.heroImage;
-    if (heroImage && !isValidUrl(heroImage)) {
-      errors.push({ field: `${prefix}.settings.heroImage`, message: "URL de imagen inválida." });
+    const s = block.settings;
+    if (!isValidMediaRef(s.heroMediaId, s.heroImage)) {
+      errors.push({ field: `${prefix}.settings.heroMediaId`, message: "Referencia de imagen hero inválida." });
+    }
+    if (!isValidMediaRef(s.logoMediaId, s.logoSrc)) {
+      errors.push({ field: `${prefix}.settings.logoMediaId`, message: "Referencia de logo inválida." });
     }
   }
 

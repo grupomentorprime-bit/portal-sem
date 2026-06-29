@@ -81,18 +81,19 @@ export function validateSiteConfigUpdate(
     });
   }
 
-  const urlFields: Array<[string, string]> = [
-    ["branding.logo", config.branding.logo],
-    ["branding.favicon", config.branding.favicon],
-    ["branding.heroImage", config.branding.heroImage],
-    ["social.facebook", config.social.facebook],
-    ["social.instagram", config.social.instagram],
-    ["social.youtube", config.social.youtube],
-    ["social.linkedin", config.social.linkedin],
-    ["social.tiktok", config.social.tiktok],
+  const urlFields: Array<[string, string, string | undefined]> = [
+    ["branding.logo", config.branding.logo, config.branding.logoMediaId],
+    ["branding.favicon", config.branding.favicon, config.branding.faviconMediaId],
+    ["branding.heroImage", config.branding.heroImage, config.branding.heroMediaId],
+    ["social.facebook", config.social.facebook, undefined],
+    ["social.instagram", config.social.instagram, undefined],
+    ["social.youtube", config.social.youtube, undefined],
+    ["social.linkedin", config.social.linkedin, undefined],
+    ["social.tiktok", config.social.tiktok, undefined],
   ];
 
-  for (const [field, value] of urlFields) {
+  for (const [field, value, mediaId] of urlFields) {
+    if (mediaId?.startsWith("media-")) continue;
     if (value && !URL_PATTERN.test(value) && !value.startsWith("/")) {
       errors.push({
         field,

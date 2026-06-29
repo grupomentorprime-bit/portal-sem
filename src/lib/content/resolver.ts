@@ -5,6 +5,7 @@ import { buildMongoFilter, parseFilters } from "@/lib/content/filters";
 import { normalizePagination, withTotal } from "@/lib/content/pagination";
 import { normalizeSort } from "@/lib/content/sort";
 import { mapDocumentsForCollection } from "@/lib/content/mappers";
+import { enrichContentDocumentsMedia } from "@/core/media";
 import {
   cachedContentQuery,
   contentCacheTag,
@@ -52,9 +53,10 @@ export class ContentResolver {
       ]);
 
       const meta = withTotal(pagination, total);
+      const enriched = await enrichContentDocumentsMedia(query.tenant, docs);
       const items = options?.mapItems !== false
-        ? (mapDocumentsForCollection(collection, docs) as T[])
-        : (docs as T[]);
+        ? (mapDocumentsForCollection(collection, enriched) as T[])
+        : (enriched as T[]);
 
       return {
         items,

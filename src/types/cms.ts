@@ -12,10 +12,18 @@ export interface Institution {
 }
 
 export interface Branding {
+  /** @deprecated Usar logoMediaId — URL derivada por Asset Engine */
   logo: string;
+  logoMediaId?: string;
+  /** @deprecated Usar secondaryLogoMediaId */
   secondaryLogo?: string;
+  secondaryLogoMediaId?: string;
+  /** @deprecated Usar faviconMediaId */
   favicon: string;
+  faviconMediaId?: string;
+  /** @deprecated Usar heroMediaId */
   heroImage: string;
+  heroMediaId?: string;
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
@@ -26,6 +34,12 @@ export interface SeoConfig {
   title: string;
   description: string;
   keywords: string[];
+  /** @deprecated Usar ogImageMediaId */
+  ogImage?: string;
+  ogImageMediaId?: string;
+  /** @deprecated Usar twitterImageMediaId */
+  twitterImage?: string;
+  twitterImageMediaId?: string;
 }
 
 export interface ContactInfo {

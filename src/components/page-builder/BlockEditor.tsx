@@ -59,16 +59,26 @@ export function BlockEditor({ block, onChange, tenant }: BlockEditorProps) {
           </Field>
           <MediaField
             label="Imagen hero"
-            value={String(s.heroImage ?? "")}
-            onChange={(v) => updateSetting(block, "heroImage", v, onChange)}
+            value={String(s.heroMediaId ?? s.heroImage ?? "")}
+            onChange={(mediaId) =>
+              onChange({
+                ...block,
+                settings: { ...s, heroMediaId: mediaId, heroImage: "" },
+              })
+            }
             tenant={tenant}
             folder="Hero"
             category="Imagen"
           />
           <MediaField
             label="Logo"
-            value={String(s.logoSrc ?? "")}
-            onChange={(v) => updateSetting(block, "logoSrc", v, onChange)}
+            value={String(s.logoMediaId ?? s.logoSrc ?? "")}
+            onChange={(mediaId) =>
+              onChange({
+                ...block,
+                settings: { ...s, logoMediaId: mediaId, logoSrc: "" },
+              })
+            }
             tenant={tenant}
             folder="Logos"
             category="Imagen"

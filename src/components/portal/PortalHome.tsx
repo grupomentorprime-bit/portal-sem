@@ -6,6 +6,11 @@ import {
   PortalSection,
 } from "@/components/portal/layout";
 import { PortalHero } from "@/components/portal/PortalHero";
+import { PortalHeroMedia } from "@/components/portal/PortalHeroMedia";
+import {
+  PortalHeroBenefits,
+  parseHeroBenefits,
+} from "@/components/portal/PortalHeroBenefits";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 import { PortalSectionHeader } from "@/components/portal/PortalSectionHeader";
 import {
@@ -25,6 +30,7 @@ import {
   findBlock,
 } from "@/lib/portal/blocks";
 import { getPublishedPageBySlug } from "@/lib/cms/pages";
+import { resolveMediaRef } from "@/core/media";
 import type { PortalContext } from "@/lib/portal/site";
 
 interface PortalHomeProps {
@@ -52,7 +58,11 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
   const textBlock = findBlock(homePage?.blocks, "text");
 
   const heroSettings = blockSettings<{
+    institutionName?: string;
     motto?: string;
+    heroImage?: string;
+    heroMediaId?: string;
+    overlayOpacity?: number;
     ctaLabel?: string;
     ctaHref?: string;
     badge?: string;
@@ -110,20 +120,39 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
   const applyQuickLink = navigation.quickLinks.find((l) => l.highlighted) ?? navigation.quickLinks[0];
   const teamPreview = team.slice(0, 4);
 
+  const heroFromBlock = await resolveMediaRef(tenant, {
+    mediaId: heroSettings.heroMediaId,
+    legacyUrl: heroSettings.heroImage,
+  });
+
+  const configuredHeroImage = heroFromBlock ?? (logos.hasHero ? logos.hero : undefined);
+
+  const benefitItems = parseHeroBenefits(heroSettings.badge);
+  const statBenefits = stats.map((s) => s.label).filter(Boolean).slice(0, 4);
+  const heroBenefits = benefitItems.length > 0 ? benefitItems : statBenefits;
+
   return (
     <>
       <PortalHero
-        badge={heroSettings.badge}
-        title={institution.name}
+        title={heroSettings.institutionName || institution.name}
         subtitle={heroSettings.motto || seo.description}
         description={presentation.description || undefined}
-        heroImage={logos.hero}
-        logoSrc={logos.primary}
+        heroImage={configuredHeroImage}
+        overlayOpacity={
+          typeof heroSettings.overlayOpacity === "number"
+            ? heroSettings.overlayOpacity
+            : 75
+        }
         primaryLabel={heroSettings.primaryLabel || applyQuickLink?.label}
         primaryHref={heroSettings.primaryHref || applyQuickLink?.href}
         secondaryLabel={heroSettings.secondaryLabel || heroSettings.ctaLabel}
-        secondaryHref={heroSettings.secondaryHref || heroSettings.ctaHref || programsSettings.buttonHref}
+        secondaryHref={
+          heroSettings.secondaryHref ||
+          heroSettings.ctaHref ||
+          programsSettings.buttonHref
+        }
       />
+      <PortalHeroBenefits items={heroBenefits} />
 
       <PortalSection id="programas-destacados">
         <PortalContainer>
@@ -137,7 +166,7 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
             />
           ) : null}
           {programs.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {programs.map((program) => (
                 <ProgramCard key={program.id} program={program} />
               ))}
@@ -162,7 +191,7 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
               />
             ) : null}
             {stats.length > 0 ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
                 {stats.map((stat) => (
                   <StatCard key={stat.id} value={stat.value} label={stat.label} />
                 ))}
@@ -180,7 +209,7 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
       {(textSettings.title || textSettings.body) ? (
         <PortalSection id="contenido-destacado">
           <PortalContainer>
-            <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
               <div>
                 <PortalSectionHeader
                   overline={textSettings.overline}
@@ -193,15 +222,10 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
                   </Button>
                 ) : null}
               </div>
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-2xl)] bg-background-soft">
-                <Image
-                  src={logos.hero}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              </div>
+              <PortalHeroMedia
+                src={logos.hasHero ? logos.hero : undefined}
+                variant="landscape"
+              />
             </div>
           </PortalContainer>
         </PortalSection>
@@ -219,7 +243,7 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
             />
           ) : null}
           {teamPreview.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {teamPreview.map((member) => (
                 <TeamCard key={member.id} member={member} />
               ))}
@@ -244,7 +268,7 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
             />
           ) : null}
           {news.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {news.map((item) => (
                 <NewsCard key={item.id} news={item} />
               ))}
@@ -270,7 +294,7 @@ export async function PortalHome({ ctx }: PortalHomeProps) {
                 className="h-24 w-auto shrink-0"
               />
               <div className="flex-1">
-                <h2 className="text-display-s font-semibold text-foreground">
+                <h2 className="text-display-l font-semibold text-foreground">
                   {institution.organization}
                 </h2>
               </div>

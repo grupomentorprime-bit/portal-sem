@@ -31,7 +31,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
   return {
     config,
     tenantId,
-    branding: resolveBrandingAssets({ config }),
+    branding: await resolveBrandingAssets({ config }),
     navigation: resolveNavigation({
       header: headerMenu?.items,
       footer: footerMenu?.items,

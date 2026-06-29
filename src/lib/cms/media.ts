@@ -17,7 +17,7 @@ import {
   deleteMediaPrefix,
   putMediaFile,
 } from "@/lib/cms/media-storage";
-import { mediaHasUsage } from "@/lib/cms/media-usage";
+import { mediaHasUsage } from "@/lib/cms/media-usage-helpers";
 import type {
   CmsMediaAsset,
   CmsMediaUpdate,
@@ -37,6 +37,9 @@ function normalizeAsset(asset: CmsMediaAsset): CmsMediaAsset {
     usage: asset.usage ?? [],
     responsive: asset.responsive ?? {},
     visibility: asset.visibility ?? "active",
+    title: asset.title ?? asset.originalName,
+    status: asset.status ?? "active",
+    version: asset.version ?? 1,
   };
 }
 
@@ -221,8 +224,11 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     category,
     tags: input.tags ?? [],
     alt: input.alt ?? input.originalName,
+    title: input.originalName,
     caption: input.caption ?? "",
     credits: input.credits ?? "",
+    status: "active",
+    version: 1,
     visibility: "active",
     url,
     thumbnail: thumbnail || url,

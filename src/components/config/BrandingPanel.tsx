@@ -28,9 +28,21 @@ export function BrandingPanel({ value, onChange, tenant }: BrandingPanelProps) {
           <CardDescription>Logotipos, favicon e imagen principal del portal.</CardDescription>
         </CardHeader>
         <div className="space-y-6">
-          <LogoUploader value={value.logo} onChange={(v) => update("logo", v)} tenant={tenant} />
-          <FaviconUploader value={value.favicon} onChange={(v) => update("favicon", v)} tenant={tenant} />
-          <HeroUploader value={value.heroImage} onChange={(v) => update("heroImage", v)} tenant={tenant} />
+          <LogoUploader
+            value={value.logoMediaId ?? ""}
+            onChange={(v) => update("logoMediaId", v)}
+            tenant={tenant}
+          />
+          <FaviconUploader
+            value={value.faviconMediaId ?? ""}
+            onChange={(v) => update("faviconMediaId", v)}
+            tenant={tenant}
+          />
+          <HeroUploader
+            value={value.heroMediaId ?? ""}
+            onChange={(v) => update("heroMediaId", v)}
+            tenant={tenant}
+          />
         </div>
       </Card>
 

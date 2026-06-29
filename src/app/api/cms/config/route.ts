@@ -49,8 +49,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    const { syncBrandingMediaUsage } = await import("@/lib/cms/media-usage");
-    await syncBrandingMediaUsage(config.institution.tenant, config.branding);
+    const { rebuildUsageIndex } = await import("@/core/media/usage");
+    await rebuildUsageIndex(config.institution.tenant);
 
     return NextResponse.json({ ok: true, config });
   } catch (error) {

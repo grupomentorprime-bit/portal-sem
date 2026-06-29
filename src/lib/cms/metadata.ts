@@ -3,7 +3,7 @@ import { resolveSiteMetadata } from "@/core/seo";
 import { getSiteConfig } from "@/lib/cms/config";
 import type { SiteConfig } from "@/types/cms";
 
-export function buildSiteMetadata(config: SiteConfig | null): Metadata {
+export async function buildSiteMetadata(config: SiteConfig | null): Promise<Metadata> {
   return resolveSiteMetadata(config);
 }
 

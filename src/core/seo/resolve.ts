@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { resolveSeoImageUrls } from "@/core/media";
 import type { SiteConfig } from "@/types/cms";
 
 export function resolvePageTitle(pageName: string, config: SiteConfig): string {
@@ -6,7 +7,7 @@ export function resolvePageTitle(pageName: string, config: SiteConfig): string {
   return suffix ? `${pageName} | ${suffix}` : pageName;
 }
 
-export function resolveSiteMetadata(config: SiteConfig | null): Metadata {
+export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Metadata> {
   if (!config) {
     return {
       title: "Portal Institucional",
@@ -17,6 +18,21 @@ export function resolveSiteMetadata(config: SiteConfig | null): Metadata {
   const { institution, seo, branding } = config;
   const title = seo.title || institution.name;
   const description = seo.description;
+  const tenant = institution.tenant;
+
+  const images = tenant
+    ? await resolveSeoImageUrls(tenant, seo, branding)
+    : { ogImage: seo.ogImage ?? branding.heroImage ?? branding.logo };
+
+  const favicon =
+    tenant && branding.faviconMediaId
+      ? (await import("@/core/media")).resolveMediaRef(tenant, {
+          mediaId: branding.faviconMediaId,
+          legacyUrl: branding.favicon,
+        })
+      : Promise.resolve(branding.favicon || undefined);
+
+  const faviconUrl = await favicon;
 
   return {
     title,
@@ -30,14 +46,15 @@ export function resolveSiteMetadata(config: SiteConfig | null): Metadata {
       title,
       description,
       siteName: institution.name,
-      images: branding.heroImage
-        ? [{ url: branding.heroImage, alt: institution.name }]
-        : branding.logo
-          ? [{ url: branding.logo, alt: institution.name }]
-          : undefined,
+      images: images.ogImage
+        ? [{ url: images.ogImage, alt: institution.name }]
+        : undefined,
       locale: "es_CL",
       type: "website",
     },
-    icons: branding.favicon ? { icon: branding.favicon } : undefined,
+    twitter: images.twitterImage
+      ? { card: "summary_large_image", images: [images.twitterImage] }
+      : undefined,
+    icons: faviconUrl ? { icon: faviconUrl } : undefined,
   };
 }

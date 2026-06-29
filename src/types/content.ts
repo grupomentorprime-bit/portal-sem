@@ -19,7 +19,15 @@ export interface ContentDocument {
   slug: string;
   summary: string;
   content: string;
+  /** @deprecated Usar imageMediaId / coverMediaId / featuredMediaId / photoMediaId */
   image: string;
+  imageMediaId?: string;
+  coverMediaId?: string;
+  featuredMediaId?: string;
+  photoMediaId?: string;
+  galleryMediaIds?: string[];
+  /** URLs resueltas en runtime — no persistir */
+  galleryUrls?: string[];
   status: ContentStatus;
   featured: boolean;
   categories: string[];
@@ -44,7 +52,9 @@ export interface ContentDocument {
   category?: string;
   location?: string;
   alt?: string;
+  /** @deprecated Usar srcMediaId */
   src?: string;
+  srcMediaId?: string;
   modality?: string;
   requirements?: string;
   fees?: string;

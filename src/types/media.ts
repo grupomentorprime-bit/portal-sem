@@ -34,6 +34,13 @@ export type MediaCategory = (typeof MEDIA_CATEGORIES)[number];
 export const MEDIA_VISIBILITY = ["active", "trash"] as const;
 export type MediaVisibility = (typeof MEDIA_VISIBILITY)[number];
 
+export interface MediaFocalPoint {
+  x: number;
+  y: number;
+}
+
+export type MediaAssetStatus = "active" | "archived";
+
 export interface MediaResponsiveUrls {
   thumbnail?: string;
   w400?: string;
@@ -65,8 +72,16 @@ export interface CmsMediaAsset {
   category: MediaCategory;
   tags: string[];
   alt: string;
+  title?: string;
   caption: string;
   credits: string;
+  author?: string;
+  license?: string;
+  dominantColor?: string;
+  blurDataURL?: string;
+  focalPoint?: MediaFocalPoint;
+  status?: MediaAssetStatus;
+  version?: number;
   visibility: MediaVisibility;
   url: string;
   thumbnail: string;
@@ -92,8 +107,15 @@ export type CmsMediaUpdate = Partial<
     | "category"
     | "tags"
     | "alt"
+    | "title"
     | "caption"
     | "credits"
+    | "author"
+    | "license"
+    | "dominantColor"
+    | "blurDataURL"
+    | "focalPoint"
+    | "status"
     | "visibility"
     | "originalName"
   >

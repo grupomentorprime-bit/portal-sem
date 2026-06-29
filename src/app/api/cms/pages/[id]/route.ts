@@ -76,6 +76,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     const saveVersion = body.publish === true || body.status === "published";
     const page = await updatePage(id, body, { saveVersion });
+
+    if (page) {
+      const { rebuildUsageIndex } = await import("@/core/media/usage");
+      await rebuildUsageIndex(page.tenant);
+    }
+
     return NextResponse.json({ ok: true, page });
   } catch (error) {
     console.error(error);

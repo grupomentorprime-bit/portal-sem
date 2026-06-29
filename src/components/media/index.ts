@@ -6,7 +6,7 @@ export { MediaFilters } from "./MediaFilters";
 export { MediaFolderTree, MediaSidebar } from "./MediaFolderTree";
 export { MediaGrid } from "./MediaGrid";
 export { MediaLibraryClient, MediaLibraryCore } from "./MediaLibraryClient";
-export { MediaField, MediaPicker } from "./MediaPicker";
+export { MediaField, MediaPicker, type MediaSelection } from "./MediaPicker";
 export { MediaPreview } from "./MediaPreview";
 export { MediaSearch } from "./MediaSearch";
 export { MediaToolbar } from "./MediaToolbar";

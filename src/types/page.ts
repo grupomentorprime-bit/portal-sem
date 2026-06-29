@@ -38,7 +38,10 @@ export interface SeoSettings {
   title?: string;
   description?: string;
   keywords?: string[];
+  /** @deprecated Usar ogImageMediaId */
   ogImage?: string;
+  ogImageMediaId?: string;
+  twitterImageMediaId?: string;
   noIndex?: boolean;
 }
 

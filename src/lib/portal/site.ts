@@ -11,6 +11,9 @@ export interface PortalLogos {
   primary: string;
   secondary?: string;
   hero: string;
+  hasPrimary: boolean;
+  hasSecondary: boolean;
+  hasHero: boolean;
 }
 
 export interface PortalContext {
@@ -33,6 +36,11 @@ function mapTenantContext(ctx: TenantContext): PortalContext {
       primary: ctx.branding.logo,
       secondary: ctx.branding.secondaryLogo,
       hero: ctx.branding.hero,
+      hasPrimary: Boolean(ctx.config.branding.logoMediaId?.trim() || ctx.config.branding.logo?.trim()),
+      hasSecondary: Boolean(
+        ctx.config.branding.secondaryLogoMediaId?.trim() || ctx.config.branding.secondaryLogo?.trim()
+      ),
+      hasHero: Boolean(ctx.config.branding.heroMediaId?.trim() || ctx.config.branding.heroImage?.trim()),
     },
   };
 }

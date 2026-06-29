@@ -1,14 +1,26 @@
-import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
+import { resolveBrandingMediaUrls } from "@/core/media";
 import type { BrandingResolverInput, ResolvedBrandingAssets } from "./types";
 
-export function resolveBrandingAssets({ config }: BrandingResolverInput): ResolvedBrandingAssets {
+export async function resolveBrandingAssets({
+  config,
+}: BrandingResolverInput): Promise<ResolvedBrandingAssets> {
   const { branding } = config;
+  const tenant = config.institution.tenant;
+
+  const urls = tenant
+    ? await resolveBrandingMediaUrls(tenant, branding)
+    : {
+        logo: branding.logo,
+        secondaryLogo: branding.secondaryLogo,
+        hero: branding.heroImage,
+        favicon: branding.favicon,
+      };
 
   return {
-    logo: branding.logo || PLATFORM_ASSET_FALLBACKS.logo,
-    secondaryLogo: branding.secondaryLogo || undefined,
-    hero: branding.heroImage || PLATFORM_ASSET_FALLBACKS.hero,
-    favicon: branding.favicon || undefined,
+    logo: urls.logo,
+    secondaryLogo: urls.secondaryLogo,
+    hero: urls.hero,
+    favicon: urls.favicon,
     colors: {
       primaryColor: branding.primaryColor,
       secondaryColor: branding.secondaryColor,
