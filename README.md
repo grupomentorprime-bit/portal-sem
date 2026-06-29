@@ -4,8 +4,8 @@ Portal web del **Seminario Eclesiástico Mayor (SEM)**, construido con Next.js y
 
 | Campo | Valor |
 | --- | --- |
-| Código OT | OT-SEM-INFRA-001 |
-| Versión base | v1.0-base |
+| Código OT (infra) | OT-SEM-INFRA-001 — v1.0-base |
+| Código OT (CMS) | OT-SEM-CMS-001 — Configuration Hub |
 | Base de datos | SeminarioIPN |
 
 ## Arquitectura
@@ -36,19 +36,26 @@ AprendeHoy (integración futura)
 ```
 portal-sem/
 ├── docs/
-│   └── INFRAESTRUCTURA.md    # Documentación técnica detallada
-├── public/                   # Assets estáticos
+│   ├── INFRAESTRUCTURA.md      # OT infraestructura base
+│   └── CMS-CONFIGURACION.md    # OT Configuration Hub
+├── public/
 ├── src/
 │   ├── app/
+│   │   ├── admin/config/       # Configuration Hub
 │   │   ├── api/
-│   │   │   └── test/         # Validación de infraestructura
+│   │   │   ├── cms/config/     # GET/PUT configuración
+│   │   │   └── test/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   └── globals.css
-│   └── lib/
-│       └── mongodb.ts        # Conexión reutilizable a MongoDB
-├── .env.example              # Plantilla de variables de entorno
-└── .env.local                # Credenciales locales (no versionado)
+│   ├── components/
+│   │   ├── config/             # Panel CMS
+│   │   └── ui/
+│   ├── lib/cms/                # Servicios CMS
+│   ├── lib/mongodb.ts
+│   └── types/cms.ts
+├── .env.example
+└── .env.local
 ```
 
 ## Requisitos
@@ -85,6 +92,15 @@ npm run dev
 ```
 
 Abrir [http://localhost:3000](http://localhost:3000).
+
+## Configuration Hub
+
+Panel de administración institucional en `/admin/config`.
+
+| Endpoint | Método | Descripción |
+| --- | --- | --- |
+| `/api/cms/config` | GET | Obtiene configuración |
+| `/api/cms/config` | PUT | Actualiza configuración |
 
 ## Validación de infraestructura
 
@@ -127,6 +143,7 @@ Preparado para:
 ## Documentación
 
 - [Infraestructura técnica](./docs/INFRAESTRUCTURA.md)
+- [Configuration Hub (CMS)](./docs/CMS-CONFIGURACION.md)
 - Arquitecturas de referencia: ARQ-001, ARQ-002
 
 ## Licencia

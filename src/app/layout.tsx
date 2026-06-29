@@ -1,3 +1,5 @@
+import { getSiteConfig } from "@/lib/cms/config";
+import { getSiteMetadata } from "@/lib/cms/metadata";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -12,22 +14,38 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Seminario Eclesiástico Mayor",
-  description: "Portal Institucional del Seminario Eclesiástico Mayor",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getSiteMetadata();
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const config = await getSiteConfig();
+  const branding = config?.branding;
+
+  const themeStyle = branding
+    ? ({
+        "--brand-primary": branding.primaryColor,
+        "--brand-secondary": branding.secondaryColor,
+        "--brand-background": branding.backgroundColor,
+        "--brand-text": branding.textColor,
+      } as React.CSSProperties)
+    : undefined;
+
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body
+        className="flex min-h-full flex-col"
+        style={themeStyle}
+      >
+        {children}
+      </body>
     </html>
   );
 }
