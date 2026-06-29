@@ -90,6 +90,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
       const { rebuildUsageIndex } = await import("@/core/media/usage");
       await rebuildUsageIndex(page.tenant);
 
+      const { emitPageStatusChange } = await import("@/lib/events/cms");
+      const authCtx = await requirePermission("cms.pages.update");
+      const userId = authCtx instanceof NextResponse ? undefined : authCtx.user._id;
+      await emitPageStatusChange(page, existing.status, userId).catch(console.error);
+
       if (body.status) {
         const auth = await requirePermission("workflow.transition");
         if (isAuthContext(auth)) {

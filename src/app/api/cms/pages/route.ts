@@ -48,6 +48,8 @@ export async function POST(request: Request) {
     }
 
     const page = await createPage(body);
+    const { emitPageCreated } = await import("@/lib/events/cms");
+    await emitPageCreated(page).catch(console.error);
     return NextResponse.json({ ok: true, page }, { status: 201 });
   } catch (error) {
     console.error(error);

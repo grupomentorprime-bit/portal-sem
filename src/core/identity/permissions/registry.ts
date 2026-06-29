@@ -21,7 +21,7 @@ export const PERMISSIONS = {
   // Content
   "programs.manage": "Gestionar programas",
   "news.publish": "Publicar noticias",
-  "events.manage": "Gestionar eventos",
+  "content.events.manage": "Gestionar eventos de contenido",
 
   // Settings
   "settings.update": "Actualizar configuración",
@@ -36,6 +36,11 @@ export const PERMISSIONS = {
   "workflow.read": "Ver workflows",
   "workflow.manage": "Gestionar definiciones de workflow",
   "workflow.transition": "Ejecutar transiciones de workflow",
+
+  // Events
+  "events.read": "Ver eventos del bus",
+  "events.manage": "Publicar y gestionar eventos",
+  "events.replay": "Reprocesar eventos (replay)",
 
   // Academic (futuro)
   "students.read": "Ver estudiantes",

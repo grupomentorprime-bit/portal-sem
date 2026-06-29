@@ -57,6 +57,20 @@ export async function POST(request: Request) {
       });
     }
 
+    const { publish } = await import("@/core/events/publisher");
+    await publish({
+      type: "InvitationCreated",
+      tenantId: ctx.tenantId,
+      entityType: "invitation",
+      entityId: invitation._id,
+      userId: ctx.user._id,
+      payload: {
+        email: invitation.email,
+        token: invitation.token,
+        roleIds: invitation.roleIds,
+      },
+    }).catch(console.error);
+
     return NextResponse.json({
       ok: true,
       invitation: {

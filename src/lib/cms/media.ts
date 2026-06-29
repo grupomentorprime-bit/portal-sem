@@ -243,6 +243,8 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
 
   await db.collection<CmsMediaAsset>("cms_media").insertOne(document);
   revalidateMediaTags(input.tenant);
+  const { emitMediaUploaded } = await import("@/lib/events/media");
+  await emitMediaUploaded(document).catch(console.error);
   return document;
 }
 
@@ -264,6 +266,8 @@ export async function updateMedia(
 
   await db.collection<CmsMediaAsset>("cms_media").replaceOne({ _id: id }, updated);
   revalidateMediaTags(existing.tenant, id);
+  const { emitMediaUpdated } = await import("@/lib/events/media");
+  await emitMediaUpdated(updated).catch(console.error);
   return updated;
 }
 
@@ -283,7 +287,12 @@ export async function trashMedia(id: string): Promise<CmsMediaAsset | null> {
     { $set: { visibility: "trash", trashedAt: now, updatedAt: now } }
   );
   revalidateMediaTags(existing.tenant, id);
-  return getMediaById(id);
+  const trashed = await getMediaById(id);
+  if (trashed) {
+    const { emitMediaDeleted } = await import("@/lib/events/media");
+    await emitMediaDeleted(trashed).catch(console.error);
+  }
+  return trashed;
 }
 
 export async function restoreMedia(id: string): Promise<CmsMediaAsset | null> {
@@ -308,6 +317,10 @@ export async function deleteMediaPermanent(id: string): Promise<boolean> {
   const db = await getDatabase();
   const result = await db.collection<CmsMediaAsset>("cms_media").deleteOne({ _id: id });
   revalidateMediaTags(existing.tenant, id);
+  if (result.deletedCount > 0) {
+    const { emitMediaDeleted } = await import("@/lib/events/media");
+    await emitMediaDeleted({ ...existing, visibility: "trash" }).catch(console.error);
+  }
   return result.deletedCount > 0;
 }
 

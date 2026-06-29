@@ -76,7 +76,7 @@ Al guardar una pÃ¡gina (`PUT /api/cms/pages/[id]`), se sincroniza el workflow vÃ
 ## Event Bus
 
 ```ts
-import { subscribe } from "@/core/workflow";
+import { subscribe } from "@/core/workflow/events/bus";
 
 subscribe("WorkflowTransitioned", async (event) => {
   // reaccionar sin acoplar al engine

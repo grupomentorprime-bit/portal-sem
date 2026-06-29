@@ -1,28 +1,55 @@
 import type { WorkflowDomainEvent } from "@/types/workflow";
+import type { DomainEvent } from "@/types/events";
+import { publish as corePublish } from "@/core/events/publisher";
+import { subscribe as coreSubscribe } from "@/core/events/subscribers";
 
 export type WorkflowEventHandler = (event: WorkflowDomainEvent) => void | Promise<void>;
 
-const subscribers = new Map<string, WorkflowEventHandler[]>();
-
-export function subscribe(eventType: string, handler: WorkflowEventHandler): () => void {
-  const list = subscribers.get(eventType) ?? [];
-  list.push(handler);
-  subscribers.set(eventType, list);
-  return () => {
-    const current = subscribers.get(eventType) ?? [];
-    subscribers.set(
-      eventType,
-      current.filter((h) => h !== handler)
-    );
+function workflowFromDomain(event: DomainEvent): WorkflowDomainEvent {
+  const p = event.payload;
+  return {
+    type: event.type as WorkflowDomainEvent["type"],
+    tenantId: event.tenantId,
+    entityType: event.entityType,
+    entityId: event.entityId,
+    workflowInstanceId: String(p.workflowInstanceId ?? ""),
+    definitionId: String(p.definitionId ?? ""),
+    fromState: p.fromState as string | undefined,
+    toState: p.toState as string | undefined,
+    performedBy: event.userId ?? String(p.performedBy ?? ""),
+    timestamp: event.occurredAt,
+    metadata: event.metadata,
   };
 }
 
+function domainFromWorkflow(event: WorkflowDomainEvent) {
+  return {
+    type: event.type,
+    tenantId: event.tenantId,
+    entityType: event.entityType,
+    entityId: event.entityId,
+    userId: event.performedBy,
+    payload: {
+      workflowInstanceId: event.workflowInstanceId,
+      definitionId: event.definitionId,
+      fromState: event.fromState,
+      toState: event.toState,
+      performedBy: event.performedBy,
+    },
+    metadata: event.metadata,
+  };
+}
+
+export function subscribe(eventType: string, handler: WorkflowEventHandler): () => void {
+  return coreSubscribe(
+    eventType,
+    (e) => handler(workflowFromDomain(e)),
+    { name: handler.name || `workflow.${eventType}` }
+  );
+}
+
 export async function publish(event: WorkflowDomainEvent): Promise<void> {
-  const handlers = [
-    ...(subscribers.get(event.type) ?? []),
-    ...(subscribers.get("*") ?? []),
-  ];
-  await Promise.all(handlers.map((h) => h(event)));
+  await corePublish(domainFromWorkflow(event));
 }
 
 export async function publishTransitionEvents(

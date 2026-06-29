@@ -10,3 +10,4 @@ export * from "./search";
 export * from "./notifications";
 export * from "./media";
 export * from "./identity";
+export * from "./events";

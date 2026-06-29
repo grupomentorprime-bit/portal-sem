@@ -38,6 +38,15 @@ export async function POST(request: Request, { params }: RouteParams) {
         invitedBy: invitation.invitedBy,
       });
       await acceptInvitation(invitation._id, existing._id);
+      const { publish } = await import("@/core/events/publisher");
+      await publish({
+        type: "InvitationAccepted",
+        tenantId: invitation.tenantId,
+        entityType: "invitation",
+        entityId: invitation._id,
+        userId: existing._id,
+        payload: { email: invitation.email, existingUser: true },
+      }).catch(console.error);
       return NextResponse.json({ ok: true, userId: existing._id, existing: true });
     }
 
@@ -61,6 +70,15 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     await acceptInvitation(invitation._id, result.user._id);
+    const { publish } = await import("@/core/events/publisher");
+    await publish({
+      type: "InvitationAccepted",
+      tenantId: invitation.tenantId,
+      entityType: "invitation",
+      entityId: invitation._id,
+      userId: result.user._id,
+      payload: { email: invitation.email, existingUser: false },
+    }).catch(console.error);
     return NextResponse.json({ ok: true, userId: result.user._id, existing: false });
   } catch (error) {
     console.error(error);

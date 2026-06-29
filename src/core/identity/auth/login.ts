@@ -61,6 +61,16 @@ export async function loginWithEmail(input: {
     entityId: session._id,
   });
 
+  const { publish } = await import("@/core/events/publisher");
+  await publish({
+    type: "UserLoggedIn",
+    tenantId: input.tenantId,
+    entityType: "user",
+    entityId: user._id,
+    userId: user._id,
+    payload: { email: user.email, sessionId: session._id },
+  }).catch(console.error);
+
   return { ok: true, user };
 }
 
@@ -113,6 +123,16 @@ export async function registerWithEmail(input: {
     entity: "user",
     entityId: user._id,
   });
+
+  const { publish } = await import("@/core/events/publisher");
+  await publish({
+    type: "UserRegistered",
+    tenantId: input.tenantId,
+    entityType: "user",
+    entityId: user._id,
+    userId: user._id,
+    payload: { email: user.email, displayName: user.displayName },
+  }).catch(console.error);
 
   return { ok: true, user };
 }

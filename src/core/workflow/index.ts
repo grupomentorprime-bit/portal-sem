@@ -9,7 +9,6 @@ export {
 
 export { evaluateGuard, canTransitionGuard } from "./guards";
 export { registerAction, runActions } from "./actions/registry";
-export { subscribe, publish } from "./events/bus";
 export { writeWorkflowAudit } from "./audit";
 
 export {

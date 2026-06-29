@@ -21,6 +21,9 @@ export default async function AdminLayout({
           <Link href="/admin/workflows" className="underline">
             Workflows
           </Link>
+          <Link href="/admin/events" className="underline">
+            Eventos
+          </Link>
           <LogoutButton />
         </div>
       ) : null}
