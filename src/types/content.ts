@@ -45,6 +45,12 @@ export interface ContentDocument {
   location?: string;
   alt?: string;
   src?: string;
+  modality?: string;
+  requirements?: string;
+  fees?: string;
+  modules?: string;
+  programStatus?: "active" | "admission_open" | "coming_soon";
+  department?: string;
 }
 
 export interface CategoryItem {
@@ -61,6 +67,8 @@ export interface CategoryItem {
 }
 
 /** Modelos de tarjeta para UI — Web y Mobile comparten forma */
+export type ProgramStatus = "active" | "admission_open" | "coming_soon";
+
 export interface ProgramItem {
   id: string;
   title: string;
@@ -68,6 +76,9 @@ export interface ProgramItem {
   duration: string;
   icon: string;
   href: string;
+  image?: string;
+  modality?: string;
+  status?: ProgramStatus;
 }
 
 export interface TeacherItem {
@@ -76,6 +87,7 @@ export interface TeacherItem {
   role: string;
   specialty: string;
   image?: string;
+  department?: string;
 }
 
 export interface NewsItem {
@@ -94,6 +106,8 @@ export interface EventItem {
   date: string;
   location: string;
   href: string;
+  image?: string;
+  excerpt?: string;
 }
 
 export interface LibraryItem {

@@ -35,6 +35,9 @@ export function mapToProgramItem(doc: ContentDocument): ProgramItem {
     duration: doc.duration ?? "",
     icon: doc.icon ?? "BookOpen",
     href: doc.href || slugHref("/programas", doc.slug),
+    image: doc.image || undefined,
+    modality: doc.modality,
+    status: doc.programStatus,
   };
 }
 
@@ -45,6 +48,7 @@ export function mapToTeacherItem(doc: ContentDocument): TeacherItem {
     role: doc.role ?? "",
     specialty: doc.specialty ?? doc.summary ?? "",
     image: doc.image || undefined,
+    department: doc.department,
   };
 }
 
@@ -67,6 +71,8 @@ export function mapToEventItem(doc: ContentDocument): EventItem {
     date: doc.date || formatDate(doc.publishedAt),
     location: doc.location ?? "",
     href: doc.href || slugHref("/eventos", doc.slug),
+    image: doc.image || undefined,
+    excerpt: doc.excerpt || doc.summary || undefined,
   };
 }
 

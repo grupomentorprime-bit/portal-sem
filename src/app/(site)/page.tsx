@@ -1,74 +1,56 @@
-import { ServerBlockRenderer } from "@/components/page-builder/ServerBlockRenderer";
-import { Container, Page, Section } from "@/components/layout";
-import { getSiteConfig } from "@/lib/cms/config";
-import { getPublishedPageBySlug } from "@/lib/cms/pages";
+import { PortalHome } from "@/components/portal/PortalHome";
+import { PortalContainer, PortalSection } from "@/components/portal/layout";
+import { getPortalContext } from "@/lib/portal/site";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 export default async function HomePage() {
-  const config = await getSiteConfig();
+  const ctx = await getPortalContext();
 
-  if (!config) {
+  if (!ctx) {
     return (
-      <Page centered>
-        <Section padding="lg">
-          <Container size="sm" className="text-center">
-            <p className="text-body text-muted">Configuración institucional no disponible.</p>
-          </Container>
-        </Section>
-      </Page>
+      <PortalSection padding="lg">
+        <PortalContainer size="sm" className="text-center">
+          <p className="text-body text-muted">Configuración institucional no disponible.</p>
+        </PortalContainer>
+      </PortalSection>
     );
   }
 
-  const { institution } = config;
+  const { institution } = ctx.config;
 
   if (institution.status === "maintenance") {
     return (
-      <Page centered>
-        <Section padding="lg">
-          <Container size="sm" className="text-center">
-            <p className="text-caption font-semibold uppercase tracking-widest text-secondary">
-              Mantenimiento
-            </p>
-            <h1 className="mt-4 text-display-l text-foreground">{institution.name}</h1>
-            <p className="mt-6 text-body text-muted">Estamos realizando mejoras. Vuelve pronto.</p>
-          </Container>
-        </Section>
-      </Page>
+      <PortalSection padding="lg">
+        <PortalContainer size="sm" className="text-center">
+          <p className="text-caption font-semibold uppercase tracking-widest text-secondary">
+            Mantenimiento
+          </p>
+          <h1 className="mt-4 text-display-l text-foreground">{institution.name}</h1>
+          <p className="mt-6 text-body text-muted">Estamos realizando mejoras. Vuelve pronto.</p>
+        </PortalContainer>
+      </PortalSection>
     );
   }
 
   if (institution.status === "inactive") {
     return (
-      <Page centered>
-        <Section padding="lg">
-          <Container size="sm" className="text-center">
-            <p className="text-body text-muted">Portal temporalmente no disponible.</p>
-          </Container>
-        </Section>
-      </Page>
+      <PortalSection padding="lg">
+        <PortalContainer size="sm" className="text-center">
+          <p className="text-body text-muted">Portal temporalmente no disponible.</p>
+        </PortalContainer>
+      </PortalSection>
     );
   }
 
-  const page = await getPublishedPageBySlug("/", config.institution.tenant);
-  if (!page) notFound();
-
-  return (
-    <ServerBlockRenderer
-      blocks={page.blocks}
-      config={config}
-      tenant={config.institution.tenant}
-    />
-  );
+  return <PortalHome ctx={ctx} />;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const config = await getSiteConfig();
-  if (!config) return { title: "Portal SEM" };
+  const ctx = await getPortalContext();
+  if (!ctx) return { title: "Portal SEM" };
 
-  const page = await getPublishedPageBySlug("/", config.institution.tenant);
   return {
-    title: page?.seo.title ?? config.seo.title,
-    description: page?.seo.description ?? config.seo.description,
+    title: ctx.config.seo.title,
+    description: ctx.config.seo.description,
   };
 }
