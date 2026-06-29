@@ -1,14 +1,24 @@
-/** Interfaces base para flujos de trabajo multi-tenant (admisión, matrícula, etc.) */
+/** Workflow Engine v1 — genérico y desacoplado */
 
-export type WorkflowStatus = "draft" | "active" | "archived";
+export { buildExecutionContext } from "./services/context";
 
-export interface WorkflowDefinition {
-  id: string;
-  tenantId: string;
-  name: string;
-  status: WorkflowStatus;
-}
+export {
+  SYSTEM_WORKFLOW_TEMPLATES,
+  templateToDefinition,
+} from "./definitions/defaults";
 
-export interface WorkflowService {
-  list(tenantId: string): Promise<WorkflowDefinition[]>;
-}
+export { evaluateGuard, canTransitionGuard } from "./guards";
+export { registerAction, runActions } from "./actions/registry";
+export { subscribe, publish } from "./events/bus";
+export { writeWorkflowAudit } from "./audit";
+
+export {
+  startWorkflow,
+  transition,
+  canTransition,
+  getCurrentState,
+  getHistory,
+  cancelWorkflow,
+  restartWorkflow,
+  getAvailableTransitions,
+} from "./engine/engine";

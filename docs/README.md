@@ -22,6 +22,7 @@
 
 - [ADR-003 — Media Library desacoplada](./architecture/ADR-003.md)
 - [ADR-004 — Identity Core (IAM)](./architecture/ADR-004.md)
+- [ADR-005 — Workflow Engine](./architecture/ADR-005.md)
 
 ### Core Media
 
@@ -31,6 +32,11 @@
 
 - [OT-CORE-IDENTITY-001 — Identity & Access Management](./ot/OT-CORE-IDENTITY-001.md)
 - [IDENTITY.md](./core/IDENTITY.md)
+
+### Workflow
+
+- [OT-CORE-WORKFLOW-001 — Workflow Engine](./ot/OT-CORE-WORKFLOW-001.md)
+- [WORKFLOW.md](./core/WORKFLOW.md)
 
 ## UX
 

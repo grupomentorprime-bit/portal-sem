@@ -18,6 +18,9 @@ export default async function AdminLayout({
           <Link href="/admin/settings/team" className="underline">
             Equipo
           </Link>
+          <Link href="/admin/workflows" className="underline">
+            Workflows
+          </Link>
           <LogoutButton />
         </div>
       ) : null}

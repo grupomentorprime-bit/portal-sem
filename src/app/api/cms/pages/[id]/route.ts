@@ -9,6 +9,8 @@ import {
 import { validatePageUpdate } from "@/lib/cms/page-validation";
 import { normalizeSlug } from "@/lib/cms/page-utils";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { requirePermission, isAuthContext } from "@/core/identity";
+import { syncPageWorkflow } from "@/lib/workflow/integration";
 import type { CmsPageUpdate } from "@/types/page";
 
 interface RouteParams {
@@ -87,6 +89,13 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (page) {
       const { rebuildUsageIndex } = await import("@/core/media/usage");
       await rebuildUsageIndex(page.tenant);
+
+      if (body.status) {
+        const auth = await requirePermission("workflow.transition");
+        if (isAuthContext(auth)) {
+          await syncPageWorkflow(auth, id, body.status).catch(console.error);
+        }
+      }
     }
 
     return NextResponse.json({ ok: true, page });

@@ -32,6 +32,11 @@ export const PERMISSIONS = {
   "identity.members.manage": "Gestionar miembros",
   "identity.audit.read": "Ver auditoría",
 
+  // Workflow
+  "workflow.read": "Ver workflows",
+  "workflow.manage": "Gestionar definiciones de workflow",
+  "workflow.transition": "Ejecutar transiciones de workflow",
+
   // Academic (futuro)
   "students.read": "Ver estudiantes",
   "finance.view": "Ver finanzas",
