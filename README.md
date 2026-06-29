@@ -5,7 +5,8 @@ Portal web del **Seminario Eclesiástico Mayor (SEM)**, construido con Next.js y
 | Campo | Valor |
 | --- | --- |
 | Código OT (infra) | OT-SEM-INFRA-001 — v1.0-base |
-| Código OT (CMS) | OT-SEM-CMS-001 — Configuration Hub |
+| Código OT (CMS config) | OT-SEM-CMS-001 — Configuration Hub |
+| Código OT (CMS menús) | OT-SEM-CMS-002 — Menu Engine v1.1 |
 | Base de datos | SeminarioIPN |
 
 ## Arquitectura
@@ -41,15 +42,22 @@ portal-sem/
 ├── public/
 ├── src/
 │   ├── app/
-│   │   ├── admin/config/       # Configuration Hub
+│   │   ├── admin/
+│   │   │   ├── config/         # Configuration Hub
+│   │   │   └── menus/          # Menu Engine
+│   │   ├── (site)/             # Portal público con shell
 │   │   ├── api/
-│   │   │   ├── cms/config/     # GET/PUT configuración
+│   │   │   ├── cms/
+│   │   │   │   ├── config/     # GET/PUT configuración
+│   │   │   │   └── menus/      # CRUD menús
 │   │   │   └── test/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   └── globals.css
 │   ├── components/
-│   │   ├── config/             # Panel CMS
+│   │   ├── config/             # Panel CMS config
+│   │   ├── menu/               # Motor de menús (reutilizable)
+│   │   ├── navigation/         # Header, footer, shell
 │   │   └── ui/
 │   ├── lib/cms/                # Servicios CMS
 │   ├── lib/mongodb.ts
@@ -102,6 +110,20 @@ Panel de administración institucional en `/admin/config`.
 | `/api/cms/config` | GET | Obtiene configuración |
 | `/api/cms/config` | PUT | Actualiza configuración |
 
+## Menu Engine
+
+Motor de navegación dinámica en `/admin/menus`. Sin menús hardcodeados.
+
+| Endpoint | Método | Descripción |
+| --- | --- | --- |
+| `/api/cms/menus` | GET | Listado de menús |
+| `/api/cms/menus` | POST | Crear menú |
+| `/api/cms/menus/[id]` | GET | Obtener menú |
+| `/api/cms/menus/[id]` | PUT | Actualizar menú |
+| `/api/cms/menus/[id]` | DELETE | Eliminar menú |
+
+Portal: `main` → header, `footer` → footer, `mobile` → navegación móvil.
+
 ## Validación de infraestructura
 
 Endpoint de prueba:
@@ -144,6 +166,7 @@ Preparado para:
 
 - [Infraestructura técnica](./docs/INFRAESTRUCTURA.md)
 - [Configuration Hub (CMS)](./docs/CMS-CONFIGURACION.md)
+- [Motor de Menús (CMS)](./docs/CMS-MENUS.md)
 - Arquitecturas de referencia: ARQ-001, ARQ-002
 
 ## Licencia

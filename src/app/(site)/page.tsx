@@ -126,6 +126,10 @@ export default async function Home() {
           <Link href="/admin/config" className="underline">
             Configuration Hub
           </Link>
+          {" · "}
+          <Link href="/admin/menus" className="underline">
+            Menús
+          </Link>
         </p>
       </section>
     </main>
