@@ -1,25 +1,58 @@
+import { NavbarPremium, InstitutionalFooter } from "@/components/institutional";
 import { getActiveMenuById } from "@/lib/cms/menus";
 import { getSiteConfig } from "@/lib/cms/config";
-import { SiteFooter } from "@/components/navigation/SiteFooter";
-import { SiteHeader } from "@/components/navigation/SiteHeader";
+import type { NavLinkItem } from "@/components/institutional";
+import { DEFAULT_NAV_LINKS } from "@/lib/cms/page-defaults";
+import { resolveMenuItemHref } from "@/lib/cms/menu-utils";
+import type { MenuItem } from "@/types/menu";
 
 interface SiteShellProps {
   children: React.ReactNode;
 }
 
+function mapMenuToLinks(items: MenuItem[]): NavLinkItem[] {
+  const seen = new Set<string>();
+
+  return items
+    .filter((item) => item.visible && item.active)
+    .sort((a, b) => a.order - b.order)
+    .map((item) => ({
+      label: item.title,
+      href: resolveMenuItemHref(item),
+    }))
+    .filter((link) => {
+      if (seen.has(link.href)) return false;
+      seen.add(link.href);
+      return true;
+    });
+}
+
 export async function SiteShell({ children }: SiteShellProps) {
-  const [config, mainMenu, footerMenu, mobileMenu] = await Promise.all([
+  const [config, mainMenu] = await Promise.all([
     getSiteConfig(),
     getActiveMenuById("main"),
-    getActiveMenuById("footer"),
-    getActiveMenuById("mobile"),
   ]);
+
+  const navLinks = mainMenu?.items?.length
+    ? mapMenuToLinks(mainMenu.items)
+    : [...DEFAULT_NAV_LINKS];
 
   return (
     <>
-      <SiteHeader config={config} mainMenu={mainMenu} mobileMenu={mobileMenu} />
-      {children}
-      <SiteFooter config={config} footerMenu={footerMenu} />
+      <NavbarPremium
+        links={navLinks}
+        institutionShortName={config?.institution.shortName || "SEM"}
+        logoSem={config?.branding.logo || undefined}
+        logoIpn={undefined}
+      />
+      <main className="flex-1">{children}</main>
+      <InstitutionalFooter
+        institutionName={config?.institution.name || "Seminario Eclesiástico Mayor"}
+        organization={config?.institution.organization}
+        contact={config?.contact}
+        social={config?.social}
+        logoSem={config?.branding.logo || undefined}
+      />
     </>
   );
 }

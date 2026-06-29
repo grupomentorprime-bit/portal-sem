@@ -1,35 +1,99 @@
 import { cn } from "@/lib/utils";
-import type { ButtonHTMLAttributes } from "react";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import type { ButtonHTMLAttributes, MouseEventHandler } from "react";
+import { disabledStyles, focusRing } from "./shared";
 
-type ButtonVariant = "primary" | "secondary" | "ghost";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger"
+  | "success";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export type ButtonSize = "sm" | "md" | "lg";
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
+  loading?: boolean;
+  href?: string;
 }
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-zinc-900 text-white hover:bg-zinc-800 disabled:bg-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white",
+    "bg-primary text-text-inverse hover:bg-secondary active:bg-primary",
   secondary:
-    "border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
-  ghost: "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
+    "bg-secondary text-text-inverse hover:bg-accent active:bg-secondary",
+  outline:
+    "border border-border bg-background text-foreground hover:bg-background-muted active:bg-gray-100",
+  ghost:
+    "text-foreground hover:bg-background-muted active:bg-gray-100",
+  danger:
+    "bg-primary text-text-inverse hover:opacity-90 active:opacity-100",
+  success:
+    "bg-success text-primary hover:opacity-90 active:opacity-100",
+};
+
+const sizes: Record<ButtonSize, string> = {
+  sm: "h-8 px-3 text-xs",
+  md: "h-10 px-4 text-sm",
+  lg: "h-12 px-6 text-base",
 };
 
 export function Button({
   className,
   variant = "primary",
+  size = "md",
+  loading = false,
+  disabled,
+  children,
   type = "button",
+  href,
+  onClick,
   ...props
 }: ButtonProps) {
+  const classes = cn(
+    "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium transition-[background-color,opacity,transform,box-shadow] duration-[var(--transition-fast)]",
+    focusRing,
+    disabledStyles,
+    variants[variant],
+    sizes[size],
+    !disabled && !loading && "hover-lift press-scale",
+    className
+  );
+
+  const content = loading ? (
+    <>
+      <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden />
+      <span>{children}</span>
+    </>
+  ) : (
+    children
+  );
+
+  if (href && !disabled) {
+    return (
+      <Link
+        href={href}
+        className={classes}
+        onClick={onClick as MouseEventHandler<HTMLAnchorElement> | undefined}
+      >
+        {content}
+      </Link>
+    );
+  }
+
   return (
     <button
       type={type}
-      className={cn(
-        "inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed",
-        variants[variant],
-        className
-      )}
+      disabled={disabled || loading}
+      className={classes}
+      onClick={onClick}
       {...props}
-    />
+    >
+      {content}
+    </button>
   );
 }

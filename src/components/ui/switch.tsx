@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { disabledStyles, focusRing } from "./shared";
 
 interface SwitchProps {
   checked: boolean;
@@ -6,6 +7,7 @@ interface SwitchProps {
   label: string;
   description?: string;
   disabled?: boolean;
+  id?: string;
 }
 
 export function Switch({
@@ -14,29 +16,39 @@ export function Switch({
   label,
   description,
   disabled,
+  id,
 }: SwitchProps) {
+  const switchId =
+    id ?? `switch-${label.replace(/\s+/g, "-").toLowerCase()}`;
+
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="flex items-center justify-between gap-4 rounded-[var(--radius-md)] border border-border p-4">
       <div>
-        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{label}</p>
+        <label htmlFor={switchId} className="text-sm font-medium text-foreground">
+          {label}
+        </label>
         {description ? (
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{description}</p>
+          <p className="mt-1 text-sm text-muted">{description}</p>
         ) : null}
       </div>
       <button
         type="button"
+        id={switchId}
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative h-6 w-11 rounded-full transition-colors disabled:opacity-50",
-          checked ? "bg-zinc-900 dark:bg-zinc-100" : "bg-zinc-300 dark:bg-zinc-700"
+          "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-[var(--transition-fast)]",
+          focusRing,
+          disabledStyles,
+          checked ? "bg-primary" : "bg-gray-300"
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform dark:bg-zinc-900",
+            "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow-[var(--shadow-sm)] transition-transform duration-[var(--transition-fast)]",
             checked && "translate-x-5"
           )}
         />

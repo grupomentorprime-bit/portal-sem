@@ -18,10 +18,10 @@ export function createDefaultSiteConfig(): SiteConfig {
       logo: "",
       favicon: "",
       heroImage: "",
-      primaryColor: "#003B73",
-      secondaryColor: "#C9A227",
+      primaryColor: "#002A47",
+      secondaryColor: "#246AA1",
       backgroundColor: "#FFFFFF",
-      textColor: "#222222",
+      textColor: "#141F29",
     },
     seo: {
       title: "",

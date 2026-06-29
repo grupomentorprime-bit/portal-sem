@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" fill="#e8ecf0"/>
+  <circle cx="120" cy="200" r="40" fill="#246aa1" opacity="0.4"/>
+  <circle cx="200" cy="200" r="40" fill="#10bce2" opacity="0.35"/>
+  <circle cx="280" cy="200" r="40" fill="#3ed6af" opacity="0.3"/>
+  <text x="200" y="360" text-anchor="middle" fill="#5c7289" font-family="system-ui" font-size="14">Comunidad</text>
+</svg>

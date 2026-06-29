@@ -1,17 +1,44 @@
 import { cn } from "@/lib/utils";
 import type { TextareaHTMLAttributes } from "react";
+import { inputBase } from "./shared";
+import { InputField } from "./input";
+
+export interface TextareaProps
+  extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  helper?: string;
+  error?: string;
+}
 
 export function Textarea({
   className,
+  label,
+  helper,
+  error,
+  id,
   ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+}: TextareaProps) {
+  const inputId =
+    id ?? (label ? `textarea-${label.replace(/\s+/g, "-").toLowerCase()}` : undefined);
+  const helperId = helper ? `${inputId}-helper` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+
   return (
-    <textarea
-      className={cn(
-        "flex min-h-24 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800",
-        className
-      )}
-      {...props}
-    />
+    <InputField
+      label={label}
+      helper={helper}
+      error={error}
+      inputId={inputId}
+      helperId={helperId}
+      errorId={errorId}
+    >
+      <textarea
+        id={inputId}
+        aria-describedby={[helperId, errorId].filter(Boolean).join(" ") || undefined}
+        aria-invalid={error ? true : undefined}
+        className={cn(inputBase, "min-h-24 py-2", error && "border-primary", className)}
+        {...props}
+      />
+    </InputField>
   );
 }
