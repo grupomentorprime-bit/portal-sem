@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { generateToken } from "@/core/identity/auth/crypto";
+import { isSecureCookie } from "@/core/identity/auth/config";
 import {
   buildKeycloakAuthorizeUrl,
   isKeycloakEnabled,
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
 
   jar.set(STATE_COOKIE, state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureCookie(),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 10,
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
 
   jar.set(NEXT_COOKIE, nextPath.startsWith("/") ? nextPath : "/admin", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureCookie(),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 10,

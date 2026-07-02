@@ -27,3 +27,19 @@ export function sessionExpiresAt(): string {
   d.setDate(d.getDate() + SESSION_TTL_DAYS);
   return d.toISOString();
 }
+
+/** Cookies Secure solo cuando la app se sirve por HTTPS (o SESSION_COOKIE_SECURE=true). */
+export function isSecureCookie(): boolean {
+  const override = process.env.SESSION_COOKIE_SECURE?.trim().toLowerCase();
+  if (override === "true") return true;
+  if (override === "false") return false;
+
+  const appUrl =
+    process.env.APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    "";
+  if (appUrl.startsWith("https://")) return true;
+  if (appUrl.startsWith("http://")) return false;
+
+  return process.env.NODE_ENV === "production";
+}
