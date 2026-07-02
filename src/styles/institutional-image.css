@@ -1,0 +1,77 @@
+/* OT-MEDIA-SEM-001 — InstitutionalImage */
+
+.institutional-image {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  background-color: var(--background-soft);
+}
+
+.institutional-image--rounded {
+  border-radius: var(--radius-full);
+}
+
+.institutional-image__img {
+  transition: opacity var(--transition-normal), transform var(--transition-slow);
+}
+
+.institutional-image:hover .institutional-image__img {
+  transform: scale(1.02);
+}
+
+.institutional-image__skeleton {
+  background: linear-gradient(
+    110deg,
+    var(--background-muted) 0%,
+    var(--background-soft) 45%,
+    var(--background-muted) 90%
+  );
+  background-size: 200% 100%;
+}
+
+.institutional-image__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--sem-primary) 55%, transparent) 0%,
+    color-mix(in srgb, var(--sem-secondary) 25%, transparent) 100%
+  );
+  pointer-events: none;
+}
+
+.institutional-image__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-muted);
+}
+
+.institutional-image--hero .institutional-image__fallback {
+  background: var(--editorial-gradient-hero);
+}
+
+.institutional-image__fallback-mesh {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: url("/editorial/patterns/academic-grid.svg");
+  background-repeat: repeat;
+}
+
+.institutional-image--hero .institutional-image__fallback-mesh {
+  opacity: 0.1;
+  background-image: url("/editorial/patterns/editorial-lines.svg");
+}
+
+.institutional-image--hero {
+  min-height: 280px;
+}
+
+@media (min-width: 768px) {
+  .institutional-image--hero {
+    min-height: 420px;
+  }
+}

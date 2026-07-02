@@ -1,0 +1,40 @@
+/**
+ * OT-ARCH-UX-001 — Home Premium shell (tokens compartidos, sin estilos de bloque)
+ */
+
+.portal-home-experience {
+  --home-card-radius: var(--card-radius);
+  --home-card-shadow: var(--card-shadow);
+  --home-card-shadow-hover: var(--card-shadow-hover);
+  --home-ease: var(--motion-ease-standard);
+  counter-reset: home-section;
+}
+
+.portal-home-experience .portal-home-x__section {
+  position: relative;
+  counter-increment: home-section;
+}
+
+/* Superficies por bloque — cada una aislada */
+.portal-home-experience [data-block="timeline"],
+.portal-home-experience [data-block="news"],
+.portal-home-experience [data-block="contact_hub"] {
+  background: var(--background);
+}
+
+.portal-home-experience [data-block="audience_profiles"] {
+  /* Fondo en audience-home.css — banda editorial oscura */
+}
+
+.portal-home-experience [data-block="modality"],
+.portal-home-experience [data-block="testimonials"],
+.portal-home-experience [data-block="faq"],
+.portal-home-experience [data-block="admission_process"] {
+  background: var(--background);
+}
+
+.portal-home-experience [data-block="admission_process"] {
+  background: var(--background-soft);
+}
+
+/* Fondo people — teachers-home.css (banda editorial) */

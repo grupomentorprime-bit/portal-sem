@@ -8,10 +8,11 @@ import { notFound } from "next/navigation";
 
 export async function generateMetadata(): Promise<Metadata> {
   const ctx = await getActivePortal();
-  if (!ctx) return { title: "Programas" };
+  if (!ctx) return { title: "Programas formativos" };
   return {
-    title: resolvePageTitle("Programas", ctx.config),
-    description: ctx.config.seo.description,
+    title: resolvePageTitle("Programas formativos", ctx.config),
+    description:
+      "Programas formativos en Teología Bíblica del Seminario Eclesiástico Mayor — formación para el servicio cristiano.",
   };
 }
 

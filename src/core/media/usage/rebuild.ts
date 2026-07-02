@@ -4,8 +4,10 @@ import { getDatabase } from "@/lib/mongodb";
 import type { CmsMediaAsset, MediaUsageRef } from "@/types/media";
 import { getSiteConfigUncached } from "@/lib/cms/config";
 import {
+  scanAcademicAgenda,
   scanBranding,
   scanEvents,
+  scanInstitutionalNotices,
   scanNews,
   scanPages,
   scanPrograms,
@@ -20,6 +22,8 @@ async function collectAllRefs(tenant: string): Promise<Map<string, MediaUsageRef
     scanPrograms(tenant),
     scanNews(tenant),
     scanEvents(tenant),
+    scanAcademicAgenda(tenant),
+    scanInstitutionalNotices(tenant),
     scanTeam(tenant),
   ]);
 

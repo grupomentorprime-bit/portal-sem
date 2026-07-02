@@ -77,6 +77,15 @@ export function ContactForm({ value, onChange }: ContactFormProps) {
             placeholder="Chile"
           />
         </div>
+
+        <div className="sm:col-span-2">
+          <Label className="mb-2 block">Horario de atención</Label>
+          <Input
+            value={value.hours ?? ""}
+            onChange={(e) => update("hours", e.target.value)}
+            placeholder="Lunes a viernes, 9:00 – 18:00 hrs"
+          />
+        </div>
       </div>
     </Card>
   );

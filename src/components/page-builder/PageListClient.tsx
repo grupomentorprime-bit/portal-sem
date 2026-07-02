@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
 import { Button, Card, Badge } from "@/components/ui";
 import { blocksFromTemplate } from "@/lib/cms/page-defaults";
 import { normalizeSlug } from "@/lib/cms/page-utils";
@@ -86,26 +87,26 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
   };
 
   return (
-    <div className="min-h-screen bg-background-soft">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-caption font-semibold uppercase tracking-widest text-muted">CMS</p>
-            <h1 className="text-display-l text-foreground">Constructor de Páginas</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" disabled={loading} onClick={seedCms}>
-              Inicializar CMS
-            </Button>
-            <Button type="button" disabled={loading} onClick={createPage}>
-              Nueva página
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="grid gap-4">
+    <AdminModuleLayout
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Portal", href: "/admin/pages" },
+        { label: "Páginas del sitio" },
+      ]}
+      title="Páginas del portal"
+      description="Estructura, bloques y contenido de cada página institucional"
+      actions={
+        <>
+          <Button type="button" variant="outline" disabled={loading} onClick={seedCms}>
+            Preparar plantillas
+          </Button>
+          <Button type="button" disabled={loading} onClick={createPage}>
+            Nueva página
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4">
           {pages.length === 0 ? (
             <Card className="p-8 text-center text-muted">
               No hay páginas. Usa &quot;Inicializar CMS&quot; para crear la biblioteca y la home.
@@ -146,7 +147,6 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
             ))
           )}
         </div>
-      </div>
-    </div>
+    </AdminModuleLayout>
   );
 }

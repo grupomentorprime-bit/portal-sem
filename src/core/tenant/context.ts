@@ -38,7 +38,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
       mobile: mobileMenu?.items,
       legal: legalMenu?.items,
       quickLinks: quickLinksMenu?.items,
-    }),
+    }, config.features),
   };
 }
 

@@ -1,48 +1,71 @@
-import { mkdir, writeFile, unlink, rm } from "fs/promises";
+import { mkdir, writeFile, unlink, rm, readFile } from "fs/promises";
 import path from "path";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { deleteS3Object, getS3ObjectBuffer, putS3Object } from "@/lib/cms/storage-s3";
+import { resolveStorageSettings } from "@/lib/cms/storage-config";
+import { buildMediaProxyUrl, usesPrivateMediaProxy } from "@/lib/cms/storage-normalize";
+import type { ResolvedStorageSettings } from "@/types/integrations";
 
 export interface StoragePutResult {
   key: string;
   publicUrl: string;
 }
 
-function getStorageMode(): "s3" | "local" {
-  if (process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID) return "s3";
-  return "local";
-}
-
-function publicBaseUrl(): string {
-  if (process.env.S3_PUBLIC_URL) return process.env.S3_PUBLIC_URL.replace(/\/$/, "");
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
-  return base.replace(/\/$/, "");
-}
-
 function localMediaRoot(): string {
   return path.join(process.cwd(), "public", "media");
 }
 
-function buildPublicUrl(key: string): string {
-  const base = publicBaseUrl();
-  if (base) return `${base}/media/${key}`;
+function buildPublicUrl(settings: ResolvedStorageSettings, key: string): string {
+  if (settings.mode === "s3" && settings.s3) {
+    if (usesPrivateMediaProxy(settings)) {
+      return buildMediaProxyUrl(key);
+    }
+    if (settings.s3.publicUrl) {
+      return `${settings.s3.publicUrl}/media/${key}`;
+    }
+  }
+
+  const base = process.env.S3_PUBLIC_URL?.replace(/\/$/, "")
+    ?? process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "")
+    ?? process.env.APP_URL?.replace(/\/$/, "")
+    ?? "";
+
+  if (base && settings.mode === "s3") return `${base}/media/${key}`;
   return `/media/${key}`;
 }
 
-let s3Client: S3Client | null = null;
+export async function readMediaFile(key: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  const settings = await resolveStorageSettings();
+  const ext = key.split(".").pop()?.toLowerCase() ?? "";
+  const mimeType = guessMimeType(ext);
 
-function getS3Client(): S3Client {
-  if (!s3Client) {
-    s3Client = new S3Client({
-      region: process.env.S3_REGION ?? "auto",
-      endpoint: process.env.S3_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-      },
-      forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
-    });
+  if (settings.mode === "s3" && settings.s3) {
+    const buffer = await getS3ObjectBuffer(settings.s3, key);
+    return buffer ? { buffer, mimeType } : null;
   }
-  return s3Client;
+
+  try {
+    const filePath = path.join(localMediaRoot(), key);
+    const buffer = await readFile(filePath);
+    return { buffer, mimeType };
+  } catch {
+    return null;
+  }
+}
+
+function guessMimeType(ext: string): string {
+  const map: Record<string, string> = {
+    webp: "image/webp",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    svg: "image/svg+xml",
+    avif: "image/avif",
+    mp4: "video/mp4",
+    webm: "video/webm",
+    pdf: "application/pdf",
+  };
+  return map[ext] ?? "application/octet-stream";
 }
 
 export async function putMediaFile(
@@ -50,41 +73,24 @@ export async function putMediaFile(
   buffer: Buffer,
   mimeType: string
 ): Promise<StoragePutResult> {
-  const mode = getStorageMode();
+  const settings = await resolveStorageSettings();
 
-  if (mode === "s3") {
-    const bucket = process.env.S3_BUCKET!;
-    await getS3Client().send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: `media/${key}`,
-        Body: buffer,
-        ContentType: mimeType,
-        ACL: "public-read",
-      })
-    );
-    const publicUrl = process.env.S3_PUBLIC_URL
-      ? `${process.env.S3_PUBLIC_URL.replace(/\/$/, "")}/media/${key}`
-      : buildPublicUrl(key);
-    return { key, publicUrl };
+  if (settings.mode === "s3" && settings.s3) {
+    await putS3Object(settings.s3, key, buffer, mimeType);
+    return { key, publicUrl: buildPublicUrl(settings, key) };
   }
 
   const filePath = path.join(localMediaRoot(), key);
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, buffer);
-  return { key, publicUrl: buildPublicUrl(key) };
+  return { key, publicUrl: buildPublicUrl(settings, key) };
 }
 
 export async function deleteMediaFile(key: string): Promise<void> {
-  const mode = getStorageMode();
+  const settings = await resolveStorageSettings();
 
-  if (mode === "s3") {
-    await getS3Client().send(
-      new DeleteObjectCommand({
-        Bucket: process.env.S3_BUCKET!,
-        Key: `media/${key}`,
-      })
-    );
+  if (settings.mode === "s3" && settings.s3) {
+    await deleteS3Object(settings.s3, key);
     return;
   }
 
@@ -97,9 +103,8 @@ export async function deleteMediaFile(key: string): Promise<void> {
 }
 
 export async function deleteMediaPrefix(prefix: string): Promise<void> {
-  const mode = getStorageMode();
-  if (mode === "s3") {
-    /* bulk S3 delete omitted — keys deleted individually in service */
+  const settings = await resolveStorageSettings();
+  if (settings.mode === "s3") {
     return;
   }
   const dirPath = path.join(localMediaRoot(), prefix);
@@ -114,3 +119,5 @@ export function buildStorageKey(tenant: string, mediaId: string, filename: strin
   const safeTenant = tenant.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
   return `${safeTenant}/${mediaId}/${filename}`;
 }
+
+export { testS3Connection } from "@/lib/cms/storage-s3";

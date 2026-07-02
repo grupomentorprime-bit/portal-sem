@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 54" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="sem-isotype-grad" x1="9" y1="4" x2="39" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14c9c3" />
+      <stop offset="0.55" stop-color="#0ea5c9" />
+      <stop offset="1" stop-color="#0577b8" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M24 3.25c8.56 0 15.5 7.32 15.5 16.5 0 7.85-5.28 15.72-12.78 20.2-.55.35-1.24.35-1.79 0C17.28 35.47 8.5 27.6 8.5 19.75 8.5 10.57 15.44 3.25 24 3.25Z"
+    stroke="url(#sem-isotype-grad)"
+    stroke-width="2.15"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M24 36.75c-3.05-5.35-4.55-10.45-3.15-15.35.75-2.65 2.3-4.45 3.95-3.65 1.2.6 1.65 3 .25 5.65-1.15 2.15-1.35 7.35.95 13.35Zm0 0c3.05-5.35 4.55-10.45 3.15-15.35-.75-2.65-2.3-4.45-3.95-3.65-1.2.6-1.65 3-.25 5.65 1.15 2.15 1.35 7.35-.95 13.35Z"
+    fill="url(#sem-isotype-grad)"
+  />
+  <path
+    d="M14 41.25c3.35 2 6.55 2.75 10 2.75s6.65-.75 10-2.75"
+    stroke="url(#sem-isotype-grad)"
+    stroke-width="1.9"
+    stroke-linecap="round"
+  />
+</svg>

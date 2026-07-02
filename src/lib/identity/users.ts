@@ -2,7 +2,7 @@ import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
 import type { IdentityCredential, IdentityUser } from "@/types/identity";
-import { generateId } from "@/core/identity/auth/crypto";
+import { generateId, hashPassword, verifyPassword } from "@/core/identity/auth/crypto";
 
 export async function findUserByEmail(email: string): Promise<IdentityUser | null> {
   const db = await getDatabase();
@@ -74,4 +74,60 @@ export async function listUsersByIds(ids: string[]): Promise<IdentityUser[]> {
   if (!ids.length) return [];
   const db = await getDatabase();
   return db.collection<IdentityUser>("identity_users").find({ _id: { $in: ids } }).toArray();
+}
+
+export async function updateUserProfile(
+  userId: string,
+  input: {
+    displayName?: string;
+    jobTitle?: string;
+    phone?: string;
+    timezone?: string;
+    locale?: string;
+  }
+): Promise<IdentityUser | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  const updates: Partial<IdentityUser> = { updatedAt: now };
+
+  if (input.displayName !== undefined) updates.displayName = input.displayName.trim();
+  if (input.jobTitle !== undefined) updates.jobTitle = input.jobTitle.trim();
+  if (input.phone !== undefined) updates.phone = input.phone.trim();
+  if (input.timezone !== undefined) updates.timezone = input.timezone;
+  if (input.locale !== undefined) updates.locale = input.locale;
+
+  await db.collection<IdentityUser>("identity_users").updateOne(
+    { _id: userId },
+    { $set: updates }
+  );
+  return findUserById(userId);
+}
+
+export async function changeUserPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (newPassword.length < 8) {
+    return { ok: false, error: "La contraseña nueva debe tener al menos 8 caracteres." };
+  }
+
+  const credential = await getEmailCredential(userId);
+  if (!credential?.passwordHash) {
+    return { ok: false, error: "No hay credencial de email para este usuario." };
+  }
+
+  const valid = await verifyPassword(currentPassword, credential.passwordHash);
+  if (!valid) {
+    return { ok: false, error: "La contraseña actual no es correcta." };
+  }
+
+  const db = await getDatabase();
+  const passwordHash = await hashPassword(newPassword);
+  await db.collection<IdentityCredential>("identity_credentials").updateOne(
+    { userId, provider: "email" },
+    { $set: { passwordHash, updatedAt: new Date().toISOString() } }
+  );
+
+  return { ok: true };
 }

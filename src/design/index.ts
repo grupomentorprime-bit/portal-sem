@@ -1,26 +1,24 @@
-export { colors, semanticColors, type ColorToken } from "./colors";
+/**
+ * Design System — Tokens oficiales AprendeHoy (DOC-002)
+ * @see docs/frontend/DOC-002-DESIGN-TOKENS.md
+ */
+export * from "./tokens";
+
 export {
-  fontFamilies,
-  fontSizes,
-  fontWeights,
-  lineHeights,
-  letterSpacing,
-  typeScale,
-  type TypeScaleToken,
-} from "./typography";
+  foundationBreakpoints,
+  foundationContainers,
+  foundationSpacing,
+  foundationMediaRatios,
+  type FoundationTier,
+  type FoundationContainer,
+} from "./tokens/foundation-breakpoints";
+
 export { iconSizes, type IconSizeToken } from "./icon-sizes";
-export { spacing, type SpacingToken } from "./spacing";
-export { radius, type RadiusToken } from "./radius";
-export { shadow, type ShadowToken } from "./shadow";
 export {
-  breakpoints,
-  breakpointValues,
-  type BreakpointToken,
-} from "./breakpoints";
-export {
-  durations,
-  easings,
-  animations,
-  type DurationToken,
-} from "./animations";
-export { zIndex, type ZIndexToken } from "./zindex";
+  heroBreakpoints,
+  HERO_MOBILE_IMAGE_MAX_WIDTH,
+  type HeroBreakpointKey,
+} from "./hero-breakpoints";
+
+/** @deprecated Use breakpointStrings from ./breakpoints */
+export { breakpointStrings as legacyBreakpointStrings } from "./breakpoints";

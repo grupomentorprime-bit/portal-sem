@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * portal/cards/TestimonialCard
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import { Quote } from "lucide-react";
 import { iconSizes } from "@/design";
 import type { TestimonialItem } from "@/lib/institutional/home-content";

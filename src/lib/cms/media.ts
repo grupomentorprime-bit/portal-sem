@@ -1,5 +1,7 @@
 import "server-only";
 
+import { readFile } from "fs/promises";
+import path from "path";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
 import {
@@ -17,6 +19,7 @@ import {
   deleteMediaPrefix,
   putMediaFile,
 } from "@/lib/cms/media-storage";
+import { invalidateMediaCache } from "@/core/media/cache";
 import { mediaHasUsage } from "@/lib/cms/media-usage-helpers";
 import type {
   CmsMediaAsset,
@@ -39,6 +42,7 @@ function normalizeAsset(asset: CmsMediaAsset): CmsMediaAsset {
     visibility: asset.visibility ?? "active",
     title: asset.title ?? asset.originalName,
     status: asset.status ?? "active",
+    favorite: asset.favorite ?? false,
     version: asset.version ?? 1,
   };
 }
@@ -52,6 +56,8 @@ function buildSort(query: MediaListQuery): Record<string, 1 | -1> {
       return { size: dir };
     case "type":
       return { mimeType: dir };
+    case "favorite":
+      return { favorite: -1, createdAt: -1 };
     case "date":
     default:
       return { createdAt: dir };
@@ -69,6 +75,13 @@ function buildFilter(query: MediaListQuery | MediaSearchQuery): Record<string, u
   if (query.mimeType) filter.mimeType = query.mimeType;
   if (query.createdBy) filter.createdBy = query.createdBy;
   if (query.tags?.length) filter.tags = { $in: query.tags };
+  if (query.favorite === true) filter.favorite = true;
+
+  if (query.usageFilter === "inUse") {
+    filter["usage.0"] = { $exists: true };
+  } else if (query.usageFilter === "noUse") {
+    filter.$nor = [{ "usage.0": { $exists: true } }];
+  }
 
   if (query.search) {
     const regex = {
@@ -80,6 +93,10 @@ function buildFilter(query: MediaListQuery | MediaSearchQuery): Record<string, u
       { alt: regex },
       { caption: regex },
       { tags: regex },
+      { folder: regex },
+      { author: regex },
+      { mimeType: regex },
+      { extension: regex },
     ];
   }
 
@@ -156,6 +173,8 @@ export interface UploadMediaInput {
   caption?: string;
   credits?: string;
   createdBy?: string;
+  /** Omite deduplicación por hash (p. ej. duplicar asset) */
+  skipDuplicateCheck?: boolean;
 }
 
 export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsset> {
@@ -163,11 +182,13 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
   const now = new Date().toISOString();
   const hash = await computeFileHash(input.buffer);
 
-  const duplicate = await db.collection<CmsMediaAsset>("cms_media").findOne({
-    tenant: input.tenant,
-    hash,
-    visibility: "active",
-  });
+  const duplicate = input.skipDuplicateCheck
+    ? null
+    : await db.collection<CmsMediaAsset>("cms_media").findOne({
+        tenant: input.tenant,
+        hash,
+        visibility: "active",
+      });
   if (duplicate) return normalizeAsset(duplicate);
 
   const ext = input.originalName.split(".").pop()?.toLowerCase() ?? "bin";
@@ -188,7 +209,8 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
       input.mimeType,
       input.tenant,
       mediaId,
-      baseName || "image"
+      baseName || "image",
+      folder === "Hero" ? "hero" : "default"
     );
     url = processed.primaryUrl;
     thumbnail = processed.thumbnail;
@@ -222,7 +244,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     height,
     folder,
     category,
-    tags: input.tags ?? [],
+    tags: input.tags?.length ? input.tags : folder === "Hero" ? ["Hero"] : [],
     alt: input.alt ?? input.originalName,
     title: input.originalName,
     caption: input.caption ?? "",
@@ -248,6 +270,152 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
   return document;
 }
 
+export async function renameMedia(
+  id: string,
+  originalName: string
+): Promise<CmsMediaAsset | null> {
+  const trimmed = originalName.trim();
+  if (!trimmed) return null;
+  return updateMedia(id, { originalName: trimmed, title: trimmed });
+}
+
+export async function moveMedia(
+  id: string,
+  folder: MediaFolder
+): Promise<CmsMediaAsset | null> {
+  return updateMedia(id, { folder });
+}
+
+async function readAssetBuffer(asset: CmsMediaAsset): Promise<Buffer | null> {
+  const streamMatch = asset.url.match(/[?&]key=([^&]+)/);
+  if (streamMatch) {
+    const { readMediaFile } = await import("@/lib/cms/media-storage");
+    const key = decodeURIComponent(streamMatch[1]);
+    const file = await readMediaFile(key);
+    return file?.buffer ?? null;
+  }
+
+  try {
+    const urlPath = asset.url.replace(/^https?:\/\/[^/]+/, "");
+    if (urlPath.startsWith("/media/")) {
+      const relative = urlPath.replace(/^\/media\//, "");
+      const filePath = path.join(process.cwd(), "public", "media", relative);
+      return readFile(filePath);
+    }
+    if (urlPath.startsWith("/api/cms/media/stream")) {
+      const { readMediaFile } = await import("@/lib/cms/media-storage");
+      const key = new URL(asset.url, "http://localhost").searchParams.get("key");
+      if (key) {
+        const file = await readMediaFile(key);
+        return file?.buffer ?? null;
+      }
+    }
+  } catch {
+    /* fallback fetch */
+  }
+
+  try {
+    const res = await fetch(asset.url);
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+export async function duplicateMedia(id: string): Promise<CmsMediaAsset | null> {
+  const source = await getMediaById(id);
+  if (!source) return null;
+
+  const buffer = await readAssetBuffer(source);
+  if (!buffer) return null;
+
+  const baseName = source.originalName.replace(/\.[^.]+$/, "");
+  const copyName = source.originalName.includes("(copia)")
+    ? source.originalName
+    : `${baseName} (copia)${source.extension ? `.${source.extension}` : ""}`;
+
+  return uploadMedia({
+    tenant: source.tenant,
+    buffer,
+    originalName: copyName,
+    mimeType: source.mimeType,
+    folder: source.folder,
+    tags: source.tags,
+    alt: source.alt,
+    caption: source.caption,
+    credits: source.credits,
+    createdBy: source.createdBy,
+    skipDuplicateCheck: true,
+  });
+}
+
+export async function replaceMediaFile(
+  id: string,
+  input: Pick<UploadMediaInput, "buffer" | "originalName" | "mimeType" | "tenant">
+): Promise<CmsMediaAsset | null> {
+  const existing = await getMediaById(id);
+  if (!existing) return null;
+
+  await deleteMediaPrefix(`${existing.tenant}/${id}`);
+
+  let url = existing.url;
+  let thumbnail = existing.thumbnail;
+  let responsive = existing.responsive;
+  let width = existing.width;
+  let height = existing.height;
+
+  if (input.mimeType.startsWith("image/")) {
+    const baseName = input.originalName.replace(/\.[^.]+$/, "").replace(/[^a-z0-9-_]/gi, "-");
+    const processed = await processUploadedImage(
+      input.buffer,
+      input.mimeType,
+      input.tenant,
+      id,
+      baseName || "image",
+      existing.folder === "Hero" ? "hero" : "default"
+    );
+    url = processed.primaryUrl;
+    thumbnail = processed.thumbnail;
+    responsive = processed.responsive;
+    width = processed.metadata.width;
+    height = processed.metadata.height;
+  } else {
+    const ext = input.originalName.split(".").pop()?.toLowerCase() ?? "bin";
+    const key = buildStorageKey(input.tenant, id, `${id}.${ext}`);
+    const stored = await putMediaFile(key, input.buffer, input.mimeType);
+    url = stored.publicUrl;
+    thumbnail = url;
+    responsive = {};
+  }
+
+  const hash = await computeFileHash(input.buffer);
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+
+  const updated: CmsMediaAsset = {
+    ...existing,
+    originalName: input.originalName,
+    filename: input.originalName,
+    mimeType: input.mimeType,
+    size: input.buffer.length,
+    width,
+    height,
+    url,
+    thumbnail,
+    responsive,
+    hash,
+    version: (existing.version ?? 1) + 1,
+    updatedAt: now,
+  };
+
+  await db.collection<CmsMediaAsset>("cms_media").replaceOne({ _id: id }, updated);
+  revalidateMediaTags(existing.tenant, id);
+  const { emitMediaReplaced } = await import("@/lib/events/media");
+  await emitMediaReplaced(updated).catch(console.error);
+  return updated;
+}
+
 export async function updateMedia(
   id: string,
   data: CmsMediaUpdate
@@ -266,8 +434,20 @@ export async function updateMedia(
 
   await db.collection<CmsMediaAsset>("cms_media").replaceOne({ _id: id }, updated);
   revalidateMediaTags(existing.tenant, id);
-  const { emitMediaUpdated } = await import("@/lib/events/media");
-  await emitMediaUpdated(updated).catch(console.error);
+
+  const events = await import("@/lib/events/media");
+  if (data.originalName && data.originalName !== existing.originalName) {
+    await events.emitMediaRenamed(updated, existing.originalName).catch(console.error);
+  } else if (data.folder && data.folder !== existing.folder) {
+    await events.emitMediaMoved(updated, existing.folder).catch(console.error);
+  } else if (data.favorite !== undefined && data.favorite !== existing.favorite) {
+    await events.emitMediaFavorited(updated, Boolean(data.favorite)).catch(console.error);
+  } else if (data.tags && JSON.stringify(data.tags) !== JSON.stringify(existing.tags)) {
+    await events.emitMediaTagged(updated, data.tags).catch(console.error);
+  } else {
+    await events.emitMediaUpdated(updated).catch(console.error);
+  }
+
   return updated;
 }
 
@@ -350,6 +530,15 @@ export async function bulkMediaAction(body: MediaBulkAction): Promise<number> {
             }
           }
           break;
+        case "duplicate":
+          if (await duplicateMedia(id)) count++;
+          break;
+        case "activate":
+          if (await updateMedia(id, { status: "active", visibility: "active" })) count++;
+          break;
+        case "deactivate":
+          if (await updateMedia(id, { status: "archived" })) count++;
+          break;
       }
     } catch {
       /* skip failed items in bulk */
@@ -381,6 +570,7 @@ function revalidateMediaTags(tenant: string, id?: string) {
   revalidateTag(CMS_MEDIA_TAG, "max");
   revalidateTag(`cms-media-tenant-${tenant}`, "max");
   if (id) revalidateTag(`cms-media-${id}`, "max");
+  invalidateMediaCache(id);
 }
 
 export { CMS_MEDIA_TAG };

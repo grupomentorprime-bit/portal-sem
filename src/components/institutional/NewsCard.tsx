@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * portal/cards/NewsCard
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Calendar } from "lucide-react";

@@ -1,0 +1,104 @@
+/**
+ * OT-UX-FOUNDATION-001 — Button System
+ */
+
+:root {
+  --btn-font-weight: 600;
+  --btn-transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+/* Clase foundation */
+.btn-f {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--btn-height-md);
+  padding-inline: var(--btn-padding-x-md);
+  border-radius: var(--btn-radius);
+  font-size: var(--type-small);
+  font-weight: var(--btn-font-weight);
+  line-height: 1.25;
+  transition: var(--btn-transition);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn-f-sm {
+  min-height: var(--btn-height-sm);
+  padding-inline: var(--btn-padding-x-sm);
+  font-size: var(--type-caption);
+}
+
+.btn-f-lg {
+  min-height: var(--btn-height-lg);
+  padding-inline: var(--btn-padding-x-lg);
+  font-size: var(--type-body);
+}
+
+.btn-f-primary {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}
+
+.btn-f-primary:hover:not(:disabled) {
+  background: var(--color-secondary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-f-outline {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.btn-f-outline:hover:not(:disabled) {
+  background: var(--background-soft);
+  border-color: color-mix(in srgb, var(--color-secondary) 40%, var(--border));
+}
+
+.btn-f:disabled,
+.btn-f[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-f[aria-busy="true"] {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Bridge componente UI Button */
+.inline-flex.items-center.justify-center.gap-2.rounded-\[var\(--radius-md\)\] {
+  border-radius: var(--btn-radius) !important;
+  transition: var(--btn-transition) !important;
+}
+
+.h-8.px-3 { min-height: var(--btn-height-sm) !important; padding-inline: var(--btn-padding-x-sm) !important; }
+.h-10.px-4 { min-height: var(--btn-height-md) !important; padding-inline: var(--btn-padding-x-md) !important; }
+.h-12.px-6 { min-height: var(--btn-height-lg) !important; padding-inline: var(--btn-padding-x-lg) !important; }
+
+/* Hero CTAs */
+.hero-premium__btn-primary,
+.hero-premium__btn-secondary {
+  min-height: var(--btn-height-lg);
+  transition: var(--btn-transition);
+}
+
+.portal-cta-premium__btn {
+  min-height: var(--btn-height-lg);
+  border-radius: var(--btn-radius);
+  transition: var(--btn-transition);
+}
+
+.portal-contact-hub__action-btn {
+  min-height: var(--btn-height-lg) !important;
+  padding-inline: var(--btn-padding-x-lg) !important;
+  border-radius: var(--btn-radius) !important;
+}

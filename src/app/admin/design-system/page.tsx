@@ -1,11 +1,6 @@
-import { DesignSystemShowcase } from "@/components/design-system/DesignSystemShowcase";
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Design System | SEM",
-  description: "Catálogo visual del Design System institucional del Seminario Eclesiástico Mayor.",
-};
-
-export default function DesignSystemPage() {
-  return <DesignSystemShowcase />;
+/** @deprecated Usar /internal/design-system — OT-BRANDING-005 */
+export default function AdminDesignSystemRedirect() {
+  redirect("/internal/design-system");
 }

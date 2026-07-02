@@ -1,0 +1,134 @@
+/**
+ * OT-UX-FOUNDATION-001 — Motion System centralizado
+ * Fade · Slide · Scale · Stagger · Hover · Reveal
+ */
+
+@keyframes f-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes f-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes f-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes f-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes f-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes f-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utilidades */
+.animate-f-fade-in {
+  animation: f-fade-in var(--motion-duration-normal) var(--motion-ease-enter) forwards;
+}
+
+.animate-f-slide-up {
+  animation: f-slide-up var(--motion-duration-normal) var(--motion-ease-enter) forwards;
+}
+
+.animate-f-scale-in {
+  animation: f-scale-in var(--motion-duration-normal) var(--motion-ease-enter) forwards;
+}
+
+.animate-f-reveal {
+  animation: f-reveal var(--motion-duration-reveal) var(--motion-ease-standard) forwards;
+}
+
+/* Stagger */
+.stagger-f > *:nth-child(1) { animation-delay: calc(var(--motion-stagger-step) * 0); }
+.stagger-f > *:nth-child(2) { animation-delay: calc(var(--motion-stagger-step) * 1); }
+.stagger-f > *:nth-child(3) { animation-delay: calc(var(--motion-stagger-step) * 2); }
+.stagger-f > *:nth-child(4) { animation-delay: calc(var(--motion-stagger-step) * 3); }
+.stagger-f > *:nth-child(5) { animation-delay: calc(var(--motion-stagger-step) * 4); }
+.stagger-f > *:nth-child(6) { animation-delay: calc(var(--motion-stagger-step) * 5); }
+
+/* Hover lift — bridge globals */
+.hover-lift {
+  transition: transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.press-scale:active {
+  transform: scale(0.98);
+}
+
+.portal-home-experience [data-block]:not([data-block="hero"]) > .portal-home-x__reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity var(--motion-duration-reveal) var(--motion-ease-standard) var(--home-reveal-delay, 0s),
+    transform var(--motion-duration-reveal) var(--motion-ease-standard) var(--home-reveal-delay, 0s);
+}
+
+.portal-home-experience [data-block]:not([data-block="hero"]) > .portal-home-x__reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Bridge animate-slide-up legacy */
+.animate-slide-up {
+  animation: f-slide-up var(--motion-duration-normal) var(--motion-ease-enter) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-f-fade-in,
+  .animate-f-slide-up,
+  .animate-f-scale-in,
+  .animate-f-reveal,
+  .animate-slide-up,
+  .portal-home-experience [data-block]:not([data-block="hero"]) > .portal-home-x__reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .hover-lift:hover,
+  .press-scale:active {
+    transform: none;
+  }
+}

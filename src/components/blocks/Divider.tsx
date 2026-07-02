@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * GenericContentBlockSection
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import { cn } from "@/lib/utils";
 import { asString } from "@/lib/cms/block-utils";
 

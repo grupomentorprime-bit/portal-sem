@@ -1,0 +1,150 @@
+/**
+ * Design Tokens — layout, tipografía, motion, sombras (DOC-002)
+ * Colores corporativos: src/styles/tokens/brand.css + colors.css
+ * Los componentes consumen var(--color-*), nunca --brand-* ni --sem-* directamente.
+ */
+
+:root,
+[data-theme="light"] {
+  /* ─── Tipografía fluida ─── */
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-brand: var(--font-sans);
+  --font-display-xl: clamp(2.5rem, 5vw, 4rem);
+  --font-display: clamp(2rem, 4vw, 3rem);
+  --font-heading: clamp(1.5rem, 2.5vw, 2.25rem);
+  --font-title: clamp(1.25rem, 2vw, 1.5rem);
+  --font-subtitle: clamp(1.0625rem, 1.5vw, 1.25rem);
+  --font-body: 1rem;
+  --font-caption: 0.875rem;
+  --font-overline: 0.75rem;
+  --font-label: 0.8125rem;
+
+  /* ─── Espaciado ─── */
+  --space-0: 0;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+
+  /* ─── Radius ─── */
+  --radius-2: 2px;
+  --radius-4: 4px;
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+  --radius-24: 24px;
+  --radius-pill: 9999px;
+  --radius-sm: var(--radius-4);
+  --radius-md: var(--radius-8);
+  --radius-lg: var(--radius-12);
+  --radius-xl: var(--radius-16);
+  --radius-2xl: var(--radius-24);
+  --radius-full: var(--radius-pill);
+  --radius: var(--radius-md);
+
+  /* ─── Sombras ─── */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 42, 71, 0.03);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 42, 71, 0.04);
+  --shadow-md: 0 2px 8px 0 rgba(0, 42, 71, 0.06);
+  --shadow-lg: 0 4px 16px 0 rgba(0, 42, 71, 0.08);
+  --shadow-xl: 0 8px 24px 0 rgba(0, 42, 71, 0.1);
+  --shadow: var(--shadow-md);
+
+  /* ─── Motion ─── */
+  --motion-fast: 150ms;
+  --motion-normal: 250ms;
+  --motion-slow: 350ms;
+  --motion-hero: 600ms;
+  --motion-carousel: 500ms;
+  --motion-modal: 300ms;
+  --motion-hover: 150ms;
+  --motion-focus: 100ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-hero: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-carousel: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: var(--motion-fast);
+  --transition-normal: var(--motion-normal);
+  --transition-slow: var(--motion-slow);
+  --transition: var(--motion-normal);
+
+  /* ─── Z-index ─── */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-overlay: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-toast: 800;
+  --z-tooltip: 900;
+
+  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-accent);
+
+  color-scheme: light;
+
+  /* Layout portal (no semánticos de marca) */
+  --portal-header-height: 5.625rem;
+  --portal-header-height-hero: 90px;
+  --portal-topbar-height: 2.25rem;
+  --portal-header-offset: var(--portal-header-height);
+}
+
+/**
+ * Branding CMS → tokens semánticos
+ * layout.tsx inyecta --brand-* en <body>; aquí se mapean a --color-*.
+ * Los componentes NUNCA leen --brand-* directamente.
+ */
+body {
+  --color-primary: var(--brand-primary, var(--color-primary-default));
+  --color-secondary: var(--brand-secondary, var(--color-secondary-default));
+  --color-background: var(--brand-background, var(--color-background-default));
+  --color-foreground: var(--brand-text, var(--color-foreground-default));
+  --color-surface: var(--brand-background, var(--color-surface-default));
+
+  --primary: var(--color-primary);
+  --secondary: var(--color-secondary);
+  --background: var(--color-background);
+  --text: var(--color-foreground);
+}
+
+@media (min-width: 1024px) {
+  :root,
+  [data-theme="light"] {
+    --portal-header-height: 6rem;
+  }
+}
+
+[data-theme="dark"],
+.dark {
+  --color-background: var(--gray-900);
+  --color-foreground: var(--gray-50);
+  --color-muted: var(--gray-400);
+  --color-surface: var(--gray-900);
+  --color-border: var(--gray-700);
+
+  --background: var(--color-background);
+  --background-muted: var(--gray-800);
+  --text: var(--color-foreground);
+  --text-muted: var(--color-muted);
+  --text-inverse: var(--gray-900);
+  --border: var(--color-border);
+  --border-strong: var(--gray-600);
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 8px 24px 0 rgba(0, 0, 0, 0.35);
+
+  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-accent);
+
+  color-scheme: dark;
+}

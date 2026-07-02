@@ -1,0 +1,61 @@
+/**
+ * OT-UX-FOUNDATION-001 — Grid System (12 columnas)
+ */
+
+.grid-f {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+.grid-f-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.grid-f-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-f-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-f-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.col-f-span-1 { grid-column: span 1; }
+.col-f-span-2 { grid-column: span 2; }
+.col-f-span-3 { grid-column: span 3; }
+.col-f-span-4 { grid-column: span 4; }
+.col-f-span-5 { grid-column: span 5; }
+.col-f-span-6 { grid-column: span 6; }
+.col-f-span-7 { grid-column: span 7; }
+.col-f-span-8 { grid-column: span 8; }
+.col-f-span-9 { grid-column: span 9; }
+.col-f-span-10 { grid-column: span 10; }
+.col-f-span-11 { grid-column: span 11; }
+.col-f-span-12 { grid-column: span 12; }
+.col-f-span-full { grid-column: 1 / -1; }
+
+/* Responsive spans — mobile first */
+@media (min-width: 768px) {
+  .col-f-md-span-6 { grid-column: span 6; }
+  .col-f-md-span-4 { grid-column: span 4; }
+  .col-f-md-span-8 { grid-column: span 8; }
+  .grid-f-md-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-f-md-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 992px) {
+  .col-f-lg-span-3 { grid-column: span 3; }
+  .col-f-lg-span-4 { grid-column: span 4; }
+  .col-f-lg-span-6 { grid-column: span 6; }
+  .col-f-lg-span-8 { grid-column: span 8; }
+  .grid-f-lg-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-f-lg-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid-f-lg-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1280px) {
+  .col-f-xl-span-4 { grid-column: span 4; }
+  .col-f-xl-span-8 { grid-column: span 8; }
+}
+
+/* Bridge grids Experience Kit → foundation gap */
+.portal-feature-grid__grid,
+.portal-news-grid__list,
+.portal-people-grid__list,
+.portal-programs-section__cards-list,
+.portal-timeline__track {
+  gap: var(--grid-gap) !important;
+}

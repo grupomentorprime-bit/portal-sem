@@ -11,7 +11,7 @@ interface MediaSearchProps {
 export function MediaSearch({
   value,
   onChange,
-  placeholder = "Buscar por nombre, etiqueta o alt…",
+  placeholder = "Buscar por nombre, carpeta, etiqueta, formato…",
 }: MediaSearchProps) {
   return (
     <Input
@@ -19,6 +19,7 @@ export function MediaSearch({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       aria-label="Buscar en biblioteca de medios"
+      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"
     />
   );
 }

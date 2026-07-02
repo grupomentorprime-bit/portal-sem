@@ -1,0 +1,94 @@
+/**
+ * Experience Module — Contact Hub v1.0 (LOCKED)
+ * @see docs/core/CORE-CONTACT-HUB-v1.md
+ */
+
+.portal-contact-hub__layout {
+  display: grid;
+  gap: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .portal-contact-hub--full .portal-contact-hub__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 42%);
+    align-items: start;
+  }
+}
+
+.portal-contact-hub__channels {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .portal-contact-hub__channels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-contact-hub__channels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.portal-contact-hub__channel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--background);
+}
+
+.portal-contact-hub__channel--interactive {
+  cursor: pointer;
+}
+
+.portal-contact-hub__channel-icon {
+  margin-bottom: 0.75rem;
+}
+
+.portal-contact-hub__actions {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .portal-contact-hub__actions {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.portal-contact-hub__action-btn--whatsapp {
+  order: -1;
+}
+
+@media (min-width: 640px) {
+  .portal-contact-hub__action-btn--whatsapp {
+    order: 0;
+  }
+}
+
+.portal-contact-hub__map-frame {
+  min-height: 12rem;
+}
+
+.portal-contact-hub--skeleton .portal-contact-hub__channel {
+  border: none;
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-contact-hub__channel--interactive {
+    transition: none;
+  }
+}

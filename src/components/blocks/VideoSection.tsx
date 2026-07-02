@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * GenericContentBlockSection
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import Image from "next/image";
 import { Container, Section, Stack } from "@/components/layout";
 import { SectionTitle } from "@/components/institutional";

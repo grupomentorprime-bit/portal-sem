@@ -1,0 +1,128 @@
+/**
+ * OT-UX-FOUNDATION-001 — Typography system
+ * Hero · Display · H1 · H2 · H3 · Lead · Body · Small · Caption
+ */
+
+:root {
+  --type-hero: clamp(2rem, 5vw, 3.25rem);
+  --type-display: clamp(1.875rem, 4vw, 2.75rem);
+  --type-h1: clamp(1.75rem, 3.2vw, 2.5rem);
+  --type-h2: clamp(1.5rem, 2.6vw, 2rem);
+  --type-h3: clamp(1.25rem, 2vw, 1.5rem);
+  --type-lead: clamp(1.0625rem, 1.4vw, 1.25rem);
+  --type-body: 1rem;
+  --type-small: 0.875rem;
+  --type-caption: 0.75rem;
+
+  --type-hero-lh: 1.05;
+  --type-display-lh: 1.1;
+  --type-heading-lh: 1.15;
+  --type-body-lh: 1.65;
+  --type-caption-lh: 1.5;
+
+  --type-tracking-tight: -0.03em;
+  --type-tracking-wide: 0.12em;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  :root {
+    --type-hero: clamp(2.125rem, 5.5vw, 2.75rem);
+    --type-h1: clamp(1.875rem, 3.5vw, 2.25rem);
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1279px) {
+  :root {
+    --type-hero: clamp(2.25rem, 4.5vw, 3rem);
+    --type-display: clamp(2rem, 3.8vw, 2.5rem);
+    --type-h1: clamp(2rem, 3vw, 2.375rem);
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  :root {
+    --type-hero: clamp(2.5rem, 3.8vw, 3.25rem);
+    --type-display: clamp(2.25rem, 3.2vw, 2.75rem);
+    --type-h1: clamp(2.125rem, 2.8vw, 2.5rem);
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  :root {
+    --type-hero: clamp(2.75rem, 3.5vw, 3.75rem);
+    --type-display: clamp(2.5rem, 3vw, 3rem);
+    --type-h1: clamp(2.25rem, 2.5vw, 2.75rem);
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --type-hero: clamp(3rem, 3.2vw, 4.25rem);
+    --type-display: clamp(2.75rem, 2.8vw, 3.25rem);
+    --type-h1: clamp(2.5rem, 2.2vw, 3rem);
+  }
+}
+
+/* Clases tipográficas */
+.text-f-hero {
+  font-size: var(--type-hero);
+  line-height: var(--type-hero-lh);
+  letter-spacing: var(--type-tracking-tight);
+  font-weight: 800;
+}
+
+.text-f-display {
+  font-size: var(--type-display);
+  line-height: var(--type-display-lh);
+  letter-spacing: var(--type-tracking-tight);
+  font-weight: 700;
+}
+
+.text-f-h1 {
+  font-size: var(--type-h1);
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-tight);
+  font-weight: 700;
+}
+
+.text-f-h2 {
+  font-size: var(--type-h2);
+  line-height: var(--type-heading-lh);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.text-f-h3 {
+  font-size: var(--type-h3);
+  line-height: var(--type-heading-lh);
+  font-weight: 600;
+}
+
+.text-f-lead {
+  font-size: var(--type-lead);
+  line-height: var(--type-body-lh);
+}
+
+.text-f-body {
+  font-size: var(--type-body);
+  line-height: var(--type-body-lh);
+}
+
+.text-f-small {
+  font-size: var(--type-small);
+  line-height: var(--type-body-lh);
+}
+
+.text-f-caption {
+  font-size: var(--type-caption);
+  line-height: var(--type-caption-lh);
+  letter-spacing: var(--type-tracking-wide);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Bridge clases legacy portal */
+.text-display-l { font-size: var(--type-display); line-height: var(--type-display-lh); letter-spacing: var(--type-tracking-tight); }
+.text-heading { font-size: var(--type-h3); line-height: var(--type-heading-lh); }
+.text-body { font-size: var(--type-body); line-height: var(--type-body-lh); }
+.text-caption { font-size: var(--type-caption); }

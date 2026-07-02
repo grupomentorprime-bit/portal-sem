@@ -12,3 +12,4 @@ export * from "./media";
 export * from "./identity";
 export * from "./events";
 export * from "./portal";
+export * from "./experience";

@@ -50,7 +50,10 @@ export const EXTENSION_TO_MIME: Record<string, string> = {
 
 export const TRASH_RETENTION_DAYS = 30;
 
-export const RESPONSIVE_WIDTHS = [400, 800, 1200, 1920] as const;
+export const RESPONSIVE_WIDTHS = [400, 800, 1200] as const;
+
+/** Hero: 3 tamaños WebP (móvil, tablet, desktop) — sin duplicar JPEG */
+export const HERO_WEBP_WIDTHS = [768, 1080, 1920] as const;
 
 export const THUMBNAIL_WIDTH = 200;
 

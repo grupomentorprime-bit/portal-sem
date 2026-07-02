@@ -19,8 +19,9 @@ export {
   getResolverKey,
 } from "@/core/portal/resolver";
 
+export { buildRenderContext } from "@/core/portal/render-context";
+
 export {
-  buildRenderContext,
   loadPublishedPage,
   loadHomePage,
   preparePageBlocks,
@@ -36,12 +37,16 @@ export {
 
 export { resolveLayoutConfig, DEFAULT_PORTAL_LAYOUT } from "@/core/portal/layout";
 
+export {
+  registerExperienceActionHandler,
+  executeExperienceAction,
+  resolveExperienceActionLink,
+  requiresExperienceActionHandler,
+  parseExperienceAction,
+  isValidExperienceAction,
+} from "@/core/experience/actions";
+
 export type {
-  PortalAudience,
-  PortalBlockConditions,
-  PortalBlockDefinition,
-  PortalPageModel,
-  PortalRenderContext,
-  PortalSeoPayload,
-  ResolvedBlockData,
-} from "@/types/portal";
+  ExperienceActionContext,
+  ExperienceActionHandler,
+} from "@/core/experience/actions";

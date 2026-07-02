@@ -1,0 +1,55 @@
+/**
+ * OT-UX-FOUNDATION-001 — Layout Container System
+ * XS · SM · MD · LG · XL · XXL — nunca contenido a ancho completo sin padding
+ */
+
+.container-f,
+.container-xs,
+.container-sm,
+.container-md,
+.container-lg,
+.container-xl,
+.container-xxl {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+}
+
+.container-xs { max-width: 100%; }
+.container-sm { max-width: 720px; }
+.container-md { max-width: 960px; }
+.container-lg { max-width: 1180px; }
+.container-xl { max-width: 1360px; }
+.container-xxl { max-width: 1560px; }
+
+/* Bridge — PortalContainer y contenedores Tailwind existentes */
+.mx-auto.w-full.max-w-7xl,
+.mx-auto.w-full.max-w-\[1400px\],
+.portal-header-premium__inner,
+.portal-header-premium--hero .portal-header-premium__inner {
+  max-width: var(--container-max) !important;
+  padding-inline: var(--container-padding) !important;
+}
+
+/* Hero container interno */
+.hero-premium__container {
+  max-width: var(--container-max) !important;
+  padding-inline: var(--container-padding) !important;
+  margin-inline: auto;
+  width: 100%;
+}
+
+/* Home experience bridge */
+.portal-home-experience {
+  --site-content-max: var(--container-max);
+  --site-content-gutter: var(--container-padding);
+  --site-content-inset: calc(
+    (100vw - min(100vw, var(--container-max))) / 2 + var(--container-padding)
+  );
+}
+
+body:has(.portal-home-experience) {
+  --site-content-max: var(--container-max);
+  --site-content-gutter: var(--container-padding);
+}

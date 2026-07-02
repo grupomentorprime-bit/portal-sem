@@ -20,7 +20,7 @@ function blockQueryToContentQuery(
   tenant: string,
   includeDraft?: boolean
 ): ContentQuery {
-  const { collection, limit, sort, featured, category, categoryId, tags, status, slug, search } =
+  const { collection, limit, sort, featured, category, categoryId, tags, status, slug, search, upcoming, personRole } =
     blockQuery;
 
   const filters: ContentQuery["filters"] = {};
@@ -30,6 +30,8 @@ function blockQueryToContentQuery(
   if (tags) filters.tags = tags;
   if (slug) filters.slug = slug;
   if (search) filters.search = search;
+  if (upcoming === true) filters.upcoming = true;
+  if (personRole) filters.personRole = personRole;
   if (status) filters.status = status;
   else if (!includeDraft) filters.status = "published";
 

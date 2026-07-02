@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "ot": "OT-EDITORIAL-ASSETS-001",
+  "basePath": "/editorial",
+  "colors": {
+    "primary": "#002A47",
+    "secondary": "#246AA1",
+    "accent": "#10BCE2",
+    "success": "#3ED6AF",
+    "light": "#8CE27F",
+    "white": "#FFFFFF"
+  },
+  "categories": [
+    "patterns",
+    "textures",
+    "gradients",
+    "overlays",
+    "dividers",
+    "seals",
+    "icons",
+    "backgrounds",
+    "illustrations"
+  ],
+  "counts": {
+    "patterns": 15,
+    "textures": 10,
+    "gradients": 5,
+    "overlays": 6,
+    "dividers": 5,
+    "seals": 18,
+    "icons": 10,
+    "backgrounds": 6,
+    "illustrations": 6
+  }
+}

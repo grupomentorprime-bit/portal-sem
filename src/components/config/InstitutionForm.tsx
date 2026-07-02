@@ -65,6 +65,14 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
             placeholder="https://seminarioipn.cl"
           />
         </Field>
+
+        <Field label="Lema institucional" className="sm:col-span-2">
+          <Input
+            value={value.tagline}
+            onChange={(e) => update("tagline", e.target.value)}
+            placeholder="Equipando a los santos para la obra del ministerio"
+          />
+        </Field>
       </div>
     </Card>
   );

@@ -6,8 +6,10 @@ import {
   trashMedia,
   updateMedia,
 } from "@/lib/cms/media";
+import { writeMediaAudit } from "@/lib/cms/media-audit";
 import { validateMediaUpdate } from "@/lib/cms/media-validation";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { requirePermission } from "@/core/identity";
 import type { CmsMediaUpdate } from "@/types/media";
 
 interface RouteParams {
@@ -33,11 +35,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const denied = await authorizeApiWrite("cms.media.update", {
-      action: "media.update",
-      entity: "cms_media",
-    });
+    const denied = await authorizeApiWrite("cms.media.update");
     if (denied) return denied;
+
+    const ctx = await requirePermission("cms.media.update");
+    if (ctx instanceof NextResponse) return ctx;
 
     const { id } = await params;
     const body = (await request.json()) as CmsMediaUpdate & { restore?: boolean };
@@ -49,11 +51,38 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (body.restore) {
       const media = await restoreMedia(id);
       if (!media) return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
+      const { emitMediaRestoreRequested } = await import("@/lib/events/media");
+      await emitMediaRestoreRequested(media).catch(console.error);
+      if (!ctx.compatMode) {
+        await writeMediaAudit({
+          tenantId: media.tenant,
+          userId: ctx.user._id,
+          action: "media.restore",
+          mediaId: id,
+        });
+      }
       return NextResponse.json({ ok: true, media });
     }
 
     const media = await updateMedia(id, body);
     if (!media) return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
+
+    if (!ctx.compatMode) {
+      let action = "media.update";
+      if (body.originalName) action = "media.rename";
+      else if (body.folder) action = "media.move";
+      else if (body.tags) action = "media.tag";
+      else if (body.favorite !== undefined) action = "media.favorite";
+
+      await writeMediaAudit({
+        tenantId: media.tenant,
+        userId: ctx.user._id,
+        action,
+        mediaId: id,
+        metadata: { patch: body },
+      });
+    }
+
     return NextResponse.json({ ok: true, media });
   } catch (error) {
     console.error(error);
@@ -66,11 +95,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const denied = await authorizeApiWrite("cms.media.delete", {
-      action: "media.delete",
-      entity: "cms_media",
-    });
+    const denied = await authorizeApiWrite("cms.media.delete");
     if (denied) return denied;
+
+    const ctx = await requirePermission("cms.media.delete");
+    if (ctx instanceof NextResponse) return ctx;
 
     const { id } = await params;
     const { searchParams } = new URL(request.url);
@@ -88,12 +117,25 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     if (!media) {
       return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
     }
+
+    if (!ctx.compatMode) {
+      await writeMediaAudit({
+        tenantId: media.tenant,
+        userId: ctx.user._id,
+        action: "media.delete",
+        mediaId: id,
+        metadata: { visibility: "trash" },
+      });
+    }
+
     return NextResponse.json({ ok: true, media });
   } catch (error) {
     console.error(error);
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    const inUse = message.includes("en uso");
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 403 }
+      { ok: false, error: message },
+      { status: inUse ? 409 : 403 }
     );
   }
 }

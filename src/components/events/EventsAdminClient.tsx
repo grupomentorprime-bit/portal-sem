@@ -172,7 +172,7 @@ export function EventsAdminClient() {
                   <dt className="text-muted">Procesamiento</dt>
                   <dd>{selected.processingMs != null ? `${selected.processingMs}ms` : "—"}</dd>
                   <dt className="text-muted">Error</dt>
-                  <dd className="text-red-600">{selected.error ?? "—"}</dd>
+                  <dd className="text-[var(--color-danger)]">{selected.error ?? "—"}</dd>
                 </dl>
                 <pre className="max-h-48 overflow-auto rounded bg-muted/30 p-2">
                   {JSON.stringify(selected.payload, null, 2)}
@@ -201,7 +201,7 @@ export function EventsAdminClient() {
                   <li key={d._id} className="rounded border border-border p-3">
                     <p className="font-mono font-medium">{d.type}</p>
                     <p className="text-muted">Handler: {d.handler}</p>
-                    <p className="text-red-600">{d.error}</p>
+                    <p className="text-[var(--color-danger)]">{d.error}</p>
                     <p className="text-muted">{d.createdAt}</p>
                   </li>
                 ))}

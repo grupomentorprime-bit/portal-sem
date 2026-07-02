@@ -1,0 +1,30 @@
+/**
+ * OT-ARCH-UX-001 — Home Premium (composición por bloque)
+ * @see docs/ui/UI-LOCK-POLICY.md
+ */
+
+@import "./shell.css";
+@import "./compat.css";
+@import "./hero-home.css";
+@import "./programs-home.css";
+@import "./programs-premium.css";
+@import "./seminarios-home.css";
+@import "./audience-home.css";
+@import "./methodology-home.css";
+@import "./why-study-home.css";
+@import "./timeline-home.css";
+@import "./admission-home.css";
+@import "./teachers-home.css";
+@import "./testimonials-home.css";
+@import "./faq-home.css";
+@import "./news-home.css";
+@import "./cta-home.css";
+@import "./contact-home.css";
+@import "./footer-home.css";
+
+/* Responsive shell — solo bloques no-hero */
+@media (max-width: 767px) {
+  .portal-home-experience .portal-home-x__section:not([data-block="hero"]) {
+    padding-inline: 0;
+  }
+}

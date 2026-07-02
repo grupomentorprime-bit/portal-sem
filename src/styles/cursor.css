@@ -1,0 +1,191 @@
+/* OT-PORTAL-015 — Cursor Premium
+ * OT-BRANDING-003 — tokens corporativos SEM
+ */
+
+:root {
+  --cursor-primary: var(--sem-accent);
+  --cursor-secondary: var(--sem-secondary);
+}
+
+.has-premium-cursor,
+.has-premium-cursor * {
+  cursor: none !important;
+}
+
+.premium-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+
+.premium-cursor--hidden {
+  opacity: 0;
+}
+
+.premium-cursor__ring,
+.premium-cursor__dot,
+.premium-cursor__icon,
+.premium-cursor__spinner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.premium-cursor__ring {
+  width: var(--cursor-size, 36px);
+  height: var(--cursor-size, 36px);
+  margin-top: calc(var(--cursor-size, 36px) / -2);
+  margin-left: calc(var(--cursor-size, 36px) / -2);
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in srgb, var(--cursor-primary) 88%, transparent);
+  background: color-mix(in srgb, var(--cursor-primary) 8%, transparent);
+  opacity: var(--cursor-opacity, 0.88);
+  transition:
+    width 0.28s var(--ease-out, ease),
+    height 0.28s var(--ease-out, ease),
+    margin 0.28s var(--ease-out, ease),
+    border-color 0.24s ease,
+    background 0.24s ease,
+    opacity 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.premium-cursor-glow .premium-cursor__ring {
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--cursor-primary) 42%, transparent),
+    0 0 36px color-mix(in srgb, var(--cursor-secondary) 18%, transparent);
+}
+
+.premium-cursor__dot {
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  margin-left: -2.5px;
+  border-radius: 9999px;
+  background: var(--cursor-primary);
+  opacity: calc(var(--cursor-opacity, 0.88) + 0.1);
+  transition: transform 0.12s ease, opacity 0.2s ease;
+}
+
+.premium-cursor__icon {
+  display: grid;
+  place-items: center;
+  width: var(--cursor-size, 36px);
+  height: var(--cursor-size, 36px);
+  margin-top: calc(var(--cursor-size, 36px) / -2);
+  margin-left: calc(var(--cursor-size, 36px) / -2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-inverse);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.premium-cursor__spinner {
+  width: calc(var(--cursor-size, 36px) + 6px);
+  height: calc(var(--cursor-size, 36px) + 6px);
+  margin-top: calc((var(--cursor-size, 36px) + 6px) / -2);
+  margin-left: calc((var(--cursor-size, 36px) + 6px) / -2);
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, var(--cursor-primary) 25%, transparent);
+  border-top-color: var(--cursor-primary);
+  opacity: 0;
+  animation: premium-cursor-spin 0.75s linear infinite;
+  transition: opacity 0.2s ease;
+}
+
+.premium-cursor__ripples {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.premium-cursor__ripple {
+  position: fixed;
+  width: var(--cursor-size, 36px);
+  height: var(--cursor-size, 36px);
+  margin-top: calc(var(--cursor-size, 36px) / -2);
+  margin-left: calc(var(--cursor-size, 36px) / -2);
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--cursor-primary) 70%, transparent);
+  animation: premium-cursor-ripple 0.2s var(--ease-out, ease) forwards;
+}
+
+/* Estados — color/tamaño vía clases; escala vía JS (transform) */
+.premium-cursor--link .premium-cursor__ring {
+  border-color: var(--cursor-primary);
+}
+
+.premium-cursor--button .premium-cursor__ring {
+  border-color: var(--cursor-secondary);
+  background: color-mix(in srgb, var(--cursor-secondary) 14%, transparent);
+}
+
+.premium-cursor--hero .premium-cursor__ring {
+  opacity: calc(var(--cursor-opacity, 0.88) * 0.65);
+  background: color-mix(in srgb, var(--cursor-primary) 5%, transparent);
+}
+
+.premium-cursor--video .premium-cursor__icon,
+.premium-cursor--carousel-left .premium-cursor__icon,
+.premium-cursor--carousel-right .premium-cursor__icon {
+  opacity: 1;
+}
+
+.premium-cursor--loading .premium-cursor__spinner {
+  opacity: 1;
+}
+
+.premium-cursor--loading .premium-cursor__ring,
+.premium-cursor--loading .premium-cursor__dot {
+  opacity: 0.35;
+}
+
+[data-cursor-magnet] {
+  transition: transform 0.22s var(--ease-out, ease);
+  will-change: transform;
+}
+
+@keyframes premium-cursor-ripple {
+  from {
+    opacity: 0.75;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.65);
+  }
+}
+
+@keyframes premium-cursor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-cursor {
+    display: none;
+  }
+
+  .has-premium-cursor,
+  .has-premium-cursor * {
+    cursor: auto !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .premium-cursor {
+    display: none;
+  }
+
+  .has-premium-cursor,
+  .has-premium-cursor * {
+    cursor: auto !important;
+  }
+}

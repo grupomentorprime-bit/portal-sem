@@ -48,7 +48,7 @@ export function Footer({
         <div className="grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
             <p className="text-lg font-bold">SEM</p>
-            <p className="mt-2 text-sm text-gray-300">
+            <p className="mt-2 text-sm text-text-inverse/75">
               Seminario Eclesiástico Mayor
             </p>
           </div>
@@ -62,7 +62,7 @@ export function Footer({
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-300 transition-colors hover:text-accent"
+                      className="text-sm text-text-inverse/75 transition-colors hover:text-accent"
                     >
                       {link.label}
                     </Link>
@@ -72,8 +72,8 @@ export function Footer({
             </div>
           ))}
         </div>
-        <div className="border-t border-gray-700 py-6">
-          <p className="text-center text-xs text-gray-400">{copyright}</p>
+        <div className="border-t border-text-inverse/20 py-6">
+          <p className="text-center text-xs text-text-inverse/60">{copyright}</p>
         </div>
       </Container>
     </footer>

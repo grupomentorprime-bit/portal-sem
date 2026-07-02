@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+  <defs>
+    <pattern id="p" width="32" height="32" patternUnits="userSpaceOnUse">
+      <line x1="8" y1="0" x2="8" y2="32" stroke="#246AA1" stroke-width="0.75" opacity="0.3"/>
+       <line x1="9.5" y1="0" x2="9.5" y2="32" stroke="#246AA1" stroke-width="0.25" opacity="0.2"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#p)" opacity="0.06"/>
+</svg>

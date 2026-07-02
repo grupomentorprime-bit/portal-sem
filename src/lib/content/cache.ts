@@ -6,6 +6,7 @@ export const CONTENT_CACHE_TAG = "content-engine";
 const COLLECTION_TTL: Partial<Record<AllowedCollection, number>> = {
   academy_programs: 120,
   content_news: 60,
+  content_people: 180,
   academy_team: 180,
   academy_teachers: 180,
   content_events: 90,

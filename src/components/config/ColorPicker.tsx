@@ -1,5 +1,6 @@
 "use client";
 
+import { colorDefaults } from "@/design/tokens/colors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -18,12 +19,12 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-12 cursor-pointer rounded border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-900"
+          className="h-10 w-12 cursor-pointer rounded border border-border bg-background p-1 dark:border-gray-700 dark:bg-gray-900"
         />
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="#003B73"
+          placeholder={colorDefaults.primary}
           className="font-mono"
         />
       </div>

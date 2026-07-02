@@ -1,0 +1,164 @@
+/**
+ * OT-UX-FOUNDATION-001 — Hero Responsive (composición sobre hero-premium LOCKED)
+ * No escalar: layouts distintos por tier.
+ *
+ * Mobile      — vertical
+ * Tablet      — texto arriba, imagen abajo
+ * Tablet XL+  — split con ratios por tier
+ */
+
+.hero-premium {
+  --hero-gutter: var(--container-padding);
+}
+
+.hero-premium__main {
+  padding-inline: 0;
+}
+
+.hero-premium__title {
+  font-size: var(--type-hero);
+  min-height: auto;
+  line-height: var(--type-hero-lh);
+}
+
+.hero-premium__description {
+  font-size: var(--type-lead);
+  line-height: var(--type-body-lh);
+}
+
+/* ─── Mobile <768 — todo vertical ─── */
+@media (max-width: 767px) {
+  .hero-premium {
+    --hero-content-col: 100%;
+    min-height: clamp(520px, 88dvh, 900px);
+  }
+
+  .hero-premium__generation-card-wrap {
+    right: var(--container-padding);
+  }
+}
+
+/* ─── Tablet 768–991 — texto arriba, imagen abajo ─── */
+@media (min-width: 768px) and (max-width: 991px) {
+  .hero-premium {
+    --hero-content-col: 100%;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-premium__body {
+    order: 1;
+  }
+
+  .hero-premium > .hero-premium__region-fade:has(.hero-photo) {
+    order: 2;
+    position: relative !important;
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .hero-premium__generation-card-wrap {
+    order: 3;
+    position: static !important;
+    width: 100%;
+    max-width: 28rem;
+    margin: var(--space-4) auto 0;
+    right: auto !important;
+    bottom: auto !important;
+  }
+
+  .hero-premium__indicators {
+    order: 4;
+    position: relative !important;
+    bottom: auto !important;
+    margin-top: var(--space-3);
+  }
+
+  .hero-photo {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: var(--media-hero);
+    margin-top: var(--space-4);
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  .hero-photo__image--desktop {
+    display: none;
+  }
+
+  .hero-photo__image--mobile {
+    display: block !important;
+  }
+
+  .hero-premium__arrow {
+    display: none;
+  }
+
+  .hero-premium__left-stack {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 auto;
+  }
+}
+
+/* ─── Split layouts Tablet XL+ ─── */
+@media (min-width: 992px) {
+  .hero-premium {
+    --hero-content-col: calc(var(--container-max) * var(--hero-text-ratio) - var(--container-padding) * 2);
+    --hero-split: calc(
+      (100vw - min(100vw, var(--container-max))) / 2
+      + min(var(--hero-content-col), min(100vw, var(--container-max)) - 2 * var(--container-padding))
+      + var(--space-1)
+    );
+    min-height: clamp(640px, 90dvh, 960px);
+  }
+
+  .hero-premium__generation-card-wrap {
+    right: var(--site-content-inset, calc(
+      (100vw - min(100vw, var(--container-max))) / 2 + var(--container-padding)
+    ));
+  }
+
+  .hero-premium__arrow--prev {
+    /* Centradas en el gutter lateral — fuera del contenido */
+    left: max(
+      var(--space-2),
+      calc((100vw - min(100vw, var(--container-max))) / 4 - 1.375rem)
+    );
+  }
+
+  .hero-premium__arrow--next {
+    right: max(
+      var(--space-2),
+      calc((100vw - min(100vw, var(--container-max))) / 4 - 1.375rem)
+    );
+  }
+}
+
+/* Laptop 1280–1439 — 50/50 */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .hero-premium {
+    min-height: clamp(680px, 88dvh, 920px);
+  }
+}
+
+/* Desktop 1440–1919 — 48/52 */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .hero-premium {
+    min-height: clamp(720px, 92dvh, 980px);
+  }
+}
+
+/* Desktop XL ≥1920 — 45/55 */
+@media (min-width: 1920px) {
+  .hero-premium {
+    min-height: calc(100dvh - var(--portal-header-offset, 90px));
+  }
+}

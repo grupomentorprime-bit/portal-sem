@@ -49,7 +49,7 @@ export function Hero({
           ) : null}
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{title}</h1>
           {description ? (
-            <p className="text-lg text-gray-300">{description}</p>
+            <p className="text-lg text-text-inverse/75">{description}</p>
           ) : null}
           {(primaryCta || secondaryCta) && (
             <div

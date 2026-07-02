@@ -1,6 +1,15 @@
 import { AcademicEcosystemSectionSkeleton } from "@/components/portal/AcademicEcosystemSectionSkeleton";
 import { InstitutionSectionSkeleton } from "@/components/portal/InstitutionSectionSkeleton";
 import { ProgramsSectionSkeleton } from "@/components/portal/ProgramsSectionSkeleton";
+import { PortalProgramsSectionSkeleton } from "@/components/portal/PortalProgramsSectionSkeleton";
+import { PortalFeatureGridSkeleton } from "@/components/portal/experience/feature-grid";
+import { PortalNewsSkeleton } from "@/components/portal/experience/news-grid";
+import { PortalPeopleSkeleton } from "@/components/portal/experience/people-grid";
+import { PortalContactSkeleton } from "@/components/portal/experience/contact-hub";
+import { PortalFormSkeleton } from "@/components/portal/experience/forms";
+import { PortalFooterSkeleton } from "@/components/portal/experience/footer-premium";
+import { PortalCTASkeleton } from "@/components/portal/experience/cta-premium";
+import { PortalTimelineSkeleton } from "@/components/portal/experience/timeline";
 import { CardGridSkeleton } from "@/components/portal/cards/CardSkeleton";
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
 import type { BlockType } from "@/types/page";
@@ -37,7 +46,17 @@ export function PortalBlockSkeleton({ type }: PortalBlockSkeletonProps) {
       );
     case "programs":
       return <ProgramsSectionSkeleton />;
+    case "academic_offer":
+      return <PortalProgramsSectionSkeleton />;
     case "presentation":
+    case "feature_grid":
+      return (
+        <PortalSection id="feature-grid" aria-busy="true">
+          <PortalContainer>
+            <PortalFeatureGridSkeleton count={4} />
+          </PortalContainer>
+        </PortalSection>
+      );
     case "modality":
     case "stats":
     case "gallery":
@@ -45,18 +64,67 @@ export function PortalBlockSkeleton({ type }: PortalBlockSkeletonProps) {
     case "verse":
       return <InstitutionSectionSkeleton />;
     case "news":
+      return (
+        <PortalSection id="noticias" aria-busy="true">
+          <PortalContainer>
+            <PortalNewsSkeleton count={3} />
+          </PortalContainer>
+        </PortalSection>
+      );
     case "events":
     case "library":
     case "resources":
       return <AcademicEcosystemSectionSkeleton />;
     case "admission_process":
+    case "timeline":
+      return (
+        <PortalSection id="timeline" aria-busy="true">
+          <PortalContainer>
+            <PortalTimelineSkeleton count={4} />
+          </PortalContainer>
+        </PortalSection>
+      );
+    case "contact_hub":
+      return (
+        <PortalSection id="contacto" aria-busy="true">
+          <PortalContainer>
+            <PortalContactSkeleton />
+          </PortalContainer>
+        </PortalSection>
+      );
+    case "experience_form":
+      return (
+        <PortalSection id="formulario" aria-busy="true">
+          <PortalContainer size="md">
+            <PortalFormSkeleton />
+          </PortalContainer>
+        </PortalSection>
+      );
+    case "footer_premium":
+      return <PortalFooterSkeleton />;
     case "scholarships":
     case "faq":
     case "quick_contact":
     case "cta":
+    case "cta_premium":
+      return (
+        <PortalSection id="cta-premium" aria-busy="true">
+          <PortalContainer>
+            <PortalCTASkeleton variant="highlight" />
+          </PortalContainer>
+        </PortalSection>
+      );
     case "alliance":
-    case "teachers":
       return <GenericSectionSkeleton />;
+    case "teachers":
+    case "people":
+      return (
+        <PortalSection id="personas" aria-busy="true">
+          <PortalContainer>
+            <PortalPeopleSkeleton count={4} />
+          </PortalContainer>
+        </PortalSection>
+      );
     default:
       return <GenericSectionSkeleton />;
   }

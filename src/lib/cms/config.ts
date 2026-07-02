@@ -1,4 +1,4 @@
-import { unstable_cache, revalidateTag } from "next/cache";
+import { unstable_cache, revalidatePath, revalidateTag } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
 import { normalizeSiteConfig } from "@/lib/cms/normalize";
 import type { SiteConfig, SiteConfigUpdate } from "@/types/cms";
@@ -36,12 +36,18 @@ export async function updateSiteConfig(
   }
 
   const now = new Date().toISOString();
-  const document: SiteConfig = {
-    _id: SITE_CONFIG_ID,
+  const merged = {
+    ...existing,
     ...update,
+    _id: SITE_CONFIG_ID,
     createdAt: existing.createdAt,
     updatedAt: now,
   };
+
+  const document = normalizeSiteConfig(merged);
+  if (!document) {
+    return null;
+  }
 
   await db.collection<SiteConfig>("cms_config").replaceOne(
     { _id: SITE_CONFIG_ID },
@@ -49,6 +55,7 @@ export async function updateSiteConfig(
   );
 
   revalidateTag(CMS_CONFIG_TAG, "max");
+  revalidatePath("/", "layout");
 
   return document;
 }

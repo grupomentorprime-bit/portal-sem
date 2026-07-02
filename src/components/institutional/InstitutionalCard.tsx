@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * portal/cards/PortalCard
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import { cn } from "@/lib/utils";
 import type { HTMLAttributes, ReactNode } from "react";
 

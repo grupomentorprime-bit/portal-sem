@@ -11,13 +11,14 @@ export interface BreadcrumbItem {
 
 interface PortalBreadcrumbProps {
   items: BreadcrumbItem[];
+  /** Sin contenedor ni padding — para incrustar en heroes u otras secciones */
+  bare?: boolean;
 }
 
-export function PortalBreadcrumb({ items }: PortalBreadcrumbProps) {
-  return (
-    <PortalContainer className="py-4">
-      <nav aria-label="Breadcrumb">
-        <ol className="flex flex-wrap items-center gap-1 text-sm text-muted">
+export function PortalBreadcrumb({ items, bare }: PortalBreadcrumbProps) {
+  const nav = (
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center gap-1 text-sm text-muted">
           {items.map((item, index) => {
             const isLast = index === items.length - 1;
             return (
@@ -39,6 +40,8 @@ export function PortalBreadcrumb({ items }: PortalBreadcrumbProps) {
           })}
         </ol>
       </nav>
-    </PortalContainer>
   );
+
+  if (bare) return nav;
+  return <PortalContainer className="py-4">{nav}</PortalContainer>;
 }

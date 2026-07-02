@@ -1,7 +1,8 @@
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
-import { PortalCTA } from "@/components/portal/layout/PortalCTA";
+import { PortalCTAPremium } from "@/components/portal/experience/cta-premium";
 import { blockSettings } from "@/lib/portal/blocks";
 import { asString } from "@/lib/cms/block-utils";
+import type { PortalCTAPremiumSettings } from "@/types/cta-premium";
 import type { PageBlock } from "@/types/page";
 
 interface CtaBlockSectionProps {
@@ -11,17 +12,9 @@ interface CtaBlockSectionProps {
   };
 }
 
+/** @deprecated Usar CtaPremiumBlockSection / bloque cta_premium */
 export function CtaBlockSection({ block, navigation }: CtaBlockSectionProps) {
-  const settings = blockSettings<{
-    title?: string;
-    description?: string;
-    primaryLabel?: string;
-    primaryHref?: string;
-    secondaryLabel?: string;
-    secondaryHref?: string;
-    variant?: string;
-  }>(block);
-
+  const settings = blockSettings<PortalCTAPremiumSettings>(block);
   const applyQuickLink =
     navigation.quickLinks.find((l) => l.highlighted) ?? navigation.quickLinks[0];
 
@@ -31,18 +24,26 @@ export function CtaBlockSection({ block, navigation }: CtaBlockSectionProps) {
 
   if (!title && !primaryLabel) return null;
 
+  const legacySettings: PortalCTAPremiumSettings = {
+    ...settings,
+    title,
+    primaryLabel,
+    primaryHref,
+    secondaryLabel: asString(settings.secondaryLabel) || undefined,
+    secondaryHref: asString(settings.secondaryHref) || undefined,
+    variant:
+      settings.variant === "default"
+        ? "minimal"
+        : settings.variant === "primary" || !settings.variant
+          ? "highlight"
+          : settings.variant,
+    background: "primary",
+  };
+
   return (
     <PortalSection id="cta-final">
       <PortalContainer>
-        <PortalCTA
-          title={title}
-          description={asString(settings.description) || undefined}
-          primaryLabel={primaryLabel}
-          primaryHref={primaryHref}
-          secondaryLabel={asString(settings.secondaryLabel) || undefined}
-          secondaryHref={asString(settings.secondaryHref) || undefined}
-          variant={settings.variant === "default" ? "default" : "primary"}
-        />
+        <PortalCTAPremium settings={legacySettings} />
       </PortalContainer>
     </PortalSection>
   );

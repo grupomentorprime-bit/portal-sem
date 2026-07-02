@@ -92,7 +92,7 @@ export function validateBulkAction(body: MediaBulkAction): MediaValidationError[
   const errors: MediaValidationError[] = [];
   if (!body.tenant?.trim()) errors.push({ field: "tenant", message: "Tenant obligatorio." });
   if (!body.ids?.length) errors.push({ field: "ids", message: "Se requiere al menos un id." });
-  if (!["trash", "restore", "delete", "move", "tag"].includes(body.action)) {
+  if (!["trash", "restore", "delete", "move", "tag", "duplicate", "activate", "deactivate"].includes(body.action)) {
     errors.push({ field: "action", message: "Acción no válida." });
   }
   if (body.action === "move" && body.folder && !(MEDIA_FOLDERS as readonly string[]).includes(body.folder)) {

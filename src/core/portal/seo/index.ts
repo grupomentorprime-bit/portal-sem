@@ -13,6 +13,15 @@ export function consolidatePageSeo(
   const title = page.seo.title ?? page.title ?? seo.title;
   const description = page.seo.description ?? seo.description;
 
+  const sameAs = [
+    config.social.facebook,
+    config.social.instagram,
+    config.social.youtube,
+    config.social.linkedin,
+    config.social.tiktok,
+    config.social.spotify,
+  ].filter(Boolean);
+
   const organization: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
@@ -21,6 +30,7 @@ export function consolidatePageSeo(
     url: institution.website || undefined,
     description: description || undefined,
     logo: branding.logo || undefined,
+    sameAs: sameAs.length > 0 ? sameAs : undefined,
     address: contact.address
       ? {
           "@type": "PostalAddress",

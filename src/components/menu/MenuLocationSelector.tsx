@@ -16,7 +16,7 @@ export function MenuLocationSelector({ value, onChange }: MenuLocationSelectorPr
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
       >
         {MENU_LOCATIONS.map((location) => (
           <option key={location} value={location}>
@@ -24,7 +24,7 @@ export function MenuLocationSelector({ value, onChange }: MenuLocationSelectorPr
           </option>
         ))}
       </select>
-      <p className="mt-1 text-xs text-zinc-400">
+      <p className="mt-1 text-xs text-gray-400">
         O ingresa una ubicación personalizada:
       </p>
       <Input

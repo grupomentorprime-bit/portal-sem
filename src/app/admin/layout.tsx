@@ -1,33 +1,40 @@
-import Link from "next/link";
+import { AdminShell } from "@/components/identity/AdminShell";
+import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
+import { getSiteConfigUncached } from "@/lib/cms/config";
 import { isIdentityEnforced } from "@/core/identity";
+import { findRolesByIds } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
-import { LogoutButton } from "@/components/identity/LogoutButton";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = isIdentityEnforced() ? await loadSessionContext() : null;
+  const session = await loadSessionContext();
+  let roleLabel = "Colaborador";
+
+  if (session?.membership) {
+    const roles = await findRolesByIds(session.session.tenantId, session.membership.roleIds);
+    if (roles[0]) roleLabel = getInstitutionalRoleLabel(roles[0].name);
+  }
+
+  const config = await getSiteConfigUncached();
 
   return (
-    <>
-      {session ? (
-        <div className="flex items-center justify-end gap-4 border-b border-border bg-background px-4 py-2 text-xs text-muted">
-          <span>{session.user.displayName || session.user.email}</span>
-          <Link href="/admin/settings/team" className="underline">
-            Equipo
-          </Link>
-          <Link href="/admin/workflows" className="underline">
-            Workflows
-          </Link>
-          <Link href="/admin/events" className="underline">
-            Eventos
-          </Link>
-          <LogoutButton />
-        </div>
-      ) : null}
+    <AdminShell
+      user={
+        session
+          ? {
+              displayName: session.user.displayName,
+              email: session.user.email,
+              roleLabel,
+              institutionName: config?.institution.name,
+            }
+          : null
+      }
+      compatMode={!isIdentityEnforced()}
+    >
       {children}
-    </>
+    </AdminShell>
   );
 }

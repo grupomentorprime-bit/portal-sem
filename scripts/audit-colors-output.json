@@ -1,0 +1,2099 @@
+{
+  "summary": {
+    "hexDistinct": 46,
+    "officialHex": 5,
+    "nonOfficialHex": 39,
+    "neutralHex": 2,
+    "rgbDistinct": 47,
+    "tailwindDistinct": 71,
+    "tailwindOccurrences": 274,
+    "cssVarDistinct": 64,
+    "inlineStyleDistinct": 29
+  },
+  "official": [
+    {
+      "color": "#002a47",
+      "count": 9,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/lib/cms/defaults.ts",
+        "src/lib/cms/hero-portal-defaults.ts",
+        "src/lib/cms/hero-portal-migrate-v2.ts",
+        "src/lib/content/seed.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#246aa1",
+      "count": 8,
+      "files": [
+        "src/app/globals.css",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/design/tokens/colors.ts",
+        "src/lib/cms/defaults.ts",
+        "src/lib/content/seed.ts",
+        "src/styles/design-tokens.css",
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "color": "#10bce2",
+      "count": 4,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#3ed6af",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#8ce27f",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    }
+  ],
+  "nonOfficial": [
+    {
+      "color": "#14c9c3",
+      "count": 24,
+      "files": [
+        "src/app/globals.css",
+        "src/lib/portal/cursor-defaults.ts",
+        "src/styles/cursor.css",
+        "src/styles/hero-premium.css",
+        "src/styles/home-premium/hero-home.css"
+      ]
+    },
+    {
+      "color": "#041525",
+      "count": 12,
+      "files": [
+        "src/app/globals.css",
+        "src/components/config/HeroPortalPreview.tsx",
+        "src/components/config/PortalCursorForm.tsx",
+        "src/styles/hero-premium.css",
+        "src/styles/home-premium/compat.css",
+        "src/styles/home-premium/cta-home.css",
+        "src/styles/home-premium/hero-home.css",
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "color": "#061f35",
+      "count": 6,
+      "files": [
+        "src/app/globals.css",
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#5c7289",
+      "count": 6,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css",
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#0577b8",
+      "count": 6,
+      "files": [
+        "src/lib/portal/cursor-defaults.ts",
+        "src/styles/cursor.css",
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#475a6e",
+      "count": 5,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#141f29",
+      "count": 5,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/lib/cms/defaults.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#c5d3df",
+      "count": 4,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "color": "#d1d9e0",
+      "count": 4,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#6b7280",
+      "count": 3,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "color": "#10b981",
+      "count": 3,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "color": "#d8e2ea",
+      "count": 2,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "color": "#f8fafc",
+      "count": 2,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "color": "#0ea5c9",
+      "count": 2,
+      "files": [
+        "src/app/globals.css",
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#003b73",
+      "count": 2,
+      "files": [
+        "src/components/config/ColorPicker.tsx",
+        "src/components/menu/MenuItemEditor.tsx"
+      ]
+    },
+    {
+      "color": "#062a42",
+      "count": 2,
+      "files": [
+        "src/components/config/PortalCursorForm.tsx",
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#f59e0b",
+      "count": 2,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "color": "#64748b",
+      "count": 2,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "color": "#b42318",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#f5f7f9",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#e8ecf0",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#a8b5c2",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#7a8fa3",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#354656",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#243340",
+      "count": 2,
+      "files": [
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "color": "#c9a227",
+      "count": 2,
+      "files": [
+        "src/lib/content/seed.ts",
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "color": "#e8edf2",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "color": "#dde5ec",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "color": "#2563eb",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "color": "#94a3b8",
+      "count": 1,
+      "files": [
+        "src/components/workflow/WorkflowAdminClient.tsx"
+      ]
+    },
+    {
+      "color": "#3b82f6",
+      "count": 1,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "color": "#053049",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#073654",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#082b47",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#fff4cc",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "color": "#f4f6f9",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "color": "#0a2540",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "color": "#b8921f",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "color": "#1a8a7a",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    }
+  ],
+  "neutral": [
+    {
+      "color": "#ffffff",
+      "count": 37,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/lib/cms/defaults.ts",
+        "src/styles/cursor.css",
+        "src/styles/design-tokens.css",
+        "src/styles/hero-premium.css",
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "color": "#000000",
+      "count": 4,
+      "files": [
+        "src/app/globals.css",
+        "src/styles/hero-premium.css",
+        "src/styles/home-premium/programs-home.css"
+      ]
+    }
+  ],
+  "tailwind": [
+    {
+      "class": "border-zinc-200",
+      "count": 26,
+      "files": [
+        "src/components/config/ColorPicker.tsx",
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/media/MediaLibraryClient.tsx",
+        "src/components/menu/IconSelector.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuItemEditor.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuLocationSelector.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/menu/MenuSortableList.tsx",
+        "src/components/menu/MenuTargetSelector.tsx",
+        "src/components/menu/MenuTree.tsx",
+        "src/components/menu/MenuTypeSelector.tsx",
+        "src/components/navigation/NavMenu.tsx",
+        "src/components/navigation/SiteFooter.tsx",
+        "src/components/navigation/SiteHeader.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-500",
+      "count": 23,
+      "files": [
+        "src/app/admin/config/page.tsx",
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/media/MediaLibraryClient.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "bg-zinc-900",
+      "count": 20,
+      "files": [
+        "src/components/config/ColorPicker.tsx",
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/media/MediaLibraryClient.tsx",
+        "src/components/menu/IconSelector.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuItemEditor.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuLocationSelector.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/menu/MenuSortableList.tsx",
+        "src/components/menu/MenuTargetSelector.tsx",
+        "src/components/menu/MenuTree.tsx",
+        "src/components/menu/MenuTypeSelector.tsx"
+      ]
+    },
+    {
+      "class": "border-zinc-800",
+      "count": 17,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/media/MediaLibraryClient.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/menu/MenuSortableList.tsx",
+        "src/components/navigation/NavMenu.tsx",
+        "src/components/navigation/SiteFooter.tsx",
+        "src/components/navigation/SiteHeader.tsx"
+      ]
+    },
+    {
+      "class": "bg-zinc-100",
+      "count": 11,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/menu/IconSelector.tsx",
+        "src/components/menu/MenuBadge.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuTree.tsx",
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "border-zinc-700",
+      "count": 10,
+      "files": [
+        "src/components/config/ColorPicker.tsx",
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/menu/IconSelector.tsx",
+        "src/components/menu/MenuItemEditor.tsx",
+        "src/components/menu/MenuLocationSelector.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/menu/MenuTargetSelector.tsx",
+        "src/components/menu/MenuTree.tsx",
+        "src/components/menu/MenuTypeSelector.tsx"
+      ]
+    },
+    {
+      "class": "bg-zinc-950",
+      "count": 10,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/media/MediaLibraryClient.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/menu/MenuSortableList.tsx",
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "text-red-600",
+      "count": 10,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/events/EventsAdminClient.tsx",
+        "src/components/identity/LoginForm.tsx",
+        "src/components/identity/TeamSettingsClient.tsx",
+        "src/components/media/MediaDetails.tsx",
+        "src/components/media/MediaDropzone.tsx",
+        "src/components/media/MediaListTable.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-900",
+      "count": 9,
+      "files": [
+        "src/app/admin/config/page.tsx",
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/menu/IconSelector.tsx",
+        "src/components/menu/MenuTree.tsx",
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "bg-zinc-50",
+      "count": 9,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/media/MediaLibraryClient.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-400",
+      "count": 9,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/config/SeoEditor.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuLocationSelector.tsx",
+        "src/components/menu/MenuPreview.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "bg-red-50",
+      "count": 8,
+      "files": [
+        "src/components/config/ConfigurationHub.tsx",
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuListClient.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "text-red-700",
+      "count": 7,
+      "files": [
+        "src/components/config/ConfigurationHub.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/media/MediaCard.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuListClient.tsx"
+      ]
+    },
+    {
+      "class": "border-red-200",
+      "count": 6,
+      "files": [
+        "src/components/config/ConfigurationHub.tsx",
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentHubClient.tsx",
+        "src/components/content/ContentListClient.tsx",
+        "src/components/menu/MenuEditorClient.tsx",
+        "src/components/menu/MenuListClient.tsx"
+      ]
+    },
+    {
+      "class": "bg-zinc-800",
+      "count": 6,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/menu/MenuTree.tsx",
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "bg-amber-50",
+      "count": 4,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/identity/TeamSettingsClient.tsx",
+        "src/components/media/MediaDetails.tsx",
+        "src/components/media/MediaManager.tsx"
+      ]
+    },
+    {
+      "class": "text-amber-500",
+      "count": 4,
+      "files": [
+        "src/components/media/MediaCard.tsx",
+        "src/components/media/MediaDetails.tsx",
+        "src/components/media/MediaListTable.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-600",
+      "count": 3,
+      "files": [
+        "src/app/admin/config/page.tsx",
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/menu/MenuBadge.tsx"
+      ]
+    },
+    {
+      "class": "text-amber-700",
+      "count": 3,
+      "files": [
+        "src/app/admin/login/page.tsx",
+        "src/components/media/MediaDetails.tsx",
+        "src/components/media/MediaDropzone.tsx"
+      ]
+    },
+    {
+      "class": "bg-amber-950/30",
+      "count": 3,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/media/MediaDetails.tsx",
+        "src/components/media/MediaManager.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-100",
+      "count": 3,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "border-amber-200",
+      "count": 3,
+      "files": [
+        "src/components/identity/TeamSettingsClient.tsx",
+        "src/components/media/MediaDetails.tsx",
+        "src/components/media/MediaManager.tsx"
+      ]
+    },
+    {
+      "class": "bg-emerald-100",
+      "count": 3,
+      "files": [
+        "src/components/media/MediaCard.tsx",
+        "src/components/media/MediaListTable.tsx",
+        "src/components/menu/MenuListClient.tsx"
+      ]
+    },
+    {
+      "class": "bg-gray-100",
+      "count": 3,
+      "files": [
+        "src/components/ui/badge.tsx",
+        "src/components/ui/button.tsx"
+      ]
+    },
+    {
+      "class": "text-gray-300",
+      "count": 3,
+      "files": [
+        "src/components/ui/footer.tsx",
+        "src/components/ui/hero.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-50",
+      "count": 2,
+      "files": [
+        "src/app/admin/config/page.tsx",
+        "src/components/config/ConfigurationLayout.tsx"
+      ]
+    },
+    {
+      "class": "text-emerald-600",
+      "count": 2,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/menu/MenuEditorClient.tsx"
+      ]
+    },
+    {
+      "class": "text-amber-600",
+      "count": 2,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx",
+        "src/components/menu/MenuEditorClient.tsx"
+      ]
+    },
+    {
+      "class": "bg-emerald-950/30",
+      "count": 2,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/media/MediaOptimizationInfo.tsx"
+      ]
+    },
+    {
+      "class": "bg-red-950/30",
+      "count": 2,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "border-zinc-300",
+      "count": 2,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-800",
+      "count": 2,
+      "files": [
+        "src/components/content/ContentEditorClient.tsx",
+        "src/components/content/ContentListClient.tsx"
+      ]
+    },
+    {
+      "class": "text-amber-900",
+      "count": 2,
+      "files": [
+        "src/components/identity/TeamSettingsClient.tsx",
+        "src/components/media/MediaManager.tsx"
+      ]
+    },
+    {
+      "class": "text-emerald-800",
+      "count": 2,
+      "files": [
+        "src/components/media/MediaCard.tsx",
+        "src/components/media/MediaListTable.tsx"
+      ]
+    },
+    {
+      "class": "bg-emerald-950/50",
+      "count": 2,
+      "files": [
+        "src/components/media/MediaCard.tsx",
+        "src/components/media/MediaListTable.tsx"
+      ]
+    },
+    {
+      "class": "text-emerald-300",
+      "count": 2,
+      "files": [
+        "src/components/media/MediaCard.tsx",
+        "src/components/media/MediaListTable.tsx"
+      ]
+    },
+    {
+      "class": "border-amber-900",
+      "count": 2,
+      "files": [
+        "src/components/media/MediaDetails.tsx",
+        "src/components/media/MediaManager.tsx"
+      ]
+    },
+    {
+      "class": "text-emerald-700",
+      "count": 2,
+      "files": [
+        "src/components/media/MediaDropzone.tsx",
+        "src/components/menu/MenuListClient.tsx"
+      ]
+    },
+    {
+      "class": "border-zinc-900",
+      "count": 2,
+      "files": [
+        "src/components/menu/IconSelector.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "border-zinc-100",
+      "count": 2,
+      "files": [
+        "src/components/menu/IconSelector.tsx",
+        "src/components/menu/MenuSortableList.tsx"
+      ]
+    },
+    {
+      "class": "border-red-900",
+      "count": 1,
+      "files": [
+        "src/components/config/ConfigurationHub.tsx"
+      ]
+    },
+    {
+      "class": "bg-red-950/40",
+      "count": 1,
+      "files": [
+        "src/components/config/ConfigurationHub.tsx"
+      ]
+    },
+    {
+      "class": "text-red-300",
+      "count": 1,
+      "files": [
+        "src/components/config/ConfigurationHub.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-300",
+      "count": 1,
+      "files": [
+        "src/components/config/ConfigurationLayout.tsx"
+      ]
+    },
+    {
+      "class": "border-emerald-500",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "class": "bg-emerald-50",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "class": "border-amber-500",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "class": "border-red-500",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "class": "divide-zinc-200",
+      "count": 1,
+      "files": [
+        "src/components/content/ContentListClient.tsx"
+      ]
+    },
+    {
+      "class": "divide-zinc-800",
+      "count": 1,
+      "files": [
+        "src/components/content/ContentListClient.tsx"
+      ]
+    },
+    {
+      "class": "text-blue-600",
+      "count": 1,
+      "files": [
+        "src/components/content/ContentListClient.tsx"
+      ]
+    },
+    {
+      "class": "text-green-600",
+      "count": 1,
+      "files": [
+        "src/components/experience/forms/FormEditorClient.tsx"
+      ]
+    },
+    {
+      "class": "bg-red-100",
+      "count": 1,
+      "files": [
+        "src/components/media/MediaCard.tsx"
+      ]
+    },
+    {
+      "class": "text-amber-200",
+      "count": 1,
+      "files": [
+        "src/components/media/MediaManager.tsx"
+      ]
+    },
+    {
+      "class": "border-emerald-200",
+      "count": 1,
+      "files": [
+        "src/components/media/MediaOptimizationInfo.tsx"
+      ]
+    },
+    {
+      "class": "bg-emerald-50/80",
+      "count": 1,
+      "files": [
+        "src/components/media/MediaOptimizationInfo.tsx"
+      ]
+    },
+    {
+      "class": "border-emerald-900",
+      "count": 1,
+      "files": [
+        "src/components/media/MediaOptimizationInfo.tsx"
+      ]
+    },
+    {
+      "class": "text-emerald-900",
+      "count": 1,
+      "files": [
+        "src/components/media/MediaOptimizationInfo.tsx"
+      ]
+    },
+    {
+      "class": "text-emerald-200",
+      "count": 1,
+      "files": [
+        "src/components/media/MediaOptimizationInfo.tsx"
+      ]
+    },
+    {
+      "class": "border-zinc-400",
+      "count": 1,
+      "files": [
+        "src/components/menu/IconSelector.tsx"
+      ]
+    },
+    {
+      "class": "bg-amber-100",
+      "count": 1,
+      "files": [
+        "src/components/menu/MenuBadge.tsx"
+      ]
+    },
+    {
+      "class": "text-amber-800",
+      "count": 1,
+      "files": [
+        "src/components/menu/MenuBadge.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-700",
+      "count": 1,
+      "files": [
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "text-zinc-200",
+      "count": 1,
+      "files": [
+        "src/components/navigation/NavMenu.tsx"
+      ]
+    },
+    {
+      "class": "bg-zinc-950/95",
+      "count": 1,
+      "files": [
+        "src/components/navigation/SiteHeader.tsx"
+      ]
+    },
+    {
+      "class": "text-gray-700",
+      "count": 1,
+      "files": [
+        "src/components/ui/badge.tsx"
+      ]
+    },
+    {
+      "class": "border-gray-200",
+      "count": 1,
+      "files": [
+        "src/components/ui/badge.tsx"
+      ]
+    },
+    {
+      "class": "border-gray-700",
+      "count": 1,
+      "files": [
+        "src/components/ui/footer.tsx"
+      ]
+    },
+    {
+      "class": "text-gray-400",
+      "count": 1,
+      "files": [
+        "src/components/ui/footer.tsx"
+      ]
+    },
+    {
+      "class": "bg-gray-200",
+      "count": 1,
+      "files": [
+        "src/components/ui/skeleton.tsx"
+      ]
+    },
+    {
+      "class": "bg-gray-300",
+      "count": 1,
+      "files": [
+        "src/components/ui/switch.tsx"
+      ]
+    }
+  ],
+  "cssVars": [
+    {
+      "var": "--color-secondary",
+      "count": 28,
+      "files": [
+        "src/app/globals.css",
+        "src/components/portal/cards/AcademicAgendaCard.tsx",
+        "src/design/tokens/colors.ts",
+        "src/styles/cta-premium.css",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-primary",
+      "count": 23,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/cta-premium.css",
+        "src/styles/design-tokens.css",
+        "src/styles/foundation/buttons.css"
+      ]
+    },
+    {
+      "var": "--fp-navy",
+      "count": 23,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--cursor-size",
+      "count": 20,
+      "files": [
+        "src/components/config/PortalCursorForm.tsx",
+        "src/lib/cursor/cursor-engine.ts",
+        "src/styles/cursor.css"
+      ]
+    },
+    {
+      "var": "--color-accent",
+      "count": 16,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css",
+        "src/styles/hero-premium.css",
+        "src/styles/home-premium/cta-home.css"
+      ]
+    },
+    {
+      "var": "--fp-gold",
+      "count": 15,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--cursor-primary",
+      "count": 11,
+      "files": [
+        "src/components/config/PortalCursorForm.tsx",
+        "src/lib/cursor/cursor-engine.ts",
+        "src/styles/cursor.css"
+      ]
+    },
+    {
+      "var": "--color-background",
+      "count": 10,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-surface",
+      "count": 9,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/cta-premium.css",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-foreground",
+      "count": 8,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-warning",
+      "count": 6,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-muted",
+      "count": 6,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-border",
+      "count": 6,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--fp-surface",
+      "count": 6,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--color-success",
+      "count": 5,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--cursor-secondary",
+      "count": 5,
+      "files": [
+        "src/components/config/PortalCursorForm.tsx",
+        "src/lib/cursor/cursor-engine.ts",
+        "src/styles/cursor.css"
+      ]
+    },
+    {
+      "var": "--cursor-opacity",
+      "count": 5,
+      "files": [
+        "src/components/config/PortalCursorForm.tsx",
+        "src/lib/cursor/cursor-engine.ts",
+        "src/styles/cursor.css"
+      ]
+    },
+    {
+      "var": "--fp-teal",
+      "count": 5,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--fp-blue",
+      "count": 5,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--color-danger",
+      "count": 4,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-info",
+      "count": 4,
+      "files": [
+        "src/app/globals.css",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--brand-background",
+      "count": 4,
+      "files": [
+        "src/app/layout.tsx",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--brand-primary",
+      "count": 3,
+      "files": [
+        "src/app/layout.tsx",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--brand-secondary",
+      "count": 3,
+      "files": [
+        "src/app/layout.tsx",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--brand-text",
+      "count": 3,
+      "files": [
+        "src/app/layout.tsx",
+        "src/design/tokens/colors.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-primary-default",
+      "count": 3,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-secondary-default",
+      "count": 3,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-surface-default",
+      "count": 3,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-background-default",
+      "count": 3,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-foreground-default",
+      "count": 3,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--fp-surface-elevated",
+      "count": 3,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--fp-shadow",
+      "count": 3,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--fp-shadow-hover",
+      "count": 3,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--fp-radius",
+      "count": 3,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--fp-radius-sm",
+      "count": 3,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--accent-",
+      "count": 2,
+      "files": [
+        "src/components/portal/home/programs/ProgramMiniCard.tsx"
+      ]
+    },
+    {
+      "var": "--color-accent-default",
+      "count": 2,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-success-default",
+      "count": 2,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-warning-default",
+      "count": 2,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-danger-default",
+      "count": 2,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-info-default",
+      "count": 2,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-border-default",
+      "count": 2,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--color-muted-default",
+      "count": 2,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "var": "--fp-navy-soft",
+      "count": 2,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--fp-gold-hover",
+      "count": 2,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--accent-teal",
+      "count": 2,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--accent-blue",
+      "count": 2,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "var": "--color-light",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-background-soft",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-background-muted",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-text-inverse",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-border-strong",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-50",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-100",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-200",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-300",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-400",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-500",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-600",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-700",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-800",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--color-gray-900",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "var": "--cursor-speed",
+      "count": 1,
+      "files": [
+        "src/lib/cursor/cursor-engine.ts"
+      ]
+    },
+    {
+      "var": "--cursor-magnet",
+      "count": 1,
+      "files": [
+        "src/lib/cursor/cursor-engine.ts"
+      ]
+    }
+  ],
+  "rgb": [
+    {
+      "value": "rgb(0, 0, 0, 0.22)",
+      "count": 3,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255 255 255 / 0.1)",
+      "count": 3,
+      "files": [
+        "src/styles/home-premium/cta-home.css",
+        "src/styles/home-premium/hero-home.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.32)",
+      "count": 2,
+      "files": [
+        "src/app/globals.css",
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 42, 71, 0.03)",
+      "count": 2,
+      "files": [
+        "src/design/tokens/shadow.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 42, 71, 0.04)",
+      "count": 2,
+      "files": [
+        "src/design/tokens/shadow.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 42, 71, 0.06)",
+      "count": 2,
+      "files": [
+        "src/design/tokens/shadow.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 42, 71, 0.08)",
+      "count": 2,
+      "files": [
+        "src/design/tokens/shadow.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 42, 71, 0.1)",
+      "count": 2,
+      "files": [
+        "src/design/tokens/shadow.ts",
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(255 255 255 / 0.06)",
+      "count": 2,
+      "files": [
+        "src/styles/home-premium/cta-home.css"
+      ]
+    },
+    {
+      "value": "rgb(255 255 255 / 0.12)",
+      "count": 2,
+      "files": [
+        "src/styles/home-premium/cta-home.css",
+        "src/styles/home-premium/hero-home.css"
+      ]
+    },
+    {
+      "value": "rgb(6, 31, 53, 0.08)",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "value": "rgb(6, 31, 53, 0.06)",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 0, 0, 0.15)",
+      "count": 1,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 0, 0, 0.2)",
+      "count": 1,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 0, 0, 0.25)",
+      "count": 1,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 0, 0, 0.3)",
+      "count": 1,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 0, 0, 0.35)",
+      "count": 1,
+      "files": [
+        "src/styles/design-tokens.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.22)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.07)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(5, 119, 184, 0.26)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(12, 108, 104, 0.42)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(8, 82, 88, 0.38)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.14)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.55)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.65)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.35)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.45)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(230, 240, 248, 0.92)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(5, 119, 184, 0.16)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.42)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(5, 119, 184, 0.22)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255, 255, 255, 0.32)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255, 255, 255, 0.06)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255, 255, 255, 0.48)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255, 255, 255, 0.38)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255, 255, 255, 0.04)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255, 255, 255, 0.97)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255, 255, 255, 0.95)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(0, 0, 0, 0.08)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(20, 201, 195, 0.58)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(230, 240, 248, 0.78)",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "rgb(255 255 255 / 0.14)",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/cta-home.css"
+      ]
+    },
+    {
+      "value": "rgb(0 0 0 / 0.22)",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/cta-home.css"
+      ]
+    },
+    {
+      "value": "rgb(255 255 255 / 0.88)",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/cta-home.css"
+      ]
+    },
+    {
+      "value": "rgb(255 255 255 / 0.9)",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/cta-home.css"
+      ]
+    },
+    {
+      "value": "rgb(0 0 0 / 0.28)",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/hero-home.css"
+      ]
+    },
+    {
+      "value": "rgb(4 21 37 / 0.45)",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/hero-home.css"
+      ]
+    }
+  ],
+  "inline": [
+    {
+      "value": "background: \"primary",
+      "count": 4,
+      "files": [
+        "src/components/portal/blocks/CtaBlockSection.tsx",
+        "src/components/portal/experience/cta-premium/AdmissionCTA.tsx",
+        "src/lib/cms/page-defaults.ts",
+        "src/lib/portal/institutional-demo.ts"
+      ]
+    },
+    {
+      "value": "color: \"#6b7280",
+      "count": 3,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "value": "color: \"#10b981",
+      "count": 3,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "value": "color: \"#002A47",
+      "count": 3,
+      "files": [
+        "src/lib/cms/hero-portal-defaults.ts",
+        "src/lib/content/seed.ts"
+      ]
+    },
+    {
+      "value": "color: \"#f59e0b",
+      "count": 2,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "value": "color: \"#64748b",
+      "count": 2,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "value": "background: \"gradient",
+      "count": 2,
+      "files": [
+        "src/lib/cms/page-defaults.ts"
+      ]
+    },
+    {
+      "value": "color: #fff;\n  transition:\n    transform var(--motion-duration-normal) var(--hom",
+      "count": 2,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "value": "background: #ffffff;\r\n  border-bottom: 1px solid #e8edf2;\r\n  box-shadow: 0 4px 2",
+      "count": 1,
+      "files": [
+        "src/app/globals.css"
+      ]
+    },
+    {
+      "value": "background: \"linear-gradient(135deg, #041525 0%, #062a42 100%)",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalCursorForm.tsx"
+      ]
+    },
+    {
+      "value": "color: \"border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "value": "color: \"border-amber-500 bg-amber-50 dark:bg-amber-950/30",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "value": "color: \"border-red-500 bg-red-50 dark:bg-red-950/30",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "value": "color\n                  : \"border-zinc-200 hover:border-zinc-300 dark:border-zin",
+      "count": 1,
+      "files": [
+        "src/components/config/PortalStatusCard.tsx"
+      ]
+    },
+    {
+      "value": "backgroundColor: `${color}22",
+      "count": 1,
+      "files": [
+        "src/components/menu/MenuBadge.tsx"
+      ]
+    },
+    {
+      "value": "background:\n            \"radial-gradient(ellipse at top right, var(--accent), tr",
+      "count": 1,
+      "files": [
+        "src/components/ui/hero.tsx"
+      ]
+    },
+    {
+      "value": "color: \"#3b82f6",
+      "count": 1,
+      "files": [
+        "src/core/workflow/definitions/defaults.ts"
+      ]
+    },
+    {
+      "value": "background: \"#FFFFFF",
+      "count": 1,
+      "files": [
+        "src/design/tokens/colors.ts"
+      ]
+    },
+    {
+      "value": "background: \"--color-background",
+      "count": 1,
+      "files": [
+        "src/design/tokens/colors.ts"
+      ]
+    },
+    {
+      "value": "background: \"--brand-background",
+      "count": 1,
+      "files": [
+        "src/design/tokens/colors.ts"
+      ]
+    },
+    {
+      "value": "backgroundColor: \"#FFFFFF",
+      "count": 1,
+      "files": [
+        "src/lib/cms/defaults.ts"
+      ]
+    },
+    {
+      "value": "color: \"#246AA1",
+      "count": 1,
+      "files": [
+        "src/lib/content/seed.ts"
+      ]
+    },
+    {
+      "value": "color: \"#C9A227",
+      "count": 1,
+      "files": [
+        "src/lib/content/seed.ts"
+      ]
+    },
+    {
+      "value": "color: #ffffff;\n  opacity: 0;\n  transform: scale(0.6);\n  transition: opacity 0.2",
+      "count": 1,
+      "files": [
+        "src/styles/cursor.css"
+      ]
+    },
+    {
+      "value": "color: #041525;\n  background-image:\n    radial-gradient(ellipse 130% 100% at 18%",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "color: #14c9c3;\n}\n\n.hero-premium__title {\n  font-size: var(--hero-title-size);\n ",
+      "count": 1,
+      "files": [
+        "src/styles/hero-premium.css"
+      ]
+    },
+    {
+      "value": "color: #041525;\n}\n\n.portal-home-experience [data-block=",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/hero-home.css"
+      ]
+    },
+    {
+      "value": "color: #fff;\n}\n\n.portal-home-experience [data-block=",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    },
+    {
+      "value": "background: #fff;\n}\n\n.portal-home-experience [data-block=",
+      "count": 1,
+      "files": [
+        "src/styles/home-premium/programs-home.css"
+      ]
+    }
+  ]
+}

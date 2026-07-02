@@ -128,11 +128,11 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="min-h-screen bg-background-soft dark:bg-gray-900">
+      <header className="border-b border-border bg-background dark:border-gray-700 dark:bg-gray-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">CMS</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted">CMS</p>
             <h1 className="text-xl font-semibold">Menús</h1>
           </div>
           <div className="flex gap-2">
@@ -148,7 +148,7 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {error ? (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
             {error}
           </div>
         ) : null}
@@ -192,8 +192,8 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                     menu.active
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-zinc-100 text-zinc-500"
+                      ? "bg-success/15 text-success"
+                      : "bg-background-muted text-muted"
                   }`}
                 >
                   {menu.active ? "Activo" : "Inactivo"}
@@ -218,7 +218,7 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
         </div>
 
         {menus.length === 0 ? (
-          <p className="mt-8 text-center text-sm text-zinc-500">
+          <p className="mt-8 text-center text-sm text-muted">
             No hay menús. Crea uno o inicializa los predeterminados.
           </p>
         ) : null}

@@ -75,6 +75,33 @@ export async function scanBranding(
     });
   }
 
+  for (const [index, slide] of config.heroPortal?.slides?.entries() ?? []) {
+    pushRef(results, tenant, slide.multimedia.desktopMediaId, undefined, {
+      module: "cms_config",
+      entityId: "site",
+      field: `heroPortal.slides[${index}].multimedia.desktopMediaId`,
+      label: `Hero del Portal — Slide ${index + 1} (escritorio)`,
+    });
+    pushRef(results, tenant, slide.multimedia.mobileMediaId, undefined, {
+      module: "cms_config",
+      entityId: "site",
+      field: `heroPortal.slides[${index}].multimedia.mobileMediaId`,
+      label: `Hero del Portal — Slide ${index + 1} (móvil)`,
+    });
+    pushRef(results, tenant, slide.institutionalVideo.mediaId, undefined, {
+      module: "cms_config",
+      entityId: "site",
+      field: `heroPortal.slides[${index}].institutionalVideo.mediaId`,
+      label: `Hero del Portal — Slide ${index + 1} (video)`,
+    });
+    pushRef(results, tenant, slide.seo.imageMediaId, undefined, {
+      module: "cms_config",
+      entityId: "site",
+      field: `heroPortal.slides[${index}].seo.imageMediaId`,
+      label: `Hero del Portal — Slide ${index + 1} (SEO)`,
+    });
+  }
+
   return resolveLegacyRefs(tenant, results);
 }
 
@@ -185,6 +212,38 @@ export function scanEvents(tenant: string): Promise<UsageScanResult[]> {
       label: `Evento — ${doc.title}`,
     },
   ]);
+}
+
+export function scanAcademicAgenda(tenant: string): Promise<UsageScanResult[]> {
+  return scanContentCollection(tenant, "content_academic_agenda", "content_academic_agenda", (doc) => [
+    {
+      mediaId: doc.featuredMediaId ?? doc.imageMediaId,
+      legacyUrl: doc.image,
+      field: "imageMediaId",
+      label: `Agenda — ${doc.title}`,
+    },
+  ]);
+}
+
+export function scanInstitutionalNotices(tenant: string): Promise<UsageScanResult[]> {
+  return scanContentCollection(
+    tenant,
+    "content_institutional_notices",
+    "content_institutional_notices",
+    (doc) => [
+      {
+        mediaId: doc.featuredMediaId ?? doc.imageMediaId,
+        legacyUrl: doc.image,
+        field: "imageMediaId",
+        label: `Aviso — ${doc.title}`,
+      },
+      {
+        mediaId: doc.attachmentMediaId,
+        field: "attachmentMediaId",
+        label: `Aviso adjunto — ${doc.title}`,
+      },
+    ]
+  );
 }
 
 export function scanTeam(tenant: string): Promise<UsageScanResult[]> {

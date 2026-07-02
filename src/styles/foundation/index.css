@@ -1,0 +1,18 @@
+/**
+ * OT-UX-FOUNDATION-001 — Responsive Foundation & Design System
+ * Capa visual definitiva AprendeHoy. Importar después de design-tokens.css.
+ */
+
+@import "./tokens.css";
+@import "./breakpoints.css";
+@import "./spacing.css";
+@import "./typography.css";
+@import "./containers.css";
+@import "./grid.css";
+@import "./buttons.css";
+@import "./cards.css";
+@import "./media.css";
+@import "./motion.css";
+@import "./hero.css";
+@import "./sections.css";
+@import "./utilities.css";

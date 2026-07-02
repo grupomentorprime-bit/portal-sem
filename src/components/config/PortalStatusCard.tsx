@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { adminUi } from "@/lib/admin/admin-ui";
 import { cn } from "@/lib/utils";
 import type { Institution, SiteConfig } from "@/types/cms";
 
@@ -20,19 +21,19 @@ const statusOptions: Array<{
     value: "active",
     label: "Activo",
     description: "El portal es visible y accesible públicamente.",
-    color: "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30",
+    color: adminUi.statusActive,
   },
   {
     value: "maintenance",
     label: "Mantenimiento",
     description: "El portal muestra modo mantenimiento. SEO desindexado.",
-    color: "border-amber-500 bg-amber-50 dark:bg-amber-950/30",
+    color: adminUi.statusWarning,
   },
   {
     value: "inactive",
     label: "Inactivo",
     description: "Portal deshabilitado. No indexable por buscadores.",
-    color: "border-red-500 bg-red-50 dark:bg-red-950/30",
+    color: adminUi.statusDanger,
   },
 ];
 
@@ -61,11 +62,11 @@ export function PortalStatusCard({
                 "rounded-xl border-2 p-4 text-left transition",
                 institution.status === option.value
                   ? option.color
-                  : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
+                  : adminUi.statusIdle
               )}
             >
-              <p className="font-medium text-zinc-900 dark:text-zinc-100">{option.label}</p>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className={cn("font-medium", adminUi.metaValue)}>{option.label}</p>
+              <p className={cn("mt-1 text-sm", adminUi.mutedText)}>
                 {option.description}
               </p>
             </button>
@@ -92,9 +93,9 @@ export function PortalStatusCard({
 
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-      <dt className="text-xs uppercase tracking-wide text-zinc-500">{label}</dt>
-      <dd className="mt-1 font-medium text-zinc-900 dark:text-zinc-100">{value}</dd>
+    <div className={cn("rounded-lg border p-3", adminUi.card)}>
+      <dt className={adminUi.metaLabel}>{label}</dt>
+      <dd className={adminUi.metaValue}>{value}</dd>
     </div>
   );
 }

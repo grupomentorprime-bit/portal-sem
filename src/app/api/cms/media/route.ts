@@ -10,6 +10,9 @@ import {
   validateMediaUpload,
 } from "@/lib/cms/media-validation";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { requirePermission } from "@/core/identity";
+import { writeMediaAudit } from "@/lib/cms/media-audit";
+import { buildOptimizationSummary } from "@/lib/cms/media-optimization";
 import type { MediaFolder, MediaListQuery } from "@/types/media";
 
 export async function GET(request: Request) {
@@ -34,6 +37,13 @@ export async function GET(request: Request) {
     if (searchParams.get("tags")) {
       query.tags = searchParams.get("tags")!.split(",").map((t) => t.trim());
     }
+    if (searchParams.get("favorite") === "true") {
+      query.favorite = true;
+    }
+    const usageFilter = searchParams.get("usageFilter");
+    if (usageFilter === "inUse" || usageFilter === "noUse") {
+      query.usageFilter = usageFilter;
+    }
 
     const errors = validateMediaListQuery(query);
     if (errors.length > 0) {
@@ -54,10 +64,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const denied = await authorizeApiWrite("cms.media.upload", {
-      action: "media.upload",
-      entity: "cms_media",
-    });
+    const denied = await authorizeApiWrite("cms.media.upload");
     if (denied) return denied;
 
     const formData = await request.formData();
@@ -102,7 +109,30 @@ export async function POST(request: Request) {
       createdBy: String(formData.get("createdBy") ?? "admin"),
     });
 
-    return NextResponse.json({ ok: true, media: asset }, { status: 201 });
+    const ctx = await requirePermission("cms.media.upload");
+    if (!(ctx instanceof NextResponse) && !ctx.compatMode) {
+      await writeMediaAudit({
+        tenantId: tenant,
+        userId: ctx.user._id,
+        action: "media.upload",
+        mediaId: asset._id,
+        metadata: {
+          filename: file.name,
+          folder: asset.folder,
+          mimeType,
+          size: buffer.length,
+        },
+      });
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        media: asset,
+        optimization: buildOptimizationSummary(asset, buffer.length),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(

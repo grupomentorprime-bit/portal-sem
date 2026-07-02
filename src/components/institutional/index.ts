@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * portal/* (ver CORE-UI-CANON.md)
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 export { HomeInstitutional } from "./HomeInstitutional";
 export { CTASection } from "./CTASection";
 export { EventCard } from "./EventCard";

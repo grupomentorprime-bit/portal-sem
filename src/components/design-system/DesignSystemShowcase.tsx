@@ -1,5 +1,7 @@
 "use client";
 
+import { ComponentSpecPanel } from "@/components/design-system/ComponentSpecPanel";
+import { getComponentSpec } from "@/components/design-system/component-specs";
 import {
   Accordion,
   AccordionItem,
@@ -47,6 +49,9 @@ import {
   VerseBlock,
 } from "@/components/institutional";
 import { Container, Grid, Section, Spacer, Stack } from "@/components/layout";
+import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
+import { PortalTimeline } from "@/components/portal/experience/timeline";
+import type { PortalTimelineItem } from "@/types/timeline";
 import { colors } from "@/design";
 import {
   HOME_EVENTS,
@@ -84,7 +89,18 @@ const graySwatches = Object.entries(colors.gray).map(([shade, value]) => ({
   value,
 }));
 
-export function DesignSystemShowcase() {
+const demoTimelineItems: PortalTimelineItem[] = [
+  { id: "1", step: 1, title: "Solicitud", description: "Completa el formulario.", order: 0, status: "completed" },
+  { id: "2", step: 2, title: "Revisión", description: "Evaluación documental.", order: 1, status: "active" },
+  { id: "3", step: 3, title: "Entrevista", order: 2, status: "upcoming" },
+  { id: "4", step: 4, title: "Admisión", order: 3, status: "pending" },
+];
+
+interface DesignSystemShowcaseProps {
+  variant?: "internal" | "legacy";
+}
+
+export function DesignSystemShowcase({ variant = "internal" }: DesignSystemShowcaseProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [switchOn, setSwitchOn] = useState(true);
@@ -104,13 +120,25 @@ export function DesignSystemShowcase() {
       />
 
       <Hero
-        subtitle="OT-SEM-DESIGN-001"
-        title="Design System Institucional v1.0"
-        description="Catálogo visual oficial del Seminario Eclesiástico Mayor. Todos los componentes consumen tokens y variables CSS del Manual de Marca."
+        subtitle="OT-BRANDING-005 · Experience Kit v1.0"
+        title="Catálogo visual del Design System"
+        description="Componentes, variantes, estados y tokens corporativos SEM. Documentación en docs/design/."
         primaryCta={{ label: "Explorar componentes", href: "#componentes" }}
-        secondaryCta={{ label: "Documentación", href: "#docs" }}
+        secondaryCta={{ label: "Guía de contribución", href: "#docs" }}
         align="center"
       />
+
+      {variant === "internal" ? (
+        <Section padding="sm">
+          <Container size="md">
+            <p className="rounded-lg border border-border bg-background-soft px-4 py-3 text-center text-sm text-muted">
+              Ruta interna: <code className="font-mono text-foreground">/internal/design-system</code>
+              {" · "}
+              Checklist PR: <code className="font-mono text-foreground">docs/design/PULL_REQUEST_CHECKLIST.md</code>
+            </p>
+          </Container>
+        </Section>
+      ) : null}
 
       <Section id="colores" padding="lg">
         <Container>
@@ -152,7 +180,7 @@ export function DesignSystemShowcase() {
         <Container>
           <SectionHeader title="Componentes" description="Biblioteca completa de UI institucional." />
 
-          <ShowcaseBlock title="Botones">
+          <ShowcaseBlock title="Botones" specId="button">
             <Grid cols={2} mdCols={3} lgCols={6} gap={4}>
               {buttonVariants.map((variant) => (
                 <Button key={variant} variant={variant}>
@@ -169,7 +197,7 @@ export function DesignSystemShowcase() {
             </Stack>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="Cards">
+          <ShowcaseBlock title="Cards" specId="card">
             <Grid cols={1} mdCols={2} lgCols={4} gap={4}>
               <Card variant="default">
                 <CardHeader>
@@ -198,7 +226,7 @@ export function DesignSystemShowcase() {
             </Grid>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="Badges">
+          <ShowcaseBlock title="Badges" specId="badge">
             <Stack direction="horizontal" gap={2} className="flex-wrap">
               <Badge variant="success">Success</Badge>
               <Badge variant="warning">Warning</Badge>
@@ -208,13 +236,13 @@ export function DesignSystemShowcase() {
             </Stack>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="Alertas">
+          <ShowcaseBlock title="Alertas / Toast" specId="alert">
             <Stack gap={4}>
               <Alert variant="info" title="Información">
                 Mensaje informativo para el usuario.
               </Alert>
-              <Alert variant="success" title="Éxito">
-                La operación se completó correctamente.
+              <Alert variant="success" title="Éxito" role="status">
+                Patrón toast: Alert con role=&quot;status&quot; hasta componente Toast v1.1.
               </Alert>
               <Alert variant="warning" title="Advertencia">
                 Revise los datos antes de continuar.
@@ -225,7 +253,7 @@ export function DesignSystemShowcase() {
             </Stack>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="Formularios">
+          <ShowcaseBlock title="Formularios" specId="input">
             <Grid cols={1} mdCols={2} gap={6}>
               <Input
                 label="Correo electrónico"
@@ -248,8 +276,14 @@ export function DesignSystemShowcase() {
                 label="Programa"
                 placeholder="Seleccionar…"
                 options={[
-                  { value: "filosofia", label: "Filosofía" },
-                  { value: "teologia", label: "Teología" },
+                  {
+                    value: "diploma-teologia-biblica-pastoral-g2023",
+                    label: "Diploma Teología Bíblica Pastoral — G-2023",
+                  },
+                  {
+                    value: "diploma-teologia-biblica-pastores-g2024",
+                    label: "Diploma Teología Bíblica — G-2024",
+                  },
                 ]}
               />
               <Textarea
@@ -279,7 +313,7 @@ export function DesignSystemShowcase() {
             </Grid>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="Tabs y Accordion">
+          <ShowcaseBlock title="Tabs y Accordion" specId="tabs">
             <Grid cols={1} lgCols={2} gap={8}>
               <Tabs defaultValue="tab1">
                 <TabsList>
@@ -302,7 +336,7 @@ export function DesignSystemShowcase() {
             </Grid>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="Modal, Drawer y Dropdown">
+          <ShowcaseBlock title="Modal, Drawer y Dropdown" specId="modal">
             <Stack direction="horizontal" gap={4} className="flex-wrap">
               <Button onClick={() => setModalOpen(true)}>Abrir Modal</Button>
               <Button variant="secondary" onClick={() => setDrawerOpen(true)}>
@@ -354,7 +388,7 @@ export function DesignSystemShowcase() {
             </Stack>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="Avatar, Spinner y Skeleton">
+          <ShowcaseBlock title="Avatar, Spinner y Skeleton" specId="skeleton">
             <Stack direction="horizontal" gap={6} align="center" className="flex-wrap">
               <Avatar name="Juan Pérez" size="sm" />
               <Avatar name="María García" size="md" />
@@ -367,7 +401,33 @@ export function DesignSystemShowcase() {
             </Stack>
           </ShowcaseBlock>
 
-          <ShowcaseBlock title="CTA">
+          <ShowcaseBlock title="Hero" specId="hero">
+            <Hero
+              subtitle="Ejemplo"
+              title="Cabecera de página"
+              description="Variante de demostración con CTAs."
+              primaryCta={{ label: "Primario", href: "#" }}
+              secondaryCta={{ label: "Secundario", href: "#" }}
+              align="left"
+            />
+          </ShowcaseBlock>
+
+          <ShowcaseBlock title="Footer" specId="footer">
+            <Footer
+              columns={[
+                {
+                  title: "Enlaces",
+                  links: [
+                    { label: "Programas", href: "/programas" },
+                    { label: "Contacto", href: "/contacto" },
+                  ],
+                },
+              ]}
+              copyright="© Ejemplo SEM"
+            />
+          </ShowcaseBlock>
+
+          <ShowcaseBlock title="CTA" specId="cta">
             <CTA
               title="¿Listo para formarte?"
               description="Descubre nuestros programas de formación eclesiástica."
@@ -377,6 +437,69 @@ export function DesignSystemShowcase() {
               secondaryHref="/contacto"
               variant="accent"
             />
+          </ShowcaseBlock>
+
+          <ShowcaseBlock title="Empty State" specId="empty-state">
+            <PortalEmptyState
+              title="Sin contenido disponible"
+              description="Ejemplo de estado vacío para listados CMS y portal."
+              actionLabel="Ir al CMS"
+              actionHref="/admin/config"
+            />
+          </ShowcaseBlock>
+
+          <ShowcaseBlock title="Timeline" specId="timeline">
+            <PortalTimeline
+              id="ds-timeline"
+              settings={{
+                title: "Proceso de admisión",
+                description: "Ejemplo de línea de tiempo con estados corporativos.",
+                layout: "auto",
+                variant: "process",
+              }}
+              items={demoTimelineItems}
+            />
+          </ShowcaseBlock>
+
+          <ShowcaseBlock title="Table (patrón v1.0)" specId="table">
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-background-muted text-left text-muted">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Programa</th>
+                    <th className="px-4 py-3 font-medium">Estado</th>
+                    <th className="px-4 py-3 font-medium">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-background">
+                  <tr className="hover:bg-background-soft">
+                    <td className="px-4 py-3 text-foreground">Teología Bíblica</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="success">Activo</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button size="sm" variant="ghost">
+                        Editar
+                      </Button>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-background-soft">
+                    <td className="px-4 py-3 text-foreground">Pastoral</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="neutral">Borrador</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button size="sm" variant="ghost">
+                        Editar
+                      </Button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-sm text-muted">
+              Componente Table formal planificado para v1.1. Usar este patrón con tokens hasta entonces.
+            </p>
           </ShowcaseBlock>
         </Container>
       </Section>
@@ -453,23 +576,25 @@ export function DesignSystemShowcase() {
         </Container>
       </Section>
 
-      <Section id="docs" padding="md" muted>
+        <Section id="docs" padding="md" muted>
         <Container size="md">
           <SectionHeader
-            title="Documentación"
-            description="Consulta docs/DESIGN-SYSTEM.md y docs/DESIGN-LANGUAGE.md."
+            title="Documentación y gobernanza"
+            description="Experience Kit v1.0 — OT-BRANDING-005"
           />
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Buenas prácticas</CardTitle>
+              <CardTitle>Documentos obligatorios</CardTitle>
+              <CardDescription>Consultar antes de crear UI nueva.</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="list-inside list-disc space-y-2 text-sm text-muted">
-                <li>Usar exclusivamente componentes de @/components/ui</li>
-                <li>Consumir tokens via variables CSS, nunca colores hardcodeados</li>
-                <li>Iconos Lucide con strokeWidth 2 (outline)</li>
-                <li>Respetar sistema de espaciado 8pt</li>
-                <li>Verificar contraste WCAG AA en todo contenido</li>
+                <li><code className="text-foreground">docs/design/INTRODUCTION.md</code> — arquitectura multi-tenant</li>
+                <li><code className="text-foreground">docs/design/COMPONENTS.md</code> — catálogo y especificaciones</li>
+                <li><code className="text-foreground">docs/design/CONTRIBUTING.md</code> — flujo de nuevos componentes</li>
+                <li><code className="text-foreground">docs/design/PULL_REQUEST_CHECKLIST.md</code> — checklist PR</li>
+                <li><code className="text-foreground">docs/design/VISUAL_QA.md</code> — procedimiento QA visual</li>
+                <li><code className="text-foreground">docs/design/VERSIONING.md</code> — política de evolución</li>
               </ul>
             </CardContent>
             <CardFooter>
@@ -509,15 +634,20 @@ function SectionHeader({ title, description }: { title: string; description: str
 
 function ShowcaseBlock({
   title,
+  specId,
   children,
 }: {
   title: string;
+  specId?: string;
   children: React.ReactNode;
 }) {
+  const spec = specId ? getComponentSpec(specId) : undefined;
+
   return (
     <div className="mt-12 border-t border-border pt-12 first:mt-8 first:border-t-0 first:pt-0">
       <h3 className="mb-6 text-xl font-semibold text-foreground">{title}</h3>
       {children}
+      {spec ? <ComponentSpecPanel spec={spec} /> : null}
     </div>
   );
 }

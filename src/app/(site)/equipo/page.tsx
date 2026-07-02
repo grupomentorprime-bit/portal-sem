@@ -1,47 +1,40 @@
 import { PortalBreadcrumb, PortalContainer, PortalSection } from "@/components/portal/layout";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 import { PortalPageHeader, PortalSectionHeader } from "@/components/portal/PortalSectionHeader";
-import { TeamCard } from "@/components/portal/cards";
+import { PortalPersonCard, personItemToPortalPersonCard } from "@/components/portal/experience/people-grid";
+import { TEAM_GROUPS } from "@/lib/content/team-groups";
 import { fetchTeam } from "@/lib/portal/content";
 import { getActivePortal } from "@/lib/portal/site";
-import type { TeacherItem } from "@/types/content";
+import type { PersonItem } from "@/types/people-grid";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-const TEAM_SECTIONS = [
-  { id: "director", title: "Director", match: /director/i },
-  { id: "subdirector", title: "Subdirector", match: /subdirector|decano|vicerrector/i },
-  { id: "academica", title: "Coordinación académica", match: /acad[eé]m|coordinaci[oó]n/i },
-  { id: "gestion", title: "Gestión / calidad", match: /gesti[oó]n|calidad/i },
-  { id: "estudiantiles", title: "Asuntos estudiantiles", match: /estudiant/i },
-  { id: "soporte", title: "Soporte", match: /soporte|t[eé]cnico|administr/i },
-] as const;
-
-function groupTeam(members: TeacherItem[]) {
+function groupTeamByCategory(members: PersonItem[]) {
   const assigned = new Set<string>();
-  const sections = TEAM_SECTIONS.map((section) => {
-    const items = members.filter((m) => {
-      if (assigned.has(m.id)) return false;
-      const haystack = `${m.role} ${m.department ?? ""} ${m.specialty}`;
-      if (section.match.test(haystack)) {
-        assigned.add(m.id);
+
+  const sections = TEAM_GROUPS.map((group) => {
+    const items = members.filter((member) => {
+      if (assigned.has(member.id)) return false;
+      if (member.teamGroup === group.id) {
+        assigned.add(member.id);
         return true;
       }
       return false;
     });
-    return { ...section, members: items };
+    return { ...group, members: items };
   });
 
-  const unassigned = members.filter((m) => !assigned.has(m.id));
+  const unassigned = members.filter((member) => !assigned.has(member.id));
   return { sections, unassigned };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   const ctx = await getActivePortal();
-  if (!ctx) return { title: "Equipo" };
+  if (!ctx) return { title: "Equipo docente" };
   return {
-    title: `Equipo | ${ctx.config.institution.shortName}`,
-    description: "Equipo institucional y formadores.",
+    title: `Equipo docente | ${ctx.config.institution.shortName}`,
+    description:
+      "Docentes y equipo institucional del Seminario Eclesiástico Mayor — autoridad académica al servicio de la Iglesia.",
   };
 }
 
@@ -50,7 +43,7 @@ export default async function EquipoPage() {
   if (!ctx) notFound();
 
   const team = await fetchTeam(ctx.tenant);
-  const { sections, unassigned } = groupTeam(team);
+  const { sections, unassigned } = groupTeamByCategory(team);
 
   return (
     <>
@@ -61,8 +54,8 @@ export default async function EquipoPage() {
         ]}
       />
       <PortalPageHeader
-        title="Equipo institucional"
-        description={ctx.config.seo.description}
+        title="Equipo del seminario"
+        description="Equipo directivo, docente y técnico comprometido con la formación bíblica, académica y pastoral del SEM."
       />
 
       {team.length === 0 ? (
@@ -70,20 +63,27 @@ export default async function EquipoPage() {
           <PortalContainer>
             <PortalEmptyState
               title="Equipo en actualización"
-              description="Los perfiles del equipo se publicarán desde el panel de administración."
+              description="Los perfiles del equipo se publican desde Personas en el panel de administración."
             />
           </PortalContainer>
         </PortalSection>
       ) : (
         <>
-          {sections.map((section) =>
+          {sections.map((section, index) =>
             section.members.length > 0 ? (
-              <PortalSection key={section.id} padding="md" muted={section.id === "academica" || section.id === "estudiantiles"}>
+              <PortalSection key={section.id} padding="md" muted={index % 2 === 1}>
                 <PortalContainer>
-                  <PortalSectionHeader title={section.title} />
+                  <PortalSectionHeader
+                    title={section.label}
+                    description={section.description}
+                  />
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {section.members.map((member) => (
-                      <TeamCard key={member.id} member={member} />
+                      <PortalPersonCard
+                        key={member.id}
+                        person={personItemToPortalPersonCard(member)}
+                        compact
+                      />
                     ))}
                   </div>
                 </PortalContainer>
@@ -94,10 +94,14 @@ export default async function EquipoPage() {
           {unassigned.length > 0 ? (
             <PortalSection padding="md">
               <PortalContainer>
-                <PortalSectionHeader title="Equipo" />
+                <PortalSectionHeader title="Otros colaboradores" />
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {unassigned.map((member) => (
-                    <TeamCard key={member.id} member={member} />
+                    <PortalPersonCard
+                      key={member.id}
+                      person={personItemToPortalPersonCard(member)}
+                      compact
+                    />
                   ))}
                 </div>
               </PortalContainer>

@@ -1,10 +1,12 @@
 import { buildMenuTree, resolveMenuItemHref } from "@/lib/cms/menu-utils";
+import { filterLinksByFeatures } from "@/lib/portal/feature-flags";
+import type { FeatureFlags } from "@/types/cms";
 import type { MenuItem } from "@/types/menu";
 import type { FooterColumn, NavLink, ResolvedNavigation } from "./types";
 
-function mapItemsToLinks(items: MenuItem[]): NavLink[] {
+function mapItemsToLinks(items: MenuItem[], features?: FeatureFlags): NavLink[] {
   const seen = new Set<string>();
-  return items
+  const links = items
     .filter((item) => item.visible && item.active)
     .sort((a, b) => a.order - b.order)
     .map((item) => ({
@@ -18,21 +20,28 @@ function mapItemsToLinks(items: MenuItem[]): NavLink[] {
       seen.add(link.href);
       return true;
     });
+
+  return features ? filterLinksByFeatures(links, features) : links;
 }
 
-export function mapFooterColumns(items: MenuItem[]): FooterColumn[] {
+export function mapFooterColumns(
+  items: MenuItem[],
+  features?: FeatureFlags
+): FooterColumn[] {
   const tree = buildMenuTree(items);
 
   if (tree.some((node) => node.children.length > 0)) {
-    return tree.map((node) => ({
-      title: node.title,
-      links: node.children.length
-        ? mapItemsToLinks(node.children)
-        : [{ label: node.title, href: resolveMenuItemHref(node) }],
-    }));
+    return tree
+      .map((node) => ({
+        title: node.title,
+        links: node.children.length
+          ? mapItemsToLinks(node.children, features)
+          : [{ label: node.title, href: resolveMenuItemHref(node) }],
+      }))
+      .filter((column) => column.links.length > 0);
   }
 
-  const links = mapItemsToLinks(items);
+  const links = mapItemsToLinks(items, features);
   if (links.length === 0) return [];
 
   const midpoint = Math.ceil(links.length / 2);
@@ -50,15 +59,21 @@ interface NavigationMenusInput {
   quickLinks?: MenuItem[];
 }
 
-export function resolveNavigation(menus: NavigationMenusInput): ResolvedNavigation {
-  const header = mapItemsToLinks(menus.header ?? []);
+export function resolveNavigation(
+  menus: NavigationMenusInput,
+  features?: FeatureFlags
+): ResolvedNavigation {
+  const filter = (links: NavLink[]) =>
+    features ? filterLinksByFeatures(links, features) : links;
+
+  const header = filter(mapItemsToLinks(menus.header ?? []));
   const mobileSource = menus.mobile?.length ? menus.mobile : menus.header ?? [];
 
   return {
     header,
-    footer: mapFooterColumns(menus.footer ?? []),
-    mobile: mapItemsToLinks(mobileSource),
-    legal: mapItemsToLinks(menus.legal ?? []),
-    quickLinks: mapItemsToLinks(menus.quickLinks ?? []),
+    footer: mapFooterColumns(menus.footer ?? [], features),
+    mobile: filter(mapItemsToLinks(mobileSource)),
+    legal: filter(mapItemsToLinks(menus.legal ?? [])),
+    quickLinks: filter(mapItemsToLinks(menus.quickLinks ?? [])),
   };
 }

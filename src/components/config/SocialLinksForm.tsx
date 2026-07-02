@@ -16,6 +16,7 @@ const fields: Array<{ key: keyof SocialLinks; label: string; placeholder: string
   { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/..." },
   { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/..." },
   { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/..." },
+  { key: "spotify", label: "Spotify", placeholder: "https://open.spotify.com/..." },
 ];
 
 export function SocialLinksForm({ value, onChange }: SocialLinksFormProps) {

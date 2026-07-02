@@ -17,6 +17,7 @@ export {
   requirePermission,
   requireRole,
   requireOwner,
+  requireSession,
   getActiveTenantId,
   isAuthContext,
 } from "./middleware/guards";

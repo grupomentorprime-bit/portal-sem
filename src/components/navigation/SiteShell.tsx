@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * PortalShell
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import { NavbarPremium, InstitutionalFooter } from "@/components/institutional";
 import { getActiveMenuById } from "@/lib/cms/menus";
 import { getSiteConfig } from "@/lib/cms/config";

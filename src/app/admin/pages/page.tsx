@@ -1,9 +1,8 @@
 import { PageListClient } from "@/components/page-builder/PageListClient";
 import { getSiteConfigUncached } from "@/lib/cms/config";
 import { getAllPagesUncached } from "@/lib/cms/pages";
-import { getTemplatesUncached, seedDefaultHomePage } from "@/lib/cms/templates";
+import { getTemplatesUncached, seedDefaultHomePage, seedTemplates } from "@/lib/cms/templates";
 import { seedBlockLibrary } from "@/lib/cms/blocks";
-import { seedTemplates } from "@/lib/cms/templates";
 import { seedContentCollections } from "@/lib/content/seed";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +14,12 @@ export default async function AdminPagesPage() {
   if (pages.length === 0 && config) {
     await seedBlockLibrary();
     await seedTemplates();
-    await seedContentCollections(config.institution.tenant);
+    await seedContentCollections(config.institution.tenant, { revalidate: false });
     await seedDefaultHomePage(
       config.institution.tenant,
       config.institution.name,
-      config.seo.description
+      config.seo.description,
+      { revalidate: false }
     );
     pages = await getAllPagesUncached(config.institution.tenant);
   }

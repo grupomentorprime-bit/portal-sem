@@ -1,4 +1,7 @@
+import { Suspense } from "react";
 import { ContentListClient } from "@/components/content/ContentListClient";
+import { PeopleListClient } from "@/components/content/PeopleListClient";
+import { enrichContentDocumentsMedia } from "@/core/media";
 import { executeContentQuery } from "@/lib/content/query";
 import { getSiteConfigUncached } from "@/lib/cms/config";
 import type { ContentDocument } from "@/types/content";
@@ -20,10 +23,15 @@ const SECTIONS: Record<string, { collection: string; title: string; description:
     title: "Noticias",
     description: "Noticias institucionales",
   },
+  people: {
+    collection: "content_people",
+    title: "Personas",
+    description: "Equipo directivo, docente y técnico del seminario",
+  },
   team: {
     collection: "academy_team",
-    title: "Equipo",
-    description: "Formadores y equipo institucional",
+    title: "Equipo (legacy)",
+    description: "Colección heredada — preferir Personas (content_people)",
   },
   library: {
     collection: "content_library",
@@ -34,6 +42,16 @@ const SECTIONS: Record<string, { collection: string; title: string; description:
     collection: "content_events",
     title: "Eventos",
     description: "Eventos institucionales",
+  },
+  "academic-agenda": {
+    collection: "content_academic_agenda",
+    title: "Agenda Académica",
+    description: "Calendario oficial de hitos académicos",
+  },
+  avisos: {
+    collection: "content_institutional_notices",
+    title: "Avisos Institucionales",
+    description: "Comunicados oficiales de la Dirección",
   },
   testimonials: {
     collection: "academy_testimonials",
@@ -68,13 +86,28 @@ export default async function AdminContentSectionPage({ params }: PageProps) {
   let initialTotal = 0;
   try {
     const result = await executeContentQuery<ContentDocument>(
-      { tenant, collection: meta.collection, pagination: { page: 1, limit: 50 } },
+      { tenant, collection: meta.collection, pagination: { page: 1, limit: 100 } },
       { includeDraft: true, mapItems: false, skipCache: true }
     );
-    initialItems = result.items;
+    initialItems =
+      section === "people"
+        ? await enrichContentDocumentsMedia(tenant, result.items)
+        : result.items;
     initialTotal = result.total;
   } catch {
     /* empty */
+  }
+
+  if (section === "people") {
+    return (
+      <Suspense fallback={<div className="p-8 text-center text-muted">Cargando personas…</div>}>
+        <PeopleListClient
+          tenant={tenant}
+          initialItems={initialItems}
+          initialTotal={initialTotal}
+        />
+      </Suspense>
+    );
   }
 
   return (
@@ -83,6 +116,7 @@ export default async function AdminContentSectionPage({ params }: PageProps) {
       collection={meta.collection}
       title={meta.title}
       description={meta.description}
+      sectionSlug={section}
       initialItems={initialItems}
       initialTotal={initialTotal}
     />

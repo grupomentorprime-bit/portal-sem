@@ -1,4 +1,5 @@
 import { ContentHubClient } from "@/components/content/ContentHubClient";
+import { createDefaultSiteConfig } from "@/lib/cms/defaults";
 import { executeContentQuery } from "@/lib/content/query";
 import { getSiteConfigUncached } from "@/lib/cms/config";
 
@@ -7,9 +8,12 @@ export const dynamic = "force-dynamic";
 const SECTION_COLLECTIONS = [
   "academy_programs",
   "content_news",
+  "content_people",
   "academy_team",
   "content_library",
   "content_events",
+  "content_academic_agenda",
+  "content_institutional_notices",
   "academy_testimonials",
   "academy_gallery",
   "academy_categories",
@@ -32,5 +36,11 @@ export default async function AdminContentPage() {
     }
   }
 
-  return <ContentHubClient tenant={tenant} initialCounts={initialCounts} />;
+  return (
+    <ContentHubClient
+      tenant={tenant}
+      features={config?.features ?? createDefaultSiteConfig().features}
+      initialCounts={initialCounts}
+    />
+  );
 }

@@ -1,6 +1,17 @@
 import type { CmsMediaAsset, MediaResponsiveUrls } from "@/types/media";
 
-export type MediaVariant = "original" | "thumbnail" | "w400" | "w800" | "w1200" | "w1920" | "webp";
+export type MediaVariant =
+  | "original"
+  | "thumbnail"
+  | "w400"
+  | "w768"
+  | "w800"
+  | "w1080"
+  | "w1200"
+  | "w1440"
+  | "w1600"
+  | "w1920"
+  | "webp";
 
 export interface MediaFocalPoint {
   x: number;

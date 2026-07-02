@@ -15,7 +15,7 @@ export function MenuTargetSelector({ value, onChange }: MenuTargetSelectorProps)
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as MenuTarget)}
-        className="flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
       >
         {MENU_TARGETS.map((target) => (
           <option key={target} value={target}>

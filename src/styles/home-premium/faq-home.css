@@ -1,0 +1,172 @@
+/**
+ * OT-UX-HOME-FAQ-v2 — Preguntas frecuentes (layout editorial 2 columnas)
+ */
+
+.portal-home-experience [data-block="faq"].portal-home-x__section {
+  padding-top: clamp(2rem, 4vw, 3rem);
+  padding-bottom: clamp(3rem, 5vw, 4.5rem);
+}
+
+.portal-home-experience [data-block="faq"] {
+  background: var(--background-soft);
+}
+
+.portal-home-experience [data-block="faq"] .faq-home-section {
+  background: transparent;
+}
+
+/* Layout 2 columnas */
+.portal-home-experience [data-block="faq"] .faq-home {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .portal-home-experience [data-block="faq"] .faq-home {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2.5rem, 5vw, 4rem);
+  }
+}
+
+/* Encabezado */
+.portal-home-experience [data-block="faq"] .faq-home__header {
+  position: sticky;
+  top: 6rem;
+}
+
+.portal-home-experience [data-block="faq"] .faq-home__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.portal-home-experience [data-block="faq"] .faq-home__title {
+  margin: 0.75rem 0 0;
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+  text-wrap: balance;
+}
+
+.portal-home-experience [data-block="faq"] .faq-home__desc {
+  margin: 1rem 0 0;
+  max-width: 28rem;
+  font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.portal-home-experience [data-block="faq"] .faq-home__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease, gap 0.2s ease;
+}
+
+.portal-home-experience [data-block="faq"] .faq-home__cta:hover {
+  color: var(--color-primary);
+  gap: 0.65rem;
+}
+
+/* Acordeón editorial */
+.portal-home-experience [data-block="faq"] .faq-accordion--editorial {
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-primary) 4%, transparent),
+    0 12px 32px color-mix(in srgb, var(--color-primary) 6%, transparent);
+  overflow: hidden;
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion--editorial > div {
+  padding: 0;
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__item {
+  border-color: color-mix(in srgb, var(--border) 85%, transparent);
+  transition: background 0.2s ease;
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__item:last-child {
+  border-bottom: none;
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__item--open {
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__trigger {
+  padding-inline: clamp(1.25rem, 2.5vw, 1.75rem);
+  color: var(--color-primary);
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__trigger:hover {
+  color: var(--color-secondary);
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__trigger-text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__index {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__question {
+  font-size: clamp(0.9375rem, 1.3vw, 1.0625rem);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__chevron {
+  color: var(--color-accent);
+}
+
+.portal-home-experience [data-block="faq"] .faq-accordion__panel {
+  padding: 0 clamp(1.25rem, 2.5vw, 1.75rem) clamp(1.25rem, 2vw, 1.5rem);
+  padding-left: calc(clamp(1.25rem, 2.5vw, 1.75rem) + 1.75rem);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--color-foreground);
+}
+
+@media (min-width: 640px) {
+  .portal-home-experience [data-block="faq"] .faq-accordion__panel {
+    padding-left: calc(clamp(1.25rem, 2.5vw, 1.75rem) + 2.25rem);
+  }
+}
+
+/* Páginas internas — acordeón simple */
+.portal-home-experience [data-block="faq"] .faq-accordion:not(.faq-accordion--editorial) {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.portal-home-experience [data-block="faq"] .portal-section-header {
+  text-align: center;
+  margin-inline: auto;
+  max-width: 40rem;
+}

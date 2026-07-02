@@ -23,3 +23,4 @@ export {
   resolveSeoImageUrls,
 } from "./enrich";
 export * from "./usage";
+export { MediaService } from "./service";

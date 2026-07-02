@@ -1,6 +1,15 @@
-import { Container, Section, Stack } from "@/components/layout";
-import { Button } from "@/components/ui";
-import { SectionTitle } from "./SectionTitle";
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * PortalCTAPremium
+ *
+ * @see docs/core/CORE-CTA-PREMIUM-v1.md
+ */
+
+import { PortalContainer, PortalSection } from "@/components/portal/layout";
+import { PortalCTAPremium } from "@/components/portal/experience/cta-premium";
+import type { PortalCTAPremiumSettings } from "@/types/cta-premium";
 
 interface CTASectionProps {
   title: string;
@@ -21,40 +30,22 @@ export function CTASection({
   secondaryHref,
   variant = "default",
 }: CTASectionProps) {
+  const settings: PortalCTAPremiumSettings = {
+    title,
+    description,
+    primaryLabel,
+    primaryHref,
+    secondaryLabel,
+    secondaryHref,
+    variant: variant === "default" ? "minimal" : "highlight",
+    background: variant === "primary" ? "primary" : "default",
+  };
+
   return (
-    <Section
-      padding="lg"
-      className={variant === "primary" ? "bg-primary" : "bg-background-soft"}
-    >
-      <Container size="md">
-        <Stack gap={8} align="center" className="text-center">
-          <SectionTitle
-            title={title}
-            description={description}
-            align="center"
-            className={variant === "primary" ? "[&_h2]:text-text-inverse [&_p]:text-text-inverse/80" : undefined}
-          />
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button
-              href={primaryHref}
-              variant={variant === "primary" ? "secondary" : "primary"}
-              size="lg"
-            >
-              {primaryLabel}
-            </Button>
-            {secondaryLabel && secondaryHref ? (
-              <Button
-                href={secondaryHref}
-                variant="outline"
-                size="lg"
-                className={variant === "primary" ? "border-text-inverse/30 text-text-inverse hover:bg-white/10" : undefined}
-              >
-                {secondaryLabel}
-              </Button>
-            ) : null}
-          </div>
-        </Stack>
-      </Container>
-    </Section>
+    <PortalSection padding="lg" className={variant === "primary" ? "bg-primary" : "bg-background-soft"}>
+      <PortalContainer size="md">
+        <PortalCTAPremium settings={settings} />
+      </PortalContainer>
+    </PortalSection>
   );
 }

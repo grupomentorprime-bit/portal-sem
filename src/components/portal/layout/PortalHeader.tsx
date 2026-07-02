@@ -1,13 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ArrowRight, LogIn, Menu, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { iconSizes } from "@/design";
-import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { focusRing } from "@/components/ui/shared";
+import { PortalBrandMark } from "@/components/portal/PortalBrandMark";
+import { useHomeLinkHandler } from "@/lib/navigation/home";
 import { PortalMobileNav } from "./PortalMobileNav";
 
 export interface NavLinkItem {
@@ -17,30 +18,52 @@ export interface NavLinkItem {
 
 interface PortalHeaderProps {
   links: NavLinkItem[];
-  logoPrimary: string;
+  mobileLinks?: NavLinkItem[];
+  logoPrimary?: string;
   logoSecondary?: string;
+  institutionName?: string;
   institutionShortName?: string;
+  organization?: string;
+  loginHref?: string;
+  loginLabel?: string;
   applyHref?: string;
   applyLabel?: string;
-  campusHref?: string;
-  campusLabel?: string;
+  variant?: "default" | "premium";
+  searchHref?: string;
+}
+
+function isActiveNav(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function stripTrailingArrow(label: string): string {
+  return label.replace(/\s*(?:→|->)\s*$/u, "").trimEnd();
 }
 
 export function PortalHeader({
   links,
+  mobileLinks,
   logoPrimary,
   logoSecondary,
+  institutionName = "",
   institutionShortName = "",
+  organization = "",
+  loginHref,
+  loginLabel = "Ingresar",
   applyHref,
-  applyLabel = "Postular",
-  campusHref,
-  campusLabel = "Aula virtual",
+  applyLabel = "Postular ahora",
+  variant = "default",
+  searchHref = "/buscar",
 }: PortalHeaderProps) {
+  const pathname = usePathname();
+  const handleHomeLink = useHomeLinkHandler();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isPremium = variant === "premium";
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -54,107 +77,123 @@ export function PortalHeader({
   }, [mobileOpen]);
 
   const navLinks = links.filter((l) => l.href !== "/");
+  const drawerLinks = mobileLinks ?? links;
+  const homeLink = links.find((l) => l.href === "/");
 
   return (
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-[var(--z-sticky)] transition-all duration-[var(--transition-normal)]",
-          scrolled
-            ? "border-b border-border bg-background/95 shadow-[var(--shadow-sm)] backdrop-blur-md"
-            : "bg-primary/90 backdrop-blur-sm"
+          "portal-header-premium fixed inset-x-0 top-0 z-[var(--z-sticky)] border-b",
+          isPremium && "portal-header-premium--hero",
+          scrolled && "portal-header-premium--scrolled"
         )}
       >
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 sm:h-[4.5rem] sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className={cn("flex shrink-0 items-center gap-3", focusRing, "rounded-[var(--radius-sm)]")}
-            aria-label={institutionShortName ? `${institutionShortName} — Inicio` : "Inicio"}
-          >
-            {logoSecondary ? (
-              <>
-                <Image
-                  src={logoSecondary}
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="h-8 w-auto brightness-0 invert sm:h-9"
-                />
-                <span
-                  className={cn("hidden h-7 w-px sm:block", scrolled ? "bg-border" : "bg-text-inverse/25")}
-                  aria-hidden
-                />
-              </>
-            ) : null}
-            <Image
-              src={logoPrimary}
-              alt={institutionShortName || "Logo institucional"}
-              width={36}
-              height={36}
-              className={cn("h-8 w-auto sm:h-9", !scrolled && "brightness-0 invert")}
-            />
-          </Link>
+        <div
+          className={cn(
+            "portal-header-premium__inner mx-auto w-full",
+            !isPremium && "max-w-[1400px] px-4 sm:px-6 lg:px-8"
+          )}
+        >
+          <div className="portal-header-premium__grid">
+            <Link
+              href="/"
+              className={cn("portal-header-premium__brand", focusRing)}
+              onClick={(event) => handleHomeLink(event, "/")}
+              aria-label={
+                institutionShortName
+                  ? `${institutionShortName} — Inicio`
+                  : institutionName
+                    ? `${institutionName} — Inicio`
+                    : "Inicio"
+              }
+            >
+              <PortalBrandMark
+                logoPrimary={logoPrimary}
+                logoSecondary={logoSecondary}
+                institutionName={institutionName}
+                institutionShortName={institutionShortName}
+                organization={organization}
+                variant="light"
+                layout={isPremium ? "premium-hero" : "default"}
+              />
+            </Link>
 
-          <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Navegación principal">
-            {navLinks.map((link) => (
+            <nav
+              className="portal-header-premium__nav hidden lg:flex"
+              aria-label="Navegación principal"
+            >
+              {homeLink ? (
+                <Link
+                  href={homeLink.href}
+                  className={cn(
+                    "portal-nav-link",
+                    isActiveNav(pathname, homeLink.href) && "portal-nav-link--active",
+                    focusRing
+                  )}
+                  onClick={(event) => handleHomeLink(event, homeLink.href)}
+                >
+                  {homeLink.label}
+                </Link>
+              ) : null}
+              {navLinks.map((link) => (
+                <Link
+                  key={`${link.href}-${link.label}`}
+                  href={link.href}
+                  className={cn(
+                    "portal-nav-link",
+                    isActiveNav(pathname, link.href) && "portal-nav-link--active",
+                    focusRing
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="portal-header-premium__actions hidden lg:flex">
               <Link
-                key={`${link.href}-${link.label}`}
-                href={link.href}
-                className={cn(
-                  "rounded-[var(--radius-sm)] px-3 py-2 text-sm font-medium transition-colors",
-                  focusRing,
-                  scrolled
-                    ? "text-foreground hover:text-secondary"
-                    : "text-text-inverse/90 hover:text-text-inverse"
-                )}
+                href={searchHref}
+                className={cn("portal-header-premium__search", focusRing)}
+                aria-label="Buscar en el sitio"
               >
-                {link.label}
+                <Search size={18} strokeWidth={2} />
               </Link>
-            ))}
-          </nav>
+              {loginHref ? (
+                <Link href={loginHref} className={cn("portal-btn-login portal-btn-login--hero", focusRing)}>
+                  <LogIn size={16} strokeWidth={2} aria-hidden />
+                  {loginLabel}
+                </Link>
+              ) : null}
+              {applyHref ? (
+                <Link href={applyHref} className={cn("portal-btn-apply portal-btn-apply--header", focusRing)} data-cursor-magnet>
+                  {stripTrailingArrow(applyLabel)}
+                  <ArrowRight size={16} strokeWidth={2.5} aria-hidden />
+                </Link>
+              ) : null}
+            </div>
 
-          <div className="hidden items-center gap-2 lg:flex">
-            {campusHref ? (
-              <Button
-                href={campusHref}
-                variant={scrolled ? "outline" : "ghost"}
-                size="sm"
-                className={!scrolled ? "border-text-inverse/30 text-text-inverse hover:bg-text-inverse/10" : undefined}
-              >
-                {campusLabel}
-              </Button>
-            ) : null}
-            {applyHref ? (
-              <Button href={applyHref} variant="secondary" size="sm">
-                {applyLabel}
-              </Button>
-            ) : null}
+            <button
+              type="button"
+              className={cn("portal-header-premium__menu lg:hidden", focusRing)}
+              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu size={iconSizes.lg} strokeWidth={2} />
+            </button>
           </div>
-
-          <button
-            type="button"
-            className={cn(
-              "rounded-[var(--radius-md)] p-2 xl:hidden",
-              focusRing,
-              scrolled ? "text-foreground" : "text-text-inverse"
-            )}
-            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu size={iconSizes.lg} strokeWidth={2} />
-          </button>
         </div>
       </header>
 
       <PortalMobileNav
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        links={links}
+        links={drawerLinks}
+        loginHref={loginHref}
+        loginLabel={loginLabel}
         applyHref={applyHref}
         applyLabel={applyLabel}
-        campusHref={campusHref}
-        campusLabel={campusLabel}
       />
     </>
   );

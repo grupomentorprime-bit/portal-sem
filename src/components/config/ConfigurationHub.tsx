@@ -6,6 +6,9 @@ import { ConfigurationLayout } from "@/components/config/ConfigurationLayout";
 import { ContactForm } from "@/components/config/ContactForm";
 import { FeatureTogglePanel } from "@/components/config/FeatureTogglePanel";
 import { InstitutionForm } from "@/components/config/InstitutionForm";
+import { PortalCopyForm } from "@/components/config/PortalCopyForm";
+import { PortalCursorForm } from "@/components/config/PortalCursorForm";
+import { PortalTopBarForm } from "@/components/config/PortalTopBarForm";
 import { PortalStatusCard } from "@/components/config/PortalStatusCard";
 import { SeoEditor } from "@/components/config/SeoEditor";
 import { SocialLinksForm } from "@/components/config/SocialLinksForm";
@@ -19,13 +22,18 @@ interface ConfigurationHubProps {
 
 function toUpdate(config: SiteConfig): SiteConfigUpdate {
   return {
+    schemaVersion: config.schemaVersion,
+    modules: config.modules,
     institution: config.institution,
     branding: config.branding,
+    heroPortal: config.heroPortal,
     seo: config.seo,
     contact: config.contact,
     social: config.social,
     features: config.features,
     portalCopy: config.portalCopy,
+    topBar: config.topBar,
+    portalExperience: config.portalExperience,
   };
 }
 
@@ -93,19 +101,29 @@ export function ConfigurationHub({ initialConfig }: ConfigurationHubProps) {
       onSave={handleSave}
     >
       {errorMessage ? (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
           {errorMessage}
         </div>
       ) : null}
 
       {activeSection === "general" ? (
-        <InstitutionForm value={config.institution} onChange={updateInstitution} />
+        <>
+          <InstitutionForm value={config.institution} onChange={updateInstitution} />
+          <div className="mt-6">
+            <PortalCopyForm
+              value={config.portalCopy}
+              onChange={(portalCopy) => setConfig((prev) => ({ ...prev, portalCopy }))}
+            />
+          </div>
+        </>
       ) : null}
 
       {activeSection === "branding" ? (
         <BrandingPanel
           value={config.branding}
           onChange={(branding) => setConfig((prev) => ({ ...prev, branding }))}
+          heroPortal={config.heroPortal}
+          onHeroPortalChange={(heroPortal) => setConfig((prev) => ({ ...prev, heroPortal }))}
           tenant={config.institution.tenant}
         />
       ) : null}
@@ -118,10 +136,18 @@ export function ConfigurationHub({ initialConfig }: ConfigurationHubProps) {
       ) : null}
 
       {activeSection === "contact" ? (
-        <ContactForm
-          value={config.contact}
-          onChange={(contact) => setConfig((prev) => ({ ...prev, contact }))}
-        />
+        <>
+          <ContactForm
+            value={config.contact}
+            onChange={(contact) => setConfig((prev) => ({ ...prev, contact }))}
+          />
+          <div className="mt-6">
+            <PortalTopBarForm
+              value={config.topBar}
+              onChange={(topBar) => setConfig((prev) => ({ ...prev, topBar }))}
+            />
+          </div>
+        </>
       ) : null}
 
       {activeSection === "social" ? (
@@ -135,6 +161,18 @@ export function ConfigurationHub({ initialConfig }: ConfigurationHubProps) {
         <FeatureTogglePanel
           value={config.features}
           onChange={(features) => setConfig((prev) => ({ ...prev, features }))}
+        />
+      ) : null}
+
+      {activeSection === "experience" ? (
+        <PortalCursorForm
+          value={config.portalExperience.cursor}
+          onChange={(cursor) =>
+            setConfig((prev) => ({
+              ...prev,
+              portalExperience: { ...prev.portalExperience, cursor },
+            }))
+          }
         />
       ) : null}
 

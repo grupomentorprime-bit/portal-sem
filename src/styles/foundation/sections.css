@@ -1,0 +1,108 @@
+/**
+ * OT-UX-FOUNDATION-001 — Section Composition System
+ * Eyebrow → Título → Descripción → Acciones → Contenido → CTA opcional
+ */
+
+.section-f {
+  padding-block: var(--space-section-y);
+}
+
+.section-f__header {
+  margin-bottom: var(--space-block);
+  max-width: 42rem;
+}
+
+.section-f__eyebrow {
+  font-size: var(--type-caption);
+  letter-spacing: var(--type-tracking-wide);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.section-f__title {
+  font-size: var(--type-h2);
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-tight);
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: var(--space-3);
+}
+
+.section-f__description {
+  font-size: var(--type-lead);
+  line-height: var(--type-body-lh);
+  color: var(--text-muted);
+  max-width: 36rem;
+}
+
+.section-f__actions {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.section-f__content {
+  margin-top: var(--space-block);
+}
+
+.section-f__footer {
+  margin-top: var(--space-5);
+  text-align: center;
+}
+
+/* Bridge headers Experience Kit */
+.portal-programs-section__intro,
+.portal-feature-grid__header,
+.portal-timeline__header,
+.portal-people-grid__header,
+.portal-news-grid__header,
+.portal-contact-hub__header,
+.mb-12 {
+  margin-bottom: var(--space-block) !important;
+}
+
+.portal-programs-section__intro [class*="__overline"],
+.portal-feature-grid__header .text-caption,
+.portal-timeline__header .text-caption,
+.portal-people-grid__header .text-caption,
+.portal-news-grid__header .text-caption,
+.portal-contact-hub__header .text-caption {
+  margin-bottom: var(--space-2);
+}
+
+.portal-programs-section__intro h2,
+.portal-feature-grid__title,
+.portal-timeline__title,
+.portal-people-grid__title,
+.portal-news-grid__title,
+.portal-contact-hub__title {
+  font-size: var(--type-h2) !important;
+  line-height: var(--type-heading-lh) !important;
+  margin-bottom: var(--space-3);
+}
+
+.portal-programs-section__intro p,
+.portal-feature-grid__description,
+.portal-timeline__description,
+.portal-people-grid__description,
+.portal-news-grid__description,
+.portal-contact-hub__description {
+  font-size: var(--type-lead) !important;
+  line-height: var(--type-body-lh) !important;
+}
+
+/* Home section rhythm */
+.portal-home-experience .portal-home-x__section {
+  padding-block: clamp(var(--space-7), 8vw, var(--space-9));
+}
+
+.portal-home-experience .portal-home-x__section--hero {
+  padding-block: 0;
+}
+
+.portal-home-experience .portal-home-x__section--cta {
+  padding-block: var(--space-9);
+}

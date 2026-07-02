@@ -1,0 +1,76 @@
+/**
+ * OT-ARCH-UX-001 — Contacto Home
+ * PENDING
+ */
+
+.portal-home-experience [data-block="contact_hub"] {
+  padding-bottom: clamp(6rem, 10vw, 9rem);
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__header {
+  max-width: 36rem;
+  margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__layout {
+  gap: clamp(2.5rem, 5vw, 4rem);
+  align-items: stretch;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="contact_hub"] .portal-contact-hub--full .portal-contact-hub__layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  }
+
+  .portal-home-experience [data-block="contact_hub"] .portal-contact-hub__aside {
+    order: 2;
+  }
+
+  .portal-home-experience [data-block="contact_hub"] .portal-contact-hub__main {
+    order: 1;
+  }
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__map-frame {
+  min-height: clamp(16rem, 35vw, 24rem);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--home-card-shadow-hover);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  overflow: hidden;
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__channel {
+  padding: clamp(1.5rem, 3vw, 2rem);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--home-card-shadow);
+  transition:
+    transform 0.4s var(--home-ease),
+    box-shadow 0.4s var(--home-ease);
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__channel:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--home-card-shadow-hover);
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__actions {
+  gap: 1rem;
+  margin-top: clamp(2rem, 4vw, 2.5rem);
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__action-btn {
+  min-height: 3.25rem;
+  padding-inline: 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.portal-home-experience [data-block="contact_hub"] .portal-contact-hub__action-btn--whatsapp {
+  order: -1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-home-experience [data-block="contact_hub"] .portal-contact-hub__channel:hover {
+    transform: none;
+  }
+}

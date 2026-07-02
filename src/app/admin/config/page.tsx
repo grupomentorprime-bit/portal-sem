@@ -11,13 +11,13 @@ export default async function AdminConfigPage() {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <div className="max-w-md text-center">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-xl font-semibold text-foreground dark:text-gray-50">
             Configuración no encontrada
           </h1>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-muted">
             No existe el documento cms_config con _id &quot;site&quot;.
           </p>
-          <Link href="/" className="mt-4 inline-block text-sm text-zinc-600 underline">
+          <Link href="/" className="mt-4 inline-block text-sm text-muted underline">
             Volver al portal
           </Link>
         </div>

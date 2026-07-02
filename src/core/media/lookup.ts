@@ -41,7 +41,7 @@ export async function findMediaById(
   const asset = await db.collection<CmsMediaAsset>("cms_media").findOne({
     _id: mediaId,
     tenant,
-    visibility: "active",
+    $or: [{ visibility: "active" }, { visibility: { $exists: false } }],
   });
 
   setCachedMedia(cacheKey, asset);

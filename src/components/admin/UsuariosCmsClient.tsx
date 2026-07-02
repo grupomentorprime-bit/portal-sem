@@ -1,0 +1,188 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AuditTimeline, type AuditTimelineEntry } from "@/components/admin/AuditTimeline";
+import { InviteUserWizard } from "@/components/admin/InviteUserWizard";
+import { UserCmsCard, type UserCmsCardData } from "@/components/admin/UserCmsCard";
+import { CMS_USER_GROUPS } from "@/lib/admin/institutional";
+import { cn } from "@/lib/utils";
+
+export function UsuariosCmsClient() {
+  const [members, setMembers] = useState<UserCmsCardData[]>([]);
+  const [invitations, setInvitations] = useState<
+    Array<{ id: string; email: string; expiresAt: string; roles: Array<{ label: string }> }>
+  >([]);
+  const [audit, setAudit] = useState<AuditTimelineEntry[]>([]);
+  const [activeGroup, setActiveGroup] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [compatMode, setCompatMode] = useState(false);
+  const [roleSavingId, setRoleSavingId] = useState<string | null>(null);
+
+  const loadTeam = useCallback(async () => {
+    const [teamRes, meRes] = await Promise.all([
+      fetch("/api/identity/team"),
+      fetch("/api/identity/me"),
+    ]);
+    const team = await teamRes.json();
+    const me = await meRes.json();
+
+    if (team.ok) {
+      setMembers(team.members ?? []);
+      setInvitations(team.invitations ?? []);
+      setAudit(team.audit ?? []);
+    }
+    if (me.ok) setCompatMode(me.compatMode === true);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await loadTeam();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadTeam]);
+
+  const filteredMembers = useMemo(() => {
+    const group = CMS_USER_GROUPS.find((g) => g.id === activeGroup);
+    if (!group || group.id === "all") return members;
+    if (!("roles" in group)) return members;
+    return members.filter((m) =>
+      m.roles.some((r) => (group.roles as readonly string[]).includes(r.name))
+    );
+  }, [members, activeGroup]);
+
+  async function handleInvite(payload: { email: string; roleName: string }) {
+    setError("");
+    const res = await fetch("/api/identity/invitations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      setError(data.error ?? "No se pudo enviar la invitación");
+      throw new Error(data.error);
+    }
+    await loadTeam();
+  }
+
+  async function handleRoleChange(membershipId: string, roleName: string) {
+    setRoleSavingId(membershipId);
+    setError("");
+    const res = await fetch(`/api/identity/members/${membershipId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roleName }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      setError(data.error ?? "No se pudo actualizar el rol");
+      setRoleSavingId(null);
+      return;
+    }
+    await loadTeam();
+    setRoleSavingId(null);
+  }
+
+  if (loading) {
+    return <p className="text-sm text-muted">Cargando usuarios del CMS…</p>;
+  }
+
+  return (
+    <div className="space-y-8">
+      {compatMode ? (
+        <div className="rounded-xl border border-[var(--state-warning-border)] bg-[var(--state-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning)]">
+          Este entorno permite acceder al CMS sin iniciar sesión. Activa el modo seguro en producción.
+        </div>
+      ) : null}
+
+      <section className="rounded-xl border border-border bg-background p-4">
+        <h2 className="text-sm font-semibold">Plataforma</h2>
+        <p className="mt-1 text-sm text-muted">
+          Integraciones de infraestructura del portal.
+        </p>
+        <Link
+          href="/admin/settings/integrations"
+          className="mt-3 inline-flex text-sm font-medium text-primary underline"
+        >
+          Almacenamiento en la nube (S3 / Backblaze B2)
+        </Link>
+      </section>
+
+      <section>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {CMS_USER_GROUPS.map((group) => (
+            <button
+              key={group.id}
+              type="button"
+              onClick={() => setActiveGroup(group.id)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-sm font-medium transition",
+                activeGroup === group.id
+                  ? "bg-primary text-text-inverse"
+                  : "bg-background text-muted hover:bg-background-muted"
+              )}
+            >
+              {group.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filteredMembers.map((member) => (
+            <UserCmsCard
+              key={member.membershipId}
+              member={member}
+              saving={roleSavingId === member.membershipId}
+              onRoleChange={handleRoleChange}
+            />
+          ))}
+        </div>
+
+        {filteredMembers.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted">
+            No hay usuarios en este grupo.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Invitar usuario</h2>
+          <p className="text-sm text-muted">Asistente guiado para nuevos accesos al CMS.</p>
+        </div>
+        <InviteUserWizard onSubmit={handleInvite} error={error} />
+        {invitations.length > 0 ? (
+          <ul className="space-y-2 text-sm">
+            {invitations.map((inv) => (
+              <li key={inv.id} className="rounded-xl border border-border px-4 py-3">
+                <span className="font-medium">{inv.email}</span>
+                <span className="text-muted">
+                  {" "}
+                  · {inv.roles.map((r) => r.label).join(", ")} · expira{" "}
+                  {new Date(inv.expiresAt).toLocaleDateString("es")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Actividad reciente</h2>
+          <p className="text-sm text-muted">Historial legible de cambios en el CMS.</p>
+        </div>
+        <AuditTimeline entries={audit} />
+      </section>
+    </div>
+  );
+}

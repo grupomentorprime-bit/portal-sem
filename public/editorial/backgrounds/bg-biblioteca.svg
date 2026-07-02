@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#FFFFFF"/>
+    <stop offset="100%" stop-color="#002A47" stop-opacity="0.04"/></linearGradient>
+    <pattern id="pt" width="64" height="64" patternUnits="userSpaceOnUse"><line x1="8" y1="0" x2="8" y2="48" stroke="#002A47" stroke-width="0.5" opacity="0.12"/></pattern>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <rect width="800" height="600" fill="url(#pt)" opacity="0.06"/>
+  
+</svg>

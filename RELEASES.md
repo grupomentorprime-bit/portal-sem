@@ -1,6 +1,21 @@
-# Releases — Portal SEM
+# Releases — Portal SEM / AprendeHoy Learning OS
 
-Historial oficial de versiones del Portal Institucional SEM.
+Historial oficial de versiones.
+
+---
+
+## Foundation Complete — v2.0.0 (Platform Core)
+
+| Atributo | Valor |
+| --- | --- |
+| Versión | 2.0.0 |
+| Alcance | AprendeHoy Learning OS — Etapa I |
+| Fecha | Junio 2026 |
+| Tag | `v2.0.0-portal-engine` |
+
+**Incluye:** Cierre oficial de Foundation & Platform Core — Multi-Tenant, CMS, Asset Engine, Identity, Workflow, Event Bus (`v1.9.0-event-bus`), Portal Engine.
+
+**Documentación:** [FOUNDATION-COMPLETE](./docs/strategy/FOUNDATION-COMPLETE.md) · [PRODUCT-ROADMAP](./docs/strategy/PRODUCT-ROADMAP-2026-2028.md)
 
 ---
 
@@ -15,6 +30,20 @@ Historial oficial de versiones del Portal Institucional SEM.
 **Incluye:** Portal Engine CMS-driven, Block Registry, visibility/conditions, resolvers, PortalRenderer, SEO consolidado, eventos analytics.
 
 **Documentación:** [PORTAL-ENGINE.md](./docs/core/PORTAL-ENGINE.md) · [ADR-007](./docs/architecture/ADR-007.md) · [CHANGELOG](./CHANGELOG.md)
+
+---
+
+## v2.5.0 — Footer Premium Institucional
+
+| Atributo | Valor |
+| --- | --- |
+| Versión | 2.5.0 |
+| OT principal | OT-SEM-PORTAL-007 |
+| Dependencias | OT-SEM-PORTAL-001–006 |
+
+**Incluye:** Footer Premium CMS-driven, programas destacados, menú jerárquico Recursos/Admisión, contacto completo, redes condicionales, botón volver arriba, portalCopy ampliado.
+
+**Documentación:** [OT-SEM-PORTAL-007](./docs/ot/OT-SEM-PORTAL-007.md) · [HOME-PREMIUM-SEM](./docs/ux/HOME-PREMIUM-SEM.md) · [CHANGELOG](./CHANGELOG.md)
 
 ---
 

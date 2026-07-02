@@ -1,5 +1,8 @@
 "use client";
 
+import { adminUi } from "@/lib/admin/admin-ui";
+import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import { getConfigSectionLabel } from "@/lib/admin/institutional";
 import { cn } from "@/lib/utils";
 import { CONFIG_SECTIONS, type ConfigSectionId } from "@/types/cms";
 
@@ -19,6 +22,7 @@ const sectionIcons: Record<ConfigSectionId, string> = {
   contact: "✉",
   social: "◉",
   features: "⚙",
+  experience: "✦",
   status: "●",
 };
 
@@ -30,57 +34,50 @@ export function ConfigurationLayout({
   onSave,
   children,
 }: ConfigurationLayoutProps) {
+  const sectionLabel = getConfigSectionLabel(activeSection);
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-              CMS
-            </p>
-            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-              Configuration Hub
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <SaveIndicator status={saveStatus} isDirty={isDirty} />
+    <AdminModuleLayout
+      breadcrumbs={[
+        { label: "Institución", href: "/admin/config" },
+        { label: sectionLabel },
+      ]}
+      title={sectionLabel}
+      description="Datos, identidad y funcionamiento del portal institucional"
+      actions={
+        <>
+          <SaveIndicator status={saveStatus} isDirty={isDirty} />
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saveStatus === "saving" || !isDirty}
+            className={adminUi.primaryBtn}
+          >
+            {saveStatus === "saving" ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </>
+      }
+      sidebar={
+        <nav className={adminUi.sidebarNav} aria-label="Secciones de institución">
+          {CONFIG_SECTIONS.map((section) => (
             <button
+              key={section.id}
               type="button"
-              onClick={onSave}
-              disabled={saveStatus === "saving" || !isDirty}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+              onClick={() => onSectionChange(section.id)}
+              className={cn(
+                adminUi.navBtn,
+                activeSection === section.id ? adminUi.navActive : adminUi.navIdle
+              )}
             >
-              {saveStatus === "saving" ? "Guardando…" : "Guardar cambios"}
+              <span className="text-base">{sectionIcons[section.id]}</span>
+              {getConfigSectionLabel(section.id)}
             </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row sm:px-6">
-        <aside className="lg:w-64 lg:shrink-0">
-          <nav className="rounded-xl border border-zinc-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-900">
-            {CONFIG_SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => onSectionChange(section.id)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition",
-                  activeSection === section.id
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                )}
-              >
-                <span className="text-base">{sectionIcons[section.id]}</span>
-                {section.label}
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        <main className="min-w-0 flex-1">{children}</main>
-      </div>
-    </div>
+          ))}
+        </nav>
+      }
+    >
+      {children}
+    </AdminModuleLayout>
   );
 }
 
@@ -92,20 +89,20 @@ function SaveIndicator({
   isDirty: boolean;
 }) {
   if (status === "saving") {
-    return <span className="text-sm text-zinc-500">Guardando…</span>;
+    return <span className={adminUi.mutedText}>Guardando…</span>;
   }
 
   if (status === "saved") {
-    return <span className="text-sm text-emerald-600">Cambios guardados</span>;
+    return <span className={adminUi.successText}>Cambios guardados</span>;
   }
 
   if (status === "error") {
-    return <span className="text-sm text-red-600">Error al guardar</span>;
+    return <span className={adminUi.errorText}>Error al guardar</span>;
   }
 
   if (isDirty) {
-    return <span className="text-sm text-amber-600">Cambios sin guardar</span>;
+    return <span className={adminUi.warningText}>Cambios sin guardar</span>;
   }
 
-  return <span className="text-sm text-zinc-400">Sin cambios</span>;
+  return <span className={adminUi.faintText}>Sin cambios</span>;
 }

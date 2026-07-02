@@ -1,0 +1,36 @@
+/**
+ * OT-EDITORIAL-ASSETS-001 — Gradientes institucionales (tokens --sem-*).
+ * Consumir en componentes vía class o var(); multi-tenant hereda brand.css.
+ */
+:root {
+  --editorial-gradient-vertical: linear-gradient(
+    180deg,
+    var(--sem-primary) 0%,
+    var(--sem-secondary) 55%,
+    var(--sem-accent) 100%
+  );
+  --editorial-gradient-diagonal: linear-gradient(
+    135deg,
+    var(--sem-primary) 0%,
+    var(--sem-secondary) 50%,
+    var(--sem-accent) 100%
+  );
+  --editorial-gradient-hero: linear-gradient(
+    145deg,
+    var(--sem-primary) 0%,
+    color-mix(in srgb, var(--sem-primary) 88%, var(--sem-secondary)) 45%,
+    var(--sem-secondary) 100%
+  );
+  --editorial-gradient-cta: linear-gradient(
+    90deg,
+    var(--sem-primary) 0%,
+    var(--sem-secondary) 50%,
+    color-mix(in srgb, var(--sem-accent) 90%, var(--sem-secondary)) 100%
+  );
+  --editorial-gradient-footer: linear-gradient(
+    180deg,
+    var(--sem-secondary) 0%,
+    var(--sem-primary) 100%
+  );
+}
+

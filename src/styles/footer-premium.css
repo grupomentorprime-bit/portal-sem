@@ -1,0 +1,441 @@
+/**
+ * OT-PORTAL-002 — Footer Institucional Premium v2.1
+ * @see src/components/portal/footer/
+ */
+
+.portal-footer-premium--v2.footer-premium {
+  --fp-navy: var(--sem-primary);
+  --fp-blue: var(--sem-secondary);
+  --fp-cyan: var(--sem-accent);
+  --fp-mint: var(--sem-success);
+  --fp-light: var(--sem-light);
+  position: relative;
+  color: var(--text-inverse);
+  border-top: none;
+  background: var(--fp-navy);
+  overflow: hidden;
+}
+
+.portal-footer-premium--v2.footer-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image:
+    radial-gradient(circle at 18% 22%, var(--fp-cyan) 0.5px, transparent 0.55px),
+    radial-gradient(circle at 82% 78%, var(--fp-light) 0.5px, transparent 0.55px);
+  background-size: 32px 32px, 40px 40px;
+}
+
+.portal-footer-premium--v2 .footer-premium__cta,
+.portal-footer-premium--v2 .footer-premium__main,
+.portal-footer-premium--v2 .footer-premium__bottom {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── CTA final ───────────────────────────────────────────────── */
+
+.portal-footer-premium--v2 .footer-premium__cta {
+  border-bottom: 1px solid color-mix(in srgb, var(--text-inverse) 8%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fp-blue) 18%, var(--fp-navy)) 0%,
+    var(--fp-navy) 100%
+  );
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-inner {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2rem);
+  align-items: center;
+  padding-block: clamp(3rem, 6vw, 4.25rem);
+}
+
+@media (min-width: 900px) {
+  .portal-footer-premium--v2 .footer-premium__cta-inner {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(2.5rem, 5vw, 4rem);
+  }
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fp-cyan);
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-title {
+  margin: 0.75rem 0 0;
+  font-size: clamp(1.625rem, 3.2vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.14;
+  letter-spacing: -0.03em;
+  max-width: 18ch;
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-description {
+  margin: 1rem 0 0;
+  max-width: 38rem;
+  font-size: clamp(0.975rem, 1.8vw, 1.0625rem);
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--text-inverse) 74%, transparent);
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .portal-footer-premium--v2 .footer-premium__cta-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 900px) {
+  .portal-footer-premium--v2 .footer-premium__cta-actions {
+    flex-direction: column;
+    justify-self: end;
+    width: min(100%, 17.5rem);
+  }
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 3rem;
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-btn--primary {
+  background: var(--fp-cyan);
+  border-color: var(--fp-cyan);
+  color: var(--fp-navy);
+  font-weight: 600;
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-btn--primary:hover {
+  background: color-mix(in srgb, var(--fp-cyan) 90%, var(--text-inverse));
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-btn--secondary {
+  border-color: color-mix(in srgb, var(--text-inverse) 28%, transparent);
+  color: var(--text-inverse);
+  background: color-mix(in srgb, var(--text-inverse) 4%, transparent);
+}
+
+.portal-footer-premium--v2 .footer-premium__cta-btn--secondary:hover {
+  border-color: color-mix(in srgb, var(--fp-cyan) 55%, transparent);
+  color: var(--fp-cyan);
+  background: color-mix(in srgb, var(--fp-cyan) 7%, transparent);
+}
+
+/* ── Main grid ───────────────────────────────────────────────── */
+
+.portal-footer-premium--v2 .footer-premium__main {
+  padding-block: clamp(3.25rem, 6.5vw, 5rem);
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--fp-blue) 6%, transparent) 50%,
+      transparent 100%
+    );
+}
+
+.portal-footer-premium--v2 .footer-premium__main::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("/images/demo/programs/hero-online.jpg");
+  background-size: cover;
+  background-position: center top;
+  mix-blend-mode: luminosity;
+}
+
+.portal-footer-premium--v2 .footer-premium__grid {
+  display: grid;
+  gap: clamp(2.25rem, 4.5vw, 3rem);
+}
+
+@media (min-width: 768px) {
+  .portal-footer-premium--v2 .footer-premium__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(2rem, 4vw, 3rem);
+    row-gap: clamp(2rem, 3.5vw, 2.75rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-footer-premium--v2 .footer-premium__grid {
+    grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr));
+    gap: clamp(1.25rem, 2vw, 2rem);
+    align-items: start;
+  }
+}
+
+/* ── Institución ─────────────────────────────────────────────── */
+
+.portal-footer-premium--v2 .footer-premium__institution {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .portal-footer-premium--v2 .footer-premium__institution {
+    grid-column: 1 / -1;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-inverse) 8%, transparent);
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-footer-premium--v2 .footer-premium__institution {
+    grid-column: auto;
+    padding-bottom: 0;
+    border-bottom: none;
+    padding-right: 1.5rem;
+    border-right: 1px solid color-mix(in srgb, var(--text-inverse) 8%, transparent);
+  }
+}
+
+.portal-footer-premium--v2 .footer-premium__brand {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-footer-premium--v2 .footer-premium__brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.portal-footer-premium--v2 .footer-premium__brand-icon {
+  width: 2.625rem;
+  height: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: transparent;
+}
+
+.portal-footer-premium--v2 .footer-premium__institution-name {
+  margin: 0;
+  font-size: clamp(1.0625rem, 1.9vw, 1.25rem);
+  font-weight: 700;
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+}
+
+.portal-footer-premium--v2 .footer-premium__tagline {
+  margin: 0.875rem 0 0;
+  max-width: 20rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  font-style: italic;
+  color: color-mix(in srgb, var(--fp-cyan) 70%, var(--text-inverse));
+}
+
+.portal-footer-premium--v2 .footer-premium__social--institution {
+  margin-top: 1.375rem;
+}
+
+/* ── Columnas de enlaces ───────────────────────────────────────── */
+
+.portal-footer-premium--v2 .footer-premium__columns {
+  display: contents;
+}
+
+.portal-footer-premium--v2 .footer-premium__column .portal-footer-premium__heading {
+  color: var(--fp-cyan);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-bottom: 1.25rem;
+}
+
+.portal-footer-premium--v2 .footer-premium__links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.portal-footer-premium--v2 .footer-premium__link {
+  display: inline-block;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text-inverse) 68%, transparent);
+  transition: color 200ms ease;
+}
+
+.portal-footer-premium--v2 .footer-premium__link:hover,
+.portal-footer-premium--v2 .footer-premium__link--highlight {
+  color: var(--fp-cyan);
+}
+
+/* ── Contacto ──────────────────────────────────────────────────── */
+
+.portal-footer-premium--v2 .footer-premium__contact-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.portal-footer-premium--v2 .footer-premium__contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text-inverse) 68%, transparent);
+}
+
+.portal-footer-premium--v2 .footer-premium__contact-icon {
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--fp-cyan) 80%, var(--text-inverse));
+  opacity: 0.9;
+}
+
+.portal-footer-premium--v2 .footer-premium__contact-link {
+  color: inherit;
+  transition: color 200ms ease;
+}
+
+.portal-footer-premium--v2 .footer-premium__contact-link:hover {
+  color: var(--fp-cyan);
+}
+
+/* ── Redes sociales ────────────────────────────────────────────── */
+
+.portal-footer-premium--v2 .footer-premium__social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portal-footer-premium--v2 .footer-premium__social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--text-inverse) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-inverse) 12%, transparent);
+  background: color-mix(in srgb, var(--text-inverse) 3%, transparent);
+  transition:
+    color 200ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease,
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.portal-footer-premium--v2 .footer-premium__social-link:hover {
+  color: var(--fp-cyan);
+  border-color: color-mix(in srgb, var(--fp-cyan) 40%, transparent);
+  background: color-mix(in srgb, var(--fp-cyan) 9%, transparent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--fp-navy) 30%, transparent);
+}
+
+/* ── Pie legal ─────────────────────────────────────────────────── */
+
+.portal-footer-premium--v2 .footer-premium__bottom {
+  border-top: 1px solid color-mix(in srgb, var(--text-inverse) 8%, transparent);
+  background: color-mix(in srgb, var(--fp-navy) 94%, var(--text-inverse));
+}
+
+.portal-footer-premium--v2 .footer-premium__bottom-inner {
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: clamp(1.125rem, 2.5vw, 1.5rem) clamp(1rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .portal-footer-premium--v2 .footer-premium__bottom-inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.25rem 2rem;
+    text-align: left;
+    align-items: center;
+  }
+
+  .portal-footer-premium--v2 .footer-premium__copyright {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .portal-footer-premium--v2 .footer-premium__credits {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .portal-footer-premium--v2 .footer-premium__admin-link {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-self: end;
+    align-self: center;
+  }
+}
+
+.portal-footer-premium--v2 .footer-premium__copyright {
+  margin: 0;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--text-inverse) 48%, transparent);
+}
+
+.portal-footer-premium--v2 .footer-premium__credits {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: color-mix(in srgb, var(--text-inverse) 34%, transparent);
+}
+
+.portal-footer-premium--v2 .footer-premium__admin-link {
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--text-inverse) 28%, transparent);
+  transition: color 200ms ease;
+}
+
+.portal-footer-premium--v2 .footer-premium__admin-link:hover {
+  color: color-mix(in srgb, var(--text-inverse) 52%, transparent);
+}
+
+.portal-footer-premium--v2 .portal-footer-premium__back-to-top {
+  border-color: color-mix(in srgb, var(--text-inverse) 18%, transparent);
+  background: color-mix(in srgb, var(--fp-navy) 85%, var(--text-inverse));
+  color: var(--text-inverse);
+}
+
+.portal-footer-premium--v2 .portal-footer-premium__back-to-top:hover {
+  background: color-mix(in srgb, var(--fp-blue) 35%, var(--fp-navy));
+  color: var(--fp-cyan);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-footer-premium--v2 .footer-premium__social-link:hover {
+    transform: none;
+  }
+}

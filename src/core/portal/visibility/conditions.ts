@@ -1,3 +1,4 @@
+import { isBlockTypeEnabled } from "@/lib/portal/feature-flags";
 import type { FeatureFlags } from "@/types/cms";
 import type { PageBlock } from "@/types/page";
 import type { PortalAudience, PortalBlockConditions, PortalRenderContext } from "@/types/portal";
@@ -49,6 +50,7 @@ export function evaluateBlockVisibility(
   if (!matchesTenant(conditions.tenantIds, ctx.tenantId)) return false;
   if (!matchesRole(conditions.roles, ctx.audience)) return false;
   if (!matchesFeatureFlag(conditions.featureFlag, ctx.featureFlags)) return false;
+  if (!isBlockTypeEnabled(ctx.featureFlags, block.type)) return false;
   if (!isWithinDateRange(conditions.dateFrom, conditions.dateTo)) return false;
   if (!matchesLanguage(conditions.language, ctx.language)) return false;
 

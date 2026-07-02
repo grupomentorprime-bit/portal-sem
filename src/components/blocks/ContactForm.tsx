@@ -1,9 +1,11 @@
+/**
+ * @deprecated Usar Experience Forms — ver docs/core/CORE-EXPERIENCE-FORMS-v1.md
+ */
+
 "use client";
 
-import { Container, Section, Stack } from "@/components/layout";
-import { Input, Textarea, Button } from "@/components/ui";
-import { SectionTitle } from "@/components/institutional";
-import { asBoolean, asString } from "@/lib/cms/block-utils";
+import { ExperienceFormGrid } from "@/components/blocks/ExperienceFormGrid";
+import { asString } from "@/lib/cms/block-utils";
 import type { ContactInfo } from "@/types/cms";
 
 interface ContactFormProps {
@@ -11,38 +13,15 @@ interface ContactFormProps {
   contact?: ContactInfo;
 }
 
-export function ContactForm({ settings, contact }: ContactFormProps) {
+export function ContactForm({ settings }: ContactFormProps) {
   return (
-    <Section id="contacto" padding="lg" muted>
-      <Container size="md">
-        <Stack gap={8}>
-          <SectionTitle
-            title={asString(settings.title, "Contáctanos")}
-            description={asString(settings.description) || undefined}
-            align="center"
-            className="mx-auto"
-          />
-          <form className="institutional-card mx-auto max-w-xl space-y-4" onSubmit={(e) => e.preventDefault()}>
-            <Input label="Nombre" name="name" required />
-            <Input label="Correo" name="email" type="email" required />
-            <Textarea label="Mensaje" name="message" required />
-            <Button type="submit" variant="primary" className="w-full">
-              Enviar mensaje
-            </Button>
-          </form>
-          <div className="text-center text-caption text-muted">
-            {asBoolean(settings.showEmail, true) && contact?.email ? (
-              <p>{contact.email}</p>
-            ) : null}
-            {asBoolean(settings.showPhone, true) && contact?.phone ? (
-              <p>{contact.phone}</p>
-            ) : null}
-            {asBoolean(settings.showAddress, true) && contact?.address ? (
-              <p>{contact.address}</p>
-            ) : null}
-          </div>
-        </Stack>
-      </Container>
-    </Section>
+    <ExperienceFormGrid
+      settings={{
+        formId: asString(settings.formId, "contact"),
+        overline: asString(settings.overline, "Contacto"),
+        title: asString(settings.title, "Contáctanos"),
+        description: asString(settings.description),
+      }}
+    />
   );
 }

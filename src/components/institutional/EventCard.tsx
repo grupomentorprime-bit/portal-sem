@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * portal/cards/EventCard
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import Link from "next/link";
 import { Calendar, MapPin } from "lucide-react";
 import { iconSizes } from "@/design";

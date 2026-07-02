@@ -1,20 +1,38 @@
 import type { LucideProps } from "lucide-react";
 import {
+  Award,
   BookOpen,
   Calendar,
   Circle,
+  ClipboardCheck,
+  Clock,
+  Compass,
   GraduationCap,
   Heart,
   Library,
+  Monitor,
+  Shield,
+  Sparkles,
+  Users,
+  Video,
 } from "lucide-react";
 
 const ICONS = {
+  Award,
   BookOpen,
+  Calendar,
+  Circle,
+  ClipboardCheck,
+  Clock,
+  Compass,
   GraduationCap,
   Heart,
-  Calendar,
   Library,
-  Circle,
+  Monitor,
+  Shield,
+  Sparkles,
+  Users,
+  Video,
 } as const;
 
 type IconName = keyof typeof ICONS;

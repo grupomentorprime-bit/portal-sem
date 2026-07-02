@@ -12,9 +12,14 @@ import {
   scheduleEvent,
 } from "@/core/events/persistence/store";
 
-export async function publish(input: PublishInput): Promise<DomainEvent> {
+export interface PublishOptions {
+  /** Evita escritura en MongoDB — útil para telemetría de render en el camino crítico. */
+  skipPersist?: boolean;
+}
+
+export async function publish(input: PublishInput, options?: PublishOptions): Promise<DomainEvent> {
   const event = buildDomainEvent(input);
-  await dispatch(event);
+  await dispatch(event, { skipPersist: options?.skipPersist });
   return event;
 }
 

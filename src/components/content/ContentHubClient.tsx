@@ -1,35 +1,76 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { AdminModuleLayout, AdminQuickActions } from "@/components/admin/AdminModuleLayout";
+import {
+  CONTENT_EDITORIAL_PRIMARY,
+  CONTENT_EDITORIAL_SECONDARY,
+} from "@/lib/admin/institutional";
+import { isAdminSectionEnabled } from "@/lib/portal/feature-flags";
+import type { FeatureFlags } from "@/types/cms";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ALLOWED_COLLECTIONS } from "@/lib/content/types";
-
-const CONTENT_SECTIONS = [
-  { href: "/admin/content/programs", label: "Programas", collection: "academy_programs" },
-  { href: "/admin/content/news", label: "Noticias", collection: "content_news" },
-  { href: "/admin/content/team", label: "Equipo", collection: "academy_team" },
-  { href: "/admin/content/library", label: "Biblioteca", collection: "content_library" },
-  { href: "/admin/content/events", label: "Eventos", collection: "content_events" },
-  { href: "/admin/content/testimonials", label: "Testimonios", collection: "academy_testimonials" },
-  { href: "/admin/content/gallery", label: "Galería", collection: "academy_gallery" },
-  { href: "/admin/content/categories", label: "Categorías", collection: "academy_categories" },
-] as const;
 
 interface ContentHubClientProps {
   tenant: string;
+  features: FeatureFlags;
   initialCounts: Record<string, number>;
 }
 
-export function ContentHubClient({ tenant, initialCounts }: ContentHubClientProps) {
+function EditorialCard({
+  href,
+  label,
+  description,
+  count,
+}: {
+  href: string;
+  label: string;
+  description: string;
+  count?: number;
+}) {
+  return (
+    <Link href={href} className="group block h-full">
+      <Card className="h-full border-border transition group-hover:border-primary/30 group-hover:shadow-md">
+        <CardHeader>
+          <CardTitle className="text-lg">{label}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+          {count !== undefined ? (
+            <p className="pt-2 text-xs font-medium text-muted">
+              {count} {count === 1 ? "elemento" : "elementos"}
+            </p>
+          ) : null}
+        </CardHeader>
+      </Card>
+    </Link>
+  );
+}
+
+export function ContentHubClient({ tenant, features, initialCounts }: ContentHubClientProps) {
   const [counts, setCounts] = useState(initialCounts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const primarySections = useMemo(
+    () =>
+      CONTENT_EDITORIAL_PRIMARY.filter((section) =>
+        isAdminSectionEnabled(features, section.href)
+      ),
+    [features]
+  );
+  const secondarySections = useMemo(
+    () =>
+      CONTENT_EDITORIAL_SECONDARY.filter((section) =>
+        isAdminSectionEnabled(features, section.href)
+      ),
+    [features]
+  );
+
   const refreshCounts = useCallback(async () => {
     const next: Record<string, number> = {};
-    for (const section of CONTENT_SECTIONS) {
+    const sections = [...primarySections, ...secondarySections];
+    for (const section of sections) {
+      if (!section.collection) continue;
       const res = await fetch(
         `/api/cms/content-query?tenant=${encodeURIComponent(tenant)}&collection=${section.collection}&limit=1`
       );
@@ -37,7 +78,7 @@ export function ContentHubClient({ tenant, initialCounts }: ContentHubClientProp
       next[section.collection] = data.ok ? data.total : 0;
     }
     setCounts(next);
-  }, [tenant]);
+  }, [tenant, primarySections, secondarySections]);
 
   const handleSeed = async () => {
     setLoading(true);
@@ -50,83 +91,107 @@ export function ContentHubClient({ tenant, initialCounts }: ContentHubClientProp
       });
       const data = await res.json();
       if (!data.ok) {
-        setError(data.error ?? "Error al inicializar contenido.");
+        setError(data.error ?? "No se pudo preparar el contenido inicial.");
         return;
       }
       await refreshCounts();
     } catch {
-      setError("Error de red.");
+      setError("Error de conexión. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">CMS</p>
-            <h1 className="text-xl font-semibold">Contenido</h1>
-            <p className="text-sm text-zinc-500">Content Engine — tenant: {tenant}</p>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/admin/media">
-              <Button variant="secondary">Medios</Button>
-            </Link>
-            <Link href="/admin/pages">
-              <Button variant="secondary">Páginas</Button>
-            </Link>
-            <Button onClick={handleSeed} disabled={loading}>
-              Inicializar contenido
-            </Button>
-          </div>
+    <AdminModuleLayout
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Comunicaciones", href: "/admin/content" },
+        { label: "Centro editorial" },
+      ]}
+      title="Centro editorial"
+      description="Gestiona programas, noticias, personas y recursos del portal SEM"
+      actions={
+        <>
+          <Link href="/admin/media">
+            <Button variant="outline">Biblioteca de medios</Button>
+          </Link>
+          <Button onClick={handleSeed} disabled={loading} variant="secondary">
+            {loading ? "Preparando…" : "Contenido de ejemplo"}
+          </Button>
+        </>
+      }
+    >
+      {error ? (
+        <div className="mb-6 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+          {error}
         </div>
-      </header>
+      ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {error ? (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Colecciones</CardTitle>
-              <CardDescription>{ALLOWED_COLLECTIONS.length} oficiales registradas</CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Motor</CardTitle>
-              <CardDescription>POST /api/cms/content-query</CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Estado editorial</CardTitle>
-              <CardDescription>Solo publicado en sitio público</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CONTENT_SECTIONS.map((section) => (
-            <Link key={section.href} href={section.href}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <CardHeader>
-                  <CardTitle>{section.label}</CardTitle>
-                  <CardDescription>
-                    {section.collection} · {counts[section.collection] ?? 0} documentos
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
+      <section className="mb-10">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
+          Accesos principales
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {primarySections.map((section) => (
+            <EditorialCard
+              key={section.href}
+              href={section.href}
+              label={section.label}
+              description={section.description}
+              count={
+                section.collection ? counts[section.collection] : undefined
+              }
+            />
           ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="mb-10">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
+          Más secciones
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {secondarySections.map((section) => (
+            <EditorialCard
+              key={section.href}
+              href={section.href}
+              label={section.label}
+              description={section.description}
+              count={counts[section.collection] ?? 0}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
+          Acciones rápidas
+        </h2>
+        <AdminQuickActions
+          items={[
+            ...(features.news
+              ? [
+                  {
+                    href: "/admin/content/news/edit/new",
+                    label: "Publicar noticia",
+                    description: "Nuevo comunicado institucional",
+                  },
+                ]
+              : []),
+            {
+              href: "/admin/pages",
+              label: "Editar páginas del portal",
+              description: "Estructura y bloques del sitio",
+            },
+            {
+              href: "/admin/media",
+              label: "Subir imágenes",
+              description: "Biblioteca visual del seminario",
+            },
+          ]}
+        />
+      </section>
+    </AdminModuleLayout>
   );
 }

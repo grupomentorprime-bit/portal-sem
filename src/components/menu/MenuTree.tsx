@@ -55,8 +55,8 @@ function MenuTreeNodeItem({
         className={cn(
           "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition",
           isSelected
-            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-            : "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+            ? "bg-primary text-text-inverse dark:bg-background-muted dark:text-foreground"
+            : "hover:bg-background-muted dark:hover:bg-gray-800",
           editable && "cursor-pointer"
         )}
       >
@@ -69,7 +69,7 @@ function MenuTreeNodeItem({
       </button>
 
       {node.children.length > 0 ? (
-        <div className="ml-6 mt-1 border-l border-zinc-200 pl-3 dark:border-zinc-700">
+        <div className="ml-6 mt-1 border-l border-border pl-3 dark:border-gray-700">
           <MenuTree
             nodes={node.children}
             onSelect={onSelect}

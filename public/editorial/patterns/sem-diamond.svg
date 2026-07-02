@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <defs>
+    <pattern id="p" width="48" height="48" patternUnits="userSpaceOnUse">
+      <rect x="20" y="20" width="8" height="8" transform="rotate(45 24 24)" stroke="#10BCE2" stroke-width="0.5" opacity="0.22" fill="none"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#p)" opacity="0.06"/>
+</svg>

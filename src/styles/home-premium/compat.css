@@ -1,0 +1,48 @@
+/**
+ * OT-ARCH-UX-001 — Puentes documentados (!important permitido solo aquí)
+ * OT-BRANDING-003 — tokens corporativos SEM
+ */
+
+/* PortalSection interno — nunca el Hero */
+.portal-home-experience .portal-home-x__section > .portal-home-x__reveal > section:not(.hero-premium),
+.portal-home-experience .portal-home-x__section > .portal-home-x__reveal > div > section:not(.hero-premium) {
+  padding-block: 0 !important;
+  background: transparent !important;
+}
+
+/* Hero — full-bleed, sin animación reveal */
+.portal-home-experience [data-block="hero"] > .portal-home-x__reveal {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  max-width: none !important;
+  width: 100% !important;
+  margin-inline: 0 !important;
+}
+
+/* People home — sin card SaaS sobre retratos */
+.portal-home-experience [data-block="people"] .institutional-card,
+.portal-home-experience [data-block="people"] .portal-person-card__card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.portal-home-experience [data-block="people"] .institutional-card:hover,
+.portal-home-experience [data-block="people"] .portal-person-card__card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+.portal-home-experience [data-block="hero"] .hero-premium__photo-overlay {
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--sem-primary) 92%, transparent) 0%,
+    color-mix(in srgb, var(--sem-primary) 55%, transparent) 38%,
+    color-mix(in srgb, var(--sem-primary) 18%, transparent) 62%,
+    transparent 100%
+  ) !important;
+  mix-blend-mode: normal !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}

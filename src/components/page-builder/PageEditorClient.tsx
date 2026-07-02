@@ -1,6 +1,6 @@
 "use client";
 
-import { PageBuilder } from "./PageBuilder";
+import { ExperienceStudio } from "@/components/visual-builder";
 import type { BlockDefinition, CmsPage, CmsTemplate } from "@/types/page";
 import type { SiteConfig } from "@/types/cms";
 
@@ -35,11 +35,11 @@ export function PageEditorClient({
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error ?? "Error al guardar");
-    window.location.reload();
+    return data.page as CmsPage;
   };
 
   return (
-    <PageBuilder
+    <ExperienceStudio
       initialPage={initialPage}
       blockLibrary={blockLibrary}
       templates={templates}

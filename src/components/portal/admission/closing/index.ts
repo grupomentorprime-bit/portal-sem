@@ -1,0 +1,10 @@
+export { ClosingActions } from "./ClosingActions";
+export { ClosingBackgroundOverlay, buildClosingBackgroundStyle } from "./ClosingBackground";
+export { ClosingContact } from "./ClosingContact";
+export { ClosingCopyright } from "./ClosingCopyright";
+export { ClosingFooter } from "./ClosingFooter";
+export { ClosingIndicators } from "./ClosingIndicators";
+export { ClosingMediaImage } from "./ClosingMediaImage";
+export { ClosingMessage } from "./ClosingMessage";
+export { ClosingQuotes } from "./ClosingQuotes";
+export { ClosingSeal } from "./ClosingSeal";

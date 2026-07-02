@@ -25,6 +25,10 @@ export interface IdentityUser {
   emailVerified: boolean;
   displayName: string;
   photoMediaId?: string;
+  jobTitle?: string;
+  phone?: string;
+  timezone?: string;
+  locale?: string;
   status: UserStatus;
   lastLoginAt?: string;
   createdAt: string;

@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * TestimonialsSectionContent
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import { Container, Grid, Section, Stack } from "@/components/layout";
 import { SectionTitle, TestimonialCard } from "@/components/institutional";
 import { getResolvedItems } from "@/lib/content/block-settings";

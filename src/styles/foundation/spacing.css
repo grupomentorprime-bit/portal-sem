@@ -1,0 +1,59 @@
+/**
+ * OT-UX-FOUNDATION-001 — Spacing scale oficial (px)
+ * 8 · 16 · 24 · 32 · 48 · 64 · 80 · 120 · 160
+ */
+
+:root {
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 48px;
+  --space-6: 64px;
+  --space-7: 80px;
+  --space-8: 120px;
+  --space-9: 160px;
+
+  /* Alias semánticos */
+  --space-section-y: var(--space-8);
+  --space-section-y-lg: var(--space-9);
+  --space-block: var(--space-5);
+  --space-stack: var(--space-3);
+  --space-inline: var(--space-2);
+
+  /* Retrocompat design-tokens */
+  --space-xs: var(--space-1);
+  --space-sm: var(--space-1);
+  --space-md: var(--space-2);
+  --space-lg: var(--space-3);
+  --space-xl: var(--space-4);
+  --space-2xl: var(--space-5);
+  --space-3xl: var(--space-6);
+  --space-4xl: var(--space-8);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --space-section-y: var(--space-8);
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --space-section-y: var(--space-9);
+    --space-block: var(--space-6);
+  }
+}
+
+/* Utilidades de espaciado */
+.gap-f-1 { gap: var(--space-1); }
+.gap-f-2 { gap: var(--space-2); }
+.gap-f-3 { gap: var(--space-3); }
+.gap-f-4 { gap: var(--space-4); }
+.gap-f-5 { gap: var(--space-5); }
+.gap-f-6 { gap: var(--space-6); }
+
+.py-section { padding-block: var(--space-section-y); }
+.py-section-lg { padding-block: var(--space-section-y-lg); }
+.mb-block { margin-bottom: var(--space-block); }
+.mb-stack { margin-bottom: var(--space-stack); }

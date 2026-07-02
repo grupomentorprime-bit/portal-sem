@@ -1,0 +1,57 @@
+/**
+ * OT-UX-FOUNDATION-001 — Foundation tokens (alias canónicos)
+ */
+
+:root {
+  /* ─── Breakpoint tier labels (use in JS/docs; CSS uses media queries) ─── */
+  --bp-mobile-max: 767px;
+  --bp-tablet-min: 768px;
+  --bp-tablet-max: 991px;
+  --bp-tablet-xl-min: 992px;
+  --bp-tablet-xl-max: 1279px;
+  --bp-laptop-min: 1280px;
+  --bp-laptop-max: 1439px;
+  --bp-desktop-min: 1440px;
+  --bp-desktop-max: 1919px;
+  --bp-desktop-xl-min: 1920px;
+
+  /* ─── Container (defaults = mobile) ─── */
+  --container-max: 100%;
+  --container-padding: 16px;
+  --container-name: xs;
+
+  /* ─── Grid ─── */
+  --grid-columns: 12;
+  --grid-gap: 16px;
+
+  /* ─── Cards ─── */
+  --card-radius: var(--radius-xl);
+  --card-padding: 24px;
+  --card-shadow: var(--shadow-sm);
+  --card-shadow-hover: var(--shadow-lg);
+  --card-border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+
+  /* ─── Buttons ─── */
+  --btn-height-sm: 32px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 48px;
+  --btn-radius: var(--radius-md);
+  --btn-padding-x-sm: 12px;
+  --btn-padding-x-md: 16px;
+  --btn-padding-x-lg: 24px;
+
+  /* ─── Hero layout ratios (text column share) ─── */
+  --hero-text-ratio: 1;
+  --hero-image-ratio: 0;
+  --hero-layout: stacked;
+
+  /* ─── Motion foundation ─── */
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-duration-fast: 150ms;
+  --motion-duration-normal: 250ms;
+  --motion-duration-slow: 400ms;
+  --motion-duration-reveal: 750ms;
+  --motion-stagger-step: 80ms;
+}

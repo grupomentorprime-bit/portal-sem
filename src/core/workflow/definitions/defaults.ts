@@ -1,5 +1,6 @@
 import type { WorkflowDefinition } from "@/types/workflow";
 import type { WorkflowStateType } from "@/types/workflow";
+import { workflowStateColors } from "@/core/workflow/workflow-colors";
 
 export interface DefinitionTemplate {
   key: string;
@@ -33,11 +34,11 @@ export const SYSTEM_WORKFLOW_TEMPLATES: DefinitionTemplate[] = [
     description: "Flujo editorial de páginas",
     entityType: "cms.page",
     states: [
-      { key: "draft", label: "Borrador", type: "initial", color: "#6b7280", isInitial: true },
-      { key: "review", label: "En revisión", type: "approval", color: "#f59e0b" },
-      { key: "approved", label: "Aprobado", type: "normal", color: "#3b82f6" },
-      { key: "published", label: "Publicado", type: "published", color: "#10b981", isFinal: true },
-      { key: "archived", label: "Archivado", type: "archived", color: "#64748b", isFinal: true },
+      { key: "draft", label: "Borrador", type: "initial", color: workflowStateColors.draft, isInitial: true },
+      { key: "review", label: "En revisión", type: "approval", color: workflowStateColors.review },
+      { key: "approved", label: "Aprobado", type: "normal", color: workflowStateColors.approved },
+      { key: "published", label: "Publicado", type: "published", color: workflowStateColors.published, isFinal: true },
+      { key: "archived", label: "Archivado", type: "archived", color: workflowStateColors.archived, isFinal: true },
     ],
     transitions: [
       { id: "submit-review", fromState: "draft", toState: "review", label: "Enviar a revisión", permission: "cms.pages.update" },
@@ -54,9 +55,9 @@ export const SYSTEM_WORKFLOW_TEMPLATES: DefinitionTemplate[] = [
     description: "Flujo de publicación de programas",
     entityType: "academy.program",
     states: [
-      { key: "draft", label: "Borrador", type: "initial", color: "#6b7280", isInitial: true },
-      { key: "published", label: "Publicado", type: "published", color: "#10b981", isFinal: true },
-      { key: "archived", label: "Archivado", type: "archived", color: "#64748b", isFinal: true },
+      { key: "draft", label: "Borrador", type: "initial", color: workflowStateColors.draft, isInitial: true },
+      { key: "published", label: "Publicado", type: "published", color: workflowStateColors.published, isFinal: true },
+      { key: "archived", label: "Archivado", type: "archived", color: workflowStateColors.archived, isFinal: true },
     ],
     transitions: [
       { id: "publish", fromState: "draft", toState: "published", label: "Publicar", permission: "programs.manage", actions: ["audit"] },
@@ -70,9 +71,9 @@ export const SYSTEM_WORKFLOW_TEMPLATES: DefinitionTemplate[] = [
     description: "Flujo editorial de noticias",
     entityType: "content.news",
     states: [
-      { key: "draft", label: "Borrador", type: "initial", color: "#6b7280", isInitial: true },
-      { key: "review", label: "En revisión", type: "approval", color: "#f59e0b" },
-      { key: "published", label: "Publicado", type: "published", color: "#10b981", isFinal: true },
+      { key: "draft", label: "Borrador", type: "initial", color: workflowStateColors.draft, isInitial: true },
+      { key: "review", label: "En revisión", type: "approval", color: workflowStateColors.review },
+      { key: "published", label: "Publicado", type: "published", color: workflowStateColors.published, isFinal: true },
     ],
     transitions: [
       { id: "submit-review", fromState: "draft", toState: "review", label: "Enviar a revisión", permission: "cms.pages.update" },

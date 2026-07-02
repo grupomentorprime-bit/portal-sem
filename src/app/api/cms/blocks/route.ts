@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getBlockLibraryUncached, seedBlockLibrary } from "@/lib/cms/blocks";
+import { getBlockLibraryUncached, revalidateBlockLibraryCache, seedBlockLibrary } from "@/lib/cms/blocks";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     if (searchParams.get("seed") === "true") {
       const blocks = await seedBlockLibrary();
+      revalidateBlockLibraryCache();
       return NextResponse.json({ ok: true, blocks, seeded: true });
     }
     const blocks = await getBlockLibraryUncached();

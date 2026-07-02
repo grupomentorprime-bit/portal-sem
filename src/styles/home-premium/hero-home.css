@@ -1,0 +1,66 @@
+/**
+ * OT-ARCH-UX-001 — Hero Home composition
+ * OT-BRANDING-003 — tokens corporativos SEM
+ */
+
+.portal-home-experience [data-block="hero"] {
+  padding-top: 0;
+  padding-bottom: 0;
+  background: transparent;
+  overflow: clip;
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium {
+  background-color: var(--sem-primary);
+}
+
+.portal-home-experience [data-block="hero"] .hero-photo > span {
+  transform: scale(var(--hero-img-zoom, 1.12));
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium__generation-card {
+  border-radius: 1.25rem;
+  box-shadow:
+    0 24px 64px color-mix(in srgb, var(--sem-primary) 28%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--text-inverse) 12%, transparent);
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium__indicators {
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--sem-primary) 45%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--text-inverse) 10%, transparent);
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium__indicator::after {
+  width: 0.5rem;
+  height: 0.5rem;
+  transition:
+    transform 0.35s var(--home-ease),
+    background-color 0.35s var(--home-ease),
+    width 0.35s var(--home-ease);
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium__indicator--active::after {
+  width: 1.75rem;
+  border-radius: 9999px;
+  background: var(--sem-accent);
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium__btn-primary {
+  padding-inline: clamp(1.5rem, 3vw, 2rem);
+  font-size: clamp(1rem, 1.4vw, 1.0625rem);
+  letter-spacing: 0.01em;
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium__features {
+  margin-top: clamp(0.75rem, 2vh, 1.25rem);
+  padding-top: clamp(1rem, 2vh, 1.375rem);
+  border-top: 1px solid color-mix(in srgb, var(--text-inverse) 10%, transparent);
+}
+
+.portal-home-experience [data-block="hero"] .hero-premium__indicators--inline {
+  margin-top: clamp(0.75rem, 1.5vh, 1rem);
+}

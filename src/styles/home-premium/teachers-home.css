@@ -1,0 +1,212 @@
+/**
+ * OT-UX-HOME-TEACHERS-v2 — Equipo directivo y académico (editorial)
+ * Colores: --color-primary, --color-accent (overline), --color-success (nombres)
+ */
+
+.portal-home-experience [data-block="people"].portal-home-x__section,
+.portal-home-experience [data-block="people"] .portal-home-x__reveal {
+  overflow: visible;
+}
+
+.portal-home-experience [data-block="people"] {
+  background: var(--background);
+  position: relative;
+  z-index: 2;
+}
+
+/* Separación del bloque anterior (metodología) — evita solapamiento de texto */
+.portal-home-experience [data-block="people"].portal-home-x__section {
+  padding-top: clamp(2rem, 4vw, 3rem);
+}
+
+.portal-home-experience [data-block="people"]::before {
+  display: none;
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid {
+  position: relative;
+  z-index: 1;
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid--home-editorial .portal-people-grid__header {
+  position: relative;
+  isolation: isolate;
+  max-width: 44rem;
+  margin-inline: auto;
+  margin-bottom: clamp(1.25rem, 2.5vw, 2rem) !important;
+  text-align: center;
+  padding: clamp(1.75rem, 3.5vw, 2.5rem) 1rem clamp(2.75rem, 5vw, 3.5rem);
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid--home-editorial .portal-people-grid__header::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  background: linear-gradient(
+    165deg,
+    var(--color-primary) 0%,
+    color-mix(in srgb, var(--color-primary) 72%, var(--color-secondary)) 46%,
+    color-mix(in srgb, var(--color-primary) 88%, black) 100%
+  );
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid--home-editorial .portal-people-grid__header .text-secondary {
+  color: var(--color-accent);
+  letter-spacing: 0.18em;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid--home-editorial .portal-people-grid__header .text-foreground {
+  color: var(--color-surface);
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid--home-editorial .portal-people-grid__header .text-muted {
+  color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  max-width: 36rem;
+  margin-inline: auto;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+/* Grid — cards superponen suavemente la banda del encabezado */
+.portal-home-experience [data-block="people"] .portal-people-grid__list {
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  margin-top: clamp(-2.5rem, -5vw, -1.75rem);
+  padding-top: 0;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="people"] .portal-people-grid__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="people"] .portal-people-grid__list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(1rem, 1.75vw, 1.5rem);
+  }
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid__list > li {
+  display: flex;
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card {
+  width: 100%;
+}
+
+/* Retrato — fondo unificado, siempre llena el marco */
+.portal-home-experience [data-block="people"] {
+  --team-portrait-bg: color-mix(in srgb, var(--color-primary) 94%, black);
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__media,
+.portal-home-experience [data-block="people"] .portal-person-card--compact .portal-person-card__media {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  aspect-ratio: 3 / 4;
+  min-height: 12rem;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--team-portrait-bg);
+  box-shadow:
+    0 20px 48px color-mix(in srgb, var(--color-primary) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 88% 82% at 50% 36%,
+    transparent 40%,
+    color-mix(in srgb, var(--team-portrait-bg) 40%, transparent) 100%
+  );
+  z-index: 1;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__media-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 14%;
+  transition: none;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card:hover .portal-person-card__media-img {
+  transform: none;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__card > div:last-child {
+  padding: clamp(0.875rem, 1.5vw, 1.125rem) 0.125rem 0;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__meta {
+  text-align: center;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__name {
+  font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+  font-weight: 700;
+  color: var(--color-success);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__position,
+.portal-home-experience [data-block="people"] .portal-person-card__position.text-secondary {
+  margin-top: 0.3125rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  line-height: 1.4;
+}
+
+.portal-home-experience [data-block="people"] .portal-person-card__specialty,
+.portal-home-experience [data-block="people"] .portal-person-card__bio,
+.portal-home-experience [data-block="people"] .portal-person-card__social {
+  display: none;
+}
+
+/* CTA */
+.portal-home-experience [data-block="people"] .portal-people-grid__footer-cta {
+  margin-top: clamp(2rem, 3.5vw, 2.75rem);
+  padding-bottom: 0;
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid__footer-cta a {
+  min-width: 12rem;
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--border));
+  color: var(--color-primary);
+}
+
+.portal-home-experience [data-block="people"] .portal-people-grid__footer-cta a:hover {
+  border-color: var(--color-accent);
+  color: var(--color-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-home-experience [data-block="people"] .portal-person-card:hover .portal-person-card__card {
+    transform: none;
+  }
+}

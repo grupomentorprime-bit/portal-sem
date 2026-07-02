@@ -1,54 +1,73 @@
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, Calendar, MapPin } from "lucide-react";
+import { ArrowRight, Calendar, Clock, MapPin } from "lucide-react";
 import { iconSizes } from "@/design";
+import { focusRing } from "@/components/ui/shared";
 import type { EventItem } from "@/types/content";
+import { cn } from "@/lib/utils";
 import { PortalCard } from "./PortalCard";
+import { CardMedia } from "./CardMedia";
 
 interface EventCardProps {
   event: EventItem;
+  variant?: "card" | "timeline";
+  ctaLabel?: string;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, variant = "card", ctaLabel }: EventCardProps) {
+  const timeline = variant === "timeline";
+
   return (
-    <Link href={event.href} className="group block h-full">
-      <PortalCard className="flex h-full flex-col overflow-hidden p-0 animate-scale-in">
-        {event.image ? (
-          <div className="relative aspect-[16/10] overflow-hidden bg-background-soft">
-            <Image
+    <article className={cn("group", timeline ? "eco-events-timeline__item" : "h-full")}>
+      {timeline ? <span className="eco-events-timeline__marker" aria-hidden /> : null}
+      <Link href={event.href} className={cn("block", !timeline && "h-full", focusRing)}>
+        <PortalCard
+          className={cn(
+            "eco-event-card overflow-hidden p-0",
+            timeline ? "flex flex-row gap-0" : "flex h-full flex-col"
+          )}
+        >
+          {event.image ? (
+            <CardMedia
               src={event.image}
-              alt=""
-              fill
-              className="object-cover transition-transform duration-[var(--transition-slow)] group-hover:scale-[1.03]"
-              sizes="(max-width: 768px) 100vw, 33vw"
+              alt={event.title}
+              className={cn(timeline ? "hidden w-40 shrink-0 sm:block" : undefined)}
+              sizes="160px"
             />
-          </div>
-        ) : null}
-        <div className="flex flex-1 flex-col p-6">
-          <h3 className="text-heading text-foreground group-hover:text-secondary">{event.title}</h3>
-          {event.excerpt ? (
-            <p className="mt-2 flex-1 text-body text-muted">{event.excerpt}</p>
           ) : null}
-          <ul className="mt-4 space-y-2">
-            {event.date ? (
-              <li className="flex items-center gap-2 text-caption text-muted">
-                <Calendar size={iconSizes.sm} strokeWidth={2} aria-hidden />
-                <time>{event.date}</time>
-              </li>
-            ) : null}
+          <div className={cn("flex flex-1 flex-col p-6", timeline && "min-w-0")}>
+            <div className="mb-2 flex flex-wrap gap-3 text-caption text-muted">
+              {event.date ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Calendar size={iconSizes.sm} strokeWidth={2} aria-hidden />
+                  <time>{event.date}</time>
+                </span>
+              ) : null}
+              {event.time ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock size={iconSizes.sm} strokeWidth={2} aria-hidden />
+                  {event.time}
+                </span>
+              ) : null}
+            </div>
+            <h3 className="text-heading text-foreground group-hover:text-secondary">{event.title}</h3>
             {event.location ? (
-              <li className="flex items-center gap-2 text-caption text-muted">
+              <p className="mt-2 inline-flex items-center gap-1.5 text-caption text-muted">
                 <MapPin size={iconSizes.sm} strokeWidth={2} aria-hidden />
                 {event.location}
-              </li>
+              </p>
             ) : null}
-          </ul>
-          <span className="mt-4 flex items-center gap-1 text-caption font-medium text-secondary group-hover:text-accent">
-            Ver evento
-            <ArrowRight size={iconSizes.sm} strokeWidth={2} aria-hidden />
-          </span>
-        </div>
-      </PortalCard>
-    </Link>
+            {event.excerpt && !timeline ? (
+              <p className="mt-2 flex-1 text-body text-muted line-clamp-2">{event.excerpt}</p>
+            ) : null}
+            {ctaLabel ?? event.ctaLabel ? (
+              <span className="mt-4 inline-flex items-center gap-1 text-caption font-medium text-secondary group-hover:text-accent">
+                {ctaLabel ?? event.ctaLabel}
+                <ArrowRight size={iconSizes.sm} strokeWidth={2} aria-hidden />
+              </span>
+            ) : null}
+          </div>
+        </PortalCard>
+      </Link>
+    </article>
   );
 }

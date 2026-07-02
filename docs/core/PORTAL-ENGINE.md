@@ -23,7 +23,20 @@ Portal Engine (src/core/portal/)
       ↓
 PortalRenderer (src/components/portal/PortalRenderer.tsx)
       ↓
-PortalBlockSection → Componentes UI
+PortalBlockSection → Componentes Core UI canónicos (portal/)
+```
+
+**Canon oficial:** [CORE-UI-CANON.md](../frontend/CORE-UI-CANON.md) — únicos componentes autorizados para desarrollo público.
+
+**Árbol de componentes:**
+
+```text
+src/components/
+├── ui/           Primitivos CANONICAL
+├── layout/       Layout CANONICAL (fusión OT-006)
+├── portal/       Composición pública CANONICAL
+├── [internal]/   config, media, menu, page-builder…
+└── [deprecated]/ institutional/, blocks/, navigation/
 ```
 
 ---
@@ -154,6 +167,19 @@ Publicados vía Event Bus (`@/core/events`).
 ## Compatibilidad
 
 Todos los tipos de bloque existentes en `BLOCK_TYPES` están registrados. Páginas publicadas antes de esta OT siguen funcionando; el orden depende de sus bloques en MongoDB.
+
+### Page Builder Preview
+
+El preview del editor (`page-builder/BlockRenderer`) migra progresivamente hacia componentes canónicos de `portal/` (OT-CORE-UI-002). La capa `blocks/` permanece como DEPRECATED hasta Core UI v2.0.
+
+| Bloque preview | Componente canónico (post OT-002) |
+| --- | --- |
+| hero | HeroPremiumSection |
+| cta | PortalCTA |
+| stats | StatsSectionContent |
+| verse | VerseSectionContent |
+| teachers | TeachersSectionContent |
+| conversion blocks | portal/conversion/* |
 
 ---
 

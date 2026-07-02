@@ -1,0 +1,71 @@
+/**
+ * OT-UX-FOUNDATION-001 — Utilities
+ */
+
+.sr-only-f {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.max-w-prose-f {
+  max-width: 42rem;
+}
+
+.mx-auto-f {
+  margin-inline: auto;
+}
+
+.w-full-f {
+  width: 100%;
+}
+
+.flex-center-f {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stack-f {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+}
+
+.stack-f-lg {
+  gap: var(--space-block);
+}
+
+/* Sin divisores — solo espacio */
+.portal-home-experience hr,
+.portal-home-experience .divider {
+  display: none;
+}
+
+/* Footer home bridge */
+body:has(.portal-home-experience) .portal-footer-premium .max-w-7xl {
+  max-width: var(--container-max) !important;
+  padding-inline: var(--container-padding) !important;
+}
+
+body:has(.portal-home-experience) .portal-footer-premium {
+  padding-top: var(--space-7);
+}
+
+body:has(.portal-home-experience) .portal-footer-premium__main {
+  padding-bottom: var(--space-6);
+}

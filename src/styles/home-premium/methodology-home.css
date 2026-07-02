@@ -1,0 +1,349 @@
+/**
+ * OT-PORTAL-001 / OT-PORTAL-003 — Metodología (ruta formativa conectada)
+ */
+
+.portal-home-experience [data-block="modality"] {
+  background: var(--background);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home-section {
+  background: transparent;
+}
+
+.portal-home-experience [data-block="modality"].portal-home-x__section {
+  padding-bottom: clamp(2rem, 3.5vw, 2.75rem);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+/* Masthead editorial asimétrico */
+.portal-home-experience [data-block="modality"] .methodology-home__masthead {
+  display: grid;
+  gap: 1.5rem;
+  align-items: end;
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__masthead {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2rem;
+  }
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__intro {
+  max-width: 38rem;
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__title {
+  margin: 0.625rem 0 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__subtitle {
+  margin: 0.875rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--foreground);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__masthead-accent {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding-bottom: 0.35rem;
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__masthead-accent {
+    display: flex;
+  }
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__masthead-line {
+  display: block;
+  width: 4.5rem;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-secondary) 55%,
+    var(--color-accent) 100%
+  );
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__masthead-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Recorrido conectado */
+.portal-home-experience [data-block="modality"] .methodology-home__track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__track::before {
+  content: "";
+  position: absolute;
+  top: 1.75rem;
+  bottom: 1.75rem;
+  left: 1.375rem;
+  width: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    180deg,
+    var(--color-secondary) 0%,
+    color-mix(in srgb, var(--color-accent) 70%, var(--color-secondary)) 55%,
+    var(--color-accent) 100%
+  );
+  opacity: 0.55;
+  z-index: 0;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__track {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .portal-home-experience [data-block="modality"] .methodology-home__track::before {
+    top: 2.125rem;
+    bottom: auto;
+    left: 4%;
+    right: 4%;
+    width: auto;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--color-primary) 0%,
+      var(--color-secondary) 40%,
+      var(--color-accent) 100%
+    );
+  }
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem 1.25rem;
+  align-items: start;
+  padding: 0 0 2rem 0;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 0.35rem;
+    gap: 0.875rem;
+  }
+
+  .portal-home-experience [data-block="modality"] .methodology-home__node:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node:last-child {
+  padding-bottom: 0;
+}
+
+/* Marcador del paso */
+.portal-home-experience [data-block="modality"] .methodology-home__node-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--background);
+  border: 2px solid color-mix(in srgb, var(--color-secondary) 35%, var(--border));
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__node-marker {
+    width: 4.25rem;
+    height: 4.25rem;
+  }
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node-index {
+  position: absolute;
+  top: -0.55rem;
+  left: -0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-accent);
+  background: var(--background);
+  padding: 0 0.2rem;
+  line-height: 1;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__node-index {
+    top: -0.65rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+  }
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+}
+
+/* Destino — certificación */
+.portal-home-experience [data-block="modality"] .methodology-home__node--destination .methodology-home__node-marker {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-secondary));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--color-primary) 92%, var(--color-secondary)) 0%,
+    color-mix(in srgb, var(--color-secondary) 75%, var(--color-accent)) 100%
+  );
+  box-shadow:
+    0 12px 28px color-mix(in srgb, var(--color-primary) 18%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 12%, transparent);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node--destination .methodology-home__node-icon {
+  color: white;
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node--destination .methodology-home__node-index {
+  color: white;
+  background: color-mix(in srgb, var(--color-primary) 80%, transparent);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node-body {
+  min-width: 0;
+  padding-top: 0.15rem;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__node-body {
+    padding-top: 0;
+  }
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node--destination .methodology-home__node-title {
+  color: var(--color-primary);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node-description {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node-badge {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--background));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--border));
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__node-badge {
+    margin-top: 0.625rem;
+  }
+}
+
+/* Nota al pie */
+.portal-home-experience [data-block="modality"] .methodology-home__footnote {
+  margin: 0;
+  max-width: 42rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+/* Stagger */
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-1,
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-2,
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-3,
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-4,
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-5,
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-6 {
+  animation: slide-up var(--motion-duration-slow) var(--motion-ease-standard) both;
+}
+
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-1 { animation-delay: 0ms; }
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-2 { animation-delay: 70ms; }
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-3 { animation-delay: 140ms; }
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-4 { animation-delay: 210ms; }
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-5 { animation-delay: 280ms; }
+.portal-home-experience [data-block="modality"] .methodology-home__node--stagger-6 { animation-delay: 350ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-home-experience [data-block="modality"] .methodology-home__node--stagger-1,
+  .portal-home-experience [data-block="modality"] .methodology-home__node--stagger-2,
+  .portal-home-experience [data-block="modality"] .methodology-home__node--stagger-3,
+  .portal-home-experience [data-block="modality"] .methodology-home__node--stagger-4,
+  .portal-home-experience [data-block="modality"] .methodology-home__node--stagger-5,
+  .portal-home-experience [data-block="modality"] .methodology-home__node--stagger-6 {
+    animation: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .portal-home-experience [data-block="modality"] .methodology-home__track {
+    padding-left: 0.15rem;
+  }
+}

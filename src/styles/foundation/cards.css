@@ -1,0 +1,113 @@
+/**
+ * OT-UX-FOUNDATION-001 — Card System unificado
+ * Feature · Program · News · Teacher · CTA · Contact
+ */
+
+:root {
+  --card-transition: transform var(--motion-duration-normal) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-normal) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.card-f {
+  border-radius: var(--card-radius);
+  border: var(--card-border);
+  background: var(--background);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition: var(--card-transition);
+}
+
+.card-f:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.card-f__body {
+  padding: var(--card-padding);
+}
+
+.card-f__media {
+  overflow: hidden;
+  background: var(--background-soft);
+}
+
+.card-f__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--motion-duration-slow) var(--motion-ease-standard);
+}
+
+.card-f:hover .card-f__media img {
+  transform: scale(1.04);
+}
+
+.card-f__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-primary) 45%, transparent) 0%,
+    transparent 55%
+  );
+  opacity: 0.8;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-normal) var(--motion-ease-standard);
+}
+
+.card-f:hover .card-f__overlay {
+  opacity: 0.9;
+}
+
+/* ─── Bridge Experience Kit cards ─── */
+
+.portal-feature-card__inner,
+.portal-catalog-card__card,
+.portal-person-card__card,
+.portal-news-card__card,
+.portal-timeline__item,
+.portal-contact-hub__channel,
+.portal-cta-premium__shell {
+  border-radius: var(--card-radius) !important;
+  box-shadow: var(--card-shadow) !important;
+  border: var(--card-border) !important;
+  transition: var(--card-transition) !important;
+}
+
+.portal-feature-card:hover .portal-feature-card__inner,
+.portal-catalog-card:hover .portal-catalog-card__card,
+.portal-person-card:hover .portal-person-card__card,
+.portal-news-card:hover .portal-news-card__card,
+.portal-timeline__item-link:hover .portal-timeline__item,
+.portal-timeline__item:hover,
+.portal-contact-hub__channel:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: var(--card-shadow-hover) !important;
+}
+
+.portal-catalog-card__body,
+.portal-news-card__card > div:last-child,
+.portal-person-card__card > div:last-child,
+.portal-feature-card__inner {
+  padding: var(--card-padding) !important;
+}
+
+.portal-catalog-card__media-overlay,
+.portal-news-card__media-overlay {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-primary) 40%, transparent) 0%,
+    transparent 60%
+  ) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-f:hover,
+  .portal-feature-card:hover .portal-feature-card__inner,
+  .portal-catalog-card:hover .portal-catalog-card__card,
+  .portal-person-card:hover .portal-person-card__card,
+  .portal-news-card:hover .portal-news-card__card {
+    transform: none !important;
+  }
+}

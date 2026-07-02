@@ -107,6 +107,32 @@ export async function requireOwner(): Promise<AuthContext | NextResponse> {
   return requireRole("Tenant Owner");
 }
 
+/** Sesión real (cookie); no devuelve contexto compat ficticio. */
+export async function requireSession(): Promise<AuthContext | NextResponse> {
+  const tenantId = await getActiveTenantId();
+  if (!tenantId) {
+    return NextResponse.json({ ok: false, error: "Tenant no configurado." }, { status: 503 });
+  }
+
+  const loaded = await loadSessionContext();
+  if (!loaded) {
+    return NextResponse.json({ ok: false, error: "Debes iniciar sesión." }, { status: 401 });
+  }
+
+  const permissions = loaded.membership
+    ? await resolvePermissionsForRoles(loaded.session.tenantId, loaded.membership.roleIds)
+    : [];
+
+  return {
+    user: loaded.user,
+    session: loaded.session,
+    membership: loaded.membership,
+    permissions,
+    tenantId: loaded.session.tenantId,
+    compatMode: !isIdentityEnforced(),
+  };
+}
+
 export function isAuthContext(value: unknown): value is AuthContext {
   return Boolean(value && typeof value === "object" && "user" in value && "permissions" in value);
 }

@@ -1,0 +1,73 @@
+/**
+ * OT-ARCH-UX-001 — Ruta Formativa Home
+ * PENDING
+ */
+
+.portal-home-experience [data-block="timeline"] .portal-timeline__header {
+  margin-inline: auto;
+  text-align: center;
+  max-width: 40rem;
+}
+
+.portal-home-experience [data-block="timeline"] .portal-timeline__track {
+  position: relative;
+  margin-top: 1rem;
+}
+
+@media (min-width: 1280px) {
+  .portal-home-experience [data-block="timeline"] .portal-timeline--layout-auto .portal-timeline__track::before {
+    content: "";
+    position: absolute;
+    top: 2.5rem;
+    left: 8%;
+    right: 8%;
+    height: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      var(--success) 0%,
+      color-mix(in srgb, var(--color-secondary) 80%, var(--success)) 35%,
+      color-mix(in srgb, var(--color-secondary) 60%, var(--border)) 65%,
+      var(--border) 100%
+    );
+    z-index: 0;
+    opacity: 0.85;
+  }
+
+  .portal-home-experience [data-block="timeline"] .portal-timeline--layout-auto .portal-timeline__step {
+    z-index: 1;
+  }
+}
+
+.portal-home-experience [data-block="timeline"] .portal-timeline__item {
+  padding: clamp(1.5rem, 3vw, 2rem);
+  background: var(--background);
+}
+
+.portal-home-experience [data-block="timeline"] .portal-timeline__item--current,
+.portal-home-experience [data-block="timeline"] .portal-timeline__item--active {
+  border-color: color-mix(in srgb, var(--color-secondary) 50%, var(--border));
+  box-shadow:
+    var(--home-card-shadow),
+    0 0 0 1px color-mix(in srgb, var(--color-secondary) 12%, transparent);
+}
+
+.portal-home-experience [data-block="timeline"] .portal-timeline__marker {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1rem;
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--timeline-accent, var(--secondary)) 12%, var(--background)),
+    var(--home-card-shadow);
+}
+
+.portal-home-experience [data-block="timeline"] .portal-timeline__connector--vertical {
+  width: 3px;
+  margin-left: 1.35rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-secondary) 60%, var(--border)),
+    var(--border)
+  );
+  border-radius: 9999px;
+}

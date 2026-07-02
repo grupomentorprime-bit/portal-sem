@@ -9,28 +9,62 @@ import {
   type ResolvedMedia,
 } from "./types";
 
+function firstNonEmptyUrl(...candidates: Array<string | undefined | null>): string {
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}
+
 function pickVariantUrl(
   resolved: ResolvedMedia,
   variant: MediaVariant = "w1200"
 ): string {
   const { responsive, url, thumbnail } = resolved;
+  let picked: string;
   switch (variant) {
     case "thumbnail":
-      return thumbnail || responsive.thumbnail || url;
+      picked = firstNonEmptyUrl(thumbnail, responsive.thumbnail, url);
+      break;
     case "w400":
-      return responsive.w400 ?? responsive.webp ?? url;
+      picked = firstNonEmptyUrl(responsive.w400, responsive.webp, url);
+      break;
     case "w800":
-      return responsive.w800 ?? responsive.webp ?? url;
+      picked = firstNonEmptyUrl(responsive.w800, responsive.webp, url);
+      break;
     case "w1200":
-      return responsive.w1200 ?? responsive.webp ?? url;
+      picked = firstNonEmptyUrl(responsive.w1200, responsive.webp, url);
+      break;
     case "w1920":
-      return responsive.w1920 ?? responsive.webp ?? url;
+      picked = firstNonEmptyUrl(responsive.w1920, responsive.webp, url);
+      break;
+    case "w1440":
+      picked = firstNonEmptyUrl(responsive.w1440, responsive.w1920, responsive.webp, url);
+      break;
+    case "w1600":
+      picked = firstNonEmptyUrl(responsive.w1600, responsive.w1920, responsive.webp, url);
+      break;
+    case "w1080":
+      picked = firstNonEmptyUrl(responsive.w1080, responsive.w1200, responsive.webp, url);
+      break;
+    case "w768":
+      picked = firstNonEmptyUrl(responsive.w768, responsive.w800, responsive.webp, url);
+      break;
     case "webp":
-      return responsive.webp ?? url;
+      picked = firstNonEmptyUrl(responsive.webp, url);
+      break;
     case "original":
     default:
-      return url;
+      picked = firstNonEmptyUrl(url);
   }
+  return appendMediaVersion(picked, resolved.version);
+}
+
+function appendMediaVersion(url: string, version: number): string {
+  if (!url?.trim() || version <= 1) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${version}`;
 }
 
 export async function resolveMedia(
@@ -47,7 +81,9 @@ export async function resolveMediaUrl(
   variant: MediaVariant = "w1200"
 ): Promise<string | null> {
   const resolved = await resolveMedia(tenant, mediaId);
-  return resolved ? pickVariantUrl(resolved, variant) : null;
+  if (!resolved) return null;
+  const url = pickVariantUrl(resolved, variant).trim();
+  return url || null;
 }
 
 export async function resolveMediaThumbnail(

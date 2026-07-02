@@ -1,0 +1,340 @@
+/**
+ * OT-UX-HOME-VOCATION-v2 — ¿Por qué estudiar? / Sobre nosotros / Plataforma
+ * Scoped to [data-block="feature_grid"]
+ */
+
+.portal-home-experience [data-block="feature_grid"] {
+  --ws-navy: var(--sem-primary);
+  --ws-blue: var(--sem-secondary);
+  --ws-cyan: var(--sem-accent);
+  --ws-mint: var(--sem-success);
+  --ws-muted: color-mix(in srgb, var(--ws-navy) 68%, var(--text-inverse));
+  --ws-body: color-mix(in srgb, var(--ws-navy) 58%, var(--text-inverse));
+  --ws-radius: 1rem;
+  --ws-shadow: 0 8px 32px color-mix(in srgb, var(--ws-navy) 9%, transparent);
+  --ws-photo-grade: saturate(1.15) contrast(1.05) brightness(1.06);
+}
+
+/* ── Root layout ─────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="feature_grid"] .why-study-premium {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-premium__header {
+  max-width: 42rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-premium__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ws-cyan);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-premium__title {
+  margin: 0.625rem 0 0;
+  font-size: clamp(1.875rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--ws-navy);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-premium__description {
+  margin: 0.875rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ws-body);
+}
+
+/* ── Sobre nosotros ──────────────────────────────────────────── */
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: center;
+  padding: clamp(1.75rem, 3.5vw, 2.5rem);
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: calc(var(--ws-radius) + 0.25rem);
+  box-shadow: var(--ws-shadow);
+}
+
+@media (min-width: 900px) {
+  .portal-home-experience [data-block="feature_grid"] .why-study-about {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.45fr);
+    gap: clamp(2rem, 3vw, 3.5rem);
+  }
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ws-blue);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__title {
+  margin: 0.5rem 0 0;
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ws-navy);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__columns {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .portal-home-experience [data-block="feature_grid"] .why-study-about__columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__label {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-navy);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__text {
+  margin: 0.625rem 0 0;
+  font-size: 0.975rem;
+  line-height: 1.65;
+  color: var(--ws-muted);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  text-align: center;
+  border-radius: var(--ws-radius);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--ws-cyan) 14%, var(--color-surface)) 0%,
+    color-mix(in srgb, var(--ws-blue) 8%, var(--color-surface)) 100%
+  );
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__stat-value {
+  font-size: clamp(3.5rem, 8vw, 5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--ws-cyan);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-about__stat-label {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--ws-navy);
+}
+
+/* ── Banner institucional ────────────────────────────────────── */
+
+.portal-home-experience [data-block="feature_grid"] .why-study-banner {
+  padding: clamp(2rem, 4.5vw, 3rem) clamp(1.5rem, 4vw, 2.5rem);
+  text-align: center;
+  border-radius: calc(var(--ws-radius) + 0.25rem);
+  background: linear-gradient(
+    135deg,
+    var(--ws-cyan) 0%,
+    color-mix(in srgb, var(--ws-blue) 55%, var(--ws-cyan)) 100%
+  );
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--ws-cyan) 28%, transparent);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-banner__title {
+  margin: 0;
+  font-size: clamp(1.375rem, 2.8vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-inverse);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-banner__description {
+  margin: 0.75rem auto 0;
+  max-width: 38rem;
+  font-size: clamp(0.975rem, 1.8vw, 1.0625rem);
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--text-inverse) 88%, transparent);
+}
+
+/* ── Plataforma académica ────────────────────────────────────── */
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__intro {
+  max-width: 40rem;
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ws-cyan);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__title {
+  margin: 0.625rem 0 0;
+  font-size: clamp(1.625rem, 3vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--ws-navy);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__description {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ws-body);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__layout {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="feature_grid"] .why-study-platform__layout {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: clamp(2rem, 3vw, 3.5rem);
+  }
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__feature {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.125rem;
+  align-items: start;
+  padding: 1.25rem 1.375rem;
+  border-radius: var(--ws-radius);
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  transition: box-shadow 220ms ease, transform 220ms ease;
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__feature:hover {
+  box-shadow: var(--ws-shadow);
+  transform: translateY(-2px);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  color: var(--ws-cyan);
+  background: color-mix(in srgb, var(--ws-cyan) 14%, var(--color-surface));
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__feature-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ws-navy);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__feature-description {
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ws-muted);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__visual {
+  margin: 0;
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__device {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: calc(var(--ws-radius) + 0.5rem);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--ws-navy) 6%, var(--background-soft)) 0%,
+    color-mix(in srgb, var(--ws-blue) 10%, var(--background-soft)) 100%
+  );
+  box-shadow: var(--ws-shadow);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__image {
+  object-fit: cover;
+  filter: var(--ws-photo-grade);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__device-badge {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--ws-navy) 82%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--text-inverse);
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__device-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.portal-home-experience [data-block="feature_grid"] .why-study-platform__device-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-home-experience [data-block="feature_grid"] .why-study-platform__feature:hover {
+    transform: none;
+  }
+}

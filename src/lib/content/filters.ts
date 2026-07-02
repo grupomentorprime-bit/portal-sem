@@ -31,7 +31,9 @@ export function buildMongoFilter(
     options?.collection === "content_news_categories";
 
   if (statusless) {
-    mongo.enabled = true;
+    if (!options?.includeDraft) {
+      mongo.enabled = true;
+    }
   } else if (!options?.includeDraft) {
     mongo.status = filters?.status ?? "published";
   } else if (filters?.status) {
@@ -67,6 +69,60 @@ export function buildMongoFilter(
     mongo.publishedAt = dateFilter;
   }
 
+  if (filters?.upcoming === true) {
+    const today = new Date().toISOString().slice(0, 10);
+    mongo.$and = [
+      ...(Array.isArray(mongo.$and) ? (mongo.$and as Record<string, unknown>[]) : []),
+      {
+        $or: [
+          { endDate: { $gte: today } },
+          { endDate: "" },
+          { endDate: { $exists: false } },
+          {
+            $and: [
+              { $or: [{ endDate: "" }, { endDate: { $exists: false } }] },
+              { startDate: { $gte: today } },
+            ],
+          },
+        ],
+      },
+    ];
+  }
+
+  if (options?.collection === "content_academic_agenda" && !options?.includeDraft) {
+    const now = new Date().toISOString();
+    mongo.$and = [
+      ...(Array.isArray(mongo.$and) ? (mongo.$and as Record<string, unknown>[]) : []),
+      {
+        $or: [{ visibleFrom: "" }, { visibleFrom: { $exists: false } }, { visibleFrom: { $lte: now } }],
+      },
+      {
+        $or: [
+          { visibleUntil: "" },
+          { visibleUntil: { $exists: false } },
+          { visibleUntil: { $gte: now } },
+        ],
+      },
+    ];
+  }
+
+  if (filters?.personRole) mongo.personRole = filters.personRole;
+
+  if (options?.collection === "content_people" && !options?.includeDraft) {
+    mongo.$and = [
+      ...(Array.isArray(mongo.$and) ? (mongo.$and as Record<string, unknown>[]) : []),
+      {
+        $or: [{ visible: { $ne: false } }, { visible: { $exists: false } }],
+      },
+      {
+        $or: [
+          { personStatus: { $exists: false } },
+          { personStatus: { $nin: ["historical"] } },
+        ],
+      },
+    ];
+  }
+
   const now = new Date().toISOString();
   if (!statusless) {
     mongo.$and = [
@@ -92,6 +148,10 @@ export function parseFilters(raw?: Record<string, unknown>): ContentQueryFilters
   if (typeof raw.search === "string") filters.search = sanitizeFilterValue(raw.search) as string;
   if (typeof raw.dateFrom === "string") filters.dateFrom = raw.dateFrom;
   if (typeof raw.dateTo === "string") filters.dateTo = raw.dateTo;
+  if (raw.upcoming === true) filters.upcoming = true;
+  if (typeof raw.personRole === "string") {
+    filters.personRole = sanitizeFilterValue(raw.personRole) as string;
+  }
   if (Array.isArray(raw.tags)) filters.tags = sanitizeFilterValue(raw.tags) as string[];
 
   return Object.keys(filters).length > 0 ? filters : undefined;

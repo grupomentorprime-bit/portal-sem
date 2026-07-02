@@ -63,6 +63,13 @@ export async function createMembership(input: {
   return membership;
 }
 
+export async function findMembershipById(
+  membershipId: string
+): Promise<IdentityMembership | null> {
+  const db = await getDatabase();
+  return db.collection<IdentityMembership>("identity_memberships").findOne({ _id: membershipId });
+}
+
 export async function updateMembershipRoles(
   membershipId: string,
   roleIds: string[]

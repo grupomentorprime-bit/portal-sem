@@ -10,7 +10,10 @@ export const ALLOWED_COLLECTIONS = [
   "content_news",
   "content_news_categories",
   "content_events",
+  "content_academic_agenda",
+  "content_institutional_notices",
   "content_library",
+  "content_people",
 ] as const;
 
 export type AllowedCollection = (typeof ALLOWED_COLLECTIONS)[number];
@@ -26,6 +29,7 @@ export const ALLOWED_FILTER_KEYS = [
   "search",
   "dateFrom",
   "dateTo",
+  "upcoming",
 ] as const;
 
 export const ALLOWED_SORT_FIELDS = [
@@ -36,6 +40,8 @@ export const ALLOWED_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
   "date",
+  "startDate",
+  "priority",
 ] as const;
 
 export const MAX_QUERY_LIMIT = 50;

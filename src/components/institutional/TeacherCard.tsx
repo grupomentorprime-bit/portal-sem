@@ -1,5 +1,17 @@
-import { Avatar } from "@/components/ui";
-import { InstitutionalCard } from "./InstitutionalCard";
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * PortalPersonCard
+ *
+ * @see docs/core/CORE-PEOPLE-GRID-v1.md
+ */
+
+import {
+  PortalPersonCard,
+  personItemToPortalPersonCard,
+  teacherItemToPersonItem,
+} from "@/components/portal/experience/people-grid";
 import type { TeacherItem } from "@/lib/institutional/home-content";
 
 interface TeacherCardProps {
@@ -8,13 +20,17 @@ interface TeacherCardProps {
 
 export function TeacherCard({ teacher }: TeacherCardProps) {
   return (
-    <InstitutionalCard className="text-center animate-scale-in">
-      <div className="mx-auto mb-4">
-        <Avatar name={teacher.name} size="xl" src={teacher.image} />
-      </div>
-      <h3 className="text-heading text-foreground">{teacher.name}</h3>
-      <p className="mt-1 text-caption font-medium text-secondary">{teacher.role}</p>
-      <p className="mt-2 text-body text-muted">{teacher.specialty}</p>
-    </InstitutionalCard>
+    <PortalPersonCard
+      person={personItemToPortalPersonCard(
+        teacherItemToPersonItem({
+          id: teacher.id,
+          name: teacher.name,
+          role: teacher.role,
+          specialty: teacher.specialty,
+          image: teacher.image,
+        })
+      )}
+      compact
+    />
   );
 }

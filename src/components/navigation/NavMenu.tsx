@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * PortalHeader / PortalMobileNav
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import Link from "next/link";
 import { MenuBadge } from "@/components/menu/MenuBadge";
 import { MenuIcon } from "@/components/menu/menu-icons";
@@ -52,7 +64,7 @@ function HeaderNavItem({ node }: { node: MenuTreeNode }) {
     return (
       <div className="group relative">
         <NavLink item={node} variant="header" />
-        <div className="invisible absolute left-0 top-full z-50 min-w-48 rounded-lg border border-zinc-200 bg-white py-1 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="invisible absolute left-0 top-full z-50 min-w-48 rounded-lg border border-border bg-background py-1 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 dark:border-gray-700 dark:bg-gray-900">
           {node.children.map((child) => (
             <NavLink key={child.id} item={child} variant="dropdown" />
           ))}
@@ -88,12 +100,12 @@ function NavLink({
   const className = cn(
     "inline-flex items-center gap-1.5 transition",
     variant === "header" &&
-      "rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
-    variant === "footer" && "text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100",
+      "rounded-lg px-3 py-2 text-sm font-medium text-muted hover:bg-background-muted dark:text-gray-200 dark:hover:bg-gray-800",
+    variant === "footer" && "text-sm text-muted hover:text-foreground dark:hover:text-gray-100",
     variant === "mobile" &&
-      "w-full rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800",
+      "w-full rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-background-muted dark:hover:bg-gray-800",
     variant === "dropdown" &&
-      "block w-full px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800",
+      "block w-full px-4 py-2 text-sm hover:bg-background-muted dark:hover:bg-gray-800",
     item.highlighted && "font-semibold"
   );
 

@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * PortalHome
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import { Container, Grid, Section, Stack } from "@/components/layout";
 import {
   CTASection,
@@ -62,7 +74,7 @@ export function HomeInstitutional({ config }: HomeInstitutionalProps) {
             <SectionTitle
               overline="Académico"
               title="Nuestros programas"
-              description="Rutas formativas diseñadas para una preparación sólida en filosofía, teología y pastoral."
+              description="Diplomas en Teología Bíblica por generación, para pastores, líderes y hermanos(as) en modalidad online."
               align="center"
               className="mx-auto"
             />

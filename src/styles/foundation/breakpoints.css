@@ -1,0 +1,75 @@
+/**
+ * OT-UX-FOUNDATION-001 — Breakpoints únicos AprendeHoy
+ *
+ * Mobile      <768px
+ * Tablet      768–991px
+ * Tablet XL   992–1279px
+ * Laptop      1280–1439px
+ * Desktop     1440–1919px
+ * Desktop XL  ≥1920px
+ */
+
+/* ─── Tablet 768–991px ─── */
+@media (min-width: 768px) and (max-width: 991px) {
+  :root {
+    --container-max: 720px;
+    --container-padding: 24px;
+    --container-name: sm;
+    --grid-gap: 24px;
+    --hero-layout: stacked;
+    --hero-text-ratio: 1;
+    --hero-image-ratio: 1;
+  }
+}
+
+/* ─── Tablet XL 992–1279px ─── */
+@media (min-width: 992px) and (max-width: 1279px) {
+  :root {
+    --container-max: 960px;
+    --container-padding: 24px;
+    --container-name: md;
+    --grid-gap: 24px;
+    --hero-layout: split;
+    --hero-text-ratio: 0.5;
+    --hero-image-ratio: 0.5;
+  }
+}
+
+/* ─── Laptop 1280–1439px ─── */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  :root {
+    --container-max: 1180px;
+    --container-padding: 32px;
+    --container-name: lg;
+    --grid-gap: 32px;
+    --hero-layout: split;
+    --hero-text-ratio: 0.5;
+    --hero-image-ratio: 0.5;
+  }
+}
+
+/* ─── Desktop 1440–1919px ─── */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  :root {
+    --container-max: 1360px;
+    --container-padding: 32px;
+    --container-name: xl;
+    --grid-gap: 32px;
+    --hero-layout: split;
+    --hero-text-ratio: 0.48;
+    --hero-image-ratio: 0.52;
+  }
+}
+
+/* ─── Desktop XL ≥1920px ─── */
+@media (min-width: 1920px) {
+  :root {
+    --container-max: 1560px;
+    --container-padding: 40px;
+    --container-name: xxl;
+    --grid-gap: 32px;
+    --hero-layout: split;
+    --hero-text-ratio: 0.45;
+    --hero-image-ratio: 0.55;
+  }
+}

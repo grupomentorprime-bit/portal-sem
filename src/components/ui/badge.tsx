@@ -12,7 +12,7 @@ const variants: Record<BadgeVariant, string> = {
   warning: "bg-light/20 text-primary border-light/40",
   error: "bg-primary/10 text-primary border-primary/20",
   info: "bg-accent/15 text-primary border-accent/30",
-  neutral: "bg-gray-100 text-gray-700 border-gray-200",
+  neutral: "bg-background-muted text-muted border-border",
 };
 
 export function Badge({

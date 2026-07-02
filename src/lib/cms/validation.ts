@@ -1,4 +1,6 @@
 import type { SiteConfigUpdate } from "@/types/cms";
+import { getDisplaySlides, slideHasPublishableContent } from "@/lib/cms/hero-slide-display";
+import { HERO_SLIDE_MAX } from "@/types/hero-portal";
 
 const HEX_COLOR = /^#([0-9A-Fa-f]{6})$/;
 const URL_PATTERN = /^https?:\/\/.+/;
@@ -60,6 +62,21 @@ export function validateSiteConfigUpdate(
     }
   }
 
+  const cursor = config.portalExperience?.cursor;
+  if (cursor) {
+    for (const [key, value] of Object.entries({
+      primaryColor: cursor.primaryColor,
+      secondaryColor: cursor.secondaryColor,
+    })) {
+      if (value && !HEX_COLOR.test(value)) {
+        errors.push({
+          field: `portalExperience.cursor.${key}`,
+          message: "El color del cursor debe estar en formato hexadecimal (#RRGGBB).",
+        });
+      }
+    }
+  }
+
   if (config.contact.email && !config.contact.email.includes("@")) {
     errors.push({
       field: "contact.email",
@@ -90,6 +107,7 @@ export function validateSiteConfigUpdate(
     ["social.youtube", config.social.youtube, undefined],
     ["social.linkedin", config.social.linkedin, undefined],
     ["social.tiktok", config.social.tiktok, undefined],
+    ["social.spotify", config.social.spotify, undefined],
   ];
 
   for (const [field, value, mediaId] of urlFields) {
@@ -99,6 +117,50 @@ export function validateSiteConfigUpdate(
         field,
         message: "Debe ser una URL válida o ruta relativa.",
       });
+    }
+  }
+
+  const heroPortal = config.heroPortal;
+  if (heroPortal?.enabled) {
+    if (heroPortal.slides.length === 0) {
+      errors.push({
+        field: "heroPortal.slides",
+        message: "Agrega al menos un slide cuando el Hero está activo.",
+      });
+    }
+
+    if (heroPortal.slides.length > HERO_SLIDE_MAX) {
+      errors.push({
+        field: "heroPortal.slides",
+        message: `Máximo ${HERO_SLIDE_MAX} slides permitidos.`,
+      });
+    }
+
+    const publishableSlides = heroPortal.slides.filter(slideHasPublishableContent);
+    if (publishableSlides.length === 0) {
+      errors.push({
+        field: "heroPortal.slides",
+        message: "Al menos un slide debe estar publicado o programado.",
+      });
+    }
+
+    const visibleSlides = getDisplaySlides(heroPortal.slides);
+    if (visibleSlides.length === 0 && publishableSlides.length > 0) {
+      errors.push({
+        field: "heroPortal.slides",
+        message:
+          "Ningún slide está visible ahora: revisa fechas de programación o estado de publicación.",
+      });
+    }
+
+    for (const [index, slide] of heroPortal.slides.entries()) {
+      if (!slideHasPublishableContent(slide)) continue;
+      if (!slide.multimedia.desktopMediaId?.startsWith("media-")) {
+        errors.push({
+          field: `heroPortal.slides[${index}].multimedia.desktopMediaId`,
+          message: `Slide ${index + 1}: selecciona imagen de escritorio desde la biblioteca.`,
+        });
+      }
     }
   }
 

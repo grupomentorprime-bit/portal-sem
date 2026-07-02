@@ -5,6 +5,7 @@ import {
   GraduationCap,
   Heart,
   Library,
+  Users,
   Circle,
 } from "lucide-react";
 
@@ -14,6 +15,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Heart,
   Calendar,
   Library,
+  Users,
   Circle,
 };
 
@@ -29,6 +31,18 @@ export interface ProgramItemSettings {
   duration: string;
   icon?: string;
   href: string;
+  image?: string;
+  modality?: string;
+  status?: "active" | "admission_open" | "coming_soon";
+  badge?: string;
+  featured?: boolean;
+  certification?: string;
+  price?: string;
+  showPrice?: boolean;
+  startDate?: string;
+  ctaPrimaryLabel?: string;
+  ctaSecondaryLabel?: string;
+  ctaSecondaryHref?: string;
 }
 
 export interface TeacherItemSettings {

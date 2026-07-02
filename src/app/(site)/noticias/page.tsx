@@ -12,7 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!ctx) return { title: "Noticias" };
   return {
     title: `Noticias | ${ctx.config.institution.shortName}`,
-    description: "Novedades y actualidad institucional.",
+    description:
+      "Actualidad institucional, eventos y vida de la comunidad seminarista del SEM.",
   };
 }
 
@@ -32,8 +33,8 @@ export default async function NoticiasPage() {
         ]}
       />
       <PortalPageHeader
-        title="Noticias y novedades"
-        description="Mantente informado sobre la vida académica e institucional."
+        title="Noticias y vida seminarista"
+        description="Novedades, eventos y comunicados de la comunidad de formación del Seminario Eclesiástico Mayor."
       />
       <PortalSection padding="md">
         <PortalContainer>

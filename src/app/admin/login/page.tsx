@@ -14,16 +14,16 @@ export default async function AdminLoginPage() {
       <div className="w-full max-w-md rounded-xl border border-border bg-background p-8 shadow-sm">
         <div className="mb-6 text-center">
           <h1 className="text-xl font-semibold">
-            {bootstrap ? "Configurar administrador" : "Ingresar al CMS"}
+            {bootstrap ? "Configurar administrador" : "Centro de Administración"}
           </h1>
           <p className="mt-1 text-sm text-muted">
             {bootstrap
-              ? "Crea la primera cuenta de administrador del tenant."
-              : "Identity Core — AprendeHoy Learning OS"}
+              ? "Crea la primera cuenta de administrador del seminario."
+              : "Acceso institucional al CMS del SEM"}
           </p>
           {!isIdentityEnforced() ? (
-            <p className="mt-2 text-xs text-amber-700">
-              Modo compatibilidad: el admin sigue accesible sin login hasta activar IDENTITY_ENFORCE=true.
+            <p className="mt-2 text-xs text-[var(--color-warning)]">
+              Entorno de desarrollo: el acceso sin sesión está habilitado temporalmente.
             </p>
           ) : null}
         </div>

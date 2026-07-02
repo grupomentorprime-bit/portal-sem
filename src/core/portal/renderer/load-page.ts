@@ -1,26 +1,10 @@
 import "server-only";
 
 import { blocksFromTemplate, DEFAULT_TEMPLATES } from "@/lib/cms/page-defaults";
+import { applyPortal001HomeMigration } from "@/lib/cms/home-portal-001";
 import { getPublishedPageBySlug } from "@/lib/cms/pages";
 import type { PortalPageModel, PortalRenderContext } from "@/types/portal";
-import type { SiteConfig } from "@/types/cms";
 import { getRenderableBlocks } from "@/core/portal/visibility";
-
-export function buildRenderContext(input: {
-  tenantId: string;
-  config: SiteConfig;
-  preview?: boolean;
-  audience?: PortalRenderContext["audience"];
-  language?: string;
-}): PortalRenderContext {
-  return {
-    tenantId: input.tenantId,
-    audience: input.audience ?? "guest",
-    featureFlags: input.config.features,
-    language: input.language,
-    preview: input.preview,
-  };
-}
 
 export async function loadPublishedPage(
   slug: string,
@@ -65,13 +49,13 @@ export function preparePageBlocks(
 
 export async function loadHomePage(tenantId: string): Promise<PortalPageModel> {
   const page = await loadPublishedPage("/", tenantId, "home");
-  return (
+  const base =
     page ?? {
       slug: "/",
       title: "Inicio",
       blocks: [],
       seo: {},
       tenantId,
-    }
-  );
+    };
+  return applyPortal001HomeMigration(base);
 }

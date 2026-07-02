@@ -85,7 +85,10 @@ export async function getPublishedPageBySlug(
   )();
 }
 
-export async function createPage(data: CmsPageCreate): Promise<CmsPage> {
+export async function createPage(
+  data: CmsPageCreate,
+  options?: { revalidate?: boolean }
+): Promise<CmsPage> {
   const db = await getDatabase();
   const now = new Date().toISOString();
 
@@ -110,7 +113,9 @@ export async function createPage(data: CmsPageCreate): Promise<CmsPage> {
   };
 
   await db.collection<CmsPage>("cms_pages").insertOne(document);
-  revalidatePageTags(document);
+  if (options?.revalidate !== false) {
+    revalidatePageTags(document);
+  }
   return document;
 }
 

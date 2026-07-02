@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getTemplatesUncached, seedTemplates } from "@/lib/cms/templates";
+import { getTemplatesUncached, revalidateTemplatesCache, seedTemplates } from "@/lib/cms/templates";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     if (searchParams.get("seed") === "true") {
       const templates = await seedTemplates();
+      revalidateTemplatesCache();
       return NextResponse.json({ ok: true, templates, seeded: true });
     }
     const templates = await getTemplatesUncached();

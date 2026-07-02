@@ -22,7 +22,7 @@ export default async function ContactoPage() {
       <PortalCmsPage
         slug="contacto"
         fallbackTitle="Contacto"
-        fallbackDescription="Comunícate con nosotros."
+        fallbackDescription="Comunícate con el SEM para postulaciones, orientación vocacional o consultas sobre la formación ministerial."
       />
     );
   }
@@ -39,7 +39,7 @@ export default async function ContactoPage() {
       />
       <PortalPageHeader
         title="Contacto"
-        description={`Comunícate con ${institution.name} para postulaciones, información académica o consultas generales.`}
+        description={`Comunícate con ${institution.name} para postulaciones, orientación vocacional o consultas sobre la formación ministerial.`}
       />
       <PortalSection padding="md">
         <PortalContainer size="sm">

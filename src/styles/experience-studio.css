@@ -1,0 +1,80 @@
+/**
+ * OT-CMSV2-BUILD-001A — Experience Studio canvas styles.
+ */
+
+.experience-studio {
+  --studio-sidebar-width: 17rem;
+  --studio-inspector-width: 20rem;
+}
+
+.experience-studio__layout {
+  display: grid;
+  min-height: calc(100vh - 4rem);
+  grid-template-columns: var(--studio-sidebar-width) minmax(0, 1fr) var(--studio-inspector-width);
+}
+
+@media (max-width: 1279px) {
+  .experience-studio__layout {
+    grid-template-columns: var(--studio-sidebar-width) minmax(0, 1fr);
+  }
+}
+
+.studio-canvas__frame {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  min-height: 70vh;
+}
+
+.studio-canvas__block {
+  position: relative;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.15s ease;
+}
+
+.studio-canvas__block:hover {
+  outline-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.studio-canvas__block--selected {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.studio-canvas__block--selected::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+
+.studio-library__item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.15rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.studio-library__item:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  box-shadow: var(--shadow-sm);
+}
+
+.studio-history__item {
+  border-left: 2px solid var(--color-border);
+  padding-left: 0.75rem;
+}
+
+.studio-history__item--active {
+  border-left-color: var(--color-primary);
+}

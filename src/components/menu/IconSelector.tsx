@@ -23,8 +23,8 @@ export function IconSelector({ value, onChange }: IconSelectorProps) {
             className={cn(
               "flex h-10 items-center justify-center rounded-lg border transition",
               value === icon.id
-                ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-700"
+                ? "border-primary bg-primary text-text-inverse dark:border-gray-100 dark:bg-background-muted dark:text-foreground"
+                : "border-border hover:border-gray-400 dark:border-gray-700"
             )}
           >
             <MenuIcon name={icon.id} />

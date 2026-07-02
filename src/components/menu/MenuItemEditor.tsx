@@ -1,5 +1,6 @@
 "use client";
 
+import { colorDefaults } from "@/design/tokens/colors";
 import { IconSelector } from "@/components/menu/IconSelector";
 import { MenuTargetSelector } from "@/components/menu/MenuTargetSelector";
 import { MenuTypeSelector } from "@/components/menu/MenuTypeSelector";
@@ -67,7 +68,7 @@ export function MenuItemEditor({ item, parentOptions, onChange }: MenuItemEditor
             <select
               value={item.parent ?? ""}
               onChange={(e) => update("parent", e.target.value || null)}
-              className="flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm dark:border-gray-700 dark:bg-gray-900"
             >
               <option value="">Sin padre (raíz)</option>
               {availableParents.map((parent) => (
@@ -108,7 +109,7 @@ export function MenuItemEditor({ item, parentOptions, onChange }: MenuItemEditor
             <Input
               value={item.color}
               onChange={(e) => update("color", e.target.value)}
-              placeholder="#003B73"
+              placeholder={colorDefaults.primary}
             />
           </div>
           <Switch

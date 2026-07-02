@@ -2,7 +2,8 @@ import {
   BookOpen,
   Calendar,
   GraduationCap,
-  Heart,
+  Monitor,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -80,31 +81,40 @@ export interface GalleryItem {
 
 export const HOME_PROGRAMS: ProgramItem[] = [
   {
-    id: "filosofia",
-    title: "Filosofía",
+    id: "diploma-teologia-biblica-pastoral-g2023",
+    title: "Diploma en Teología Bíblica Pastoral",
     description:
-      "Formación filosófica sólida como fundamento del pensamiento teológico y pastoral.",
-    duration: "2 años",
+      "Formación bíblica y pastoral exclusiva para pastores y pastoras.",
+    duration: "3 años",
     icon: BookOpen,
-    href: "/programas/filosofia",
+    href: "/programas/diploma-teologia-biblica-pastoral-g2023",
   },
   {
-    id: "teologia",
-    title: "Teología",
+    id: "diploma-teologia-biblica-pastores-g2024",
+    title: "Diploma en Teología Bíblica",
     description:
-      "Estudio profundo de la revelación divina al servicio de la Iglesia y el ministerio.",
+      "Formación bíblica integral para pastores y líderes comprometidos con el servicio cristiano.",
+    duration: "4 años",
+    icon: Users,
+    href: "/programas/diploma-teologia-biblica-pastores-g2024",
+  },
+  {
+    id: "diploma-teologia-biblica-hermanos-g2025",
+    title: "Diploma en Teología Bíblica",
+    description:
+      "Formación bíblica de cuatro años orientada a hermanos(as) y líderes.",
     duration: "4 años",
     icon: GraduationCap,
-    href: "/programas/teologia",
+    href: "/programas/diploma-teologia-biblica-hermanos-g2025",
   },
   {
-    id: "pastoral",
-    title: "Formación Pastoral",
+    id: "diploma-teologia-biblica-hermanos-g2026",
+    title: "Diploma en Teología Bíblica",
     description:
-      "Preparación integral para el servicio diaconal, sacerdotal y la vida consagrada.",
-    duration: "Continua",
-    icon: Heart,
-    href: "/programas/pastoral",
+      "Programa académico de ingreso para hermanos(as) y líderes en modalidad online.",
+    duration: "4 años",
+    icon: Monitor,
+    href: "/programas/diploma-teologia-biblica-hermanos-g2026",
   },
 ];
 

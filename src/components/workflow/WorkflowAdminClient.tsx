@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { neutralScale } from "@/design/tokens/colors";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { WorkflowDefinition, WorkflowHistoryEntry, WorkflowInstance } from "@/types/workflow";
@@ -97,7 +98,7 @@ export function WorkflowAdminClient() {
                     <li key={s.id} className="flex items-center gap-2">
                       <span
                         className="inline-block h-2 w-2 rounded-full"
-                        style={{ backgroundColor: s.color ?? "#94a3b8" }}
+                        style={{ backgroundColor: s.color ?? neutralScale[400] }}
                       />
                       {s.label} <code className="text-xs text-muted">({s.key})</code>
                     </li>

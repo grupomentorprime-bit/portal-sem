@@ -1,0 +1,1144 @@
+/**
+ * OT-DESIGN-PROGRAMS-003 — Premium Editorial Cards v3
+ * Scoped to [data-block="academic_offer"]
+ * Colores: brand.css (--sem-*)
+ */
+
+.portal-home-experience [data-block="academic_offer"] {
+  --fp-bg: var(--gray-50);
+  --fp-card: var(--color-surface);
+  --fp-navy: var(--sem-primary);
+  --fp-blue: var(--sem-secondary);
+  --fp-cyan: var(--sem-accent);
+  --fp-mint: var(--sem-success);
+  --fp-green: var(--sem-light);
+  --fp-muted: color-mix(in srgb, var(--fp-navy) 70%, var(--text-inverse));
+  --fp-body: color-mix(in srgb, var(--fp-navy) 62%, var(--text-inverse));
+  --fp-photo-grade: saturate(1.18) contrast(1.06) brightness(1.08);
+  --fp-shadow: 0 4px 24px color-mix(in srgb, var(--fp-navy) 8%, transparent);
+  --fp-shadow-featured: 0 8px 32px color-mix(in srgb, var(--fp-navy) 11%, transparent);
+  --fp-shadow-hover: 0 16px 40px color-mix(in srgb, var(--fp-navy) 14%, transparent);
+  --fp-radius: 1rem;
+  --fp-transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--fp-bg);
+}
+
+.portal-home-experience [data-block="academic_offer"] .portal-programs-section--premium-v3 {
+  gap: 0;
+  padding-block: clamp(1.75rem, 3.5vw, 2.75rem);
+}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__stack--enter {
+  animation: fp-stack-enter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fp-stack-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__trust {
+  margin-top: 2rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__audience {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
+
+/* Menos aire al cerrar programas → ¿Por qué estudiar? */
+.portal-home-experience [data-block="academic_offer"].portal-home-x__section {
+  padding-bottom: clamp(2rem, 3.5vw, 3rem);
+}
+
+.portal-home-experience [data-block="feature_grid"].portal-home-x__section {
+  padding-top: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .featured-programs__stack {
+    margin-top: 3.2rem;
+  }
+}
+
+/* ── Hero (encabezado interno del bloque) ────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs-hero {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2rem);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .featured-programs-hero {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: clamp(1.5rem, 2.5vw, 2.25rem);
+    align-items: stretch;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs-hero__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fp-cyan);
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs-hero__title {
+  margin: 0.625rem 0 0;
+  font-size: clamp(1.875rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs-hero__tagline {
+  margin: 0.875rem 0 0;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  color: color-mix(in srgb, var(--fp-navy) 72%, var(--text-inverse));
+  max-width: 32rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs-hero__description {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--fp-body);
+  max-width: 32rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs-hero__catalog-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  background: var(--fp-blue);
+  color: var(--text-inverse);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--fp-transition), transform var(--fp-transition);
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs-hero__catalog-btn:hover {
+  background: color-mix(in srgb, var(--fp-blue) 85%, var(--fp-navy));
+  transform: translateY(-1px);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-gallery__frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--fp-radius);
+  overflow: hidden;
+  box-shadow: var(--fp-shadow);
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .program-gallery__frame {
+    aspect-ratio: auto;
+    height: clamp(31.25rem, 34vw, 33.75rem);
+    min-height: 31.25rem;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-gallery__image {
+  object-fit: cover;
+  transition: transform var(--fp-transition);
+  filter: var(--fp-photo-grade);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-gallery__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--fp-cyan) 10%, transparent) 0%,
+    color-mix(in srgb, var(--fp-navy) 14%, transparent) 100%
+  );
+  pointer-events: none;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-gallery__brand {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-gallery__brand-img {
+  width: 2.75rem;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.94;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--fp-navy) 55%, transparent));
+}
+
+/* ── Filter chips ────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__filters {
+  margin-top: 1.75rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-filter-chips__chip {
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--fp-navy) 12%, transparent);
+  border-radius: 999px;
+  background: var(--fp-card);
+  color: var(--fp-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--fp-transition), background var(--fp-transition), color var(--fp-transition);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-filter-chips__chip:hover {
+  border-color: color-mix(in srgb, var(--fp-cyan) 40%, transparent);
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-filter-chips__chip--active {
+  border-color: var(--fp-cyan);
+  background: color-mix(in srgb, var(--fp-cyan) 12%, var(--fp-card));
+  color: var(--fp-navy);
+}
+
+/* ── Social proof ───────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__social-proof {
+  margin: -0.75rem 0 0;
+  padding: 0 0.25rem;
+  font-size: 0.875rem;
+  color: var(--fp-muted);
+  text-align: center;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__social-proof strong {
+  font-weight: 700;
+  color: var(--fp-cyan);
+}
+
+/* ── Card media ──────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .program-card-media {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--fp-navy) 6%, var(--fp-bg));
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-card-media__skeleton {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--fp-navy) 6%, var(--fp-bg));
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-card-media__image {
+  object-fit: cover;
+  transition: transform var(--fp-transition);
+  filter: var(--fp-photo-grade);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-card-media__image--loading {
+  opacity: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-card-media__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--fp-cyan) 6%, transparent) 0%,
+    color-mix(in srgb, var(--fp-navy) 10%, transparent) 100%
+  );
+  transition: background var(--fp-transition);
+  pointer-events: none;
+}
+
+.portal-home-experience [data-block="academic_offer"] .group:hover .program-card-media__overlay {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--fp-cyan) 12%, transparent) 0%,
+    color-mix(in srgb, var(--fp-navy) 16%, transparent) 100%
+  );
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-card-media__brand {
+  position: absolute;
+  right: 0.875rem;
+  bottom: 0.875rem;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__media .program-card-media__brand {
+  right: 1.125rem;
+  bottom: 1.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-card-media__brand-img {
+  width: 2.25rem;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.94;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--fp-navy) 50%, transparent));
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__media .program-card-media__brand-img {
+  width: 2.625rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .group:hover .program-card-media__image {
+  transform: scale(1.05);
+}
+
+/* ── Featured program card ───────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  border-radius: var(--fp-radius);
+  overflow: hidden;
+  background: var(--fp-card);
+  box-shadow: var(--fp-shadow-featured);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--fp-transition), box-shadow var(--fp-transition);
+}
+
+@media (min-width: 640px) {
+  .portal-home-experience [data-block="academic_offer"] .featured-program-card__surface {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    min-height: 15rem;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card.group:hover .featured-program-card__surface {
+  transform: translateY(-3px);
+  box-shadow: var(--fp-shadow-hover);
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__media {
+  min-height: 11rem;
+  min-width: 0;
+  width: 100%;
+  position: relative;
+  isolation: isolate;
+}
+
+@media (min-width: 640px) {
+  .portal-home-experience [data-block="academic_offer"] .featured-program-card__media {
+    min-height: 100%;
+    max-width: 100%;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem) clamp(1.5rem, 3vw, 2rem);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__badges,
+.portal-home-experience [data-block="academic_offer"] .program-mini-card__badges {
+  margin-bottom: 0.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__price-band {
+  margin: 0 calc(-1 * clamp(1.5rem, 3vw, 2rem));
+  padding: 0.875rem clamp(1.5rem, 3vw, 2rem);
+  background: color-mix(in srgb, var(--fp-cyan) 6%, var(--fp-card));
+  border-block: 1px solid color-mix(in srgb, var(--fp-cyan) 12%, transparent);
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.25rem;
+  padding-top: 0.25rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 2vw, 1.625rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--fp-navy);
+  overflow: visible;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__title-line {
+  display: block;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-program-card__description {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--fp-body);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card__price {
+  margin-top: 0.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine .program-mini-card__cta {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* ── Mini cards (magazine) ───────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__secondary {
+  display: grid;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .portal-home-experience [data-block="academic_offer"] .featured-programs__secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .featured-programs__secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine .program-mini-card__surface {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: var(--fp-radius);
+  overflow: hidden;
+  background: var(--fp-card);
+  box-shadow: var(--fp-shadow);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--fp-transition), box-shadow var(--fp-transition);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine.group:hover .program-mini-card__surface {
+  transform: translateY(-3px);
+  box-shadow: var(--fp-shadow-hover);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine .program-mini-card__media {
+  aspect-ratio: 16 / 10;
+  min-height: 9.5rem;
+  max-height: 11.5rem;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine .program-mini-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine .program-mini-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.125rem 1.25rem 1.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine .program-mini-card__body {
+    padding: 1rem 1rem 1.125rem;
+  }
+
+  .portal-home-experience [data-block="academic_offer"] .program-mini-card--magazine .program-mini-card__media {
+    max-height: 10rem;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card__title {
+  margin: 0;
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  font-weight: 700;
+  line-height: 1.28;
+  letter-spacing: -0.015em;
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card__title-line {
+  display: block;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta--magazine {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__magazine-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--fp-navy) 8%, transparent);
+  font-size: 0.8125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__magazine-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__magazine-label {
+  color: var(--fp-muted);
+  font-weight: 500;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__magazine-value {
+  color: var(--fp-navy);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ── Badge ───────────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .program-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-badge--generation {
+  background: color-mix(in srgb, var(--fp-blue) 12%, transparent);
+  color: var(--fp-blue);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-badge--institutional {
+  background: color-mix(in srgb, var(--fp-cyan) 14%, transparent);
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-badge--online {
+  background: color-mix(in srgb, var(--fp-mint) 18%, transparent);
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-badge--admission {
+  background: color-mix(in srgb, var(--fp-cyan) 16%, transparent);
+  color: var(--fp-navy);
+  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-badge--continuing,
+.portal-home-experience [data-block="academic_offer"] .program-badge--default {
+  background: color-mix(in srgb, var(--fp-navy) 8%, transparent);
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-badge--coming-soon {
+  background: color-mix(in srgb, var(--fp-muted) 20%, transparent);
+  color: var(--fp-muted);
+}
+
+/* ── Academic meta ───────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .program-meta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta--academic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem 1.25rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta--compact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__field {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__icon--accent {
+  color: var(--fp-cyan);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__icon--success {
+  color: var(--fp-mint);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fp-muted);
+  line-height: 1.2;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-meta__value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--fp-navy);
+  line-height: 1.3;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card__meta .program-meta__label {
+  font-size: 0.625rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card__meta .program-meta__value {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 479px) {
+  .portal-home-experience [data-block="academic_offer"] .program-meta--academic-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+  }
+}
+
+/* ── Economic price ──────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .program-price--featured {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__enrollment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__enrollment .program-price__label {
+  font-size: 0.75rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__amount--small {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--fp-muted);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__tuition {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__tuition .program-price__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__amount--hero {
+  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--fp-cyan);
+  letter-spacing: -0.02em;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--fp-muted);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__amount--primary {
+  font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+  color: var(--fp-cyan);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price--featured .program-price__amount--primary {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price__note {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--fp-muted);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price--compact {
+  gap: 0.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price--compact .program-price__label {
+  font-size: 0.6875rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price--compact .program-price__amount {
+  font-size: 0.875rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-price--compact .program-price__amount--primary {
+  font-size: 1rem;
+}
+
+/* ── CTA ─────────────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .program-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-cta__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--fp-blue);
+  white-space: nowrap;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-cta__arrow {
+  width: 1rem;
+  height: 1rem;
+  transition: transform var(--fp-transition);
+}
+
+.portal-home-experience [data-block="academic_offer"] .group:hover .program-cta__arrow {
+  transform: translateX(4px);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-cta__circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: var(--fp-cyan);
+  color: var(--text-inverse);
+  transition: transform var(--fp-transition), box-shadow var(--fp-transition);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-cta__circle svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .group:hover .program-cta__circle {
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--fp-cyan) 35%, transparent);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-mini-card__cta .program-cta__primary {
+  font-size: 0.8125rem;
+}
+
+/* ── Trust bar ───────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-section__heading {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--fp-navy);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="academic_offer"] .program-trust-section__heading {
+    text-align: left;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1.5rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.5rem);
+  border-radius: var(--fp-radius);
+  background: var(--fp-bg);
+  border: 1px solid color-mix(in srgb, var(--fp-cyan) 15%, transparent);
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="academic_offer"] .program-trust-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .program-trust-bar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-width: 0;
+  padding: 0.5rem 0;
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="academic_offer"] .program-trust-bar__item {
+    padding: 0.75rem clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .portal-home-experience [data-block="academic_offer"] .program-trust-bar__item--divided {
+    border-left: 1px solid color-mix(in srgb, var(--fp-navy) 10%, transparent);
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fp-cyan) 12%, var(--text-inverse));
+  color: var(--fp-blue);
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .program-trust-bar__icon {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar__item:nth-child(even) .program-trust-bar__icon {
+  background: color-mix(in srgb, var(--fp-mint) 16%, var(--text-inverse));
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar__value {
+  font-size: clamp(1.125rem, 1.6vw, 1.375rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--fp-cyan);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-trust-bar__description {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--fp-muted);
+}
+
+/* ── Indicators ──────────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__indicators-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__indicators-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fp-muted);
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__indicator {
+  width: 0.625rem;
+  height: 0.625rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fp-navy) 18%, transparent);
+  cursor: pointer;
+  transition: width var(--fp-transition), background var(--fp-transition);
+}
+
+.portal-home-experience [data-block="academic_offer"] .featured-programs__indicator--active {
+  width: 2rem;
+  background: var(--fp-cyan);
+}
+
+/* ── Audience section ────────────────────────────────────────── */
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-section__heading {
+  margin: 0;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--fp-navy);
+  text-align: center;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-section__lead {
+  margin: 0.5rem auto 0;
+  max-width: 36rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--fp-body);
+  text-align: center;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-section__grid {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .portal-home-experience [data-block="academic_offer"] .program-audience-section__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-home-experience [data-block="academic_offer"] .program-audience-section__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  height: 100%;
+  padding: 1.125rem 1rem;
+  border-radius: var(--fp-radius);
+  background: var(--fp-card);
+  border: 1px solid color-mix(in srgb, var(--fp-navy) 8%, transparent);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--fp-transition), box-shadow var(--fp-transition), transform var(--fp-transition);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-card:hover {
+  border-color: color-mix(in srgb, var(--fp-cyan) 35%, transparent);
+  box-shadow: var(--fp-shadow);
+  transform: translateY(-2px);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fp-cyan) 12%, var(--text-inverse));
+  color: var(--fp-blue);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-card__title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--fp-navy);
+}
+
+.portal-home-experience [data-block="academic_offer"] .program-audience-card__description {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--fp-muted);
+}
+
+/* ── Responsive stack ────────────────────────────────────────── */
+
+@media (max-width: 639px) {
+  .portal-home-experience [data-block="academic_offer"] .featured-program-card__surface {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-home-experience [data-block="academic_offer"] .featured-program-card__footer {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .portal-home-experience [data-block="academic_offer"] .featured-programs__stack {
+    margin-top: 2rem;
+    gap: 1.5rem;
+  }
+
+  .portal-home-experience [data-block="academic_offer"] .program-price--featured {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-home-experience [data-block="academic_offer"] .featured-programs__stack--enter {
+    animation: none;
+  }
+
+  .portal-home-experience [data-block="academic_offer"] .group:hover .featured-program-card__surface,
+  .portal-home-experience [data-block="academic_offer"] .group:hover .program-mini-card__surface,
+  .portal-home-experience [data-block="academic_offer"] .group:hover .program-card-media__image,
+  .portal-home-experience [data-block="academic_offer"] .group:hover .program-cta__circle,
+  .portal-home-experience [data-block="academic_offer"] .group:hover .program-cta__arrow {
+    transform: none;
+  }
+}

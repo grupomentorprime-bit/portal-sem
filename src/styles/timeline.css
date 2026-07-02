@@ -1,0 +1,357 @@
+/**
+ * Experience Module — Timeline v1.0 (LOCKED)
+ * @see docs/core/CORE-TIMELINE-v1.md
+ */
+
+/* ─── Track base ─── */
+
+.portal-timeline__track {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-timeline__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.portal-timeline__item-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.portal-timeline__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--transition-normal) var(--ease-out),
+    box-shadow var(--transition-normal) var(--ease-out),
+    border-color var(--transition-fast) var(--ease-default);
+}
+
+.portal-timeline__item-link:hover .portal-timeline__item,
+.portal-timeline__item:hover {
+  border-color: color-mix(in srgb, var(--timeline-accent, var(--secondary)) 40%, var(--border));
+  box-shadow: var(--shadow-md);
+}
+
+.portal-timeline__item--current {
+  border-color: color-mix(in srgb, var(--timeline-accent, var(--secondary)) 55%, var(--border));
+  box-shadow: var(--shadow-lg);
+}
+
+/* ─── Marker / node ─── */
+
+.portal-timeline__marker-wrap {
+  flex-shrink: 0;
+}
+
+.portal-timeline__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--timeline-accent, var(--secondary)) 15%, var(--background));
+  transition:
+    transform var(--transition-normal) var(--ease-out),
+    box-shadow var(--transition-fast) var(--ease-default);
+  animation: portal-timeline-node-scale var(--transition-normal) var(--ease-out) forwards;
+}
+
+.portal-timeline__item--stagger-1 .portal-timeline__marker { animation-delay: 0ms; }
+.portal-timeline__item--stagger-2 .portal-timeline__marker { animation-delay: 80ms; }
+.portal-timeline__item--stagger-3 .portal-timeline__marker { animation-delay: 160ms; }
+.portal-timeline__item--stagger-4 .portal-timeline__marker { animation-delay: 240ms; }
+.portal-timeline__item--stagger-5 .portal-timeline__marker { animation-delay: 320ms; }
+.portal-timeline__item--stagger-6 .portal-timeline__marker { animation-delay: 400ms; }
+
+.portal-timeline__item-link:hover .portal-timeline__marker,
+.portal-timeline__item:hover .portal-timeline__marker {
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--timeline-accent, var(--secondary)) 20%, var(--background)),
+    0 0 1rem color-mix(in srgb, var(--timeline-accent, var(--secondary)) 35%, transparent);
+}
+
+.portal-timeline__item--pending .portal-timeline__marker {
+  background: var(--background-muted);
+  color: var(--text-muted);
+}
+
+.portal-timeline__item--active .portal-timeline__marker,
+.portal-timeline__item--current .portal-timeline__marker {
+  background: var(--timeline-accent, var(--secondary));
+  color: var(--text-inverse);
+}
+
+.portal-timeline__item--completed .portal-timeline__marker {
+  background: var(--success);
+  color: var(--text-inverse);
+}
+
+.portal-timeline__item--upcoming .portal-timeline__marker {
+  background: color-mix(in srgb, var(--warning) 85%, var(--primary));
+  color: var(--text-inverse);
+}
+
+.portal-timeline__step-number {
+  line-height: 1;
+}
+
+.portal-timeline__date {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.portal-timeline__title {
+  transition: color var(--transition-fast) var(--ease-default);
+}
+
+.portal-timeline__item-link:hover .portal-timeline__title,
+.portal-timeline__item:hover .portal-timeline__title {
+  color: var(--timeline-accent, var(--secondary));
+}
+
+/* ─── Connector ─── */
+
+.portal-timeline__connector {
+  flex-shrink: 0;
+  background: var(--border);
+  animation: portal-timeline-line-draw var(--transition-slow) var(--ease-out) forwards;
+  transform-origin: top center;
+}
+
+.portal-timeline__connector--vertical {
+  width: 2px;
+  min-height: 1.5rem;
+  margin: 0.5rem 0 0.5rem 1.2rem;
+  align-self: flex-start;
+}
+
+.portal-timeline__connector--horizontal {
+  display: none;
+}
+
+/* ─── Layout: vertical (mobile / tablet default) ─── */
+
+.portal-timeline--layout-vertical .portal-timeline__track,
+.portal-timeline--layout-auto .portal-timeline__track {
+  flex-direction: column;
+}
+
+.portal-timeline--layout-vertical .portal-timeline__step,
+.portal-timeline--layout-auto .portal-timeline__step {
+  flex-direction: column;
+}
+
+.portal-timeline--layout-vertical .portal-timeline__item,
+.portal-timeline--layout-auto .portal-timeline__item {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.portal-timeline--layout-vertical .portal-timeline__connector--vertical,
+.portal-timeline--layout-auto .portal-timeline__connector--vertical {
+  display: block;
+}
+
+/* ─── Layout: horizontal (desktop) ─── */
+
+@media (min-width: 1280px) {
+  .portal-timeline--layout-horizontal .portal-timeline__track,
+  .portal-timeline--layout-auto .portal-timeline__track {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  .portal-timeline--layout-horizontal .portal-timeline__step,
+  .portal-timeline--layout-auto .portal-timeline__step {
+    flex: 1 1 0;
+    flex-direction: row;
+    align-items: stretch;
+    min-width: 0;
+  }
+
+  .portal-timeline--layout-horizontal .portal-timeline__item,
+  .portal-timeline--layout-auto .portal-timeline__item {
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .portal-timeline--layout-horizontal .portal-timeline__connector--vertical,
+  .portal-timeline--layout-auto .portal-timeline__connector--vertical {
+    display: none;
+  }
+
+  .portal-timeline--layout-horizontal .portal-timeline__connector--horizontal,
+  .portal-timeline--layout-auto .portal-timeline__connector--horizontal {
+    display: block;
+    width: 100%;
+    height: 2px;
+    margin: 1.2rem 0 0;
+    align-self: flex-start;
+    transform-origin: left center;
+  }
+
+  .portal-timeline--layout-horizontal .portal-timeline__step:not(:last-child)::after,
+  .portal-timeline--layout-auto .portal-timeline__step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 2.45rem;
+    left: calc(50% + 1.25rem);
+    right: calc(-50% + 1.25rem);
+    height: 2px;
+    background: var(--border);
+    animation: portal-timeline-line-draw-h var(--transition-slow) var(--ease-out) forwards;
+    transform-origin: left center;
+    z-index: 0;
+  }
+
+  .portal-timeline--layout-horizontal .portal-timeline__step,
+  .portal-timeline--layout-auto .portal-timeline__step {
+    position: relative;
+  }
+
+  .portal-timeline--layout-horizontal .portal-timeline__item,
+  .portal-timeline--layout-auto .portal-timeline__item {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* ─── Notebook: adaptive grid ─── */
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .portal-timeline--layout-auto .portal-timeline__track {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem 1rem;
+  }
+
+  .portal-timeline--layout-auto .portal-timeline__step {
+    flex-direction: column;
+  }
+
+  .portal-timeline--layout-auto .portal-timeline__connector {
+    display: none;
+  }
+
+  .portal-timeline--layout-auto .portal-timeline__item {
+    flex-direction: column;
+    height: 100%;
+  }
+}
+
+/* ─── Tablet: 2-col optional for many items ─── */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .portal-timeline--layout-auto .portal-timeline__track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .portal-timeline--layout-auto .portal-timeline__connector {
+    display: none;
+  }
+
+  .portal-timeline--layout-auto .portal-timeline__item {
+    flex-direction: column;
+    height: 100%;
+  }
+}
+
+/* ─── Animations ─── */
+
+@keyframes portal-timeline-node-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes portal-timeline-line-draw {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@media (min-width: 1280px) {
+  .portal-timeline--layout-horizontal .portal-timeline__connector--horizontal,
+  .portal-timeline--layout-auto .portal-timeline__connector--horizontal {
+    animation-name: portal-timeline-line-draw-h;
+    transform-origin: left center;
+  }
+}
+
+@keyframes portal-timeline-line-draw-h {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* ─── Skeleton ─── */
+
+.portal-timeline--skeleton .portal-timeline__item {
+  pointer-events: none;
+  box-shadow: none;
+}
+
+.portal-timeline--skeleton .portal-timeline__marker {
+  animation: none;
+  background: var(--background-soft);
+  box-shadow: none;
+}
+
+/* ─── Reduced motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-timeline.animate-slide-up {
+    animation: none;
+  }
+
+  .portal-timeline__marker,
+  .portal-timeline__connector {
+    animation: none;
+  }
+
+  .portal-timeline__item-link:hover .portal-timeline__marker,
+  .portal-timeline__item:hover .portal-timeline__marker {
+    transform: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--timeline-accent, var(--secondary)) 15%, var(--background));
+  }
+}

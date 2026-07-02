@@ -1,0 +1,34 @@
+/**
+ * OT-PORTAL-ADMISION — Editor CMS del Centro de Admisión
+ */
+
+.admission-cms__sidebar-group {
+  letter-spacing: 0.12em;
+}
+
+.admission-cms__section-header {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sem-secondary) 4%, var(--background)) 0%,
+      var(--background) 55%
+    );
+}
+
+.admission-cms__editor .tabs-list {
+  margin-bottom: 1rem;
+}
+
+.admission-cms-section-card:focus-within {
+  border-color: color-mix(in srgb, var(--sem-secondary) 35%, var(--border));
+}
+
+.admission-cms__preview iframe {
+  background: var(--background);
+}
+
+@media (max-width: 1279px) {
+  .admission-cms__preview {
+    order: -1;
+  }
+}

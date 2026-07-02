@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * PortalHeader
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 "use client";
 
 import { useState } from "react";
@@ -19,7 +31,7 @@ export function SiteHeader({ config, mainMenu, mobileMenu }: SiteHeaderProps) {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95"
+      className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95"
       style={{
         borderColor: branding ? `${branding.primaryColor}22` : undefined,
       }}
@@ -60,7 +72,7 @@ export function SiteHeader({ config, mainMenu, mobileMenu }: SiteHeaderProps) {
       </div>
 
       {mobileOpen && mobileMenu ? (
-        <div className="border-t border-zinc-200 px-4 py-4 md:hidden dark:border-zinc-800">
+        <div className="border-t border-border px-4 py-4 md:hidden dark:border-gray-700">
           <NavMenu items={mobileMenu.items} variant="mobile" />
         </div>
       ) : null}

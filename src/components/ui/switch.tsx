@@ -43,7 +43,7 @@ export function Switch({
           "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-[var(--transition-fast)]",
           focusRing,
           disabledStyles,
-          checked ? "bg-primary" : "bg-gray-300"
+          checked ? "bg-primary" : "bg-gray-200"
         )}
       >
         <span

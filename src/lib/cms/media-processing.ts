@@ -1,10 +1,13 @@
 import sharp from "sharp";
 import {
+  HERO_WEBP_WIDTHS,
   RESPONSIVE_WIDTHS,
   THUMBNAIL_WIDTH,
 } from "@/lib/cms/media-defaults";
 import { putMediaFile, buildStorageKey } from "@/lib/cms/media-storage";
 import type { MediaResponsiveUrls } from "@/types/media";
+
+export type ImageVariantProfile = "default" | "hero";
 
 export interface ImageMetadata {
   width?: number;
@@ -38,12 +41,34 @@ export async function extractImageMetadata(buffer: Buffer): Promise<ImageMetadat
   }
 }
 
+async function generateWebpVariants(
+  image: ReturnType<typeof sharp>,
+  tenant: string,
+  mediaId: string,
+  baseName: string,
+  widths: readonly number[],
+  responsive: MediaResponsiveUrls
+): Promise<void> {
+  for (const width of widths) {
+    const variantKey = buildStorageKey(tenant, mediaId, `${baseName}-w${width}.webp`);
+    const variantBuf = await image
+      .clone()
+      .resize({ width, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
+    const stored = await putMediaFile(variantKey, variantBuf, "image/webp");
+    const urlKey = `w${width}` as keyof MediaResponsiveUrls;
+    responsive[urlKey] = stored.publicUrl;
+  }
+}
+
 export async function processUploadedImage(
   buffer: Buffer,
   mimeType: string,
   tenant: string,
   mediaId: string,
-  baseName: string
+  baseName: string,
+  variantProfile: ImageVariantProfile = "default"
 ): Promise<ProcessedImageResult> {
   if (mimeType === "image/svg+xml") {
     const safe = sanitizeSvg(buffer);
@@ -80,16 +105,10 @@ export async function processUploadedImage(
   const thumbStored = await putMediaFile(thumbKey, thumbBuf, "image/webp");
   responsive.thumbnail = thumbStored.publicUrl;
 
-  for (const width of RESPONSIVE_WIDTHS) {
-    const variantKey = buildStorageKey(tenant, mediaId, `${baseName}-w${width}.webp`);
-    const variantBuf = await image
-      .clone()
-      .resize({ width, withoutEnlargement: true })
-      .webp({ quality: 82 })
-      .toBuffer();
-    const stored = await putMediaFile(variantKey, variantBuf, "image/webp");
-    const urlKey = `w${width}` as keyof MediaResponsiveUrls;
-    responsive[urlKey] = stored.publicUrl;
+  if (variantProfile === "hero") {
+    await generateWebpVariants(image, tenant, mediaId, baseName, HERO_WEBP_WIDTHS, responsive);
+  } else {
+    await generateWebpVariants(image, tenant, mediaId, baseName, RESPONSIVE_WIDTHS, responsive);
   }
 
   return {

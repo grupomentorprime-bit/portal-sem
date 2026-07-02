@@ -40,7 +40,7 @@ export function MenuSortableList({
   return (
     <div className="space-y-1">
       {sorted.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400">
+        <p className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
           Sin ítems. Agrega el primero con el botón +.
         </p>
       ) : (
@@ -55,13 +55,13 @@ export function MenuSortableList({
             className={cn(
               "flex items-center gap-2 rounded-lg border px-3 py-2 transition",
               selectedId === item.id
-                ? "border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-900"
-                : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950",
+                ? "border-primary bg-background-soft dark:border-gray-100 dark:bg-gray-900"
+                : "border-border bg-background dark:border-gray-700 dark:bg-gray-900",
               draggedId === item.id && "opacity-50"
             )}
             style={{ marginLeft: `${item.level * 20}px` }}
           >
-            <span className="cursor-grab text-zinc-400" title="Arrastrar para reordenar">
+            <span className="cursor-grab text-gray-400" title="Arrastrar para reordenar">
               ⠿
             </span>
             <button
@@ -73,13 +73,13 @@ export function MenuSortableList({
               <span className="font-medium">{item.title}</span>
               <MenuBadge label={item.badge} color={item.color} highlighted={item.highlighted} />
               {!item.visible || !item.active ? (
-                <span className="text-xs text-zinc-400">(oculto)</span>
+                <span className="text-xs text-gray-400">(oculto)</span>
               ) : null}
             </button>
             <button
               type="button"
               onClick={() => onDelete(item.id)}
-              className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+              className="rounded px-2 py-1 text-xs text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] dark:hover:bg-[var(--state-danger-bg)]"
             >
               Eliminar
             </button>

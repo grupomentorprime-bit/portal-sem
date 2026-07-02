@@ -1,0 +1,90 @@
+/**
+ * OT-BRANDING-002 — Sistema corporativo de color (alias, neutros, estados)
+ * Requiere brand.css cargado antes en globals.css.
+ * Única fuente autorizada de HEX institucionales fuera de brand.css.
+ */
+
+:root,
+[data-theme="light"] {
+  /* ─── Escala neutra única (usar --gray-*; no zinc/slate/stone/neutral Tailwind) ─── */
+  --gray-50: #f5f7f9;
+  --gray-100: #e8ecf0;
+  --gray-200: #d1d9e0;
+  --gray-300: #a8b5c2;
+  --gray-400: #7a8fa3;
+  --gray-500: #5c7289;
+  --gray-600: #475a6e;
+  --gray-700: #354656;
+  --gray-800: #243340;
+  --gray-900: #141f29;
+
+  /* ─── Defaults de marca (desde brand.css) ─── */
+  --color-primary-default: var(--sem-primary);
+  --color-secondary-default: var(--sem-secondary);
+  --color-accent-default: var(--sem-accent);
+  --color-success-default: var(--sem-success);
+  --color-warning-default: var(--sem-light);
+  --color-info-default: var(--sem-accent);
+
+  /* ─── Alias universales ─── */
+  --color-brand: var(--sem-primary);
+  --color-link: var(--sem-secondary);
+  --color-action: var(--sem-accent);
+
+  /* ─── Superficies y texto ─── */
+  --color-surface-default: #ffffff;
+  --color-background-default: #ffffff;
+  --color-foreground-default: var(--gray-900);
+  --color-border-default: var(--gray-200);
+  --color-muted-default: var(--gray-500);
+
+  /* ─── Estados UI (accesibilidad; sin HEX en componentes) ─── */
+  --color-danger-default: #b42318;
+
+  --state-success-fg: var(--sem-primary);
+  --state-success-bg: color-mix(in srgb, var(--sem-success) 15%, transparent);
+  --state-success-border: color-mix(in srgb, var(--sem-success) 30%, transparent);
+
+  --state-warning-fg: var(--sem-primary);
+  --state-warning-bg: color-mix(in srgb, var(--sem-light) 20%, transparent);
+  --state-warning-border: color-mix(in srgb, var(--sem-light) 40%, transparent);
+
+  --state-danger-fg: var(--color-danger-default);
+  --state-danger-bg: color-mix(in srgb, var(--color-danger-default) 10%, transparent);
+  --state-danger-border: color-mix(in srgb, var(--color-danger-default) 25%, transparent);
+
+  --state-info-fg: var(--sem-primary);
+  --state-info-bg: color-mix(in srgb, var(--sem-accent) 10%, transparent);
+  --state-info-border: color-mix(in srgb, var(--sem-accent) 30%, transparent);
+
+  /* ─── Semánticos runtime ─── */
+  --color-primary: var(--color-primary-default);
+  --color-secondary: var(--color-secondary-default);
+  --color-accent: var(--color-accent-default);
+  --color-success: var(--color-success-default);
+  --color-warning: var(--color-warning-default);
+  --color-danger: var(--color-danger-default);
+  --color-info: var(--color-info-default);
+  --color-surface: var(--color-surface-default);
+  --color-background: var(--color-background-default);
+  --color-foreground: var(--color-foreground-default);
+  --color-border: var(--color-border-default);
+  --color-muted: var(--color-muted-default);
+
+  /* ─── Alias legacy (retrocompatibilidad Core UI) ─── */
+  --primary: var(--color-primary);
+  --secondary: var(--color-secondary);
+  --accent: var(--color-accent);
+  --success: var(--color-success);
+  --light: var(--color-warning);
+  --white: var(--color-surface);
+
+  --background: var(--color-background);
+  --background-soft: var(--gray-50);
+  --background-muted: var(--gray-50);
+  --text: var(--color-foreground);
+  --text-muted: var(--color-muted);
+  --text-inverse: var(--color-surface);
+  --border: var(--color-border);
+  --border-strong: var(--gray-300);
+}

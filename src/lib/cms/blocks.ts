@@ -37,6 +37,10 @@ export async function seedBlockLibrary(): Promise<BlockDefinition[]> {
     );
   }
 
-  revalidateTag(CMS_BLOCKS_TAG, "max");
   return fetchBlocksFromDb();
+}
+
+/** Invalidar caché — solo en Route Handlers / Server Actions, no durante render */
+export function revalidateBlockLibraryCache(): void {
+  revalidateTag(CMS_BLOCKS_TAG, "max");
 }

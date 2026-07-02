@@ -59,7 +59,7 @@ export function SeoEditor({ value, onChange }: SeoEditorProps) {
             }
             placeholder="seminario, teología, biblia, ministerio"
           />
-          <p className="mt-1 text-xs text-zinc-400">Separadas por comas.</p>
+          <p className="mt-1 text-xs text-gray-400">Separadas por comas.</p>
         </div>
       </div>
     </Card>

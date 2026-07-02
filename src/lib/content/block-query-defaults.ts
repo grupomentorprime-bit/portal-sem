@@ -3,9 +3,13 @@ import type { BlockContentQuery } from "@/types/content";
 
 export const QUERY_BLOCK_TYPES: BlockType[] = [
   "programs",
+  "academic_offer",
   "teachers",
+  "people",
   "news",
   "events",
+  "academic_agenda",
+  "institutional_notices",
   "library",
   "testimonials",
   "gallery",
@@ -15,12 +19,24 @@ export const DEFAULT_BLOCK_QUERIES: Record<string, BlockContentQuery> = {
   programs: {
     collection: "academy_programs",
     featured: true,
-    limit: 6,
+    limit: 3,
+    sort: { field: "order", direction: "asc" },
+  },
+  academic_offer: {
+    collection: "academy_programs",
+    featured: true,
+    limit: 3,
     sort: { field: "order", direction: "asc" },
   },
   teachers: {
-    collection: "academy_team",
+    collection: "content_people",
     limit: 4,
+    sort: { field: "order", direction: "asc" },
+  },
+  people: {
+    collection: "content_people",
+    limit: 4,
+    category: "team_leadership",
     sort: { field: "order", direction: "asc" },
   },
   news: {
@@ -30,12 +46,23 @@ export const DEFAULT_BLOCK_QUERIES: Record<string, BlockContentQuery> = {
   },
   events: {
     collection: "content_events",
-    limit: 2,
+    limit: 4,
     sort: { field: "publishedAt", direction: "asc" },
+  },
+  academic_agenda: {
+    collection: "content_academic_agenda",
+    limit: 4,
+    upcoming: true,
+    sort: { field: "startDate", direction: "asc" },
+  },
+  institutional_notices: {
+    collection: "content_institutional_notices",
+    limit: 4,
+    sort: { field: "priority", direction: "desc" },
   },
   library: {
     collection: "content_library",
-    limit: 3,
+    limit: 4,
     sort: { field: "title", direction: "asc" },
   },
   testimonials: {

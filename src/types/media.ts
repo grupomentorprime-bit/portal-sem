@@ -8,12 +8,13 @@ export const MEDIA_FOLDERS = [
   "Profesores",
   "Biblioteca",
   "Eventos",
-  "Testimonios",
   "Galería",
-  "Documentos",
-  "Descargas",
+  "Landing",
   "Videos",
   "Audio",
+  "Documentos",
+  "Descargas",
+  "Testimonios",
   "Iconos",
   "Otros",
 ] as const;
@@ -44,10 +45,20 @@ export type MediaAssetStatus = "active" | "archived";
 export interface MediaResponsiveUrls {
   thumbnail?: string;
   w400?: string;
+  w768?: string;
   w800?: string;
+  w1080?: string;
   w1200?: string;
+  w1440?: string;
+  w1600?: string;
   w1920?: string;
   webp?: string;
+  /** Variantes JPEG para compatibilidad (perfil Hero) */
+  jpeg768?: string;
+  jpeg1080?: string;
+  jpeg1200?: string;
+  jpeg1440?: string;
+  jpeg1920?: string;
 }
 
 export interface MediaUsageRef {
@@ -71,6 +82,8 @@ export interface CmsMediaAsset {
   folder: MediaFolder;
   category: MediaCategory;
   tags: string[];
+  /** Marcada como favorita para reutilización rápida (OT-PORTAL-015) */
+  favorite?: boolean;
   alt: string;
   title?: string;
   caption: string;
@@ -118,6 +131,7 @@ export type CmsMediaUpdate = Partial<
     | "status"
     | "visibility"
     | "originalName"
+    | "favorite"
   >
 >;
 
@@ -130,8 +144,11 @@ export interface MediaListQuery {
   search?: string;
   mimeType?: string;
   createdBy?: string;
-  sort?: "name" | "date" | "size" | "type";
+  sort?: "name" | "date" | "size" | "type" | "favorite";
   direction?: "asc" | "desc";
+  favorite?: boolean;
+  /** Filtrar por uso activo */
+  usageFilter?: "inUse" | "noUse";
   page?: number;
   limit?: number;
 }
@@ -147,7 +164,7 @@ export interface MediaListResult {
 export interface MediaBulkAction {
   tenant: string;
   ids: string[];
-  action: "trash" | "restore" | "delete" | "move" | "tag";
+  action: "trash" | "restore" | "delete" | "move" | "tag" | "duplicate" | "activate" | "deactivate";
   folder?: MediaFolder;
   tags?: string[];
 }

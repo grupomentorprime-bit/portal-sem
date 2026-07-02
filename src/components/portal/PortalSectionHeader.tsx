@@ -19,14 +19,14 @@ export function PortalSectionHeader({
   linkLabel = "Ver más",
 }: PortalSectionHeaderProps) {
   return (
-    <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="max-w-2xl">
         {overline ? (
           <p className="text-caption font-semibold uppercase tracking-widest text-secondary">
             {overline}
           </p>
         ) : null}
-        <h2 className="mt-2 text-display-s font-semibold text-foreground">{title}</h2>
+        <h2 className="mt-2 text-display-l font-semibold text-foreground">{title}</h2>
         {description ? (
           <p className="mt-3 text-body text-muted">{description}</p>
         ) : null}

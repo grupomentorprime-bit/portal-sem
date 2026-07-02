@@ -2,20 +2,26 @@
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ColorPicker } from "@/components/config/ColorPicker";
-import {
-  FaviconUploader,
-  HeroUploader,
-  LogoUploader,
-} from "@/components/config/ImageUploader";
+import { HeroPortalPanel } from "@/components/config/HeroPortalPanel";
+import { LogoUploader, FaviconUploader } from "@/components/config/ImageUploader";
 import type { Branding } from "@/types/cms";
+import type { HeroPortalConfig } from "@/types/hero-portal";
 
 interface BrandingPanelProps {
   value: Branding;
   onChange: (value: Branding) => void;
+  heroPortal: HeroPortalConfig;
+  onHeroPortalChange: (value: HeroPortalConfig) => void;
   tenant: string;
 }
 
-export function BrandingPanel({ value, onChange, tenant }: BrandingPanelProps) {
+export function BrandingPanel({
+  value,
+  onChange,
+  heroPortal,
+  onHeroPortalChange,
+  tenant,
+}: BrandingPanelProps) {
   const update = <K extends keyof Branding>(key: K, fieldValue: Branding[K]) => {
     onChange({ ...value, [key]: fieldValue });
   };
@@ -25,7 +31,7 @@ export function BrandingPanel({ value, onChange, tenant }: BrandingPanelProps) {
       <Card>
         <CardHeader>
           <CardTitle>Identidad visual</CardTitle>
-          <CardDescription>Logotipos, favicon e imagen principal del portal.</CardDescription>
+          <CardDescription>Logotipos y favicon del portal.</CardDescription>
         </CardHeader>
         <div className="space-y-6">
           <LogoUploader
@@ -38,13 +44,10 @@ export function BrandingPanel({ value, onChange, tenant }: BrandingPanelProps) {
             onChange={(v) => update("faviconMediaId", v)}
             tenant={tenant}
           />
-          <HeroUploader
-            value={value.heroMediaId ?? ""}
-            onChange={(v) => update("heroMediaId", v)}
-            tenant={tenant}
-          />
         </div>
       </Card>
+
+      <HeroPortalPanel value={heroPortal} onChange={onHeroPortalChange} tenant={tenant} />
 
       <Card>
         <CardHeader>

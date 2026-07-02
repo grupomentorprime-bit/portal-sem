@@ -1,0 +1,188 @@
+/**
+ * OT-PORTAL-001 — Ruta de admisión (timeline)
+ */
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__header {
+  margin-inline: auto;
+  text-align: center;
+  max-width: 40rem;
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__track {
+  position: relative;
+  margin-top: 1rem;
+}
+
+/* ─── Tarjetas uniformes ─── */
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__item {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  background: var(--background);
+  transition:
+    transform var(--transition-normal) var(--ease-out),
+    box-shadow var(--transition-normal) var(--ease-out),
+    border-color var(--transition-fast) var(--ease-default);
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__description {
+  flex: 1;
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__item-link:hover .portal-timeline__item {
+  transform: translateY(-2px);
+}
+
+/* ─── Marcadores uniformes con progresión de marca ─── */
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__marker {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1rem;
+  border: 2px solid transparent;
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__step:nth-child(1) .portal-timeline__marker {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__step:nth-child(2) .portal-timeline__marker {
+  background: color-mix(in srgb, var(--color-primary) 55%, var(--color-secondary));
+  color: var(--text-inverse);
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__step:nth-child(3) .portal-timeline__marker {
+  background: var(--color-secondary);
+  color: var(--text-inverse);
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__step:nth-child(4) .portal-timeline__marker {
+  background: color-mix(in srgb, var(--color-secondary) 50%, var(--color-accent));
+  color: var(--text-inverse);
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__step:nth-child(5) .portal-timeline__marker {
+  background: var(--color-accent);
+  color: var(--text-inverse);
+}
+
+/* Sin resaltado de paso "actual" en home informativo */
+.portal-home-experience [data-block="admission_process"] .portal-timeline__item--current {
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ─── Tablet: scroll horizontal con snap ─── */
+
+@media (min-width: 768px) and (max-width: 1439px) {
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__track {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1rem;
+    padding-bottom: 0.75rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__step {
+    flex: 0 0 min(16rem, 72vw);
+    scroll-snap-align: start;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__connector {
+    display: none;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__item {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__content {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* ─── Desktop: 5 columnas + línea conectora ─── */
+
+@media (min-width: 1440px) {
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__track {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__track::before {
+    content: "";
+    position: absolute;
+    top: 1.5rem;
+    left: 8%;
+    right: 8%;
+    height: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      var(--color-primary) 0%,
+      var(--color-secondary) 50%,
+      var(--color-accent) 100%
+    );
+    z-index: 0;
+    opacity: 0.7;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__step {
+    flex: 1 1 0;
+    z-index: 1;
+    min-width: 0;
+  }
+
+  /* Ocultar conector duplicado del core timeline */
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__step:not(:last-child)::after {
+    display: none;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__connector {
+    display: none;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__item {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__marker-wrap {
+    margin-inline: auto;
+  }
+
+  .portal-home-experience [data-block="admission_process"] .portal-timeline--layout-auto .portal-timeline__content {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* ─── Footer CTA ─── */
+
+.portal-home-experience [data-block="admission_process"] .admission-process__footer {
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+}
+
+.portal-home-experience [data-block="admission_process"] .admission-process__footer .portal-cta-premium__actions {
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}

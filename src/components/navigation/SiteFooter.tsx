@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * PortalFooter
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import Link from "next/link";
 import { NavMenu } from "@/components/navigation/NavMenu";
 import type { CmsMenu } from "@/types/menu";
@@ -14,7 +26,7 @@ export function SiteFooter({ config, footerMenu }: SiteFooterProps) {
 
   return (
     <footer
-      className="mt-auto border-t border-zinc-200 dark:border-zinc-800"
+      className="mt-auto border-t border-border dark:border-gray-700"
       style={{
         backgroundColor: branding?.backgroundColor,
         color: branding?.textColor,

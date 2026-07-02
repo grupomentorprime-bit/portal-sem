@@ -1,0 +1,158 @@
+/**
+ * Experience Module — People Grid v1.0 (LOCKED)
+ * @see docs/core/CORE-PEOPLE-GRID-v1.md
+ */
+
+/* ─── Grid ─── */
+
+.portal-people-grid__list {
+  display: grid;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .portal-people-grid__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-people-grid__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .portal-people-grid__list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ─── Card ─── */
+
+.portal-person-card__card {
+  transition:
+    transform var(--transition-normal) var(--ease-out),
+    box-shadow var(--transition-normal) var(--ease-out);
+}
+
+.portal-person-card:hover .portal-person-card__card {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.portal-person-card--stagger-1,
+.portal-person-card--stagger-2,
+.portal-person-card--stagger-3,
+.portal-person-card--stagger-4,
+.portal-person-card--stagger-5,
+.portal-person-card--stagger-6 {
+  animation: slide-up var(--transition-normal) var(--ease-out) forwards;
+  opacity: 0;
+}
+
+.portal-person-card--stagger-1 { animation-delay: 0ms; }
+.portal-person-card--stagger-2 { animation-delay: 80ms; }
+.portal-person-card--stagger-3 { animation-delay: 160ms; }
+.portal-person-card--stagger-4 { animation-delay: 240ms; }
+.portal-person-card--stagger-5 { animation-delay: 320ms; }
+.portal-person-card--stagger-6 { animation-delay: 400ms; }
+
+/* ─── Media ─── */
+
+.portal-person-card__media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--background-soft);
+}
+
+.portal-person-card--compact .portal-person-card__media {
+  aspect-ratio: 1;
+  max-width: 10rem;
+  margin: 1.5rem auto 0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.portal-person-card__media-img {
+  transition: transform var(--transition-slow) var(--ease-out);
+}
+
+.portal-person-card:hover .portal-person-card__media-img {
+  transform: scale(1.04);
+}
+
+.portal-person-card__media-skeleton {
+  background: var(--background-muted);
+}
+
+.portal-person-card__media-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--background-muted);
+}
+
+/* ─── Meta & badge ─── */
+
+.portal-person-card__badge {
+  align-items: center;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-secondary) 12%, transparent);
+  color: var(--color-secondary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.625rem;
+  text-transform: uppercase;
+}
+
+.portal-person-card__bio {
+  text-wrap: pretty;
+}
+
+/* ─── Social ─── */
+
+.portal-person-card__social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-person-card__social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition:
+    color var(--transition-fast) var(--ease-out),
+    border-color var(--transition-fast) var(--ease-out),
+    background-color var(--transition-fast) var(--ease-out);
+}
+
+.portal-person-card__social-link:hover {
+  color: var(--color-secondary);
+  border-color: color-mix(in srgb, var(--color-secondary) 35%, var(--border));
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
+}
+
+/* ─── Skeleton ─── */
+
+.portal-people-grid--skeleton .portal-person-card--skeleton {
+  pointer-events: none;
+}

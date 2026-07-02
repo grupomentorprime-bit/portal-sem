@@ -24,6 +24,7 @@ export default async function RootLayout({
 
   const themeStyle = branding
     ? ({
+        /* Branding CMS → mapeados a --color-* en design-tokens.css (body) */
         "--brand-primary": branding.primaryColor,
         "--brand-secondary": branding.secondaryColor,
         "--brand-background": branding.backgroundColor,

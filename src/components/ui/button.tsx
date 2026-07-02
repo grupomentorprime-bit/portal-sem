@@ -27,9 +27,9 @@ const variants: Record<ButtonVariant, string> = {
   secondary:
     "bg-secondary text-text-inverse hover:bg-accent active:bg-secondary",
   outline:
-    "border border-border bg-background text-foreground hover:bg-background-muted active:bg-gray-100",
+    "border border-border bg-background text-foreground hover:bg-background-muted active:bg-background-muted",
   ghost:
-    "text-foreground hover:bg-background-muted active:bg-gray-100",
+    "text-foreground hover:bg-background-muted active:bg-background-muted",
   danger:
     "bg-primary text-text-inverse hover:opacity-90 active:opacity-100",
   success:

@@ -8,7 +8,10 @@ export function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
-  if (!pathname.startsWith("/admin")) {
+  const isProtected =
+    pathname.startsWith("/admin") || pathname.startsWith("/internal");
+
+  if (!isProtected) {
     return NextResponse.next();
   }
 
@@ -27,5 +30,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/internal/:path*"],
 };

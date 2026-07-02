@@ -114,15 +114,15 @@ export function MenuEditorClient({ menu: initialMenu }: MenuEditorClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="min-h-screen bg-background-soft dark:bg-gray-900">
+      <header className="border-b border-border bg-background dark:border-gray-700 dark:bg-gray-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <div>
-            <Link href="/admin/menus" className="text-sm text-zinc-500 hover:underline">
+            <Link href="/admin/menus" className="text-sm text-muted hover:underline">
               ← Menús
             </Link>
             <h1 className="text-xl font-semibold">{menu.name}</h1>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted">
               {menu.location} · {menu.items.length} ítems ·{" "}
               {menu.active ? "Activo" : "Inactivo"}
             </p>
@@ -138,7 +138,7 @@ export function MenuEditorClient({ menu: initialMenu }: MenuEditorClientProps) {
 
       <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-2 sm:px-6">
         {error ? (
-          <div className="lg:col-span-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="lg:col-span-2 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
             {error}
           </div>
         ) : null}
@@ -223,9 +223,9 @@ function SaveLabel({
   status: "idle" | "saving" | "saved" | "error";
   isDirty: boolean;
 }) {
-  if (status === "saving") return <span className="text-sm text-zinc-500">Guardando…</span>;
-  if (status === "saved") return <span className="text-sm text-emerald-600">Guardado</span>;
-  if (status === "error") return <span className="text-sm text-red-600">Error</span>;
-  if (isDirty) return <span className="text-sm text-amber-600">Sin guardar</span>;
-  return <span className="text-sm text-zinc-400">Sin cambios</span>;
+  if (status === "saving") return <span className="text-sm text-muted">Guardando…</span>;
+  if (status === "saved") return <span className="text-sm text-success">Guardado</span>;
+  if (status === "error") return <span className="text-sm text-[var(--color-danger)]">Error</span>;
+  if (isDirty) return <span className="text-sm text-[var(--color-warning)]">Sin guardar</span>;
+  return <span className="text-sm text-gray-400">Sin cambios</span>;
 }

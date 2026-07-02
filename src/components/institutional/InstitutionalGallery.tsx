@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ *
+ * Reemplazado por:
+ * GallerySectionContent
+ *
+ * Eliminación prevista:
+ * Core UI v2.0
+ *
+ * @see docs/frontend/CORE-UI-CANON.md
+ */
+
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/lib/institutional/home-content";

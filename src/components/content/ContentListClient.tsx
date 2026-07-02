@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
+import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSectionByCollection, isEditableCollection } from "@/lib/content/content-sections";
 import type { ContentDocument } from "@/types/content";
 
 interface ContentListClientProps {
@@ -11,8 +13,40 @@ interface ContentListClientProps {
   collection: string;
   title: string;
   description: string;
+  sectionSlug: string;
   initialItems: ContentDocument[];
   initialTotal: number;
+}
+
+function getItemLabel(item: ContentDocument, collection: string): string {
+  if (collection === "academy_categories") {
+    return (item as { name?: string }).name ?? item.title ?? item._id;
+  }
+  if (collection === "academy_testimonials") {
+    return item.author ?? item.title ?? item._id;
+  }
+  return item.title ?? item.name ?? item._id;
+}
+
+function getItemSubtitle(item: ContentDocument, collection: string): string {
+  const parts: string[] = [];
+
+  if (collection === "academy_categories") {
+    const enabled = (item as { enabled?: boolean }).enabled;
+    parts.push(enabled === false ? "inactiva" : "activa");
+    if (item.order !== undefined) parts.push(`orden ${item.order}`);
+    parts.push(item.slug);
+    return parts.join(" · ");
+  }
+
+  if (item.status) parts.push(item.status);
+  if (collection === "academy_programs" && item.modality) parts.push(item.modality);
+  if (collection === "content_news" && item.category) parts.push(item.category);
+  if (collection === "content_events" && item.location) parts.push(item.location);
+  if (collection === "content_library" && item.author) parts.push(item.author);
+  if (collection === "academy_testimonials" && item.role) parts.push(item.role);
+  parts.push(item.slug || item._id);
+  return parts.join(" · ");
 }
 
 export function ContentListClient({
@@ -20,6 +54,7 @@ export function ContentListClient({
   collection,
   title,
   description,
+  sectionSlug,
   initialItems,
   initialTotal,
 }: ContentListClientProps) {
@@ -27,6 +62,25 @@ export function ContentListClient({
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const editable = isEditableCollection(collection);
+  const section = getSectionByCollection(collection);
+  const newLabel =
+    collection === "academy_programs"
+      ? "Nuevo programa"
+      : collection === "content_news"
+        ? "Nueva noticia"
+        : collection === "content_events"
+          ? "Nuevo evento"
+          : collection === "content_library"
+            ? "Nuevo recurso"
+            : collection === "academy_testimonials"
+              ? "Nuevo testimonio"
+              : collection === "academy_gallery"
+                ? "Nueva imagen"
+                : collection === "academy_categories"
+                  ? "Nueva categoría"
+                  : "Nuevo";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,71 +99,102 @@ export function ContentListClient({
       });
       const data = await res.json();
       if (!data.ok) {
-        setError(data.errors?.[0]?.message ?? data.error ?? "Error al cargar.");
+        setError(data.errors?.[0]?.message ?? data.error ?? "No se pudo cargar el contenido.");
         return;
       }
       setItems(data.items ?? []);
       setTotal(data.total ?? 0);
     } catch {
-      setError("Error de red.");
+      setError("Error de conexión.");
     } finally {
       setLoading(false);
     }
   }, [tenant, collection]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <Link href="/admin/content" className="text-sm text-zinc-500 hover:text-zinc-800">
-              ← Contenido
-            </Link>
-            <h1 className="text-xl font-semibold">{title}</h1>
-            <p className="text-sm text-zinc-500">{description}</p>
-          </div>
-          <Button variant="secondary" onClick={load} disabled={loading}>
-            Actualizar
+    <AdminModuleLayout
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Comunicaciones", href: "/admin/content" },
+        { label: title },
+      ]}
+      title={title}
+      description={description}
+      actions={
+        <>
+          <Button variant="outline" onClick={load} disabled={loading}>
+            {loading ? "Actualizando…" : "Actualizar"}
           </Button>
+          {editable ? (
+            <Link href={`/admin/content/${sectionSlug}/edit/new`}>
+              <Button>{newLabel}</Button>
+            </Link>
+          ) : null}
+        </>
+      }
+    >
+      {error ? (
+        <div className="mb-4 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+          {error}
         </div>
-      </header>
+      ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {error ? (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+      <p className="mb-4 text-sm text-muted">
+        {total} {total === 1 ? "registro" : "registros"}
+      </p>
+
+      <div className="grid gap-3">
+        {items.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted">
+            {editable ? (
+              <>
+                <p>No hay contenido en esta sección.</p>
+                <Link href={`/admin/content/${sectionSlug}/edit/new`} className="mt-4 inline-block">
+                  <Button size="sm">{newLabel}</Button>
+                </Link>
+              </>
+            ) : (
+              "No hay contenido publicado en esta sección."
+            )}
           </div>
-        ) : null}
-
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-base">{collection}</CardTitle>
-            <CardDescription>{total} documentos · tenant {tenant}</CardDescription>
-          </CardHeader>
-        </Card>
-
-        {loading ? (
-          <p className="text-sm text-zinc-500">Cargando…</p>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            Sin contenido. Usa &quot;Inicializar contenido&quot; en el hub de Contenido.
-          </p>
         ) : (
-          <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
-            {items.map((item) => (
-              <li key={item._id} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="font-medium">{item.title || item.name || item._id}</p>
-                  <p className="text-xs text-zinc-500">
-                    {item.status ?? "—"} · {item.slug}
-                    {item.featured ? " · destacado" : ""}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          items.map((item) => {
+            const label = getItemLabel(item, collection);
+            const subtitle = getItemSubtitle(item, collection);
+
+            if (!editable) {
+              return (
+                <Card key={item._id}>
+                  <CardHeader>
+                    <CardTitle className="text-base">{label}</CardTitle>
+                    <CardDescription>{subtitle}</CardDescription>
+                  </CardHeader>
+                </Card>
+              );
+            }
+
+            return (
+              <Link
+                key={item._id}
+                href={`/admin/content/${sectionSlug}/edit/${item._id}`}
+                className="block"
+              >
+                <Card className="transition hover:border-primary/30 hover:shadow-md">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-base">{label}</CardTitle>
+                      <CardDescription className="mt-1">{subtitle}</CardDescription>
+                    </div>
+                    <span className="ml-4 shrink-0 text-sm font-medium text-secondary">
+                      Editar →
+                    </span>
+                  </CardHeader>
+                </Card>
+              </Link>
+            );
+          })
         )}
-      </main>
-    </div>
+      </div>
+    </AdminModuleLayout>
   );
 }

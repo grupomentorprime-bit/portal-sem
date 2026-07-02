@@ -1,0 +1,228 @@
+/**
+ * OT-PORTAL-001 — Seminarios home (carrusel horizontal)
+ * Scoped: .portal-home-experience [data-block="seminarios_home"]
+ */
+
+.portal-home-experience [data-block="seminarios_home"] {
+  --seminarios-card-width: 17.5rem;
+  --seminarios-gap: 1.5rem;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__header {
+  max-width: 42rem;
+  margin-bottom: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__eyebrow {
+  margin: 0 0 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sem-accent);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__title {
+  margin: 0;
+  font-size: clamp(1.75rem, 3.2vw, 2.375rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__desc {
+  margin: 0.875rem 0 0;
+  max-width: 38rem;
+  font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__carousel-wrap {
+  position: relative;
+  margin-inline: calc(-1 * var(--home-gutter, 1rem));
+  padding-inline: var(--home-gutter, 1rem);
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="seminarios_home"] .seminarios-home__carousel-wrap {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__track {
+  display: flex;
+  gap: var(--seminarios-gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-block: 0.25rem 0.5rem;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__track::-webkit-scrollbar {
+  display: none;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card {
+  flex: 0 0 var(--seminarios-card-width);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 8px 24px color-mix(in srgb, var(--sem-primary) 6%, transparent);
+  transition:
+    transform 0.25s var(--home-ease, ease),
+    box-shadow 0.25s var(--home-ease, ease);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 4px 12px color-mix(in srgb, var(--foreground) 6%, transparent),
+    0 16px 40px color-mix(in srgb, var(--sem-primary) 10%, transparent);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card__media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: color-mix(in srgb, var(--sem-primary) 12%, var(--muted));
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.125rem 1.125rem;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card__meta {
+  margin: 0;
+  flex: 1;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.625rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-inverse);
+  background: linear-gradient(
+    135deg,
+    var(--sem-accent),
+    color-mix(in srgb, var(--sem-accent) 72%, var(--sem-primary))
+  );
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminario-card__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--sem-accent) 35%, transparent);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+  color: var(--foreground);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--foreground) 8%, transparent);
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__nav:hover:not(:disabled) {
+  background: var(--background);
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__nav--prev {
+  left: -0.25rem;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__nav--next {
+  right: -0.25rem;
+}
+
+@media (min-width: 768px) {
+  .portal-home-experience [data-block="seminarios_home"] .seminarios-home__nav--prev {
+    left: -1.25rem;
+  }
+
+  .portal-home-experience [data-block="seminarios_home"] .seminarios-home__nav--next {
+    right: -1.25rem;
+  }
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__nav--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__footer {
+  margin-top: clamp(1.5rem, 3vw, 2rem);
+  text-align: center;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sem-accent);
+  text-decoration: none;
+  transition: gap 0.2s ease;
+}
+
+.portal-home-experience [data-block="seminarios_home"] .seminarios-home__view-all:hover {
+  gap: 0.625rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-home-experience [data-block="seminarios_home"] .seminario-card,
+  .portal-home-experience [data-block="seminarios_home"] .seminario-card__cta {
+    transition: none;
+  }
+
+  .portal-home-experience [data-block="seminarios_home"] .seminarios-home__track {
+    scroll-behavior: auto;
+  }
+}

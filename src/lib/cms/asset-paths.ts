@@ -1,7 +1,12 @@
 /** Fallbacks genéricos de plataforma — sin branding de tenant específico */
 export const PLATFORM_ASSET_FALLBACKS = {
   hero: "/images/hero-institutional.svg",
-  logo: "/images/logo-sem.svg",
+  heroPremium: "/images/hero-premium-student.jpg",
+  /** Isotipo oficial SEM — fondos claros (header) */
+  logo: "/images/logo-sem-isotype.png",
+  /** Isotipo blanco — fondos oscuros (footer, watermarks) */
+  logoOnDark: "/images/logo-sem-isotype-white.png",
+  logoLegacy: "/images/logo-sem.svg",
   secondaryLogo: "/images/logo-ipn.svg",
 } as const;
 

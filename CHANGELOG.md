@@ -6,7 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 
 ---
 
-## v2.0.0 — Portal Engine
+## v2.0.0 — Portal Engine · Foundation Complete
+
+Declaración oficial: [FOUNDATION-COMPLETE.md](./docs/strategy/FOUNDATION-COMPLETE.md) — cierre de Etapa I (Platform Core).
 
 ### Added
 
@@ -28,6 +30,142 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 
 - `PortalHomeBlock.tsx` (lógica absorbida por engine + `PortalBlockSection`)
 - `HomeJsonLd.tsx` (reemplazado por `consolidatePageSeo`)
+
+---
+
+## v2.6.1 — Dirección de Arte Editorial (OT-PORTAL-003)
+
+### Added
+
+- [EDITORIAL-ART-DIRECTION.md](./docs/design/EDITORIAL-ART-DIRECTION.md) — guía permanente de identidad editorial SEM
+- [OT-PORTAL-003](./docs/ot/OT-PORTAL-003.md) — orden de trabajo Dirección de Arte Institucional (planificada)
+
+### Changed
+
+- [INTRODUCTION.md](./docs/design/INTRODUCTION.md) — referencia a dirección editorial junto al Experience Kit
+- [PULL_REQUEST_CHECKLIST.md](./docs/design/PULL_REQUEST_CHECKLIST.md) — checklist §15 identidad ministerial
+- [EP-001](./docs/strategy/epics/EP-001-PORTAL-INSTITUCIONAL-PREMIUM.md) — OT-PORTAL-003 redefinida como Dirección de Arte Editorial
+- [HOME-PREMIUM-v2-ART-DIRECTION.md](./docs/design/HOME-PREMIUM-v2-ART-DIRECTION.md) — enlace al documento padre
+
+---
+
+## v2.6.0 — Home Institucional Definitivo (OT-PORTAL-001)
+
+### Added
+
+- Bloque CMS `audience_profiles` — sección «¿Este seminario es para ti?» (5 criterios visuales)
+- `src/lib/cms/home-portal-001.ts` — contenido canónico, orden narrativo y migración `portal-001`
+- Experiencias home: `AudienceProfilesExperience`, `MethodologyHomeExperience`
+- Estilos `src/styles/home-premium/` (audience, methodology, testimonials, faq, admission)
+- Campo `program` en `ContentDocument` para iglesia/comunidad en testimonios
+- Documentación [OT-PORTAL-001](./docs/ot/OT-PORTAL-001.md), [AUDIT-PORTAL-001](./docs/audits/AUDIT-PORTAL-001.md)
+
+### Changed
+
+- Home pública — narrativa continua: hero → programas → perfil → metodología → equipo → testimonios → admisión → FAQ → CTA
+- `loadHomePage()` aplica migración OT-PORTAL-001 a páginas home existentes
+- Hero — mensaje, CTA `/admision`, indicadores de confianza
+- `modality` en home renderiza flujo metodológico de 6 pasos
+- Testimonios — muestran generación (`role`) e iglesia (`program`) por separado
+- Seed testimonios enriquecido; template home usa `buildPortal001HomeBlocks`
+- [EP-001](./docs/strategy/epics/EP-001-PORTAL-INSTITUCIONAL-PREMIUM.md) — OT-PORTAL-001 marcada completada
+
+### Removed
+
+- Audiencia embebida en `FeaturedProgramsExperience` (ahora bloque dedicado)
+- Noticias, contact hub y timeline formativo del orden home canónico
+
+### Notes
+
+- Primera OT de producto post EP-000; establece estándar de calidad para páginas públicas
+- QA Lighthouse ≥ 95 y WCAG AA documentados en AUDIT-PORTAL-001 (verificación manual en deploy)
+
+---
+
+## v2.5.3 — Cierre épica EP-000 & Roadmap producto v2
+
+### Added
+
+- Cierre épica [EP-000 — Foundation / Experience Kit](./docs/strategy/epics/EP-000-FOUNDATION-EXPERIENCE-KIT.md)
+- Épicas producto: [EP-001](./docs/strategy/epics/EP-001-PORTAL-INSTITUCIONAL-PREMIUM.md) Portal, [EP-002](./docs/strategy/epics/EP-002-CRM-ADMISSIONS.md) CRM, [EP-003](./docs/strategy/epics/EP-003-CAMPUS-VIRTUAL.md) Campus, [EP-004](./docs/strategy/epics/EP-004-BACKOFFICE-ACADEMICO.md) Backoffice
+- [OT-PORTAL-001](./docs/ot/OT-PORTAL-001.md) — Home Institucional Definitivo ✅
+
+### Changed
+
+- [PRODUCT-ROADMAP-2026-2028.md](./docs/strategy/PRODUCT-ROADMAP-2026-2028.md) — versión 2.0, foco producto post EP-000
+- [FOUNDATION-COMPLETE.md](./docs/strategy/FOUNDATION-COMPLETE.md) — Etapa II apunta a épicas EP-001+
+- `EP-001-CRM-ADMISSIONS.md` — nota de renumeración a EP-002
+
+### Notes
+
+- Línea Branding (OT-001→005) y épica EP-000 cerradas oficialmente
+- Nomenclatura OT futura: producto (`OT-PORTAL-*`, `OT-CRM-*`) sobre Experience Kit
+
+---
+
+## v2.5.2 — Design System Governance (OT-BRANDING-005)
+
+### Added
+
+- Documentación Experience Kit: `docs/design/INTRODUCTION.md`, `DESIGN-PRINCIPLES.md`, `COLORS.md`, `TYPOGRAPHY.md`, `SPACING.md`, `LAYOUT.md`, `ICONS.md`, `MOTION.md`, `ACCESSIBILITY.md`, `COMPONENTS.md`, `CONTRIBUTING.md`, `PULL_REQUEST_CHECKLIST.md`, `VERSIONING.md`
+- Catálogo visual interno en `/internal/design-system` con specs por componente
+- `src/components/design-system/component-specs.ts` y `ComponentSpecPanel.tsx`
+- Documentación [OT-BRANDING-005](./docs/ot/OT-BRANDING-005.md), [AUDIT-BRANDING-005](./docs/audits/AUDIT-BRANDING-005.md)
+
+### Changed
+
+- `/admin/design-system` redirige a `/internal/design-system`
+- Middleware protege rutas `/internal/*` cuando `IDENTITY_ENFORCE=true`
+- `DESIGN-SYSTEM.md` apunta a INTRODUCTION.md como índice principal
+
+### Notes
+
+- Cierre de la línea de trabajo Branding (OT-001 → OT-005)
+- Sin cambios visuales respecto a OT-BRANDING-004
+
+---
+
+## v2.5.1 — Branding Corporativo SEM (OT-BRANDING-004)
+
+### Added
+
+- `src/lib/admin/admin-ui.ts` — clases compartidas del panel administrativo con tokens SEM
+- `src/core/workflow/workflow-colors.ts` — paleta corporativa para estados de workflow
+- Validador `check-branding.ts` ampliado: Tailwind prohibidos, modo estricto por defecto
+- Documentación [OT-BRANDING-004](./docs/ot/OT-BRANDING-004.md), [AUDIT-BRANDING-004](./docs/audits/AUDIT-BRANDING-004.md)
+
+### Changed
+
+- Panel administrativo (CMS): layout, media manager, workflows, formularios y menús migrados a `--sem-*` / `--color-*`
+- Workflows: definiciones por defecto sin HEX legacy (`workflowStateColors`)
+- `MenuBadge`, `MediaCard`, `ConfigurationHub` — estados danger/warning/success vía tokens
+- `scripts/branding-baseline.json` — **0 entradas** (baseline deprecado; CI en modo estricto)
+
+### Removed
+
+- Clases Tailwind prohibidas del admin: `zinc-*`, `slate-*`, `amber-*`, `emerald-*`, `red-*`, `blue-*`
+- HEX hardcodeados en componentes CMS y workflows
+- Deuda de branding residual (90 → 0 incidencias)
+
+---
+
+### Added
+
+- `PortalFooter` modular: `FooterInstitution`, `FooterPrograms`, `FooterLinkColumn`, `FooterContact`, `FooterBottom`, `BackToTop`
+- Programas destacados en footer desde `academy_programs` (Content Engine)
+- Menú footer jerárquico: Recursos + Admisión en `menu-defaults.ts`
+- `institution.tagline` en `cms_config`
+- `portalCopy` ampliado: títulos de columnas, créditos, volver arriba
+- `social.spotify` en configuración de redes
+- `PortalCopyForm` en `/admin/config` → General
+- CSS `.portal-footer-premium__*` — grid responsive 1 / 2 / 5 columnas
+- JSON-LD `sameAs` desde redes sociales configuradas
+- Documentación [OT-SEM-PORTAL-007](./docs/ot/OT-SEM-PORTAL-007.md)
+
+### Changed
+
+- `PortalShell` obtiene programas destacados para el footer
+- Menú legal: Política de Privacidad, Términos de Uso, Mapa del Sitio
 
 ---
 

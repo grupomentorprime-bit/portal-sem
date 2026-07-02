@@ -2,6 +2,7 @@
 
 import type { CmsMediaAsset } from "@/types/media";
 import { MediaCard } from "./MediaCard";
+import { MediaHeroEmptyState } from "./MediaHeroEmptyState";
 
 interface MediaGridProps {
   items: CmsMediaAsset[];
@@ -9,6 +10,10 @@ interface MediaGridProps {
   selectedId?: string;
   onSelect?: (asset: CmsMediaAsset) => void;
   onOpen?: (asset: CmsMediaAsset) => void;
+  onToggleFavorite?: (asset: CmsMediaAsset) => void;
+  cardVariant?: "default" | "rich";
+  emptyState?: "default" | "hero";
+  onEmptyUpload?: () => void;
 }
 
 export function MediaGrid({
@@ -17,8 +22,15 @@ export function MediaGrid({
   selectedId,
   onSelect,
   onOpen,
+  onToggleFavorite,
+  cardVariant = "default",
+  emptyState = "default",
+  onEmptyUpload,
 }: MediaGridProps) {
   if (items.length === 0) {
+    if (emptyState === "hero") {
+      return <MediaHeroEmptyState onUploadClick={onEmptyUpload} />;
+    }
     return (
       <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted">
         No hay archivos en esta carpeta.
@@ -34,9 +46,11 @@ export function MediaGrid({
             key={asset._id}
             asset={asset}
             view="list"
+            variant={cardVariant}
             selected={selectedId === asset._id}
             onSelect={onSelect}
             onOpen={onOpen}
+            onToggleFavorite={onToggleFavorite}
           />
         ))}
       </div>
@@ -44,14 +58,16 @@ export function MediaGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div className="media-grid grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
       {items.map((asset) => (
         <MediaCard
           key={asset._id}
           asset={asset}
+          variant={cardVariant}
           selected={selectedId === asset._id}
           onSelect={onSelect}
           onOpen={onOpen}
+          onToggleFavorite={onToggleFavorite}
         />
       ))}
     </div>

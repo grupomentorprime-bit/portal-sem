@@ -13,7 +13,7 @@ export function Skeleton({
     <div
       aria-hidden="true"
       className={cn(
-        "animate-[skeleton-pulse_1.5s_ease-in-out_infinite] bg-gray-200",
+        "animate-[skeleton-pulse_1.5s_ease-in-out_infinite] bg-gray-100",
         variant === "text" && "h-4 w-full rounded-[var(--radius-sm)]",
         variant === "circular" && "rounded-full",
         variant === "rectangular" && "rounded-[var(--radius-md)]",

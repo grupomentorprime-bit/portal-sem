@@ -18,6 +18,10 @@ export const PERMISSIONS = {
   "cms.menus.read": "Ver menús",
   "cms.menus.manage": "Gestionar menús",
 
+  // Experience Forms
+  "experience.forms.read": "Ver formularios de experiencia",
+  "experience.forms.manage": "Gestionar formularios de experiencia",
+
   // Content
   "programs.manage": "Gestionar programas",
   "news.publish": "Publicar noticias",
@@ -25,6 +29,7 @@ export const PERMISSIONS = {
 
   // Settings
   "settings.update": "Actualizar configuración",
+  "settings.integrations": "Gestionar integraciones de plataforma",
   "settings.team": "Gestionar equipo e invitaciones",
 
   // Identity

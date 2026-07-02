@@ -1,0 +1,13 @@
+/**
+ * OT-BRANDING-001 / OT-BRANDING-002 — Tokens oficiales de marca SEM
+ * Paleta institucional única (Manual Corporativo).
+ * Única fuente autorizada de colores de marca. No agregar tokens aquí.
+ * Alias y neutros: src/styles/tokens/colors.css
+ */
+:root {
+  --sem-primary: #002A47;
+  --sem-secondary: #246AA1;
+  --sem-accent: #10BCE2;
+  --sem-success: #3ED6AF;
+  --sem-light: #8CE27F;
+}
