@@ -44,6 +44,12 @@ export function canManageStudentAffairsScope(ctx: AuthContext): boolean {
   );
 }
 
+/** Solo administradores del centro de formularios (p. ej. Director General). */
+export function canDeleteStudentAffairsSubmission(ctx: AuthContext): boolean {
+  if (ctx.compatMode) return true;
+  return ctx.permissions.includes("experience.forms.manage");
+}
+
 export function resolveStudentAffairsScope(ctx: AuthContext): StudentAffairsScope | null {
   if (hasStudentAffairsFullAccess(ctx)) return null;
   return ctx.membership?.studentAffairsScope ?? { formIds: [], generationCodes: [] };

@@ -7,6 +7,7 @@ import {
 import {
   canAccessFormInStudentAffairs,
   canAccessStudentAffairsPanel,
+  canDeleteStudentAffairsSubmission,
   filterSubmissionsForStudentAffairs,
   resolveStudentAffairsScope,
 } from "@/lib/student-affairs/scope";
@@ -70,6 +71,7 @@ export async function GET(request: Request, context: RouteContext) {
       ok: true,
       submissions: filtered,
       total: filtered.length,
+      canDeleteSubmissions: canDeleteStudentAffairsSubmission(ctx),
     });
   } catch (error) {
     console.error(error);

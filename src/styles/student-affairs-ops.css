@@ -271,6 +271,25 @@
   background: color-mix(in srgb, var(--sem-primary) 3%, white);
 }
 
+.sa-ops__th-actions {
+  width: 4rem;
+  text-align: center;
+}
+
+.sa-ops__actions {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.sa-ops__delete-btn {
+  color: color-mix(in srgb, var(--color-danger) 75%, var(--sem-primary));
+}
+
+.sa-ops__delete-btn:hover:not(:disabled) {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, white);
+}
+
 .sa-ops__policy {
   margin: 1rem 1.5rem;
   padding: 0.75rem 1rem;

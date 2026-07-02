@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, RefreshCw } from "lucide-react";
+import { ClipboardList, RefreshCw, Trash2 } from "lucide-react";
 import { AbsenceReviewEditor } from "@/components/admin/forms/AbsenceReviewEditor";
 import { SubmissionJustificationCell } from "@/components/admin/forms/SubmissionJustificationCell";
 import { getSubmissionAttachment } from "@/lib/experience/forms/attachments";
@@ -44,6 +44,8 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [checkInSavingId, setCheckInSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [canDeleteSubmissions, setCanDeleteSubmissions] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -63,6 +65,7 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
 
       setSubmissions(subsData.submissions ?? []);
       setStats(statsData.stats ?? null);
+      setCanDeleteSubmissions(Boolean(subsData.canDeleteSubmissions));
     } catch {
       setError("Error de red al cargar respuestas.");
     } finally {
@@ -117,6 +120,49 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
       )
     );
     setExpandedId(null);
+  };
+
+  const handleDelete = async (submissionId: string, participantName: string) => {
+    const confirmed = window.confirm(
+      `¿Eliminar el registro de ${participantName}? La persona podrá volver a responder el formulario. Esta acción no se puede deshacer.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(submissionId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/student-affairs/submissions/${encodeURIComponent(submissionId)}`, {
+        method: "DELETE",
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!data.ok) {
+        setError(data.error ?? "No se pudo eliminar el registro.");
+        return;
+      }
+
+      const removed = submissions.find((submission) => submission._id === submissionId);
+      setSubmissions((current) => current.filter((submission) => submission._id !== submissionId));
+      if (expandedId === submissionId) setExpandedId(null);
+
+      if (removed && stats) {
+        const wasCheckedIn = Boolean(removed.dayCheckIn?.present);
+        const attendance = removed.data.attendance;
+        setStats({
+          total: Math.max(0, stats.total - 1),
+          attending: Math.max(0, stats.attending - (attendance === "yes" ? 1 : 0)),
+          notAttending: Math.max(0, stats.notAttending - (attendance === "no" ? 1 : 0)),
+          other: Math.max(
+            0,
+            stats.other - (attendance !== "yes" && attendance !== "no" ? 1 : 0)
+          ),
+          checkedIn: Math.max(0, stats.checkedIn - (wasCheckedIn ? 1 : 0)),
+        });
+      }
+    } catch {
+      setError("Error de red al eliminar.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -280,6 +326,7 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
                   <th>Teléfono</th>
                   {showAbsenceColumns ? <th>Inasistencia</th> : null}
                   <th>Registro</th>
+                  {canDeleteSubmissions ? <th className="sa-ops__th-actions">Acciones</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -294,6 +341,7 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
                   const checkedIn = Boolean(submission.dayCheckIn?.present);
                   const rsvpYes = submission.data.attendance === "yes";
                   const rsvpNo = submission.data.attendance === "no";
+                  const isDeleting = deletingId === submissionId;
 
                   return (
                     <Fragment key={submissionId}>
@@ -351,10 +399,26 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
                         <td className="whitespace-nowrap text-muted">
                           {formatSubmissionDate(submission.createdAt)}
                         </td>
+                        {canDeleteSubmissions ? (
+                          <td className="sa-ops__actions">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="sa-ops__delete-btn h-8 w-8 p-0"
+                              loading={isDeleting}
+                              disabled={isDeleting || isSaving}
+                              onClick={() => void handleDelete(submissionId, participantName)}
+                              aria-label={`Eliminar registro de ${participantName}`}
+                              title="Eliminar registro (solo administrador)"
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden />
+                            </Button>
+                          </td>
+                        ) : null}
                       </tr>
                       {isExpanded && rsvpNo ? (
                         <tr className="bg-muted/20">
-                          <td colSpan={showAbsenceColumns ? 6 : 5} className="px-4 py-4">
+                          <td colSpan={(showAbsenceColumns ? 6 : 5) + (canDeleteSubmissions ? 1 : 0)} className="px-4 py-4">
                             <AbsenceReviewEditor
                               submissionId={submissionId}
                               participantName={participantName}
