@@ -5,6 +5,15 @@ export function isIdentityEnforced(): boolean {
   return process.env.IDENTITY_ENFORCE === "true";
 }
 
+/** Solo Keycloak; deshabilita login/registro por email y contraseña. */
+export function isKeycloakOnlyAuth(): boolean {
+  return process.env.AUTH_BACKEND?.trim().toLowerCase() === "keycloak";
+}
+
+export function isEmailAuthEnabled(): boolean {
+  return !isKeycloakOnlyAuth();
+}
+
 export function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret && process.env.NODE_ENV === "production") {

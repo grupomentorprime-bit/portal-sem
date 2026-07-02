@@ -8,6 +8,7 @@ export type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
 
 export const IDENTITY_PROVIDERS = [
   "email",
+  "oidc",
   "google",
   "microsoft",
   "apple",
@@ -95,6 +96,7 @@ export interface IdentityInvitation {
   _id: string;
   tenantId: string;
   email: string;
+  displayName: string;
   roleIds: string[];
   token: string;
   status: InvitationStatus;

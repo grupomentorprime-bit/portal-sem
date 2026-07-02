@@ -1,7 +1,12 @@
 export * from "./permissions/registry";
 export * from "./roles/defaults";
 export { hashPassword, verifyPassword, generateToken, generateId } from "./auth/crypto";
-export { isIdentityEnforced, SESSION_COOKIE, SESSION_TTL_DAYS } from "./auth/config";
+export { isIdentityEnforced, isKeycloakOnlyAuth, isEmailAuthEnabled, SESSION_COOKIE, SESSION_TTL_DAYS } from "./auth/config";
+export {
+  isKeycloakEnabled,
+  getKeycloakConfig,
+  buildKeycloakAuthorizeUrl,
+} from "./auth/keycloak";
 export { loginWithEmail, registerWithEmail, logoutCurrentSession } from "./auth/login";
 export {
   can,

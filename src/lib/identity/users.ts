@@ -70,6 +70,54 @@ export async function getEmailCredential(userId: string): Promise<IdentityCreden
   });
 }
 
+export async function findOidcCredential(
+  providerUserId: string
+): Promise<IdentityCredential | null> {
+  const db = await getDatabase();
+  return db.collection<IdentityCredential>("identity_credentials").findOne({
+    provider: "oidc",
+    providerUserId,
+  });
+}
+
+export async function upsertOidcCredential(input: {
+  userId: string;
+  providerUserId: string;
+  providerData?: Record<string, unknown>;
+}): Promise<void> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  const existing = await db.collection<IdentityCredential>("identity_credentials").findOne({
+    userId: input.userId,
+    provider: "oidc",
+  });
+
+  if (existing) {
+    await db.collection<IdentityCredential>("identity_credentials").updateOne(
+      { _id: existing._id },
+      {
+        $set: {
+          providerUserId: input.providerUserId,
+          providerData: input.providerData,
+          updatedAt: now,
+        },
+      }
+    );
+    return;
+  }
+
+  const credential: IdentityCredential = {
+    _id: generateId("cred"),
+    userId: input.userId,
+    provider: "oidc",
+    providerUserId: input.providerUserId,
+    providerData: input.providerData,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.collection<IdentityCredential>("identity_credentials").insertOne(credential);
+}
+
 export async function listUsersByIds(ids: string[]): Promise<IdentityUser[]> {
   if (!ids.length) return [];
   const db = await getDatabase();

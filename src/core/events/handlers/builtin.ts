@@ -39,8 +39,27 @@ export function registerNotificationHandlers(): void {
   subscribe(
     "InvitationCreated",
     async (event: DomainEvent) => {
-      if (process.env.NODE_ENV === "development") {
-        console.info("[events:notifications] invitation email", event.payload.email);
+      const email = String(event.payload.email ?? "");
+      const displayName = String(event.payload.displayName ?? "");
+      const token = String(event.payload.token ?? "");
+      const expiresAt = String(event.payload.expiresAt ?? "");
+
+      if (!email || !token) return;
+
+      const { sendInvitationEmail } = await import("@/lib/notifications/email");
+      const { getSiteConfigUncached } = await import("@/lib/cms/config");
+      const config = await getSiteConfigUncached();
+
+      const result = await sendInvitationEmail({
+        to: email,
+        displayName: displayName || email,
+        token,
+        institutionName: config?.institution.name,
+        expiresAt,
+      });
+
+      if (!result.ok) {
+        console.error("[events:notifications] invitation email failed", result.error);
       }
     },
     { name: "notifications.invitationEmail" }

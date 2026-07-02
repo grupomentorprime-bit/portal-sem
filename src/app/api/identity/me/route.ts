@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth, requireSession } from "@/core/identity";
+import { isEmailAuthEnabled, isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 import { getSiteConfigUncached } from "@/lib/cms/config";
 import { findRolesByIds } from "@/lib/identity/roles";
@@ -57,6 +58,7 @@ export async function GET() {
       roleLabel: primaryRole ? getInstitutionalRoleLabel(primaryRole) : "Colaborador",
       compatMode: ctx.compatMode,
       authenticated: Boolean(session),
+      authMethod: isKeycloakOnlyAuth() ? "institutional" : "local",
     });
   } catch (error) {
     console.error(error);
@@ -116,6 +118,13 @@ export async function PATCH(request: Request) {
     }
 
     if (body.newPassword !== undefined) {
+      if (!isEmailAuthEnabled()) {
+        return NextResponse.json(
+          { ok: false, error: "La contraseña se administra en el portal institucional de identidad." },
+          { status: 403 }
+        );
+      }
+
       if (!body.currentPassword) {
         return NextResponse.json(
           { ok: false, error: "La contraseña actual es obligatoria." },

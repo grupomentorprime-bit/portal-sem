@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
+import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { createInvitation, listInvitationsByTenant } from "@/lib/identity/invitations";
+import { findMembership } from "@/lib/identity/memberships";
 import { ensureTenantRoles, findRoleByName } from "@/lib/identity/roles";
 import { writeAudit } from "@/lib/identity/audit";
+import { findUserByEmail } from "@/lib/identity/users";
+import {
+  isValidEmail,
+  isValidFullName,
+  normalizeEmail,
+  normalizeFullName,
+} from "@/lib/validation/identity";
 
 export async function GET() {
   try {
@@ -25,9 +34,50 @@ export async function POST(request: Request) {
     const ctx = await requirePermission("settings.team");
     if (ctx instanceof NextResponse) return ctx;
 
-    const body = (await request.json()) as { email?: string; roleName?: string };
-    if (!body.email?.trim()) {
-      return NextResponse.json({ ok: false, error: "Email obligatorio." }, { status: 400 });
+    const body = (await request.json()) as {
+      email?: string;
+      displayName?: string;
+      roleName?: string;
+    };
+
+    const email = body.email?.trim() ?? "";
+    const displayName = body.displayName?.trim() ?? "";
+
+    if (!email) {
+      return NextResponse.json({ ok: false, error: "El correo es obligatorio." }, { status: 400 });
+    }
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { ok: false, error: "Ingresa un correo electrónico válido." },
+        { status: 400 }
+      );
+    }
+    if (!displayName) {
+      return NextResponse.json(
+        { ok: false, error: "El nombre completo es obligatorio." },
+        { status: 400 }
+      );
+    }
+    if (!isValidFullName(displayName)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Ingresa nombre y apellido (mínimo dos palabras).",
+        },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const existingUser = await findUserByEmail(normalizedEmail);
+    if (existingUser) {
+      const membership = await findMembership(existingUser._id, ctx.tenantId);
+      if (membership) {
+        return NextResponse.json(
+          { ok: false, error: "Este usuario ya tiene acceso al CMS." },
+          { status: 409 }
+        );
+      }
     }
 
     await ensureTenantRoles(ctx.tenantId);
@@ -41,9 +91,11 @@ export async function POST(request: Request) {
 
     const invitation = await createInvitation({
       tenantId: ctx.tenantId,
-      email: body.email,
+      email: normalizedEmail,
+      displayName: normalizeFullName(displayName),
       roleIds: [role._id],
       invitedBy: ctx.user._id,
+      expiresInMinutes: isKeycloakOnlyAuth() ? 60 * 24 * 7 : undefined,
     });
 
     if (!ctx.compatMode) {
@@ -53,7 +105,7 @@ export async function POST(request: Request) {
         action: "user.invite",
         entity: "invitation",
         entityId: invitation._id,
-        metadata: { email: body.email, role: role.name },
+        metadata: { email: normalizedEmail, displayName: invitation.displayName, role: role.name },
       });
     }
 
@@ -66,8 +118,10 @@ export async function POST(request: Request) {
       userId: ctx.user._id,
       payload: {
         email: invitation.email,
+        displayName: invitation.displayName,
         token: invitation.token,
         roleIds: invitation.roleIds,
+        expiresAt: invitation.expiresAt,
       },
     }).catch(console.error);
 
@@ -76,15 +130,15 @@ export async function POST(request: Request) {
       invitation: {
         id: invitation._id,
         email: invitation.email,
-        token: invitation.token,
+        displayName: invitation.displayName,
         expiresAt: invitation.expiresAt,
+        roles: [{ name: role.name }],
       },
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    const status = message.includes("invitación pendiente") ? 409 : 500;
+    return NextResponse.json({ ok: false, error: message }, { status });
   }
 }

@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import { isEmailAuthEnabled } from "@/core/identity/auth/config";
 import { getActiveTenantId, loginWithEmail } from "@/core/identity";
 
 export async function POST(request: Request) {
   try {
+    if (!isEmailAuthEnabled()) {
+      return NextResponse.json(
+        { ok: false, error: "El acceso es solo mediante cuenta institucional." },
+        { status: 403 }
+      );
+    }
+
     const body = (await request.json()) as { email?: string; password?: string };
     const tenantId = await getActiveTenantId();
 

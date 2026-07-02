@@ -11,7 +11,14 @@ import { cn } from "@/lib/utils";
 export function UsuariosCmsClient() {
   const [members, setMembers] = useState<UserCmsCardData[]>([]);
   const [invitations, setInvitations] = useState<
-    Array<{ id: string; email: string; expiresAt: string; roles: Array<{ label: string }> }>
+    Array<{
+      id: string;
+      email: string;
+      displayName: string;
+      expiresAt: string;
+      createdAt: string;
+      roles: Array<{ label: string }>;
+    }>
   >([]);
   const [audit, setAudit] = useState<AuditTimelineEntry[]>([]);
   const [activeGroup, setActiveGroup] = useState("all");
@@ -59,7 +66,11 @@ export function UsuariosCmsClient() {
     );
   }, [members, activeGroup]);
 
-  async function handleInvite(payload: { email: string; roleName: string }) {
+  async function handleInvite(payload: {
+    email: string;
+    displayName: string;
+    roleName: string;
+  }) {
     setError("");
     const res = await fetch("/api/identity/invitations", {
       method: "POST",
@@ -161,18 +172,24 @@ export function UsuariosCmsClient() {
         </div>
         <InviteUserWizard onSubmit={handleInvite} error={error} />
         {invitations.length > 0 ? (
-          <ul className="space-y-2 text-sm">
-            {invitations.map((inv) => (
-              <li key={inv.id} className="rounded-xl border border-border px-4 py-3">
-                <span className="font-medium">{inv.email}</span>
-                <span className="text-muted">
-                  {" "}
-                  · {inv.roles.map((r) => r.label).join(", ")} · expira{" "}
-                  {new Date(inv.expiresAt).toLocaleDateString("es")}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">Invitaciones pendientes</h3>
+            <ul className="space-y-2 text-sm">
+              {invitations.map((inv) => (
+                <li key={inv.id} className="rounded-xl border border-border px-4 py-3">
+                  <div className="font-medium">{inv.displayName || inv.email}</div>
+                  <div className="text-muted">{inv.email}</div>
+                  <div className="mt-1 text-muted">
+                    {inv.roles.map((r) => r.label).join(", ")} · expira{" "}
+                    {new Date(inv.expiresAt).toLocaleString("es-CL", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </section>
 

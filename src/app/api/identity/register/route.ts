@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
+import { isEmailAuthEnabled } from "@/core/identity/auth/config";
 import { getActiveTenantId, registerWithEmail } from "@/core/identity";
 import { getDatabase } from "@/lib/mongodb";
 
 export async function POST(request: Request) {
   try {
+    if (!isEmailAuthEnabled()) {
+      return NextResponse.json(
+        { ok: false, error: "El registro local está deshabilitado. Usa tu cuenta institucional." },
+        { status: 403 }
+      );
+    }
+
     const tenantId = await getActiveTenantId();
     if (!tenantId) {
       return NextResponse.json({ ok: false, error: "Tenant no configurado." }, { status: 503 });

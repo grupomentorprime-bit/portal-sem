@@ -3,28 +3,69 @@
 import { useState } from "react";
 import { Button, Input, Label } from "@/components/ui";
 import { CMS_INVITE_ROLES } from "@/lib/admin/institutional";
+import { isValidEmail, isValidFullName } from "@/lib/validation/identity";
 import { cn } from "@/lib/utils";
 
 interface InviteUserWizardProps {
-  onSubmit: (payload: { email: string; roleName: string }) => Promise<void>;
+  onSubmit: (payload: {
+    email: string;
+    displayName: string;
+    roleName: string;
+  }) => Promise<void>;
   error?: string;
+  onSuccess?: () => void;
 }
 
-export function InviteUserWizard({ onSubmit, error }: InviteUserWizardProps) {
+export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizardProps) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [nameError, setNameError] = useState("");
   const [roleId, setRoleId] = useState<string>(CMS_INVITE_ROLES[1]?.id ?? "editor");
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const selectedRole = CMS_INVITE_ROLES.find((r) => r.id === roleId) ?? CMS_INVITE_ROLES[1];
+
+  function validateStep1(): boolean {
+    let valid = true;
+    setEmailError("");
+    setNameError("");
+
+    if (!email.trim()) {
+      setEmailError("El correo es obligatorio.");
+      valid = false;
+    } else if (!isValidEmail(email)) {
+      setEmailError("Ingresa un correo electrónico válido.");
+      valid = false;
+    }
+
+    if (!displayName.trim()) {
+      setNameError("El nombre completo es obligatorio.");
+      valid = false;
+    } else if (!isValidFullName(displayName)) {
+      setNameError("Ingresa nombre y apellido (mínimo dos palabras).");
+      valid = false;
+    }
+
+    return valid;
+  }
 
   async function handleSend() {
     setSubmitting(true);
     try {
-      await onSubmit({ email, roleName: selectedRole.internalName });
+      await onSubmit({
+        email: email.trim(),
+        displayName: displayName.trim(),
+        roleName: selectedRole.internalName,
+      });
       setEmail("");
+      setDisplayName("");
       setRoleId("editor");
       setStep(1);
+      setSuccess(true);
+      onSuccess?.();
     } finally {
       setSubmitting(false);
     }
@@ -32,6 +73,12 @@ export function InviteUserWizard({ onSubmit, error }: InviteUserWizardProps) {
 
   return (
     <div className="rounded-xl border border-border bg-background p-5">
+      {success ? (
+        <div className="mb-4 rounded-xl border border-[var(--state-success-border)] bg-[var(--state-success-bg)] px-4 py-3 text-sm text-[var(--color-success)]">
+          Invitación enviada. El usuario debe iniciar sesión con el mismo correo institucional.
+        </div>
+      ) : null}
+
       <div className="mb-6 flex items-center gap-2">
         {[1, 2, 3, 4].map((n) => (
           <div key={n} className="flex flex-1 items-center gap-2">
@@ -51,21 +98,54 @@ export function InviteUserWizard({ onSubmit, error }: InviteUserWizardProps) {
       {step === 1 ? (
         <div className="space-y-4">
           <div>
-            <h3 className="font-medium">Paso 1 — Correo</h3>
-            <p className="text-sm text-muted">Ingresa el email de la persona que invitarás.</p>
+            <h3 className="font-medium">Paso 1 — Datos de la persona</h3>
+            <p className="text-sm text-muted">
+              Correo institucional y nombre completo tal como aparecerá en el CMS.
+            </p>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="wizard-email">Correo institucional</Label>
+            <Label htmlFor="wizard-email">Correo electrónico</Label>
             <Input
               id="wizard-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError("");
+                setSuccess(false);
+              }}
               placeholder="nombre@institucion.cl"
+              autoComplete="email"
               required
             />
+            {emailError ? (
+              <p className="text-sm text-[var(--color-danger)]">{emailError}</p>
+            ) : null}
           </div>
-          <Button type="button" onClick={() => setStep(2)} disabled={!email.trim()}>
+          <div className="space-y-1.5">
+            <Label htmlFor="wizard-name">Nombre completo</Label>
+            <Input
+              id="wizard-name"
+              value={displayName}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                setNameError("");
+                setSuccess(false);
+              }}
+              placeholder="María González Pérez"
+              autoComplete="name"
+              required
+            />
+            {nameError ? (
+              <p className="text-sm text-[var(--color-danger)]">{nameError}</p>
+            ) : null}
+          </div>
+          <Button
+            type="button"
+            onClick={() => {
+              if (validateStep1()) setStep(2);
+            }}
+          >
             Continuar
           </Button>
         </div>
@@ -117,7 +197,8 @@ export function InviteUserWizard({ onSubmit, error }: InviteUserWizardProps) {
           <ul className="rounded-xl bg-background-muted/50 p-4 text-sm text-muted">
             <li>· Acceso acorde al rol institucional seleccionado</li>
             <li>· Cambios auditados en el historial de actividad</li>
-            <li>· Invitación válida por 7 días</li>
+            <li>· Enlace de invitación válido por 7 días</li>
+            <li>· El acceso se activa al iniciar sesión institucional</li>
           </ul>
           <div className="flex gap-2">
             <Button type="button" variant="ghost" onClick={() => setStep(2)}>
@@ -140,6 +221,10 @@ export function InviteUserWizard({ onSubmit, error }: InviteUserWizardProps) {
             <div>
               <dt className="text-muted">Correo</dt>
               <dd className="font-medium">{email}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Nombre</dt>
+              <dd className="font-medium">{displayName}</dd>
             </div>
             <div>
               <dt className="text-muted">Rol</dt>

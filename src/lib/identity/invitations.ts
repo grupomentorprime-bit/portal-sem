@@ -3,23 +3,36 @@ import "server-only";
 import { getDatabase } from "@/lib/mongodb";
 import type { IdentityInvitation } from "@/types/identity";
 import { generateId, generateToken } from "@/core/identity/auth/crypto";
+import { normalizeEmail } from "@/lib/validation/identity";
+
+const INVITATION_TTL_MINUTES = 15;
 
 export async function createInvitation(input: {
   tenantId: string;
   email: string;
+  displayName: string;
   roleIds: string[];
   invitedBy: string;
-  expiresInDays?: number;
+  expiresInMinutes?: number;
 }): Promise<IdentityInvitation> {
   const db = await getDatabase();
+  const email = normalizeEmail(input.email);
+  const displayName = input.displayName.trim();
+
+  const existingPending = await findPendingInvitationByEmail(input.tenantId, email);
+  if (existingPending) {
+    throw new Error("Ya existe una invitación pendiente para este correo.");
+  }
+
   const now = new Date().toISOString();
   const expires = new Date();
-  expires.setDate(expires.getDate() + (input.expiresInDays ?? 7));
+  expires.setMinutes(expires.getMinutes() + (input.expiresInMinutes ?? INVITATION_TTL_MINUTES));
 
   const invitation: IdentityInvitation = {
     _id: generateId("inv"),
     tenantId: input.tenantId,
-    email: input.email.toLowerCase().trim(),
+    email,
+    displayName,
     roleIds: input.roleIds,
     token: generateToken(24),
     status: "pending",
@@ -30,6 +43,19 @@ export async function createInvitation(input: {
 
   await db.collection<IdentityInvitation>("identity_invitations").insertOne(invitation);
   return invitation;
+}
+
+export async function findPendingInvitationByEmail(
+  tenantId: string,
+  email: string
+): Promise<IdentityInvitation | null> {
+  const db = await getDatabase();
+  return db.collection<IdentityInvitation>("identity_invitations").findOne({
+    tenantId,
+    email: normalizeEmail(email),
+    status: "pending",
+    expiresAt: { $gt: new Date().toISOString() },
+  });
 }
 
 export async function listInvitationsByTenant(

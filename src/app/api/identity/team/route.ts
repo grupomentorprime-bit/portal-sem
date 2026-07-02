@@ -53,6 +53,7 @@ export async function GET() {
         return {
           id: i._id,
           email: i.email,
+          displayName: i.displayName || i.email,
           status: i.status,
           expiresAt: i.expiresAt,
           createdAt: i.createdAt,

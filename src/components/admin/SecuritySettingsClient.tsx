@@ -6,6 +6,7 @@ import Link from "next/link";
 
 export function SecuritySettingsClient() {
   const [authenticated, setAuthenticated] = useState(false);
+  const [institutionalAuth, setInstitutionalAuth] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -14,7 +15,10 @@ export function SecuritySettingsClient() {
   useEffect(() => {
     fetch("/api/identity/me")
       .then((r) => r.json())
-      .then((data) => setAuthenticated(data.authenticated === true));
+      .then((data) => {
+        setAuthenticated(data.authenticated === true);
+        setInstitutionalAuth(data.authMethod === "institutional");
+      });
   }, []);
 
   async function handlePassword(e: React.FormEvent) {
@@ -51,36 +55,46 @@ export function SecuritySettingsClient() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-background p-6">
-        <h2 className="font-semibold">Contraseña</h2>
-        <form onSubmit={handlePassword} className="mt-4 grid max-w-md gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="currentPassword">Contraseña actual</Label>
-            <Input
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="newPassword">Contraseña nueva</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              minLength={8}
-              required
-            />
-          </div>
-          {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
-          <Button type="submit" disabled={status === "saving"}>
-            {status === "saving" ? "Actualizando…" : status === "saved" ? "Actualizada" : "Cambiar contraseña"}
-          </Button>
-        </form>
-      </section>
+      {institutionalAuth ? (
+        <section className="rounded-xl border border-border bg-background p-6">
+          <h2 className="font-semibold">Autenticación institucional</h2>
+          <p className="mt-2 text-sm text-muted">
+            Tu contraseña y factores de autenticación se administran en el portal institucional de
+            identidad, no en el CMS.
+          </p>
+        </section>
+      ) : (
+        <section className="rounded-xl border border-border bg-background p-6">
+          <h2 className="font-semibold">Contraseña</h2>
+          <form onSubmit={handlePassword} className="mt-4 grid max-w-md gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="currentPassword">Contraseña actual</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="newPassword">Contraseña nueva</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </div>
+            {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
+            <Button type="submit" disabled={status === "saving"}>
+              {status === "saving" ? "Actualizando…" : status === "saved" ? "Actualizada" : "Cambiar contraseña"}
+            </Button>
+          </form>
+        </section>
+      )}
 
       {[
         { title: "Verificación en dos pasos", desc: "Protección adicional al iniciar sesión." },
