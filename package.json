@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run check:branding && npm run build:institutional-media && next build",
+    "build:docker": "npm run build:institutional-media && next build",
     "start": "next start",
     "lint": "eslint",
     "check:branding": "tsx scripts/check-branding.ts",
@@ -17,6 +18,7 @@
     "migrate:media-ids": "npx tsx scripts/migrate-media-ids.ts",
     "migrate": "npx tsx scripts/migrate.ts",
     "migrate:hero-v2": "npx tsx scripts/migrate.ts 001-hero-v2",
+    "migrate:local-media-to-s3": "npx tsx scripts/migrate-local-cms-media-to-s3.ts",
     "setup:keycloak": "npx tsx scripts/setup-keycloak-client.ts",
     "check:keycloak": "npx tsx scripts/check-keycloak.ts"
   },
