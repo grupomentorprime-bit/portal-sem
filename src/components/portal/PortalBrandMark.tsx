@@ -22,7 +22,7 @@ interface PortalBrandMarkProps {
   institutionShortName?: string;
   organization?: string;
   variant?: "light" | "dark";
-  layout?: "default" | "premium-hero";
+  layout?: "default" | "premium-hero" | "partner";
   className?: string;
 }
 
@@ -44,93 +44,74 @@ export function PortalBrandMark({
   const showSecondaryImage =
     isConfiguredAsset(logoSecondary, PLATFORM_ASSET_FALLBACKS.secondaryLogo) && !secondaryError;
 
-  const primaryFallback = institutionShortName || institutionName || "Institución";
+  const textClass = variant === "light" ? "text-primary" : "text-text-inverse";
   const secondaryFallback = organization
     ? organization.split(/\s+/).slice(0, 2).join(" ")
     : "";
 
-  const textClass = variant === "light" ? "text-primary" : "text-text-inverse";
-  const hasPartner = showSecondaryImage || Boolean(secondaryFallback);
-
-  if (layout === "premium-hero") {
-    const [institutionLine1, institutionLine2] = splitInstitutionName(institutionName);
-    const logoSrc = PLATFORM_ASSET_FALLBACKS.logo;
-
+  if (layout === "partner") {
+    const partnerLabel = organization || secondaryFallback || institutionName;
     return (
-      <div className={cn("portal-brand-mark portal-brand-mark--premium-hero flex items-center", className)}>
-        <Image
-          src={logoSrc}
-          alt={institutionName || "Seminario Eclesiástico Mayor"}
-          width={48}
-          height={54}
-          className="portal-brand-mark__premium-logo shrink-0 object-contain"
-          onError={() => setPrimaryError(true)}
-          priority
-        />
-        <span className="portal-brand-mark__premium-sem">{institutionShortName || "SEM"}</span>
-        {institutionName ? (
-          <>
-            <span className="portal-brand-mark__premium-divider" aria-hidden />
-            <span className="portal-brand-mark__premium-institution">
-              <span className="block">{institutionLine1}</span>
-              {institutionLine2 ? <span className="block">{institutionLine2}</span> : null}
-            </span>
-          </>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("portal-brand-mark flex items-center", className)}>
-      {hasPartner ? (
-        <div className="flex items-center gap-3 sm:gap-4">
-          {showSecondaryImage ? (
-            <Image
-              src={logoSecondary!}
-              alt=""
-              width={48}
-              height={48}
-              className="h-9 w-auto max-w-[5rem] object-contain sm:h-10"
-              onError={() => setSecondaryError(true)}
-              priority
-            />
-          ) : (
-            <span
-              className={cn(
-                "hidden max-w-[6rem] text-[10px] font-semibold uppercase leading-tight tracking-wider sm:block sm:text-xs",
-                textClass
-              )}
-            >
-              {secondaryFallback}
-            </span>
-          )}
-          <span className="portal-brand-mark__divider hidden sm:block" aria-hidden />
-        </div>
-      ) : null}
-
-      <div className={cn(hasPartner && "pl-3 sm:pl-4")}>
-        {showPrimaryImage ? (
+      <div className={cn("portal-brand-mark portal-brand-mark--partner flex items-center", className)}>
+        {showSecondaryImage ? (
           <Image
-            src={logoPrimary!}
-            alt={institutionName || "Logo institucional"}
-            width={56}
-            height={56}
-            className="portal-brand-mark__primary h-10 w-auto max-w-[7rem] object-contain sm:h-11 lg:h-12 lg:max-w-[8rem]"
-            onError={() => setPrimaryError(true)}
+            src={logoSecondary!}
+            alt={partnerLabel || "Logo institucional"}
+            width={120}
+            height={48}
+            className="h-9 w-auto max-w-[9rem] object-contain sm:h-10"
+            onError={() => setSecondaryError(true)}
             priority
           />
         ) : (
           <span
             className={cn(
-              "portal-brand-mark__primary-text text-base font-bold tracking-tight sm:text-lg lg:text-xl",
+              "max-w-[9rem] text-[10px] font-semibold uppercase leading-tight tracking-wider sm:text-xs",
               textClass
             )}
           >
-            {primaryFallback}
+            {partnerLabel}
           </span>
         )}
       </div>
+    );
+  }
+
+  const [institutionLine1, institutionLine2] = splitInstitutionName(institutionName);
+  const logoSrc = showPrimaryImage
+    ? logoPrimary!
+    : variant === "dark"
+      ? PLATFORM_ASSET_FALLBACKS.logoOnDark
+      : PLATFORM_ASSET_FALLBACKS.logo;
+  const isCompact = layout === "default";
+
+  return (
+    <div
+      className={cn(
+        "portal-brand-mark portal-brand-mark--premium-hero flex items-center",
+        isCompact && "portal-brand-mark--compact",
+        className
+      )}
+    >
+      <Image
+        src={logoSrc}
+        alt={institutionName || "Seminario Eclesiástico Mayor"}
+        width={48}
+        height={54}
+        className="portal-brand-mark__premium-logo shrink-0 object-contain"
+        onError={() => setPrimaryError(true)}
+        priority
+      />
+      <span className="portal-brand-mark__premium-sem">{institutionShortName || "SEM"}</span>
+      {institutionName ? (
+        <>
+          <span className="portal-brand-mark__premium-divider" aria-hidden />
+          <span className="portal-brand-mark__premium-institution">
+            <span className="block">{institutionLine1}</span>
+            {institutionLine2 ? <span className="block">{institutionLine2}</span> : null}
+          </span>
+        </>
+      ) : null}
     </div>
   );
 }

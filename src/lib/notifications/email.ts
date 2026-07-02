@@ -88,6 +88,31 @@ export async function sendInvitationEmail(
   return { ok: true, id: data?.id };
 }
 
+export async function sendTransactionalHtmlEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { ok: false, error: "RESEND_API_KEY no configurada." };
+  }
+
+  const { data, error } = await resend.emails.send({
+    from: getEmailFrom(),
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+  });
+
+  if (error) {
+    console.error("[email] transactional send failed", error);
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true, id: data?.id };
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")

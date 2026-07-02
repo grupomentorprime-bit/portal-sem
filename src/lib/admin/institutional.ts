@@ -8,15 +8,34 @@ export interface AdminNavItem {
   label: string;
   icon?: string;
   matchPrefixes?: string[];
+  /** Si se define, el ítem solo se muestra si el usuario tiene al menos uno de estos permisos. */
+  requiredAnyPermission?: string[];
 }
 
-/** Navegación principal del Centro de Administración */
+/**
+ * Navegación principal del Centro de Administración.
+ *
+ * Orden por capas institucionales (de lo general a lo operativo):
+ * 1. Orientación — Inicio
+ * 2. Identidad — Institución
+ * 3. Presencia pública — Portal
+ * 4. Oferta académica — Programas → Admisión
+ * 5. Contenido editorial — Comunicaciones → Personas
+ * 6. Recursos transversales — Medios
+ * 7. Sistema — Administración
+ */
 export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
   {
     href: "/admin",
     label: "Inicio",
     icon: "home",
     matchPrefixes: ["/admin"],
+  },
+  {
+    href: "/admin/config",
+    label: "Institución",
+    icon: "institution",
+    matchPrefixes: ["/admin/config"],
   },
   {
     href: "/admin/pages",
@@ -30,22 +49,28 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
     ],
   },
   {
-    href: "/admin/portal/admission",
-    label: "Centro de admisión",
-    icon: "admission",
-    matchPrefixes: ["/admin/portal/admission"],
-  },
-  {
     href: "/admin/content/programs",
     label: "Programas y cursos",
     icon: "programs",
     matchPrefixes: ["/admin/content/programs"],
   },
   {
-    href: "/admin/config",
-    label: "Institución",
-    icon: "institution",
-    matchPrefixes: ["/admin/config"],
+    href: "/admin/portal/admission",
+    label: "Centro de admisión",
+    icon: "admission",
+    matchPrefixes: ["/admin/portal/admission"],
+  },
+  {
+    href: "/admin/portal/asuntos-estudiantiles",
+    label: "Asuntos estudiantiles",
+    icon: "students",
+    matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
+    requiredAnyPermission: [
+      "student-affairs.read",
+      "student-affairs.checkin",
+      "student-affairs.manage",
+      "experience.forms.manage",
+    ],
   },
   {
     href: "/admin/content",
@@ -96,6 +121,7 @@ export const INSTITUTIONAL_ROLE_LABELS: Record<string, string> = {
   Finance: "Finanzas",
   Student: "Estudiante",
   Guest: "Solo lectura",
+  "Student Affairs": "Asuntos estudiantiles",
   "Platform Owner": "Director General",
   "Platform Admin": "Administrador",
   Support: "Soporte",
@@ -107,6 +133,7 @@ export const CMS_INVITE_ROLES = [
   { id: "editor", internalName: "Editor", label: "Editor" },
   { id: "comms", internalName: "Editor", label: "Comunicaciones" },
   { id: "admissions", internalName: "Admissions", label: "Admisiones" },
+  { id: "student-affairs", internalName: "Student Affairs", label: "Asuntos estudiantiles" },
   { id: "reviewer", internalName: "Reviewer", label: "Revisor" },
   { id: "readonly", internalName: "Guest", label: "Solo lectura" },
 ] as const;
@@ -117,6 +144,11 @@ export const CMS_USER_GROUPS = [
   { id: "admins", label: "Administradores", roles: ["Tenant Owner", "Institution Admin"] },
   { id: "editors", label: "Editores", roles: ["Editor"] },
   { id: "reviewers", label: "Revisores", roles: ["Reviewer"] },
+  {
+    id: "student-affairs",
+    label: "Asuntos estudiantiles",
+    roles: ["Student Affairs"],
+  },
   { id: "guests", label: "Invitados", roles: ["Guest", "Admissions", "Teacher", "Finance", "Student"] },
 ] as const;
 

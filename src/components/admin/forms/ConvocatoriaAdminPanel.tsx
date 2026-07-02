@@ -1,17 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Calendar, ClipboardList, MapPin, Users, XCircle } from "lucide-react";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
-import { Badge } from "@/components/ui";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { AbsenceReviewEditor } from "@/components/admin/forms/AbsenceReviewEditor";
+import { SubmissionJustificationCell } from "@/components/admin/forms/SubmissionJustificationCell";
+import { getSubmissionAttachment } from "@/lib/experience/forms/attachments";
+import { ConvocatoriaRosterPanel } from "@/components/admin/forms/ConvocatoriaRosterPanel";
+import { Alert, Badge } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import {
+  ABSENCE_REVIEW_POLICY,
+  absenceReviewStatusLabel,
   attendanceLabel,
+  formatSubmissionPhone,
+  getSubmissionGeneration,
   formatConvocatoriaDate,
   publicFormUrl,
   type FormConvocatoria,
 } from "@/lib/admin/forms-center";
-import type { ExperienceFormSubmission } from "@/types/experience-forms";
+import type {
+  ExperienceFormAbsenceReview,
+  ExperienceFormSubmission,
+} from "@/types/experience-forms";
 
 interface SubmissionStats {
   total: number;
@@ -29,7 +47,9 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
   const [stats, setStats] = useState<SubmissionStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "yes" | "no">("all");
+  const [generationFilter, setGenerationFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -65,21 +85,74 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
   }, [loadData]);
 
   const filtered = submissions.filter((submission) => {
-    if (filter === "all") return true;
-    return submission.data.attendance === filter;
+    if (filter !== "all" && submission.data.attendance !== filter) return false;
+    if (generationFilter !== "all" && getSubmissionGeneration(submission.data) !== generationFilter) {
+      return false;
+    }
+    return true;
   });
 
+  const generationOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const submission of submissions) {
+      const generation = getSubmissionGeneration(submission.data);
+      if (generation === "—") continue;
+      counts.set(generation, (counts.get(generation) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
+  }, [submissions]);
+
+  const hasGeneration = generationOptions.length > 0;
+
+  const groupedByGeneration = useMemo(() => {
+    if (generationFilter !== "all" || !hasGeneration) return null;
+    const groups = new Map<string, ExperienceFormSubmission[]>();
+    for (const submission of filtered) {
+      const generation = getSubmissionGeneration(submission.data);
+      const bucket = groups.get(generation) ?? [];
+      bucket.push(submission);
+      groups.set(generation, bucket);
+    }
+    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], "es"));
+  }, [filtered, generationFilter, hasGeneration]);
+
+  const handleReviewSaved = (submissionId: string, review: ExperienceFormAbsenceReview) => {
+    setSubmissions((current) =>
+      current.map((submission) =>
+        submission._id === submissionId ? { ...submission, absenceReview: review } : submission
+      )
+    );
+    setExpandedId(null);
+  };
+
   const exportCsv = () => {
-    const headers = ["Nombre", "Correo", "Teléfono", "Programa", "Asistencia", "Justificación", "Fecha"];
+    const headers = [
+      "Nombre",
+      "Generación",
+      "Teléfono",
+      "Correo",
+      "Asistencia",
+      "Justificación",
+      "Estado gestión",
+      "Respaldo recibido",
+      "Detalle respaldo",
+      "Gestiones realizadas",
+      "Fecha",
+    ];
     const rows = filtered.map((submission) => {
       const data = submission.data;
+      const review = submission.absenceReview;
       return [
         String(data.fullName ?? ""),
+        getSubmissionGeneration(data),
+        formatSubmissionPhone(data.phone),
         String(data.email ?? ""),
-        String(data.phone ?? ""),
-        String(data.program ?? ""),
         attendanceLabel(data.attendance),
         String(data.justification ?? ""),
+        absenceReviewStatusLabel(review?.status),
+        review?.evidenceReceived ? "Sí" : "No",
+        String(review?.evidenceNotes ?? ""),
+        String(review?.managementNotes ?? ""),
         formatSubmissionDate(submission.createdAt),
       ];
     });
@@ -92,7 +165,7 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${convocatoria.slug}-respuestas.csv`;
+    link.download = `${convocatoria.slug}${generationFilter !== "all" ? `-${generationFilter}` : ""}-respuestas.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -131,16 +204,36 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
         </div>
       }
     >
-      <p className="mb-6 text-sm text-muted">{convocatoria.description}</p>
+      <AdminModuleCenter>
+        <AdminModuleHero
+          eyebrow="Portal · Convocatoria"
+          heroTitle={convocatoria.title}
+          heroDescription={convocatoria.description}
+        />
 
       {stats ? (
-        <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Total respuestas" value={stats.total} />
-          <StatCard label="Asistirán" value={stats.attending} variant="success" />
-          <StatCard label="No asistirán" value={stats.notAttending} variant="warning" />
-          <StatCard label="Sin definir" value={stats.other} />
-        </section>
+        <AdminModuleStats
+          items={[
+            { label: "Total respuestas", value: stats.total, icon: ClipboardList, tone: "total" },
+            { label: "Asistirán", value: stats.attending, icon: Users, tone: "active" },
+            { label: "No asistirán", value: stats.notAttending, icon: XCircle, tone: "published" },
+            { label: "Sin definir", value: stats.other, icon: Calendar, tone: "neutral" },
+          ]}
+        />
       ) : null}
+
+      <AdminModuleSectionHeader
+        icon={MapPin}
+        title="Listado de alumnos convocados"
+        description="Carga los nombres y generaciones para que cada alumno se identifique en el formulario público."
+      />
+      <ConvocatoriaRosterPanel convocatoriaSlug={convocatoria.slug} />
+
+      <AdminModuleSectionHeader
+        icon={MapPin}
+        title="Respuestas de la convocatoria"
+        description={`${formatConvocatoriaDate(convocatoria.date)} · ${convocatoria.location}`}
+      />
 
       <section className="mb-4 flex flex-wrap gap-2">
         <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
@@ -154,8 +247,34 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
         </FilterButton>
       </section>
 
+      {hasGeneration ? (
+        <section className="mb-4 flex flex-wrap gap-2">
+          <FilterButton
+            active={generationFilter === "all"}
+            onClick={() => setGenerationFilter("all")}
+          >
+            Todas las generaciones ({submissions.length})
+          </FilterButton>
+          {generationOptions.map(([generation, count]) => (
+            <FilterButton
+              key={generation}
+              active={generationFilter === generation}
+              onClick={() => setGenerationFilter(generation)}
+            >
+              {generation} ({count})
+            </FilterButton>
+          ))}
+        </section>
+      ) : null}
+
       {error ? <p className="mb-4 text-sm text-primary">{error}</p> : null}
       {loading ? <p className="text-sm text-muted">Cargando respuestas…</p> : null}
+
+      {filter === "no" || submissions.some((s) => s.data.attendance === "no") ? (
+        <Alert variant="info" className="mb-4">
+          {ABSENCE_REVIEW_POLICY}
+        </Alert>
+      ) : null}
 
       {!loading && filtered.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">
@@ -166,65 +285,199 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
 
       {!loading && filtered.length > 0 ? (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[1080px] text-left text-sm">
             <thead className="border-b border-border bg-background-muted/50">
               <tr>
                 <th className="px-4 py-3 font-medium">Nombre</th>
+                <th className="px-4 py-3 font-medium">Generación</th>
+                <th className="px-4 py-3 font-medium">Teléfono</th>
                 <th className="px-4 py-3 font-medium">Correo</th>
-                <th className="px-4 py-3 font-medium">Programa</th>
                 <th className="px-4 py-3 font-medium">Asistencia</th>
                 <th className="px-4 py-3 font-medium">Justificación</th>
+                <th className="px-4 py-3 font-medium">Gestión</th>
                 <th className="px-4 py-3 font-medium">Fecha</th>
+                <th className="px-4 py-3 font-medium" />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((submission) => (
-                <tr key={submission._id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-medium">{String(submission.data.fullName ?? "—")}</td>
-                  <td className="px-4 py-3 text-muted">{String(submission.data.email ?? "—")}</td>
-                  <td className="px-4 py-3 text-muted">{String(submission.data.program ?? "—")}</td>
-                  <td className="px-4 py-3">
-                    <AttendanceBadge value={submission.data.attendance} />
-                  </td>
-                  <td className="max-w-xs px-4 py-3 text-muted">
-                    {submission.data.attendance === "no"
-                      ? String(submission.data.justification ?? "—")
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-muted whitespace-nowrap">
-                    {formatSubmissionDate(submission.createdAt)}
-                  </td>
-                </tr>
-              ))}
+              {groupedByGeneration
+                ? groupedByGeneration.map(([generation, groupSubmissions]) => (
+                    <Fragment key={generation}>
+                      <tr className="border-b border-border bg-background-muted/40">
+                        <td
+                          className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted"
+                          colSpan={9}
+                        >
+                          {generation} · {groupSubmissions.length} respuesta
+                          {groupSubmissions.length === 1 ? "" : "s"}
+                        </td>
+                      </tr>
+                      {groupSubmissions.map((submission) => {
+                        const isAbsence = submission.data.attendance === "no";
+                        const submissionId = submission._id ?? "";
+                        const isExpanded = expandedId === submissionId;
+
+                        return (
+                          <Fragment key={submission._id}>
+                            <tr className="border-b border-border last:border-0">
+                              <td className="px-4 py-3 font-medium">
+                                <SubmissionParticipantName data={submission.data} />
+                              </td>
+                              <td className="px-4 py-3 text-muted">
+                                {getSubmissionGeneration(submission.data)}
+                              </td>
+                              <td className="px-4 py-3 text-muted whitespace-nowrap">
+                                {formatSubmissionPhone(submission.data.phone)}
+                              </td>
+                              <td className="px-4 py-3 text-muted">
+                                {String(submission.data.email ?? "—")}
+                              </td>
+                              <td className="px-4 py-3">
+                                <AttendanceBadge value={submission.data.attendance} />
+                              </td>
+                              <td className="max-w-xs px-4 py-3 text-muted">
+                                {isAbsence ? (
+                                  <SubmissionJustificationCell data={submission.data} />
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isAbsence ? (
+                                  <AbsenceReviewBadge review={submission.absenceReview} />
+                                ) : (
+                                  <span className="text-muted">—</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-muted whitespace-nowrap">
+                                {formatSubmissionDate(submission.createdAt)}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {isAbsence && submissionId ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      setExpandedId(isExpanded ? null : submissionId)
+                                    }
+                                  >
+                                    {isExpanded ? "Cerrar" : "Gestionar"}
+                                  </Button>
+                                ) : null}
+                              </td>
+                            </tr>
+                            {isAbsence && isExpanded && submissionId ? (
+                              <tr className="border-b border-border bg-background-muted/20">
+                                <td className="px-4 py-4" colSpan={9}>
+                                  <AbsenceReviewEditor
+                                    submissionId={submissionId}
+                                    participantName={String(
+                                      submission.data.fullName ?? "Participante"
+                                    )}
+                                    participantJustification={String(
+                                      submission.data.justification ?? ""
+                                    )}
+                                    participantAttachment={getSubmissionAttachment(submission.data)}
+                                    initialReview={submission.absenceReview}
+                                    onSaved={(review) => handleReviewSaved(submissionId, review)}
+                                    onCancel={() => setExpandedId(null)}
+                                  />
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
+                        );
+                      })}
+                    </Fragment>
+                  ))
+                : filtered.map((submission) => {
+                    const isAbsence = submission.data.attendance === "no";
+                    const submissionId = submission._id ?? "";
+                    const isExpanded = expandedId === submissionId;
+
+                    return (
+                      <Fragment key={submission._id}>
+                        <tr className="border-b border-border last:border-0">
+                          <td className="px-4 py-3 font-medium">
+                            <SubmissionParticipantName data={submission.data} />
+                          </td>
+                          <td className="px-4 py-3 text-muted">
+                            {getSubmissionGeneration(submission.data)}
+                          </td>
+                          <td className="px-4 py-3 text-muted whitespace-nowrap">
+                            {formatSubmissionPhone(submission.data.phone)}
+                          </td>
+                          <td className="px-4 py-3 text-muted">
+                            {String(submission.data.email ?? "—")}
+                          </td>
+                          <td className="px-4 py-3">
+                            <AttendanceBadge value={submission.data.attendance} />
+                          </td>
+                          <td className="max-w-xs px-4 py-3 text-muted">
+                            {isAbsence ? (
+                              <SubmissionJustificationCell data={submission.data} />
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {isAbsence ? (
+                              <AbsenceReviewBadge review={submission.absenceReview} />
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-muted whitespace-nowrap">
+                            {formatSubmissionDate(submission.createdAt)}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {isAbsence && submissionId ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setExpandedId(isExpanded ? null : submissionId)}
+                              >
+                                {isExpanded ? "Cerrar" : "Gestionar"}
+                              </Button>
+                            ) : null}
+                          </td>
+                        </tr>
+                        {isAbsence && isExpanded && submissionId ? (
+                          <tr className="border-b border-border bg-background-muted/20">
+                            <td className="px-4 py-4" colSpan={9}>
+                              <AbsenceReviewEditor
+                                submissionId={submissionId}
+                                participantName={String(submission.data.fullName ?? "Participante")}
+                                participantJustification={String(submission.data.justification ?? "")}
+                                participantAttachment={getSubmissionAttachment(submission.data)}
+                                initialReview={submission.absenceReview}
+                                onSaved={(review) => handleReviewSaved(submissionId, review)}
+                                onCancel={() => setExpandedId(null)}
+                              />
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
             </tbody>
           </table>
         </div>
       ) : null}
+      </AdminModuleCenter>
     </AdminModuleLayout>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  variant,
-}: {
-  label: string;
-  value: number;
-  variant?: "success" | "warning";
-}) {
+function SubmissionParticipantName({ data }: { data: Record<string, unknown> }) {
+  const isSelfRegistered = String(data.registrationMode ?? "") === "manual";
+
   return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
-      {variant === "success" ? (
-        <Badge variant="success" className="mt-2">
-          Confirmados
-        </Badge>
-      ) : null}
-      {variant === "warning" ? (
-        <Badge variant="warning" className="mt-2">
-          Justificados
+    <div className="flex flex-col gap-1">
+      <span>{String(data.fullName ?? "—")}</span>
+      {isSelfRegistered ? (
+        <Badge variant="info" className="w-fit text-xs font-normal">
+          Auto-registro · Otros
         </Badge>
       ) : null}
     </div>
@@ -246,8 +499,8 @@ function FilterButton({
       onClick={onClick}
       className={
         active
-          ? "rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
-          : "rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:bg-background-muted"
+          ? "admin-form-detail__chip-tab admin-form-detail__chip-tab--active"
+          : "admin-form-detail__chip-tab"
       }
     >
       {children}
@@ -259,6 +512,13 @@ function AttendanceBadge({ value }: { value: unknown }) {
   if (value === "yes") return <Badge variant="success">Asistirá</Badge>;
   if (value === "no") return <Badge variant="warning">No asistirá</Badge>;
   return <Badge variant="neutral">Sin definir</Badge>;
+}
+
+function AbsenceReviewBadge({ review }: { review?: ExperienceFormAbsenceReview }) {
+  const status = review?.status ?? "pending";
+  if (status === "approved") return <Badge variant="success">Fuerza mayor aceptada</Badge>;
+  if (status === "rejected") return <Badge variant="error">No procede</Badge>;
+  return <Badge variant="neutral">{absenceReviewStatusLabel(status)}</Badge>;
 }
 
 function formatSubmissionDate(iso: string): string {

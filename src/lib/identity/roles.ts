@@ -39,23 +39,45 @@ export async function resolvePermissionsForRoles(
 
 export async function ensureTenantRoles(tenantId: string): Promise<IdentityRole[]> {
   const db = await getDatabase();
-  const existing = await listRolesByTenant(tenantId);
-  if (existing.length > 0) return existing;
-
   const now = new Date().toISOString();
-  const roles: IdentityRole[] = TENANT_ROLES.map((template) => ({
-    _id: `role-${tenantId}-${roleSlug(template.name)}`,
-    tenantId,
-    name: template.name,
-    description: template.description,
-    permissionIds: [...template.permissionIds],
-    system: template.system,
-    createdAt: now,
-    updatedAt: now,
-  }));
+  const existing = await listRolesByTenant(tenantId);
+  const existingByName = new Map(existing.map((role) => [role.name, role]));
+  const templateByName = new Map(TENANT_ROLES.map((template) => [template.name, template]));
 
-  await db.collection<IdentityRole>("identity_roles").insertMany(roles);
-  return roles;
+  const missing = TENANT_ROLES.filter((template) => !existingByName.has(template.name));
+  if (missing.length > 0) {
+    const roles: IdentityRole[] = missing.map((template) => ({
+      _id: `role-${tenantId}-${roleSlug(template.name)}`,
+      tenantId,
+      name: template.name,
+      description: template.description,
+      permissionIds: [...template.permissionIds],
+      system: template.system,
+      createdAt: now,
+      updatedAt: now,
+    }));
+    await db.collection<IdentityRole>("identity_roles").insertMany(roles);
+  }
+
+  if (existing.length === 0 && missing.length === TENANT_ROLES.length) {
+    return listRolesByTenant(tenantId);
+  }
+
+  for (const role of await listRolesByTenant(tenantId)) {
+    const template = templateByName.get(role.name);
+    if (!role.system || !template) continue;
+
+    const templatePerms = [...template.permissionIds].sort().join(",");
+    const rolePerms = [...role.permissionIds].sort().join(",");
+    if (templatePerms !== rolePerms) {
+      await db.collection<IdentityRole>("identity_roles").updateOne(
+        { _id: role._id },
+        { $set: { permissionIds: [...template.permissionIds], updatedAt: now } }
+      );
+    }
+  }
+
+  return listRolesByTenant(tenantId);
 }
 
 export async function findRoleByName(

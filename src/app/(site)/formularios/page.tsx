@@ -2,17 +2,13 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PortalBreadcrumb, PortalContainer, PortalSection } from "@/components/portal/layout";
 import { getActivePortal } from "@/lib/portal/site";
-import {
-  ensureDefaultExperienceForms,
-  listExperienceForms,
-  seedExperienceForms,
-} from "@/lib/experience/forms/repository";
+import { listPublicExperienceForms } from "@/lib/experience/forms/repository";
 import {
   FORM_CONVOCATORIAS,
-  FORM_LANDINGS,
-  getFormLandingByFormId,
+  getSupersededFormIds,
   publicFormUrl,
 } from "@/lib/admin/forms-center";
+import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experience";
 import type { FormLandingTheme } from "@/lib/admin/forms-center";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -22,24 +18,29 @@ export const metadata: Metadata = {
   description: "Formularios y convocatorias del Seminario Eclesiástico Mayor.",
 };
 
-function themeForForm(formId: string): FormLandingTheme | "default" {
-  return getFormLandingByFormId(formId)?.theme ?? "default";
+function themeForExperience(theme: FormLandingTheme): FormLandingTheme | "default" {
+  return theme ?? "default";
 }
 
 export default async function FormulariosIndexPage() {
   const ctx = await getActivePortal();
   if (!ctx) notFound();
 
-  await seedExperienceForms(ctx.tenant);
-  await ensureDefaultExperienceForms(ctx.tenant);
-
-  const forms = (await listExperienceForms(ctx.tenant)).filter(
-    (form) => form.active && form.visible
+  const forms = await listPublicExperienceForms(ctx.tenant);
+  const supersededFormIds = getSupersededFormIds();
+  const publishedForms = forms.filter((form) => !supersededFormIds.has(form._id));
+  const experiences = await Promise.all(
+    publishedForms.map(async (form) => ({
+      form,
+      landing: toFormLandingConfig(await getFormExperience(ctx.tenant, form._id, form.name)),
+    }))
   );
 
-  const convocatoriaFormIds = new Set(FORM_CONVOCATORIAS.map((item) => item.formId));
-  const convocatorias = forms.filter((form) => convocatoriaFormIds.has(form._id));
-  const otros = forms.filter((form) => !convocatoriaFormIds.has(form._id));
+  const convocatoriaFormIds = new Set(
+    FORM_CONVOCATORIAS.filter((item) => item.active).map((item) => item.formId)
+  );
+  const convocatorias = experiences.filter(({ form }) => convocatoriaFormIds.has(form._id));
+  const otros = experiences.filter(({ form }) => !convocatoriaFormIds.has(form._id));
 
   return (
     <>
@@ -67,9 +68,8 @@ export default async function FormulariosIndexPage() {
               <section>
                 <h2 className="forms-hub__section-title">Convocatorias activas</h2>
                 <div className="forms-hub__grid forms-hub__grid--convocatorias">
-                  {convocatorias.map((form) => {
+                  {convocatorias.map(({ form, landing }) => {
                     const convocatoria = FORM_CONVOCATORIAS.find((c) => c.formId === form._id);
-                    const landing = getFormLandingByFormId(form._id);
                     return (
                       <Link
                         key={form._id}
@@ -99,9 +99,8 @@ export default async function FormulariosIndexPage() {
               <section className={convocatorias.length > 0 ? "mt-10" : undefined}>
                 <h2 className="forms-hub__section-title">Otros formularios</h2>
                 <div className="forms-hub__grid">
-                  {otros.map((form) => {
-                    const theme = themeForForm(form._id);
-                    const landing = FORM_LANDINGS.find((l) => l.formId === form._id);
+                  {otros.map(({ form, landing }) => {
+                    const theme = themeForExperience(landing.theme);
                     const cardClass =
                       theme !== "default"
                         ? `forms-hub__card forms-hub__card--${theme}`
@@ -127,7 +126,7 @@ export default async function FormulariosIndexPage() {
               </section>
             ) : null}
 
-            {forms.length === 0 ? (
+            {experiences.length === 0 ? (
               <p className="text-sm text-muted">No hay formularios publicados en este momento.</p>
             ) : null}
           </div>

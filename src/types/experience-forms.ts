@@ -86,6 +86,8 @@ export interface ExperienceFormDefinition {
   fields: ExperienceFormField[];
   active: boolean;
   visible: boolean;
+  /** Marcado al archivar; distingue borradores nuevos de formularios retirados. */
+  archived?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -105,7 +107,34 @@ export interface ExperienceFormSubmission {
   formId: string;
   destination: ExperienceFormDestination;
   data: Record<string, unknown>;
+  /** Seguimiento institucional cuando el participante declara inasistencia. */
+  absenceReview?: ExperienceFormAbsenceReview;
+  /** Registro de llegada el día de la jornada (check-in presencial). */
+  dayCheckIn?: ExperienceFormDayCheckIn;
   createdAt: string;
+}
+
+export const ABSENCE_REVIEW_STATUSES = ["pending", "approved", "rejected"] as const;
+
+export type AbsenceReviewStatus = (typeof ABSENCE_REVIEW_STATUSES)[number];
+
+export interface ExperienceFormDayCheckIn {
+  present: boolean;
+  checkedInAt?: string;
+  checkedInByName?: string;
+  notes?: string;
+}
+
+export interface ExperienceFormAbsenceReview {
+  status: AbsenceReviewStatus;
+  /** Gestiones realizadas por el equipo (comunicaciones, seguimiento, etc.). */
+  managementNotes?: string;
+  /** Si se recibió respaldo documental de fuerza mayor. */
+  evidenceReceived?: boolean;
+  /** Detalle del respaldo recibido (certificado, carta, etc.). */
+  evidenceNotes?: string;
+  reviewedAt?: string;
+  reviewedByName?: string;
 }
 
 export interface ExperienceFormBlockSettings extends Record<string, unknown> {

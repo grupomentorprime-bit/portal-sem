@@ -8,6 +8,7 @@ import {
 import { academicAgendaCategoryLabel } from "@/types/academic-portal";
 import type { ContentDocument } from "@/types/content";
 import type { HeroSlideFloatingCard } from "@/types/hero-portal";
+import { convocatoriaFormUrlForContent } from "@/core/hero/resolve-convocatoria-hero-links";
 
 function formatShortDate(iso: string): string {
   if (!iso) return "";
@@ -68,6 +69,9 @@ function agendaToFloatingCard(
 ): HeroSlideFloatingCard {
   const item = mapToAcademicAgendaItem(doc);
   const category = academicAgendaCategoryLabel(item.category);
+  const convocatoriaUrl =
+    convocatoriaFormUrlForContent(item.title, item.description ?? "", item.href) ?? item.href;
+
   return {
     ...base,
     enabled: true,
@@ -77,7 +81,7 @@ function agendaToFloatingCard(
     description: item.description || `${item.startDateLabel}${item.endDateLabel ? ` — ${item.endDateLabel}` : ""}`,
     button: {
       text: item.ctaLabel || base.button.text || "Ver detalle",
-      url: item.href,
+      url: convocatoriaUrl,
       openInNewTab: base.button.openInNewTab,
     },
   };

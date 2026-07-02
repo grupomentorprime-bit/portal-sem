@@ -10,11 +10,10 @@ export function PortalFooterBrand({ brand }: PortalFooterBrandProps) {
     <div className="portal-footer-premium__column portal-footer-premium__column--institution">
       <PortalBrandMark
         logoPrimary={brand.logoPrimary}
-        logoSecondary={brand.logoSecondary}
         institutionName={brand.institutionName}
         institutionShortName={brand.institutionShortName}
-        organization={brand.organization}
         variant="dark"
+        layout="default"
       />
       {brand.institutionName ? (
         <p className="portal-footer-premium__institution-name">{brand.institutionName}</p>

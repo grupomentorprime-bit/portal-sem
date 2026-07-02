@@ -1,11 +1,13 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { RadioGroup } from "@/components/ui/radio";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ExperienceFormField } from "@/types/experience-forms";
+import { ChilePhoneInput } from "./ChilePhoneInput";
 
 interface PortalFormFieldsProps {
   fields: ExperienceFormField[];
@@ -39,7 +41,15 @@ export function PortalFormFields({
         ))}
 
       {visibleFields.map((field) => (
-        <div key={field.id} className="portal-experience-form__field">
+        <div
+          key={field.id}
+          data-form-error={errors[field.name] ? "true" : undefined}
+          className={cn(
+            "portal-experience-form__field",
+            field.type === "radio" && "portal-experience-form__field--radio",
+            field.name === "attendance" && "portal-experience-form__field--attendance"
+          )}
+        >
           {renderField(field, values, errors, disabled, onChange)}
         </div>
       ))}
@@ -89,12 +99,16 @@ function renderField(
       );
     case "radio":
       return (
-        <div className="space-y-1.5">
+        <div
+          className="portal-experience-form__radio-wrap space-y-1.5"
+          data-form-error={error ? "true" : undefined}
+        >
           <RadioGroup
             legend={field.label}
             name={field.name}
             value={String(value ?? "")}
             onChange={(v) => onChange(field.name, v)}
+            className={field.name === "attendance" ? "portal-experience-form__radio-cards" : undefined}
             options={
               field.options?.map((opt) => ({ label: opt.label, value: opt.value })) ?? []
             }
@@ -140,18 +154,31 @@ function renderField(
         />
       );
     default: {
+      if (field.type === "phone") {
+        return (
+          <ChilePhoneInput
+            label={field.label}
+            name={field.name}
+            helper={field.helper}
+            error={error}
+            required={field.validation?.required}
+            disabled={disabled}
+            value={String(value ?? field.defaultValue ?? "")}
+            onChange={(nextValue) => onChange(field.name, nextValue)}
+          />
+        );
+      }
+
       const inputType =
         field.type === "email"
           ? "email"
-          : field.type === "phone"
-            ? "tel"
-            : field.type === "number"
-              ? "number"
-              : field.type === "date"
-                ? "date"
-                : field.type === "time"
-                  ? "time"
-                  : "text";
+          : field.type === "number"
+            ? "number"
+            : field.type === "date"
+              ? "date"
+              : field.type === "time"
+                ? "time"
+                : "text";
 
       return (
         <Input

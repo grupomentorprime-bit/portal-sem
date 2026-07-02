@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
-import type { IdentityMembership } from "@/types/identity";
+import type { IdentityMembership, StudentAffairsScope } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
 
 export async function findMembership(
@@ -84,6 +84,19 @@ export async function updateMembershipRoles(
   await db.collection<IdentityMembership>("identity_memberships").updateOne(
     { _id: membershipId },
     { $set: { roleIds, updatedAt: now } }
+  );
+  return db.collection<IdentityMembership>("identity_memberships").findOne({ _id: membershipId });
+}
+
+export async function updateMembershipStudentAffairsScope(
+  membershipId: string,
+  scope: StudentAffairsScope
+): Promise<IdentityMembership | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  await db.collection<IdentityMembership>("identity_memberships").updateOne(
+    { _id: membershipId },
+    { $set: { studentAffairsScope: scope, updatedAt: now } }
   );
   return db.collection<IdentityMembership>("identity_memberships").findOne({ _id: membershipId });
 }

@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
 import { submitExperienceForm } from "@/core/experience/forms";
+import { normalizeFormSubmissionData } from "@/core/experience/forms/validation";
+import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
+import { getFormExperienceUncached } from "@/lib/cms/form-experience";
+import {
+  buildSelfRegisteredRosterStudent,
+  findConvocatoriaRosterStudent,
+  hasConvocatoriaSubmission,
+  hasConvocatoriaSubmissionByEmail,
+  upsertConvocatoriaRosterStudent,
+} from "@/lib/experience/forms/roster";
+import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
+import { normalizeChilePhone, formatChilePhoneDisplay } from "@/lib/experience/forms/phone-chile";
 import {
   getPublicExperienceForm,
   saveFormSubmission,
-  seedExperienceForms,
 } from "@/lib/experience/forms/repository";
+import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -20,11 +32,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
 
-    let form = await getPublicExperienceForm(tenant, id);
-    if (!form) {
-      await seedExperienceForms(tenant);
-      form = await getPublicExperienceForm(tenant, id);
-    }
+    const form = await getPublicExperienceForm(tenant, id);
 
     if (!form) {
       return NextResponse.json(
@@ -34,7 +42,126 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     const body = (await request.json()) as { data?: Record<string, unknown> };
-    const data = body.data ?? {};
+    let data = body.data ?? {};
+    delete data.justificationAttachmentFile;
+
+    const convocatoria = getConvocatoriaByFormId(id);
+    if (convocatoria) {
+      const studentId = String(data.studentId ?? "").trim();
+      const registrationMode = String(data.registrationMode ?? "").trim();
+
+      if (!studentId || registrationMode === "manual") {
+        const fullName = String(data.fullName ?? "").trim();
+        const email = String(data.email ?? "").trim();
+        const rut = String(data.rut ?? "").trim() || undefined;
+        const phone = normalizeChilePhone(String(data.phone ?? "").trim()) ?? undefined;
+        const generation = "other";
+
+        if (!fullName) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { fullName: "Debe indicar su nombre completo." },
+              error: "Complete su nombre para registrarse.",
+            },
+            { status: 422 }
+          );
+        }
+
+        const rosterStudent = buildSelfRegisteredRosterStudent({ fullName, rut, phone });
+        if (!rosterStudent) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { fullName: "Debe indicar su nombre completo." },
+              error: "Complete su nombre para registrarse.",
+            },
+            { status: 422 }
+          );
+        }
+
+        if (email && (await hasConvocatoriaSubmissionByEmail(tenant, id, email))) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { email: "Ya existe una respuesta registrada con este correo." },
+              error: "Ya registraste una respuesta para esta convocatoria.",
+            },
+            { status: 422 }
+          );
+        }
+
+        const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, rosterStudent.id);
+        if (alreadySubmitted) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { fullName: "Ya registraste una respuesta para esta convocatoria." },
+              error: "Ya existe una respuesta registrada con tu nombre.",
+            },
+            { status: 422 }
+          );
+        }
+
+        data = {
+          ...data,
+          registrationMode: "manual",
+          studentId: rosterStudent.id,
+          rut: rosterStudent.rut ?? "",
+          fullName: rosterStudent.fullName,
+          program: generation,
+          generation,
+          phone: phone || rosterStudent.phone || "",
+        };
+      } else {
+        const student = await findConvocatoriaRosterStudent(tenant, convocatoria.slug, studentId);
+        if (!student) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { studentId: "El alumno seleccionado no está en el listado de la convocatoria." },
+              error: "Participante no válido para esta convocatoria.",
+            },
+            { status: 422 }
+          );
+        }
+
+        const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, studentId);
+        if (alreadySubmitted) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { studentId: "Ya registraste una respuesta para esta convocatoria." },
+              error: "Ya existe una respuesta registrada con tu nombre.",
+            },
+            { status: 422 }
+          );
+        }
+
+        const submittedPhone =
+          normalizeChilePhone(String(data.phone ?? "").trim()) ??
+          String(data.phone ?? "").trim();
+
+        const normalizedGeneration = normalizeGenerationValue(student.generation);
+
+        data = {
+          ...data,
+          registrationMode: "roster",
+          studentId: student.id,
+          rut: student.rut ?? "",
+          fullName: student.fullName,
+          program: normalizedGeneration,
+          generation: normalizedGeneration,
+          phone:
+            submittedPhone ||
+            formatChilePhoneDisplay(student.phone ?? "") ||
+            student.phone ||
+            "",
+        };
+      }
+    }
+
+    data = normalizeFormSubmissionData(form, data);
 
     const result = await submitExperienceForm({
       form,
@@ -51,6 +178,52 @@ export async function POST(request: Request, { params }: RouteParams) {
         },
         { status: 422 }
       );
+    }
+
+    if (convocatoria && data.registrationMode === "manual") {
+      const rosterStudent = buildSelfRegisteredRosterStudent({
+        fullName: String(data.fullName ?? ""),
+        rut: String(data.rut ?? "").trim() || undefined,
+        phone: String(data.phone ?? "").trim() || undefined,
+      });
+      if (rosterStudent) {
+        await upsertConvocatoriaRosterStudent(
+          tenant,
+          convocatoria.slug,
+          id,
+          rosterStudent
+        );
+      }
+    }
+
+    if (convocatoria) {
+      const participantEmail = String(data.email ?? "").trim();
+      const attendance =
+        data.attendance === "yes" ? "yes" : data.attendance === "no" ? "no" : null;
+
+      if (participantEmail && attendance) {
+        try {
+          const experience = await getFormExperienceUncached(tenant, id, form.name);
+          const emailResult = await sendConvocatoriaConfirmationEmail({
+            to: participantEmail,
+            participantName: String(data.fullName ?? "Participante"),
+            attendance,
+            convocatoria,
+            phone: String(data.phone ?? ""),
+            generation: String(data.generation ?? data.program ?? ""),
+            professorMessage:
+              attendance === "yes"
+                ? experience.formShell.attendanceYesMessage
+                : experience.formShell.attendanceNoMessage,
+          });
+
+          if (!emailResult.ok) {
+            console.warn("[convocatoria] confirmation email not sent:", emailResult.error);
+          }
+        } catch (emailError) {
+          console.error("[convocatoria] confirmation email failed", emailError);
+        }
+      }
     }
 
     return NextResponse.json({

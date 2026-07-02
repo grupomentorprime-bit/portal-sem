@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
-import {
-  getPublicExperienceForm,
-  seedExperienceForms,
-} from "@/lib/experience/forms/repository";
+import { getPublicExperienceForm } from "@/lib/experience/forms/repository";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -18,12 +15,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
 
-    let form = await getPublicExperienceForm(tenant, id);
-
-    if (!form) {
-      await seedExperienceForms(tenant);
-      form = await getPublicExperienceForm(tenant, id);
-    }
+    const form = await getPublicExperienceForm(tenant, id);
 
     if (!form) {
       return NextResponse.json(

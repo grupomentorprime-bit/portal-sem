@@ -1,4 +1,5 @@
 import { FormDetailClient } from "@/components/admin/forms/FormDetailClient";
+import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
 import { getTenantContext } from "@/core/tenant";
 import { notFound } from "next/navigation";
@@ -19,5 +20,7 @@ export default async function AdminFormDetailPage({ params }: FormDetailPageProp
   const form = await getExperienceFormById(ctx.tenantId, id);
   if (!form) notFound();
 
-  return <FormDetailClient form={form} />;
+  const convocatoria = getConvocatoriaByFormId(id);
+
+  return <FormDetailClient form={form} convocatoria={convocatoria} tenantId={ctx.tenantId} />;
 }

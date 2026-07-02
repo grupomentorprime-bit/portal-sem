@@ -22,6 +22,11 @@ export const PERMISSIONS = {
   "experience.forms.read": "Ver formularios de experiencia",
   "experience.forms.manage": "Gestionar formularios de experiencia",
 
+  // Student Affairs
+  "student-affairs.read": "Ver panel de asuntos estudiantiles",
+  "student-affairs.checkin": "Marcar asistencia y gestionar inasistencias",
+  "student-affairs.manage": "Asignar alcance de asuntos estudiantiles",
+
   // Content
   "programs.manage": "Gestionar programas",
   "news.publish": "Publicar noticias",

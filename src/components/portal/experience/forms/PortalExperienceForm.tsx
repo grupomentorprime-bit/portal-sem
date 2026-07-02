@@ -2,7 +2,11 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { executeExperienceAction } from "@/core/experience/actions";
-import { validateFormSubmission } from "@/core/experience/forms/validation";
+import { validateFormSubmission, normalizeFormSubmissionData } from "@/core/experience/forms/validation";
+import {
+  buildValidationSummaryItems,
+  scrollToFirstFormError,
+} from "@/lib/experience/forms/form-validation-ui";
 import { useExperienceAction } from "@/components/portal/experience/ExperienceActionProvider";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
 import { PortalFormActions } from "./PortalFormActions";
@@ -10,6 +14,8 @@ import { PortalFormError } from "./PortalFormError";
 import { PortalFormFields } from "./PortalFormFields";
 import { PortalFormHeader } from "./PortalFormHeader";
 import { PortalFormSuccess } from "./PortalFormSuccess";
+import { PortalFormValidationSummary } from "./PortalFormValidationSummary";
+import type { ValidationSummaryItem } from "@/lib/experience/forms/form-validation-ui";
 
 interface PortalExperienceFormProps {
   form: ExperienceFormDefinition;
@@ -35,8 +41,10 @@ export function PortalExperienceForm({
   const actionCtx = useExperienceAction();
   const [values, setValues] = useState<Record<string, unknown>>(() => initialValues(form));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [validationSummary, setValidationSummary] = useState<ValidationSummaryItem[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const formClass = useMemo(
@@ -59,6 +67,8 @@ export function PortalExperienceForm({
       delete next[name];
       return next;
     });
+    setValidationSummary((prev) => (prev.length > 0 ? [] : prev));
+    setGlobalError(null);
   }, []);
 
   const runPostSubmit = useCallback(async () => {
@@ -85,11 +95,19 @@ export function PortalExperienceForm({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setGlobalError(null);
+    setValidationSummary([]);
 
-    const clientErrors = validateFormSubmission(form, values);
+    const normalizedValues = normalizeFormSubmissionData(form, values);
+    const clientErrors = validateFormSubmission(form, normalizedValues);
     if (Object.keys(clientErrors).length > 0) {
       setErrors(clientErrors);
+      setValidationSummary(buildValidationSummaryItems(clientErrors, form));
+      scrollToFirstFormError();
       return;
+    }
+
+    if (normalizedValues.phone !== values.phone) {
+      setValues((prev) => ({ ...prev, phone: normalizedValues.phone }));
     }
 
     setSubmitting(true);
@@ -97,7 +115,7 @@ export function PortalExperienceForm({
       const res = await fetch(`/api/experience/forms/${encodeURIComponent(form._id)}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: values }),
+        body: JSON.stringify({ data: normalizedValues }),
       });
       const payload = (await res.json()) as {
         ok: boolean;
@@ -109,6 +127,8 @@ export function PortalExperienceForm({
       if (!payload.ok) {
         if (payload.errors) {
           setErrors(payload.errors);
+          setValidationSummary(buildValidationSummaryItems(payload.errors, form));
+          scrollToFirstFormError();
         }
         setGlobalError(payload.error ?? payload.message ?? form.errorMessage);
         return;
@@ -122,10 +142,12 @@ export function PortalExperienceForm({
 
       if (form.postSubmit?.type === "message") {
         setSuccessMessage(message);
+        setShowSuccessOverlay(variant !== "modal");
       } else {
         await runPostSubmit();
         if (form.postSubmit?.type !== "redirect" && form.postSubmit?.type !== "page") {
           setSuccessMessage(message);
+          setShowSuccessOverlay(variant !== "modal");
         } else if (onSuccessClose) {
           onSuccessClose();
         }
@@ -137,13 +159,30 @@ export function PortalExperienceForm({
     }
   };
 
-  if (successMessage) {
+  const handleDismissSuccess = useCallback(() => {
+    if (onSuccessClose) {
+      onSuccessClose();
+      return;
+    }
+    setShowSuccessOverlay(false);
+  }, [onSuccessClose]);
+
+  if (successMessage && showSuccessOverlay) {
     return (
-      <div className={formClass}>
+      <div className={`${formClass} portal-experience-form--submitted`}>
         <PortalFormSuccess
           message={successMessage}
-          onClose={onSuccessClose}
+          onClose={handleDismissSuccess}
+          variant="overlay"
         />
+      </div>
+    );
+  }
+
+  if (successMessage) {
+    return (
+      <div className={`${formClass} portal-experience-form--submitted`}>
+        <PortalFormSuccess message={successMessage} onClose={onSuccessClose} variant="inline" />
       </div>
     );
   }
@@ -162,6 +201,7 @@ export function PortalExperienceForm({
         description={description}
       />
 
+      {validationSummary.length > 0 ? <PortalFormValidationSummary items={validationSummary} /> : null}
       {globalError ? <PortalFormError message={globalError} /> : null}
 
       <PortalFormFields

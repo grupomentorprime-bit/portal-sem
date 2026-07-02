@@ -1,10 +1,13 @@
 import { ObjectId } from "mongodb";
-import { revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
-import { createSemDefaultForms } from "@/core/experience/forms/defaults";
+import { createSemDefaultForms, SEM_DEFAULT_FORM_IDS } from "@/core/experience/forms/defaults";
 import { resolveFormId } from "@/core/experience/forms/engine";
+import { isExperienceFormPublished } from "@/lib/experience/forms/status";
 import type {
+  ExperienceFormAbsenceReview,
   ExperienceFormCreate,
+  ExperienceFormDayCheckIn,
   ExperienceFormDefinition,
   ExperienceFormSubmission,
   ExperienceFormUpdate,
@@ -12,10 +15,19 @@ import type {
 
 const COLLECTION = "experience_forms";
 const SUBMISSIONS = "experience_form_submissions";
+const SUPPRESSIONS = "experience_form_suppressions";
 const CACHE_TAG = "experience-forms";
 
 function tenantFilter(tenant: string) {
   return { tenant };
+}
+
+function revalidateExperienceFormsCache(formId?: string): void {
+  revalidateTag(CACHE_TAG, "max");
+  if (formId) {
+    revalidateTag(`experience-form-${formId}`, "max");
+  }
+  revalidatePath("/formularios", "layout");
 }
 
 export async function listExperienceForms(tenant: string): Promise<ExperienceFormDefinition[]> {
@@ -23,6 +35,48 @@ export async function listExperienceForms(tenant: string): Promise<ExperienceFor
   const forms = await db
     .collection<ExperienceFormDefinition>(COLLECTION)
     .find(tenantFilter(tenant))
+    .sort({ name: 1 })
+    .toArray();
+  return forms;
+}
+
+async function getPurgedFormIds(tenant: string): Promise<Set<string>> {
+  const db = await getDatabase();
+  const docs = await db
+    .collection<{ formId: string }>(SUPPRESSIONS)
+    .find(tenantFilter(tenant))
+    .toArray();
+  return new Set(docs.map((doc) => doc.formId));
+}
+
+async function recordPurgedForm(tenant: string, formId: string): Promise<void> {
+  const db = await getDatabase();
+  const resolvedId = resolveFormId(formId);
+  await db.collection(SUPPRESSIONS).updateOne(
+    { tenant, formId: resolvedId },
+    { $set: { tenant, formId: resolvedId, purgedAt: new Date().toISOString() } },
+    { upsert: true }
+  );
+}
+
+async function clearPurgedForm(tenant: string, formId: string): Promise<void> {
+  const db = await getDatabase();
+  const resolvedId = resolveFormId(formId);
+  await db.collection(SUPPRESSIONS).deleteOne({ tenant, formId: resolvedId });
+}
+
+export async function listPublicExperienceForms(
+  tenant: string
+): Promise<ExperienceFormDefinition[]> {
+  const db = await getDatabase();
+  const forms = await db
+    .collection<ExperienceFormDefinition>(COLLECTION)
+    .find({
+      ...tenantFilter(tenant),
+      active: true,
+      visible: true,
+      archived: { $ne: true },
+    })
     .sort({ name: 1 })
     .toArray();
   return forms;
@@ -46,7 +100,7 @@ export async function getPublicExperienceForm(
   id: string
 ): Promise<ExperienceFormDefinition | null> {
   const form = await getExperienceFormById(tenant, id);
-  if (!form || !form.active || !form.visible) return null;
+  if (!form || !isExperienceFormPublished(form)) return null;
   return form;
 }
 
@@ -67,8 +121,7 @@ export async function createExperienceForm(data: ExperienceFormCreate): Promise<
     updatedAt: now,
   };
   await db.collection<ExperienceFormDefinition>(COLLECTION).insertOne(document);
-  revalidateTag(CACHE_TAG, "max");
-  revalidateTag(`experience-form-${document._id}`, "max");
+  revalidateExperienceFormsCache(document._id);
   return document;
 }
 
@@ -84,9 +137,56 @@ export async function updateExperienceForm(
     { $set: { ...update, updatedAt: now } },
     { returnDocument: "after" }
   );
-  revalidateTag(CACHE_TAG, "max");
-  revalidateTag(`experience-form-${id}`, "max");
+  revalidateExperienceFormsCache(id);
   return result ?? null;
+}
+
+export async function archiveExperienceForm(
+  tenant: string,
+  id: string
+): Promise<ExperienceFormDefinition | null> {
+  return updateExperienceForm(tenant, id, {
+    archived: true,
+    active: false,
+    visible: false,
+  });
+}
+
+export async function restoreExperienceForm(
+  tenant: string,
+  id: string
+): Promise<ExperienceFormDefinition | null> {
+  return updateExperienceForm(tenant, id, {
+    archived: false,
+    active: true,
+    visible: false,
+  });
+}
+
+export async function purgeExperienceForm(
+  tenant: string,
+  id: string,
+  options: { deleteSubmissions?: boolean } = {}
+): Promise<boolean> {
+  const db = await getDatabase();
+  const resolvedId = resolveFormId(id);
+  const deleteSubmissions = options.deleteSubmissions ?? true;
+
+  const result = await db.collection<ExperienceFormDefinition>(COLLECTION).deleteOne({
+    _id: resolvedId,
+    ...tenantFilter(tenant),
+  });
+
+  if (result.deletedCount === 0) return false;
+
+  await recordPurgedForm(tenant, resolvedId);
+
+  if (deleteSubmissions) {
+    await db.collection(SUBMISSIONS).deleteMany({ tenant, formId: resolvedId });
+  }
+
+  revalidateExperienceFormsCache(resolvedId);
+  return true;
 }
 
 export async function duplicateExperienceForm(
@@ -117,25 +217,151 @@ export async function saveFormSubmission(
   return { id: _id.toString() };
 }
 
+export async function updateFormSubmissionAbsenceReview(
+  tenant: string,
+  submissionId: string,
+  review: ExperienceFormAbsenceReview,
+  reviewerName?: string
+): Promise<ExperienceFormSubmission | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  const absenceReview: ExperienceFormAbsenceReview = {
+    ...review,
+    reviewedAt: now,
+    reviewedByName: reviewerName?.trim() || review.reviewedByName,
+  };
+
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return null;
+  }
+
+  const result = await db.collection(SUBMISSIONS).findOneAndUpdate(
+    { _id: objectId, tenant },
+    { $set: { absenceReview } },
+    { returnDocument: "after" }
+  );
+
+  if (!result) return null;
+
+  const doc = result as ExperienceFormSubmission & { _id: ObjectId };
+
+  return {
+    ...doc,
+    _id: doc._id?.toString(),
+  };
+}
+
+export async function getFormSubmissionById(
+  tenant: string,
+  submissionId: string
+): Promise<ExperienceFormSubmission | null> {
+  const db = await getDatabase();
+
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return null;
+  }
+
+  const doc = await db
+    .collection(SUBMISSIONS)
+    .findOne({ _id: objectId, tenant });
+
+  if (!doc) return null;
+
+  const submission = doc as ExperienceFormSubmission & { _id: ObjectId };
+
+  return {
+    ...submission,
+    _id: submission._id?.toString(),
+  };
+}
+
+export async function updateFormSubmissionDayCheckIn(
+  tenant: string,
+  submissionId: string,
+  checkIn: ExperienceFormDayCheckIn,
+  operatorName?: string
+): Promise<ExperienceFormSubmission | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  const dayCheckIn: ExperienceFormDayCheckIn = {
+    present: checkIn.present,
+    notes: checkIn.notes?.trim() || undefined,
+    checkedInAt: checkIn.present ? now : undefined,
+    checkedInByName: checkIn.present ? operatorName?.trim() || checkIn.checkedInByName : undefined,
+  };
+
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return null;
+  }
+
+  const result = await db.collection(SUBMISSIONS).findOneAndUpdate(
+    { _id: objectId, tenant },
+    { $set: { dayCheckIn } },
+    { returnDocument: "after" }
+  );
+
+  if (!result) return null;
+
+  const doc = result as ExperienceFormSubmission & { _id: ObjectId };
+
+  return {
+    ...doc,
+    _id: doc._id?.toString(),
+  };
+}
+
+export async function deleteFormSubmission(
+  tenant: string,
+  submissionId: string
+): Promise<boolean> {
+  const db = await getDatabase();
+
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return false;
+  }
+
+  const result = await db.collection(SUBMISSIONS).deleteOne({ _id: objectId, tenant });
+  return result.deletedCount === 1;
+}
+
 export async function seedExperienceForms(tenant: string): Promise<ExperienceFormDefinition[]> {
   const db = await getDatabase();
+  const purged = await getPurgedFormIds(tenant);
   const existing = await db.collection(COLLECTION).countDocuments(tenantFilter(tenant));
-  if (existing > 0) {
-    await ensureDefaultExperienceForms(tenant);
+
+  if (existing === 0) {
+    const defaults = createSemDefaultForms(tenant).filter((form) => !purged.has(form._id));
+    if (defaults.length > 0) {
+      await db.collection<ExperienceFormDefinition>(COLLECTION).insertMany(defaults);
+    }
     return listExperienceForms(tenant);
   }
 
-  const defaults = createSemDefaultForms(tenant);
-  await db.collection<ExperienceFormDefinition>(COLLECTION).insertMany(defaults);
-  return defaults;
+  await ensureDefaultExperienceForms(tenant);
+  return listExperienceForms(tenant);
 }
 
-/** Inserta formularios base que falten (p. ej. nuevas convocatorias). */
+/** Inserta formularios base que falten. Respeta eliminaciones definitivas del admin. */
 export async function ensureDefaultExperienceForms(tenant: string): Promise<void> {
   const db = await getDatabase();
   const defaults = createSemDefaultForms(tenant);
+  const purged = await getPurgedFormIds(tenant);
 
   for (const form of defaults) {
+    if (purged.has(form._id)) continue;
+
     const exists = await db.collection<ExperienceFormDefinition>(COLLECTION).countDocuments({
       _id: form._id,
       ...tenantFilter(tenant),
@@ -144,6 +370,30 @@ export async function ensureDefaultExperienceForms(tenant: string): Promise<void
       await db.collection<ExperienceFormDefinition>(COLLECTION).insertOne(form);
     }
   }
+}
+
+/** Restaura un formulario base eliminado (p. ej. convocatoria). */
+export async function restoreDefaultExperienceForm(
+  tenant: string,
+  formId: string
+): Promise<ExperienceFormDefinition | null> {
+  const resolvedId = resolveFormId(formId);
+  if (!(SEM_DEFAULT_FORM_IDS as readonly string[]).includes(resolvedId)) {
+    return null;
+  }
+
+  const existing = await getExperienceFormById(tenant, resolvedId);
+  if (existing) return existing;
+
+  await clearPurgedForm(tenant, resolvedId);
+
+  const template = createSemDefaultForms(tenant).find((form) => form._id === resolvedId);
+  if (!template) return null;
+
+  const db = await getDatabase();
+  await db.collection<ExperienceFormDefinition>(COLLECTION).insertOne(template);
+  revalidateExperienceFormsCache(resolvedId);
+  return template;
 }
 
 export interface FormSubmissionListOptions {

@@ -200,11 +200,22 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
           defaultValue: "talca-aurora-jul-2026",
         },
         {
+          id: "studentId",
+          type: "hidden",
+          name: "studentId",
+          label: "Alumno",
+        },
+        {
           id: "fullName",
-          type: "text",
+          type: "hidden",
           name: "fullName",
           label: "Nombre completo",
-          validation: { required: true, minLength: 2 },
+        },
+        {
+          id: "program",
+          type: "hidden",
+          name: "program",
+          label: "Generación",
         },
         {
           id: "email",
@@ -217,23 +228,10 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
           id: "phone",
           type: "phone",
           name: "phone",
-          label: "Teléfono",
+          label: "Teléfono de contacto",
+          placeholder: "+56 9 1234 5678",
+          helper: "Formato Chile: +56 9 1234 5678. Actualiza tu número para que el equipo pueda contactarte.",
           validation: { required: true },
-        },
-        {
-          id: "program",
-          type: "select",
-          name: "program",
-          label: "Programa / generación",
-          validation: { required: true },
-          options: [
-            { label: "Diploma Teología Bíblica Pastoral — G-2023", value: "g2023-pastoral" },
-            { label: "Diploma Teología Bíblica — G-2024", value: "g2024" },
-            { label: "Diploma Teología Bíblica — G-2025", value: "g2025" },
-            { label: "Diploma Teología Bíblica — G-2026", value: "g2026" },
-            { label: "Equipo docente / administrativo", value: "staff" },
-            { label: "Otro", value: "other" },
-          ],
         },
         {
           id: "attendance",
@@ -251,7 +249,8 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
           type: "textarea",
           name: "justification",
           label: "Motivo de inasistencia",
-          helper: "Obligatorio si indicó que no asistirá.",
+          helper:
+            "Obligatorio si no podrás asistir. Solo procede por causa de fuerza mayor; debes adjuntar respaldo documental.",
           validation: { maxLength: 1000 },
         },
         {

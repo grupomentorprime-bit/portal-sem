@@ -28,18 +28,60 @@ export function sessionExpiresAt(): string {
   return d.toISOString();
 }
 
-/** Cookies Secure solo cuando la app se sirve por HTTPS (o SESSION_COOKIE_SECURE=true). */
-export function isSecureCookie(): boolean {
+function readSecureCookieOverride(): boolean | null {
   const override = process.env.SESSION_COOKIE_SECURE?.trim().toLowerCase();
   if (override === "true") return true;
   if (override === "false") return false;
+  return null;
+}
 
+function secureCookieFromAppUrl(): boolean | null {
   const appUrl =
     process.env.APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     "";
   if (appUrl.startsWith("https://")) return true;
   if (appUrl.startsWith("http://")) return false;
+  return null;
+}
+
+function secureCookieFromProto(proto: string | null): boolean | null {
+  if (!proto) return null;
+  const normalized = proto.split(",")[0]?.trim().toLowerCase();
+  if (normalized === "https") return true;
+  if (normalized === "http") return false;
+  return null;
+}
+
+function readForwardedProto(headers: Headers): string | null {
+  return (
+    headers.get("x-forwarded-proto") ??
+    headers.get("x-forwarded-protocol") ??
+    headers.get("cloudfront-forwarded-proto")
+  );
+}
+
+/** Cookies Secure según el protocolo real de la petición o APP_URL. */
+export function isSecureCookieFromHeaders(headers: Headers): boolean {
+  const override = readSecureCookieOverride();
+  if (override !== null) return override;
+
+  const fromProto = secureCookieFromProto(readForwardedProto(headers));
+  if (fromProto !== null) return fromProto;
+
+  const fromAppUrl = secureCookieFromAppUrl();
+  if (fromAppUrl !== null) return fromAppUrl;
+
+  return process.env.NODE_ENV === "production";
+}
+
+/** @deprecated Usa `resolveSecureCookie()` en handlers para respetar x-forwarded-proto. */
+export function isSecureCookie(): boolean {
+  const override = readSecureCookieOverride();
+  if (override !== null) return override;
+
+  const fromAppUrl = secureCookieFromAppUrl();
+  if (fromAppUrl !== null) return fromAppUrl;
 
   return process.env.NODE_ENV === "production";
 }

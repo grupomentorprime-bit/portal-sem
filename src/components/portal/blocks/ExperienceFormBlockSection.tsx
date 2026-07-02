@@ -1,10 +1,7 @@
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
 import { PortalExperienceForm } from "@/components/portal/experience/forms";
 import { blockSettings } from "@/lib/portal/blocks";
-import {
-  getPublicExperienceFormCached,
-  seedExperienceForms,
-} from "@/lib/experience/forms/repository";
+import { getPublicExperienceFormCached } from "@/lib/experience/forms/repository";
 import { asString } from "@/lib/cms/block-utils";
 import type { ExperienceFormBlockSettings } from "@/types/experience-forms";
 import type { PageBlock } from "@/types/page";
@@ -18,8 +15,6 @@ export async function ExperienceFormBlockSection({
   block,
   tenant,
 }: ExperienceFormBlockSectionProps) {
-  await seedExperienceForms(tenant);
-
   const settings = blockSettings<ExperienceFormBlockSettings>(block);
   const formId = asString(settings.formId, "information-request");
   const form = await getPublicExperienceFormCached(tenant, formId)();

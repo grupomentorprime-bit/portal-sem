@@ -1,0 +1,236 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import { Alert } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CONVOCATORIA_GENERATIONS } from "@/lib/experience/forms/generations";
+import type { StudentAffairsScope } from "@/types/identity";
+
+interface TeamMember {
+  membershipId: string;
+  displayName: string;
+  email: string;
+  roles: Array<{ name: string; label: string }>;
+  studentAffairsScope?: StudentAffairsScope;
+}
+
+interface ExperienceFormOption {
+  id: string;
+  name: string;
+}
+
+export function StudentAffairsTeamClient() {
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [forms, setForms] = useState<ExperienceFormOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, StudentAffairsScope>>({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [teamRes, contextRes] = await Promise.all([
+        fetch("/api/identity/team"),
+        fetch("/api/student-affairs/context"),
+      ]);
+      const team = await teamRes.json();
+      const context = await contextRes.json();
+
+      if (!team.ok) {
+        setError(team.error ?? "No se pudo cargar el equipo.");
+        return;
+      }
+      if (!context.ok) {
+        setError(context.error ?? "No se pudo cargar formularios.");
+        return;
+      }
+
+      const studentAffairsMembers = (team.members ?? []).filter((member: TeamMember) =>
+        member.roles.some((role) => role.name === "Student Affairs")
+      );
+
+      setMembers(studentAffairsMembers);
+      setForms(
+        (context.forms ?? []).map((form: ExperienceFormOption & { id: string }) => ({
+          id: form.id,
+          name: form.name,
+        }))
+      );
+
+      const initialDrafts: Record<string, StudentAffairsScope> = {};
+      for (const member of studentAffairsMembers) {
+        initialDrafts[member.membershipId] = member.studentAffairsScope ?? {
+          formIds: [],
+          generationCodes: [],
+        };
+      }
+      setDrafts(initialDrafts);
+    } catch {
+      setError("Error de red.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const allForms = useMemo(() => {
+    if (forms.length > 0) return forms;
+    return [];
+  }, [forms]);
+
+  const toggleForm = (membershipId: string, formId: string) => {
+    setDrafts((current) => {
+      const scope = current[membershipId] ?? { formIds: [], generationCodes: [] };
+      const formIds = scope.formIds.includes(formId)
+        ? scope.formIds.filter((id) => id !== formId)
+        : [...scope.formIds, formId];
+      return { ...current, [membershipId]: { ...scope, formIds } };
+    });
+  };
+
+  const toggleGeneration = (membershipId: string, generationCode: string) => {
+    setDrafts((current) => {
+      const scope = current[membershipId] ?? { formIds: [], generationCodes: [] };
+      const generationCodes = scope.generationCodes.includes(generationCode)
+        ? scope.generationCodes.filter((code) => code !== generationCode)
+        : [...scope.generationCodes, generationCode];
+      return { ...current, [membershipId]: { ...scope, generationCodes } };
+    });
+  };
+
+  const saveScope = async (membershipId: string) => {
+    const scope = drafts[membershipId];
+    if (!scope?.formIds.length || !scope.generationCodes.length) {
+      setError("Cada encargada debe tener al menos un formulario y una generación.");
+      return;
+    }
+
+    setSavingId(membershipId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/student-affairs/scope/${membershipId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "No se pudo guardar.");
+        return;
+      }
+      setMembers((current) =>
+        current.map((member) =>
+          member.membershipId === membershipId
+            ? { ...member, studentAffairsScope: data.scope }
+            : member
+        )
+      );
+    } catch {
+      setError("Error de red al guardar.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  return (
+    <AdminModuleLayout
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Asuntos estudiantiles", href: "/admin/portal/asuntos-estudiantiles" },
+        { label: "Asignar encargadas" },
+      ]}
+      title="Asignar encargadas"
+      description="Defina qué formularios y generaciones puede gestionar cada persona de asuntos estudiantiles."
+      actions={
+        <Button variant="outline" size="sm" href="/admin/portal/asuntos-estudiantiles">
+          Volver al panel
+        </Button>
+      }
+    >
+      {loading ? <p className="text-sm text-muted">Cargando equipo…</p> : null}
+      {error ? <Alert variant="warning">{error}</Alert> : null}
+
+      {!loading && members.length === 0 ? (
+        <Alert variant="info">
+          No hay usuarios con rol <strong>Asuntos estudiantiles</strong>. Invítelas desde{" "}
+          <Link href="/admin/settings/users" className="text-primary underline">
+            Usuarios CMS
+          </Link>{" "}
+          y vuelva aquí para asignar formularios y generaciones.
+        </Alert>
+      ) : null}
+
+      <div className="space-y-6">
+        {members.map((member) => {
+          const draft = drafts[member.membershipId] ?? { formIds: [], generationCodes: [] };
+          return (
+            <section
+              key={member.membershipId}
+              className="rounded-xl border border-border bg-background p-5"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="font-semibold text-foreground">{member.displayName}</h2>
+                  <p className="text-sm text-muted">{member.email}</p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={savingId === member.membershipId}
+                  onClick={() => void saveScope(member.membershipId)}
+                >
+                  {savingId === member.membershipId ? "Guardando…" : "Guardar alcance"}
+                </Button>
+              </div>
+
+              <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Formularios
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {allForms.map((form) => (
+                      <label key={form.id} className="flex items-start gap-2 text-sm">
+                        <Checkbox
+                          checked={draft.formIds.includes(form.id)}
+                          onChange={() => toggleForm(member.membershipId, form.id)}
+                        />
+                        <span>{form.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Generaciones
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {CONVOCATORIA_GENERATIONS.map((generation) => (
+                      <label key={generation.value} className="flex items-start gap-2 text-sm">
+                        <Checkbox
+                          checked={draft.generationCodes.includes(generation.value)}
+                          onChange={() =>
+                            toggleGeneration(member.membershipId, generation.value)
+                          }
+                        />
+                        <span>{generation.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </AdminModuleLayout>
+  );
+}

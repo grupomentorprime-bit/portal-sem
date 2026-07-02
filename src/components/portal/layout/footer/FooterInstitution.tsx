@@ -31,11 +31,10 @@ export function FooterInstitution({
     <div className="portal-footer-premium__column portal-footer-premium__column--institution">
       <PortalBrandMark
         logoPrimary={logoPrimary}
-        logoSecondary={logoSecondary}
         institutionName={institutionName}
         institutionShortName={institutionShortName}
-        organization={organization}
         variant="dark"
+        layout="default"
       />
       {institutionName ? (
         <p className="portal-footer-premium__institution-name">{institutionName}</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
 import Link from "next/link";
@@ -15,7 +15,6 @@ const OAUTH_ERRORS: Record<string, string> = {
 };
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") || "/admin";
   const oauthError = searchParams.get("error");
@@ -70,8 +69,9 @@ export function LoginForm() {
         return;
       }
 
-      router.push(nextPath.startsWith("/") ? nextPath : "/admin");
-      router.refresh();
+      const destination = nextPath.startsWith("/") ? nextPath : "/admin";
+      // Navegación completa para que el navegador aplique la cookie de sesión recién emitida.
+      window.location.assign(destination);
     } catch {
       setError("No se pudo conectar con el servidor.");
     } finally {
@@ -139,8 +139,8 @@ export function LoginForm() {
 
       {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
 
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Ingresando…" : "Ingresar"}
+      <Button type="submit" loading={loading} disabled={loading} className="w-full">
+        Ingresar
       </Button>
 
       <p className="text-center text-xs text-muted">

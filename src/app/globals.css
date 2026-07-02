@@ -14,6 +14,7 @@
 @import "../styles/footer-premium.css";
 @import "../styles/experience-forms.css";
 @import "../styles/form-landing.css";
+@import "../styles/form-focused.css";
 @import "../styles/foundation/index.css";
 @import "../styles/editorial-assets.css";
 @import "../styles/institutional-image.css";
@@ -603,6 +604,28 @@ label {
   line-height: 1.12;
   letter-spacing: 0.01em;
   color: var(--gray-600);
+}
+
+.portal-brand-mark--compact {
+  gap: 0.5rem;
+}
+
+.portal-brand-mark--compact .portal-brand-mark__premium-logo {
+  height: 2rem;
+}
+
+.portal-brand-mark--compact .portal-brand-mark__premium-sem {
+  font-size: 1.375rem;
+}
+
+.portal-brand-mark--compact .portal-brand-mark__premium-divider {
+  height: 1.75rem;
+  margin-inline: 0.5rem 0.625rem;
+}
+
+.portal-brand-mark--compact .portal-brand-mark__premium-institution {
+  max-width: 4.75rem;
+  font-size: 0.5625rem;
 }
 
 body:has(.hero-premium) .portal-shell-premium {
@@ -1814,6 +1837,14 @@ body:has(.hero-premium) main {
 .portal-footer-premium .portal-brand-mark__primary-text,
 .portal-footer-premium .portal-brand-mark span {
   color: var(--text-inverse);
+}
+
+.portal-footer-premium .portal-brand-mark__premium-sem {
+  color: var(--text-inverse);
+}
+
+.portal-footer-premium .portal-brand-mark__premium-institution {
+  color: color-mix(in srgb, var(--text-inverse) 72%, transparent);
 }
 
 /* ─── Hero Carousel administrable (OT-PORTAL-014) ─── */

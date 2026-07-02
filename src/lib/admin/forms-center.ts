@@ -2,6 +2,13 @@
  * Centro de formularios — convocatorias, categorías y landings públicas.
  */
 
+import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
+import {
+  formatChilePhoneDisplay,
+  isValidChilePhone,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
+
 export type FormLandingTheme =
   | "convocatoria"
   | "attendance"
@@ -13,6 +20,7 @@ export interface FormLandingHighlight {
   icon: "calendar" | "map-pin" | "users" | "book" | "heart" | "clock" | "sparkles" | "message";
   label: string;
   value: string;
+  href?: string;
 }
 
 export interface FormLandingConfig {
@@ -45,20 +53,25 @@ export const FORM_CONVOCATORIAS: FormConvocatoria[] = [
     date: "2026-07-04",
     location: "Talca Aurora",
     description:
-      "Confirmación de asistencia a la jornada presencial del viernes 4 de julio de 2026.",
+      "Confirmación de asistencia a la jornada presencial de evaluación del sábado 4 de julio de 2026.",
     active: true,
     landing: {
       theme: "convocatoria",
-      eyebrow: "Convocatoria presencial",
-      headline: "Jornada en Talca Aurora",
+      eyebrow: "Convocatoria presencial · evaluación",
+      headline: "Jornada de evaluación en Talca Aurora",
       subheadline:
-        "Un día de comunión, formación y encuentro presencial. Confirma tu asistencia o justifica tu inasistencia para que podamos preparar todo con excelencia.",
+        "Un día de evaluación académica, comunión, formación y encuentro presencial. Confirma tu asistencia o justifica tu inasistencia para que podamos preparar todo con excelencia.",
       motivational: "¡Nos encantará verte! Tu presencia fortalece nuestra comunidad formativa.",
       highlights: [
-        { icon: "calendar", label: "Fecha", value: "Viernes 4 de julio de 2026" },
-        { icon: "map-pin", label: "Lugar", value: "Talca Aurora" },
+        { icon: "calendar", label: "Fecha", value: "Sábado 4 de julio de 2026" },
+        {
+          icon: "map-pin",
+          label: "Lugar",
+          value: "Talca Aurora",
+          href: "https://www.google.com/maps/search/?api=1&query=Aurora+Talca+Chile",
+        },
         { icon: "users", label: "Para quién", value: "Estudiantes, docentes y equipo SEM" },
-        { icon: "clock", label: "Horario", value: "Jornada completa — detalles por correo" },
+        { icon: "clock", label: "Horario", value: "Desde las 9:00 am — incluye evaluación académica" },
       ],
       ctaLabel: "Enviar mi respuesta",
     },
@@ -157,6 +170,15 @@ export function getConvocatoriaByFormId(formId: string): FormConvocatoria | unde
   return FORM_CONVOCATORIAS.find((item) => item.formId === formId);
 }
 
+export function getActiveConvocatoria(): FormConvocatoria | undefined {
+  return FORM_CONVOCATORIAS.find((item) => item.active);
+}
+
+export function activeConvocatoriaFormUrl(): string | null {
+  const convocatoria = getActiveConvocatoria();
+  return convocatoria ? publicFormUrl(convocatoria.formId) : null;
+}
+
 export function getFormLandingByFormId(formId: string): FormLandingConfig | undefined {
   const convocatoria = getConvocatoriaByFormId(formId);
   if (convocatoria?.landing) {
@@ -184,12 +206,58 @@ export function publicFormUrl(formId: string): string {
   return `/formularios/${formId}`;
 }
 
+/** URL pública canónica de una convocatoria (mismo destino que publicFormUrl). */
 export function publicConvocatoriaUrl(slug: string): string {
-  return `/formularios/convocatorias/${slug}`;
+  const convocatoria = getConvocatoriaBySlug(slug);
+  if (convocatoria) return publicFormUrl(convocatoria.formId);
+  return `/formularios/${slug}`;
 }
+
+/** IDs de formularios plantilla sustituidos por una convocatoria activa publicada. */
+export function getSupersededFormIds(): Set<string> {
+  const active = getActiveConvocatoria();
+  if (!active) return new Set();
+  return new Set(["attendance-confirmation"]);
+}
+
+export {
+  isExperienceFormArchived,
+  isExperienceFormPublished,
+} from "@/lib/experience/forms/status";
 
 export function attendanceLabel(value: unknown): string {
   if (value === "yes") return "Asistirá";
   if (value === "no") return "No asistirá";
   return "Sin definir";
+}
+
+export const ABSENCE_REVIEW_STATUS_OPTIONS = [
+  { value: "pending", label: "Pendiente de revisión" },
+  { value: "approved", label: "Fuerza mayor aceptada" },
+  { value: "rejected", label: "No procede" },
+] as const;
+
+export const ABSENCE_REVIEW_POLICY =
+  "Las inasistencias solo se justifican por causa de fuerza mayor (enfermedad grave, duelo, emergencia familiar u otra situación equivalente) y deben respaldarse con documentación verificable.";
+
+export function absenceReviewStatusLabel(status?: string): string {
+  return (
+    ABSENCE_REVIEW_STATUS_OPTIONS.find((option) => option.value === status)?.label ??
+    "Pendiente de revisión"
+  );
+}
+
+export function formatSubmissionProgram(value: unknown): string {
+  return formatGenerationDisplay(value);
+}
+
+export function formatSubmissionPhone(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "—";
+  if (isValidChilePhone(raw)) return normalizeChilePhone(raw) ?? formatChilePhoneDisplay(raw);
+  return formatChilePhoneDisplay(raw) || raw;
+}
+
+export function getSubmissionGeneration(data: Record<string, unknown>): string {
+  return formatSubmissionProgram(data.generation ?? data.program);
 }

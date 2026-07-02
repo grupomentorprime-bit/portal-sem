@@ -8,7 +8,7 @@ import type {
   IdentitySession,
   IdentityUser,
 } from "@/types/identity";
-import { SESSION_COOKIE, isSecureCookie } from "@/core/identity/auth/config";
+import { SESSION_COOKIE, isSecureCookieFromHeaders } from "@/core/identity/auth/config";
 import { generateId } from "@/core/identity/auth/crypto";
 
 export async function createSession(input: {
@@ -66,9 +66,10 @@ export async function deleteUserSessions(userId: string): Promise<void> {
 
 export async function setSessionCookie(sessionId: string): Promise<void> {
   const jar = await cookies();
+  const h = await headers();
   jar.set(SESSION_COOKIE, sessionId, {
     httpOnly: true,
-    secure: isSecureCookie(),
+    secure: isSecureCookieFromHeaders(h),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,

@@ -47,12 +47,20 @@ export interface IdentityCredential {
   updatedAt: string;
 }
 
+/** Alcance operativo para encargadas de asuntos estudiantiles. */
+export interface StudentAffairsScope {
+  formIds: string[];
+  generationCodes: string[];
+}
+
 export interface IdentityMembership {
   _id: string;
   tenantId: string;
   userId: string;
   roleIds: string[];
   status: MembershipStatus;
+  /** Formularios y generaciones asignados (rol Asuntos Estudiantiles). */
+  studentAffairsScope?: StudentAffairsScope;
   joinedAt: string;
   invitedBy?: string;
   createdAt: string;

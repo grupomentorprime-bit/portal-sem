@@ -3,11 +3,16 @@ import type {
   ExperienceFormField,
   ExperienceFormFieldType,
 } from "@/types/experience-forms";
+import { hasSubmissionAttachment } from "@/lib/experience/forms/attachments";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  isValidChilePhone,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
 
 export type FieldErrors = Record<string, string>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[\d\s+()-]{6,20}$/;
 
 function asString(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -20,7 +25,8 @@ function validateByType(type: ExperienceFormFieldType, value: string): string | 
     case "email":
       return value && !EMAIL_RE.test(value) ? "Correo electrónico inválido" : null;
     case "phone":
-      return value && !PHONE_RE.test(value) ? "Teléfono inválido" : null;
+      if (!value) return null;
+      return isValidChilePhone(value) ? null : CHILE_PHONE_INVALID_MESSAGE;
     case "number": {
       if (!value) return null;
       const n = Number(value);
@@ -95,6 +101,21 @@ export function validateFormSubmission(
   return applyConditionalFormRules(form, data, errors);
 }
 
+export function normalizeFormSubmissionData(
+  form: ExperienceFormDefinition,
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const normalized = { ...data };
+  const phoneField = form.fields.find((field) => field.name === "phone" && field.type === "phone");
+  if (phoneField) {
+    const rawPhone = asString(data.phone);
+    if (rawPhone) {
+      normalized.phone = normalizeChilePhone(rawPhone) ?? rawPhone;
+    }
+  }
+  return normalized;
+}
+
 /** Reglas cruzadas entre campos (p. ej. justificación obligatoria si no asiste). */
 function applyConditionalFormRules(
   form: ExperienceFormDefinition,
@@ -104,13 +125,37 @@ function applyConditionalFormRules(
   const hasAttendance = form.fields.some((field) => field.name === "attendance");
   if (!hasAttendance) return errors;
 
+  const hasRosterLookup =
+    form.fields.some((field) => field.name === "studentId") ||
+    form.fields.some((field) => field.name === "eventId" && field.type === "hidden");
+  if (hasRosterLookup) {
+    const registrationMode = asString(data.registrationMode);
+    const studentId = asString(data.studentId);
+
+    if (registrationMode === "manual") {
+      if (!asString(data.fullName)) {
+        errors.fullName = "Debe indicar su nombre completo.";
+      }
+    } else if (!studentId) {
+      errors.studentId =
+        "Busca tu nombre en el listado o usa la opción de registro manual si no apareces.";
+    }
+  }
+
   const attendance = asString(data.attendance);
   if (attendance === "no") {
     const justification = asString(data.justification);
     if (!justification || justification.length < 10) {
       errors.justification =
-        "Debe indicar el motivo de su inasistencia (mínimo 10 caracteres).";
+        "Debe explicar el motivo de inasistencia por fuerza mayor (mínimo 10 caracteres).";
     }
+
+    if (!hasSubmissionAttachment(data.justificationAttachment)) {
+      errors.justificationAttachment = "Debe adjuntar un justificativo de respaldo (PDF o imagen).";
+    }
+  } else {
+    delete errors.justification;
+    delete errors.justificationAttachment;
   }
 
   return errors;

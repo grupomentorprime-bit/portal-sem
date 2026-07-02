@@ -46,6 +46,7 @@ export async function GET() {
         displayName: user?.displayName ?? "",
         status: membership.status,
         roleIds: membership.roleIds,
+        studentAffairsScope: membership.studentAffairsScope,
         roles: memberRoles.map((role) => ({
           id: role._id,
           name: role.name,

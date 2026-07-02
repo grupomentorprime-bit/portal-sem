@@ -8,9 +8,10 @@ interface AdminShellProps {
   children: React.ReactNode;
   user: AdminUserSummary | null;
   compatMode: boolean;
+  permissions: string[];
 }
 
-export function AdminShell({ children, user, compatMode }: AdminShellProps) {
+export function AdminShell({ children, user, compatMode, permissions }: AdminShellProps) {
   const pathname = usePathname();
   const hideChrome = pathname === "/admin/login";
 
@@ -20,7 +21,11 @@ export function AdminShell({ children, user, compatMode }: AdminShellProps) {
 
   return (
     <div className="min-h-screen bg-background-soft">
-      <AdminInstitutionalHeader user={user} compatMode={compatMode} />
+      <AdminInstitutionalHeader
+        user={user}
+        compatMode={compatMode}
+        permissions={permissions}
+      />
       {children}
     </div>
   );

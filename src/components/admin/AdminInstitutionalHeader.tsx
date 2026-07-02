@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Clock3 } from "lucide-react";
-import { ADMIN_PRIMARY_NAV, isNavActive } from "@/lib/admin/institutional";
+import { isNavActive } from "@/lib/admin/institutional";
+import { filterAdminNav } from "@/lib/admin/nav-access";
 import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 import { AdminNavDrawer } from "@/components/admin/AdminNavDrawer";
 import { AdminStatusBadges } from "@/components/admin/AdminStatusBadges";
@@ -16,16 +17,22 @@ import { cn } from "@/lib/utils";
 interface AdminInstitutionalHeaderProps {
   user: AdminUserSummary | null;
   compatMode: boolean;
+  permissions: string[];
 }
 
-export function AdminInstitutionalHeader({ user, compatMode }: AdminInstitutionalHeaderProps) {
+export function AdminInstitutionalHeader({
+  user,
+  compatMode,
+  permissions,
+}: AdminInstitutionalHeaderProps) {
   const pathname = usePathname();
+  const navItems = filterAdminNav(permissions, compatMode);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       {/* Barra superior: marca + utilidades */}
       <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-2 sm:px-6">
-        <AdminNavDrawer />
+        <AdminNavDrawer compatMode={compatMode} permissions={permissions} />
 
         <Link
           href="/admin"
@@ -67,7 +74,7 @@ export function AdminInstitutionalHeader({ user, compatMode }: AdminInstitutiona
             className="-mb-px flex flex-wrap items-center gap-x-0.5"
             aria-label="Administración institucional"
           >
-            {ADMIN_PRIMARY_NAV.map((item) => {
+            {navItems.map((item) => {
               const active = isNavActive(pathname, item);
               return (
                 <Link

@@ -5,12 +5,19 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Drawer } from "@/components/ui/drawer";
-import { ADMIN_PRIMARY_NAV, isNavActive } from "@/lib/admin/institutional";
+import { isNavActive } from "@/lib/admin/institutional";
+import { filterAdminNav } from "@/lib/admin/nav-access";
 import { cn } from "@/lib/utils";
 
-export function AdminNavDrawer() {
+interface AdminNavDrawerProps {
+  compatMode: boolean;
+  permissions: string[];
+}
+
+export function AdminNavDrawer({ compatMode, permissions }: AdminNavDrawerProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const navItems = filterAdminNav(permissions, compatMode);
 
   return (
     <>
@@ -25,7 +32,7 @@ export function AdminNavDrawer() {
 
       <Drawer open={open} onClose={() => setOpen(false)} title="Centro de Administración" side="left">
         <nav className="space-y-1" aria-label="Navegación principal">
-          {ADMIN_PRIMARY_NAV.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

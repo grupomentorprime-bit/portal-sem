@@ -1,4 +1,11 @@
 import { AdminPageFrame } from "@/components/admin/AdminPageFrame";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+import { BookOpen } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -11,11 +18,14 @@ export default function HelpSettingsPage() {
       backHref="/admin"
       backLabel="Volver al inicio"
     >
-      <div className="space-y-4 text-sm">
-        <p className="text-muted">
-          Recursos para el equipo del Seminario Eclesiástico Mayor.
-        </p>
-        <ul className="space-y-2">
+      <AdminModuleCenter>
+        <AdminModuleHero {...ADMIN_PANEL_META.help} />
+        <AdminModuleSectionHeader
+          icon={BookOpen}
+          title="Recursos rápidos"
+          description="Enlaces frecuentes para el equipo del Seminario Eclesiástico Mayor."
+        />
+        <ul className="space-y-2 text-sm">
           <li>
             <Link href="/admin/settings/users" className="text-primary underline">
               Administrar usuarios del CMS
@@ -32,7 +42,7 @@ export default function HelpSettingsPage() {
             </Link>
           </li>
         </ul>
-      </div>
+      </AdminModuleCenter>
     </AdminPageFrame>
   );
 }

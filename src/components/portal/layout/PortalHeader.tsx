@@ -110,10 +110,8 @@ export function PortalHeader({
             >
               <PortalBrandMark
                 logoPrimary={logoPrimary}
-                logoSecondary={logoSecondary}
                 institutionName={institutionName}
                 institutionShortName={institutionShortName}
-                organization={organization}
                 variant="light"
                 layout={isPremium ? "premium-hero" : "default"}
               />

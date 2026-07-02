@@ -5,6 +5,7 @@ import { HeroPremiumSection } from "@/components/portal/sections/HeroPremiumSect
 import { PortalHero } from "@/components/portal/PortalHero";
 import { PortalHeroBenefits, parseHeroBenefits } from "@/components/portal/PortalHeroBenefits";
 import { mapResolvedSlideToPremiumView } from "@/core/hero/map-slide";
+import { resolveConvocatoriaHeroLinks } from "@/core/hero/resolve-convocatoria-hero-links";
 import { blockSettings, extractStats, findBlock } from "@/lib/portal/blocks";
 import {
   DEFAULT_GENERATION_CARD,
@@ -161,6 +162,7 @@ export async function HeroBlockSection({ block, tenant, ctx, allBlocks }: HeroBl
 
   if (variant === "sem_premium") {
     const resolved = blockToResolvedSlide(settings, configuredHeroImage);
+    resolveConvocatoriaHeroLinks([resolved]);
     const view = mapResolvedSlideToPremiumView(resolved);
 
     return <HeroPremiumSection slides={[view]} type="image" />;

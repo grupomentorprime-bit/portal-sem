@@ -1,6 +1,7 @@
 import "server-only";
 
 import { mapResolvedSlidesToPremiumViews } from "@/core/hero/map-slide";
+import { resolveConvocatoriaHeroLinks } from "@/core/hero/resolve-convocatoria-hero-links";
 import { resolveHeroSlidesFloatingCards } from "@/core/hero/resolve-floating-card";
 import { resolveHeroSlides } from "@/core/hero/resolve";
 import { buildHeroSlidesSignature } from "@/core/hero/slide-signature";
@@ -18,6 +19,7 @@ export async function HeroPortalSection({ tenant, heroPortal }: HeroPortalSectio
   if (resolvedSlides.length === 0) return null;
 
   await resolveHeroSlidesFloatingCards(tenant, resolvedSlides);
+  resolveConvocatoriaHeroLinks(resolvedSlides);
 
   const views = mapResolvedSlidesToPremiumViews(resolvedSlides);
   const slidesKey = buildHeroSlidesSignature(views);

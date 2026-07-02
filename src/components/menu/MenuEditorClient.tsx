@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Layers, Menu, Navigation, Settings } from "lucide-react";
+import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { countVisibleItems } from "@/lib/cms/menu-utils";
 import { MenuItemEditor } from "@/components/menu/MenuItemEditor";
 import { MenuPreview } from "@/components/menu/MenuPreview";
 import { MenuSortableList } from "@/components/menu/MenuSortableList";
@@ -114,29 +123,59 @@ export function MenuEditorClient({ menu: initialMenu }: MenuEditorClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background-soft dark:bg-gray-900">
-      <header className="border-b border-border bg-background dark:border-gray-700 dark:bg-gray-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <Link href="/admin/menus" className="text-sm text-muted hover:underline">
-              ← Menús
-            </Link>
-            <h1 className="text-xl font-semibold">{menu.name}</h1>
-            <p className="text-sm text-muted">
-              {menu.location} · {menu.items.length} ítems ·{" "}
-              {menu.active ? "Activo" : "Inactivo"}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <SaveLabel status={saveStatus} isDirty={isDirty} />
-            <Button onClick={handleSave} disabled={saveStatus === "saving" || !isDirty}>
-              Guardar
-            </Button>
-          </div>
+    <AdminModuleLayout
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Portal", href: "/admin/pages" },
+        { label: "Menús", href: "/admin/menus" },
+        { label: menu.name },
+      ]}
+      title={menu.name}
+      description={`${menu.location} · ${menu.items.length} ítems · ${menu.active ? "Activo" : "Inactivo"}`}
+      actions={
+        <div className="flex items-center gap-3">
+          <SaveLabel status={saveStatus} isDirty={isDirty} />
+          <Link href="/admin/menus">
+            <Button variant="outline">Volver a menús</Button>
+          </Link>
+          <Button onClick={handleSave} disabled={saveStatus === "saving" || !isDirty}>
+            Guardar
+          </Button>
         </div>
-      </header>
+      }
+    >
+      <AdminModuleCenter>
+        <AdminModuleHero
+          eyebrow="Portal · Editor de menú"
+          heroTitle={menu.name}
+          heroDescription={`Ubicación ${menu.location}. Arrastra ítems, edita enlaces y previsualiza la navegación.`}
+        />
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-2 sm:px-6">
+        <AdminModuleStats
+          items={[
+            { label: "Ítems totales", value: menu.items.length, icon: Menu, tone: "total" },
+            {
+              label: "Visibles",
+              value: countVisibleItems(menu.items),
+              icon: Navigation,
+              tone: "active",
+            },
+            {
+              label: "Niveles",
+              value: Math.max(0, ...menu.items.map((item) => item.level ?? 0)) + 1,
+              icon: Layers,
+              tone: "published",
+            },
+          ]}
+        />
+
+        <AdminModuleSectionHeader
+          icon={Settings}
+          title="Estructura y edición"
+          description="Configura el menú, reordena ítems y ajusta cada enlace en el panel lateral."
+        />
+
+      <div className="grid gap-6 lg:grid-cols-2">
         {error ? (
           <div className="lg:col-span-2 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
             {error}
@@ -211,8 +250,9 @@ export function MenuEditorClient({ menu: initialMenu }: MenuEditorClientProps) {
             </Card>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+      </AdminModuleCenter>
+    </AdminModuleLayout>
   );
 }
 

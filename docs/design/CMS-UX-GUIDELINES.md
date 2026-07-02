@@ -134,7 +134,9 @@ Mensajes en español claro: “No se pudo guardar la configuración”, no códi
 
 Definida en `src/lib/admin/institutional.ts` → `ADMIN_PRIMARY_NAV`:
 
-Inicio · Portal · Institución · Comunicaciones · Personas · Medios · Administración
+Inicio · Institución · Portal · Programas y cursos · Centro de admisión · Comunicaciones · Personas · Medios · Administración
+
+Capas (de identidad a sistema): orientación → identidad → presencia pública → oferta académica → contenido editorial → recursos → administración.
 
 No añadir enlaces técnicos al header sin actualizar este manual y la OT correspondiente.
 

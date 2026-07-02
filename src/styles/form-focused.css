@@ -1,0 +1,162 @@
+/**
+ * Formularios individuales — experiencia enfocada (mobile-first).
+ */
+
+.form-focused-shell {
+  --form-focused-header-h: 3.75rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+}
+
+.form-focused-shell__header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--form-focused-header-h);
+  padding: 0.5rem 1rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--sem-primary) 6%, transparent);
+  transform: translateZ(0);
+}
+
+.form-focused-shell__brand {
+  display: inline-flex;
+  max-width: min(100%, 20rem);
+  text-decoration: none;
+  pointer-events: none;
+}
+
+.form-focused-shell__brand .portal-brand-mark--compact .portal-brand-mark__premium-logo {
+  height: 2.35rem;
+}
+
+.form-focused-shell__brand .portal-brand-mark--compact .portal-brand-mark__premium-sem {
+  font-size: 1.5rem;
+}
+
+.form-focused-shell__brand .portal-brand-mark--compact .portal-brand-mark__premium-divider {
+  height: 2rem;
+}
+
+.form-focused-shell__brand .portal-brand-mark--compact .portal-brand-mark__premium-institution {
+  max-width: 5.25rem;
+  font-size: 0.625rem;
+}
+
+.form-focused-shell__main {
+  flex: 1;
+  width: 100%;
+  padding-top: calc(var(--form-focused-header-h) + env(safe-area-inset-top, 0px));
+}
+
+.form-focused-shell__legal {
+  flex-shrink: 0;
+  padding: 1.25rem 1rem 1.75rem;
+  text-align: center;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--background) 96%, var(--sem-primary));
+}
+
+.form-focused-shell__legal p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Menos ruido visual: el alumno va directo al formulario */
+.form-focused-shell .form-landing__breadcrumb,
+.form-focused-shell .form-landing__editorial,
+.form-focused-shell .form-landing__footer {
+  display: none;
+}
+
+.form-focused-shell .form-landing__hero-inner {
+  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.form-focused-shell .form-landing__highlights {
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 639px) {
+  .form-focused-shell .form-landing__hero-inner {
+    padding-top: 1.25rem;
+    padding-inline: 1rem;
+  }
+
+  .form-focused-shell .form-landing__headline {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+
+  .form-focused-shell .form-landing__highlights {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .form-focused-shell .form-landing__highlight {
+    padding: 0.75rem;
+  }
+
+  .form-focused-shell .form-landing__form-section {
+    margin-top: -1.25rem;
+    padding-inline: 0;
+    padding-bottom: 0.75rem;
+  }
+
+  .form-focused-shell .form-landing__form-card {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-inline: none;
+    padding: 1.5rem 1.125rem 1.125rem;
+    box-shadow: 0 -10px 36px color-mix(in srgb, var(--sem-primary) 12%, transparent);
+  }
+
+  .form-focused-shell .form-landing__form-card::before {
+    border-radius: 0;
+  }
+
+  .form-focused-shell .portal-experience-form__radio-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .form-focused-shell .portal-experience-form--inline {
+    padding: 0;
+    border: none;
+    background: transparent;
+  }
+}
+
+/* Botón de envío fijo al final en celular */
+@media (max-width: 639px) {
+  .form-focused-shell__legal {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .form-focused-shell .portal-experience-form__actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    margin: 0;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--background) 94%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .form-focused-shell .portal-experience-form__submit {
+    width: 100%;
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+}
