@@ -39,7 +39,7 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
   const [submissions, setSubmissions] = useState<ExperienceFormSubmission[]>([]);
   const [stats, setStats] = useState<SubmissionStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<AttendanceFilter>("pending-checkin");
+  const [filter, setFilter] = useState<AttendanceFilter>("all");
   const [generationFilter, setGenerationFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -228,7 +228,8 @@ export function StudentAffairsOperationsPanel({ formId }: StudentAffairsOperatio
           <div className="sa-ops__summary">
             <div className="sa-ops__metrics">
               <Metric label="Respuestas" value={stats.total} />
-              <Metric label="Confirmaron" value={stats.attending} accent="highlight" />
+              <Metric label="Asistirán" value={stats.attending} accent="highlight" />
+              <Metric label="No asistirán" value={stats.notAttending} accent="warning" />
               <Metric label="Llegaron hoy" value={checkedInCount} accent="highlight" />
               <Metric label="Por llegar" value={pendingArrival} accent="pending" />
             </div>
@@ -457,13 +458,14 @@ function Metric({
 }: {
   label: string;
   value: number;
-  accent?: "highlight" | "pending";
+  accent?: "highlight" | "pending" | "warning";
 }) {
   return (
     <div
       className={cn(
         accent === "highlight" && "sa-ops__metric--highlight",
-        accent === "pending" && "sa-ops__metric--pending"
+        accent === "pending" && "sa-ops__metric--pending",
+        accent === "warning" && "sa-ops__metric--warning"
       )}
     >
       <p className="sa-ops__metric-value">{value}</p>

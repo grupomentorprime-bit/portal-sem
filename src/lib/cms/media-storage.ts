@@ -2,7 +2,12 @@ import { unlink, rm, readFile } from "fs/promises";
 import path from "path";
 import { deleteS3Object, getS3ObjectBuffer, putS3Object } from "@/lib/cms/storage-s3";
 import { assertS3StorageForUpload, resolveStorageSettings } from "@/lib/cms/storage-config";
-import { buildMediaProxyUrl, usesPrivateMediaProxy } from "@/lib/cms/storage-normalize";
+import {
+  buildMediaProxyUrl,
+  isValidMediaStorageKey,
+  MEDIA_STREAM_PATH,
+  usesPrivateMediaProxy,
+} from "@/lib/cms/storage-normalize";
 import type { ResolvedStorageSettings } from "@/types/integrations";
 
 export interface StoragePutResult {
@@ -39,6 +44,41 @@ function buildPublicUrl(settings: ResolvedStorageSettings, key: string): string 
 
   if (base && settings.mode === "s3") return `${base}/media/${key}`;
   return `/media/${key}`;
+}
+
+function stripMediaVersionQuery(url: string): string {
+  return url.replace(/([?&])v=\d+(?:&|$)/, "$1").replace(/[?&]$/, "");
+}
+
+/** Extrae la clave de almacenamiento (tenant/media-…/archivo) desde una URL pública o del proxy. */
+export function storageKeyFromMediaUrl(url: string): string | null {
+  const trimmed = stripMediaVersionQuery(url.trim());
+  if (!trimmed) return null;
+
+  try {
+    const parsed = trimmed.startsWith("http")
+      ? new URL(trimmed)
+      : new URL(trimmed, "https://placeholder.local");
+    if (parsed.pathname === MEDIA_STREAM_PATH || parsed.pathname.endsWith(MEDIA_STREAM_PATH)) {
+      const key = parsed.searchParams.get("key")?.trim();
+      return key && isValidMediaStorageKey(key) ? key : null;
+    }
+    const pathOnly = `${parsed.pathname}${parsed.search}`;
+    if (pathOnly.startsWith("/media/")) {
+      const key = pathOnly.replace(/^\/media\//, "").replace(/\?.*$/, "");
+      return isValidMediaStorageKey(key) ? key : null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+/** Reconstruye la URL pública actual de un archivo según la configuración de almacenamiento activa. */
+export async function resolveMediaStoragePublicUrl(storageKey: string): Promise<string> {
+  const settings = await resolveStorageSettings();
+  return buildPublicUrl(settings, storageKey);
 }
 
 export async function readMediaFile(key: string): Promise<{ buffer: Buffer; mimeType: string } | null> {

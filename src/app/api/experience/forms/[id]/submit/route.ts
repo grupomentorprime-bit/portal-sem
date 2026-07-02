@@ -18,6 +18,7 @@ import {
   saveFormSubmission,
 } from "@/lib/experience/forms/repository";
 import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
+import { resolveConfirmationEmailCtaUrl } from "@/lib/notifications/resolve-confirmation-email-cta";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -223,7 +224,10 @@ export async function POST(request: Request, { params }: RouteParams) {
             attendance === "yes"
               ? experience.formShell.attendanceYesMessage
               : experience.formShell.attendanceNoMessage;
-          confirmationEmailCtaUrl = experience.formShell.confirmationEmailCtaUrl;
+          confirmationEmailCtaUrl = await resolveConfirmationEmailCtaUrl(
+            tenant,
+            experience.formShell
+          );
           confirmationEmailCtaLabel = experience.formShell.confirmationEmailCtaLabel;
         } catch (experienceError) {
           console.error(

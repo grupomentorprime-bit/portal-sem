@@ -40,3 +40,4 @@ yarn-error.log*
 # uploaded media (local storage)
 /public/media/*
 !/public/media/.gitkeep
+/data/media/

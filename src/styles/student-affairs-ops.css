@@ -38,7 +38,13 @@
 
 @media (min-width: 640px) {
   .sa-ops__metrics {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .sa-ops__metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
@@ -64,6 +70,10 @@
 
 .sa-ops__metric--pending .sa-ops__metric-value {
   color: color-mix(in srgb, var(--sem-accent) 55%, white);
+}
+
+.sa-ops__metric--warning .sa-ops__metric-value {
+  color: color-mix(in srgb, var(--sem-warning, #f59e0b) 70%, white);
 }
 
 .sa-ops__progress-label {
