@@ -136,9 +136,9 @@
 }
 
 .admission-hero__status-badge--success {
-  background: color-mix(in srgb, var(--success, #16a34a) 12%, var(--background));
-  color: color-mix(in srgb, var(--success, #16a34a) 85%, var(--foreground));
-  border: 1px solid color-mix(in srgb, var(--success, #16a34a) 25%, transparent);
+  background: var(--state-success-bg);
+  color: var(--state-success-fg);
+  border: 1px solid var(--state-success-border);
 }
 
 .admission-hero__status-badge--info {
@@ -368,7 +368,7 @@ a.admission-hero__indicator:hover {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: #000;
+  background: var(--gray-900);
   pointer-events: none;
 }
 

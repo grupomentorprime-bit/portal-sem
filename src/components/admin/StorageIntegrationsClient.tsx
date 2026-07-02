@@ -311,7 +311,7 @@ export function StorageIntegrationsClient() {
                 className={
                   testStatus === "error"
                     ? "text-sm text-[var(--color-danger)]"
-                    : "text-sm text-[var(--color-success,#15803d)]"
+                    : "text-sm text-[var(--color-success)]"
                 }
               >
                 {testMessage}

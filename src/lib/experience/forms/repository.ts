@@ -127,7 +127,6 @@ export async function seedExperienceForms(tenant: string): Promise<ExperienceFor
 
   const defaults = createSemDefaultForms(tenant);
   await db.collection<ExperienceFormDefinition>(COLLECTION).insertMany(defaults);
-  revalidateTag(CACHE_TAG, "max");
   return defaults;
 }
 
@@ -145,8 +144,6 @@ export async function ensureDefaultExperienceForms(tenant: string): Promise<void
       await db.collection<ExperienceFormDefinition>(COLLECTION).insertOne(form);
     }
   }
-
-  revalidateTag(CACHE_TAG, "max");
 }
 
 export interface FormSubmissionListOptions {

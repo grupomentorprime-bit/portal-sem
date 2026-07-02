@@ -1,5 +1,8 @@
 import "server-only";
 
+import { colorDefaults, neutralScale } from "@/design/tokens/colors";
+import { shadow } from "@/design/tokens/shadow";
+
 export interface TransactionalEmailInput {
   institutionName: string;
   previewText: string;
@@ -12,14 +15,14 @@ export interface TransactionalEmailInput {
 }
 
 const BRAND = {
-  primary: "#1e3a5f",
-  primaryDark: "#152a45",
-  accent: "#c9a227",
-  text: "#1f2937",
-  muted: "#6b7280",
-  border: "#e5e7eb",
-  background: "#f3f4f6",
-  card: "#ffffff",
+  primary: colorDefaults.primary,
+  primaryDark: neutralScale[900],
+  accent: colorDefaults.accent,
+  text: colorDefaults.foreground,
+  muted: colorDefaults.muted,
+  border: colorDefaults.border,
+  background: neutralScale[50],
+  card: colorDefaults.surface,
 };
 
 export function renderTransactionalEmail(input: TransactionalEmailInput): string {
@@ -35,7 +38,7 @@ export function renderTransactionalEmail(input: TransactionalEmailInput): string
           <tr>
             <td style="border-radius:10px;background:${BRAND.primary};">
               <a href="${escapeHtmlAttr(input.ctaUrl)}" target="_blank" rel="noopener noreferrer"
-                style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">
+                style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:${BRAND.card};text-decoration:none;border-radius:10px;">
                 ${escapeHtml(input.ctaLabel)}
               </a>
             </td>
@@ -69,13 +72,13 @@ export function renderTransactionalEmail(input: TransactionalEmailInput): string
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
             <tr>
               <td style="padding:0 0 20px;text-align:center;">
-                <div style="display:inline-block;padding:10px 18px;border-radius:999px;background:${BRAND.primaryDark};color:#ffffff;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
+                <div style="display:inline-block;padding:10px 18px;border-radius:999px;background:${BRAND.primaryDark};color:${BRAND.card};font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
                   ${institution}
                 </div>
               </td>
             </tr>
             <tr>
-              <td style="background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;padding:32px 28px;box-shadow:0 10px 30px rgba(15,23,42,0.06);">
+              <td style="background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;padding:32px 28px;box-shadow:${shadow.lg};">
                 <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:${BRAND.text};">${escapeHtml(input.headline)}</h1>
                 ${greeting}
                 <div style="font-size:15px;line-height:1.7;color:${BRAND.text};">
@@ -99,7 +102,7 @@ export function renderTransactionalEmail(input: TransactionalEmailInput): string
 }
 
 export function renderInfoBox(html: string): string {
-  return `<div style="margin:20px 0;padding:16px 18px;border-radius:12px;background:#f8fafc;border:1px solid ${BRAND.border};font-size:14px;line-height:1.6;color:${BRAND.text};">${html}</div>`;
+  return `<div style="margin:20px 0;padding:16px 18px;border-radius:12px;background:${BRAND.background};border:1px solid ${BRAND.border};font-size:14px;line-height:1.6;color:${BRAND.text};">${html}</div>`;
 }
 
 export function renderCredentialRow(label: string, value: string): string {
@@ -112,7 +115,7 @@ export function renderSteps(items: string[]): string {
       (item, index) => `
         <tr>
           <td style="vertical-align:top;padding:0 12px 14px 0;width:28px;">
-            <div style="width:24px;height:24px;border-radius:999px;background:${BRAND.primary};color:#ffffff;font-size:12px;font-weight:700;line-height:24px;text-align:center;">
+            <div style="width:24px;height:24px;border-radius:999px;background:${BRAND.primary};color:${BRAND.card};font-size:12px;font-weight:700;line-height:24px;text-align:center;">
               ${index + 1}
             </div>
           </td>
