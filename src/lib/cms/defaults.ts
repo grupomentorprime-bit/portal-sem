@@ -1,4 +1,5 @@
 import { createDefaultHeroPortal } from "@/lib/cms/hero-portal-defaults";
+import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
 import { colorDefaults } from "@/design/tokens/colors";
 import {
   createDefaultSiteConfigModules,
@@ -29,7 +30,7 @@ export function createDefaultSiteConfig(): SiteConfig {
       logoMediaId: "",
       secondaryLogo: "",
       secondaryLogoMediaId: "",
-      favicon: "",
+      favicon: PLATFORM_ASSET_FALLBACKS.favicon,
       faviconMediaId: "",
       heroImage: "",
       heroMediaId: "",

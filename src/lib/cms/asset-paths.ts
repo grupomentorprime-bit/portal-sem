@@ -6,6 +6,8 @@ export const PLATFORM_ASSET_FALLBACKS = {
   logo: "/images/logo-sem-isotype.png",
   /** Isotipo blanco — fondos oscuros (footer, watermarks) */
   logoOnDark: "/images/logo-sem-isotype-white.png",
+  /** Isotipo SEM — favicon y pestaña del navegador */
+  favicon: "/images/logo-sem-favicon.png",
   logoLegacy: "/images/logo-sem.svg",
   secondaryLogo: "/images/logo-ipn.svg",
 } as const;

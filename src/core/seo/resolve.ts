@@ -32,7 +32,7 @@ export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Me
         })
       : Promise.resolve(branding.favicon || undefined);
 
-  const faviconUrl = await favicon;
+  const faviconUrl = (await favicon) || undefined;
 
   return {
     title,
