@@ -3,10 +3,21 @@ import "server-only";
 import { findMediaById } from "@/core/media/lookup";
 import { resolvePublicUrl } from "@/lib/app-url";
 import {
+  readMediaFile,
   resolveMediaStoragePublicUrl,
   storageKeyFromMediaUrl,
 } from "@/lib/cms/media-storage";
 import type { FormExperienceFormShell } from "@/types/experience-form-experience";
+
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+export interface ResolvedConfirmationEmailCta {
+  url?: string;
+  attachment?: {
+    filename: string;
+    content: Buffer;
+  };
+}
 
 function buildStorageKeyFromAsset(
   tenant: string,
@@ -18,17 +29,24 @@ function buildStorageKeyFromAsset(
   return `${safeTenant}/${mediaId}/${mediaId}.${ext}`;
 }
 
+function attachmentFilename(originalName: string, storageKey: string): string {
+  const trimmed = originalName.trim();
+  if (trimmed) return trimmed;
+  const fromKey = storageKey.split("/").pop();
+  return fromKey?.trim() || "programa.pdf";
+}
+
 /**
- * Resuelve la URL del botón del correo de confirmación usando el mediaId actual
- * y la configuración de almacenamiento vigente (evita URLs obsoletas guardadas en el formulario).
+ * Resuelve la URL del botón del correo y, si el archivo existe en almacenamiento,
+ * prepara el adjunto para enviarlo junto al correo.
  */
-export async function resolveConfirmationEmailCtaUrl(
+export async function resolveConfirmationEmailCta(
   tenant: string,
   formShell: Pick<
     FormExperienceFormShell,
     "confirmationEmailCtaMediaId" | "confirmationEmailCtaUrl"
   >
-): Promise<string | undefined> {
+): Promise<ResolvedConfirmationEmailCta> {
   const mediaId = formShell.confirmationEmailCtaMediaId?.trim();
   const storedUrl = formShell.confirmationEmailCtaUrl?.trim();
 
@@ -40,20 +58,72 @@ export async function resolveConfirmationEmailCtaUrl(
         storageKeyFromMediaUrl(asset.thumbnail) ??
         buildStorageKeyFromAsset(tenant, asset._id, asset.extension);
 
-      try {
-        const currentUrl = await resolveMediaStoragePublicUrl(storageKey);
-        return resolvePublicUrl(currentUrl);
-      } catch (error) {
-        console.warn("[convocatoria] failed to rebuild CTA media URL, using stored asset url", {
+      const file = await readMediaFile(storageKey);
+      if (!file) {
+        console.warn("[convocatoria] confirmation email CTA file missing in storage", {
           mediaId,
-          error,
+          storageKey,
+          tenant,
         });
-        return resolvePublicUrl(asset.url);
+        return {};
       }
+
+      const currentUrl = await resolveMediaStoragePublicUrl(storageKey);
+      const url = resolvePublicUrl(currentUrl);
+      const attachment =
+        file.buffer.length > 0 && file.buffer.length <= MAX_ATTACHMENT_BYTES
+          ? {
+              filename: attachmentFilename(asset.originalName, storageKey),
+              content: file.buffer,
+            }
+          : undefined;
+
+      return { url, attachment };
     }
 
     console.warn("[convocatoria] confirmation email CTA media not found", { mediaId, tenant });
+    return {};
   }
 
-  return resolvePublicUrl(storedUrl);
+  if (storedUrl) {
+    const storageKey = storageKeyFromMediaUrl(storedUrl);
+    if (storageKey) {
+      const file = await readMediaFile(storageKey);
+      if (!file) {
+        console.warn("[convocatoria] confirmation email CTA stored URL points to missing file", {
+          storageKey,
+          tenant,
+        });
+        return {};
+      }
+
+      const currentUrl = await resolveMediaStoragePublicUrl(storageKey);
+      const url = resolvePublicUrl(currentUrl);
+      const attachment =
+        file.buffer.length > 0 && file.buffer.length <= MAX_ATTACHMENT_BYTES
+          ? {
+              filename: attachmentFilename("", storageKey),
+              content: file.buffer,
+            }
+          : undefined;
+
+      return { url, attachment };
+    }
+
+    return { url: resolvePublicUrl(storedUrl) };
+  }
+
+  return {};
+}
+
+/** @deprecated Usar resolveConfirmationEmailCta */
+export async function resolveConfirmationEmailCtaUrl(
+  tenant: string,
+  formShell: Pick<
+    FormExperienceFormShell,
+    "confirmationEmailCtaMediaId" | "confirmationEmailCtaUrl"
+  >
+): Promise<string | undefined> {
+  const resolved = await resolveConfirmationEmailCta(tenant, formShell);
+  return resolved.url;
 }

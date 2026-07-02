@@ -92,6 +92,7 @@ export async function sendTransactionalHtmlEmail(input: {
   to: string;
   subject: string;
   html: string;
+  attachments?: Array<{ filename: string; content: Buffer }>;
 }): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const resend = getResendClient();
   if (!resend) {
@@ -103,6 +104,10 @@ export async function sendTransactionalHtmlEmail(input: {
     to: input.to,
     subject: input.subject,
     html: input.html,
+    attachments: input.attachments?.map((attachment) => ({
+      filename: attachment.filename,
+      content: attachment.content,
+    })),
   });
 
   if (error) {

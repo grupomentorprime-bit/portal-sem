@@ -12,10 +12,10 @@ import {
   buildValidationSummaryItems,
   scrollToFirstFormError,
 } from "@/lib/experience/forms/form-validation-ui";
-import { launchAttendanceConfetti } from "@/lib/experience/forms/celebration";
 import { canSubmitConvocatoriaForm } from "@/lib/experience/forms/convocatoria-identity";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
 import { ConvocatoriaParticipantFields } from "./ConvocatoriaParticipantFields";
+import { ConvocatoriaResponseSuccess } from "./ConvocatoriaResponseSuccess";
 import { PortalFormActions } from "./PortalFormActions";
 import { PortalFormError } from "./PortalFormError";
 import { PortalFormHeader } from "./PortalFormHeader";
@@ -34,7 +34,6 @@ interface PortalConvocatoriaExperienceFormProps {
   attendanceYesMessage?: string;
   attendanceNoMessage?: string;
   attendanceYesSuccessMessage?: string;
-  celebrateAttendanceYes?: boolean;
 }
 
 export function PortalConvocatoriaExperienceForm({
@@ -48,13 +47,13 @@ export function PortalConvocatoriaExperienceForm({
   attendanceYesMessage,
   attendanceNoMessage,
   attendanceYesSuccessMessage,
-  celebrateAttendanceYes = false,
 }: PortalConvocatoriaExperienceFormProps) {
   const [values, setValues] = useState<Record<string, unknown>>(() => initialValues(form));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [validationSummary, setValidationSummary] = useState<ValidationSummaryItem[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [submittedAttendance, setSubmittedAttendance] = useState<"yes" | "no" | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
@@ -284,10 +283,9 @@ export function PortalConvocatoriaExperienceForm({
       }
 
       const confirmedAttendance = submissionData.attendance === "yes";
-      if (confirmedAttendance && celebrateAttendanceYes) {
-        launchAttendanceConfetti();
-      }
+      const declinedAttendance = submissionData.attendance === "no";
 
+      setSubmittedAttendance(confirmedAttendance ? "yes" : declinedAttendance ? "no" : null);
       setSuccessNotice(
         payload.confirmationEmail && !payload.confirmationEmail.sent
           ? "Tu respuesta quedó registrada, pero no pudimos enviar el correo de confirmación. Revisa la carpeta de spam o contacta a asuntos estudiantiles."
@@ -296,7 +294,9 @@ export function PortalConvocatoriaExperienceForm({
       setSuccessMessage(
         confirmedAttendance && attendanceYesSuccessMessage
           ? attendanceYesSuccessMessage
-          : payload.message ?? form.postSubmit?.message ?? form.successMessage ?? "Formulario enviado correctamente."
+          : declinedAttendance && attendanceNoMessage
+            ? attendanceNoMessage
+            : payload.message ?? form.postSubmit?.message ?? form.successMessage ?? "Formulario enviado correctamente."
       );
     } catch {
       setGlobalError(form.errorMessage);
@@ -308,12 +308,22 @@ export function PortalConvocatoriaExperienceForm({
   if (successMessage) {
     return (
       <div className={`${formClass} portal-experience-form--submitted`}>
-        <PortalFormSuccess message={successMessage} variant="inline" />
-        {successNotice ? (
-          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {successNotice}
-          </p>
-        ) : null}
+        {submittedAttendance ? (
+          <ConvocatoriaResponseSuccess
+            attendance={submittedAttendance}
+            message={successMessage}
+            notice={successNotice}
+          />
+        ) : (
+          <>
+            <PortalFormSuccess message={successMessage} variant="inline" />
+            {successNotice ? (
+              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {successNotice}
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
     );
   }

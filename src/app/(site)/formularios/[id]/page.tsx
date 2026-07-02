@@ -147,7 +147,6 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
           attendanceYesMessage={shell.attendanceYesMessage}
           attendanceNoMessage={shell.attendanceNoMessage}
           attendanceYesSuccessMessage={shell.attendanceYesSuccessMessage}
-          celebrateAttendanceYes={shell.celebrateAttendanceYes}
         />
       ) : (
         <PortalExperienceForm

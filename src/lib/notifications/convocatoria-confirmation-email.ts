@@ -28,6 +28,8 @@ export interface ConvocatoriaConfirmationEmailInput {
   confirmationEmailCtaUrl?: string;
   /** Si se define, reemplaza la etiqueta por defecto del botón del correo. */
   confirmationEmailCtaLabel?: string;
+  /** PDF u otro documento adjunto al correo (p. ej. programa de la jornada). */
+  confirmationEmailAttachment?: { filename: string; content: Buffer };
 }
 
 const DEFAULT_YES_MESSAGE =
@@ -142,6 +144,9 @@ export function renderConvocatoriaConfirmationEmail(
         ? "Te esperamos puntualmente desde las 9:00 a.m. Recuerda que la jornada incluye evaluación académica."
         : "Si tu situación cambia, contacta a asuntos estudiantiles. Estamos para acompañarte en tu proceso formativo."}
     </p>
+    ${input.confirmationEmailAttachment
+      ? `<p style="margin:18px 0 0;font-size:14px;line-height:1.7;color:#5C7289;">El programa de la jornada va <strong>adjunto a este correo</strong>. También puedes descargarlo con el botón de abajo.</p>`
+      : ""}
   `;
 
   const html = renderTransactionalEmail({
@@ -171,5 +176,12 @@ export async function sendConvocatoriaConfirmationEmail(
   }
 
   const { subject, html } = renderConvocatoriaConfirmationEmail(input);
-  return sendTransactionalHtmlEmail({ to, subject, html });
+  return sendTransactionalHtmlEmail({
+    to,
+    subject,
+    html,
+    attachments: input.confirmationEmailAttachment
+      ? [input.confirmationEmailAttachment]
+      : undefined,
+  });
 }

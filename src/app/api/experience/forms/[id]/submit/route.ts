@@ -18,7 +18,7 @@ import {
   saveFormSubmission,
 } from "@/lib/experience/forms/repository";
 import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
-import { resolveConfirmationEmailCtaUrl } from "@/lib/notifications/resolve-confirmation-email-cta";
+import { resolveConfirmationEmailCta } from "@/lib/notifications/resolve-confirmation-email-cta";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -217,6 +217,9 @@ export async function POST(request: Request, { params }: RouteParams) {
         let professorMessage: string | undefined;
         let confirmationEmailCtaUrl: string | undefined;
         let confirmationEmailCtaLabel: string | undefined;
+        let confirmationEmailAttachment:
+          | { filename: string; content: Buffer }
+          | undefined;
 
         try {
           const experience = await getFormExperienceUncached(tenant, id, form.name);
@@ -224,10 +227,9 @@ export async function POST(request: Request, { params }: RouteParams) {
             attendance === "yes"
               ? experience.formShell.attendanceYesMessage
               : experience.formShell.attendanceNoMessage;
-          confirmationEmailCtaUrl = await resolveConfirmationEmailCtaUrl(
-            tenant,
-            experience.formShell
-          );
+          const resolvedCta = await resolveConfirmationEmailCta(tenant, experience.formShell);
+          confirmationEmailCtaUrl = resolvedCta.url;
+          confirmationEmailAttachment = resolvedCta.attachment;
           confirmationEmailCtaLabel = experience.formShell.confirmationEmailCtaLabel;
         } catch (experienceError) {
           console.error(
@@ -247,6 +249,7 @@ export async function POST(request: Request, { params }: RouteParams) {
             professorMessage,
             confirmationEmailCtaUrl,
             confirmationEmailCtaLabel,
+            confirmationEmailAttachment,
           });
 
           if (emailResult.ok) {

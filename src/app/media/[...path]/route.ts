@@ -23,11 +23,17 @@ export async function GET(
     return new NextResponse(null, { status: 404 });
   }
 
+  const filename = key.split("/").pop() || "archivo";
+  const headers: Record<string, string> = {
+    "Content-Type": file.mimeType,
+    "Cache-Control": "public, max-age=31536000, immutable",
+  };
+  if (file.mimeType === "application/pdf" || !file.mimeType.startsWith("image/")) {
+    headers["Content-Disposition"] = `attachment; filename="${filename.replace(/[^\w.\-() ]+/g, "_")}"`;
+  }
+
   return new NextResponse(new Uint8Array(file.buffer), {
     status: 200,
-    headers: {
-      "Content-Type": file.mimeType,
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
+    headers,
   });
 }

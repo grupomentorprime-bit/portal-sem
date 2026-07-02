@@ -740,16 +740,6 @@ export function FormExperienceEditor({
               )}
             </Field>
           ))}
-          <div className="md:col-span-2">
-            <Switch
-              checked={experience.formShell.celebrateAttendanceYes ?? false}
-              onChange={(celebrateAttendanceYes) =>
-                update({ formShell: { ...experience.formShell, celebrateAttendanceYes } })
-              }
-              label="Confetti al confirmar asistencia"
-              description="Lanza una celebración visual cuando alguien responde «Sí, asistiré» y envía el formulario."
-            />
-          </div>
           {isConvocatoria ? (
             <div className="md:col-span-2 space-y-4 rounded-lg border border-border bg-muted/10 p-4">
               <div>
@@ -807,23 +797,39 @@ export function FormExperienceEditor({
               />
               {experience.formShell.confirmationEmailCtaUrl ||
               experience.formShell.confirmationEmailCtaMediaId ? (
-                <div className="md:col-span-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      update({
-                        formShell: {
-                          ...experience.formShell,
-                          confirmationEmailCtaMediaId: "",
-                          confirmationEmailCtaUrl: "",
-                        },
-                      })
-                    }
-                  >
-                    Quitar documento
-                  </Button>
+                <div className="md:col-span-2 space-y-2">
+                  <p className="text-sm text-muted">
+                    Después de guardar, abre el enlace de prueba. Si ves un error, vuelve a subir el PDF
+                    desde la biblioteca de medios.
+                  </p>
+                  {experience.formShell.confirmationEmailCtaUrl ? (
+                    <a
+                      href={experience.formShell.confirmationEmailCtaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex text-sm font-medium text-primary hover:underline"
+                    >
+                      Probar descarga del documento
+                    </a>
+                  ) : null}
+                  <div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        update({
+                          formShell: {
+                            ...experience.formShell,
+                            confirmationEmailCtaMediaId: "",
+                            confirmationEmailCtaUrl: "",
+                          },
+                        })
+                      }
+                    >
+                      Quitar documento
+                    </Button>
+                  </div>
                 </div>
               ) : null}
               <Field

@@ -18,6 +18,9 @@ import {
   buildStorageKey,
   deleteMediaPrefix,
   putMediaFile,
+  readMediaFile,
+  resolveMediaStoragePublicUrl,
+  storageKeyFromMediaUrl,
 } from "@/lib/cms/media-storage";
 import { invalidateMediaCache } from "@/core/media/cache";
 import { mediaHasUsage } from "@/lib/cms/media-usage-helpers";
@@ -177,6 +180,50 @@ export interface UploadMediaInput {
   skipDuplicateCheck?: boolean;
 }
 
+function storageKeyForAsset(asset: CmsMediaAsset, originalName?: string): string {
+  const fromUrl = storageKeyFromMediaUrl(asset.url);
+  if (fromUrl) return fromUrl;
+
+  const ext =
+    originalName?.split(".").pop()?.toLowerCase() ??
+    asset.extension?.replace(/^\./, "") ??
+    "bin";
+  return buildStorageKey(asset.tenant, asset._id, `${asset._id}.${ext}`);
+}
+
+async function repairMissingMediaStorage(
+  asset: CmsMediaAsset,
+  buffer: Buffer,
+  mimeType: string,
+  originalName: string
+): Promise<CmsMediaAsset> {
+  const storageKey = storageKeyForAsset(asset, originalName);
+  const existing = await readMediaFile(storageKey);
+  if (existing) return normalizeAsset(asset);
+
+  await putMediaFile(storageKey, buffer, mimeType);
+  const url = await resolveMediaStoragePublicUrl(storageKey);
+  const thumbnail = mimeType.startsWith("video/") ? asset.thumbnail : url;
+
+  if (url === asset.url && thumbnail === asset.thumbnail) {
+    return normalizeAsset(asset);
+  }
+
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  const updated: CmsMediaAsset = {
+    ...asset,
+    url,
+    thumbnail,
+    updatedAt: now,
+  };
+
+  await db.collection<CmsMediaAsset>("cms_media").replaceOne({ _id: asset._id }, updated);
+  revalidateMediaTags(asset.tenant, asset._id);
+  invalidateMediaCache(asset._id);
+  return normalizeAsset(updated);
+}
+
 export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsset> {
   const db = await getDatabase();
   const now = new Date().toISOString();
@@ -189,7 +236,14 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
         hash,
         visibility: "active",
       });
-  if (duplicate) return normalizeAsset(duplicate);
+  if (duplicate) {
+    return repairMissingMediaStorage(
+      duplicate,
+      input.buffer,
+      input.mimeType,
+      input.originalName
+    );
+  }
 
   const ext = input.originalName.split(".").pop()?.toLowerCase() ?? "bin";
   const mediaId = `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -289,7 +343,6 @@ export async function moveMedia(
 async function readAssetBuffer(asset: CmsMediaAsset): Promise<Buffer | null> {
   const streamMatch = asset.url.match(/[?&]key=([^&]+)/);
   if (streamMatch) {
-    const { readMediaFile } = await import("@/lib/cms/media-storage");
     const key = decodeURIComponent(streamMatch[1]);
     const file = await readMediaFile(key);
     return file?.buffer ?? null;
@@ -298,12 +351,15 @@ async function readAssetBuffer(asset: CmsMediaAsset): Promise<Buffer | null> {
   try {
     const urlPath = asset.url.replace(/^https?:\/\/[^/]+/, "");
     if (urlPath.startsWith("/media/")) {
-      const relative = urlPath.replace(/^\/media\//, "");
+      const relative = urlPath.replace(/^\/media\//, "").replace(/\?.*$/, "");
+      const key = storageKeyFromMediaUrl(asset.url) ?? relative;
+      const file = await readMediaFile(key);
+      if (file) return file.buffer;
+
       const filePath = path.join(process.cwd(), "public", "media", relative);
       return readFile(filePath);
     }
     if (urlPath.startsWith("/api/cms/media/stream")) {
-      const { readMediaFile } = await import("@/lib/cms/media-storage");
       const key = new URL(asset.url, "http://localhost").searchParams.get("key");
       if (key) {
         const file = await readMediaFile(key);

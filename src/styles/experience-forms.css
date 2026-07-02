@@ -600,6 +600,41 @@
   color: color-mix(in srgb, var(--sem-primary) 82%, black);
 }
 
+/* ─── Éxito post-envío convocatoria ────────────────────────── */
+
+.convocatoria-response-success--no {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+.convocatoria-response-success--no .portal-experience-form__success-title {
+  margin: 0;
+}
+
+.convocatoria-response-success--no .attendance-no-feedback {
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.convocatoria-response-success--no .attendance-no-feedback__icon-wrap {
+  width: 5.5rem;
+  height: 5.5rem;
+}
+
+.convocatoria-response-success--no .attendance-no-feedback__teacher {
+  width: 4.75rem;
+  height: 4.75rem;
+}
+
+.convocatoria-response-success--no .attendance-no-feedback__text {
+  padding-top: 0;
+  max-width: 28rem;
+}
+
 /* ─── Formulario público enfocado (landing / convocatoria) ─── */
 
 .form-focused-shell .form-landing__form-section {
