@@ -18,6 +18,8 @@ export function MediaEmptyState({
   embedded,
 }: MediaEmptyStateProps) {
   const hint = getFolderHint(folder);
+  const uploadLabel =
+    folder === "Documentos" ? "Subir documentos" : folder === "Hero" ? "Subir imágenes" : "Subir archivos";
 
   return (
     <div
@@ -43,7 +45,7 @@ export function MediaEmptyState({
           aria-label={`Subir archivos a ${folder ?? "biblioteca"}`}
         >
           <Upload size={18} className="mr-2" aria-hidden />
-          {uploading ? "Procesando…" : "Subir imágenes"}
+          {uploading ? "Procesando…" : uploadLabel}
         </Button>
       ) : null}
     </div>

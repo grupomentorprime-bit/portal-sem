@@ -36,6 +36,30 @@ import { createCmsId } from "@/types/cms-shared";
 import { FormExperienceAppearancePanel } from "./FormExperienceAppearancePanel";
 import { FormExperienceSeoPanel } from "./FormExperienceSeoPanel";
 
+function extractMediaIdFromUrl(url: string): string | undefined {
+  const match = url.match(/\/(media-[a-z0-9-]+)(?:\/|\.|$)/i);
+  return match?.[1];
+}
+
+function withRecoveredConfirmationEmailMediaId(
+  experience: ExperienceFormExperience
+): ExperienceFormExperience {
+  const url = experience.formShell.confirmationEmailCtaUrl?.trim();
+  const mediaId = experience.formShell.confirmationEmailCtaMediaId?.trim();
+  if (!url || mediaId) return experience;
+
+  const recovered = extractMediaIdFromUrl(url);
+  if (!recovered) return experience;
+
+  return {
+    ...experience,
+    formShell: {
+      ...experience.formShell,
+      confirmationEmailCtaMediaId: recovered,
+    },
+  };
+}
+
 type EditorSection =
   | "blocks"
   | "hero"
@@ -96,6 +120,7 @@ interface FormExperienceEditorProps {
   formName: string;
   tenantId: string;
   mode: "experience" | "seo" | "appearance";
+  isConvocatoria?: boolean;
 }
 
 function Field({
@@ -121,6 +146,7 @@ export function FormExperienceEditor({
   formName,
   tenantId,
   mode,
+  isConvocatoria = false,
 }: FormExperienceEditorProps) {
   const [experience, setExperience] = useState<ExperienceFormExperience | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,7 +170,7 @@ export function FormExperienceEditor({
         setError(data.error ?? "No se pudo cargar la experiencia.");
         return;
       }
-      setExperience(data.experience);
+      setExperience(withRecoveredConfirmationEmailMediaId(data.experience));
     } catch {
       setError("Error de red al cargar la experiencia.");
     } finally {
@@ -172,7 +198,7 @@ export function FormExperienceEditor({
         setError(data.error ?? "Error al guardar.");
         return;
       }
-      setExperience(data.experience);
+      setExperience(withRecoveredConfirmationEmailMediaId(data.experience));
       setSaved(true);
     } catch {
       setError("Error de red al guardar.");
@@ -195,7 +221,7 @@ export function FormExperienceEditor({
         setError(data.error ?? "No se pudo aplicar la plantilla.");
         return;
       }
-      setExperience(data.experience);
+      setExperience(withRecoveredConfirmationEmailMediaId(data.experience));
       setSaved(true);
     } catch {
       setError("Error de red.");
@@ -724,6 +750,105 @@ export function FormExperienceEditor({
               description="Lanza una celebración visual cuando alguien responde «Sí, asistiré» y envía el formulario."
             />
           </div>
+          {isConvocatoria ? (
+            <div className="md:col-span-2 space-y-4 rounded-lg border border-border bg-muted/10 p-4">
+              <div>
+                <p className="font-medium text-foreground">Correo de confirmación</p>
+                <p className="text-sm text-muted">
+                  Configura el botón que aparece al final del correo automático (p. ej. «Ver detalles de la
+                  convocatoria»). Si no subes un documento, el botón llevará a la página pública del
+                  formulario.
+                </p>
+              </div>
+              <Field
+                label="Etiqueta del botón"
+                hint="Opcional. Por defecto: «Ver detalles de la convocatoria» (asistencia) o «Revisar convocatoria» (no asistencia)."
+              >
+                <Input
+                  value={experience.formShell.confirmationEmailCtaLabel ?? ""}
+                  onChange={(e) =>
+                    update({
+                      formShell: {
+                        ...experience.formShell,
+                        confirmationEmailCtaLabel: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Ver detalles de la convocatoria"
+                />
+              </Field>
+              <MediaField
+                label="Documento del botón"
+                description="Sube un PDF u otro archivo desde la biblioteca de medios. El botón del correo abrirá este documento. Para reemplazarlo, haz clic en «Cambiar documento» y elige otro archivo."
+                tenant={tenantId}
+                folder="Documentos"
+                changeLabel="Cambiar documento"
+                value={experience.formShell.confirmationEmailCtaMediaId ?? ""}
+                onChange={(confirmationEmailCtaMediaId) =>
+                  update({
+                    formShell: {
+                      ...experience.formShell,
+                      confirmationEmailCtaMediaId,
+                      ...(confirmationEmailCtaMediaId
+                        ? {}
+                        : { confirmationEmailCtaUrl: "" }),
+                    },
+                  })
+                }
+                onAssetChange={(asset) =>
+                  update({
+                    formShell: {
+                      ...experience.formShell,
+                      confirmationEmailCtaMediaId: asset?._id ?? "",
+                      confirmationEmailCtaUrl: asset?.url ?? "",
+                    },
+                  })
+                }
+              />
+              {experience.formShell.confirmationEmailCtaUrl ||
+              experience.formShell.confirmationEmailCtaMediaId ? (
+                <div className="md:col-span-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      update({
+                        formShell: {
+                          ...experience.formShell,
+                          confirmationEmailCtaMediaId: "",
+                          confirmationEmailCtaUrl: "",
+                        },
+                      })
+                    }
+                  >
+                    Quitar documento
+                  </Button>
+                </div>
+              ) : null}
+              <Field
+                label="Enlace alternativo"
+                hint="Opcional. Pega una URL externa si prefieres no usar la biblioteca de medios."
+              >
+                <Input
+                  type="url"
+                  value={experience.formShell.confirmationEmailCtaUrl ?? ""}
+                  onChange={(e) =>
+                    update({
+                      formShell: {
+                        ...experience.formShell,
+                        confirmationEmailCtaUrl: e.target.value,
+                        ...(e.target.value.trim()
+                          ? {}
+                          : { confirmationEmailCtaMediaId: "" }),
+                      },
+                    })
+                  }
+                  placeholder="https://…"
+                />
+              </Field>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

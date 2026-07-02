@@ -18,6 +18,7 @@ import {
   type HeroMediaContext,
 } from "@/lib/cms/media-hero";
 import { MediaManager, type MediaPickerContext } from "./MediaManager";
+import { MediaPreview } from "./MediaPreview";
 
 export type { MediaSelection };
 
@@ -196,7 +197,14 @@ export function MediaField({
     }
   };
 
-  const selectLabel = value ? changeLabel : "Seleccionar imagen";
+  const selectLabel = value
+    ? changeLabel
+    : folder === "Documentos"
+      ? "Seleccionar documento"
+      : "Seleccionar imagen";
+  const emptyPreviewLabel =
+    folder === "Documentos" ? "Sin documento seleccionado" : "Sin imagen seleccionada";
+  const isImagePreview = previewMeta?.mimeType.startsWith("image/") ?? false;
 
   return (
     <div className="space-y-3">
@@ -213,13 +221,18 @@ export function MediaField({
         <div
           className={`relative flex h-36 w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/20 sm:w-48 ${previewClassName ?? ""}`}
         >
-          {previewUrl ? (
+          {previewMeta ? (
+            isImagePreview && previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewUrl} alt={label} className="h-full w-full object-cover" />
+            ) : (
+              <MediaPreview asset={previewMeta} className="h-full w-full" />
+            )
+          ) : previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={previewUrl} alt={label} className="h-full w-full object-cover" />
           ) : (
-            <span className="px-4 text-center text-xs text-muted">
-              Sin imagen seleccionada
-            </span>
+            <span className="px-4 text-center text-xs text-muted">{emptyPreviewLabel}</span>
           )}
         </div>
         <div className="flex flex-1 flex-col gap-2">
@@ -264,7 +277,14 @@ export function MediaField({
         onClose={() => setPickerOpen(false)}
         onSelect={handleSelect}
         defaultFolder={folder ?? "Hero"}
-        allowedCategory={category ?? "Imagen"}
+        allowedCategory={
+          category ??
+          (resolvedContext === "hero-desktop" ||
+          resolvedContext === "hero-mobile" ||
+          folder === "Hero"
+            ? "Imagen"
+            : undefined)
+        }
         pickerContext={resolvedContext}
         title={`Media Manager — ${label}`}
       />

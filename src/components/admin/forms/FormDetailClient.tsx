@@ -370,6 +370,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
             formName={form.name}
             tenantId={tenantId}
             mode="experience"
+            isConvocatoria={Boolean(convocatoria)}
           />
         ) : null}
 

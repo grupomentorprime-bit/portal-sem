@@ -51,7 +51,7 @@ export function MediaManager({
     pickerContext === "hero-mobile" ||
     defaultFolder === "Hero";
 
-  const lockedFolder = isHeroPicker ? "Hero" : defaultFolder;
+  const lockedFolder = isHeroPicker ? "Hero" : pickMode && defaultFolder ? defaultFolder : defaultFolder;
 
   const [items, setItems] = useState<CmsMediaAsset[]>([]);
   const [total, setTotal] = useState(0);
@@ -230,6 +230,21 @@ export function MediaManager({
     await handleDeleteAsset(asset._id);
   };
 
+  const handleUploadComplete = useCallback(
+    (result: { media: CmsMediaAsset }) => {
+      const { media } = result;
+      setItems((prev) => {
+        const without = prev.filter((item) => item._id !== media._id);
+        return [media, ...without];
+      });
+      setTotal((prev) => Math.max(prev, 1));
+      if (pickMode && onPick) {
+        onPick(media);
+      }
+    },
+    [pickMode, onPick]
+  );
+
   const showUpload = adminMode || allowUploadInPicker;
   const cardVariant = adminMode || pickMode ? "rich" : "default";
   const isEmpty = items.length === 0 && !loading;
@@ -291,7 +306,7 @@ export function MediaManager({
           onChange={setFilters}
           showTagFilter={adminMode || isHeroPicker}
           showFavoriteFilter={false}
-          lockFolder={isHeroPicker}
+          lockFolder={Boolean(lockedFolder && (isHeroPicker || pickMode))}
         />
 
         <MediaToolbar
@@ -320,6 +335,7 @@ export function MediaManager({
             tenant={tenant}
             folder="Hero"
             onUploaded={load}
+            onUploadComplete={handleUploadComplete}
             variant="hero-empty"
             heroMode
           />
@@ -331,6 +347,7 @@ export function MediaManager({
             tenant={tenant}
             folder={effectiveFolder ?? defaultFolder}
             onUploaded={load}
+            onUploadComplete={handleUploadComplete}
             variant={pickMode ? "compact" : "default"}
             heroMode={isHeroPicker}
           />

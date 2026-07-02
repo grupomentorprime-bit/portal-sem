@@ -215,6 +215,8 @@ export async function POST(request: Request, { params }: RouteParams) {
               attendance === "yes"
                 ? experience.formShell.attendanceYesMessage
                 : experience.formShell.attendanceNoMessage,
+            confirmationEmailCtaUrl: experience.formShell.confirmationEmailCtaUrl,
+            confirmationEmailCtaLabel: experience.formShell.confirmationEmailCtaLabel,
           });
 
           if (!emailResult.ok) {

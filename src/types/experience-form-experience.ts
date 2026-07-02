@@ -110,6 +110,12 @@ export interface FormExperienceFormShell {
   attendanceYesSuccessMessage?: string;
   /** Lanzar confetti al enviar con asistencia confirmada. */
   celebrateAttendanceYes?: boolean;
+  /** Etiqueta del botón en el correo de confirmación de convocatoria. */
+  confirmationEmailCtaLabel?: string;
+  /** Archivo (p. ej. PDF) enlazado desde el botón del correo de confirmación. */
+  confirmationEmailCtaMediaId?: string;
+  /** URL pública del documento o enlace del botón del correo de confirmación. */
+  confirmationEmailCtaUrl?: string;
 }
 
 export interface FormExperienceStateMessage {

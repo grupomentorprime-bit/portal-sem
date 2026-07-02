@@ -24,6 +24,10 @@ export interface ConvocatoriaConfirmationEmailInput {
   generation?: string;
   professorMessage?: string;
   institutionName?: string;
+  /** Si se define, reemplaza el enlace por defecto al formulario público. */
+  confirmationEmailCtaUrl?: string;
+  /** Si se define, reemplaza la etiqueta por defecto del botón del correo. */
+  confirmationEmailCtaLabel?: string;
 }
 
 const DEFAULT_YES_MESSAGE =
@@ -98,6 +102,9 @@ export function renderConvocatoriaConfirmationEmail(
     input.professorMessage?.trim() ||
     (isAttending ? DEFAULT_YES_MESSAGE : DEFAULT_NO_MESSAGE);
   const formUrl = `${getAppBaseUrl()}${publicFormUrl(input.convocatoria.formId)}`;
+  const ctaUrl = input.confirmationEmailCtaUrl?.trim() || formUrl;
+  const defaultCtaLabel = isAttending ? "Ver detalles de la convocatoria" : "Revisar convocatoria";
+  const ctaLabel = input.confirmationEmailCtaLabel?.trim() || defaultCtaLabel;
   const firstName = input.participantName.trim().split(/\s+/)[0] || input.participantName;
 
   const headline = isAttending
@@ -143,8 +150,8 @@ export function renderConvocatoriaConfirmationEmail(
     headline,
     greeting: `Hola, ${firstName}`,
     bodyHtml,
-    ctaLabel: isAttending ? "Ver detalles de la convocatoria" : "Revisar convocatoria",
-    ctaUrl: formUrl,
+    ctaLabel,
+    ctaUrl,
     footerNote: "Este correo confirma el registro de tu respuesta en el portal institucional.",
   });
 
