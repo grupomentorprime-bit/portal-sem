@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
 import { uploadMedia } from "@/lib/cms/media";
 import {
+  isS3StorageReady,
+  resolveStorageSettings,
+  STORAGE_S3_REQUIRED_MESSAGE,
+} from "@/lib/cms/storage-config";
+import {
   FORM_ATTACHMENT_MAX_BYTES,
   inferAttachmentMimeType,
   isAllowedAttachmentMimeType,
@@ -24,6 +29,12 @@ export async function POST(request: Request, { params }: RouteParams) {
     const form = await getPublicExperienceForm(tenant, id);
     if (!form) {
       return NextResponse.json({ ok: false, error: "Formulario no disponible." }, { status: 404 });
+    }
+
+    const storageSettings = await resolveStorageSettings();
+    if (!isS3StorageReady(storageSettings)) {
+      console.error("[form-attachment] S3 not configured", { source: storageSettings.source });
+      return NextResponse.json({ ok: false, error: STORAGE_S3_REQUIRED_MESSAGE }, { status: 503 });
     }
 
     const formData = await request.formData();
@@ -73,9 +84,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     return NextResponse.json({ ok: true, attachment });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error al subir el archivo." },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Error al subir el archivo.";
+    const status = message === STORAGE_S3_REQUIRED_MESSAGE ? 503 : 500;
+    return NextResponse.json({ ok: false, error: message }, { status });
   }
 }

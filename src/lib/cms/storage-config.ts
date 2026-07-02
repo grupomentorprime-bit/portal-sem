@@ -105,6 +105,26 @@ export async function resolveStorageSettings(): Promise<ResolvedStorageSettings>
   return resolved;
 }
 
+export const STORAGE_S3_REQUIRED_MESSAGE =
+  "Almacenamiento S3 no configurado. Configure S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY en el servidor, o la integración en Admin → Integraciones → Almacenamiento.";
+
+export function isS3StorageReady(
+  settings: ResolvedStorageSettings
+): settings is ResolvedStorageSettings & { mode: "s3"; s3: NonNullable<ResolvedStorageSettings["s3"]> } {
+  return settings.mode === "s3" && Boolean(settings.s3);
+}
+
+/** Todas las subidas de archivos deben ir a S3 (local solo para lectura legacy en desarrollo). */
+export async function assertS3StorageForUpload(): Promise<
+  NonNullable<ResolvedStorageSettings["s3"]>
+> {
+  const settings = await resolveStorageSettings();
+  if (!isS3StorageReady(settings)) {
+    throw new Error(STORAGE_S3_REQUIRED_MESSAGE);
+  }
+  return settings.s3;
+}
+
 export async function getStorageIntegrationPublic(): Promise<StorageIntegrationPublic> {
   const doc = await fetchStorageDocument();
   const envResolved = resolveFromEnv();

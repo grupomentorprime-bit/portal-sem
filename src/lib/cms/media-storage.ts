@@ -1,7 +1,7 @@
-import { mkdir, writeFile, unlink, rm, readFile } from "fs/promises";
+import { unlink, rm, readFile } from "fs/promises";
 import path from "path";
 import { deleteS3Object, getS3ObjectBuffer, putS3Object } from "@/lib/cms/storage-s3";
-import { resolveStorageSettings } from "@/lib/cms/storage-config";
+import { assertS3StorageForUpload, resolveStorageSettings } from "@/lib/cms/storage-config";
 import { buildMediaProxyUrl, usesPrivateMediaProxy } from "@/lib/cms/storage-normalize";
 import type { ResolvedStorageSettings } from "@/types/integrations";
 
@@ -11,6 +11,14 @@ export interface StoragePutResult {
 }
 
 function localMediaRoot(): string {
+  const configured = process.env.MEDIA_LOCAL_ROOT?.trim();
+  if (configured) return configured;
+
+  // En Docker/producción public/ suele ser de solo lectura para el usuario de la app.
+  if (process.env.NODE_ENV === "production") {
+    return path.join(process.cwd(), "data", "media");
+  }
+
   return path.join(process.cwd(), "public", "media");
 }
 
@@ -73,16 +81,10 @@ export async function putMediaFile(
   buffer: Buffer,
   mimeType: string
 ): Promise<StoragePutResult> {
+  const s3 = await assertS3StorageForUpload();
+  await putS3Object(s3, key, buffer, mimeType);
+
   const settings = await resolveStorageSettings();
-
-  if (settings.mode === "s3" && settings.s3) {
-    await putS3Object(settings.s3, key, buffer, mimeType);
-    return { key, publicUrl: buildPublicUrl(settings, key) };
-  }
-
-  const filePath = path.join(localMediaRoot(), key);
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, buffer);
   return { key, publicUrl: buildPublicUrl(settings, key) };
 }
 
