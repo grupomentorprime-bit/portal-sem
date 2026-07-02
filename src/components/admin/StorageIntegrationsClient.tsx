@@ -1,6 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Cloud, Database, HardDrive, Plug } from "lucide-react";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, Switch } from "@/components/ui";
 import type { StorageAccessMode, StorageIntegrationPublic, StorageIntegrationUpdate, StorageProvider } from "@/types/integrations";
 
@@ -161,9 +169,47 @@ export function StorageIntegrationsClient() {
   }
 
   const isDirty = JSON.stringify(form) !== JSON.stringify(baseline);
+  const storageStatus =
+    meta?.configured && meta?.enabled
+      ? meta.accessMode === "private"
+        ? "S3 privado"
+        : "S3 público"
+      : "Local";
 
   return (
-    <div className="space-y-6">
+    <AdminModuleCenter>
+      <AdminModuleHero {...ADMIN_PANEL_META.integrations} />
+
+      <AdminModuleStats
+        items={[
+          {
+            label: "Estado actual",
+            value: storageStatus,
+            icon: HardDrive,
+            tone: meta?.enabled ? "active" : "neutral",
+          },
+          {
+            label: "Proveedor",
+            value: form.provider === "backblaze-b2" ? "Backblaze B2" : form.provider.toUpperCase(),
+            icon: Cloud,
+            tone: "total",
+          },
+          {
+            label: "Bucket",
+            value: form.bucket || "—",
+            icon: Database,
+            tone: "published",
+          },
+        ]}
+      />
+
+      <AdminModuleSectionHeader
+        icon={Plug}
+        title="Configuración S3"
+        description="Los archivos subidos desde Medios irán al bucket cuando esté activo."
+      />
+
+      <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Almacenamiento en la nube (S3)</CardTitle>
@@ -350,6 +396,7 @@ export function StorageIntegrationsClient() {
           <p>4. En modo privado no necesitas URL pública — el portal sirve los archivos de forma segura.</p>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminModuleCenter>
   );
 }

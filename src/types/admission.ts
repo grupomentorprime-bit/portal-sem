@@ -282,7 +282,6 @@ export interface AdmissionHeroContent {
   subtitle: string;
   description: string;
   media: AdmissionHeroMedia;
-  /** @deprecated Sin texto sobre la imagen — mantener oculto */
   quote?: AdmissionHeroQuote;
   editorialCard?: AdmissionHeroEditorialCard;
   /** @deprecated Migrado a editorialCard */

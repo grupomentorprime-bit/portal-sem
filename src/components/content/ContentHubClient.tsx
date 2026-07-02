@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
+import { BookOpen, FileText, Layers, Newspaper } from "lucide-react";
 import { AdminModuleLayout, AdminQuickActions } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import {
   CONTENT_EDITORIAL_PRIMARY,
   CONTENT_EDITORIAL_SECONDARY,
@@ -102,6 +110,12 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
     }
   };
 
+  const totalItems = useMemo(
+    () => Object.values(counts).reduce((sum, n) => sum + n, 0),
+    [counts]
+  );
+  const activeSections = primarySections.length + secondarySections.length;
+
   return (
     <AdminModuleLayout
       breadcrumbs={[
@@ -113,6 +127,9 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
       description="Gestiona programas, noticias, personas y recursos del portal SEM"
       actions={
         <>
+          <Link href="/" target="_blank">
+            <Button variant="outline">Ver portal público</Button>
+          </Link>
           <Link href="/admin/media">
             <Button variant="outline">Biblioteca de medios</Button>
           </Link>
@@ -122,16 +139,44 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
         </>
       }
     >
-      {error ? (
-        <div className="mb-6 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-          {error}
-        </div>
-      ) : null}
+      <AdminModuleCenter>
+        {error ? (
+          <div className="mb-6 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+            {error}
+          </div>
+        ) : null}
+
+        <AdminModuleHero {...ADMIN_PANEL_META.content} />
+
+        <AdminModuleStats
+          items={[
+            {
+              label: "Secciones activas",
+              value: activeSections,
+              icon: Layers,
+              tone: "total",
+            },
+            {
+              label: "Elementos editoriales",
+              value: totalItems,
+              icon: FileText,
+              tone: "active",
+            },
+            {
+              label: "Colecciones con contenido",
+              value: Object.values(counts).filter((n) => n > 0).length,
+              icon: BookOpen,
+              tone: "published",
+            },
+          ]}
+        />
 
       <section className="mb-10">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
-          Accesos principales
-        </h2>
+        <AdminModuleSectionHeader
+          icon={Newspaper}
+          title="Accesos principales"
+          description="Programas, noticias y piezas editoriales de mayor uso."
+        />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {primarySections.map((section) => (
             <EditorialCard
@@ -148,9 +193,11 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
-          Más secciones
-        </h2>
+        <AdminModuleSectionHeader
+          icon={BookOpen}
+          title="Más secciones"
+          description="Galería, testimonios, agenda académica y recursos complementarios."
+        />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {secondarySections.map((section) => (
             <EditorialCard
@@ -165,9 +212,11 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
       </section>
 
       <section>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
-          Acciones rápidas
-        </h2>
+        <AdminModuleSectionHeader
+          icon={FileText}
+          title="Acciones rápidas"
+          description="Atajos para publicar y mantener el portal actualizado."
+        />
         <AdminQuickActions
           items={[
             ...(features.news
@@ -192,6 +241,7 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
           ]}
         />
       </section>
+      </AdminModuleCenter>
     </AdminModuleLayout>
   );
 }

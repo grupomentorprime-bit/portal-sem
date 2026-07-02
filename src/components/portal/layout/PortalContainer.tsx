@@ -26,19 +26,20 @@ export function PortalContainer({
   );
 }
 
+const paddingMap = {
+  none: "py-0",
+  sm: "py-12 sm:py-16",
+  md: "py-16 sm:py-20",
+  lg: "py-20 sm:py-28",
+};
+
 interface PortalSectionProps {
   children: ReactNode;
   id?: string;
   className?: string;
   muted?: boolean;
-  padding?: "sm" | "md" | "lg";
+  padding?: "none" | "sm" | "md" | "lg";
 }
-
-const paddingMap = {
-  sm: "py-12 sm:py-16",
-  md: "py-16 sm:py-20",
-  lg: "py-20 sm:py-28",
-};
 
 export function PortalSection({
   children,

@@ -1,8 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { Activity, BookOpen, Mail, Users } from "lucide-react";
 import { AuditTimeline, type AuditTimelineEntry } from "@/components/admin/AuditTimeline";
 import { AdminQuickActions } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { formatRelativeTime } from "@/lib/admin/audit-labels";
 import { Badge } from "@/components/ui";
 
@@ -36,7 +44,23 @@ export function AdminDashboardClient({
   const portalActive = portalStatus === "active" || portalStatus === "published";
 
   return (
-    <div className="space-y-8">
+    <AdminModuleCenter>
+      <AdminModuleHero {...ADMIN_PANEL_META.dashboard} />
+
+      <AdminModuleStats
+        items={[
+          { label: "Noticias", value: newsCount, icon: BookOpen, tone: "total" },
+          { label: "Programas", value: programsCount, icon: Activity, tone: "active" },
+          { label: "Usuarios CMS", value: memberCount, icon: Users, tone: "published" },
+          {
+            label: "Invitaciones pendientes",
+            value: invitationsPending,
+            icon: Mail,
+            tone: "neutral",
+          },
+        ]}
+      />
+
       <section className="rounded-2xl border border-border bg-background p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -60,7 +84,13 @@ export function AdminDashboardClient({
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section>
+        <AdminModuleSectionHeader
+          icon={Activity}
+          title="Indicadores del portal"
+          description="Accesos directos a las áreas con más actividad editorial."
+        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Noticias" value={String(newsCount)} href="/admin/content/news" />
         <StatCard label="Programas" value={String(programsCount)} href="/admin/content/programs" />
         <StatCard
@@ -69,12 +99,15 @@ export function AdminDashboardClient({
           href="/admin/settings/users"
         />
         <StatCard label="Usuarios CMS" value={String(memberCount)} href="/admin/settings/users" />
+        </div>
       </section>
 
       <section>
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
-          Acciones rápidas
-        </h3>
+        <AdminModuleSectionHeader
+          icon={BookOpen}
+          title="Acciones rápidas"
+          description="Módulos frecuentes para operar el portal institucional."
+        />
         <AdminQuickActions
           items={[
             {
@@ -132,7 +165,7 @@ export function AdminDashboardClient({
           </div>
         </div>
       </section>
-    </div>
+    </AdminModuleCenter>
   );
 }
 

@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Activity, Cloud, Mail, UserPlus, Users } from "lucide-react";
 import { AuditTimeline, type AuditTimelineEntry } from "@/components/admin/AuditTimeline";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { InviteUserWizard } from "@/components/admin/InviteUserWizard";
 import { UserCmsCard, type UserCmsCardData } from "@/components/admin/UserCmsCard";
 import { CMS_USER_GROUPS } from "@/lib/admin/institutional";
@@ -108,28 +116,49 @@ export function UsuariosCmsClient() {
   }
 
   return (
-    <div className="space-y-8">
+    <AdminModuleCenter>
+      <AdminModuleHero {...ADMIN_PANEL_META.users} />
+
+      <AdminModuleStats
+        items={[
+          { label: "Usuarios activos", value: members.length, icon: Users, tone: "total" },
+          {
+            label: "Invitaciones pendientes",
+            value: invitations.length,
+            icon: Mail,
+            tone: "active",
+          },
+          { label: "Eventos recientes", value: audit.length, icon: Activity, tone: "published" },
+        ]}
+      />
+
       {compatMode ? (
         <div className="rounded-xl border border-[var(--state-warning-border)] bg-[var(--state-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning)]">
           Este entorno permite acceder al CMS sin iniciar sesión. Activa el modo seguro en producción.
         </div>
       ) : null}
 
-      <section className="rounded-xl border border-border bg-background p-4">
-        <h2 className="text-sm font-semibold">Plataforma</h2>
-        <p className="mt-1 text-sm text-muted">
-          Integraciones de infraestructura del portal.
-        </p>
+      <section className="space-y-4">
+        <AdminModuleSectionHeader
+          icon={Cloud}
+          title="Integraciones de plataforma"
+          description="Almacenamiento en la nube y conexiones de infraestructura del portal."
+        />
         <Link
           href="/admin/settings/integrations"
-          className="mt-3 inline-flex text-sm font-medium text-primary underline"
+          className="inline-flex rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-primary underline"
         >
           Almacenamiento en la nube (S3 / Backblaze B2)
         </Link>
       </section>
 
-      <section>
-        <div className="mb-4 flex flex-wrap gap-2">
+      <section className="space-y-4">
+        <AdminModuleSectionHeader
+          icon={Users}
+          title="Equipo del CMS"
+          description="Filtra por grupo institucional y ajusta roles de cada colaborador."
+        />
+        <div className="flex flex-wrap gap-2">
           {CMS_USER_GROUPS.map((group) => (
             <button
               key={group.id}
@@ -166,10 +195,11 @@ export function UsuariosCmsClient() {
       </section>
 
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Invitar usuario</h2>
-          <p className="text-sm text-muted">Asistente guiado para nuevos accesos al CMS.</p>
-        </div>
+        <AdminModuleSectionHeader
+          icon={UserPlus}
+          title="Invitar usuario"
+          description="Asistente guiado para nuevos accesos al CMS."
+        />
         <InviteUserWizard onSubmit={handleInvite} error={error} />
         {invitations.length > 0 ? (
           <div>
@@ -194,12 +224,13 @@ export function UsuariosCmsClient() {
       </section>
 
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Actividad reciente</h2>
-          <p className="text-sm text-muted">Historial legible de cambios en el CMS.</p>
-        </div>
+        <AdminModuleSectionHeader
+          icon={Activity}
+          title="Actividad reciente"
+          description="Historial legible de cambios en el CMS."
+        />
         <AuditTimeline entries={audit} />
       </section>
-    </div>
+    </AdminModuleCenter>
   );
 }

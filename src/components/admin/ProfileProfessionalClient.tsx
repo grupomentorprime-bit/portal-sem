@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button, Input, Label, Select } from "@/components/ui";
+import { Briefcase, Globe, Shield, User } from "lucide-react";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+import { Button, Input, Label, Select } from "@/components/ui";
 import { LOCALE_OPTIONS, TIMEZONE_OPTIONS } from "@/lib/admin/institutional";
 import { formatRelativeTime } from "@/lib/admin/audit-labels";
 
@@ -83,7 +91,18 @@ export function ProfileProfessionalClient() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+    <AdminModuleCenter>
+      <AdminModuleHero {...ADMIN_PANEL_META.profile} />
+
+      <AdminModuleStats
+        items={[
+          { label: "Rol institucional", value: roleLabel || "—", icon: Briefcase, tone: "total" },
+          { label: "Permisos activos", value: permissions.length, icon: Shield, tone: "active" },
+          { label: "Idioma", value: locale, icon: Globe, tone: "published" },
+        ]}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       <aside className="rounded-xl border border-border bg-background p-6 text-center lg:text-left">
         <div className="flex flex-col items-center gap-4 lg:items-start">
           <AdminUserAvatar name={displayName || email} size="lg" />
@@ -107,7 +126,11 @@ export function ProfileProfessionalClient() {
 
       <div className="space-y-6">
         <form onSubmit={handleSave} className="rounded-xl border border-border bg-background p-6 space-y-4">
-          <h3 className="font-semibold">Información profesional</h3>
+          <AdminModuleSectionHeader
+            icon={User}
+            title="Información profesional"
+            description="Datos visibles en el panel y preferencias personales."
+          />
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="displayName">Nombre completo</Label>
@@ -173,7 +196,8 @@ export function ProfileProfessionalClient() {
           </Link>
         </section>
       </div>
-    </div>
+      </div>
+    </AdminModuleCenter>
   );
 }
 

@@ -2,6 +2,8 @@
 
 import { adminUi } from "@/lib/admin/admin-ui";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import { AdminModuleCenter, AdminModuleHero } from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { getConfigSectionLabel } from "@/lib/admin/institutional";
 import { cn } from "@/lib/utils";
 import { CONFIG_SECTIONS, type ConfigSectionId } from "@/types/cms";
@@ -76,6 +78,9 @@ export function ConfigurationLayout({
         </nav>
       }
     >
+      <AdminModuleCenter className="mb-6">
+        <AdminModuleHero {...ADMIN_PANEL_META.config} />
+      </AdminModuleCenter>
       {children}
     </AdminModuleLayout>
   );

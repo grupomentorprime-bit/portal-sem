@@ -12,6 +12,27 @@ import type {
 import { DEFAULT_PROGRAMS_SHOWCASE_FILTERS } from "@/lib/experience/programs-showcase-utils";
 import type { CmsCTA, CmsIndicatorItem } from "@/types/cms-shared";
 
+const MEDIA_POSITION_MAP: Record<
+  NonNullable<AdmissionHeroMedia["position"]>,
+  string
+> = {
+  center: "center",
+  top: "top center",
+  bottom: "bottom center",
+  left: "center left",
+  right: "center right",
+};
+
+/** Resuelve object-position para imágenes del hero desde CMS. */
+export function heroMediaObjectPosition(media: AdmissionHeroMedia): string {
+  if (media.focalPoint) {
+    const x = Math.round((media.focalPoint.x ?? 0.5) * 1000) / 10;
+    const y = Math.round((media.focalPoint.y ?? 0.5) * 1000) / 10;
+    return `${x}% ${y}%`;
+  }
+  return MEDIA_POSITION_MAP[media.position ?? "center"];
+}
+
 export function sortVisibleHeroItems<T extends { order?: number; visible?: boolean }>(
   items: T[] | undefined
 ): T[] {

@@ -1,8 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { CheckCircle, FileText, Layers } from "lucide-react";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { getContentSectionPanel } from "@/lib/admin/module-panels";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSectionByCollection, isEditableCollection } from "@/lib/content/content-sections";
@@ -111,6 +119,13 @@ export function ContentListClient({
     }
   }, [tenant, collection]);
 
+  const panel = getContentSectionPanel(sectionSlug);
+  const publishedCount = useMemo(
+    () => items.filter((item) => item.status === "published").length,
+    [items]
+  );
+  const draftCount = items.length - publishedCount;
+
   return (
     <AdminModuleLayout
       breadcrumbs={[
@@ -122,6 +137,9 @@ export function ContentListClient({
       description={description}
       actions={
         <>
+          <Link href="/admin/content">
+            <Button variant="outline">Centro editorial</Button>
+          </Link>
           <Button variant="outline" onClick={load} disabled={loading}>
             {loading ? "Actualizando…" : "Actualizar"}
           </Button>
@@ -133,15 +151,28 @@ export function ContentListClient({
         </>
       }
     >
-      {error ? (
-        <div className="mb-4 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-          {error}
-        </div>
-      ) : null}
+      <AdminModuleCenter>
+        {error ? (
+          <div className="mb-4 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+            {error}
+          </div>
+        ) : null}
 
-      <p className="mb-4 text-sm text-muted">
-        {total} {total === 1 ? "registro" : "registros"}
-      </p>
+        <AdminModuleHero {...panel} />
+
+        <AdminModuleStats
+          items={[
+            { label: "Registros totales", value: total, icon: Layers, tone: "total" },
+            { label: "Publicados", value: publishedCount, icon: CheckCircle, tone: "published" },
+            { label: "Borradores", value: draftCount, icon: FileText, tone: "active" },
+          ]}
+        />
+
+        <AdminModuleSectionHeader
+          icon={FileText}
+          title={title}
+          description={description}
+        />
 
       <div className="grid gap-3">
         {items.length === 0 ? (
@@ -195,6 +226,7 @@ export function ContentListClient({
           })
         )}
       </div>
+      </AdminModuleCenter>
     </AdminModuleLayout>
   );
 }

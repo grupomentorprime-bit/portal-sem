@@ -177,10 +177,10 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
         },
       ],
     }),
-    baseMeta("convocatoria-talca-aurora-jul-2025", tenant, {
+    baseMeta("convocatoria-talca-aurora-jul-2026", tenant, {
       name: "Convocatoria — Jornada Presencial Talca Aurora (4 julio)",
       description:
-        "Confirma si asistirás a la jornada presencial del 4 de julio de 2025 en Talca Aurora. Si no podrás asistir, indica el motivo.",
+        "Confirma si asistirás a la jornada presencial del 4 de julio de 2026 en Talca Aurora. Si no podrás asistir, indica el motivo.",
       successMessage:
         "¡Gracias! Hemos registrado tu respuesta. El equipo académico la tendrá en cuenta.",
       errorMessage: "No fue posible registrar tu respuesta. Intenta nuevamente.",
@@ -197,7 +197,7 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
           type: "hidden",
           name: "eventId",
           label: "Evento",
-          defaultValue: "talca-aurora-jul-2025",
+          defaultValue: "talca-aurora-jul-2026",
         },
         {
           id: "fullName",
@@ -345,7 +345,7 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
 export const SEM_DEFAULT_FORM_IDS = [
   "attendance-confirmation",
   "absence-justification",
-  "convocatoria-talca-aurora-jul-2025",
+  "convocatoria-talca-aurora-jul-2026",
   "information-request",
   "program-application",
 ] as const;

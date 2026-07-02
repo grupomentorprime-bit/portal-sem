@@ -3,7 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ClipboardList, Eye, FileText, Settings } from "lucide-react";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
 import { FormSubmissionsPanel } from "@/components/admin/forms/FormSubmissionsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -2,8 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ExternalLink, Eye, EyeOff, Monitor, Smartphone, Tablet } from "lucide-react";
+import { ExternalLink, Eye, EyeOff, GraduationCap, Layers, Monitor, Smartphone, Tablet } from "lucide-react";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { Badge } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -119,6 +125,8 @@ export function AdmissionCmsClient({ initialConfig, tenant }: AdmissionCmsClient
         })),
     }));
   }, [sections]);
+
+  const enabledSections = sections.filter((section) => section.enabled).length;
 
   return (
     <AdminModuleLayout
@@ -244,6 +252,22 @@ export function AdmissionCmsClient({ initialConfig, tenant }: AdmissionCmsClient
         </div>
       }
     >
+      <AdminModuleCenter className="mb-6">
+        <AdminModuleHero {...ADMIN_PANEL_META.admission} />
+        <AdminModuleStats
+          items={[
+            { label: "Secciones totales", value: sections.length, icon: Layers, tone: "total" },
+            { label: "Secciones visibles", value: enabledSections, icon: Eye, tone: "active" },
+            {
+              label: "Estado publicación",
+              value: config.publishStatus === "published" ? "Publicado" : "Borrador",
+              icon: GraduationCap,
+              tone: "published",
+            },
+          ]}
+        />
+      </AdminModuleCenter>
+
       {errorMessage ? (
         <p className="mb-4 rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 px-4 py-3 text-sm text-[var(--color-danger)]" role="alert">
           {errorMessage}

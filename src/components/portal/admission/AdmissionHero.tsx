@@ -97,10 +97,12 @@ export async function AdmissionHero({
           ? "cms-animate-fade"
           : "cms-animate-fade"
       : undefined;
+  const elevationClass =
+    animations?.hoverElevation !== false ? "admission-hero__shell--elevated" : undefined;
 
   return (
-    <PortalSection id={sectionId} className="admission-hero py-0">
-      <div className={cn("admission-hero__shell", animateClass)}>
+    <PortalSection id={sectionId} className="admission-hero" padding="none">
+      <div className={cn("admission-hero__shell", animateClass, elevationClass)}>
         <div className="admission-hero__grid">
           <div className="admission-hero__copy">
             <div className="admission-hero__copy-bg" aria-hidden />
@@ -173,6 +175,9 @@ export async function AdmissionHero({
                         ) : null}
                         <span className="admission-hero__indicator-value">{item.value}</span>
                         <span className="admission-hero__indicator-label">{item.label}</span>
+                        {item.description ? (
+                          <span className="admission-hero__indicator-desc">{item.description}</span>
+                        ) : null}
                       </>
                     );
 

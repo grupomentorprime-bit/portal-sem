@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { KeyRound, Lock, Shield, Smartphone } from "lucide-react";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { Button, Input, Label } from "@/components/ui";
 import Link from "next/link";
 
@@ -54,18 +62,48 @@ export function SecuritySettingsClient() {
   }
 
   return (
-    <div className="space-y-6">
+    <AdminModuleCenter>
+      <AdminModuleHero {...ADMIN_PANEL_META.security} />
+
+      <AdminModuleStats
+        items={[
+          {
+            label: "Autenticación",
+            value: institutionalAuth ? "Institucional" : "CMS local",
+            icon: Shield,
+            tone: "total",
+          },
+          {
+            label: "Contraseña",
+            value: institutionalAuth ? "Keycloak" : "Editable",
+            icon: KeyRound,
+            tone: institutionalAuth ? "neutral" : "active",
+          },
+          {
+            label: "2FA",
+            value: "Próximamente",
+            icon: Smartphone,
+            tone: "neutral",
+          },
+        ]}
+      />
+
+      <div className="space-y-6">
       {institutionalAuth ? (
         <section className="rounded-xl border border-border bg-background p-6">
-          <h2 className="font-semibold">Autenticación institucional</h2>
-          <p className="mt-2 text-sm text-muted">
-            Tu contraseña y factores de autenticación se administran en el portal institucional de
-            identidad, no en el CMS.
-          </p>
+          <AdminModuleSectionHeader
+            icon={Lock}
+            title="Autenticación institucional"
+            description="Tu contraseña y factores de autenticación se administran en el portal institucional de identidad, no en el CMS."
+          />
         </section>
       ) : (
         <section className="rounded-xl border border-border bg-background p-6">
-          <h2 className="font-semibold">Contraseña</h2>
+          <AdminModuleSectionHeader
+            icon={KeyRound}
+            title="Contraseña"
+            description="Actualiza la contraseña de tu cuenta del CMS."
+          />
           <form onSubmit={handlePassword} className="mt-4 grid max-w-md gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="currentPassword">Contraseña actual</Label>
@@ -115,6 +153,7 @@ export function SecuritySettingsClient() {
           Finaliza tu sesión actual en todos los dispositivos. Disponible en la siguiente fase.
         </p>
       </section>
-    </div>
+      </div>
+    </AdminModuleCenter>
   );
 }

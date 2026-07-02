@@ -1,8 +1,17 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Layers, Menu, Navigation } from "lucide-react";
+import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -127,31 +136,58 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
     await refresh();
   };
 
-  return (
-    <div className="min-h-screen bg-background-soft dark:bg-gray-900">
-      <header className="border-b border-border bg-background dark:border-gray-700 dark:bg-gray-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted">CMS</p>
-            <h1 className="text-xl font-semibold">Menús</h1>
-          </div>
-          <div className="flex gap-2">
-            {menus.length === 0 ? (
-              <Button variant="secondary" onClick={handleSeed} disabled={loading}>
-                Inicializar menús
-              </Button>
-            ) : null}
-            <Button onClick={() => setShowCreate(true)}>+ Crear menú</Button>
-          </div>
-        </div>
-      </header>
+  const activeMenus = useMemo(() => menus.filter((menu) => menu.active).length, [menus]);
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+  return (
+    <AdminModuleLayout
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Portal", href: "/admin/pages" },
+        { label: "Menús" },
+      ]}
+      title="Menús del portal"
+      description="Navegación principal y secundaria del sitio institucional"
+      actions={
+        <>
+          <Link href="/admin/pages">
+            <Button variant="outline">Páginas</Button>
+          </Link>
+          {menus.length === 0 ? (
+            <Button variant="secondary" onClick={handleSeed} disabled={loading}>
+              Inicializar menús
+            </Button>
+          ) : null}
+          <Button onClick={() => setShowCreate(true)}>Crear menú</Button>
+        </>
+      }
+    >
+      <AdminModuleCenter>
         {error ? (
           <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
             {error}
           </div>
         ) : null}
+
+        <AdminModuleHero {...ADMIN_PANEL_META.menus} />
+
+        <AdminModuleStats
+          items={[
+            { label: "Menús totales", value: menus.length, icon: Menu, tone: "total" },
+            { label: "Activos", value: activeMenus, icon: Navigation, tone: "active" },
+            {
+              label: "Ítems visibles",
+              value: menus.reduce((sum, menu) => sum + countVisibleItems(menu.items), 0),
+              icon: Layers,
+              tone: "published",
+            },
+          ]}
+        />
+
+        <AdminModuleSectionHeader
+          icon={Menu}
+          title="Menús configurados"
+          description="Edita enlaces, duplica estructuras y activa ubicaciones del header o footer."
+        />
 
         {showCreate ? (
           <Card className="mb-6">
@@ -222,7 +258,7 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
             No hay menús. Crea uno o inicializa los predeterminados.
           </p>
         ) : null}
-      </main>
-    </div>
+      </AdminModuleCenter>
+    </AdminModuleLayout>
   );
 }

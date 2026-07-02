@@ -8,6 +8,7 @@ interface ClosingMediaImageProps {
   alt: string;
   className?: string;
   imageClassName?: string;
+  objectPosition?: string;
   priority?: boolean;
 }
 
@@ -17,6 +18,7 @@ export async function ClosingMediaImage({
   alt,
   className,
   imageClassName,
+  objectPosition,
   priority = false,
 }: ClosingMediaImageProps) {
   if (!mediaId?.trim()) return null;
@@ -33,6 +35,7 @@ export async function ClosingMediaImage({
         priority={priority}
         sizes="100vw"
         className={cn("object-cover", imageClassName)}
+        style={objectPosition ? { objectPosition } : undefined}
       />
     </div>
   );

@@ -1,5 +1,7 @@
-import { PortalBreadcrumb, PortalContainer, PortalSection } from "@/components/portal/layout";
+import { PortalBreadcrumb } from "@/components/portal/layout";
 import { PortalExperienceForm } from "@/components/portal/experience/forms";
+import { FormLanding } from "@/components/portal/forms";
+import { getFormLandingByFormId } from "@/lib/admin/forms-center";
 import { getActivePortal } from "@/lib/portal/site";
 import {
   ensureDefaultExperienceForms,
@@ -20,10 +22,11 @@ export async function generateMetadata({ params }: FormularioPageProps): Promise
 
   await seedExperienceForms(ctx.tenant);
   const form = await getPublicExperienceForm(ctx.tenant, id);
+  const landing = getFormLandingByFormId(id);
 
   return {
-    title: form?.name ?? "Formulario",
-    description: form?.description ?? undefined,
+    title: landing?.headline ?? form?.name ?? "Formulario",
+    description: landing?.subheadline ?? form?.description ?? undefined,
     robots: form ? undefined : { index: false, follow: false },
   };
 }
@@ -39,20 +42,40 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
   const form = await getPublicExperienceForm(ctx.tenant, id);
   if (!form) notFound();
 
+  const landing = getFormLandingByFormId(id);
+
+  const breadcrumb = (
+    <PortalBreadcrumb
+      items={[
+        { label: "Inicio", href: "/" },
+        { label: "Formularios", href: "/formularios" },
+        { label: landing?.headline ?? form.name },
+      ]}
+    />
+  );
+
+  if (landing) {
+    return (
+      <FormLanding config={landing} breadcrumb={breadcrumb}>
+        <PortalExperienceForm
+          form={form}
+          overline="Tu respuesta"
+          title="Completa el formulario"
+          description="Los campos marcados son obligatorios."
+          submitLabel={landing.ctaLabel}
+        />
+      </FormLanding>
+    );
+  }
+
   return (
     <>
-      <PortalBreadcrumb
-        items={[
-          { label: "Inicio", href: "/" },
-          { label: "Formularios", href: "/formularios" },
-          { label: form.name },
-        ]}
-      />
-      <PortalSection padding="md">
-        <PortalContainer size="md">
+      {breadcrumb}
+      <section className="py-8 md:py-12">
+        <div className="mx-auto max-w-2xl px-4">
           <PortalExperienceForm form={form} title={form.name} description={form.description} />
-        </PortalContainer>
-      </PortalSection>
+        </div>
+      </section>
     </>
   );
 }

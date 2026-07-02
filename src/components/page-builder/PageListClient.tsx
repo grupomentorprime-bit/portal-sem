@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { ExternalLink, Eye, FileStack, Layers, LayoutTemplate } from "lucide-react";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import {
+  AdminModuleCenter,
+  AdminModuleHero,
+  AdminModuleSectionHeader,
+  AdminModuleStats,
+} from "@/components/admin/AdminModuleCenter";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { Button, Card, Badge } from "@/components/ui";
 import { blocksFromTemplate } from "@/lib/cms/page-defaults";
 import { normalizeSlug } from "@/lib/cms/page-utils";
@@ -86,6 +94,12 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
     if (data.ok) router.push(`/admin/pages/${newId}`);
   };
 
+  const publishedCount = useMemo(
+    () => pages.filter((page) => page.status === "published").length,
+    [pages]
+  );
+  const draftCount = pages.length - publishedCount;
+
   return (
     <AdminModuleLayout
       breadcrumbs={[
@@ -97,6 +111,17 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
       description="Estructura, bloques y contenido de cada página institucional"
       actions={
         <>
+          <Link href="/admin/menus">
+            <Button type="button" variant="outline">
+              Menús
+            </Button>
+          </Link>
+          <Link href="/" target="_blank">
+            <Button type="button" variant="outline">
+              Ver portal
+              <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Button>
+          </Link>
           <Button type="button" variant="outline" disabled={loading} onClick={seedCms}>
             Preparar plantillas
           </Button>
@@ -106,6 +131,20 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
         </>
       }
     >
+      <AdminModuleCenter>
+        <AdminModuleHero {...ADMIN_PANEL_META.pages} />
+        <AdminModuleStats
+          items={[
+            { label: "Páginas totales", value: pages.length, icon: Layers, tone: "total" },
+            { label: "Publicadas", value: publishedCount, icon: Eye, tone: "published" },
+            { label: "Borradores", value: draftCount, icon: FileStack, tone: "active" },
+          ]}
+        />
+        <AdminModuleSectionHeader
+          icon={LayoutTemplate}
+          title="Páginas del sitio"
+          description="Edita bloques, duplica plantillas y abre la vista pública de cada página."
+        />
       <div className="grid gap-4">
           {pages.length === 0 ? (
             <Card className="p-8 text-center text-muted">
@@ -147,6 +186,7 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
             ))
           )}
         </div>
+      </AdminModuleCenter>
     </AdminModuleLayout>
   );
 }

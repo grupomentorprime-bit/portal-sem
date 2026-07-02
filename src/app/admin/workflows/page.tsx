@@ -1,25 +1,28 @@
-import { WorkflowAdminClient } from "@/components/workflow/WorkflowAdminClient";
 import Link from "next/link";
+import { WorkflowAdminClient } from "@/components/workflow/WorkflowAdminClient";
+import { AdminSystemPanel } from "@/components/admin/AdminSystemPanel";
+import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
 export default function AdminWorkflowsPage() {
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b border-border bg-background px-6 py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold">Workflow Engine</h1>
-            <p className="text-sm text-muted">Definiciones, instancias e historial</p>
-          </div>
-          <Link href="/admin/config" className="text-sm text-muted underline">
-            Volver al CMS
-          </Link>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <WorkflowAdminClient />
-      </main>
-    </div>
+    <AdminSystemPanel
+      meta={ADMIN_PANEL_META.workflows}
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Workflow Engine" },
+      ]}
+      title="Workflow Engine"
+      description="Definiciones, instancias e historial de flujos editoriales"
+      actions={
+        <Link href="/admin/config">
+          <Button variant="outline">Configuración</Button>
+        </Link>
+      }
+    >
+      <WorkflowAdminClient />
+    </AdminSystemPanel>
   );
 }

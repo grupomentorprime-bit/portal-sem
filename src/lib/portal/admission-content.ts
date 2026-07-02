@@ -269,7 +269,7 @@ export const DEFAULT_ADMISSION_CONFIG: Omit<AdmissionConfig, "tenant" | "updated
       {
         id: "dh-classes",
         label: "Inicio de clases",
-        value: "10 de marzo 2026",
+        value: "2 de marzo 2027",
         icon: "BookOpen",
         visible: true,
         order: 2,

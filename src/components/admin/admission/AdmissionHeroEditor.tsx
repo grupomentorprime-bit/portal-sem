@@ -149,6 +149,7 @@ export function AdmissionHeroEditor({ config, tenant, onChange }: AdmissionHeroE
         <TabsTrigger value="content">Contenido</TabsTrigger>
         <TabsTrigger value="dates">Fechas</TabsTrigger>
         <TabsTrigger value="image">Imagen</TabsTrigger>
+        <TabsTrigger value="quote">Cita</TabsTrigger>
         <TabsTrigger value="indicators">Indicadores</TabsTrigger>
         <TabsTrigger value="benefits">Beneficios</TabsTrigger>
         <TabsTrigger value="ctas">CTAs</TabsTrigger>
@@ -192,6 +193,24 @@ export function AdmissionHeroEditor({ config, tenant, onChange }: AdmissionHeroE
               { value: "info", label: "Info" },
               { value: "neutral", label: "Neutral" },
             ]}
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Icono del badge (Lucide)">
+            <Input
+              value={hero.statusBadge.icon ?? ""}
+              onChange={(e) =>
+                patchHero({ statusBadge: { ...hero.statusBadge, icon: e.target.value } })
+              }
+              placeholder="Sparkles"
+            />
+          </Field>
+          <Switch
+            label="Mostrar badge"
+            checked={hero.statusBadge.visible !== false}
+            onChange={(visible) =>
+              patchHero({ statusBadge: { ...hero.statusBadge, visible } })
+            }
           />
         </div>
       </TabsContent>
@@ -325,6 +344,42 @@ export function AdmissionHeroEditor({ config, tenant, onChange }: AdmissionHeroE
           ]}
         />
         <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Punto focal X (0–1)">
+            <Input
+              type="number"
+              min={0}
+              max={1}
+              step={0.01}
+              value={hero.media.focalPoint?.x ?? 0.5}
+              onChange={(e) =>
+                patchMedia({
+                  focalPoint: {
+                    x: Number.parseFloat(e.target.value) || 0.5,
+                    y: hero.media.focalPoint?.y ?? 0.5,
+                  },
+                })
+              }
+            />
+          </Field>
+          <Field label="Punto focal Y (0–1)">
+            <Input
+              type="number"
+              min={0}
+              max={1}
+              step={0.01}
+              value={hero.media.focalPoint?.y ?? 0.5}
+              onChange={(e) =>
+                patchMedia({
+                  focalPoint: {
+                    x: hero.media.focalPoint?.x ?? 0.5,
+                    y: Number.parseFloat(e.target.value) || 0.5,
+                  },
+                })
+              }
+            />
+          </Field>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Oscurecimiento (0–1)">
             <Input
               type="number"
@@ -384,6 +439,56 @@ export function AdmissionHeroEditor({ config, tenant, onChange }: AdmissionHeroE
         />
       </TabsContent>
 
+      <TabsContent value="quote" className="space-y-4">
+        <div className="rounded-lg border border-border bg-background-soft p-4">
+          <p className="text-sm text-muted">
+            Cita bíblica o institucional opcional sobre la imagen ministerial del hero.
+          </p>
+        </div>
+        <Switch
+          label="Mostrar cita"
+          checked={hero.quote?.visible ?? false}
+          onChange={(visible) =>
+            patchHero({
+              quote: {
+                text: hero.quote?.text ?? "",
+                reference: hero.quote?.reference ?? "",
+                visible,
+              },
+            })
+          }
+        />
+        <Field label="Texto de la cita">
+          <Textarea
+            rows={3}
+            value={hero.quote?.text ?? ""}
+            onChange={(e) =>
+              patchHero({
+                quote: {
+                  visible: hero.quote?.visible ?? false,
+                  text: e.target.value,
+                  reference: hero.quote?.reference ?? "",
+                },
+              })
+            }
+          />
+        </Field>
+        <Field label="Referencia (ej. Filipenses 1:6)">
+          <Input
+            value={hero.quote?.reference ?? ""}
+            onChange={(e) =>
+              patchHero({
+                quote: {
+                  visible: hero.quote?.visible ?? false,
+                  text: hero.quote?.text ?? "",
+                  reference: e.target.value,
+                },
+              })
+            }
+          />
+        </Field>
+      </TabsContent>
+
       <TabsContent value="indicators">
         <ListEditor<AdmissionHeroIndicator>
           title="Indicador"
@@ -406,6 +511,19 @@ export function AdmissionHeroEditor({ config, tenant, onChange }: AdmissionHeroE
               </Field>
               <Field label="Icono">
                 <Input value={item.icon ?? ""} onChange={(e) => update({ icon: e.target.value })} />
+              </Field>
+              <Field label="Descripción (opcional)">
+                <Input
+                  value={item.description ?? ""}
+                  onChange={(e) => update({ description: e.target.value })}
+                />
+              </Field>
+              <Field label="Enlace (opcional)">
+                <Input
+                  value={item.link ?? ""}
+                  onChange={(e) => update({ link: e.target.value })}
+                  placeholder="#fechas"
+                />
               </Field>
             </>
           )}
@@ -539,6 +657,19 @@ export function AdmissionHeroEditor({ config, tenant, onChange }: AdmissionHeroE
             }
           />
         </Field>
+        <Switch
+          label="Mostrar enlace calendario"
+          checked={hero.editorialCard?.calendarLink?.visible ?? true}
+          onChange={(visible) =>
+            patchEditorialCard({
+              calendarLink: {
+                label: hero.editorialCard?.calendarLink?.label ?? "Ver calendario",
+                href: hero.editorialCard?.calendarLink?.href ?? "#fechas",
+                visible,
+              },
+            })
+          }
+        />
       </TabsContent>
 
       <TabsContent value="animations" className="space-y-4">
