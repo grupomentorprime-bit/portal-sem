@@ -1,6 +1,30 @@
 /**
- * Centro de formularios — convocatorias y categorías institucionales.
+ * Centro de formularios — convocatorias, categorías y landings públicas.
  */
+
+export type FormLandingTheme =
+  | "convocatoria"
+  | "attendance"
+  | "absence"
+  | "information"
+  | "application";
+
+export interface FormLandingHighlight {
+  icon: "calendar" | "map-pin" | "users" | "book" | "heart" | "clock" | "sparkles" | "message";
+  label: string;
+  value: string;
+}
+
+export interface FormLandingConfig {
+  formId: string;
+  theme: FormLandingTheme;
+  eyebrow: string;
+  headline: string;
+  subheadline: string;
+  motivational?: string;
+  highlights: FormLandingHighlight[];
+  ctaLabel?: string;
+}
 
 export interface FormConvocatoria {
   slug: string;
@@ -10,6 +34,7 @@ export interface FormConvocatoria {
   location: string;
   description: string;
   active: boolean;
+  landing?: Omit<FormLandingConfig, "formId">;
 }
 
 export const FORM_CONVOCATORIAS: FormConvocatoria[] = [
