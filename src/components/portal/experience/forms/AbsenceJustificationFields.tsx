@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { FileCheck2, FileUp, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useRef } from "react";
+import { FileCheck2, FileUp, Loader2, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ABSENCE_REVIEW_POLICY } from "@/lib/admin/forms-center";
 import type { FormSubmissionAttachment } from "@/lib/experience/forms/attachments";
@@ -11,7 +10,9 @@ interface AbsenceJustificationFieldsProps {
   values: Record<string, unknown>;
   errors: Record<string, string>;
   disabled?: boolean;
+  uploading?: boolean;
   onChange: (name: string, value: unknown) => void;
+  onFileChange?: (file: File | undefined) => void | Promise<void>;
 }
 
 function formatFileSize(bytes: number): string {
@@ -24,7 +25,9 @@ export function AbsenceJustificationFields({
   values,
   errors,
   disabled,
+  uploading = false,
   onChange,
+  onFileChange,
 }: AbsenceJustificationFieldsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachment = values.justificationAttachment as FormSubmissionAttachment | undefined;
@@ -32,19 +35,26 @@ export function AbsenceJustificationFields({
   const selectedName = pendingFile?.name ?? attachment?.filename ?? "";
   const selectedSize = pendingFile?.size ?? attachment?.size ?? 0;
   const hasSelectedFile = Boolean(selectedName);
-
-  useEffect(() => {
-    if (values.attendance !== "no") {
-      onChange("justification", "");
-      onChange("justificationAttachment", undefined);
-      onChange("justificationAttachmentFile", undefined);
-    }
-  }, [values.attendance, onChange]);
+  const isUploaded = Boolean(attachment?.mediaId);
 
   const handleClearFile = () => {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (onFileChange) {
+      void onFileChange(undefined);
+      return;
+    }
     onChange("justificationAttachmentFile", undefined);
     onChange("justificationAttachment", undefined);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (onFileChange) {
+      void onFileChange(file);
+      return;
+    }
+    onChange("justificationAttachmentFile", file ?? undefined);
+    onChange("justificationAttachment", undefined);
   };
 
   if (values.attendance !== "no") return null;
@@ -81,21 +91,19 @@ export function AbsenceJustificationFields({
           type="file"
           accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
           className="sr-only"
-          disabled={disabled}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            onChange("justificationAttachmentFile", file ?? undefined);
-            onChange("justificationAttachment", undefined);
-          }}
+          disabled={disabled || uploading}
+          onChange={handleFileInputChange}
         />
 
         {hasSelectedFile ? (
           <div className="absence-attachment-card" role="status" aria-live="polite">
             <div className="absence-attachment-card__icon" aria-hidden="true">
-              <FileCheck2 />
+              {uploading ? <Loader2 className="animate-spin" /> : <FileCheck2 />}
             </div>
             <div className="absence-attachment-card__body">
-              <p className="absence-attachment-card__eyebrow">Documento adjunto</p>
+              <p className="absence-attachment-card__eyebrow">
+                {uploading ? "Subiendo documento…" : isUploaded ? "Documento listo" : "Documento adjunto"}
+              </p>
               <p className="absence-attachment-card__filename">{selectedName}</p>
               {selectedSize > 0 ? (
                 <p className="absence-attachment-card__meta">{formatFileSize(selectedSize)}</p>
@@ -106,7 +114,7 @@ export function AbsenceJustificationFields({
                 type="button"
                 className="absence-attachment-card__change"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={disabled}
+                disabled={disabled || uploading}
               >
                 <FileUp className="h-4 w-4" aria-hidden="true" />
                 Cambiar
@@ -115,7 +123,7 @@ export function AbsenceJustificationFields({
                 type="button"
                 className="absence-attachment-card__remove"
                 onClick={handleClearFile}
-                disabled={disabled}
+                disabled={disabled || uploading}
                 aria-label="Quitar archivo adjunto"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -127,10 +135,14 @@ export function AbsenceJustificationFields({
             type="button"
             className="absence-attachment-upload"
             onClick={() => fileInputRef.current?.click()}
-            disabled={disabled}
+            disabled={disabled || uploading}
           >
-            <FileUp className="h-5 w-5" aria-hidden="true" />
-            <span>Seleccionar archivo</span>
+            {uploading ? (
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+            ) : (
+              <FileUp className="h-5 w-5" aria-hidden="true" />
+            )}
+            <span>{uploading ? "Subiendo…" : "Seleccionar archivo"}</span>
           </button>
         )}
 

@@ -3,7 +3,7 @@ import type {
   ExperienceFormField,
   ExperienceFormFieldType,
 } from "@/types/experience-forms";
-import { hasSubmissionAttachment } from "@/lib/experience/forms/attachments";
+import { hasJustificationAttachment } from "@/lib/experience/forms/attachments";
 import {
   CHILE_PHONE_INVALID_MESSAGE,
   isValidChilePhone,
@@ -150,7 +150,7 @@ function applyConditionalFormRules(
         "Debe explicar el motivo de inasistencia por fuerza mayor (mínimo 10 caracteres).";
     }
 
-    if (!hasSubmissionAttachment(data.justificationAttachment)) {
+    if (!hasJustificationAttachment(data)) {
       errors.justificationAttachment = "Debe adjuntar un justificativo de respaldo (PDF o imagen).";
     }
   } else {

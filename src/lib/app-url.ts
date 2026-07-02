@@ -12,3 +12,14 @@ export function getAppBaseUrl(): string {
 
   return "http://localhost:3000";
 }
+
+/** Convierte rutas relativas del CMS en URLs absolutas para correos y enlaces externos. */
+export function resolvePublicUrl(url: string | undefined | null): string | undefined {
+  const trimmed = url?.trim();
+  if (!trimmed) return undefined;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  const base = getAppBaseUrl().replace(/\/$/, "");
+  const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return `${base}${path}`;
+}

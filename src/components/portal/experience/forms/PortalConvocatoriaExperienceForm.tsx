@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  hasSubmissionAttachment,
+  hasJustificationAttachment,
   validateFormAttachmentFile,
 } from "@/lib/experience/forms/attachments";
 import { validateFormSubmission, normalizeFormSubmissionData } from "@/core/experience/forms/validation";
@@ -53,7 +53,10 @@ export function PortalConvocatoriaExperienceForm({
   const [validationSummary, setValidationSummary] = useState<ValidationSummaryItem[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const pendingAttachmentRef = useRef<File | null>(null);
 
   const formClass = useMemo(
     () => ["portal-experience-form", "portal-experience-form--inline", className].filter(Boolean).join(" "),
@@ -63,16 +66,105 @@ export function PortalConvocatoriaExperienceForm({
   const submitReady = useMemo(() => canSubmitConvocatoriaForm(values), [values]);
 
   const handleChange = useCallback((name: string, value: unknown) => {
-    setValues((prev) => ({ ...prev, [name]: value }));
+    setValues((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "attendance" && value !== "no") {
+        delete next.justification;
+        delete next.justificationAttachment;
+        delete next.justificationAttachmentFile;
+        pendingAttachmentRef.current = null;
+      }
+      return next;
+    });
     setErrors((prev) => {
-      if (!prev[name]) return prev;
+      if (!prev[name] && name !== "justificationAttachmentFile") return prev;
       const next = { ...prev };
       delete next[name];
+      if (name === "justificationAttachmentFile" || name === "attendance") {
+        delete next.justificationAttachment;
+      }
       return next;
     });
     setValidationSummary((prev) => (prev.length > 0 ? [] : prev));
     setGlobalError(null);
   }, []);
+
+  const uploadAttachment = useCallback(
+    async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch(
+        `/api/experience/forms/${encodeURIComponent(form._id)}/attachments`,
+        { method: "POST", body: formData }
+      );
+      return (await uploadRes.json()) as {
+        ok: boolean;
+        attachment?: Record<string, unknown>;
+        error?: string;
+      };
+    },
+    [form._id]
+  );
+
+  const handleAttachmentFileChange = useCallback(
+    async (file: File | undefined) => {
+      pendingAttachmentRef.current = file && file.size > 0 ? file : null;
+
+      setValues((prev) => ({
+        ...prev,
+        justificationAttachmentFile: file,
+        justificationAttachment: undefined,
+      }));
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.justificationAttachment;
+        return next;
+      });
+      setValidationSummary((prev) => (prev.length > 0 ? [] : prev));
+      setGlobalError(null);
+
+      if (!file) return;
+
+      const fileError = validateFormAttachmentFile(file);
+      if (fileError) {
+        setErrors((prev) => ({ ...prev, justificationAttachment: fileError }));
+        return;
+      }
+
+      setUploadingAttachment(true);
+      try {
+        const uploadPayload = await uploadAttachment(file);
+        if (!uploadPayload.ok || !uploadPayload.attachment) {
+          setErrors({
+            justificationAttachment:
+              uploadPayload.error ?? "No se pudo subir el justificativo. Intenta nuevamente.",
+          });
+          return;
+        }
+
+        setValues((prev) => ({
+          ...prev,
+          justificationAttachmentFile: file,
+          justificationAttachment: uploadPayload.attachment,
+        }));
+      } catch {
+        setErrors({
+          justificationAttachment: "No se pudo subir el justificativo. Intenta nuevamente.",
+        });
+      } finally {
+        setUploadingAttachment(false);
+      }
+    },
+    [uploadAttachment]
+  );
+
+  const resolvePendingAttachmentFile = useCallback(() => {
+    const fromState = values.justificationAttachmentFile;
+    if (fromState instanceof File && fromState.size > 0) return fromState;
+    const fromRef = pendingAttachmentRef.current;
+    if (fromRef instanceof File && fromRef.size > 0) return fromRef;
+    return null;
+  }, [values.justificationAttachmentFile]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -80,14 +172,23 @@ export function PortalConvocatoriaExperienceForm({
     setValidationSummary([]);
 
     const normalizedValues = normalizeFormSubmissionData(form, values);
-    const clientErrors = validateFormSubmission(form, normalizedValues);
+    const validationData = {
+      ...normalizedValues,
+      justificationAttachmentFile: resolvePendingAttachmentFile() ?? normalizedValues.justificationAttachmentFile,
+      justificationAttachment: values.justificationAttachment ?? normalizedValues.justificationAttachment,
+    };
+    const clientErrors = validateFormSubmission(form, validationData);
     if (values.attendance === "no") {
-      const pendingFile = values.justificationAttachmentFile;
-      if (!hasSubmissionAttachment(values.justificationAttachment) && !(pendingFile instanceof File)) {
-        clientErrors.justificationAttachment = "Debe adjuntar un justificativo de respaldo.";
-      } else if (pendingFile instanceof File) {
+      const pendingFile = resolvePendingAttachmentFile();
+      if (pendingFile) {
         const fileError = validateFormAttachmentFile(pendingFile);
-        if (fileError) clientErrors.justificationAttachment = fileError;
+        if (fileError) {
+          clientErrors.justificationAttachment = fileError;
+        } else if (hasJustificationAttachment(validationData)) {
+          delete clientErrors.justificationAttachment;
+        }
+      } else if (!hasJustificationAttachment(validationData)) {
+        clientErrors.justificationAttachment = "Debe adjuntar un justificativo de respaldo.";
       }
     }
 
@@ -105,30 +206,24 @@ export function PortalConvocatoriaExperienceForm({
     setSubmitting(true);
     try {
       const submissionData: Record<string, unknown> = { ...normalizedValues };
-      const pendingFile = submissionData.justificationAttachmentFile;
 
-      if (submissionData.attendance === "no" && pendingFile instanceof File) {
-        const formData = new FormData();
-        formData.append("file", pendingFile);
-        const uploadRes = await fetch(
-          `/api/experience/forms/${encodeURIComponent(form._id)}/attachments`,
-          { method: "POST", body: formData }
-        );
-        const uploadPayload = (await uploadRes.json()) as {
-          ok: boolean;
-          attachment?: Record<string, unknown>;
-          error?: string;
-        };
-
-        if (!uploadPayload.ok || !uploadPayload.attachment) {
-          setErrors({
-            justificationAttachment:
-              uploadPayload.error ?? "No se pudo subir el justificativo. Intenta nuevamente.",
-          });
-          return;
+      if (submissionData.attendance === "no") {
+        if (!hasJustificationAttachment(submissionData)) {
+          const pendingFile = resolvePendingAttachmentFile();
+          if (pendingFile) {
+            const uploadPayload = await uploadAttachment(pendingFile);
+            if (!uploadPayload.ok || !uploadPayload.attachment) {
+              setErrors({
+                justificationAttachment:
+                  uploadPayload.error ?? "No se pudo subir el justificativo. Intenta nuevamente.",
+              });
+              return;
+            }
+            submissionData.justificationAttachment = uploadPayload.attachment;
+          }
+        } else {
+          submissionData.justificationAttachment = values.justificationAttachment;
         }
-
-        submissionData.justificationAttachment = uploadPayload.attachment;
       }
 
       delete submissionData.justificationAttachmentFile;
@@ -143,6 +238,7 @@ export function PortalConvocatoriaExperienceForm({
         message?: string;
         errors?: Record<string, string>;
         error?: string;
+        confirmationEmail?: { sent: boolean; reason?: string };
       };
 
       if (!payload.ok) {
@@ -160,6 +256,11 @@ export function PortalConvocatoriaExperienceForm({
         launchAttendanceConfetti();
       }
 
+      setSuccessNotice(
+        payload.confirmationEmail && !payload.confirmationEmail.sent
+          ? "Tu respuesta quedó registrada, pero no pudimos enviar el correo de confirmación. Revisa la carpeta de spam o contacta a asuntos estudiantiles."
+          : null
+      );
       setSuccessMessage(
         confirmedAttendance && attendanceYesSuccessMessage
           ? attendanceYesSuccessMessage
@@ -176,6 +277,11 @@ export function PortalConvocatoriaExperienceForm({
     return (
       <div className={`${formClass} portal-experience-form--submitted`}>
         <PortalFormSuccess message={successMessage} variant="inline" />
+        {successNotice ? (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {successNotice}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -190,8 +296,10 @@ export function PortalConvocatoriaExperienceForm({
         fields={form.fields}
         values={values}
         errors={errors}
-        disabled={submitting}
+        disabled={submitting || uploadingAttachment}
         onChange={handleChange}
+        onAttachmentFileChange={handleAttachmentFileChange}
+        uploadingAttachment={uploadingAttachment}
         attendanceYesMessage={attendanceYesMessage}
         attendanceNoMessage={attendanceNoMessage}
       />

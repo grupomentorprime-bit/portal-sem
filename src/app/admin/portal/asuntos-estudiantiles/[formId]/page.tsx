@@ -44,18 +44,17 @@ export default async function StudentAffairsFormPage({ params }: PageProps) {
         { label: form.name },
       ]}
       title={form.name}
-      description="Respuestas, gestión de inasistencias y check-in del día de la jornada."
+      description={
+        form.description?.trim() ||
+        "Marque la llegada presencial y gestione inasistencias desde una sola lista."
+      }
       actions={
         <Button variant="outline" size="sm" href="/admin/portal/asuntos-estudiantiles">
           Todos los formularios
         </Button>
       }
     >
-      <StudentAffairsOperationsPanel
-        formId={form._id}
-        formName={form.name}
-        formDescription={form.description}
-      />
+      <StudentAffairsOperationsPanel formId={form._id} />
     </AdminModuleLayout>
   );
 }

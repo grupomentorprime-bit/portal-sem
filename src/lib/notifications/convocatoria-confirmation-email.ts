@@ -7,7 +7,7 @@ import {
   type FormConvocatoria,
 } from "@/lib/admin/forms-center";
 import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
-import { getAppBaseUrl } from "@/lib/app-url";
+import { getAppBaseUrl, resolvePublicUrl } from "@/lib/app-url";
 import {
   renderCredentialRow,
   renderInfoBox,
@@ -102,7 +102,7 @@ export function renderConvocatoriaConfirmationEmail(
     input.professorMessage?.trim() ||
     (isAttending ? DEFAULT_YES_MESSAGE : DEFAULT_NO_MESSAGE);
   const formUrl = `${getAppBaseUrl()}${publicFormUrl(input.convocatoria.formId)}`;
-  const ctaUrl = input.confirmationEmailCtaUrl?.trim() || formUrl;
+  const ctaUrl = resolvePublicUrl(input.confirmationEmailCtaUrl) || formUrl;
   const defaultCtaLabel = isAttending ? "Ver detalles de la convocatoria" : "Revisar convocatoria";
   const ctaLabel = input.confirmationEmailCtaLabel?.trim() || defaultCtaLabel;
   const firstName = input.participantName.trim().split(/\s+/)[0] || input.participantName;

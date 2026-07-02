@@ -20,6 +20,8 @@ interface ConvocatoriaParticipantFieldsProps {
   errors: Record<string, string>;
   disabled?: boolean;
   onChange: (name: string, value: unknown) => void;
+  onAttachmentFileChange?: (file: File | undefined) => void | Promise<void>;
+  uploadingAttachment?: boolean;
   attendanceYesMessage?: string;
   attendanceNoMessage?: string;
 }
@@ -43,6 +45,8 @@ export function ConvocatoriaParticipantFields({
   errors,
   disabled,
   onChange,
+  onAttachmentFileChange,
+  uploadingAttachment,
   attendanceYesMessage,
   attendanceNoMessage,
 }: ConvocatoriaParticipantFieldsProps) {
@@ -321,6 +325,8 @@ export function ConvocatoriaParticipantFields({
             errors={errors}
             disabled={disabled}
             onChange={onChange}
+            onFileChange={onAttachmentFileChange}
+            uploading={uploadingAttachment}
           />
         </>
       ) : (

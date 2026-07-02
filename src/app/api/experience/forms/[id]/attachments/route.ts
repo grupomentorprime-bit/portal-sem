@@ -3,7 +3,8 @@ import { getActiveTenantId } from "@/core/identity";
 import { uploadMedia } from "@/lib/cms/media";
 import {
   FORM_ATTACHMENT_MAX_BYTES,
-  FORM_ATTACHMENT_MIME_TYPES,
+  inferAttachmentMimeType,
+  isAllowedAttachmentMimeType,
   type FormSubmissionAttachment,
 } from "@/lib/experience/forms/attachments";
 import { getPublicExperienceForm } from "@/lib/experience/forms/repository";
@@ -41,7 +42,8 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
-    if (!FORM_ATTACHMENT_MIME_TYPES.includes(file.type as (typeof FORM_ATTACHMENT_MIME_TYPES)[number])) {
+    const mimeType = inferAttachmentMimeType(file);
+    if (!mimeType || !isAllowedAttachmentMimeType(mimeType)) {
       return NextResponse.json(
         { ok: false, error: "Formato no permitido. Usa PDF o imagen (JPG, PNG, WEBP)." },
         { status: 422 }
@@ -53,7 +55,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       tenant,
       buffer,
       originalName: file.name,
-      mimeType: file.type,
+      mimeType,
       folder: "Documentos",
       tags: ["Formulario", "Justificativo", form._id],
       alt: `Justificativo — ${form.name}`,

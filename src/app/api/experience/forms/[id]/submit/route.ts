@@ -201,9 +201,38 @@ export async function POST(request: Request, { params }: RouteParams) {
       const attendance =
         data.attendance === "yes" ? "yes" : data.attendance === "no" ? "no" : null;
 
-      if (participantEmail && attendance) {
+      let confirmationEmail:
+        | { sent: true; id?: string }
+        | { sent: false; reason: string }
+        | undefined;
+
+      if (!participantEmail) {
+        confirmationEmail = { sent: false, reason: "Correo del participante no indicado." };
+        console.warn("[convocatoria] confirmation email skipped: missing participant email");
+      } else if (!attendance) {
+        confirmationEmail = { sent: false, reason: "Respuesta de asistencia no indicada." };
+        console.warn("[convocatoria] confirmation email skipped: missing attendance");
+      } else {
+        let professorMessage: string | undefined;
+        let confirmationEmailCtaUrl: string | undefined;
+        let confirmationEmailCtaLabel: string | undefined;
+
         try {
           const experience = await getFormExperienceUncached(tenant, id, form.name);
+          professorMessage =
+            attendance === "yes"
+              ? experience.formShell.attendanceYesMessage
+              : experience.formShell.attendanceNoMessage;
+          confirmationEmailCtaUrl = experience.formShell.confirmationEmailCtaUrl;
+          confirmationEmailCtaLabel = experience.formShell.confirmationEmailCtaLabel;
+        } catch (experienceError) {
+          console.error(
+            "[convocatoria] failed to load form experience for email, using defaults",
+            experienceError
+          );
+        }
+
+        try {
           const emailResult = await sendConvocatoriaConfirmationEmail({
             to: participantEmail,
             participantName: String(data.fullName ?? "Participante"),
@@ -211,21 +240,35 @@ export async function POST(request: Request, { params }: RouteParams) {
             convocatoria,
             phone: String(data.phone ?? ""),
             generation: String(data.generation ?? data.program ?? ""),
-            professorMessage:
-              attendance === "yes"
-                ? experience.formShell.attendanceYesMessage
-                : experience.formShell.attendanceNoMessage,
-            confirmationEmailCtaUrl: experience.formShell.confirmationEmailCtaUrl,
-            confirmationEmailCtaLabel: experience.formShell.confirmationEmailCtaLabel,
+            professorMessage,
+            confirmationEmailCtaUrl,
+            confirmationEmailCtaLabel,
           });
 
-          if (!emailResult.ok) {
+          if (emailResult.ok) {
+            confirmationEmail = { sent: true, id: emailResult.id };
+            console.info("[convocatoria] confirmation email sent", {
+              to: participantEmail,
+              id: emailResult.id,
+            });
+          } else {
+            confirmationEmail = { sent: false, reason: emailResult.error };
             console.warn("[convocatoria] confirmation email not sent:", emailResult.error);
           }
         } catch (emailError) {
+          const reason =
+            emailError instanceof Error ? emailError.message : "Error desconocido al enviar correo.";
+          confirmationEmail = { sent: false, reason };
           console.error("[convocatoria] confirmation email failed", emailError);
         }
       }
+
+      return NextResponse.json({
+        ok: true,
+        submissionId: result.submissionId,
+        message: result.message,
+        confirmationEmail,
+      });
     }
 
     return NextResponse.json({
