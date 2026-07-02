@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run check:branding && next build",
+    "build": "npm run check:branding && npm run build:institutional-media && next build",
     "start": "next start",
     "lint": "eslint",
     "check:branding": "tsx scripts/check-branding.ts",
