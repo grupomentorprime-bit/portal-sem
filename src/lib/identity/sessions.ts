@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { getDatabase } from "@/lib/mongodb";
 import type {
@@ -92,11 +93,19 @@ export async function getRequestMeta(): Promise<{ ip?: string; userAgent?: strin
   };
 }
 
-export async function loadSessionContext(): Promise<{
+const SESSION_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
+
+async function touchSessionIfStale(session: IdentitySession): Promise<void> {
+  const lastActivity = new Date(session.lastActivity).getTime();
+  if (Date.now() - lastActivity < SESSION_TOUCH_INTERVAL_MS) return;
+  await touchSession(session._id);
+}
+
+export const loadSessionContext = cache(async (): Promise<{
   session: IdentitySession;
   user: IdentityUser;
   membership: IdentityMembership | null;
-} | null> {
+} | null> => {
   const sessionId = await getSessionIdFromCookie();
   if (!sessionId) return null;
 
@@ -116,6 +125,6 @@ export async function loadSessionContext(): Promise<{
     status: "active",
   });
 
-  await touchSession(sessionId);
+  await touchSessionIfStale(session);
   return { session, user, membership };
-}
+});

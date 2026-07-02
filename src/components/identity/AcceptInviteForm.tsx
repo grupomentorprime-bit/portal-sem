@@ -53,6 +53,12 @@ export function AcceptInviteForm({
         return;
       }
 
+      if (data.redirectLogin) {
+        router.push(`/admin/login?email=${encodeURIComponent(email)}`);
+        router.refresh();
+        return;
+      }
+
       router.push("/admin");
       router.refresh();
     } catch {

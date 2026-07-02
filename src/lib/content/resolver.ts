@@ -19,6 +19,7 @@ export interface ResolverOptions {
   includeDraft?: boolean;
   skipCache?: boolean;
   mapItems?: boolean;
+  countOnly?: boolean;
 }
 
 export class ContentResolver {
@@ -41,6 +42,18 @@ export class ContentResolver {
     const runQuery = async (): Promise<ContentResult<T>> => {
       const db = await getDatabase();
       const col = db.collection<ContentDocument>(collection);
+
+      if (options?.countOnly) {
+        const total = await col.countDocuments(mongoFilter);
+        const meta = withTotal(pagination, total);
+        return {
+          items: [] as T[],
+          total: meta.total,
+          page: meta.page,
+          pages: meta.pages,
+          limit: meta.limit,
+        };
+      }
 
       const [total, docs] = await Promise.all([
         col.countDocuments(mongoFilter),
@@ -89,6 +102,18 @@ export class ContentResolver {
 }
 
 export const contentResolver = new ContentResolver();
+
+export async function countContentDocuments(
+  tenant: string,
+  collection: AllowedCollection,
+  options?: { includeDraft?: boolean }
+): Promise<number> {
+  const result = await executeContentQuery(
+    { tenant, collection, pagination: { page: 1, limit: 1 } },
+    { includeDraft: options?.includeDraft, mapItems: false, countOnly: true }
+  );
+  return result.total;
+}
 
 export async function executeContentQuery<T = ContentDocument>(
   query: ContentQuery,

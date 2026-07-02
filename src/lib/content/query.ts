@@ -1,4 +1,9 @@
-export { executeContentQuery, contentResolver, ContentResolver } from "@/lib/content/resolver";
+export {
+  executeContentQuery,
+  countContentDocuments,
+  contentResolver,
+  ContentResolver,
+} from "@/lib/content/resolver";
 export type { ResolverOptions } from "@/lib/content/resolver";
 export { validateContentQuery, toContentQuery } from "@/lib/content/validation";
 export type { ContentValidationError } from "@/lib/content/validation";

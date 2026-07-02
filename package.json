@@ -13,7 +13,9 @@
     "normalize:team-portraits": "node scripts/normalize-team-portraits.mjs",
     "migrate:media-ids": "npx tsx scripts/migrate-media-ids.ts",
     "migrate": "npx tsx scripts/migrate.ts",
-    "migrate:hero-v2": "npx tsx scripts/migrate.ts 001-hero-v2"
+    "migrate:hero-v2": "npx tsx scripts/migrate.ts 001-hero-v2",
+    "setup:keycloak": "npx tsx scripts/setup-keycloak-client.ts",
+    "check:keycloak": "npx tsx scripts/check-keycloak.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1075.0",

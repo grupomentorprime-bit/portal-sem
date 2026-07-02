@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
     const tokens = await exchangeKeycloakCode(code);
     const profile = await fetchKeycloakUserInfo(tokens.accessToken);
-    const { user } = await finishKeycloakLogin(profile, tenantId);
+    const { user } = await finishKeycloakLogin(profile, tenantId, tokens.accessToken);
 
     const meta = await getRequestMeta();
     const session = await createSession({

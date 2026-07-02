@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     const tokens = await loginWithKeycloakPassword({ username: email, password });
     const profile = await fetchKeycloakUserInfo(tokens.accessToken);
-    const { user } = await finishKeycloakLogin(profile, tenantId);
+    const { user } = await finishKeycloakLogin(profile, tenantId, tokens.accessToken);
 
     const meta = await getRequestMeta();
     const session = await createSession({

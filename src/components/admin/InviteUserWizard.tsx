@@ -75,7 +75,7 @@ export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizar
     <div className="rounded-xl border border-border bg-background p-5">
       {success ? (
         <div className="mb-4 rounded-xl border border-[var(--state-success-border)] bg-[var(--state-success-bg)] px-4 py-3 text-sm text-[var(--color-success)]">
-          Invitación enviada. El usuario debe iniciar sesión con el mismo correo institucional.
+          Invitación enviada. La persona recibirá un correo para crear su contraseña y acceder al CMS.
         </div>
       ) : null}
 
@@ -198,7 +198,8 @@ export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizar
             <li>· Acceso acorde al rol institucional seleccionado</li>
             <li>· Cambios auditados en el historial de actividad</li>
             <li>· Enlace de invitación válido por 7 días</li>
-            <li>· El acceso se activa al iniciar sesión institucional</li>
+            <li>· La persona define su propia contraseña al aceptar</li>
+            <li>· El acceso se activa al completar la invitación</li>
           </ul>
           <div className="flex gap-2">
             <Button type="button" variant="ghost" onClick={() => setStep(2)}>

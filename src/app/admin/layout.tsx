@@ -1,6 +1,6 @@
 import { AdminShell } from "@/components/identity/AdminShell";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { getSiteConfig } from "@/lib/cms/config";
 import { isIdentityEnforced } from "@/core/identity";
 import { findRolesByIds } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
@@ -10,7 +10,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await loadSessionContext();
+  const [session, config] = await Promise.all([loadSessionContext(), getSiteConfig()]);
   let roleLabel = "Colaborador";
 
   if (session?.membership) {
@@ -18,7 +18,9 @@ export default async function AdminLayout({
     if (roles[0]) roleLabel = getInstitutionalRoleLabel(roles[0].name);
   }
 
-  const config = await getSiteConfigUncached();
+  if (session?.user.jobTitle?.trim()) {
+    roleLabel = session.user.jobTitle.trim();
+  }
 
   return (
     <AdminShell

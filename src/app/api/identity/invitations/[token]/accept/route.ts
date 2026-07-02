@@ -1,23 +1,25 @@
 import { NextResponse } from "next/server";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
+import {
+  fetchKeycloakUserInfo,
+  loginWithKeycloakPassword,
+} from "@/core/identity/auth/keycloak";
+import { finishKeycloakLogin } from "@/lib/identity/keycloak-access";
+import {
+  keycloakUserNeedsPassword,
+  setKeycloakPasswordForInvite,
+} from "@/lib/identity/keycloak-admin";
+import { acceptInvitation, findInvitationByToken } from "@/lib/identity/invitations";
+import { createMembership } from "@/lib/identity/memberships";
+import { createSession, getRequestMeta, setSessionCookie } from "@/lib/identity/sessions";
+import { findUserByEmail, updateUserLastLogin } from "@/lib/identity/users";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
 }
 
-export async function POST(_request: Request, { params }: RouteParams) {
-  if (isKeycloakOnlyAuth()) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Las invitaciones se activan al iniciar sesión con tu cuenta institucional.",
-      },
-      { status: 403 }
-    );
-  }
-
+export async function POST(request: Request, { params }: RouteParams) {
   const { token } = await params;
-  const { findInvitationByToken } = await import("@/lib/identity/invitations");
   const invitation = await findInvitationByToken(token);
 
   if (!invitation) {
@@ -27,22 +29,108 @@ export async function POST(_request: Request, { params }: RouteParams) {
     );
   }
 
-  const body = (await _request.json()) as {
+  const body = (await request.json()) as {
     password?: string;
     displayName?: string;
   };
 
-  const { registerWithEmail } = await import("@/core/identity");
-  const { acceptInvitation } = await import("@/lib/identity/invitations");
-  const { createMembership } = await import("@/lib/identity/memberships");
-  const { findUserByEmail } = await import("@/lib/identity/users");
-  const {
-    createSession,
-    getRequestMeta,
-    setSessionCookie,
-  } = await import("@/lib/identity/sessions");
-  const { updateUserLastLogin } = await import("@/lib/identity/users");
+  if (isKeycloakOnlyAuth()) {
+    return handleKeycloakAccept(invitation, body);
+  }
 
+  return handleLocalAccept(invitation, body);
+}
+
+async function handleKeycloakAccept(
+  invitation: NonNullable<Awaited<ReturnType<typeof findInvitationByToken>>>,
+  body: { password?: string }
+) {
+  const existing = await findUserByEmail(invitation.email);
+  const needsPassword = await keycloakUserNeedsPassword(invitation.email);
+
+  if (!needsPassword) {
+    const { createUser } = await import("@/lib/identity/users");
+    const user =
+      existing ??
+      (await createUser({
+        email: invitation.email,
+        displayName: invitation.displayName,
+        emailVerified: true,
+      }));
+
+    await createMembership({
+      tenantId: invitation.tenantId,
+      userId: user._id,
+      roleIds: invitation.roleIds,
+      invitedBy: invitation.invitedBy,
+    });
+    await acceptInvitation(invitation._id, user._id);
+
+    return NextResponse.json({
+      ok: true,
+      userId: user._id,
+      existing: true,
+      redirectLogin: true,
+    });
+  }
+
+  if (!body.password || body.password.length < 8) {
+    return NextResponse.json(
+      { ok: false, error: "La contraseña debe tener al menos 8 caracteres." },
+      { status: 400 }
+    );
+  }
+
+  const passwordResult = await setKeycloakPasswordForInvite({
+    email: invitation.email,
+    displayName: invitation.displayName,
+    password: body.password,
+  });
+
+  if (!passwordResult.ok) {
+    return NextResponse.json(
+      { ok: false, error: passwordResult.error },
+      { status: passwordResult.code === "not_configured" ? 503 : 502 }
+    );
+  }
+
+  try {
+    const tokens = await loginWithKeycloakPassword({
+      username: invitation.email,
+      password: body.password,
+    });
+    const profile = await fetchKeycloakUserInfo(tokens.accessToken);
+    const { user } = await finishKeycloakLogin(
+      profile,
+      invitation.tenantId,
+      tokens.accessToken
+    );
+
+    const meta = await getRequestMeta();
+    const session = await createSession({
+      userId: user._id,
+      tenantId: invitation.tenantId,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
+    await setSessionCookie(session._id);
+    await updateUserLastLogin(user._id);
+
+    return NextResponse.json({ ok: true, userId: user._id, existing: false });
+  } catch (error) {
+    console.error("[invite] keycloak accept failed", error);
+    return NextResponse.json(
+      { ok: false, error: "No se pudo completar el acceso. Intenta de nuevo." },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleLocalAccept(
+  invitation: NonNullable<Awaited<ReturnType<typeof findInvitationByToken>>>,
+  body: { password?: string; displayName?: string }
+) {
+  const { registerWithEmail } = await import("@/core/identity");
   const existing = await findUserByEmail(invitation.email);
 
   if (existing) {

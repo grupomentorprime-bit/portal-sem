@@ -1,6 +1,9 @@
-import { redirect } from "next/navigation";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
+import { AcceptInviteForm } from "@/components/identity/AcceptInviteForm";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { keycloakUserNeedsPassword } from "@/lib/identity/keycloak-admin";
+import { findInvitationByToken } from "@/lib/identity/invitations";
+import { findUserByEmail } from "@/lib/identity/users";
 
 export const dynamic = "force-dynamic";
 
@@ -9,12 +12,7 @@ interface InvitePageProps {
 }
 
 export default async function InvitePage({ params }: InvitePageProps) {
-  if (isKeycloakOnlyAuth()) {
-    redirect("/admin/login");
-  }
-
   const { token } = await params;
-  const { findInvitationByToken } = await import("@/lib/identity/invitations");
   const invitation = await findInvitationByToken(token);
 
   if (!invitation) {
@@ -36,9 +34,11 @@ export default async function InvitePage({ params }: InvitePageProps) {
     );
   }
 
-  const { findUserByEmail } = await import("@/lib/identity/users");
-  const existingUser = await findUserByEmail(invitation.email);
-  const { AcceptInviteForm } = await import("@/components/identity/AcceptInviteForm");
+  const existingUserRecord = await findUserByEmail(invitation.email);
+  const needsPassword = isKeycloakOnlyAuth()
+    ? await keycloakUserNeedsPassword(invitation.email)
+    : !existingUserRecord;
+  const existingUser = isKeycloakOnlyAuth() ? !needsPassword : Boolean(existingUserRecord);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
@@ -62,7 +62,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
           token={token}
           email={invitation.email}
           displayName={invitation.displayName || invitation.email}
-          existingUser={Boolean(existingUser)}
+          existingUser={existingUser}
         />
       </div>
     </div>

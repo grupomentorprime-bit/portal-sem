@@ -12,73 +12,86 @@ export async function GET() {
     const ctx = await requirePermission("settings.team");
     if (ctx instanceof NextResponse) return ctx;
 
-    const memberships = await listMembershipsByTenant(ctx.tenantId);
-    const userIds = memberships.map((m) => m.userId);
-    const users = await listUsersByIds(userIds);
-    const userMap = new Map(users.map((u) => [u._id, u]));
+    const [memberships, invitations, audit] = await Promise.all([
+      listMembershipsByTenant(ctx.tenantId),
+      listInvitationsByTenant(ctx.tenantId),
+      listAuditByTenant(ctx.tenantId, 50),
+    ]);
 
-    const members = await Promise.all(
-      memberships.map(async (m) => {
-        const user = userMap.get(m.userId);
-        const roles = await findRolesByIds(ctx.tenantId, m.roleIds);
-        return {
-          membershipId: m._id,
-          userId: m.userId,
-          email: user?.email ?? "",
-          displayName: user?.displayName ?? "",
-          status: m.status,
-          roleIds: m.roleIds,
-          roles: roles.map((r) => ({
-            id: r._id,
-            name: r.name,
-            label: getInstitutionalRoleLabel(r.name),
-          })),
-          joinedAt: m.joinedAt,
-          lastLoginAt: user?.lastLoginAt,
-        };
-      })
-    );
-
-    const invitations = await listInvitationsByTenant(ctx.tenantId);
-    const audit = await listAuditByTenant(ctx.tenantId, 50);
-
-    const auditUserIds = audit.map((a) => a.userId);
+    const userIds = memberships.map((membership) => membership.userId);
+    const auditUserIds = audit.map((entry) => entry.userId);
     const allUserIds = [...new Set([...userIds, ...auditUserIds])];
-    const allUsers = allUserIds.length > userIds.length ? await listUsersByIds(allUserIds) : users;
-    const fullUserMap = new Map(allUsers.map((u) => [u._id, u]));
+    const users = await listUsersByIds(allUserIds);
+    const userMap = new Map(users.map((user) => [user._id, user]));
 
-    const invitationsWithRoles = await Promise.all(
-      invitations.map(async (i) => {
-        const roles = await findRolesByIds(ctx.tenantId, i.roleIds);
-        return {
-          id: i._id,
-          email: i.email,
-          displayName: i.displayName || i.email,
-          status: i.status,
-          expiresAt: i.expiresAt,
-          createdAt: i.createdAt,
-          roles: roles.map((r) => ({
-            id: r._id,
-            name: r.name,
-            label: getInstitutionalRoleLabel(r.name),
-          })),
-        };
-      })
-    );
+    const allRoleIds = [
+      ...new Set([
+        ...memberships.flatMap((membership) => membership.roleIds),
+        ...invitations.flatMap((invitation) => invitation.roleIds),
+      ]),
+    ];
+    const roles = await findRolesByIds(ctx.tenantId, allRoleIds);
+    const roleMap = new Map(roles.map((role) => [role._id, role]));
+
+    const members = memberships.map((membership) => {
+      const user = userMap.get(membership.userId);
+      const memberRoles = membership.roleIds
+        .map((roleId) => roleMap.get(roleId))
+        .filter((role): role is NonNullable<typeof role> => Boolean(role));
+
+      return {
+        membershipId: membership._id,
+        userId: membership.userId,
+        email: user?.email ?? "",
+        displayName: user?.displayName ?? "",
+        status: membership.status,
+        roleIds: membership.roleIds,
+        roles: memberRoles.map((role) => ({
+          id: role._id,
+          name: role.name,
+          label: getInstitutionalRoleLabel(role.name),
+        })),
+        joinedAt: membership.joinedAt,
+        lastLoginAt: user?.lastLoginAt,
+      };
+    });
+
+    const invitationsWithRoles = invitations.map((invitation) => {
+      const invitationRoles = invitation.roleIds
+        .map((roleId) => roleMap.get(roleId))
+        .filter((role): role is NonNullable<typeof role> => Boolean(role));
+
+      return {
+        id: invitation._id,
+        email: invitation.email,
+        displayName: invitation.displayName || invitation.email,
+        status: invitation.status,
+        expiresAt: invitation.expiresAt,
+        createdAt: invitation.createdAt,
+        roles: invitationRoles.map((role) => ({
+          id: role._id,
+          name: role.name,
+          label: getInstitutionalRoleLabel(role.name),
+        })),
+      };
+    });
 
     return NextResponse.json({
       ok: true,
       members,
       invitations: invitationsWithRoles,
-      audit: audit.map((a) => ({
-        id: a._id,
-        action: a.action,
-        entity: a.entity,
-        entityId: a.entityId,
-        userId: a.userId,
-        actorName: fullUserMap.get(a.userId)?.displayName || fullUserMap.get(a.userId)?.email || "Usuario",
-        createdAt: a.createdAt,
-        metadata: a.metadata,
+      audit: audit.map((entry) => ({
+        id: entry._id,
+        action: entry.action,
+        entity: entry.entity,
+        entityId: entry.entityId,
+        userId: entry.userId,
+        actorName:
+          userMap.get(entry.userId)?.displayName ||
+          userMap.get(entry.userId)?.email ||
+          "Usuario",
+        createdAt: entry.createdAt,
+        metadata: entry.metadata,
       })),
     });
   } catch (error) {

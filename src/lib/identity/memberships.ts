@@ -16,6 +16,11 @@ export async function findMembership(
   });
 }
 
+export async function countMembershipsByTenant(tenantId: string): Promise<number> {
+  const db = await getDatabase();
+  return db.collection<IdentityMembership>("identity_memberships").countDocuments({ tenantId });
+}
+
 export async function listMembershipsByTenant(
   tenantId: string
 ): Promise<IdentityMembership[]> {

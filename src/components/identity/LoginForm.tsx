@@ -19,6 +19,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") || "/admin";
   const oauthError = searchParams.get("error");
+  const emailFromQuery = searchParams.get("email")?.trim() ?? "";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +34,12 @@ export function LoginForm() {
       setError(OAUTH_ERRORS[oauthError]);
     }
   }, [oauthError]);
+
+  useEffect(() => {
+    if (emailFromQuery) {
+      setEmail(emailFromQuery);
+    }
+  }, [emailFromQuery]);
 
   useEffect(() => {
     fetch("/api/identity/auth/providers")

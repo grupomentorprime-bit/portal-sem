@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAuth, requireSession } from "@/core/identity";
 import { isEmailAuthEnabled, isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { getSiteConfig } from "@/lib/cms/config";
 import { findRolesByIds } from "@/lib/identity/roles";
-import { loadSessionContext } from "@/lib/identity/sessions";
 import { changeUserPassword, updateUserProfile } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
 
@@ -32,17 +31,15 @@ function serializeUser(user: {
 
 export async function GET() {
   try {
-    const session = await loadSessionContext();
     const ctx = await requireAuth();
     if (ctx instanceof NextResponse) return ctx;
 
-    const config = await getSiteConfigUncached();
+    const config = await getSiteConfig();
     const roles = ctx.membership
       ? await findRolesByIds(ctx.tenantId, ctx.membership.roleIds)
       : [];
     const primaryRole = roles[0]?.name;
-
-    const user = session?.user ?? ctx.user;
+    const user = ctx.user;
 
     return NextResponse.json({
       ok: true,
@@ -55,9 +52,11 @@ export async function GET() {
         name: r.name,
         label: getInstitutionalRoleLabel(r.name),
       })),
-      roleLabel: primaryRole ? getInstitutionalRoleLabel(primaryRole) : "Colaborador",
+      roleLabel:
+        user.jobTitle?.trim() ||
+        (primaryRole ? getInstitutionalRoleLabel(primaryRole) : "Colaborador"),
       compatMode: ctx.compatMode,
-      authenticated: Boolean(session),
+      authenticated: true,
       authMethod: isKeycloakOnlyAuth() ? "institutional" : "local",
     });
   } catch (error) {

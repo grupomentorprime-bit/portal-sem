@@ -6,10 +6,25 @@ import {
   acceptInvitation,
   findPendingInvitationByEmail,
 } from "@/lib/identity/invitations";
-import { createMembership, findMembership } from "@/lib/identity/memberships";
+import {
+  createMembership,
+  findMembership,
+  updateMembershipRoles,
+} from "@/lib/identity/memberships";
 import { ensureTenantRoles, getOwnerRole } from "@/lib/identity/roles";
-import { createUser, findUserByEmail, upsertOidcCredential } from "@/lib/identity/users";
+import {
+  createUser,
+  findUserByEmail,
+  updateUserProfile,
+  upsertOidcCredential,
+} from "@/lib/identity/users";
 import type { KeycloakUserInfo } from "@/core/identity/auth/keycloak";
+import {
+  buildKeycloakIdentityClaims,
+  decodeAccessTokenPayload,
+  extractRealmRoles,
+  resolveCmsRoleIdsFromKeycloak,
+} from "@/lib/identity/keycloak-profile";
 
 export class KeycloakAccessError extends Error {
   constructor(
@@ -23,26 +38,35 @@ export class KeycloakAccessError extends Error {
 
 export async function upsertUserFromKeycloak(
   profile: KeycloakUserInfo,
-  tenantId: string
+  tenantId: string,
+  accessToken: string
 ): Promise<IdentityUser> {
   const email = profile.email?.toLowerCase().trim();
   if (!email) {
-    throw new Error("Keycloak no devolvió un correo válido.");
+    throw new Error("El servidor de identidad no devolvió un correo válido.");
   }
 
+  const claims = buildKeycloakIdentityClaims(profile, accessToken);
   const invitation = await findPendingInvitationByEmail(tenantId, email);
   let user = await findUserByEmail(email);
+
+  const displayName =
+    claims.displayName ||
+    invitation?.displayName?.trim() ||
+    email;
 
   if (!user) {
     user = await createUser({
       email,
-      displayName:
-        invitation?.displayName?.trim() ||
-        profile.name?.trim() ||
-        profile.preferred_username ||
-        email,
+      displayName,
       emailVerified: profile.email_verified ?? false,
     });
+  } else {
+    user =
+      (await updateUserProfile(user._id, {
+        displayName,
+        jobTitle: claims.jobTitle,
+      })) ?? user;
   }
 
   await upsertOidcCredential({
@@ -51,6 +75,8 @@ export async function upsertUserFromKeycloak(
     providerData: {
       issuer: "keycloak",
       preferredUsername: profile.preferred_username,
+      realmRoles: claims.realmRoles,
+      jobTitle: claims.jobTitle,
     },
   });
 
@@ -59,21 +85,41 @@ export async function upsertUserFromKeycloak(
 
 export async function resolveKeycloakMembership(
   user: IdentityUser,
-  tenantId: string
+  tenantId: string,
+  accessToken: string
 ): Promise<IdentityMembership | null> {
+  const payload = decodeAccessTokenPayload(accessToken);
+  const realmRoles = extractRealmRoles(payload);
+  const keycloakRoleIds = await resolveCmsRoleIdsFromKeycloak(tenantId, realmRoles);
+
   const existing = await findMembership(user._id, tenantId);
-  if (existing) return existing;
+  if (existing) {
+    if (keycloakRoleIds.length > 0) {
+      const updated = await updateMembershipRoles(existing._id, keycloakRoleIds);
+      return updated ?? existing;
+    }
+    return existing;
+  }
 
   const invitation = await findPendingInvitationByEmail(tenantId, user.email);
   if (invitation) {
+    const roleIds = keycloakRoleIds.length > 0 ? keycloakRoleIds : invitation.roleIds;
     const membership = await createMembership({
       tenantId,
       userId: user._id,
-      roleIds: invitation.roleIds,
+      roleIds,
       invitedBy: invitation.invitedBy,
     });
     await acceptInvitation(invitation._id, user._id);
     return membership;
+  }
+
+  if (keycloakRoleIds.length > 0) {
+    return createMembership({
+      tenantId,
+      userId: user._id,
+      roleIds: keycloakRoleIds,
+    });
   }
 
   const db = await getDatabase();
@@ -96,10 +142,11 @@ export async function resolveKeycloakMembership(
 
 export async function finishKeycloakLogin(
   profile: KeycloakUserInfo,
-  tenantId: string
+  tenantId: string,
+  accessToken: string
 ): Promise<{ user: IdentityUser; membership: IdentityMembership }> {
-  const user = await upsertUserFromKeycloak(profile, tenantId);
-  const membership = await resolveKeycloakMembership(user, tenantId);
+  const user = await upsertUserFromKeycloak(profile, tenantId, accessToken);
+  const membership = await resolveKeycloakMembership(user, tenantId, accessToken);
 
   if (!membership) {
     throw new KeycloakAccessError(

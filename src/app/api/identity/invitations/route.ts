@@ -98,6 +98,17 @@ export async function POST(request: Request) {
       expiresInMinutes: isKeycloakOnlyAuth() ? 60 * 24 * 7 : undefined,
     });
 
+    if (isKeycloakOnlyAuth()) {
+      const { provisionKeycloakUserForInvite } = await import("@/lib/identity/keycloak-admin");
+      const provision = await provisionKeycloakUserForInvite({
+        email: normalizedEmail,
+        displayName: invitation.displayName,
+      });
+      if (!provision.ok && provision.code === "keycloak_error") {
+        console.error("[invitations] keycloak provision failed", provision.error);
+      }
+    }
+
     if (!ctx.compatMode) {
       await writeAudit({
         tenantId: ctx.tenantId,

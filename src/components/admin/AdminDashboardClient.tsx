@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { AuditTimeline, type AuditTimelineEntry } from "@/components/admin/AuditTimeline";
 import { AdminQuickActions } from "@/components/admin/AdminModuleLayout";
 import { formatRelativeTime } from "@/lib/admin/audit-labels";
@@ -10,63 +9,30 @@ import { Badge } from "@/components/ui";
 interface AdminDashboardClientProps {
   portalStatus: string;
   institutionName: string;
+  displayName: string;
+  roleLabel: string;
+  lastLoginAt?: string;
   newsCount: number;
   programsCount: number;
   invitationsPending: number;
   recentActivityCount: number;
+  memberCount: number;
+  auditPreview: AuditTimelineEntry[];
 }
 
 export function AdminDashboardClient({
   portalStatus,
   institutionName,
+  displayName,
+  roleLabel,
+  lastLoginAt,
   newsCount,
   programsCount,
   invitationsPending,
   recentActivityCount,
+  memberCount,
+  auditPreview,
 }: AdminDashboardClientProps) {
-  const [displayName, setDisplayName] = useState("");
-  const [roleLabel, setRoleLabel] = useState("");
-  const [members, setMembers] = useState(0);
-  const [audit, setAudit] = useState<AuditTimelineEntry[]>([]);
-  const [lastLoginAt, setLastLoginAt] = useState<string | undefined>();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const [meRes, teamRes] = await Promise.all([
-          fetch("/api/identity/me"),
-          fetch("/api/identity/team"),
-        ]);
-        const me = await meRes.json();
-        const team = await teamRes.json();
-        if (cancelled) return;
-
-        if (me.ok) {
-          setDisplayName(me.user.displayName || me.user.email);
-          setRoleLabel(me.roleLabel ?? "Colaborador");
-          setLastLoginAt(me.user.lastLoginAt);
-        }
-        if (team.ok) {
-          setMembers(team.members?.length ?? 0);
-          setAudit((team.audit ?? []).slice(0, 6));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (loading) {
-    return <p className="text-sm text-muted">Cargando centro de administración…</p>;
-  }
-
   const portalActive = portalStatus === "active" || portalStatus === "published";
 
   return (
@@ -75,10 +41,10 @@ export function AdminDashboardClient({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-muted">Bienvenido de vuelta</p>
-            <h2 className="mt-1 text-2xl font-semibold text-foreground">
-              {displayName || "Administrador"}
-            </h2>
-            <p className="text-muted">{roleLabel} · {institutionName}</p>
+            <h2 className="mt-1 text-2xl font-semibold text-foreground">{displayName}</h2>
+            <p className="text-muted">
+              {roleLabel} · {institutionName}
+            </p>
             {lastLoginAt ? (
               <p className="mt-2 text-xs text-muted">
                 Último acceso: {formatRelativeTime(lastLoginAt)}
@@ -97,8 +63,12 @@ export function AdminDashboardClient({
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Noticias" value={String(newsCount)} href="/admin/content/news" />
         <StatCard label="Programas" value={String(programsCount)} href="/admin/content/programs" />
-        <StatCard label="Invitaciones pendientes" value={String(invitationsPending)} href="/admin/settings/users" />
-        <StatCard label="Usuarios CMS" value={String(members)} href="/admin/settings/users" />
+        <StatCard
+          label="Invitaciones pendientes"
+          value={String(invitationsPending)}
+          href="/admin/settings/users"
+        />
+        <StatCard label="Usuarios CMS" value={String(memberCount)} href="/admin/settings/users" />
       </section>
 
       <section>
@@ -107,10 +77,22 @@ export function AdminDashboardClient({
         </h3>
         <AdminQuickActions
           items={[
-            { href: "/admin/portal/admission", label: "Centro de admisión", description: "Hero, fechas y postulación" },
-            { href: "/admin/content/programs", label: "Programas y cursos", description: "Oferta académica" },
+            {
+              href: "/admin/portal/admission",
+              label: "Centro de admisión",
+              description: "Hero, fechas y postulación",
+            },
+            {
+              href: "/admin/content/programs",
+              label: "Programas y cursos",
+              description: "Oferta académica",
+            },
             { href: "/admin/content/news", label: "Publicar noticia", description: "Comunicado institucional" },
-            { href: "/admin/portal/forms", label: "Centro de formularios", description: "Convocatorias y asistencia" },
+            {
+              href: "/admin/portal/forms",
+              label: "Centro de formularios",
+              description: "Convocatorias y asistencia",
+            },
             { href: "/admin/media", label: "Subir medios", description: "Biblioteca visual" },
             { href: "/admin/config", label: "Institución", description: "Datos y configuración" },
             { href: "/admin/pages", label: "Páginas del portal", description: "Estructura del sitio" },
@@ -146,7 +128,7 @@ export function AdminDashboardClient({
             </Link>
           </div>
           <div className="mt-4">
-            <AuditTimeline entries={audit} />
+            <AuditTimeline entries={auditPreview} />
           </div>
         </div>
       </section>
