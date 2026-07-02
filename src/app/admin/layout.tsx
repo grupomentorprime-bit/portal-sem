@@ -5,6 +5,8 @@ import { isIdentityEnforced } from "@/core/identity";
 import { findRolesByIds } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {
