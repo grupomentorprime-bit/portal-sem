@@ -1,16 +1,29 @@
 import { NextResponse } from "next/server";
-import { requirePermission } from "@/core/identity";
+import { requireAuth } from "@/core/identity";
+import { authorize } from "@/core/identity/policies/engine";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { resolvePermissionsForRoles } from "@/lib/identity/roles";
 import {
   getStorageIntegrationPublic,
   updateStorageIntegration,
 } from "@/lib/cms/storage-config";
+import { ensureTenantRoles } from "@/lib/identity/roles";
 import type { StorageIntegrationUpdate } from "@/types/integrations";
 
 export async function GET() {
   try {
-    const ctx = await requirePermission("settings.integrations");
-    if (ctx instanceof NextResponse) return ctx;
+    const auth = await requireAuth();
+    if (auth instanceof NextResponse) return auth;
+
+    await ensureTenantRoles(auth.tenantId);
+
+    const permissions = auth.membership
+      ? await resolvePermissionsForRoles(auth.tenantId, auth.membership.roleIds)
+      : [];
+    const result = authorize({ ...auth, permissions }, "settings.integrations");
+    if (!result.ok) {
+      return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
+    }
 
     const config = await getStorageIntegrationPublic();
     return NextResponse.json({ ok: true, config });

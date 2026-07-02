@@ -19,6 +19,7 @@
     "migrate": "npx tsx scripts/migrate.ts",
     "migrate:hero-v2": "npx tsx scripts/migrate.ts 001-hero-v2",
     "migrate:local-media-to-s3": "npx tsx scripts/migrate-local-cms-media-to-s3.ts",
+    "sync:tenant-roles": "npx tsx scripts/sync-tenant-roles.ts",
     "setup:keycloak": "npx tsx scripts/setup-keycloak-client.ts",
     "check:keycloak": "npx tsx scripts/check-keycloak.ts"
   },

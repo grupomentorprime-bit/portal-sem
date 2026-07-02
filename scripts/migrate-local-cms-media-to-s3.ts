@@ -89,6 +89,14 @@ function normalizeEndpoint(endpoint: string): string {
   return `https://${trimmed.replace(/\/$/, "")}`;
 }
 
+function inferS3Region(endpoint: string, region: string): string {
+  const normalized = region.trim();
+  if (normalized && normalized !== "auto") return normalized;
+  const b2Match = endpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/i);
+  if (b2Match) return b2Match[1];
+  return normalized || "auto";
+}
+
 function resolveFromEnv(): S3Config | null {
   const bucket = process.env.S3_BUCKET?.trim();
   const accessKeyId = process.env.S3_ACCESS_KEY_ID?.trim();
@@ -96,9 +104,10 @@ function resolveFromEnv(): S3Config | null {
   if (!bucket || !accessKeyId || !secretAccessKey) return null;
 
   const publicUrl = process.env.S3_PUBLIC_URL?.trim().replace(/\/$/, "") ?? "";
+  const endpoint = normalizeEndpoint(process.env.S3_ENDPOINT?.trim() ?? "");
   return {
-    endpoint: normalizeEndpoint(process.env.S3_ENDPOINT?.trim() ?? ""),
-    region: process.env.S3_REGION?.trim() || "auto",
+    endpoint,
+    region: inferS3Region(endpoint, process.env.S3_REGION?.trim() || "auto"),
     bucket,
     accessKeyId,
     secretAccessKey,
@@ -115,7 +124,7 @@ function resolveFromDocument(doc: StorageDocument): S3Config | null {
   try {
     return {
       endpoint: normalizeEndpoint(doc.endpoint),
-      region: doc.region.trim() || "auto",
+      region: inferS3Region(normalizeEndpoint(doc.endpoint), doc.region.trim() || "auto"),
       bucket: doc.bucket.trim(),
       accessKeyId: doc.accessKeyId.trim(),
       secretAccessKey: decryptSecret(doc.secretAccessKeyEncrypted),
@@ -161,6 +170,9 @@ async function putS3Object(
   buffer: Buffer,
   mimeType: string
 ): Promise<void> {
+  if (buffer.length === 0) {
+    throw new Error(`Archivo vacío: ${key}`);
+  }
   const client = createS3Client(s3);
   await client.send(
     new PutObjectCommand({
@@ -242,7 +254,8 @@ async function main() {
   const doc = await db
     .collection<StorageDocument>("platform_integrations")
     .findOne({ _id: STORAGE_INTEGRATION_ID });
-  const s3 = (doc ? resolveFromDocument(doc) : null) ?? resolveFromEnv();
+  const fromEnv = resolveFromEnv();
+  const s3 = fromEnv ?? (doc ? resolveFromDocument(doc) : null);
 
   if (!s3) {
     console.error(
@@ -285,7 +298,16 @@ async function main() {
       }
 
       const buffer = readFileSync(localPath);
-      await putS3Object(s3, key, buffer, guessMimeType(key));
+      if (buffer.length === 0) {
+        console.warn(`  ⚠ Omitido (vacío): ${key}`);
+        continue;
+      }
+      try {
+        await putS3Object(s3, key, buffer, guessMimeType(key));
+      } catch (error) {
+        console.error(`  ✗ Error subiendo ${key}:`, (error as Error).message);
+        throw error;
+      }
       keyToPublicUrl.set(key, publicUrl);
       uploaded += 1;
       console.log(`  ✓ ${key}`);
