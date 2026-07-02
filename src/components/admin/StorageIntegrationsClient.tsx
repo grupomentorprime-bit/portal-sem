@@ -321,24 +321,25 @@ export function StorageIntegrationsClient() {
               ) : null}
 
               <div className="space-y-1.5">
-                <Label htmlFor="accessKeyId">Access Key ID</Label>
+                <Label htmlFor="accessKeyId">ID de clave de aplicación</Label>
                 <Input
                   id="accessKeyId"
                   value={form.accessKeyId}
                   onChange={(e) => patch("accessKeyId", e.target.value)}
                   required
                   autoComplete="off"
+                  placeholder="Ej. 005abc1234567890000000001"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="secretAccessKey">Secret Access Key</Label>
+                <Label htmlFor="secretAccessKey">Clave secreta de aplicación</Label>
                 <Input
                   id="secretAccessKey"
                   type="password"
                   value={form.secretAccessKey ?? ""}
                   onChange={(e) => patch("secretAccessKey", e.target.value)}
-                  placeholder={hasExistingSecret ? "••••••••  (dejar vacío para mantener)" : ""}
+                  placeholder={hasExistingSecret ? "••••••••  (dejar vacío para mantener)" : "Pegue la clave generada en B2"}
                   autoComplete="new-password"
                 />
               </div>

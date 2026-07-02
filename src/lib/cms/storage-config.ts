@@ -69,25 +69,21 @@ function resolveFromDocument(doc: StorageIntegrationDocument): ResolvedStorageSe
     return null;
   }
 
-  try {
-    const secretAccessKey = decryptSecret(doc.secretAccessKeyEncrypted);
-    return {
-      mode: "s3",
-      source: "database",
-      s3: normalizeS3Fields({
-        endpoint: doc.endpoint,
-        region: doc.region.trim() || "auto",
-        bucket: doc.bucket,
-        accessKeyId: doc.accessKeyId,
-        secretAccessKey,
-        publicUrl: doc.publicUrl,
-        forcePathStyle: doc.forcePathStyle,
-        accessMode: doc.accessMode ?? "private",
-      }),
-    };
-  } catch {
-    return null;
-  }
+  const secretAccessKey = decryptSecret(doc.secretAccessKeyEncrypted);
+  return {
+    mode: "s3",
+    source: "database",
+    s3: normalizeS3Fields({
+      endpoint: doc.endpoint,
+      region: doc.region.trim() || "auto",
+      bucket: doc.bucket,
+      accessKeyId: doc.accessKeyId,
+      secretAccessKey,
+      publicUrl: doc.publicUrl,
+      forcePathStyle: doc.forcePathStyle,
+      accessMode: doc.accessMode ?? "private",
+    }),
+  };
 }
 
 export async function resolveStorageSettings(): Promise<ResolvedStorageSettings> {
@@ -97,16 +93,45 @@ export async function resolveStorageSettings(): Promise<ResolvedStorageSettings>
   }
 
   const doc = await fetchStorageDocument();
-  const fromDb = doc ? resolveFromDocument(doc) : null;
-  const resolved = fromDb ?? resolveFromEnv() ?? { mode: "local" as const, source: "none" as const };
+  if (doc?.enabled) {
+    try {
+      const fromDb = resolveFromDocument(doc);
+      if (fromDb) {
+        cachedSettings = fromDb;
+        cacheExpiresAt = now + CACHE_TTL_MS;
+        return fromDb;
+      }
+    } catch (error) {
+      console.error("[storage] integration enabled but credentials unreadable", error);
+    }
+  } else if (doc) {
+    const fromDb = resolveFromDocument(doc);
+    if (fromDb) {
+      cachedSettings = fromDb;
+      cacheExpiresAt = now + CACHE_TTL_MS;
+      return fromDb;
+    }
+  }
+
+  const fromEnv = resolveFromEnv();
+  const resolved = fromEnv ?? { mode: "local" as const, source: "none" as const };
 
   cachedSettings = resolved;
   cacheExpiresAt = now + CACHE_TTL_MS;
   return resolved;
 }
 
-export const STORAGE_S3_REQUIRED_MESSAGE =
-  "Almacenamiento S3 no configurado. Configure S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY en el servidor, o la integración en Admin → Integraciones → Almacenamiento.";
+export const STORAGE_NOT_CONFIGURED_MESSAGE =
+  "Configure el almacenamiento en Admin → Integraciones → Almacenamiento y guárdelo activo.";
+
+export const STORAGE_INTEGRATION_INCOMPLETE_MESSAGE =
+  "La integración de almacenamiento está incompleta. Revise el bucket y las claves en Integraciones → Almacenamiento.";
+
+export const STORAGE_INTEGRATION_DECRYPT_MESSAGE =
+  "No se pudo leer la clave guardada. Vuelva a ingresar la clave secreta en Integraciones → Almacenamiento y pulse Guardar.";
+
+/** @deprecated Usar STORAGE_NOT_CONFIGURED_MESSAGE */
+export const STORAGE_S3_REQUIRED_MESSAGE = STORAGE_NOT_CONFIGURED_MESSAGE;
 
 export function isS3StorageReady(
   settings: ResolvedStorageSettings
@@ -118,11 +143,28 @@ export function isS3StorageReady(
 export async function assertS3StorageForUpload(): Promise<
   NonNullable<ResolvedStorageSettings["s3"]>
 > {
-  const settings = await resolveStorageSettings();
-  if (!isS3StorageReady(settings)) {
-    throw new Error(STORAGE_S3_REQUIRED_MESSAGE);
+  const doc = await fetchStorageDocument();
+
+  if (doc?.enabled) {
+    if (!doc.bucket?.trim() || !doc.accessKeyId?.trim() || !doc.secretAccessKeyEncrypted) {
+      throw new Error(STORAGE_INTEGRATION_INCOMPLETE_MESSAGE);
+    }
+
+    try {
+      const fromDb = resolveFromDocument(doc);
+      if (fromDb?.s3) return fromDb.s3;
+    } catch (error) {
+      console.error("[storage] upload blocked: cannot decrypt integration secret", error);
+      throw new Error(STORAGE_INTEGRATION_DECRYPT_MESSAGE);
+    }
   }
-  return settings.s3;
+
+  const settings = await resolveStorageSettings();
+  if (isS3StorageReady(settings)) {
+    return settings.s3;
+  }
+
+  throw new Error(STORAGE_NOT_CONFIGURED_MESSAGE);
 }
 
 export async function getStorageIntegrationPublic(): Promise<StorageIntegrationPublic> {
@@ -261,7 +303,7 @@ export async function getResolvedS3SettingsForTest(
         : "");
 
     if (!override.bucket?.trim() || !override.accessKeyId?.trim() || !secret) {
-      throw new Error("Completa bucket, access key y secret key para probar la conexión.");
+      throw new Error("Complete bucket, ID de clave y clave secreta para probar la conexión.");
     }
 
     return normalizeS3Fields({
