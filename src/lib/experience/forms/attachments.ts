@@ -57,6 +57,12 @@ export function hasJustificationAttachment(data: Record<string, unknown>): boole
   return hasSubmissionAttachment(data.justificationAttachment) || hasPendingAttachmentFile(data.justificationAttachmentFile);
 }
 
+export function getUploadedJustificationAttachment(
+  data: Record<string, unknown>
+): FormSubmissionAttachment | null {
+  return parseSubmissionAttachment(data.justificationAttachment);
+}
+
 export function parseSubmissionAttachment(value: unknown): FormSubmissionAttachment | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;

@@ -5,6 +5,7 @@ import { FileCheck2, FileUp, Loader2, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ABSENCE_REVIEW_POLICY } from "@/lib/admin/forms-center";
 import type { FormSubmissionAttachment } from "@/lib/experience/forms/attachments";
+import { hasSubmissionAttachment } from "@/lib/experience/forms/attachments";
 
 interface AbsenceJustificationFieldsProps {
   values: Record<string, unknown>;
@@ -35,7 +36,7 @@ export function AbsenceJustificationFields({
   const selectedName = pendingFile?.name ?? attachment?.filename ?? "";
   const selectedSize = pendingFile?.size ?? attachment?.size ?? 0;
   const hasSelectedFile = Boolean(selectedName);
-  const isUploaded = Boolean(attachment?.mediaId);
+  const isUploaded = hasSubmissionAttachment(attachment);
 
   const handleClearFile = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -107,6 +108,11 @@ export function AbsenceJustificationFields({
               <p className="absence-attachment-card__filename">{selectedName}</p>
               {selectedSize > 0 ? (
                 <p className="absence-attachment-card__meta">{formatFileSize(selectedSize)}</p>
+              ) : null}
+              {!isUploaded && !uploading && !errors.justificationAttachment ? (
+                <p className="absence-attachment-card__meta text-amber-700">
+                  El archivo se subirá al enviar el formulario.
+                </p>
               ) : null}
             </div>
             <div className="absence-attachment-card__actions">

@@ -2,7 +2,9 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
+  getUploadedJustificationAttachment,
   hasJustificationAttachment,
+  parseSubmissionAttachment,
   validateFormAttachmentFile,
 } from "@/lib/experience/forms/attachments";
 import { validateFormSubmission, normalizeFormSubmissionData } from "@/core/experience/forms/validation";
@@ -142,10 +144,19 @@ export function PortalConvocatoriaExperienceForm({
           return;
         }
 
+        const uploadedAttachment = parseSubmissionAttachment(uploadPayload.attachment);
+        if (!uploadedAttachment) {
+          setErrors({
+            justificationAttachment:
+              "El justificativo se recibió de forma incompleta. Intenta subirlo nuevamente.",
+          });
+          return;
+        }
+
         setValues((prev) => ({
           ...prev,
           justificationAttachmentFile: file,
-          justificationAttachment: uploadPayload.attachment,
+          justificationAttachment: uploadedAttachment,
         }));
       } catch {
         setErrors({
@@ -208,22 +219,43 @@ export function PortalConvocatoriaExperienceForm({
       const submissionData: Record<string, unknown> = { ...normalizedValues };
 
       if (submissionData.attendance === "no") {
-        if (!hasJustificationAttachment(submissionData)) {
+        let uploadedAttachment = getUploadedJustificationAttachment(values);
+
+        if (!uploadedAttachment) {
           const pendingFile = resolvePendingAttachmentFile();
-          if (pendingFile) {
-            const uploadPayload = await uploadAttachment(pendingFile);
-            if (!uploadPayload.ok || !uploadPayload.attachment) {
-              setErrors({
-                justificationAttachment:
-                  uploadPayload.error ?? "No se pudo subir el justificativo. Intenta nuevamente.",
-              });
-              return;
-            }
-            submissionData.justificationAttachment = uploadPayload.attachment;
+          if (!pendingFile) {
+            setErrors({
+              justificationAttachment: "Debe adjuntar un justificativo de respaldo.",
+            });
+            setValidationSummary(
+              buildValidationSummaryItems(
+                { justificationAttachment: "Debe adjuntar un justificativo de respaldo." },
+                form
+              )
+            );
+            return;
           }
-        } else {
-          submissionData.justificationAttachment = values.justificationAttachment;
+
+          const uploadPayload = await uploadAttachment(pendingFile);
+          if (!uploadPayload.ok || !uploadPayload.attachment) {
+            setErrors({
+              justificationAttachment:
+                uploadPayload.error ?? "No se pudo subir el justificativo. Intenta nuevamente.",
+            });
+            return;
+          }
+
+          uploadedAttachment = parseSubmissionAttachment(uploadPayload.attachment);
+          if (!uploadedAttachment) {
+            setErrors({
+              justificationAttachment:
+                "El justificativo se recibió de forma incompleta. Intenta subirlo nuevamente.",
+            });
+            return;
+          }
         }
+
+        submissionData.justificationAttachment = uploadedAttachment;
       }
 
       delete submissionData.justificationAttachmentFile;
