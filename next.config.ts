@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
     localPatterns: [
       {
         /** Proxy de medios privados (Backblaze B2) — admite ?key=… y ?v=… */
-        pathname: "/api/cms/media/stream",
+        pathname: "/api/cms/media/**",
       },
       {
         /** Medios CMS vía app route o public/media — admite ?v=… de caché */

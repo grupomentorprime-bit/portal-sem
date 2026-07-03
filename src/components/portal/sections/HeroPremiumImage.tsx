@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, type CSSProperties } from "react";
 import type { PremiumHeroSlideView } from "@/core/hero/map-slide";
+import { nextImagePropsForSrc } from "@/lib/media/next-image-props";
 
 interface HeroPremiumImageProps {
   slide: Pick<
@@ -31,6 +32,7 @@ function HeroPremiumImageInner({ slide, priority = true }: HeroPremiumImageProps
 
   const hasDistinctMobile = Boolean(mobileUrl && mobileUrl !== desktopUrl);
   const mediaKey = slideMediaKey(slide);
+  const optimizerProps = nextImagePropsForSrc(desktopUrl ?? mobileUrl ?? "");
   const imageStyle = {
     "--hero-img-position": slide.objectPosition,
   } as CSSProperties;
@@ -49,6 +51,7 @@ function HeroPremiumImageInner({ slide, priority = true }: HeroPremiumImageProps
             style={imageStyle}
             sizes="(max-width: 767px) 100vw, 58vw"
             onError={() => setFailed(true)}
+            {...optimizerProps}
           />
         ) : null}
         {hasDistinctMobile && mobileUrl ? (
@@ -62,6 +65,7 @@ function HeroPremiumImageInner({ slide, priority = true }: HeroPremiumImageProps
             style={imageStyle}
             sizes="100vw"
             onError={() => setFailed(true)}
+            {...nextImagePropsForSrc(mobileUrl)}
           />
         ) : null}
         {!hasDistinctMobile && (desktopUrl ?? mobileUrl) ? (
@@ -75,6 +79,7 @@ function HeroPremiumImageInner({ slide, priority = true }: HeroPremiumImageProps
             style={imageStyle}
             sizes="(max-width: 767px) 100vw, 58vw"
             onError={() => setFailed(true)}
+            {...optimizerProps}
           />
         ) : null}
       </div>
