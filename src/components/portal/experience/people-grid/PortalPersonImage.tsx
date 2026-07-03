@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { UserRound } from "lucide-react";
 import { iconSizes } from "@/design";
+import { nextImagePropsForSrc } from "@/lib/media/next-image-props";
 import { cn } from "@/lib/utils";
 
 interface PortalPersonImageProps {
@@ -51,6 +52,7 @@ export function PortalPersonImage({
               setError(true);
               setLoaded(true);
             }}
+            {...nextImagePropsForSrc(src!)}
           />
         </>
       ) : (
