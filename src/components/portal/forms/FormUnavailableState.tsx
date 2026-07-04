@@ -4,12 +4,14 @@ import { ArrowLeft, ArrowRight, CalendarX2, Mail } from "lucide-react";
 import type { FormLandingConfig } from "@/lib/admin/forms-center";
 import {
   formUnavailabilityCopy,
+  isPrivateExperienceFormId,
   type FormUnavailabilityReason,
 } from "@/lib/experience/forms/status";
 import type { FormExperienceStateMessage } from "@/types/experience-form-experience";
 
 interface FormUnavailableStateProps {
   reason: FormUnavailabilityReason;
+  formId?: string;
   landing?: FormLandingConfig | null;
   stateMessage?: FormExperienceStateMessage | null;
   formName?: string;
@@ -18,6 +20,7 @@ interface FormUnavailableStateProps {
 
 export function FormUnavailableState({
   reason,
+  formId,
   landing,
   stateMessage,
   formName,
@@ -27,9 +30,12 @@ export function FormUnavailableState({
   const copy = stateMessage ?? fallback;
   const headline = landing?.headline ?? formName ?? "Formulario";
   const theme = landing?.theme ?? "information";
+  const isPrivateForm = Boolean(formId && isPrivateExperienceFormId(formId));
   const primaryCta = stateMessage?.ctaHref
     ? { label: stateMessage.ctaLabel ?? "Continuar", href: stateMessage.ctaHref }
-    : { label: "Ver formularios disponibles", href: "/formularios" };
+    : isPrivateForm
+      ? { label: "Contactar al seminario", href: "/contacto" }
+      : { label: "Ver formularios disponibles", href: "/formularios" };
 
   return (
     <div className={`form-landing form-landing--${theme}`}>

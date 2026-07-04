@@ -81,7 +81,22 @@
 }
 
 .form-focused-shell .form-landing__hero-inner {
-  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  padding-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.form-focused-shell .form-landing__info-cards {
+  padding: 0.75rem clamp(1.25rem, 4vw, 2rem) 1rem;
+}
+
+@media (min-width: 640px) {
+  .form-focused-shell .form-landing__info-cards {
+    padding-bottom: 1.25rem;
+  }
+}
+
+.form-focused-shell .form-landing__form-section {
+  margin-top: 0;
+  padding-top: 0.25rem;
 }
 
 .form-focused-shell .form-landing__highlights {
@@ -108,12 +123,15 @@
   }
 
   .form-focused-shell .form-landing__form-section {
-    margin-top: -1.25rem;
-    padding-inline: 0;
+    margin-top: 0;
+    padding-inline: 1rem;
     padding-bottom: 0.75rem;
   }
 
   .form-focused-shell .form-landing__form-card {
+    width: 100%;
+    max-width: var(--fl-content-max, 42rem);
+    margin-inline: auto;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     border-inline: none;
     padding: 1.5rem 1.125rem 1.125rem;

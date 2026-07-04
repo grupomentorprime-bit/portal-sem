@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
-import { updateFormSubmissionAbsenceReview, deleteFormSubmission } from "@/lib/experience/forms/repository";
+import {
+  getFormSubmissionById,
+  updateFormSubmissionAbsenceReview,
+  deleteFormSubmission,
+} from "@/lib/experience/forms/repository";
+import { sendParticipantAbsenceReviewEmail } from "@/lib/notifications/convocatoria-follow-up-email";
 import {
   ABSENCE_REVIEW_STATUSES,
   type AbsenceReviewStatus,
@@ -28,6 +33,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     const ctx = await requirePermission("experience.forms.manage");
     if (ctx instanceof NextResponse) return ctx;
+
+    const existing = await getFormSubmissionById(ctx.tenantId, id);
+    if (!existing) {
+      return NextResponse.json({ ok: false, error: "Respuesta no encontrada." }, { status: 404 });
+    }
 
     const body = (await request.json()) as Partial<ExperienceFormAbsenceReview>;
     if (!isAbsenceReviewStatus(body.status)) {
@@ -63,7 +73,39 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Respuesta no encontrada." }, { status: 404 });
     }
 
-    return NextResponse.json({ ok: true, submission });
+    const participantEmail = String(submission.data.email ?? "").trim();
+    let emailResult:
+      | { sent: true; id?: string }
+      | { sent: false; reason: string }
+      | undefined;
+
+    if (participantEmail) {
+      try {
+        const result = await sendParticipantAbsenceReviewEmail({
+          to: participantEmail,
+          participantName: String(
+            submission.data.name ?? submission.data.fullName ?? "Participante"
+          ),
+          formId: submission.formId,
+          status: body.status,
+          managementNotes: body.managementNotes,
+          evidenceReceived: Boolean(body.evidenceReceived),
+          evidenceNotes: body.evidenceNotes,
+        });
+        emailResult = result.ok
+          ? { sent: true, id: result.id }
+          : { sent: false, reason: result.error };
+      } catch (emailError) {
+        emailResult = {
+          sent: false,
+          reason: emailError instanceof Error ? emailError.message : "Error al enviar correo.",
+        };
+      }
+    } else {
+      emailResult = { sent: false, reason: "Participante sin correo registrado." };
+    }
+
+    return NextResponse.json({ ok: true, submission, email: emailResult });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

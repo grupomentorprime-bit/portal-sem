@@ -2,44 +2,38 @@ interface AdminStatusBadgesProps {
   compatMode: boolean;
 }
 
+type StatusTone = "success" | "info" | "warning";
+
 export function AdminStatusBadges({ compatMode }: AdminStatusBadgesProps) {
   return (
-    <div className="hidden items-center gap-2 text-xs xl:flex" aria-label="Estado del sistema">
-      <StatusPill label="Portal" status="active" />
-      <StatusPill label="CMS" status={compatMode ? "warning" : "secure"} />
-      <StatusPill label="Accesos" status="active" />
+    <div className="admin-status-badges hidden items-center gap-1.5 xl:flex" aria-label="Estado del sistema">
+      <StatusPill label="Portal" tone="success" detail="Activo" />
+      <StatusPill
+        label="CMS"
+        tone={compatMode ? "warning" : "info"}
+        detail={compatMode ? "Abierto" : "Seguro"}
+      />
+      <StatusPill label="Accesos" tone="success" detail="Activo" />
     </div>
   );
 }
 
 function StatusPill({
   label,
-  status,
+  tone,
+  detail,
 }: {
   label: string;
-  status: "active" | "secure" | "warning";
+  tone: StatusTone;
+  detail: string;
 }) {
-  const colors = {
-    active: "bg-success/15 text-success",
-    secure: "bg-primary/10 text-primary",
-    warning: "bg-[var(--state-warning-bg)] text-[var(--color-warning)]",
-  } as const;
-
-  const labels = {
-    active: "Activo",
-    secure: "Seguro",
-    warning: "Abierto",
-  } as const;
-
   return (
-    <span className={cnBadge(colors[status])}>
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
-      {label}
-      <span className="text-[10px] opacity-80">· {labels[status]}</span>
+    <span className={`admin-status-pill admin-status-pill--${tone}`}>
+      <span className="admin-status-pill__dot" aria-hidden />
+      <span className="admin-status-pill__label">{label}</span>
+      <span className="admin-status-pill__detail" aria-hidden>
+        · {detail}
+      </span>
     </span>
   );
-}
-
-function cnBadge(className: string) {
-  return `inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium ${className}`;
 }

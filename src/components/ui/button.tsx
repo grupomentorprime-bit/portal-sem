@@ -22,18 +22,15 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<ButtonVariant, string> = {
-  primary:
-    "bg-primary text-text-inverse hover:bg-secondary active:bg-primary",
-  secondary:
-    "bg-secondary text-text-inverse hover:bg-accent active:bg-secondary",
+  primary: "bg-primary text-text-inverse hover:bg-secondary active:bg-primary",
+  secondary: "border border-border bg-background text-foreground hover:bg-background-muted active:bg-background-soft",
   outline:
-    "border border-border bg-background text-foreground hover:bg-background-muted active:bg-background-muted",
-  ghost:
-    "text-foreground hover:bg-background-muted active:bg-background-muted",
+    "border border-border bg-background text-foreground hover:bg-background-muted active:bg-background-soft",
+  ghost: "text-foreground hover:bg-background-muted active:bg-background-muted",
   danger:
-    "bg-primary text-text-inverse hover:opacity-90 active:opacity-100",
+    "bg-[var(--color-danger)] text-text-inverse hover:opacity-90 active:opacity-100",
   success:
-    "bg-success text-primary hover:opacity-90 active:opacity-100",
+    "bg-success text-[var(--sem-primary)] hover:opacity-90 active:opacity-100",
 };
 
 const sizes: Record<ButtonSize, string> = {

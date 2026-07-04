@@ -3,15 +3,17 @@ import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
 import { createSemDefaultForms, SEM_DEFAULT_FORM_IDS } from "@/core/experience/forms/defaults";
 import { resolveFormId } from "@/core/experience/forms/engine";
-import { isExperienceFormPublished } from "@/lib/experience/forms/status";
+import { isExperienceFormPublished, isExperienceFormDirectAccessible } from "@/lib/experience/forms/status";
 import type {
   ExperienceFormAbsenceReview,
   ExperienceFormCreate,
   ExperienceFormDayCheckIn,
   ExperienceFormDefinition,
   ExperienceFormSubmission,
+  ExperienceFormTestimonialReview,
   ExperienceFormUpdate,
 } from "@/types/experience-forms";
+import type { FormSubmissionAttachment } from "@/lib/experience/forms/attachments";
 
 const COLLECTION = "experience_forms";
 const SUBMISSIONS = "experience_form_submissions";
@@ -76,6 +78,7 @@ export async function listPublicExperienceForms(
       active: true,
       visible: true,
       archived: { $ne: true },
+      private: { $ne: true },
     })
     .sort({ name: 1 })
     .toArray();
@@ -103,6 +106,22 @@ export async function getPublicExperienceForm(
   if (!form || !isExperienceFormPublished(form)) return null;
   return form;
 }
+
+export async function getDirectAccessibleExperienceForm(
+  tenant: string,
+  id: string
+): Promise<ExperienceFormDefinition | null> {
+  const form = await getExperienceFormById(tenant, id);
+  if (!form || !isExperienceFormDirectAccessible(form)) return null;
+  return form;
+}
+
+export const getDirectAccessibleExperienceFormCached = (tenant: string, id: string) =>
+  unstable_cache(
+    async () => getDirectAccessibleExperienceForm(tenant, id),
+    [`experience-form-direct-${tenant}-${resolveFormId(id)}`],
+    { tags: [CACHE_TAG, `experience-form-${resolveFormId(id)}`], revalidate: 60 }
+  );
 
 export const getPublicExperienceFormCached = (tenant: string, id: string) =>
   unstable_cache(
@@ -254,6 +273,43 @@ export async function updateFormSubmissionAbsenceReview(
   };
 }
 
+export async function updateFormSubmissionTestimonialReview(
+  tenant: string,
+  submissionId: string,
+  review: ExperienceFormTestimonialReview,
+  reviewerName?: string
+): Promise<ExperienceFormSubmission | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  const testimonialReview: ExperienceFormTestimonialReview = {
+    ...review,
+    reviewedAt: now,
+    reviewedByName: reviewerName?.trim() || review.reviewedByName,
+  };
+
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return null;
+  }
+
+  const result = await db.collection(SUBMISSIONS).findOneAndUpdate(
+    { _id: objectId, tenant },
+    { $set: { testimonialReview } },
+    { returnDocument: "after" }
+  );
+
+  if (!result) return null;
+
+  const doc = result as ExperienceFormSubmission & { _id: ObjectId };
+
+  return {
+    ...doc,
+    _id: doc._id?.toString(),
+  };
+}
+
 export async function getFormSubmissionById(
   tenant: string,
   submissionId: string
@@ -278,6 +334,41 @@ export async function getFormSubmissionById(
   return {
     ...submission,
     _id: submission._id?.toString(),
+  };
+}
+
+export async function updateFormSubmissionGeneration(
+  tenant: string,
+  submissionId: string,
+  generation: string
+): Promise<ExperienceFormSubmission | null> {
+  const db = await getDatabase();
+
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return null;
+  }
+
+  const result = await db.collection(SUBMISSIONS).findOneAndUpdate(
+    { _id: objectId, tenant },
+    {
+      $set: {
+        "data.generation": generation,
+        "data.program": generation,
+      },
+    },
+    { returnDocument: "after" }
+  );
+
+  if (!result) return null;
+
+  const doc = result as ExperienceFormSubmission & { _id: ObjectId };
+
+  return {
+    ...doc,
+    _id: doc._id?.toString(),
   };
 }
 
@@ -313,6 +404,146 @@ export async function updateFormSubmissionDayCheckIn(
 
   const doc = result as ExperienceFormSubmission & { _id: ObjectId };
 
+  return {
+    ...doc,
+    _id: doc._id?.toString(),
+  };
+}
+
+export type EventDayStatusAction =
+  | "check-in"
+  | "undo-check-in"
+  | "mark-absent"
+  | "mark-arrived-from-absence";
+
+export async function updateFormSubmissionEventDayStatus(
+  tenant: string,
+  submissionId: string,
+  action: EventDayStatusAction,
+  operatorName?: string,
+  operatorNotes?: string
+): Promise<ExperienceFormSubmission | null> {
+  const existing = await getFormSubmissionById(tenant, submissionId);
+  if (!existing) return null;
+
+  const now = new Date().toISOString();
+  const attendance = String(existing.data.attendance ?? "");
+  const operator = operatorName?.trim() || undefined;
+  const notes = operatorNotes?.trim() || undefined;
+
+  let update: Record<string, unknown> = {};
+  let unset: Record<string, ""> = {};
+
+  switch (action) {
+    case "check-in": {
+      if (attendance !== "yes") return null;
+      const dayCheckIn: ExperienceFormDayCheckIn = {
+        present: true,
+        checkedInAt: now,
+        checkedInByName: operator,
+      };
+      update = { dayCheckIn };
+      break;
+    }
+    case "undo-check-in": {
+      if (attendance !== "yes") return null;
+      update = {
+        dayCheckIn: {
+          present: false,
+          notes: notes,
+        } satisfies ExperienceFormDayCheckIn,
+      };
+      break;
+    }
+    case "mark-absent": {
+      if (attendance !== "yes") return null;
+      const absenceReview: ExperienceFormAbsenceReview = {
+        status: "pending",
+        managementNotes: notes,
+        reviewedAt: now,
+        reviewedByName: operator,
+      };
+      update = {
+        "data.attendance": "no",
+        absenceReview,
+      };
+      unset = { dayCheckIn: "" };
+      break;
+    }
+    case "mark-arrived-from-absence": {
+      if (attendance !== "no") return null;
+      update = {
+        "data.attendance": "yes",
+        dayCheckIn: {
+          present: true,
+          checkedInAt: now,
+          checkedInByName: operator,
+        } satisfies ExperienceFormDayCheckIn,
+      };
+      unset = { absenceReview: "" };
+      break;
+    }
+    default:
+      return null;
+  }
+
+  const db = await getDatabase();
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return null;
+  }
+
+  const result = await db.collection(SUBMISSIONS).findOneAndUpdate(
+    { _id: objectId, tenant },
+    {
+      $set: update,
+      ...(Object.keys(unset).length > 0 ? { $unset: unset } : {}),
+    },
+    { returnDocument: "after" }
+  );
+
+  if (!result) return null;
+
+  const doc = result as ExperienceFormSubmission & { _id: ObjectId };
+  return {
+    ...doc,
+    _id: doc._id?.toString(),
+  };
+}
+
+export async function updateFormSubmissionParticipantJustification(
+  tenant: string,
+  submissionId: string,
+  input: { justification: string; justificationAttachment: FormSubmissionAttachment }
+): Promise<ExperienceFormSubmission | null> {
+  const db = await getDatabase();
+  let objectId: ObjectId;
+  try {
+    objectId = new ObjectId(submissionId);
+  } catch {
+    return null;
+  }
+
+  const result = await db.collection(SUBMISSIONS).findOneAndUpdate(
+    { _id: objectId, tenant, "data.attendance": "no" },
+    {
+      $set: {
+        "data.justification": input.justification.trim(),
+        "data.justificationAttachment": input.justificationAttachment,
+        absenceReview: {
+          status: "pending",
+          reviewedAt: new Date().toISOString(),
+        } satisfies ExperienceFormAbsenceReview,
+      },
+    },
+    { returnDocument: "after" }
+  );
+
+  if (!result) return null;
+
+  const doc = result as ExperienceFormSubmission & { _id: ObjectId };
   return {
     ...doc,
     _id: doc._id?.toString(),
@@ -368,6 +599,19 @@ export async function ensureDefaultExperienceForms(tenant: string): Promise<void
     });
     if (exists === 0) {
       await db.collection<ExperienceFormDefinition>(COLLECTION).insertOne(form);
+    } else if (form._id === "testimonial-submission") {
+      await db.collection<ExperienceFormDefinition>(COLLECTION).updateOne(
+        { _id: form._id, ...tenantFilter(tenant) },
+        {
+          $set: {
+            private: true,
+            visible: false,
+            active: true,
+            fields: form.fields,
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
     }
   }
 }

@@ -14,7 +14,8 @@ import {
 } from "@/lib/identity/users";
 import { findMembership } from "@/lib/identity/memberships";
 import { createMembership } from "@/lib/identity/memberships";
-import { ensureTenantRoles, getOwnerRole } from "@/lib/identity/roles";
+import { ensureTenantRoles, getSuperAdminRole } from "@/lib/identity/roles";
+import { ensureSuperAdminMembershipForEmail } from "@/lib/identity/iam-guard";
 import { writeAudit } from "@/lib/identity/audit";
 import type { IdentityUser } from "@/types/identity";
 
@@ -42,6 +43,8 @@ export async function loginWithEmail(input: {
   if (!membership) {
     return { ok: false, error: "Sin acceso a este tenant." };
   }
+
+  await ensureSuperAdminMembershipForEmail(user.email, input.tenantId, user._id);
 
   const meta = await getRequestMeta();
   const session = await createSession({
@@ -98,8 +101,8 @@ export async function registerWithEmail(input: {
     passwordHash,
   });
 
-  const ownerRole = await getOwnerRole(input.tenantId);
-  const roleIds = input.roleIds ?? (ownerRole ? [ownerRole._id] : []);
+  const superAdminRole = await getSuperAdminRole(input.tenantId);
+  const roleIds = input.roleIds ?? (superAdminRole ? [superAdminRole._id] : []);
 
   await createMembership({
     tenantId: input.tenantId,

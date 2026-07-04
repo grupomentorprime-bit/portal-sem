@@ -26,6 +26,7 @@ export const EXPERIENCE_FORM_DESTINATIONS = [
   "absence_justification",
   "event_registration",
   "subscription",
+  "testimonial_submission",
 ] as const;
 
 export type ExperienceFormDestination = (typeof EXPERIENCE_FORM_DESTINATIONS)[number];
@@ -86,6 +87,8 @@ export interface ExperienceFormDefinition {
   fields: ExperienceFormField[];
   active: boolean;
   visible: boolean;
+  /** Accesible solo por URL directa; no aparece en /formularios ni en bloques públicos. */
+  private?: boolean;
   /** Marcado al archivar; distingue borradores nuevos de formularios retirados. */
   archived?: boolean;
   createdAt: string;
@@ -111,6 +114,8 @@ export interface ExperienceFormSubmission {
   absenceReview?: ExperienceFormAbsenceReview;
   /** Registro de llegada el día de la jornada (check-in presencial). */
   dayCheckIn?: ExperienceFormDayCheckIn;
+  /** Moderación editorial de testimonios enviados por alumnos. */
+  testimonialReview?: ExperienceFormTestimonialReview;
   createdAt: string;
 }
 
@@ -133,6 +138,37 @@ export interface ExperienceFormAbsenceReview {
   evidenceReceived?: boolean;
   /** Detalle del respaldo recibido (certificado, carta, etc.). */
   evidenceNotes?: string;
+  reviewedAt?: string;
+  reviewedByName?: string;
+}
+
+export const TESTIMONIAL_REVIEW_STATUSES = [
+  "pending",
+  "approved",
+  "rejected",
+  "published",
+] as const;
+
+export type TestimonialReviewStatus = (typeof TESTIMONIAL_REVIEW_STATUSES)[number];
+
+export interface ExperienceFormTestimonialReview {
+  status: TestimonialReviewStatus;
+  /** Publicar la cita en el sitio */
+  publishQuote?: boolean;
+  /** Publicar nombre y título */
+  publishAuthor?: boolean;
+  /** Publicar generación */
+  publishGeneration?: boolean;
+  /** Publicar iglesia o comunidad y ciudad */
+  publishAffiliation?: boolean;
+  /** Texto editado por el equipo antes de publicar */
+  editedQuote?: string;
+  editedAuthor?: string;
+  editedRole?: string;
+  editedProgram?: string;
+  /** ID en academy_testimonials cuando ya se publicó */
+  publishedTestimonialId?: string;
+  reviewNotes?: string;
   reviewedAt?: string;
   reviewedByName?: string;
 }

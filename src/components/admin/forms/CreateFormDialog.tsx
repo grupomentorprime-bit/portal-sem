@@ -27,6 +27,7 @@ const DESTINATION_LABELS: Record<(typeof EXPERIENCE_FORM_DESTINATIONS)[number], 
   absence_justification: "Justificación de inasistencia",
   event_registration: "Inscripción a evento",
   subscription: "Suscripción",
+  testimonial_submission: "Testimonio de alumno",
 };
 
 interface CreateFormDialogProps {

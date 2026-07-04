@@ -3,13 +3,22 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
-import { CMS_INVITE_ROLES } from "@/lib/admin/institutional";
 import { formatRelativeTime } from "@/lib/admin/audit-labels";
+import { isProtectedMember } from "@/core/identity/roles/helpers";
+import { UserPermissionsPanel } from "@/components/admin/permissions/UserPermissionsPanel";
 import { cn } from "@/lib/utils";
 
 interface UserRole {
   id: string;
   name: string;
+  code?: string;
+  label: string;
+}
+
+export interface AssignableRole {
+  id: string;
+  name: string;
+  code: string;
   label: string;
 }
 
@@ -25,15 +34,18 @@ export interface UserCmsCardData {
 
 interface UserCmsCardProps {
   member: UserCmsCardData;
-  onRoleChange?: (membershipId: string, roleName: string) => void;
+  assignableRoles?: AssignableRole[];
+  onRoleChange?: (membershipId: string, roleCode: string) => void;
   saving?: boolean;
 }
 
-export function UserCmsCard({ member, onRoleChange, saving }: UserCmsCardProps) {
+export function UserCmsCard({ member, assignableRoles = [], onRoleChange, saving }: UserCmsCardProps) {
   const [showRoles, setShowRoles] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
   const primaryRole = member.roles[0];
-  const isDirector = member.roles.some((r) => r.name === "Tenant Owner");
+  const isProtected = isProtectedMember(member.roles);
   const label = member.displayName || member.email;
+  const canEditRole = !isProtected && onRoleChange && assignableRoles.length > 0;
 
   return (
     <article className="rounded-xl border border-border bg-background p-5 shadow-sm">
@@ -56,7 +68,7 @@ export function UserCmsCard({ member, onRoleChange, saving }: UserCmsCardProps) 
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
-        {!isDirector && onRoleChange ? (
+        {canEditRole ? (
           <button
             type="button"
             onClick={() => setShowRoles((v) => !v)}
@@ -68,23 +80,40 @@ export function UserCmsCard({ member, onRoleChange, saving }: UserCmsCardProps) 
         <button
           type="button"
           className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted"
-          onClick={() => setShowRoles((v) => !v)}
+          onClick={() => {
+            setShowPermissions((v) => !v);
+            setShowRoles(false);
+          }}
         >
           Permisos
         </button>
       </div>
 
-      {showRoles && !isDirector && onRoleChange ? (
+      {showPermissions && !isProtected ? (
+        <UserPermissionsPanel
+          membershipId={member.membershipId}
+          displayName={label}
+          onClose={() => setShowPermissions(false)}
+        />
+      ) : null}
+
+      {showPermissions && isProtected ? (
+        <p className="mt-3 text-sm text-muted">
+          Este usuario tiene acceso reservado de Super Admin y no puede modificarse desde aquí.
+        </p>
+      ) : null}
+
+      {showRoles && canEditRole ? (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {CMS_INVITE_ROLES.map((role) => (
+          {assignableRoles.map((role) => (
             <button
               key={role.id}
               type="button"
               disabled={saving}
-              onClick={() => onRoleChange(member.membershipId, role.internalName)}
+              onClick={() => onRoleChange(member.membershipId, role.code)}
               className={cn(
                 "rounded-lg border px-3 py-2 text-left text-sm transition",
-                primaryRole?.name === role.internalName
+                primaryRole?.code === role.code
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/40"
               )}
@@ -95,9 +124,9 @@ export function UserCmsCard({ member, onRoleChange, saving }: UserCmsCardProps) 
         </div>
       ) : null}
 
-      {showRoles && isDirector ? (
+      {showRoles && isProtected ? (
         <p className="mt-3 text-sm text-muted">
-          El Director General conserva acceso completo al CMS.
+          Este usuario tiene acceso reservado de Super Admin.
         </p>
       ) : null}
     </article>

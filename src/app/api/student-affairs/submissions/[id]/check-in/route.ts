@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
 import {
   getFormSubmissionById,
-  updateFormSubmissionDayCheckIn,
+  updateFormSubmissionEventDayStatus,
 } from "@/lib/experience/forms/repository";
 import {
   assertSubmissionInStudentAffairsScope,
@@ -13,6 +13,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+/** @deprecated Usar PATCH /api/student-affairs/submissions/[id]/event-day */
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const ctx = await requireAuth();
@@ -46,18 +47,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Indique si asistió (present)." }, { status: 400 });
     }
 
-    const submission = await updateFormSubmissionDayCheckIn(
+    const action = body.present ? "check-in" : "undo-check-in";
+    const submission = await updateFormSubmissionEventDayStatus(
       ctx.tenantId,
       id,
-      {
-        present: body.present,
-        notes: body.notes,
-      },
-      ctx.user.displayName
+      action,
+      ctx.user.displayName,
+      body.notes
     );
 
     if (!submission) {
-      return NextResponse.json({ ok: false, error: "No se pudo actualizar el check-in." }, { status: 500 });
+      return NextResponse.json({ ok: false, error: "No se pudo actualizar el check-in." }, { status: 422 });
     }
 
     return NextResponse.json({ ok: true, submission });

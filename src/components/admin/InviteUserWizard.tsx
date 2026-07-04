@@ -2,31 +2,38 @@
 
 import { useState } from "react";
 import { Button, Input, Label } from "@/components/ui";
-import { CMS_INVITE_ROLES } from "@/lib/admin/institutional";
 import { isValidEmail, isValidFullName } from "@/lib/validation/identity";
 import { cn } from "@/lib/utils";
+
+import type { AssignableRole } from "@/components/admin/UserCmsCard";
 
 interface InviteUserWizardProps {
   onSubmit: (payload: {
     email: string;
     displayName: string;
-    roleName: string;
+    roleCode: string;
   }) => Promise<void>;
   error?: string;
   onSuccess?: () => void;
+  assignableRoles?: AssignableRole[];
 }
 
-export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizardProps) {
+export function InviteUserWizard({
+  onSubmit,
+  error,
+  onSuccess,
+  assignableRoles = [],
+}: InviteUserWizardProps) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [emailError, setEmailError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [roleId, setRoleId] = useState<string>(CMS_INVITE_ROLES[1]?.id ?? "editor");
+  const [roleId, setRoleId] = useState<string>(assignableRoles[0]?.id ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const selectedRole = CMS_INVITE_ROLES.find((r) => r.id === roleId) ?? CMS_INVITE_ROLES[1];
+  const selectedRole = assignableRoles.find((r) => r.id === roleId) ?? assignableRoles[0];
 
   function validateStep1(): boolean {
     let valid = true;
@@ -58,11 +65,11 @@ export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizar
       await onSubmit({
         email: email.trim(),
         displayName: displayName.trim(),
-        roleName: selectedRole.internalName,
+        roleCode: selectedRole?.code ?? "",
       });
       setEmail("");
       setDisplayName("");
-      setRoleId("editor");
+      setRoleId(assignableRoles[0]?.id ?? "");
       setStep(1);
       setSuccess(true);
       onSuccess?.();
@@ -158,7 +165,7 @@ export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizar
             <p className="text-sm text-muted">Define el nivel de acceso en el CMS.</p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            {CMS_INVITE_ROLES.map((role) => (
+            {assignableRoles.map((role) => (
               <button
                 key={role.id}
                 type="button"
@@ -190,7 +197,7 @@ export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizar
           <div>
             <h3 className="font-medium">Paso 3 — Permisos</h3>
             <p className="text-sm text-muted">
-              El rol <strong>{selectedRole.label}</strong> incluye los permisos estándar del CMS para
+              El rol <strong>{selectedRole?.label ?? "—"}</strong> incluye los permisos estándar del CMS para
               esa función.
             </p>
           </div>
@@ -229,7 +236,7 @@ export function InviteUserWizard({ onSubmit, error, onSuccess }: InviteUserWizar
             </div>
             <div>
               <dt className="text-muted">Rol</dt>
-              <dd className="font-medium">{selectedRole.label}</dd>
+              <dd className="font-medium">{selectedRole?.label ?? "—"}</dd>
             </div>
           </dl>
           {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}

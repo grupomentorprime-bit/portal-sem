@@ -2,11 +2,10 @@
 
 import { adminUi } from "@/lib/admin/admin-ui";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
-import { AdminModuleCenter, AdminModuleHero } from "@/components/admin/AdminModuleCenter";
-import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+import { configSectionHref, LEGACY_CONFIG_SECTION_NAV } from "@/lib/admin/config-nav";
 import { getConfigSectionLabel } from "@/lib/admin/institutional";
 import { cn } from "@/lib/utils";
-import { CONFIG_SECTIONS, type ConfigSectionId } from "@/types/cms";
+import type { ConfigSectionId } from "@/types/cms";
 
 interface ConfigurationLayoutProps {
   activeSection: ConfigSectionId;
@@ -14,6 +13,8 @@ interface ConfigurationLayoutProps {
   saveStatus: "idle" | "saving" | "saved" | "error";
   isDirty: boolean;
   onSave: () => void;
+  /** Shell V2: navegación vive en AdminSidebar — ocultar menú interno duplicado */
+  hideSectionNav?: boolean;
   children: React.ReactNode;
 }
 
@@ -34,14 +35,34 @@ export function ConfigurationLayout({
   saveStatus,
   isDirty,
   onSave,
+  hideSectionNav = false,
   children,
 }: ConfigurationLayoutProps) {
   const sectionLabel = getConfigSectionLabel(activeSection);
 
+  const legacySidebar = hideSectionNav ? null : (
+    <nav className={adminUi.sidebarNav} aria-label="Secciones de institución">
+      {LEGACY_CONFIG_SECTION_NAV.map((section) => (
+        <button
+          key={section.id}
+          type="button"
+          onClick={() => onSectionChange(section.id)}
+          className={cn(
+            adminUi.navBtn,
+            activeSection === section.id ? adminUi.navActive : adminUi.navIdle
+          )}
+        >
+          <span className="text-base">{sectionIcons[section.id]}</span>
+          {getConfigSectionLabel(section.id)}
+        </button>
+      ))}
+    </nav>
+  );
+
   return (
     <AdminModuleLayout
       breadcrumbs={[
-        { label: "Institución", href: "/admin/config" },
+        { label: "Institución", href: configSectionHref("general") },
         { label: sectionLabel },
       ]}
       title={sectionLabel}
@@ -59,28 +80,8 @@ export function ConfigurationLayout({
           </button>
         </>
       }
-      sidebar={
-        <nav className={adminUi.sidebarNav} aria-label="Secciones de institución">
-          {CONFIG_SECTIONS.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => onSectionChange(section.id)}
-              className={cn(
-                adminUi.navBtn,
-                activeSection === section.id ? adminUi.navActive : adminUi.navIdle
-              )}
-            >
-              <span className="text-base">{sectionIcons[section.id]}</span>
-              {getConfigSectionLabel(section.id)}
-            </button>
-          ))}
-        </nav>
-      }
+      sidebar={legacySidebar}
     >
-      <AdminModuleCenter className="mb-6">
-        <AdminModuleHero {...ADMIN_PANEL_META.config} />
-      </AdminModuleCenter>
       {children}
     </AdminModuleLayout>
   );

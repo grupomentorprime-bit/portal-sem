@@ -8,7 +8,7 @@ import {
   isAllowedAttachmentMimeType,
   type FormSubmissionAttachment,
 } from "@/lib/experience/forms/attachments";
-import { getPublicExperienceForm } from "@/lib/experience/forms/repository";
+import { getDirectAccessibleExperienceForm } from "@/lib/experience/forms/repository";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
 
-    const form = await getPublicExperienceForm(tenant, id);
+    const form = await getDirectAccessibleExperienceForm(tenant, id);
     if (!form) {
       return NextResponse.json({ ok: false, error: "Formulario no disponible." }, { status: 404 });
     }

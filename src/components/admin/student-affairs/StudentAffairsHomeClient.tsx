@@ -1,11 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, Settings2, Users } from "lucide-react";
-import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
-import { Alert } from "@/components/ui";
+import {
+  AlertBanner,
+  ContentGrid,
+  EmptyState,
+  KpiCard,
+  LoadingState,
+  QuickActions,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
+import { ROLE_CODES } from "@/core/identity/roles/codes";
+import { rolesIncludeCode } from "@/core/identity/roles/helpers";
 
 interface StudentAffairsForm {
   id: string;
@@ -15,9 +23,15 @@ interface StudentAffairsForm {
   visible: boolean;
 }
 
+interface FormStats {
+  pendingArrival: number;
+}
+
 export function StudentAffairsHomeClient() {
   const [forms, setForms] = useState<StudentAffairsForm[]>([]);
   const [canManageScope, setCanManageScope] = useState(false);
+  const [operatorCount, setOperatorCount] = useState<number | null>(null);
+  const [aggregateStats, setAggregateStats] = useState<FormStats>({ pendingArrival: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,8 +45,48 @@ export function StudentAffairsHomeClient() {
         setError(data.error ?? "No se pudo cargar el panel.");
         return;
       }
-      setForms(data.forms ?? []);
+
+      const loadedForms: StudentAffairsForm[] = data.forms ?? [];
+      setForms(loadedForms);
       setCanManageScope(Boolean(data.canManageScope));
+
+      if (loadedForms.length > 0) {
+        const statsResults = await Promise.all(
+          loadedForms.map(async (form) => {
+            try {
+              const statsRes = await fetch(
+                `/api/student-affairs/forms/${encodeURIComponent(form.id)}/submissions?stats=true`
+              );
+              const statsData = await statsRes.json();
+              if (!statsData.ok || !statsData.stats) return 0;
+              const attending = statsData.stats.attending ?? 0;
+              const checkedIn = statsData.stats.checkedIn ?? 0;
+              return Math.max(0, attending - checkedIn);
+            } catch {
+              return 0;
+            }
+          })
+        );
+        setAggregateStats({ pendingArrival: statsResults.reduce((sum, n) => sum + n, 0) });
+      } else {
+        setAggregateStats({ pendingArrival: 0 });
+      }
+
+      if (data.canManageScope) {
+        try {
+          const teamRes = await fetch("/api/identity/team");
+          const team = await teamRes.json();
+          if (team.ok) {
+            const count = (team.members ?? []).filter(
+              (member: { roles: Array<{ code?: string }> }) =>
+                rolesIncludeCode(member.roles, ROLE_CODES.STUDENT_AFFAIRS)
+            ).length;
+            setOperatorCount(count);
+          }
+        } catch {
+          setOperatorCount(null);
+        }
+      }
     } catch {
       setError("Error de red.");
     } finally {
@@ -44,14 +98,39 @@ export function StudentAffairsHomeClient() {
     void load();
   }, [load]);
 
+  const activeForms = useMemo(() => forms.filter((form) => form.active).length, [forms]);
+
+  const quickActionItems = useMemo(() => {
+    const items = forms.map((form) => ({
+      id: form.id,
+      title: form.name,
+      description: form.description || "Publicado en el portal",
+      href: `/admin/portal/asuntos-estudiantiles/${encodeURIComponent(form.id)}`,
+      icon: <ClipboardList className="h-5 w-5" />,
+    }));
+
+    if (canManageScope) {
+      items.push({
+        id: "team",
+        title: "Equipo y permisos",
+        description: "Asignar formularios y generaciones",
+        href: "/admin/portal/asuntos-estudiantiles/equipo",
+        icon: <Settings2 className="h-5 w-5" />,
+      });
+    }
+
+    return items;
+  }, [forms, canManageScope]);
+
   return (
-    <AdminModuleLayout
+    <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: "Asuntos estudiantiles" },
+        { label: "Formularios" },
+        { label: "Operación" },
       ]}
-      title="Asuntos estudiantiles"
-      description="Gestión de respuestas, inasistencias y check-in el día de la jornada."
+      title="Operación de formularios"
+      description="Gestiona respuestas, seguimiento, asistencia y operación de formularios activos."
       actions={
         canManageScope ? (
           <Button variant="outline" size="sm" href="/admin/portal/asuntos-estudiantiles/equipo">
@@ -61,46 +140,44 @@ export function StudentAffairsHomeClient() {
         ) : null
       }
     >
-      {loading ? <p className="text-sm text-muted">Cargando…</p> : null}
-      {error ? <Alert variant="warning">{error}</Alert> : null}
+      {loading ? <LoadingState variant="cards" /> : null}
+      {error ? <AlertBanner variant="warning">{error}</AlertBanner> : null}
+
+      {!loading && !error && forms.length > 0 ? (
+        <>
+          <ContentGrid cols={3} className="mb-6">
+            <KpiCard
+              label="Convocatorias activas"
+              value={activeForms}
+              accent="info"
+              icon={<ClipboardList className="h-4 w-4" />}
+            />
+            <KpiCard
+              label="Pendientes de llegada"
+              value={aggregateStats.pendingArrival}
+              accent={aggregateStats.pendingArrival > 0 ? "warning" : "success"}
+              variant={aggregateStats.pendingArrival > 0 ? "warning" : "success"}
+              icon={<Users className="h-4 w-4" />}
+            />
+            {canManageScope && operatorCount !== null ? (
+              <KpiCard label="Operadores" value={operatorCount} />
+            ) : (
+              <KpiCard label="Formularios asignados" value={forms.length} />
+            )}
+          </ContentGrid>
+
+          <QuickActions items={quickActionItems} cols={3} />
+        </>
+      ) : null}
 
       {!loading && !error && forms.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <Users className="mx-auto h-8 w-8 text-muted" />
-          <p className="mt-3 text-sm text-muted">
-            No tiene formularios asignados. Un administrador debe configurar su alcance en{" "}
-            <Link href="/admin/portal/asuntos-estudiantiles/equipo" className="text-primary underline">
-              Asignar encargadas
-            </Link>
-            .
-          </p>
-        </div>
+        <EmptyState
+          icon={<Users className="h-8 w-8" />}
+          title="Sin formularios asignados"
+          description="Un administrador debe configurar su alcance en Asignar encargadas."
+          action={{ label: "Asignar encargadas", href: "/admin/portal/asuntos-estudiantiles/equipo" }}
+        />
       ) : null}
-
-      {!loading && forms.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {forms.map((form) => (
-            <Link
-              key={form.id}
-              href={`/admin/portal/asuntos-estudiantiles/${encodeURIComponent(form.id)}`}
-              className="group rounded-xl border border-border bg-background p-5 transition hover:border-primary/40 hover:shadow-sm"
-            >
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                  <ClipboardList className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="font-semibold text-foreground group-hover:text-primary">{form.name}</h2>
-                  {form.description ? (
-                    <p className="mt-1 line-clamp-2 text-sm text-muted">{form.description}</p>
-                  ) : null}
-                  <p className="mt-3 text-xs font-medium text-primary">Publicado en el portal</p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      ) : null}
-    </AdminModuleLayout>
+    </AdminModulePage>
   );
 }

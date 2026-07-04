@@ -100,3 +100,29 @@ export async function updateMembershipStudentAffairsScope(
   );
   return db.collection<IdentityMembership>("identity_memberships").findOne({ _id: membershipId });
 }
+
+export async function updateMembershipPermissionOverrides(
+  membershipId: string,
+  overrides: Record<string, boolean> | null
+): Promise<IdentityMembership | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  if (!overrides || Object.keys(overrides).length === 0) {
+    await db.collection<IdentityMembership>("identity_memberships").updateOne(
+      { _id: membershipId },
+      { $unset: { permissionOverrides: "" }, $set: { updatedAt: now } }
+    );
+  } else {
+    await db.collection<IdentityMembership>("identity_memberships").updateOne(
+      { _id: membershipId },
+      { $set: { permissionOverrides: overrides, updatedAt: now } }
+    );
+  }
+  return db.collection<IdentityMembership>("identity_memberships").findOne({ _id: membershipId });
+}
+
+export async function clearMembershipPermissionOverrides(
+  membershipId: string
+): Promise<IdentityMembership | null> {
+  return updateMembershipPermissionOverrides(membershipId, null);
+}

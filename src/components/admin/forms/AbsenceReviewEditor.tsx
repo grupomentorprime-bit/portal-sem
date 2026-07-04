@@ -65,6 +65,11 @@ export function AbsenceReviewEditor({
         setError(data.error ?? "No se pudo guardar la gestión.");
         return;
       }
+      if (data.email && !data.email.sent) {
+        setError(
+          `Gestión guardada, pero el correo al participante no se envió: ${data.email.reason}`
+        );
+      }
       onSaved(data.submission.absenceReview);
     } catch {
       setError("Error de red al guardar.");

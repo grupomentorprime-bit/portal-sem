@@ -2,8 +2,8 @@
 
 | Atributo | Valor |
 | --- | --- |
-| OT | OT-CORE-IDENTITY-001 |
-| Versión | v1.7.0 |
+| OT | OT-CORE-IDENTITY-001, [OT-IAM-SEM-001](../ot/OT-IAM-SEM-001.md), [OT-IAM-002](../ot/OT-IAM-002.md) |
+| Versión | v1.8.0 |
 | Tag Git | v1.7.0-identity-core |
 | ADR | [ADR-004 — Identity Core](../architecture/ADR-004.md) |
 
@@ -63,7 +63,19 @@ const ctx = await requirePermission("cms.pages.update");
 if (ctx instanceof NextResponse) return ctx;
 ```
 
-Helpers disponibles: `requireAuth`, `requireTenant`, `requirePermission`, `requireRole`, `requireOwner`.
+Helpers disponibles: `requireAuth`, `requireTenant`, `requirePermission`, `requireRole`, `requireOwner` (Super Admin).
+
+## Roles del Portal SEM (OT-IAM-SEM-001)
+
+8 roles oficiales con códigos estables (`super_admin`, `institution_admin`, …). Ver [OT-IAM-SEM-001](../ot/OT-IAM-SEM-001.md).
+
+Super Admin reservado: `soporte@mentorprime.cl` — identificado por rol, protegido en APIs y oculto en listados para otros roles.
+
+## Permisos granulares (OT-IAM-002)
+
+Roles como plantillas (`permissionMap`) + overrides por membresía (`permissionOverrides`). Catálogo en `src/core/identity/permissions/catalog.ts`. Resolución en `resolver.ts` con techo jerárquico y compatibilidad legacy.
+
+UI: `/admin/settings/users` (overrides), `/admin/settings/roles` (plantillas).
 
 ## Modo compatibilidad
 
@@ -88,5 +100,6 @@ Los endpoints de escritura del CMS invocan `authorizeApiWrite()` con el permiso 
 ## Bootstrap
 
 1. Configurar tenant en `cms_config`.
-2. Visitar `/admin/login` — si no hay usuarios, permite crear el primer Tenant Owner.
-3. Activar `IDENTITY_ENFORCE=true` cuando el equipo esté listo.
+2. Visitar `/admin/login` — si no hay usuarios, permite crear el primer Super Admin.
+3. Ejecutar `scripts/sync-tenant-roles.ts` y `scripts/bootstrap-super-admin.ts` para producción.
+4. Activar `IDENTITY_ENFORCE=true` cuando el equipo esté listo.

@@ -11,6 +11,7 @@ interface DrawerProps {
   title: string;
   children: ReactNode;
   side?: "left" | "right";
+  className?: string;
 }
 
 export function Drawer({
@@ -19,6 +20,7 @@ export function Drawer({
   title,
   children,
   side = "right",
+  className,
 }: DrawerProps) {
   useEffect(() => {
     if (open) {
@@ -47,7 +49,8 @@ export function Drawer({
         aria-label={title}
         className={cn(
           "absolute top-0 flex h-full w-full max-w-sm flex-col border-border bg-background shadow-[var(--shadow-xl)]",
-          side === "right" ? "right-0 border-l animate-slide-up" : "left-0 border-r"
+          side === "right" ? "right-0 border-l animate-slide-up" : "left-0 border-r",
+          className
         )}
       >
         <div className="flex items-center justify-between border-b border-border p-4">

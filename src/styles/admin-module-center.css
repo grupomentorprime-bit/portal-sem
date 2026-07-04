@@ -1,52 +1,32 @@
 /**
  * Shell compartido para módulos del Centro de Administración (hero, KPIs, secciones).
+ * OT-SEM-BRANDING-001 — KPIs blancos con acento institucional.
  */
 
 .admin-module-center {
-  --amc-primary: var(--sem-primary);
-  --amc-secondary: var(--sem-secondary);
-  --amc-accent: var(--sem-accent);
-  --amc-success: var(--sem-success);
-  --amc-light: var(--sem-light);
+  --amc-primary: var(--color-primary);
+  --amc-secondary: var(--color-secondary);
+  --amc-accent: var(--color-secondary);
+  --amc-success: var(--color-success);
+  --amc-warning: var(--color-warning);
 }
 
 .admin-module-center__hero {
   position: relative;
   overflow: hidden;
-  margin-bottom: 1.75rem;
-  padding: 1.5rem 1.75rem;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg) var(--space-xl);
   border-radius: var(--radius-xl);
-  color: white;
-  background: linear-gradient(
-    120deg,
-    var(--amc-primary) 0%,
-    var(--amc-secondary) 48%,
-    var(--amc-accent) 100%
-  );
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--amc-primary) 28%, transparent);
+  color: var(--foreground);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border-subtle);
+  border-left: 4px solid var(--amc-primary);
+  box-shadow: var(--admin-shadow-card);
 }
 
-.admin-module-center__hero::before {
-  content: "";
-  position: absolute;
-  top: -40%;
-  right: -8%;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--amc-light) 35%, transparent);
-  filter: blur(40px);
-  pointer-events: none;
-}
-
+.admin-module-center__hero::before,
 .admin-module-center__hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.07;
-  background-image: url("/editorial/patterns/sem-diamond.svg");
-  background-repeat: repeat;
-  pointer-events: none;
+  display: none;
 }
 
 .admin-module-center__hero-inner {
@@ -62,9 +42,9 @@
   margin: 0 0 0.375rem;
   font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: color-mix(in srgb, white 80%, var(--amc-accent));
+  color: var(--muted);
 }
 
 .admin-module-center__hero-title {
@@ -72,19 +52,20 @@
   font-size: 1.375rem;
   font-weight: 700;
   line-height: 1.2;
+  color: var(--foreground);
 }
 
 .admin-module-center__hero-desc {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
   line-height: 1.55;
-  color: color-mix(in srgb, white 90%, transparent);
+  color: var(--muted);
 }
 
 .admin-module-center__stats {
   display: grid;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
 }
 
 @media (min-width: 768px) {
@@ -100,50 +81,32 @@
 .admin-module-center__stat {
   position: relative;
   overflow: hidden;
-  padding: 1.25rem 1.5rem;
+  padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-lg);
-  color: white;
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--amc-primary) 18%, transparent);
+  color: var(--foreground);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border-subtle);
+  box-shadow: var(--admin-shadow-card);
 }
 
 .admin-module-center__stat::after {
-  content: "";
-  position: absolute;
-  bottom: -20px;
-  right: -20px;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: color-mix(in srgb, white 18%, transparent);
-  pointer-events: none;
+  display: none;
 }
 
 .admin-module-center__stat--total {
-  background: linear-gradient(
-    135deg,
-    var(--amc-primary) 0%,
-    color-mix(in srgb, var(--amc-primary) 72%, black) 100%
-  );
+  border-left: 3px solid var(--amc-primary);
 }
 
 .admin-module-center__stat--active {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--amc-success) 78%, black) 0%,
-    var(--amc-success) 100%
-  );
+  border-left: 3px solid var(--amc-success);
 }
 
 .admin-module-center__stat--published {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--amc-accent) 78%, black) 0%,
-    var(--amc-accent) 100%
-  );
+  border-left: 3px solid var(--amc-secondary);
 }
 
 .admin-module-center__stat--neutral {
-  background: linear-gradient(135deg, var(--gray-600) 0%, var(--gray-800) 100%);
+  border-left: 3px solid var(--border);
 }
 
 .admin-module-center__stat-icon {
@@ -154,7 +117,18 @@
   height: 2.25rem;
   margin-bottom: 0.75rem;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, white 22%, transparent);
+  background: var(--state-info-bg);
+  color: var(--amc-primary);
+}
+
+.admin-module-center__stat--active .admin-module-center__stat-icon {
+  background: var(--state-success-bg);
+  color: var(--state-success-fg);
+}
+
+.admin-module-center__stat--published .admin-module-center__stat-icon {
+  background: var(--state-info-bg);
+  color: var(--state-info-fg);
 }
 
 .admin-module-center__stat-icon svg {
@@ -167,28 +141,25 @@
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
+  color: var(--foreground);
 }
 
 .admin-module-center__stat-label {
   margin-top: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: color-mix(in srgb, white 88%, transparent);
+  color: var(--muted);
 }
 
 .admin-module-center__section-header {
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  margin-bottom: 1rem;
-  padding: 0.875rem 1rem;
+  margin-bottom: var(--space-md);
+  padding: var(--space-md);
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--amc-secondary) 12%, white) 0%,
-    color-mix(in srgb, var(--amc-accent) 8%, white) 100%
-  );
-  border: 1px solid color-mix(in srgb, var(--amc-accent) 35%, var(--border));
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border-subtle);
 }
 
 .admin-module-center__section-icon {
@@ -199,9 +170,9 @@
   width: 2.75rem;
   height: 2.75rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--amc-secondary), var(--amc-accent));
-  color: white;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--amc-secondary) 40%, transparent);
+  background: var(--state-info-bg);
+  color: var(--amc-primary);
+  box-shadow: none;
 }
 
 .admin-module-center__section-icon svg {

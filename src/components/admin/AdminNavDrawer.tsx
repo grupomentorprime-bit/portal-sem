@@ -12,12 +12,13 @@ import { cn } from "@/lib/utils";
 interface AdminNavDrawerProps {
   compatMode: boolean;
   permissions: string[];
+  roleCodes?: string[];
 }
 
-export function AdminNavDrawer({ compatMode, permissions }: AdminNavDrawerProps) {
+export function AdminNavDrawer({ compatMode, permissions, roleCodes = [] }: AdminNavDrawerProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const navItems = filterAdminNav(permissions, compatMode);
+  const navItems = filterAdminNav(permissions, compatMode, roleCodes);
 
   return (
     <>

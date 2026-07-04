@@ -1,5 +1,12 @@
 export * from "./permissions/registry";
+export * from "./permissions/catalog";
+export * from "./permissions/role-templates";
+export * from "./permissions/resolver";
+export * from "./permissions/scopes";
 export * from "./roles/defaults";
+export * from "./roles/codes";
+export * from "./roles/hierarchy";
+export * from "./roles/helpers";
 export { hashPassword, verifyPassword, generateToken, generateId } from "./auth/crypto";
 export { isIdentityEnforced, isKeycloakOnlyAuth, isEmailAuthEnabled, SESSION_COOKIE, SESSION_TTL_DAYS } from "./auth/config";
 export {
@@ -21,6 +28,7 @@ export {
   requireTenant,
   requirePermission,
   requireRole,
+  requireRoleCode,
   requireOwner,
   requireSession,
   getActiveTenantId,

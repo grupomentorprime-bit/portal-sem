@@ -11,7 +11,11 @@ import {
   findMembership,
   updateMembershipRoles,
 } from "@/lib/identity/memberships";
-import { ensureTenantRoles, getOwnerRole } from "@/lib/identity/roles";
+import { ensureTenantRoles, getSuperAdminRole, ensureSuperAdminMembership } from "@/lib/identity/roles";
+import {
+  ensureSuperAdminMembershipForEmail,
+  SUPER_ADMIN_BOOTSTRAP_EMAIL,
+} from "@/lib/identity/iam-guard";
 import {
   createUser,
   findUserByEmail,
@@ -94,6 +98,10 @@ export async function resolveKeycloakMembership(
 
   const existing = await findMembership(user._id, tenantId);
   if (existing) {
+    if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {
+      await ensureSuperAdminMembership(tenantId, user._id);
+      return findMembership(user._id, tenantId);
+    }
     if (keycloakRoleIds.length > 0) {
       const updated = await updateMembershipRoles(existing._id, keycloakRoleIds);
       return updated ?? existing;
@@ -129,12 +137,17 @@ export async function resolveKeycloakMembership(
 
   if (membershipCount === 0) {
     await ensureTenantRoles(tenantId);
-    const ownerRole = await getOwnerRole(tenantId);
+    const superAdminRole = await getSuperAdminRole(tenantId);
     return createMembership({
       tenantId,
       userId: user._id,
-      roleIds: ownerRole ? [ownerRole._id] : [],
+      roleIds: superAdminRole ? [superAdminRole._id] : [],
     });
+  }
+
+  if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {
+    await ensureSuperAdminMembership(tenantId, user._id);
+    return findMembership(user._id, tenantId);
   }
 
   return null;
@@ -146,6 +159,7 @@ export async function finishKeycloakLogin(
   accessToken: string
 ): Promise<{ user: IdentityUser; membership: IdentityMembership }> {
   const user = await upsertUserFromKeycloak(profile, tenantId, accessToken);
+  await ensureSuperAdminMembershipForEmail(user.email, tenantId, user._id);
   const membership = await resolveKeycloakMembership(user, tenantId, accessToken);
 
   if (!membership) {

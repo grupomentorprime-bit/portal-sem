@@ -2,7 +2,18 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
 import { writeAudit } from "@/lib/identity/audit";
 import { findMembershipById, updateMembershipStudentAffairsScope } from "@/lib/identity/memberships";
-import { ensureTenantRoles } from "@/lib/identity/roles";
+import {
+  ensureTenantRoles,
+  findRolesByIds,
+  getCallerRoleCode,
+} from "@/lib/identity/roles";
+import {
+  assertCanManageMember,
+  auditIamDenied,
+  getTargetRoleCode,
+  isSystemAccountUser,
+} from "@/lib/identity/iam-guard";
+import { findUserById } from "@/lib/identity/users";
 import {
   canManageStudentAffairsScope,
   normalizeStudentAffairsScope,
@@ -27,6 +38,31 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (!membership || membership.tenantId !== ctx.tenantId) {
       return NextResponse.json({ ok: false, error: "Membresía no encontrada." }, { status: 404 });
+    }
+
+    const callerRoleCode = ctx.membership
+      ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
+      : null;
+    await ensureTenantRoles(ctx.tenantId);
+    const memberRoles = await findRolesByIds(ctx.tenantId, membership.roleIds);
+    const targetCode = getTargetRoleCode(memberRoles);
+    const targetUser = await findUserById(membership.userId);
+    const manageCheck = assertCanManageMember(callerRoleCode, targetCode, {
+      isSystemAccount: targetUser ? isSystemAccountUser(targetUser) : false,
+    });
+    if (!manageCheck.ok) {
+      if (!ctx.compatMode) {
+        await auditIamDenied({
+          tenantId: ctx.tenantId,
+          actorUserId: ctx.user._id,
+          actorRoleCode: callerRoleCode,
+          action: "membership.student_affairs_scope.update",
+          targetRoleCode: targetCode,
+          targetUserId: membership.userId,
+          reason: manageCheck.auditReason,
+        });
+      }
+      return NextResponse.json({ ok: false, error: manageCheck.error }, { status: 403 });
     }
 
     const body = (await request.json()) as { scope?: Partial<StudentAffairsScope> };

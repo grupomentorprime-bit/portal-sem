@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shell Administrativo — Centro SEM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--p:#002A47;--s:#246AA1;--a:#10BCE2;--ok:#3ED6AF;--surf:#fff;--bg:#F5F7F9;--fg:#141F29;--mut:#5C7289;--b:#D1D9E0;--font:'Manrope',system-ui,sans-serif}
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--font);background:var(--bg);color:var(--fg);font-size:14px;padding:32px}
+    h1{font-size:20px;margin-bottom:8px}p{color:var(--mut);font-size:13px;margin-bottom:24px}
+    .frame{border:2px solid var(--p);border-radius:12px;overflow:hidden;max-width:1200px;background:var(--surf)}
+    .zone{display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em;border:1px dashed var(--b)}
+    .top{height:56px;background:var(--surf);border-bottom:1px solid var(--b);color:var(--p)}
+    .body{display:grid;grid-template-columns:248px 1fr}
+    .side{background:#EEF2F6;border-right:1px solid var(--b);min-height:480px;color:var(--s)}
+    .work{padding:0}
+    .bc{height:36px;background:var(--bg);font-size:11px;color:var(--mut)}
+    .mh{height:72px;border-bottom:1px solid var(--b)}
+    .ws{min-height:320px;background:var(--surf);display:grid;grid-template-columns:1fr 380px}
+    .main{border-right:1px solid var(--b)}
+    .panel{background:var(--bg)}
+    .legend{margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:1200px}
+    .legend div{font-size:12px;padding:12px;background:var(--surf);border:1px solid var(--b);border-radius:8px}
+    .legend strong{display:block;color:var(--p);margin-bottom:4px}
+    a{color:var(--s)}
+  </style>
+</head>
+<body>
+  <h1>Entregable 2 — Shell Administrativo</h1>
+  <p>Anatomía del Layout Maestro · OT-UX-PROTOTIPO-001 · <a href="index.html">← Prototipo navegable</a></p>
+  <div class="frame">
+    <div class="zone top">① TopBar — 56px — Logo · Tenant · Estado · ⌘K · Notificaciones · Perfil</div>
+    <div class="body">
+      <div class="zone side">② Sidebar — 248px fijo<br><br>Dashboard · Módulos · Ayuda · Perfil</div>
+      <div class="work">
+        <div class="zone bc">③ Breadcrumbs</div>
+        <div class="zone mh">④ ModuleHeader — H1 · descripción · acciones primarias</div>
+        <div class="ws">
+          <div class="zone main">⑤–⑧ Workspace<br><br>ModuleDashboard · QuickActions · FilterBar · MainContent</div>
+          <div class="zone panel">⑨ RightPanel — 380px<br><br>Actividad · Inspector · Preview</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="legend">
+    <div><strong>Desktop ≥1280</strong>Sidebar expandido 248px · panel derecho visible</div>
+    <div><strong>Notebook 1024–1279</strong>Sidebar 72px colapsado · KPI 2×2</div>
+    <div><strong>Tablet / Mobile &lt;1024</strong>Drawer overlay · panel como drawer full-screen</div>
+  </div>
+</body>
+</html>

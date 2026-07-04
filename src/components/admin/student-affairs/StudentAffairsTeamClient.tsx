@@ -1,19 +1,25 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
-import { Alert } from "@/components/ui";
+import {
+  AlertBanner,
+  EmptyState,
+  LoadingState,
+  Section,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CONVOCATORIA_GENERATIONS } from "@/lib/experience/forms/generations";
+import { ROLE_CODES } from "@/core/identity/roles/codes";
+import { rolesIncludeCode } from "@/core/identity/roles/helpers";
 import type { StudentAffairsScope } from "@/types/identity";
 
 interface TeamMember {
   membershipId: string;
   displayName: string;
   email: string;
-  roles: Array<{ name: string; label: string }>;
+  roles: Array<{ name: string; code?: string; label: string }>;
   studentAffairsScope?: StudentAffairsScope;
 }
 
@@ -51,7 +57,7 @@ export function StudentAffairsTeamClient() {
       }
 
       const studentAffairsMembers = (team.members ?? []).filter((member: TeamMember) =>
-        member.roles.some((role) => role.name === "Student Affairs")
+        rolesIncludeCode(member.roles, ROLE_CODES.STUDENT_AFFAIRS)
       );
 
       setMembers(studentAffairsMembers);
@@ -141,96 +147,96 @@ export function StudentAffairsTeamClient() {
   };
 
   return (
-    <AdminModuleLayout
+    <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: "Asuntos estudiantiles", href: "/admin/portal/asuntos-estudiantiles" },
-        { label: "Asignar encargadas" },
+        { label: "Formularios" },
+        { label: "Operación", href: "/admin/portal/asuntos-estudiantiles" },
+        { label: "Equipo" },
       ]}
-      title="Asignar encargadas"
+      title="Equipo y permisos"
       description="Defina qué formularios y generaciones puede gestionar cada persona de asuntos estudiantiles."
       actions={
         <Button variant="outline" size="sm" href="/admin/portal/asuntos-estudiantiles">
-          Volver al panel
+          Volver a operación
         </Button>
       }
     >
-      {loading ? <p className="text-sm text-muted">Cargando equipo…</p> : null}
-      {error ? <Alert variant="warning">{error}</Alert> : null}
+      {loading ? <LoadingState variant="cards" /> : null}
+      {error ? <AlertBanner variant="warning">{error}</AlertBanner> : null}
 
       {!loading && members.length === 0 ? (
-        <Alert variant="info">
-          No hay usuarios con rol <strong>Asuntos estudiantiles</strong>. Invítelas desde{" "}
-          <Link href="/admin/settings/users" className="text-primary underline">
-            Usuarios CMS
-          </Link>{" "}
-          y vuelva aquí para asignar formularios y generaciones.
-        </Alert>
+        <EmptyState
+          title="Sin usuarios de asuntos estudiantiles"
+          description="Invite usuarios con rol Asuntos estudiantiles desde Usuarios CMS."
+          action={{ label: "Ir a Usuarios CMS", href: "/admin/settings/users" }}
+        />
       ) : null}
 
-      <div className="space-y-6">
-        {members.map((member) => {
-          const draft = drafts[member.membershipId] ?? { formIds: [], generationCodes: [] };
-          return (
-            <section
-              key={member.membershipId}
-              className="rounded-xl border border-border bg-background p-5"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="font-semibold text-foreground">{member.displayName}</h2>
-                  <p className="text-sm text-muted">{member.email}</p>
-                </div>
-                <Button
-                  size="sm"
-                  disabled={savingId === member.membershipId}
-                  onClick={() => void saveScope(member.membershipId)}
-                >
-                  {savingId === member.membershipId ? "Guardando…" : "Guardar alcance"}
-                </Button>
-              </div>
+      {!loading && members.length > 0 ? (
+        <div className="space-y-6">
+          {members.map((member) => {
+            const draft = drafts[member.membershipId] ?? { formIds: [], generationCodes: [] };
+            return (
+              <Section key={member.membershipId}>
+                <div className="rounded-xl border border-border bg-background p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h2 className="font-semibold text-foreground">{member.displayName}</h2>
+                      <p className="text-sm text-muted">{member.email}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={savingId === member.membershipId}
+                      onClick={() => void saveScope(member.membershipId)}
+                    >
+                      {savingId === member.membershipId ? "Guardando…" : "Guardar alcance"}
+                    </Button>
+                  </div>
 
-              <div className="mt-5 grid gap-6 lg:grid-cols-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    Formularios
-                  </p>
-                  <div className="mt-2 space-y-2">
-                    {allForms.map((form) => (
-                      <label key={form.id} className="flex items-start gap-2 text-sm">
-                        <Checkbox
-                          checked={draft.formIds.includes(form.id)}
-                          onChange={() => toggleForm(member.membershipId, form.id)}
-                        />
-                        <span>{form.name}</span>
-                      </label>
-                    ))}
+                  <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                        Formularios
+                      </p>
+                      <div className="mt-2 space-y-2">
+                        {allForms.map((form) => (
+                          <label key={form.id} className="flex items-start gap-2 text-sm">
+                            <Checkbox
+                              checked={draft.formIds.includes(form.id)}
+                              onChange={() => toggleForm(member.membershipId, form.id)}
+                            />
+                            <span>{form.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                        Generaciones
+                      </p>
+                      <div className="mt-2 space-y-2">
+                        {CONVOCATORIA_GENERATIONS.map((generation) => (
+                          <label key={generation.value} className="flex items-start gap-2 text-sm">
+                            <Checkbox
+                              checked={draft.generationCodes.includes(generation.value)}
+                              onChange={() =>
+                                toggleGeneration(member.membershipId, generation.value)
+                              }
+                            />
+                            <span>{generation.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    Generaciones
-                  </p>
-                  <div className="mt-2 space-y-2">
-                    {CONVOCATORIA_GENERATIONS.map((generation) => (
-                      <label key={generation.value} className="flex items-start gap-2 text-sm">
-                        <Checkbox
-                          checked={draft.generationCodes.includes(generation.value)}
-                          onChange={() =>
-                            toggleGeneration(member.membershipId, generation.value)
-                          }
-                        />
-                        <span>{generation.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-          );
-        })}
-      </div>
-    </AdminModuleLayout>
+              </Section>
+            );
+          })}
+        </div>
+      ) : null}
+    </AdminModulePage>
   );
 }

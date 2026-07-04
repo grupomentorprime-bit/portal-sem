@@ -1,0 +1,63 @@
+/**
+ * OT-SEM-BRANDING-001 — Tokens visuales del Portal Administrativo SEM
+ * Paleta sobria: azul institucional dominante; verde/ámbar/rojo solo en estados.
+ */
+
+:root,
+[data-theme="light"] {
+  /* Advertencia institucional (ámbar suave — no verde) */
+  --color-warning-default: #c98a2e;
+  --color-warning: var(--color-warning-default);
+
+  /* Alias admin */
+  --admin-accent-primary: var(--color-primary);
+  --admin-accent-secondary: var(--color-secondary);
+  --admin-surface: #ffffff;
+  --admin-surface-muted: var(--gray-50);
+  --admin-border-subtle: color-mix(in srgb, var(--color-border) 85%, transparent);
+
+  /* Tabla */
+  --admin-table-row-hover: color-mix(in srgb, var(--color-secondary) 6%, white);
+  --admin-table-row-gap: var(--space-sm);
+
+  /* Progreso */
+  --admin-progress-track: var(--gray-100);
+  --admin-progress-fill: var(--color-primary);
+  --admin-progress-complete: var(--color-success);
+
+  /* KPI acento */
+  --admin-kpi-accent-primary: var(--color-primary);
+  --admin-kpi-accent-success: var(--color-success);
+  --admin-kpi-accent-warning: var(--color-warning);
+  --admin-kpi-accent-info: var(--color-secondary);
+
+  /* Estados semánticos refinados */
+  --state-success-fg: color-mix(in srgb, var(--color-success) 88%, var(--gray-900));
+  --state-warning-fg: color-mix(in srgb, var(--color-warning) 90%, var(--gray-900));
+  --state-warning-bg: color-mix(in srgb, var(--color-warning) 12%, white);
+  --state-warning-border: color-mix(in srgb, var(--color-warning) 28%, transparent);
+
+  --state-info-fg: var(--color-primary);
+  --state-info-bg: color-mix(in srgb, var(--color-secondary) 8%, white);
+  --state-info-border: color-mix(in srgb, var(--color-secondary) 22%, transparent);
+
+  /* Sombras admin (más suaves) */
+  --admin-shadow-card: 0 1px 2px 0 rgba(0, 42, 71, 0.04);
+  --admin-shadow-panel: 0 1px 3px 0 rgba(0, 42, 71, 0.05);
+
+  /* Pills de estado — top bar (contraste sobre fondo blanco) */
+  --admin-status-success-bg: color-mix(in srgb, var(--color-success) 24%, white);
+  --admin-status-success-border: color-mix(in srgb, var(--color-success) 52%, var(--gray-200));
+  --admin-status-success-fg: color-mix(in srgb, var(--color-success) 58%, var(--gray-900));
+
+  --admin-status-info-bg: color-mix(in srgb, var(--color-primary) 9%, white);
+  --admin-status-info-border: color-mix(in srgb, var(--color-primary) 32%, var(--gray-200));
+  --admin-status-info-fg: var(--color-primary);
+
+  --admin-status-warning-bg: color-mix(in srgb, var(--color-warning) 22%, white);
+  --admin-status-warning-border: color-mix(in srgb, var(--color-warning) 48%, var(--gray-200));
+  --admin-status-warning-fg: color-mix(in srgb, var(--color-warning) 68%, var(--gray-900));
+
+  /* Legacy alias */
+  --light: var(--color-warning);
+}

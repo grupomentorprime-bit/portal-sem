@@ -2,6 +2,8 @@ import type { AllowedCollection } from "@/lib/content/types";
 
 export type ContentEditorType = "content" | "person" | "category";
 
+export type AcademicCatalogKind = "programs" | "courses";
+
 export interface ContentSectionMeta {
   slug: string;
   collection: AllowedCollection;
@@ -9,6 +11,8 @@ export interface ContentSectionMeta {
   description: string;
   href: string;
   editor: ContentEditorType;
+  /** Subconjunto de academy_programs — programas de largo plazo vs cursos cortos */
+  catalogKind?: AcademicCatalogKind;
 }
 
 export const CONTENT_SECTIONS: Record<string, ContentSectionMeta> = {
@@ -16,9 +20,19 @@ export const CONTENT_SECTIONS: Record<string, ContentSectionMeta> = {
     slug: "programs",
     collection: "academy_programs",
     title: "Programas",
-    description: "Programas académicos del seminario",
+    description: "Programas formativos de la institución (diplomas, certificados, especializaciones)",
     href: "/admin/content/programs",
     editor: "content",
+    catalogKind: "programs",
+  },
+  courses: {
+    slug: "courses",
+    collection: "academy_programs",
+    title: "Cursos",
+    description: "Cursos formativos cortos del seminario",
+    href: "/admin/content/courses",
+    editor: "content",
+    catalogKind: "courses",
   },
   news: {
     slug: "news",
@@ -35,6 +49,14 @@ export const CONTENT_SECTIONS: Record<string, ContentSectionMeta> = {
     description: "Equipo directivo, docente y técnico del seminario",
     href: "/admin/content/people",
     editor: "person",
+  },
+  team: {
+    slug: "team",
+    collection: "academy_team",
+    title: "Equipo (legacy)",
+    description: "Colección heredada — preferir Personas (content_people)",
+    href: "/admin/content/team",
+    editor: "content",
   },
   library: {
     slug: "library",

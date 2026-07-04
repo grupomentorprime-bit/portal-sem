@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
-import { ensureTenantRoles, listRolesByTenant } from "@/lib/identity/roles";
+import { ensureTenantRoles, listRolesByTenant, getRoleCode } from "@/lib/identity/roles";
+import { PORTAL_ROLE_CODES } from "@/core/identity/roles/codes";
+import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 
 export async function GET() {
   try {
@@ -12,13 +14,23 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
-      roles: roles.map((r) => ({
-        id: r._id,
-        name: r.name,
-        description: r.description,
-        permissionIds: r.permissionIds,
-        system: r.system,
-      })),
+      roles: roles
+        .filter((r) => {
+          const code = getRoleCode(r);
+          return !code || PORTAL_ROLE_CODES.includes(code as typeof PORTAL_ROLE_CODES[number]);
+        })
+        .map((r) => {
+          const code = getRoleCode(r);
+          return {
+            id: r._id,
+            name: r.name,
+            code: code ?? undefined,
+            label: getInstitutionalRoleLabel(r.name, code ?? undefined),
+            description: r.description,
+            permissionIds: r.permissionIds,
+            system: r.system,
+          };
+        }),
     });
   } catch (error) {
     console.error(error);

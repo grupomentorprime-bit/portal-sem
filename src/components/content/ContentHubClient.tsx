@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
-import { BookOpen, FileText, Layers, Newspaper } from "lucide-react";
-import { AdminModuleLayout, AdminQuickActions } from "@/components/admin/AdminModuleLayout";
+import { ExternalLink, Image, Layers, Plus } from "lucide-react";
 import {
-  AdminModuleCenter,
-  AdminModuleHero,
-  AdminModuleSectionHeader,
-  AdminModuleStats,
-} from "@/components/admin/AdminModuleCenter";
-import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+  AlertBanner,
+  ContentGrid,
+  KpiCard,
+  LoadingState,
+  QuickActions,
+  Section,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import {
   CONTENT_EDITORIAL_PRIMARY,
   CONTENT_EDITORIAL_SECONDARY,
@@ -115,9 +116,17 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
     [counts]
   );
   const activeSections = primarySections.length + secondarySections.length;
+  const collectionsWithContent = useMemo(
+    () => Object.values(counts).filter((n) => n > 0).length,
+    [counts]
+  );
+  const emptySections = useMemo(() => {
+    const sections = [...primarySections, ...secondarySections].filter((s) => s.collection);
+    return sections.filter((s) => (counts[s.collection!] ?? 0) === 0).length;
+  }, [counts, primarySections, secondarySections]);
 
   return (
-    <AdminModuleLayout
+    <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
         { label: "Comunicaciones", href: "/admin/content" },
@@ -128,55 +137,79 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
       actions={
         <>
           <Link href="/" target="_blank">
-            <Button variant="outline">Ver portal público</Button>
+            <Button type="button" variant="outline">
+              Ver portal público
+              <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Button>
           </Link>
           <Link href="/admin/media">
-            <Button variant="outline">Biblioteca de medios</Button>
+            <Button type="button" variant="outline">
+              Biblioteca de medios
+              <Image className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Button>
           </Link>
-          <Button onClick={handleSeed} disabled={loading} variant="secondary">
+          <Button type="button" onClick={handleSeed} disabled={loading} variant="secondary">
             {loading ? "Preparando…" : "Contenido de ejemplo"}
           </Button>
         </>
       }
     >
-      <AdminModuleCenter>
-        {error ? (
-          <div className="mb-6 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {error}
-          </div>
-        ) : null}
+      {loading ? <LoadingState variant="cards" className="mb-6" /> : null}
 
-        <AdminModuleHero {...ADMIN_PANEL_META.content} />
+      {error ? (
+        <AlertBanner variant="error" title="Error" className="mb-6">
+          {error}
+        </AlertBanner>
+      ) : null}
 
-        <AdminModuleStats
-          items={[
-            {
-              label: "Secciones activas",
-              value: activeSections,
-              icon: Layers,
-              tone: "total",
-            },
-            {
-              label: "Elementos editoriales",
-              value: totalItems,
-              icon: FileText,
-              tone: "active",
-            },
-            {
-              label: "Colecciones con contenido",
-              value: Object.values(counts).filter((n) => n > 0).length,
-              icon: BookOpen,
-              tone: "published",
-            },
-          ]}
+      <ContentGrid cols={4} className="mb-6">
+        <KpiCard label="Secciones activas" value={activeSections} />
+        <KpiCard label="Elementos editoriales" value={totalItems} variant="info" />
+        <KpiCard label="Colecciones con contenido" value={collectionsWithContent} variant="success" />
+        <KpiCard
+          label="Requieren atención"
+          value={emptySections}
+          variant={emptySections > 0 ? "warning" : "neutral"}
+          delta={emptySections > 0 ? "Secciones sin contenido" : undefined}
         />
+      </ContentGrid>
 
-      <section className="mb-10">
-        <AdminModuleSectionHeader
-          icon={Newspaper}
-          title="Accesos principales"
-          description="Programas, noticias y piezas editoriales de mayor uso."
-        />
+      <QuickActions
+        className="mb-8"
+        items={[
+          ...(features.news
+            ? [
+                {
+                  id: "news",
+                  title: "Publicar noticia",
+                  description: "Nuevo comunicado institucional",
+                  href: "/admin/content/news/edit/new",
+                  icon: <Plus className="h-5 w-5" aria-hidden="true" />,
+                },
+              ]
+            : []),
+          {
+            id: "pages",
+            title: "Editar páginas del portal",
+            description: "Estructura y bloques del sitio",
+            href: "/admin/pages",
+            icon: <Layers className="h-5 w-5" aria-hidden="true" />,
+          },
+          {
+            id: "media",
+            title: "Subir imágenes",
+            description: "Biblioteca visual del seminario",
+            href: "/admin/media",
+            icon: <Image className="h-5 w-5" aria-hidden="true" />,
+          },
+        ]}
+      />
+
+      <Section
+        title="Accesos principales"
+        description="Programas, noticias y piezas editoriales de mayor uso."
+        className="mb-8"
+      >
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {primarySections.map((section) => (
             <EditorialCard
@@ -184,20 +217,16 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
               href={section.href}
               label={section.label}
               description={section.description}
-              count={
-                section.collection ? counts[section.collection] : undefined
-              }
+              count={section.collection ? counts[section.collection] : undefined}
             />
           ))}
         </div>
-      </section>
+      </Section>
 
-      <section className="mb-10">
-        <AdminModuleSectionHeader
-          icon={BookOpen}
-          title="Más secciones"
-          description="Galería, testimonios, agenda académica y recursos complementarios."
-        />
+      <Section
+        title="Más secciones"
+        description="Galería, testimonios, agenda académica y recursos complementarios."
+      >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {secondarySections.map((section) => (
             <EditorialCard
@@ -209,39 +238,7 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
             />
           ))}
         </div>
-      </section>
-
-      <section>
-        <AdminModuleSectionHeader
-          icon={FileText}
-          title="Acciones rápidas"
-          description="Atajos para publicar y mantener el portal actualizado."
-        />
-        <AdminQuickActions
-          items={[
-            ...(features.news
-              ? [
-                  {
-                    href: "/admin/content/news/edit/new",
-                    label: "Publicar noticia",
-                    description: "Nuevo comunicado institucional",
-                  },
-                ]
-              : []),
-            {
-              href: "/admin/pages",
-              label: "Editar páginas del portal",
-              description: "Estructura y bloques del sitio",
-            },
-            {
-              href: "/admin/media",
-              label: "Subir imágenes",
-              description: "Biblioteca visual del seminario",
-            },
-          ]}
-        />
-      </section>
-      </AdminModuleCenter>
-    </AdminModuleLayout>
+      </Section>
+    </AdminModulePage>
   );
 }

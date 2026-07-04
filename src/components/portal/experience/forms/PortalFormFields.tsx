@@ -78,6 +78,7 @@ function renderField(
           error={error}
           required={field.validation?.required}
           disabled={disabled}
+          maxLength={field.validation?.maxLength}
           value={String(value ?? "")}
           onChange={(e) => onChange(field.name, e.target.value)}
         />
@@ -190,6 +191,7 @@ function renderField(
           error={error}
           required={field.validation?.required}
           disabled={disabled}
+          maxLength={field.validation?.maxLength}
           value={String(value ?? field.defaultValue ?? "")}
           onChange={(e) => onChange(field.name, e.target.value)}
         />

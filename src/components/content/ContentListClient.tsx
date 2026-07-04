@@ -1,20 +1,40 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import { CheckCircle, FileText, Layers } from "lucide-react";
-import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import { Plus } from "lucide-react";
 import {
-  AdminModuleCenter,
-  AdminModuleHero,
-  AdminModuleSectionHeader,
-  AdminModuleStats,
-} from "@/components/admin/AdminModuleCenter";
-import { getContentSectionPanel } from "@/lib/admin/module-panels";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSectionByCollection, isEditableCollection } from "@/lib/content/content-sections";
+  AdminDataTable,
+  AlertBanner,
+  ColumnActions,
+  ContentGrid,
+  EmptyState,
+  FilterBar,
+  KpiCard,
+  LoadingState,
+  StatusBadge,
+  type AdminDataTableColumn,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import type { SortState } from "@/components/admin/kit/utils/types";
+import type { BreadcrumbItem } from "@/components/ui/breadcrumb";
+import {
+  getContentStatusTone,
+  getItemLabel,
+  getItemSubtitle,
+  getNewItemLabel,
+  isDraftItem,
+  isPublishedItem,
+  matchesStatusFilter,
+  type ContentStatusFilter,
+} from "@/components/content/content-list-utils";
+import { filterByAcademicCatalogKind, type AcademicCatalogKind } from "@/lib/admin/catalog-kind";
+import { isEditableCollection } from "@/lib/content/content-sections";
 import type { ContentDocument } from "@/types/content";
+import { Button } from "@/components/ui/button";
+
+const PAGE_SIZE = 20;
 
 interface ContentListClientProps {
   tenant: string;
@@ -24,37 +44,17 @@ interface ContentListClientProps {
   sectionSlug: string;
   initialItems: ContentDocument[];
   initialTotal: number;
+  catalogKind?: AcademicCatalogKind;
+  breadcrumbs?: BreadcrumbItem[];
+  newItemLabel?: string;
 }
 
-function getItemLabel(item: ContentDocument, collection: string): string {
-  if (collection === "academy_categories") {
-    return (item as { name?: string }).name ?? item.title ?? item._id;
-  }
-  if (collection === "academy_testimonials") {
-    return item.author ?? item.title ?? item._id;
-  }
-  return item.title ?? item.name ?? item._id;
-}
-
-function getItemSubtitle(item: ContentDocument, collection: string): string {
-  const parts: string[] = [];
-
-  if (collection === "academy_categories") {
-    const enabled = (item as { enabled?: boolean }).enabled;
-    parts.push(enabled === false ? "inactiva" : "activa");
-    if (item.order !== undefined) parts.push(`orden ${item.order}`);
-    parts.push(item.slug);
-    return parts.join(" · ");
-  }
-
-  if (item.status) parts.push(item.status);
-  if (collection === "academy_programs" && item.modality) parts.push(item.modality);
-  if (collection === "content_news" && item.category) parts.push(item.category);
-  if (collection === "content_events" && item.location) parts.push(item.location);
-  if (collection === "content_library" && item.author) parts.push(item.author);
-  if (collection === "academy_testimonials" && item.role) parts.push(item.role);
-  parts.push(item.slug || item._id);
-  return parts.join(" · ");
+function applyCatalogKind(
+  items: ContentDocument[],
+  catalogKind?: AcademicCatalogKind
+): ContentDocument[] {
+  if (!catalogKind) return items;
+  return filterByAcademicCatalogKind(items, catalogKind);
 }
 
 export function ContentListClient({
@@ -65,30 +65,30 @@ export function ContentListClient({
   sectionSlug,
   initialItems,
   initialTotal,
+  catalogKind,
+  breadcrumbs,
+  newItemLabel: newItemLabelProp,
 }: ContentListClientProps) {
-  const [items, setItems] = useState(initialItems);
+  const router = useRouter();
+  const [items, setItems] = useState(() => applyCatalogKind(initialItems, catalogKind));
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ContentStatusFilter>("all");
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState>({ columnId: "title", direction: "asc" });
 
   const editable = isEditableCollection(collection);
-  const section = getSectionByCollection(collection);
-  const newLabel =
-    collection === "academy_programs"
-      ? "Nuevo programa"
-      : collection === "content_news"
-        ? "Nueva noticia"
-        : collection === "content_events"
-          ? "Nuevo evento"
-          : collection === "content_library"
-            ? "Nuevo recurso"
-            : collection === "academy_testimonials"
-              ? "Nuevo testimonio"
-              : collection === "academy_gallery"
-                ? "Nueva imagen"
-                : collection === "academy_categories"
-                  ? "Nueva categoría"
-                  : "Nuevo";
+  const newLabel = newItemLabelProp ?? getNewItemLabel(collection);
+  const editBase = `/admin/content/${sectionSlug}/edit`;
+  const pageBreadcrumbs =
+    breadcrumbs ??
+    [
+      { label: "Inicio", href: "/admin" },
+      { label: "Comunicaciones", href: "/admin/content" },
+      { label: title },
+    ];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,7 +100,7 @@ export function ContentListClient({
         body: JSON.stringify({
           tenant,
           collection,
-          pagination: { page: 1, limit: 50 },
+          pagination: { page: 1, limit: 100 },
           preview: true,
           mapItems: false,
         }),
@@ -110,123 +110,238 @@ export function ContentListClient({
         setError(data.errors?.[0]?.message ?? data.error ?? "No se pudo cargar el contenido.");
         return;
       }
-      setItems(data.items ?? []);
-      setTotal(data.total ?? 0);
+      setItems(applyCatalogKind(data.items ?? [], catalogKind));
+      setTotal(applyCatalogKind(data.items ?? [], catalogKind).length);
+      setPage(1);
+      router.refresh();
     } catch {
       setError("Error de conexión.");
     } finally {
       setLoading(false);
     }
-  }, [tenant, collection]);
+  }, [tenant, collection, router, catalogKind]);
 
-  const panel = getContentSectionPanel(sectionSlug);
   const publishedCount = useMemo(
-    () => items.filter((item) => item.status === "published").length,
-    [items]
+    () => items.filter((item) => isPublishedItem(item, collection)).length,
+    [items, collection]
   );
-  const draftCount = items.length - publishedCount;
+  const draftCount = useMemo(
+    () => items.filter((item) => isDraftItem(item, collection)).length,
+    [items, collection]
+  );
+  const needsAttention = draftCount;
+
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return items.filter((item) => {
+      if (!matchesStatusFilter(item, collection, statusFilter)) return false;
+      if (!query) return true;
+      const label = getItemLabel(item, collection).toLowerCase();
+      const subtitle = getItemSubtitle(item, collection).toLowerCase();
+      return label.includes(query) || subtitle.includes(query);
+    });
+  }, [items, collection, search, statusFilter]);
+
+  const sortedItems = useMemo(() => {
+    const sorted = [...filteredItems];
+    const dir = sort.direction === "asc" ? 1 : -1;
+    sorted.sort((a, b) => {
+      if (sort.columnId === "status") {
+        const sa = getContentStatusTone(a, collection).label;
+        const sb = getContentStatusTone(b, collection).label;
+        return sa.localeCompare(sb) * dir;
+      }
+      if (sort.columnId === "order") {
+        return ((a.order ?? 0) - (b.order ?? 0)) * dir;
+      }
+      const la = getItemLabel(a, collection);
+      const lb = getItemLabel(b, collection);
+      return la.localeCompare(lb, "es") * dir;
+    });
+    return sorted;
+  }, [filteredItems, sort, collection]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return sortedItems.slice(start, start + PAGE_SIZE);
+  }, [sortedItems, page]);
+
+  const handleSort = (columnId: string) => {
+    setSort((prev) => ({
+      columnId,
+      direction: prev.columnId === columnId && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const columns: AdminDataTableColumn<ContentDocument>[] = [
+    {
+      id: "title",
+      header: "Contenido",
+      sortable: true,
+      cell: (item) => (
+        <div>
+          <p className="font-medium text-foreground">{getItemLabel(item, collection)}</p>
+          <p className="text-xs text-muted">{getItemSubtitle(item, collection)}</p>
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: "Estado",
+      sortable: true,
+      cell: (item) => {
+        const { tone, label } = getContentStatusTone(item, collection);
+        return <StatusBadge tone={tone} label={label} />;
+      },
+    },
+    {
+      id: "order",
+      header: "Orden",
+      sortable: true,
+      cell: (item) => (
+        <span className="text-muted">{item.order !== undefined ? item.order : "—"}</span>
+      ),
+    },
+  ];
 
   return (
-    <AdminModuleLayout
-      breadcrumbs={[
-        { label: "Inicio", href: "/admin" },
-        { label: "Comunicaciones", href: "/admin/content" },
-        { label: title },
-      ]}
+    <AdminModulePage
+      breadcrumbs={pageBreadcrumbs}
       title={title}
       description={description}
       actions={
         <>
           <Link href="/admin/content">
-            <Button variant="outline">Centro editorial</Button>
+            <Button type="button" variant="outline">
+              Centro editorial
+            </Button>
           </Link>
-          <Button variant="outline" onClick={load} disabled={loading}>
+          <Button type="button" variant="outline" onClick={load} disabled={loading}>
             {loading ? "Actualizando…" : "Actualizar"}
           </Button>
           {editable ? (
-            <Link href={`/admin/content/${sectionSlug}/edit/new`}>
-              <Button>{newLabel}</Button>
-            </Link>
+            <Button href={`${editBase}/new`}>
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              {newLabel}
+            </Button>
           ) : null}
         </>
       }
     >
-      <AdminModuleCenter>
-        {error ? (
-          <div className="mb-4 rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {error}
-          </div>
-        ) : null}
+      {loading ? <LoadingState variant="table" className="mb-6" /> : null}
 
-        <AdminModuleHero {...panel} />
+      {error ? (
+        <AlertBanner variant="error" title="Error al cargar" className="mb-6">
+          {error}
+        </AlertBanner>
+      ) : null}
 
-        <AdminModuleStats
-          items={[
-            { label: "Registros totales", value: total, icon: Layers, tone: "total" },
-            { label: "Publicados", value: publishedCount, icon: CheckCircle, tone: "published" },
-            { label: "Borradores", value: draftCount, icon: FileText, tone: "active" },
-          ]}
+      <ContentGrid cols={4} className="mb-6">
+        <KpiCard label="Registros totales" value={total} />
+        <KpiCard label="Publicados" value={publishedCount} variant="success" />
+        <KpiCard label="Borradores" value={draftCount} variant="info" />
+        <KpiCard
+          label="Requieren atención"
+          value={needsAttention}
+          variant={needsAttention > 0 ? "warning" : "neutral"}
+          delta={needsAttention > 0 ? "Borradores sin publicar" : undefined}
         />
+      </ContentGrid>
 
-        <AdminModuleSectionHeader
-          icon={FileText}
-          title={title}
-          description={description}
-        />
-
-      <div className="grid gap-3">
-        {items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted">
-            {editable ? (
-              <>
-                <p>No hay contenido en esta sección.</p>
-                <Link href={`/admin/content/${sectionSlug}/edit/new`} className="mt-4 inline-block">
-                  <Button size="sm">{newLabel}</Button>
-                </Link>
-              </>
-            ) : (
-              "No hay contenido publicado en esta sección."
-            )}
-          </div>
-        ) : (
-          items.map((item) => {
-            const label = getItemLabel(item, collection);
-            const subtitle = getItemSubtitle(item, collection);
-
-            if (!editable) {
+      <FilterBar
+        className="mb-4"
+        search={{
+          placeholder: "Buscar por título, slug o detalle…",
+          value: search,
+          onChange: (value) => {
+            setSearch(value);
+            setPage(1);
+          },
+        }}
+        filters={
+          <div className="flex flex-wrap gap-2">
+            {(["all", "published", "draft", "archived"] as const).map((value) => {
+              if (value === "archived" && collection === "academy_categories") return null;
+              const labels: Record<ContentStatusFilter, string> = {
+                all: "Todos",
+                published: collection === "academy_categories" ? "Activas" : "Publicados",
+                draft: collection === "academy_categories" ? "Inactivas" : "Borradores",
+                archived: "Archivados",
+              };
               return (
-                <Card key={item._id}>
-                  <CardHeader>
-                    <CardTitle className="text-base">{label}</CardTitle>
-                    <CardDescription>{subtitle}</CardDescription>
-                  </CardHeader>
-                </Card>
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={statusFilter === value ? "primary" : "outline"}
+                  onClick={() => {
+                    setStatusFilter(value);
+                    setPage(1);
+                  }}
+                >
+                  {labels[value]}
+                </Button>
               );
-            }
+            })}
+          </div>
+        }
+        onReset={
+          search || statusFilter !== "all"
+            ? () => {
+                setSearch("");
+                setStatusFilter("all");
+                setPage(1);
+              }
+            : undefined
+        }
+      />
 
-            return (
-              <Link
-                key={item._id}
-                href={`/admin/content/${sectionSlug}/edit/${item._id}`}
-                className="block"
-              >
-                <Card className="transition hover:border-primary/30 hover:shadow-md">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-base">{label}</CardTitle>
-                      <CardDescription className="mt-1">{subtitle}</CardDescription>
-                    </div>
-                    <span className="ml-4 shrink-0 text-sm font-medium text-secondary">
-                      Editar →
-                    </span>
-                  </CardHeader>
-                </Card>
-              </Link>
-            );
-          })
-        )}
-      </div>
-      </AdminModuleCenter>
-    </AdminModuleLayout>
+      {items.length === 0 && !loading ? (
+        <EmptyState
+          title="Sin contenido"
+          description={
+            editable
+              ? `No hay registros en ${title.toLowerCase()}. Crea el primero para empezar.`
+              : "No hay contenido publicado en esta sección."
+          }
+          action={
+            editable
+              ? { label: newLabel, href: `${editBase}/new` }
+              : undefined
+          }
+        />
+      ) : (
+        <AdminDataTable
+          columns={columns}
+          data={paginatedItems}
+          rowKey={(item) => item._id}
+          sort={sort}
+          onSort={handleSort}
+          pagination={
+            totalPages > 1
+              ? {
+                  page,
+                  totalPages,
+                  onPageChange: setPage,
+                }
+              : undefined
+          }
+          emptyTitle="Sin resultados"
+          emptyDescription="Prueba con otros términos o filtros."
+          rowActions={
+            editable
+              ? (item) => (
+                  <ColumnActions>
+                    <Button href={`${editBase}/${item._id}`} variant="primary" size="sm">
+                      Editar
+                    </Button>
+                  </ColumnActions>
+                )
+              : undefined
+          }
+        />
+      )}
+    </AdminModulePage>
   );
 }

@@ -7,6 +7,7 @@ import { getFormExperienceUncached } from "@/lib/cms/form-experience";
 import {
   buildSelfRegisteredRosterStudent,
   findConvocatoriaRosterStudent,
+  findConvocatoriaRosterStudentByIdentity,
   hasConvocatoriaSubmission,
   hasConvocatoriaSubmissionByEmail,
   upsertConvocatoriaRosterStudent,
@@ -14,7 +15,7 @@ import {
 import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
 import { normalizeChilePhone, formatChilePhoneDisplay } from "@/lib/experience/forms/phone-chile";
 import {
-  getPublicExperienceForm,
+  getDirectAccessibleExperienceForm,
   saveFormSubmission,
 } from "@/lib/experience/forms/repository";
 import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
@@ -33,7 +34,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
 
-    const form = await getPublicExperienceForm(tenant, id);
+    const form = await getDirectAccessibleExperienceForm(tenant, id);
 
     if (!form) {
       return NextResponse.json(
@@ -56,7 +57,6 @@ export async function POST(request: Request, { params }: RouteParams) {
         const email = String(data.email ?? "").trim();
         const rut = String(data.rut ?? "").trim() || undefined;
         const phone = normalizeChilePhone(String(data.phone ?? "").trim()) ?? undefined;
-        const generation = "other";
 
         if (!fullName) {
           return NextResponse.json(
@@ -69,51 +69,108 @@ export async function POST(request: Request, { params }: RouteParams) {
           );
         }
 
-        const rosterStudent = buildSelfRegisteredRosterStudent({ fullName, rut, phone });
-        if (!rosterStudent) {
-          return NextResponse.json(
-            {
-              ok: false,
-              errors: { fullName: "Debe indicar su nombre completo." },
-              error: "Complete su nombre para registrarse.",
-            },
-            { status: 422 }
-          );
-        }
+        const rosterMatch = await findConvocatoriaRosterStudentByIdentity(
+          tenant,
+          convocatoria.slug,
+          { fullName, rut }
+        );
+        const rosterGeneration = rosterMatch
+          ? normalizeGenerationValue(rosterMatch.generation)
+          : "";
+        const useRosterMatch = rosterMatch && rosterGeneration !== "other";
 
-        if (email && (await hasConvocatoriaSubmissionByEmail(tenant, id, email))) {
-          return NextResponse.json(
-            {
-              ok: false,
-              errors: { email: "Ya existe una respuesta registrada con este correo." },
-              error: "Ya registraste una respuesta para esta convocatoria.",
-            },
-            { status: 422 }
-          );
-        }
+        if (useRosterMatch) {
+          const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, rosterMatch.id);
+          if (alreadySubmitted) {
+            return NextResponse.json(
+              {
+                ok: false,
+                errors: { fullName: "Ya registraste una respuesta para esta convocatoria." },
+                error: "Ya existe una respuesta registrada con tu nombre.",
+              },
+              { status: 422 }
+            );
+          }
 
-        const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, rosterStudent.id);
-        if (alreadySubmitted) {
-          return NextResponse.json(
-            {
-              ok: false,
-              errors: { fullName: "Ya registraste una respuesta para esta convocatoria." },
-              error: "Ya existe una respuesta registrada con tu nombre.",
-            },
-            { status: 422 }
-          );
-        }
+          if (email && (await hasConvocatoriaSubmissionByEmail(tenant, id, email))) {
+            return NextResponse.json(
+              {
+                ok: false,
+                errors: { email: "Ya existe una respuesta registrada con este correo." },
+                error: "Ya registraste una respuesta para esta convocatoria.",
+              },
+              { status: 422 }
+            );
+          }
 
-        data = {
-          ...data,
-          registrationMode: "manual",
-          studentId: rosterStudent.id,
-          rut: rosterStudent.rut ?? "",
-          fullName: rosterStudent.fullName,
-          program: generation,
-          generation,
-          phone: phone || rosterStudent.phone || "",
-        };
+          const submittedPhone =
+            phone ||
+            normalizeChilePhone(String(data.phone ?? "").trim()) ||
+            String(data.phone ?? "").trim();
+
+          data = {
+            ...data,
+            registrationMode: "roster",
+            studentId: rosterMatch.id,
+            rut: rosterMatch.rut ?? rut ?? "",
+            fullName: rosterMatch.fullName,
+            program: rosterGeneration,
+            generation: rosterGeneration,
+            phone:
+              submittedPhone ||
+              formatChilePhoneDisplay(rosterMatch.phone ?? "") ||
+              rosterMatch.phone ||
+              "",
+          };
+        } else {
+          const generation = "other";
+
+          const rosterStudent = buildSelfRegisteredRosterStudent({ fullName, rut, phone });
+          if (!rosterStudent) {
+            return NextResponse.json(
+              {
+                ok: false,
+                errors: { fullName: "Debe indicar su nombre completo." },
+                error: "Complete su nombre para registrarse.",
+              },
+              { status: 422 }
+            );
+          }
+
+          if (email && (await hasConvocatoriaSubmissionByEmail(tenant, id, email))) {
+            return NextResponse.json(
+              {
+                ok: false,
+                errors: { email: "Ya existe una respuesta registrada con este correo." },
+                error: "Ya registraste una respuesta para esta convocatoria.",
+              },
+              { status: 422 }
+            );
+          }
+
+          const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, rosterStudent.id);
+          if (alreadySubmitted) {
+            return NextResponse.json(
+              {
+                ok: false,
+                errors: { fullName: "Ya registraste una respuesta para esta convocatoria." },
+                error: "Ya existe una respuesta registrada con tu nombre.",
+              },
+              { status: 422 }
+            );
+          }
+
+          data = {
+            ...data,
+            registrationMode: "manual",
+            studentId: rosterStudent.id,
+            rut: rosterStudent.rut ?? "",
+            fullName: rosterStudent.fullName,
+            program: generation,
+            generation,
+            phone: phone || rosterStudent.phone || "",
+          };
+        }
       } else {
         const student = await findConvocatoriaRosterStudent(tenant, convocatoria.slug, studentId);
         if (!student) {

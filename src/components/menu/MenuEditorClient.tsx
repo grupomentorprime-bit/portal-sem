@@ -3,14 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Layers, Menu, Navigation, Settings } from "lucide-react";
-import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
-import {
-  AdminModuleCenter,
-  AdminModuleHero,
-  AdminModuleSectionHeader,
-  AdminModuleStats,
-} from "@/components/admin/AdminModuleCenter";
+import { ContentGrid, KpiCard, Section } from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { countVisibleItems } from "@/lib/cms/menu-utils";
 import { MenuItemEditor } from "@/components/menu/MenuItemEditor";
 import { MenuPreview } from "@/components/menu/MenuPreview";
@@ -122,8 +116,11 @@ export function MenuEditorClient({ menu: initialMenu }: MenuEditorClientProps) {
     if (selectedId === id) setSelectedId(null);
   };
 
+  const visibleCount = countVisibleItems(menu.items);
+  const levelCount = Math.max(0, ...menu.items.map((item) => item.level ?? 0)) + 1;
+
   return (
-    <AdminModuleLayout
+    <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
         { label: "Portal", href: "/admin/pages" },
@@ -144,92 +141,71 @@ export function MenuEditorClient({ menu: initialMenu }: MenuEditorClientProps) {
         </div>
       }
     >
-      <AdminModuleCenter>
-        <AdminModuleHero
-          eyebrow="Portal · Editor de menú"
-          heroTitle={menu.name}
-          heroDescription={`Ubicación ${menu.location}. Arrastra ítems, edita enlaces y previsualiza la navegación.`}
-        />
+      <ContentGrid cols={3} className="mb-6">
+        <KpiCard label="Ítems totales" value={menu.items.length} />
+        <KpiCard label="Visibles" value={visibleCount} variant="success" />
+        <KpiCard label="Niveles" value={levelCount} variant="info" />
+      </ContentGrid>
 
-        <AdminModuleStats
-          items={[
-            { label: "Ítems totales", value: menu.items.length, icon: Menu, tone: "total" },
-            {
-              label: "Visibles",
-              value: countVisibleItems(menu.items),
-              icon: Navigation,
-              tone: "active",
-            },
-            {
-              label: "Niveles",
-              value: Math.max(0, ...menu.items.map((item) => item.level ?? 0)) + 1,
-              icon: Layers,
-              tone: "published",
-            },
-          ]}
-        />
+      {error ? (
+        <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+          {error}
+        </div>
+      ) : null}
 
-        <AdminModuleSectionHeader
-          icon={Settings}
-          title="Estructura y edición"
-          description="Configura el menú, reordena ítems y ajusta cada enlace en el panel lateral."
-        />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {error ? (
-          <div className="lg:col-span-2 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuración del menú</CardTitle>
-            </CardHeader>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label className="mb-2 block">Nombre</Label>
-                <Input
-                  value={menu.name}
-                  onChange={(e) => setMenu((prev) => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label className="mb-2 block">Ubicación</Label>
-                <Input
-                  value={menu.location}
-                  onChange={(e) => setMenu((prev) => ({ ...prev, location: e.target.value }))}
-                />
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="min-w-0 flex-1 space-y-6">
+          <Section title="Configuración del menú" description="Nombre y ubicación en el sitio.">
+            <Card>
+              <div className="grid gap-4 p-4 sm:grid-cols-2">
                 <div>
-                  <CardTitle>Ítems</CardTitle>
-                  <CardDescription>Arrastra para reordenar.</CardDescription>
+                  <Label className="mb-2 block">Nombre</Label>
+                  <Input
+                    value={menu.name}
+                    onChange={(e) => setMenu((prev) => ({ ...prev, name: e.target.value }))}
+                  />
                 </div>
-                <Button variant="secondary" onClick={handleAddItem}>
-                  + Agregar
-                </Button>
+                <div>
+                  <Label className="mb-2 block">Ubicación</Label>
+                  <Input
+                    value={menu.location}
+                    onChange={(e) => setMenu((prev) => ({ ...prev, location: e.target.value }))}
+                  />
+                </div>
               </div>
-            </CardHeader>
-            <MenuSortableList
-              items={menu.items}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onChange={handleItemsChange}
-              onDelete={handleDeleteItem}
-            />
-          </Card>
+            </Card>
+          </Section>
 
-          <MenuPreview items={menu.items} />
+          <Section title="Ítems de navegación" description="Arrastra para reordenar.">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">Listado</CardTitle>
+                    <CardDescription>Selecciona un ítem para editarlo en el panel lateral.</CardDescription>
+                  </div>
+                  <Button variant="secondary" onClick={handleAddItem}>
+                    + Agregar
+                  </Button>
+                </div>
+              </CardHeader>
+              <MenuSortableList
+                items={menu.items}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                onChange={handleItemsChange}
+                onDelete={handleDeleteItem}
+              />
+            </Card>
+          </Section>
+
+          <Section title="Vista previa">
+            <MenuPreview items={menu.items} />
+          </Section>
         </div>
 
-        <div>
+        <aside className="w-full shrink-0 border-t border-border pt-6 lg:w-80 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Editor de ítem</h2>
           {selectedItem ? (
             <MenuItemEditor
               item={selectedItem}
@@ -242,17 +218,13 @@ export function MenuEditorClient({ menu: initialMenu }: MenuEditorClientProps) {
               }}
             />
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Editor de ítem</CardTitle>
-                <CardDescription>Selecciona un ítem de la lista para editarlo.</CardDescription>
-              </CardHeader>
-            </Card>
+            <p className="text-sm text-muted">
+              Selecciona un ítem de la lista para editar enlace, visibilidad y jerarquía.
+            </p>
           )}
-        </div>
+        </aside>
       </div>
-      </AdminModuleCenter>
-    </AdminModuleLayout>
+    </AdminModulePage>
   );
 }
 

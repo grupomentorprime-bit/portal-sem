@@ -2,12 +2,19 @@ import { PortalBreadcrumb } from "@/components/portal/layout";
 import { PortalExperienceForm } from "@/components/portal/experience/forms";
 import { PortalConvocatoriaExperienceForm } from "@/components/portal/experience/forms/PortalConvocatoriaExperienceForm";
 import { FormPublicExperience, FormUnavailableState } from "@/components/portal/forms";
-import { getConvocatoriaByFormId, getActiveConvocatoria, getSupersededFormIds, publicFormUrl } from "@/lib/admin/forms-center";
+import {
+  getConvocatoriaByFormId,
+  getActiveConvocatoria,
+  getSupersededFormIds,
+  isExperienceFormPrivate,
+  publicFormUrl,
+} from "@/lib/admin/forms-center";
 import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experience";
 import { getActivePortal } from "@/lib/portal/site";
 import {
+  ensureDefaultExperienceForms,
+  getDirectAccessibleExperienceForm,
   getExperienceFormById,
-  getPublicExperienceForm,
 } from "@/lib/experience/forms/repository";
 import { getExperienceFormUnavailabilityReason } from "@/lib/experience/forms/status";
 import type { FormExperienceStateKey } from "@/types/experience-form-experience";
@@ -37,6 +44,7 @@ export async function generateMetadata({ params }: FormularioPageProps): Promise
   const experience = await getFormExperience(ctx.tenant, id, form?.name);
   const landing = toFormLandingConfig(experience);
   const unavailability = getExperienceFormUnavailabilityReason(form);
+  const isPrivate = Boolean(form && isExperienceFormPrivate(form));
   const title = experience.seo.title ?? landing.headline ?? form?.name ?? "Formulario";
 
   if (unavailability) {
@@ -54,14 +62,17 @@ export async function generateMetadata({ params }: FormularioPageProps): Promise
   return {
     title,
     description: experience.seo.description ?? landing.subheadline ?? form?.description ?? undefined,
-    keywords: experience.seo.keywords.length > 0 ? experience.seo.keywords : undefined,
-    openGraph: {
-      title: experience.seo.title ?? title,
-      description: experience.seo.description ?? landing.subheadline,
-      images: experience.seo.openGraphImageUrl
-        ? [{ url: experience.seo.openGraphImageUrl }]
-        : undefined,
-    },
+    keywords: isPrivate ? undefined : experience.seo.keywords.length > 0 ? experience.seo.keywords : undefined,
+    robots: isPrivate ? { index: false, follow: false } : undefined,
+    openGraph: isPrivate
+      ? undefined
+      : {
+          title: experience.seo.title ?? title,
+          description: experience.seo.description ?? landing.subheadline,
+          images: experience.seo.openGraphImageUrl
+            ? [{ url: experience.seo.openGraphImageUrl }]
+            : undefined,
+        },
   };
 }
 
@@ -91,18 +102,28 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
   const ctx = await getActivePortal();
   if (!ctx) notFound();
 
+  await ensureDefaultExperienceForms(ctx.tenant);
+
   const storedForm = await getExperienceFormById(ctx.tenant, id);
   const experience = await getFormExperience(ctx.tenant, id, storedForm?.name);
   const landing = toFormLandingConfig(experience);
   const unavailability = getExperienceFormUnavailabilityReason(storedForm);
+  const isPrivate = Boolean(storedForm && isExperienceFormPrivate(storedForm));
 
   const breadcrumb = (
     <PortalBreadcrumb
-      items={[
-        { label: "Inicio", href: "/" },
-        { label: "Formularios", href: "/formularios" },
-        { label: landing.headline ?? storedForm?.name ?? "Formulario" },
-      ]}
+      items={
+        isPrivate
+          ? [
+              { label: "Inicio", href: "/" },
+              { label: landing.headline ?? storedForm?.name ?? "Formulario" },
+            ]
+          : [
+              { label: "Inicio", href: "/" },
+              { label: "Formularios", href: "/formularios" },
+              { label: landing.headline ?? storedForm?.name ?? "Formulario" },
+            ]
+      }
     />
   );
 
@@ -111,6 +132,7 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
     return (
       <FormUnavailableState
         reason={unavailability}
+        formId={id}
         landing={landing}
         stateMessage={experience.states[stateKey]}
         formName={storedForm?.name}
@@ -119,7 +141,7 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
     );
   }
 
-  const form = await getPublicExperienceForm(ctx.tenant, id);
+  const form = await getDirectAccessibleExperienceForm(ctx.tenant, id);
   if (!form) {
     return (
       <FormUnavailableState

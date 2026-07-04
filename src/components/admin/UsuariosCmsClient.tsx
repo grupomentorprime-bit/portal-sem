@@ -12,8 +12,9 @@ import {
 } from "@/components/admin/AdminModuleCenter";
 import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { InviteUserWizard } from "@/components/admin/InviteUserWizard";
-import { UserCmsCard, type UserCmsCardData } from "@/components/admin/UserCmsCard";
+import { UserCmsCard, type AssignableRole, type UserCmsCardData } from "@/components/admin/UserCmsCard";
 import { CMS_USER_GROUPS } from "@/lib/admin/institutional";
+import { rolesIncludeCode } from "@/core/identity/roles/helpers";
 import { cn } from "@/lib/utils";
 
 export function UsuariosCmsClient() {
@@ -30,6 +31,7 @@ export function UsuariosCmsClient() {
   >([]);
   const [audit, setAudit] = useState<AuditTimelineEntry[]>([]);
   const [activeGroup, setActiveGroup] = useState("all");
+  const [assignableRoles, setAssignableRoles] = useState<AssignableRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [compatMode, setCompatMode] = useState(false);
@@ -47,6 +49,7 @@ export function UsuariosCmsClient() {
       setMembers(team.members ?? []);
       setInvitations(team.invitations ?? []);
       setAudit(team.audit ?? []);
+      setAssignableRoles(team.assignableRoles ?? []);
     }
     if (me.ok) setCompatMode(me.compatMode === true);
   }, []);
@@ -68,22 +71,28 @@ export function UsuariosCmsClient() {
   const filteredMembers = useMemo(() => {
     const group = CMS_USER_GROUPS.find((g) => g.id === activeGroup);
     if (!group || group.id === "all") return members;
-    if (!("roles" in group)) return members;
+    if (!("roleCodes" in group)) return members;
     return members.filter((m) =>
-      m.roles.some((r) => (group.roles as readonly string[]).includes(r.name))
+      m.roles.some((r) =>
+        group.roleCodes.some((code) => rolesIncludeCode([r], code))
+      )
     );
   }, [members, activeGroup]);
 
   async function handleInvite(payload: {
     email: string;
     displayName: string;
-    roleName: string;
+    roleCode: string;
   }) {
     setError("");
     const res = await fetch("/api/identity/invitations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        email: payload.email,
+        displayName: payload.displayName,
+        roleCode: payload.roleCode,
+      }),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -93,13 +102,13 @@ export function UsuariosCmsClient() {
     await loadTeam();
   }
 
-  async function handleRoleChange(membershipId: string, roleName: string) {
+  async function handleRoleChange(membershipId: string, roleCode: string) {
     setRoleSavingId(membershipId);
     setError("");
     const res = await fetch(`/api/identity/members/${membershipId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roleName }),
+      body: JSON.stringify({ roleCode }),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -181,6 +190,7 @@ export function UsuariosCmsClient() {
             <UserCmsCard
               key={member.membershipId}
               member={member}
+              assignableRoles={assignableRoles}
               saving={roleSavingId === member.membershipId}
               onRoleChange={handleRoleChange}
             />
@@ -200,7 +210,11 @@ export function UsuariosCmsClient() {
           title="Invitar usuario"
           description="Asistente guiado para nuevos accesos al CMS."
         />
-        <InviteUserWizard onSubmit={handleInvite} error={error} />
+        <InviteUserWizard
+          onSubmit={handleInvite}
+          error={error}
+          assignableRoles={assignableRoles}
+        />
         {invitations.length > 0 ? (
           <div>
             <h3 className="mb-2 text-sm font-semibold">Invitaciones pendientes</h3>

@@ -317,6 +317,120 @@ export function inferGenerationFromSheetName(sheetName: string): string | null {
   return match ? `G-${match[1]}` : null;
 }
 
+function rosterGenerationMergePriority(generation: string): number {
+  const canonical = normalizeGenerationValue(generation);
+  if (canonical === "other") return 100;
+  if (canonical === "staff") return 50;
+  if (/^G-\d{4}$/.test(canonical)) return 0;
+  return 25;
+}
+
+function rosterNameTokens(value: string): string[] {
+  return normalizeRosterSearchText(value)
+    .split(/\s+/)
+    .filter((token) => token.length >= 2);
+}
+
+/** Compara nombres ignorando acentos y tolerando nombres intermedios distintos. */
+export function rosterNamesLikelyMatch(candidateName: string, rosterName: string): boolean {
+  const normalizedCandidate = normalizeRosterSearchText(candidateName);
+  const normalizedRoster = normalizeRosterSearchText(rosterName);
+  if (!normalizedCandidate || !normalizedRoster) return false;
+  if (normalizedCandidate === normalizedRoster) return true;
+  if (
+    normalizedCandidate.includes(normalizedRoster) ||
+    normalizedRoster.includes(normalizedCandidate)
+  ) {
+    return true;
+  }
+
+  const candidateTokens = rosterNameTokens(candidateName);
+  const rosterTokens = rosterNameTokens(rosterName);
+  if (candidateTokens.length === 0 || rosterTokens.length === 0) return false;
+
+  const rosterTokenSet = new Set(rosterTokens);
+  const overlap = candidateTokens.filter((token) => rosterTokenSet.has(token));
+  const minTokens = Math.min(candidateTokens.length, rosterTokens.length);
+
+  if (overlap.length >= 2) return true;
+  return overlap.length >= minTokens && minTokens >= 1;
+}
+
+function rosterRutsLikelyMatch(candidateRut: string, rosterRut: string): boolean {
+  const normalizedCandidate = normalizeRut(candidateRut);
+  const normalizedRoster = normalizeRut(rosterRut);
+  if (!normalizedCandidate || !normalizedRoster) return false;
+  if (normalizedCandidate === normalizedRoster) return true;
+
+  if (normalizedCandidate.length >= 8 && normalizedCandidate.length === normalizedRoster.length) {
+    let differences = 0;
+    for (let index = 0; index < normalizedCandidate.length; index += 1) {
+      if (normalizedCandidate[index] !== normalizedRoster[index]) differences += 1;
+    }
+    if (differences === 1) return true;
+  }
+
+  return false;
+}
+
+/** Busca en la nómina por RUT o nombre (sin acentos, con tolerancia a typos leves). */
+export function findRosterStudentByIdentity(
+  students: ConvocatoriaRosterStudent[],
+  identity: { fullName: string; rut?: string }
+): ConvocatoriaRosterStudent | null {
+  const trimmedName = identity.fullName.trim();
+  const trimmedRut = identity.rut?.trim();
+
+  if (!trimmedName && !trimmedRut) return null;
+
+  if (trimmedRut) {
+    const rutMatch = students.find(
+      (student) => student.rut && rosterRutsLikelyMatch(trimmedRut, student.rut)
+    );
+    if (rutMatch) return rutMatch;
+  }
+
+  if (!trimmedName) return null;
+
+  const candidates = students.filter((student) =>
+    rosterNamesLikelyMatch(trimmedName, student.fullName)
+  );
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  const queryTokens = rosterNameTokens(trimmedName);
+  const overlapScore = (fullName: string) => {
+    const tokenSet = new Set(rosterNameTokens(fullName));
+    return queryTokens.filter((token) => tokenSet.has(token)).length;
+  };
+
+  return [...candidates].sort((left, right) => {
+    const priorityDiff =
+      rosterGenerationMergePriority(left.generation) -
+      rosterGenerationMergePriority(right.generation);
+    if (priorityDiff !== 0) return priorityDiff;
+    return overlapScore(right.fullName) - overlapScore(left.fullName);
+  })[0];
+}
+
+export function sortRosterImportSheetNames(sheetNames: string[]): string[] {
+  const sheetPriority = (sheetName: string): number => {
+    const inferred = inferGenerationFromSheetName(sheetName);
+    if (inferred && normalizeGenerationValue(inferred) !== "other") {
+      return rosterGenerationMergePriority(inferred);
+    }
+    if (/equipo|staff|docente/i.test(sheetName)) return rosterGenerationMergePriority("staff");
+    if (/otros?/i.test(sheetName)) return rosterGenerationMergePriority("other");
+    return 25;
+  };
+
+  return [...sheetNames].sort((left, right) => {
+    const priorityDiff = sheetPriority(left) - sheetPriority(right);
+    if (priorityDiff !== 0) return priorityDiff;
+    return left.localeCompare(right, "es");
+  });
+}
+
 export function parseConvocatoriaRosterRowsFromSheet(
   rows: string[][],
   sheetName?: string
@@ -328,21 +442,35 @@ export function parseConvocatoriaRosterRowsFromSheet(
 export function mergeRosterStudents(
   batches: ConvocatoriaRosterStudent[][]
 ): ConvocatoriaRosterStudent[] {
-  const seen = new Set<string>();
-  const merged: ConvocatoriaRosterStudent[] = [];
+  const byRut = new Map<string, ConvocatoriaRosterStudent>();
+  const withoutRut: ConvocatoriaRosterStudent[] = [];
+  const seenWithoutRut = new Set<string>();
 
   for (const batch of batches) {
     for (const student of batch) {
-      const key = student.rut
-        ? normalizeRut(student.rut)
-        : `${normalizeText(student.fullName)}::${normalizeText(student.generation)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      merged.push(student);
+      if (student.rut) {
+        const key = normalizeRut(student.rut);
+        const existing = byRut.get(key);
+        if (
+          !existing ||
+          rosterGenerationMergePriority(student.generation) <
+            rosterGenerationMergePriority(existing.generation)
+        ) {
+          byRut.set(key, student);
+        }
+        continue;
+      }
+
+      const key = `${normalizeText(student.fullName)}::${normalizeText(student.generation)}`;
+      if (seenWithoutRut.has(key)) continue;
+      seenWithoutRut.add(key);
+      withoutRut.push(student);
     }
   }
 
-  return merged;
+  return [...byRut.values(), ...withoutRut].sort((left, right) =>
+    left.fullName.localeCompare(right.fullName, "es")
+  );
 }
 
 export function rosterStudentKey(student: ConvocatoriaRosterStudent): string {
@@ -445,8 +573,15 @@ export function rosterStudentMatchesQuery(
     return true;
   }
 
-  return normalizedQuery
+  const queryTokens = normalizedQuery
     .split(/\s+/)
-    .filter((token) => token.length >= 2)
-    .every((token) => haystack.includes(token));
+    .filter((token) => token.length >= 2);
+
+  if (queryTokens.length >= 2) {
+    const haystackTokens = new Set(haystack.split(/\s+/).filter(Boolean));
+    const overlap = queryTokens.filter((token) => haystackTokens.has(token));
+    if (overlap.length >= 2) return true;
+  }
+
+  return queryTokens.every((token) => haystack.includes(token));
 }

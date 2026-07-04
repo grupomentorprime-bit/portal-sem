@@ -2,20 +2,38 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { listMembershipsByTenant } from "@/lib/identity/memberships";
 import { listUsersByIds } from "@/lib/identity/users";
-import { findRolesByIds } from "@/lib/identity/roles";
+import {
+  ensureTenantRoles,
+  findRolesByIds,
+  getCallerRoleCode,
+  getRoleCode,
+} from "@/lib/identity/roles";
 import { listInvitationsByTenant } from "@/lib/identity/invitations";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 import { listAuditByTenant } from "@/lib/identity/audit";
+import {
+  buildAssignableRolesList,
+  getTargetRoleCode,
+  shouldHideMemberFromCaller,
+} from "@/lib/identity/iam-guard";
+import type { RoleCode } from "@/core/identity/roles/codes";
 
 export async function GET() {
   try {
     const ctx = await requirePermission("settings.team");
     if (ctx instanceof NextResponse) return ctx;
 
-    const [memberships, invitations, audit] = await Promise.all([
+    await ensureTenantRoles(ctx.tenantId);
+
+    const callerRoleCode = ctx.membership
+      ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
+      : null;
+
+    const [memberships, invitations, audit, allRoles] = await Promise.all([
       listMembershipsByTenant(ctx.tenantId),
       listInvitationsByTenant(ctx.tenantId),
       listAuditByTenant(ctx.tenantId, 50),
+      ensureTenantRoles(ctx.tenantId),
     ]);
 
     const userIds = memberships.map((membership) => membership.userId);
@@ -33,52 +51,87 @@ export async function GET() {
     const roles = await findRolesByIds(ctx.tenantId, allRoleIds);
     const roleMap = new Map(roles.map((role) => [role._id, role]));
 
-    const members = memberships.map((membership) => {
-      const user = userMap.get(membership.userId);
-      const memberRoles = membership.roleIds
-        .map((roleId) => roleMap.get(roleId))
-        .filter((role): role is NonNullable<typeof role> => Boolean(role));
+    const members = memberships
+      .map((membership) => {
+        const user = userMap.get(membership.userId);
+        const memberRoles = membership.roleIds
+          .map((roleId) => roleMap.get(roleId))
+          .filter((role): role is NonNullable<typeof role> => Boolean(role));
 
-      return {
-        membershipId: membership._id,
-        userId: membership.userId,
-        email: user?.email ?? "",
-        displayName: user?.displayName ?? "",
-        status: membership.status,
-        roleIds: membership.roleIds,
-        studentAffairsScope: membership.studentAffairsScope,
-        roles: memberRoles.map((role) => ({
-          id: role._id,
-          name: role.name,
-          label: getInstitutionalRoleLabel(role.name),
-        })),
-        joinedAt: membership.joinedAt,
-        lastLoginAt: user?.lastLoginAt,
-      };
-    });
+        const targetCode = getTargetRoleCode(memberRoles);
 
-    const invitationsWithRoles = invitations.map((invitation) => {
-      const invitationRoles = invitation.roleIds
-        .map((roleId) => roleMap.get(roleId))
-        .filter((role): role is NonNullable<typeof role> => Boolean(role));
+        return {
+          membershipId: membership._id,
+          userId: membership.userId,
+          email: user?.email ?? "",
+          displayName: user?.displayName ?? "",
+          status: membership.status,
+          roleIds: membership.roleIds,
+          studentAffairsScope: membership.studentAffairsScope,
+          roles: memberRoles.map((role) => {
+            const code = getRoleCode(role);
+            return {
+              id: role._id,
+              name: role.name,
+              code: code ?? undefined,
+              label: getInstitutionalRoleLabel(code ?? role.name),
+            };
+          }),
+          joinedAt: membership.joinedAt,
+          lastLoginAt: user?.lastLoginAt,
+          _targetCode: targetCode,
+          _user: user,
+        };
+      })
+      .filter((member) => {
+        if (ctx.compatMode) return true;
+        return !shouldHideMemberFromCaller(
+          callerRoleCode,
+          member._targetCode as RoleCode | null,
+          member._user ?? undefined
+        );
+      })
+      .map(({ _targetCode: _, _user: __, ...member }) => member);
 
-      return {
-        id: invitation._id,
-        email: invitation.email,
-        displayName: invitation.displayName || invitation.email,
-        status: invitation.status,
-        expiresAt: invitation.expiresAt,
-        createdAt: invitation.createdAt,
-        roles: invitationRoles.map((role) => ({
-          id: role._id,
-          name: role.name,
-          label: getInstitutionalRoleLabel(role.name),
-        })),
-      };
-    });
+    const invitationsWithRoles = invitations
+      .map((invitation) => {
+        const invitationRoles = invitation.roleIds
+          .map((roleId) => roleMap.get(roleId))
+          .filter((role): role is NonNullable<typeof role> => Boolean(role));
+
+        const targetCode = getTargetRoleCode(invitationRoles);
+
+        return {
+          id: invitation._id,
+          email: invitation.email,
+          displayName: invitation.displayName || invitation.email,
+          status: invitation.status,
+          expiresAt: invitation.expiresAt,
+          createdAt: invitation.createdAt,
+          roles: invitationRoles.map((role) => {
+            const code = getRoleCode(role);
+            return {
+              id: role._id,
+              name: role.name,
+              code: code ?? undefined,
+              label: getInstitutionalRoleLabel(code ?? role.name),
+            };
+          }),
+          _targetCode: targetCode,
+        };
+      })
+      .filter((invitation) => {
+        if (ctx.compatMode) return true;
+        return !shouldHideMemberFromCaller(callerRoleCode, invitation._targetCode as RoleCode | null);
+      })
+      .map(({ _targetCode: _, ...invitation }) => invitation);
+
+    const assignableRoles = buildAssignableRolesList(callerRoleCode, allRoles);
 
     return NextResponse.json({
       ok: true,
+      callerRoleCode,
+      assignableRoles,
       members,
       invitations: invitationsWithRoles,
       audit: audit.map((entry) => ({

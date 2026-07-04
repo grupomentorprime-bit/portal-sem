@@ -23,8 +23,8 @@
   --color-secondary-default: var(--sem-secondary);
   --color-accent-default: var(--sem-accent);
   --color-success-default: var(--sem-success);
-  --color-warning-default: var(--sem-light);
-  --color-info-default: var(--sem-accent);
+  --color-warning-default: #c98a2e;
+  --color-info-default: var(--sem-secondary);
 
   /* ─── Alias universales ─── */
   --color-brand: var(--sem-primary);
@@ -41,21 +41,21 @@
   /* ─── Estados UI (accesibilidad; sin HEX en componentes) ─── */
   --color-danger-default: #b42318;
 
-  --state-success-fg: var(--sem-primary);
-  --state-success-bg: color-mix(in srgb, var(--sem-success) 15%, transparent);
-  --state-success-border: color-mix(in srgb, var(--sem-success) 30%, transparent);
+  --state-success-fg: color-mix(in srgb, var(--sem-success) 88%, var(--gray-900));
+  --state-success-bg: color-mix(in srgb, var(--sem-success) 12%, white);
+  --state-success-border: color-mix(in srgb, var(--sem-success) 28%, transparent);
 
-  --state-warning-fg: var(--sem-primary);
-  --state-warning-bg: color-mix(in srgb, var(--sem-light) 20%, transparent);
-  --state-warning-border: color-mix(in srgb, var(--sem-light) 40%, transparent);
+  --state-warning-fg: color-mix(in srgb, var(--color-warning-default) 90%, var(--gray-900));
+  --state-warning-bg: color-mix(in srgb, var(--color-warning-default) 12%, white);
+  --state-warning-border: color-mix(in srgb, var(--color-warning-default) 28%, transparent);
 
   --state-danger-fg: var(--color-danger-default);
   --state-danger-bg: color-mix(in srgb, var(--color-danger-default) 10%, transparent);
   --state-danger-border: color-mix(in srgb, var(--color-danger-default) 25%, transparent);
 
   --state-info-fg: var(--sem-primary);
-  --state-info-bg: color-mix(in srgb, var(--sem-accent) 10%, transparent);
-  --state-info-border: color-mix(in srgb, var(--sem-accent) 30%, transparent);
+  --state-info-bg: color-mix(in srgb, var(--sem-secondary) 8%, white);
+  --state-info-border: color-mix(in srgb, var(--sem-secondary) 22%, transparent);
 
   /* ─── Semánticos runtime ─── */
   --color-primary: var(--color-primary-default);

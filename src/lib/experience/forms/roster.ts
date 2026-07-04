@@ -1,9 +1,11 @@
 import { getDatabase } from "@/lib/mongodb";
 import {
   createRosterStudentFromFields,
+  findRosterStudentByIdentity,
   rosterStudentMatchesQuery,
   upsertRosterStudent,
 } from "@/lib/experience/forms/roster-import";
+import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
 import type {
   ConvocatoriaRoster,
   ConvocatoriaRosterStudent,
@@ -62,6 +64,22 @@ export async function searchConvocatoriaRoster(
   return roster.students
     .filter((student) => rosterStudentMatchesQuery(student, query))
     .slice(0, limit);
+}
+
+export async function findConvocatoriaRosterStudentByIdentity(
+  tenant: string,
+  convocatoriaSlug: string,
+  identity: { fullName: string; rut?: string }
+): Promise<ConvocatoriaRosterStudent | null> {
+  const roster = await getConvocatoriaRoster(tenant, convocatoriaSlug);
+  if (!roster?.students.length) return null;
+  const officialStudents = roster.students.filter(
+    (student) => normalizeGenerationValue(student.generation) !== "other"
+  );
+  return findRosterStudentByIdentity(
+    officialStudents.length > 0 ? officialStudents : roster.students,
+    identity
+  );
 }
 
 export async function findConvocatoriaRosterStudent(

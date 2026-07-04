@@ -269,9 +269,9 @@ function settingsForBlock(type: BlockType): Record<string, unknown> {
         ...base,
         ...seed.people,
         overline: "Equipo directivo y académico",
-        title: "Docentes que inspiran confianza",
+        title: "Un equipo que inspira confianza",
         description:
-          "Docentes con trayectoria académica y pastoral, comprometidos con tu formación.",
+          "Profesionales con trayectoria académica y pastoral, comprometidos con tu formación.",
       };
     case "testimonials":
       return {

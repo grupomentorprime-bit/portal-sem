@@ -50,6 +50,15 @@ export function canDeleteStudentAffairsSubmission(ctx: AuthContext): boolean {
   return ctx.permissions.includes("experience.forms.manage");
 }
 
+export function canReclassifyStudentAffairsGeneration(ctx: AuthContext): boolean {
+  if (ctx.compatMode) return true;
+  return (
+    ctx.permissions.includes("experience.forms.manage") ||
+    ctx.permissions.includes("student-affairs.manage") ||
+    ctx.permissions.includes("student-affairs.checkin")
+  );
+}
+
 export function resolveStudentAffairsScope(ctx: AuthContext): StudentAffairsScope | null {
   if (hasStudentAffairsFullAccess(ctx)) return null;
   return ctx.membership?.studentAffairsScope ?? { formIds: [], generationCodes: [] };

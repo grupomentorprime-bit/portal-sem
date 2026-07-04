@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, Input, Label, Select } from "@/components/ui";
+import { Button, Input, Label } from "@/components/ui";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { isProtectedMember } from "@/core/identity/roles/helpers";
+import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 
-interface RoleOption {
+interface AssignableRole {
   id: string;
   name: string;
-  description: string;
+  code: string;
+  label: string;
 }
 
 interface TeamMember {
@@ -17,7 +20,7 @@ interface TeamMember {
   displayName: string;
   status: string;
   roleIds: string[];
-  roles: RoleOption[];
+  roles: Array<{ id: string; name: string; code?: string; label: string }>;
   joinedAt: string;
   lastLoginAt?: string;
 }
@@ -27,7 +30,7 @@ interface Invitation {
   email: string;
   status: string;
   expiresAt: string;
-  roles: RoleOption[];
+  roles: Array<{ label: string; code?: string }>;
 }
 
 interface AuditEntry {
@@ -38,47 +41,34 @@ interface AuditEntry {
   createdAt: string;
 }
 
-const INVITE_ROLE_BLOCKLIST = new Set(["Tenant Owner"]);
-
 export function TeamSettingsClient() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
-  const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
+  const [assignableRoles, setAssignableRoles] = useState<AssignableRole[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRoleId, setInviteRoleId] = useState("");
+  const [inviteRoleCode, setInviteRoleCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [compatMode, setCompatMode] = useState(false);
   const [roleSavingId, setRoleSavingId] = useState<string | null>(null);
 
   const loadTeam = useCallback(async () => {
-    const [teamRes, rolesRes, meRes] = await Promise.all([
+    const [teamRes, meRes] = await Promise.all([
       fetch("/api/identity/team"),
-      fetch("/api/identity/roles"),
       fetch("/api/identity/me"),
     ]);
 
     const team = await teamRes.json();
-    const roles = await rolesRes.json();
     const me = await meRes.json();
 
     if (team.ok) {
       setMembers(team.members ?? []);
       setInvitations(team.invitations ?? []);
       setAudit(team.audit ?? []);
-    }
-
-    if (roles.ok) {
-      const options = (roles.roles ?? []).filter(
-        (r: RoleOption) => !INVITE_ROLE_BLOCKLIST.has(r.name)
-      );
-      setRoleOptions(options);
-      setInviteRoleId((current) => {
-        if (current) return current;
-        const editor = options.find((r: RoleOption) => r.name === "Editor");
-        return editor?.id ?? options[0]?.id ?? "";
-      });
+      const roles: AssignableRole[] = team.assignableRoles ?? [];
+      setAssignableRoles(roles);
+      setInviteRoleCode((current) => current || roles[0]?.code || "");
     }
 
     if (me.ok) setCompatMode(me.compatMode === true);
@@ -104,13 +94,13 @@ export function TeamSettingsClient() {
     e.preventDefault();
     setError("");
 
-    const selectedRole = roleOptions.find((r) => r.id === inviteRoleId);
+    const selectedRole = assignableRoles.find((r) => r.code === inviteRoleCode);
     const res = await fetch("/api/identity/invitations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: inviteEmail,
-        roleName: selectedRole?.name ?? "Editor",
+        roleName: selectedRole?.name,
       }),
     });
     const data = await res.json();
@@ -118,34 +108,27 @@ export function TeamSettingsClient() {
       setError(data.error ?? "No se pudo enviar la invitación");
       return;
     }
-
     setInviteEmail("");
     await loadTeam();
   }
 
-  async function handleRoleChange(membershipId: string, roleId: string) {
+  async function handleRoleChange(membershipId: string, roleCode: string) {
     setRoleSavingId(membershipId);
     setError("");
-
-    const selectedRole = roleOptions.find((r) => r.id === roleId);
     const res = await fetch(`/api/identity/members/${membershipId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roleId, roleName: selectedRole?.name }),
+      body: JSON.stringify({ roleCode }),
     });
     const data = await res.json();
-
     if (!data.ok) {
       setError(data.error ?? "No se pudo actualizar el rol");
       setRoleSavingId(null);
       return;
     }
-
     await loadTeam();
     setRoleSavingId(null);
   }
-
-  const selectableRoles = roleOptions;
 
   if (loading) {
     return <p className="text-sm text-muted">Cargando equipo…</p>;
@@ -154,21 +137,20 @@ export function TeamSettingsClient() {
   return (
     <div className="space-y-8">
       {compatMode ? (
-        <div className="rounded-lg border border-[var(--state-warning-border)] bg-[var(--state-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning)]">
-          Modo compatibilidad activo (<code>IDENTITY_ENFORCE</code> no está en <code>true</code>).
-          La autorización no bloquea operaciones hasta activar enforcement.
+        <div className="rounded-xl border border-[var(--state-warning-border)] bg-[var(--state-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning)]">
+          Modo compatibilidad activo — enforcement de identidad deshabilitado.
         </div>
       ) : null}
 
       <Card>
         <CardHeader>
-          <CardTitle>Miembros</CardTitle>
-          <CardDescription>Usuarios con acceso a este tenant y sus roles.</CardDescription>
+          <CardTitle>Miembros del equipo</CardTitle>
+          <CardDescription>Usuarios con acceso al tenant actual.</CardDescription>
         </CardHeader>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto px-6 pb-6">
+          <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b text-left text-muted">
+              <tr className="border-b text-muted">
                 <th className="px-4 py-2 font-medium">Usuario</th>
                 <th className="px-4 py-2 font-medium">Rol</th>
                 <th className="px-4 py-2 font-medium">Estado</th>
@@ -177,8 +159,8 @@ export function TeamSettingsClient() {
             </thead>
             <tbody>
               {members.map((m) => {
-                const currentRoleId = m.roleIds[0] ?? m.roles[0]?.id ?? "";
-                const isOwner = m.roles.some((r) => r.name === "Tenant Owner");
+                const currentRoleCode = m.roles[0]?.code ?? "";
+                const isProtected = isProtectedMember(m.roles);
 
                 return (
                   <tr key={m.membershipId} className="border-b">
@@ -187,18 +169,20 @@ export function TeamSettingsClient() {
                       <div className="text-xs text-muted">{m.email}</div>
                     </td>
                     <td className="px-4 py-3">
-                      {isOwner ? (
-                        <span className="font-medium">Tenant Owner</span>
+                      {isProtected ? (
+                        <span className="font-medium">
+                          {getInstitutionalRoleLabel(m.roles[0]?.code ?? "")}
+                        </span>
                       ) : (
                         <select
-                          value={currentRoleId}
-                          disabled={roleSavingId === m.membershipId}
+                          value={currentRoleCode}
+                          disabled={roleSavingId === m.membershipId || !assignableRoles.length}
                           onChange={(e) => handleRoleChange(m.membershipId, e.target.value)}
                           className="h-9 min-w-[10rem] rounded-lg border border-border bg-background px-2 text-sm"
                         >
-                          {selectableRoles.map((role) => (
-                            <option key={role.id} value={role.id}>
-                              {role.name}
+                          {assignableRoles.map((role) => (
+                            <option key={role.id} value={role.code}>
+                              {role.label}
                             </option>
                           ))}
                         </select>
@@ -206,18 +190,13 @@ export function TeamSettingsClient() {
                     </td>
                     <td className="px-4 py-3">{m.status}</td>
                     <td className="px-4 py-3 text-muted">
-                      {m.lastLoginAt ? new Date(m.lastLoginAt).toLocaleString("es") : "—"}
+                      {m.lastLoginAt
+                        ? new Date(m.lastLoginAt).toLocaleString("es-CL")
+                        : "Sin registro"}
                     </td>
                   </tr>
                 );
               })}
-              {members.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-muted">
-                    No hay miembros registrados.
-                  </td>
-                </tr>
-              ) : null}
             </tbody>
           </table>
         </div>
@@ -225,73 +204,78 @@ export function TeamSettingsClient() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Invitaciones</CardTitle>
-          <CardDescription>Invita nuevos miembros al tenant con un rol asignado.</CardDescription>
+          <CardTitle>Invitar miembro</CardTitle>
+          <CardDescription>Envía una invitación por correo.</CardDescription>
         </CardHeader>
-        <form onSubmit={handleInvite} className="flex flex-col gap-3 px-6 pb-6 sm:flex-row sm:items-end">
-          <div className="flex-1 space-y-1.5">
-            <Label htmlFor="inviteEmail">Email</Label>
+        <form onSubmit={handleInvite} className="space-y-4 px-6 pb-6">
+          <div className="space-y-1.5">
+            <Label htmlFor="invite-email">Email</Label>
             <Input
-              id="inviteEmail"
+              id="invite-email"
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="usuario@institucion.cl"
               required
             />
           </div>
-          <div className="w-full space-y-1.5 sm:w-56">
-            <Select
-              label="Rol"
-              id="inviteRole"
-              value={inviteRoleId}
-              onChange={(e) => setInviteRoleId(e.target.value)}
-              options={selectableRoles.map((role) => ({
-                value: role.id,
-                label: role.name,
-              }))}
-              required
-            />
+          <div className="space-y-1.5">
+            <Label htmlFor="invite-role">Rol</Label>
+            <select
+              id="invite-role"
+              value={inviteRoleCode}
+              onChange={(e) => setInviteRoleCode(e.target.value)}
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+            >
+              {assignableRoles.map((role) => (
+                <option key={role.id} value={role.code}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
           </div>
-          <Button type="submit" disabled={!inviteRoleId}>
+          {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
+          <Button type="submit" disabled={!assignableRoles.length}>
             Enviar invitación
           </Button>
         </form>
-        {error ? <p className="px-6 pb-4 text-sm text-[var(--color-danger)]">{error}</p> : null}
-        {invitations.length > 0 ? (
+      </Card>
+
+      {invitations.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Invitaciones pendientes</CardTitle>
+          </CardHeader>
           <ul className="space-y-2 px-6 pb-6 text-sm">
             {invitations.map((inv) => (
-              <li key={inv.id} className="flex flex-wrap justify-between gap-2 rounded border px-3 py-2">
-                <span>{inv.email}</span>
-                <span className="text-muted">
-                  {inv.roles.map((r) => r.name).join(", ") || "Editor"} · expira{" "}
-                  {new Date(inv.expiresAt).toLocaleDateString("es")}
-                </span>
+              <li key={inv.id} className="rounded-lg border border-border px-4 py-3">
+                <div className="font-medium">{inv.email}</div>
+                <div className="text-muted">
+                  {inv.roles.map((r) => r.label).join(", ")} · expira{" "}
+                  {new Date(inv.expiresAt).toLocaleString("es-CL")}
+                </div>
               </li>
             ))}
           </ul>
-        ) : null}
-      </Card>
+        </Card>
+      ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Auditoría reciente</CardTitle>
-          <CardDescription>Últimas acciones registradas en el tenant.</CardDescription>
-        </CardHeader>
-        <ul className="space-y-2 px-6 pb-6 text-sm">
-          {audit.map((entry) => (
-            <li key={entry.id} className="flex justify-between border-b py-2">
-              <span>
-                <code className="text-xs">{entry.action}</code> — {entry.entity}
-              </span>
-              <span className="text-muted">{new Date(entry.createdAt).toLocaleString("es")}</span>
-            </li>
-          ))}
-          {audit.length === 0 ? (
-            <li className="py-4 text-center text-muted">Sin registros de auditoría.</li>
-          ) : null}
-        </ul>
-      </Card>
+      {audit.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Auditoría reciente</CardTitle>
+          </CardHeader>
+          <ul className="space-y-2 px-6 pb-6 text-sm">
+            {audit.map((entry) => (
+              <li key={entry.id} className="rounded-lg border border-border px-4 py-3">
+                <div className="font-medium">{entry.action}</div>
+                <div className="text-muted">
+                  {entry.entity} · {new Date(entry.createdAt).toLocaleString("es-CL")}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { AdminDashboardClient } from "@/components/admin/AdminDashboardClient";
 import type { AuditTimelineEntry } from "@/components/admin/AuditTimeline";
-import { AdminPageFrame } from "@/components/admin/AdminPageFrame";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 import { getSiteConfig } from "@/lib/cms/config";
 import { countContentDocuments } from "@/lib/content/query";
+import { isIdentityEnforced } from "@/core/identity";
 import { listAuditByTenant } from "@/lib/identity/audit";
 import type { IdentityAuditEntry } from "@/types/identity";
 import { listInvitationsByTenant } from "@/lib/identity/invitations";
@@ -18,6 +18,7 @@ export default async function AdminHomePage() {
   const [config, session] = await Promise.all([getSiteConfig(), loadSessionContext()]);
   const tenant = config?.institution.tenant ?? session?.session.tenantId ?? "default";
   const tenantId = session?.session.tenantId ?? tenant;
+  const compatMode = !isIdentityEnforced();
 
   let roleLabel = "Colaborador";
   if (session?.membership) {
@@ -63,26 +64,19 @@ export default async function AdminHomePage() {
   }
 
   return (
-    <AdminPageFrame
-      title="Centro de administración"
-      description="Panel institucional del Seminario Eclesiástico Mayor"
-      breadcrumbs={[{ label: "Inicio" }]}
-      backHref="/"
-      backLabel="Ver portal público"
-    >
-      <AdminDashboardClient
-        portalStatus={config?.institution.status ?? "active"}
-        institutionName={config?.institution.name ?? "SEM"}
-        displayName={session?.user.displayName || session?.user.email || "Administrador"}
-        roleLabel={roleLabel}
-        lastLoginAt={session?.user.lastLoginAt}
-        newsCount={newsCount}
-        programsCount={programsCount}
-        invitationsPending={invitationsPending}
-        recentActivityCount={recentAudit.length}
-        memberCount={memberCount}
-        auditPreview={auditPreview}
-      />
-    </AdminPageFrame>
+    <AdminDashboardClient
+      portalStatus={config?.institution.status ?? "active"}
+      institutionName={config?.institution.name ?? "SEM"}
+      displayName={session?.user.displayName || session?.user.email || "Administrador"}
+      roleLabel={roleLabel}
+      lastLoginAt={session?.user.lastLoginAt}
+      newsCount={newsCount}
+      programsCount={programsCount}
+      invitationsPending={invitationsPending}
+      recentActivityCount={recentAudit.length}
+      memberCount={memberCount}
+      auditPreview={auditPreview}
+      compatMode={compatMode}
+    />
   );
 }

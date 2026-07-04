@@ -1,4 +1,10 @@
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
+import {
+  TESTIMONIAL_FORM_LIMITS,
+  TESTIMONIAL_GENERATION_OPTIONS,
+  TESTIMONIAL_ROLE_OPTIONS,
+  testimonialFieldHelper,
+} from "@/lib/experience/forms/testimonial-limits";
 
 function baseMeta(
   id: string,
@@ -338,6 +344,99 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
         },
       ],
     }),
+    baseMeta("testimonial-submission", tenant, {
+      name: "Testimonio de alumno",
+      description:
+        "Comparte tu experiencia formativa en el SEM. El equipo revisará tu respuesta antes de publicarla en el sitio.",
+      successMessage:
+        "¡Gracias por compartir tu testimonio! Lo revisaremos y, si es aprobado, aparecerá en la sección de voces de nuestra comunidad.",
+      errorMessage: "No fue posible enviar tu testimonio. Revisa los campos e intenta nuevamente.",
+      destination: "testimonial_submission",
+      postSubmit: { type: "message" },
+      active: true,
+      visible: false,
+      private: true,
+      fields: [
+        {
+          id: "quote",
+          type: "textarea",
+          name: "quote",
+          label: "Tu testimonio",
+          placeholder:
+            "Ej.: La formación del seminario me equipó para responder con excelencia a los desafíos de la Iglesia hoy.",
+          helper: testimonialFieldHelper("quote", "Comparte tu experiencia en pocas palabras."),
+          validation: { required: true, minLength: 30, maxLength: TESTIMONIAL_FORM_LIMITS.quote },
+        },
+        {
+          id: "honorific",
+          type: "select",
+          name: "honorific",
+          label: "Rol en el ministerio (opcional)",
+          helper: "Selecciona cómo te identificas. Aparece antes de tu nombre en la tarjeta pública.",
+          options: TESTIMONIAL_ROLE_OPTIONS.map((option) => ({
+            label: option.label,
+            value: option.value,
+          })),
+        },
+        {
+          id: "fullName",
+          type: "text",
+          name: "fullName",
+          label: "Nombre y apellido",
+          placeholder: "Ej.: Marco Torres",
+          helper: testimonialFieldHelper("fullName"),
+          validation: { required: true, minLength: 3, maxLength: TESTIMONIAL_FORM_LIMITS.fullName },
+        },
+        {
+          id: "generation",
+          type: "select",
+          name: "generation",
+          label: "Generación",
+          helper:
+            "Si no eres alumno, elige «Sin generación». Si aplica, se mostrará como «Generación 20XX».",
+          validation: { required: true },
+          options: TESTIMONIAL_GENERATION_OPTIONS.map((option) => ({
+            label: option.label,
+            value: option.value,
+          })),
+        },
+        {
+          id: "churchSection",
+          type: "text",
+          name: "churchSection",
+          label: "Iglesia o comunidad",
+          placeholder: "Ej.: Iglesia Anglicana",
+          helper: testimonialFieldHelper("churchSection", "Sin incluir la ciudad."),
+          validation: { required: true, maxLength: TESTIMONIAL_FORM_LIMITS.churchSection },
+        },
+        {
+          id: "city",
+          type: "text",
+          name: "city",
+          label: "Ciudad o comuna",
+          placeholder: "Ej.: Concepción",
+          helper: testimonialFieldHelper("city", "Se combina con la iglesia: «Iglesia, Ciudad»."),
+          validation: { required: true, maxLength: TESTIMONIAL_FORM_LIMITS.city },
+        },
+        {
+          id: "email",
+          type: "email",
+          name: "email",
+          label: "Correo electrónico",
+          helper: "Solo para contacto interno; no se publica en el sitio.",
+          validation: { required: true },
+        },
+        {
+          id: "consentPublish",
+          type: "checkbox",
+          name: "consentPublish",
+          label: "Autorizo la revisión y posible publicación",
+          helper:
+            "Entiendo que el equipo del SEM revisará mi testimonio y decidirá qué información se publica en el portal.",
+          validation: { required: true },
+        },
+      ],
+    }),
   ];
 }
 
@@ -347,4 +446,5 @@ export const SEM_DEFAULT_FORM_IDS = [
   "convocatoria-talca-aurora-jul-2026",
   "information-request",
   "program-application",
+  "testimonial-submission",
 ] as const;

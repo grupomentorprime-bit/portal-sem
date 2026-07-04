@@ -44,12 +44,13 @@ export async function evaluateGuard(
   }
 
   if (transition.guard === "requireOwner") {
-    const { findRoleByName } = await import("@/lib/identity/roles");
-    const ownerRole = await findRoleByName(ctx.tenant, "Tenant Owner");
-    if (ownerRole && ctx.membership?.roleIds.includes(ownerRole._id)) {
+    const { findRoleByCode } = await import("@/lib/identity/roles");
+    const { ROLE_CODES } = await import("@/core/identity/roles/codes");
+    const superAdminRole = await findRoleByCode(ctx.tenant, ROLE_CODES.SUPER_ADMIN);
+    if (superAdminRole && ctx.membership?.roleIds.includes(superAdminRole._id)) {
       return { ok: true };
     }
-    return { ok: false, error: "Se requiere Tenant Owner." };
+    return { ok: false, error: "Se requiere Super Admin." };
   }
 
   return { ok: true };

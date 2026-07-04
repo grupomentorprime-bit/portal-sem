@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BrandingPanel } from "@/components/config/BrandingPanel";
 import { ConfigurationLayout } from "@/components/config/ConfigurationLayout";
 import { ContactForm } from "@/components/config/ContactForm";
@@ -12,12 +13,14 @@ import { PortalTopBarForm } from "@/components/config/PortalTopBarForm";
 import { PortalStatusCard } from "@/components/config/PortalStatusCard";
 import { SeoEditor } from "@/components/config/SeoEditor";
 import { SocialLinksForm } from "@/components/config/SocialLinksForm";
+import { parseConfigSection } from "@/lib/admin/config-nav";
 import type { ConfigSectionId, SiteConfig, SiteConfigUpdate } from "@/types/cms";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 interface ConfigurationHubProps {
   initialConfig: SiteConfig;
+  hideSectionNav?: boolean;
 }
 
 function toUpdate(config: SiteConfig): SiteConfigUpdate {
@@ -37,12 +40,29 @@ function toUpdate(config: SiteConfig): SiteConfigUpdate {
   };
 }
 
-export function ConfigurationHub({ initialConfig }: ConfigurationHubProps) {
+export function ConfigurationHub({ initialConfig, hideSectionNav = false }: ConfigurationHubProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sectionFromUrl = parseConfigSection(searchParams.get("section"));
   const [config, setConfig] = useState(initialConfig);
   const [baseline, setBaseline] = useState(initialConfig);
-  const [activeSection, setActiveSection] = useState<ConfigSectionId>("general");
+  const [activeSection, setActiveSection] = useState<ConfigSectionId>(sectionFromUrl);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveSection(sectionFromUrl);
+  }, [sectionFromUrl]);
+
+  const handleSectionChange = useCallback(
+    (section: ConfigSectionId) => {
+      setActiveSection(section);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("section", section);
+      router.replace(`/admin/config?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
 
   const isDirty = useMemo(
     () => JSON.stringify(config) !== JSON.stringify(baseline),
@@ -95,7 +115,8 @@ export function ConfigurationHub({ initialConfig }: ConfigurationHubProps) {
   return (
     <ConfigurationLayout
       activeSection={activeSection}
-      onSectionChange={setActiveSection}
+      onSectionChange={handleSectionChange}
+      hideSectionNav={hideSectionNav}
       saveStatus={saveStatus}
       isDirty={isDirty}
       onSave={handleSave}

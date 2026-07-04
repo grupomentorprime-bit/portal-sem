@@ -15,18 +15,20 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import { StatusBadge } from "@/components/admin/kit";
 import { AdminModuleCenter } from "@/components/admin/AdminModuleCenter";
 import { ConvocatoriaRosterPanel } from "@/components/admin/forms/ConvocatoriaRosterPanel";
 import { ExperienceFormFieldsEditor } from "@/components/admin/forms/ExperienceFormFieldsEditor";
 import { FormExperienceEditor } from "@/components/admin/forms/FormExperienceEditor";
 import { FormSubmissionsPanel } from "@/components/admin/forms/FormSubmissionsPanel";
+import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { publicFormUrl, isExperienceFormArchived, type FormConvocatoria } from "@/lib/admin/forms-center";
+import { publicFormUrl, isExperienceFormArchived, type FormConvocatoria, isExperienceFormPrivate, isPrivateExperienceForm, PRIVATE_EXPERIENCE_FORM_LABEL } from "@/lib/admin/forms-center";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
 
 type TabId =
@@ -60,7 +62,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
-  const [tab, setTab] = useState<TabId>(
+  const resolvedInitialTab: TabId =
     initialTab === "campos" ||
     initialTab === "configuracion" ||
     initialTab === "participantes" ||
@@ -68,9 +70,13 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
     initialTab === "seo" ||
     initialTab === "apariencia"
       ? initialTab
-      : "respuestas"
-  );
+      : convocatoria
+        ? "participantes"
+        : "respuestas";
+
+  const [tab, setTab] = useState<TabId>(resolvedInitialTab);
   const [form, setForm] = useState(initialForm);
+  const { confirm, dialog } = useConfirmDialog();
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [purging, setPurging] = useState(false);
@@ -115,13 +121,13 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
   };
 
   const handleArchive = async () => {
-    if (
-      !window.confirm(
-        "¿Archivar este formulario? Pasará a Archivados y dejará de mostrarse en el portal público."
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Archivar formulario",
+      description:
+        "¿Archivar este formulario? Pasará a Archivados y dejará de mostrarse en el portal público.",
+      confirmLabel: "Archivar",
+    });
+    if (!ok) return;
 
     setArchiving(true);
     setError(null);
@@ -165,13 +171,14 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
   };
 
   const handlePurge = async () => {
-    if (
-      !window.confirm(
-        "¿Eliminar definitivamente este formulario y todas sus respuestas? Esta acción no se puede deshacer."
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Eliminar definitivamente",
+      description:
+        "¿Eliminar definitivamente este formulario y todas sus respuestas? Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      destructive: true,
+    });
+    if (!ok) return;
 
     setPurging(true);
     setError(null);
@@ -195,27 +202,48 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
     }
   };
 
-  const isLive = form.active && form.visible && !isArchived;
+  const isPrivate = isPrivateExperienceForm(form);
+  const isDirectLinkLive = form.active && !isArchived && (form.visible || isPrivate);
 
   return (
-    <AdminModuleLayout
-      breadcrumbs={[
-        { label: "Inicio", href: "/admin" },
-        { label: "Portal", href: "/admin/pages" },
-        { label: "Centro de formularios", href: "/admin/portal/forms" },
-        { label: form.name },
-      ]}
+    <AdminModulePage
+      breadcrumbs={
+        convocatoria
+          ? [
+              { label: "Inicio", href: "/admin" },
+              { label: "Formularios" },
+              { label: "Gestión", href: "/admin/portal/forms" },
+              { label: form.name },
+            ]
+          : [
+              { label: "Inicio", href: "/admin" },
+              { label: "Formularios" },
+              { label: "Gestión", href: "/admin/portal/forms" },
+              { label: form.name },
+            ]
+      }
       title={form.name}
-      description={form.description ?? "Gestiona respuestas, campos y publicación."}
+      description={
+        convocatoria
+          ? "Configura participantes, campos, experiencia y publicación de la convocatoria."
+          : (form.description ?? "Gestiona respuestas, campos y publicación.")
+      }
       actions={
         <div className="flex flex-wrap gap-2">
-          {isLive ? (
+          {convocatoria ? (
+            <Link href={`/admin/portal/asuntos-estudiantiles/${encodeURIComponent(form._id)}`}>
+              <Button variant="outline" size="sm">
+                Ir a operación
+              </Button>
+            </Link>
+          ) : null}
+          {isDirectLinkLive ? (
             <Link
               href={publicFormUrl(form._id)}
               target="_blank"
               className="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm font-medium"
             >
-              Ver público
+              {isPrivate ? "Abrir enlace privado" : "Ver público"}
               <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
             </Link>
           ) : null}
@@ -260,15 +288,15 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           <div className="admin-form-detail__summary-main">
             <p className="admin-form-detail__eyebrow">Formulario · {form._id}</p>
             <div className="admin-form-detail__badges">
-              <StatusPill
+              <StatusBadge
+                tone={form.active ? "active" : "inactive"}
                 label={form.active ? "Acepta envíos" : "Cerrado"}
-                tone={form.active ? "active" : "neutral"}
               />
-              <StatusPill
-                label={form.visible ? "En el portal" : "No publicado"}
-                tone={form.visible ? "published" : "neutral"}
+              <StatusBadge
+                tone={isPrivate ? "neutral" : form.visible ? "active" : "draft"}
+                label={isPrivate ? PRIVATE_EXPERIENCE_FORM_LABEL : form.visible ? "En el portal" : "No publicado"}
               />
-              {isArchived ? <StatusPill label="Archivado" tone="archived" /> : null}
+              {isArchived ? <StatusBadge tone="inactive" label="Archivado" /> : null}
               <span className="admin-form-detail__meta">
                 <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                 {form.fields.length} campos
@@ -277,20 +305,29 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           </div>
           {!isArchived && !form.active && (
             <p className="admin-form-detail__hint">
-              Para abrir el formulario: ve a <strong>Configuración</strong> → activa
-              &quot;Acepta envíos&quot; → publica en portal → guarda.
+              Para abrir el formulario: en la pestaña <strong>Configuración</strong> activa
+              &quot;Acepta envíos&quot;
+              {isPrivate ? " → comparte el enlace directo" : " → publica en portal"} → guarda.
             </p>
           )}
+          {isPrivate ? (
+            <p className="admin-form-detail__hint">
+              Enlace directo: <code className="text-xs">{publicFormUrl(form._id)}</code> — no aparece en
+              Home, menú ni /formularios. Uso interno (WhatsApp, correo).
+            </p>
+          ) : null}
         </div>
 
         <nav className="admin-form-detail__tabs" aria-label="Secciones del formulario">
-          <TabButton
-            active={tab === "respuestas"}
-            icon={ClipboardList}
-            onClick={() => setTab("respuestas")}
-          >
-            Respuestas
-          </TabButton>
+          {!convocatoria ? (
+            <TabButton
+              active={tab === "respuestas"}
+              icon={ClipboardList}
+              onClick={() => setTab("respuestas")}
+            >
+              Respuestas
+            </TabButton>
+          ) : null}
           {convocatoria ? (
             <TabButton
               active={tab === "participantes"}
@@ -351,7 +388,9 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           </p>
         ) : null}
 
-        {tab === "respuestas" ? <FormSubmissionsPanel formId={form._id} /> : null}
+        {tab === "respuestas" && !convocatoria ? (
+          <FormSubmissionsPanel formId={form._id} />
+        ) : null}
 
         {tab === "participantes" && convocatoria ? (
           <ConvocatoriaRosterPanel convocatoriaSlug={convocatoria.slug} />
@@ -410,7 +449,12 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
                   checked={form.visible}
                   onChange={(visible) => setForm({ ...form, visible })}
                   label="Publicado en el portal"
-                  description="Si está apagado, no aparece en /formularios ni en listados públicos."
+                  description={
+                    isPrivate
+                      ? "Los formularios privados no aparecen en /formularios ni en el menú público."
+                      : "Si está apagado, no aparece en /formularios ni en listados públicos."
+                  }
+                  disabled={isPrivate}
                 />
               </div>
             </section>
@@ -468,19 +512,8 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           </div>
         ) : null}
       </AdminModuleCenter>
-    </AdminModuleLayout>
-  );
-}
-
-function StatusPill({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "active" | "published" | "neutral" | "archived";
-}) {
-  return (
-    <span className={`admin-form-detail__pill admin-form-detail__pill--${tone}`}>{label}</span>
+      {dialog}
+    </AdminModulePage>
   );
 }
 

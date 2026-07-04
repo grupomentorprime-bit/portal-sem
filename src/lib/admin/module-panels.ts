@@ -53,6 +53,12 @@ export const ADMIN_PANEL_META = {
     heroDescription:
       "Invita colaboradores, asigna roles institucionales y revisa el historial de actividad.",
   },
+  roles: {
+    eyebrow: "Administración · Permisos",
+    heroTitle: "Plantillas de permisos por rol",
+    heroDescription:
+      "Configura los permisos predeterminados que hereda cada rol oficial del portal.",
+  },
   menus: {
     eyebrow: "Portal · Navegación",
     heroTitle: "Menús y enlaces del sitio",

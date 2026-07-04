@@ -37,7 +37,7 @@ export const componentSpecs: ComponentSpec[] = [
     whenToUse: "Estados compactos, etiquetas y contadores en listas y workflows.",
     variants: ["success", "warning", "error", "info", "neutral"],
     states: ["static"],
-    tokens: ["--success", "--accent", "--light", "--background-muted", "--border"],
+    tokens: ["--color-primary", "--color-secondary", "--color-success", "--color-warning", "--color-danger", "--state-*-bg", "--radius-md"],
     accessibility: ["Texto legible dentro del badge; no usar solo color"],
     props: ["variant?", "className?", "children"],
     example: `<Badge variant="info">En revisión</Badge>`,

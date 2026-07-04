@@ -9,6 +9,7 @@ import { ProgramHubCardSkeleton } from "@/components/admin/programs/ProgramHubCa
 import { ProgramHubMetricsBar } from "@/components/admin/programs/ProgramHubMetricsBar";
 import { ProgramHubSidebar } from "@/components/admin/programs/ProgramHubSidebar";
 import { ProgramHubToolbar } from "@/components/admin/programs/ProgramHubToolbar";
+import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
   computeProgramHubMetrics,
@@ -72,6 +73,7 @@ export function ProgramsHubClient({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ProgramHubFilter>("all");
   const [sort, setSort] = useState<ProgramHubSort>("updated_desc");
+  const { confirm, dialog } = useConfirmDialog();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -190,9 +192,13 @@ export function ProgramsHubClient({
 
   const deleteProgram = useCallback(
     async (program: ContentDocument) => {
-      if (!window.confirm(`¿Eliminar "${program.title}"? Esta acción no se puede deshacer.`)) {
-        return;
-      }
+      const ok = await confirm({
+        title: "Eliminar programa",
+        description: `¿Eliminar "${program.title}"? Esta acción no se puede deshacer.`,
+        confirmLabel: "Eliminar",
+        destructive: true,
+      });
+      if (!ok) return;
 
       setBusyId(program._id);
       setError(null);
@@ -210,7 +216,7 @@ export function ProgramsHubClient({
         setBusyId(null);
       }
     },
-    [tenant, refresh]
+    [tenant, refresh, confirm]
   );
 
   return (
@@ -307,6 +313,7 @@ export function ProgramsHubClient({
           }}
         />
       </div>
+      {dialog}
     </AdminModuleLayout>
   );
 }

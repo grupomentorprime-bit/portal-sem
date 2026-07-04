@@ -2,7 +2,9 @@ import { Suspense } from "react";
 import { ContentListClient } from "@/components/content/ContentListClient";
 import { PeopleListClient } from "@/components/content/PeopleListClient";
 import { enrichContentDocumentsMedia } from "@/core/media";
+import { filterByAcademicCatalogKind } from "@/lib/admin/catalog-kind";
 import { executeContentQuery } from "@/lib/content/query";
+import { CONTENT_SECTIONS, getSectionBySlug } from "@/lib/content/content-sections";
 import { getSiteConfigUncached } from "@/lib/cms/config";
 import type { ContentDocument } from "@/types/content";
 
@@ -12,67 +14,9 @@ interface PageProps {
   params: Promise<{ section: string }>;
 }
 
-const SECTIONS: Record<string, { collection: string; title: string; description: string }> = {
-  programs: {
-    collection: "academy_programs",
-    title: "Programas",
-    description: "Programas académicos del seminario",
-  },
-  news: {
-    collection: "content_news",
-    title: "Noticias",
-    description: "Noticias institucionales",
-  },
-  people: {
-    collection: "content_people",
-    title: "Personas",
-    description: "Equipo directivo, docente y técnico del seminario",
-  },
-  team: {
-    collection: "academy_team",
-    title: "Equipo (legacy)",
-    description: "Colección heredada — preferir Personas (content_people)",
-  },
-  library: {
-    collection: "content_library",
-    title: "Biblioteca",
-    description: "Recursos bibliográficos",
-  },
-  events: {
-    collection: "content_events",
-    title: "Eventos",
-    description: "Eventos institucionales",
-  },
-  "academic-agenda": {
-    collection: "content_academic_agenda",
-    title: "Agenda Académica",
-    description: "Calendario oficial de hitos académicos",
-  },
-  avisos: {
-    collection: "content_institutional_notices",
-    title: "Avisos Institucionales",
-    description: "Comunicados oficiales de la Dirección",
-  },
-  testimonials: {
-    collection: "academy_testimonials",
-    title: "Testimonios",
-    description: "Testimonios de la comunidad",
-  },
-  gallery: {
-    collection: "academy_gallery",
-    title: "Galería",
-    description: "Imágenes institucionales",
-  },
-  categories: {
-    collection: "academy_categories",
-    title: "Categorías",
-    description: "Categorías académicas",
-  },
-};
-
 export default async function AdminContentSectionPage({ params }: PageProps) {
   const { section } = await params;
-  const meta = SECTIONS[section];
+  const meta = getSectionBySlug(section);
   if (!meta) {
     return (
       <div className="p-8 text-center text-muted">Sección no encontrada.</div>
@@ -89,11 +33,17 @@ export default async function AdminContentSectionPage({ params }: PageProps) {
       { tenant, collection: meta.collection, pagination: { page: 1, limit: 100 } },
       { includeDraft: true, mapItems: false, skipCache: true }
     );
-    initialItems =
+    let items =
       section === "people"
         ? await enrichContentDocumentsMedia(tenant, result.items)
         : result.items;
-    initialTotal = result.total;
+
+    if (meta.catalogKind) {
+      items = filterByAcademicCatalogKind(items, meta.catalogKind);
+    }
+
+    initialItems = items;
+    initialTotal = items.length;
   } catch {
     /* empty */
   }
@@ -110,6 +60,22 @@ export default async function AdminContentSectionPage({ params }: PageProps) {
     );
   }
 
+  const listBreadcrumbs =
+    meta.catalogKind !== undefined
+      ? [
+          { label: "Inicio", href: "/admin" },
+          { label: "Oferta académica" },
+          { label: meta.title },
+        ]
+      : undefined;
+
+  const newItemLabel =
+    meta.catalogKind === "courses"
+      ? "Nuevo curso"
+      : meta.catalogKind === "programs"
+        ? "Nuevo programa"
+        : undefined;
+
   return (
     <ContentListClient
       tenant={tenant}
@@ -117,8 +83,14 @@ export default async function AdminContentSectionPage({ params }: PageProps) {
       title={meta.title}
       description={meta.description}
       sectionSlug={section}
+      catalogKind={meta.catalogKind}
+      breadcrumbs={listBreadcrumbs}
+      newItemLabel={newItemLabel}
       initialItems={initialItems}
       initialTotal={initialTotal}
     />
   );
 }
+
+/** Re-export para descubrimiento de rutas */
+export { CONTENT_SECTIONS };

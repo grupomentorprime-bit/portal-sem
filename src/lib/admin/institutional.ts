@@ -1,28 +1,29 @@
 /**
- * OT-CMSV2-001 — Capa de lenguaje y navegación institucional del CMS.
- * Mapea conceptos internos de plataforma a etiquetas visibles para el SEM.
+ * OT-CMSV2-001 / OT-IAM-SEM-001 — Capa de lenguaje y navegación institucional del CMS.
  */
 
+import { ROLE_CODES } from "@/core/identity/roles/codes";
+
 export interface AdminNavItem {
+  /** Identificador estable para sub-ítems que comparten href. */
+  id?: string;
   href: string;
   label: string;
   icon?: string;
+  /** Contador opcional para badge en sidebar. */
+  badge?: number;
   matchPrefixes?: string[];
-  /** Si se define, el ítem solo se muestra si el usuario tiene al menos uno de estos permisos. */
+  /** Permisos requeridos (todos deben estar presentes). */
+  requiredPermissions?: string[];
+  /** Al menos uno de estos permisos. */
   requiredAnyPermission?: string[];
+  /** Al menos uno de estos códigos de rol. */
+  requiredRole?: string[];
 }
 
 /**
  * Navegación principal del Centro de Administración.
- *
- * Orden por capas institucionales (de lo general a lo operativo):
- * 1. Orientación — Inicio
- * 2. Identidad — Institución
- * 3. Presencia pública — Portal
- * 4. Oferta académica — Programas → Admisión
- * 5. Contenido editorial — Comunicaciones → Personas
- * 6. Recursos transversales — Medios
- * 7. Sistema — Administración
+ * Cada ítem declara permisos explícitos — nunca visible por defecto (OT-IAM-SEM-001 Fase 5).
  */
 export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
   {
@@ -30,12 +31,14 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
     label: "Inicio",
     icon: "home",
     matchPrefixes: ["/admin"],
+    requiredAnyPermission: ["cms.pages.read", "settings.team", "student-affairs.read"],
   },
   {
     href: "/admin/config",
     label: "Institución",
     icon: "institution",
     matchPrefixes: ["/admin/config"],
+    requiredAnyPermission: ["settings.update"],
   },
   {
     href: "/admin/pages",
@@ -47,29 +50,42 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
       "/admin/experience-studio",
       "/admin/portal/forms",
     ],
+    requiredAnyPermission: [
+      "cms.pages.read",
+      "cms.pages.update",
+      "cms.menus.read",
+      "experience.forms.read",
+      "experience.forms.manage",
+    ],
   },
   {
     href: "/admin/content/programs",
     label: "Programas y cursos",
     icon: "programs",
     matchPrefixes: ["/admin/content/programs"],
+    requiredAnyPermission: ["programs.manage", "cms.pages.read"],
   },
   {
     href: "/admin/portal/admission",
     label: "Centro de admisión",
     icon: "admission",
     matchPrefixes: ["/admin/portal/admission"],
+    requiredAnyPermission: [
+      "cms.pages.read",
+      "experience.forms.read",
+      "experience.forms.manage",
+      "students.read",
+    ],
   },
   {
     href: "/admin/portal/asuntos-estudiantiles",
-    label: "Asuntos estudiantiles",
+    label: "Operación de formularios",
     icon: "students",
     matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
     requiredAnyPermission: [
       "student-affairs.read",
       "student-affairs.checkin",
       "student-affairs.manage",
-      "experience.forms.manage",
     ],
   },
   {
@@ -84,18 +100,27 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
       "/admin/content/institutional_notices",
       "/admin/content/academic_agenda",
     ],
+    requiredAnyPermission: [
+      "cms.pages.read",
+      "cms.pages.update",
+      "news.publish",
+      "content.events.manage",
+      "programs.manage",
+    ],
   },
   {
     href: "/admin/content/people",
     label: "Personas",
     icon: "people",
     matchPrefixes: ["/admin/content/people", "/admin/content/team"],
+    requiredAnyPermission: ["cms.pages.read", "cms.pages.update", "programs.manage"],
   },
   {
     href: "/admin/media",
     label: "Medios",
     icon: "media",
     matchPrefixes: ["/admin/media"],
+    requiredAnyPermission: ["cms.media.read", "cms.media.upload"],
   },
   {
     href: "/admin/settings/users",
@@ -107,53 +132,79 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
       "/admin/events",
       "/admin/experience",
     ],
+    requiredAnyPermission: ["settings.team", "identity.audit.read", "workflow.read", "identity.roles.manage"],
+  },
+  {
+    href: "/admin/settings/roles",
+    label: "Permisos por rol",
+    icon: "admin",
+    matchPrefixes: ["/admin/settings/roles"],
+    requiredAnyPermission: ["identity.roles.manage"],
   },
 ];
 
-/** Roles internos → etiquetas institucionales (nunca mostrar nombres técnicos) */
+/** Roles internos → etiquetas institucionales visibles en el CMS */
 export const INSTITUTIONAL_ROLE_LABELS: Record<string, string> = {
-  "Tenant Owner": "Director General",
+  [ROLE_CODES.SUPER_ADMIN]: "Super Admin",
+  "Super Admin": "Super Admin",
+  "Tenant Owner": "Super Admin",
+  [ROLE_CODES.INSTITUTION_ADMIN]: "Administrador",
   "Institution Admin": "Administrador",
-  Editor: "Editor",
-  Reviewer: "Revisor",
-  Teacher: "Docente",
+  [ROLE_CODES.SUPPORT]: "Soporte",
+  Support: "Soporte",
+  [ROLE_CODES.ADMISSIONS]: "Admisiones",
   Admissions: "Admisiones",
+  [ROLE_CODES.STUDENT_AFFAIRS]: "Asuntos Estudiantiles",
+  "Student Affairs": "Asuntos Estudiantiles",
+  [ROLE_CODES.COMMUNICATIONS]: "Comunicaciones",
+  Communications: "Comunicaciones",
+  Editor: "Comunicaciones",
+  [ROLE_CODES.REVIEWER]: "Revisor",
+  Reviewer: "Revisor",
+  [ROLE_CODES.GUEST]: "Consulta",
+  Guest: "Consulta",
+  Teacher: "Docente",
   Finance: "Finanzas",
   Student: "Estudiante",
-  Guest: "Solo lectura",
-  "Student Affairs": "Asuntos estudiantiles",
-  "Platform Owner": "Director General",
+  "Platform Owner": "Super Admin",
   "Platform Admin": "Administrador",
-  Support: "Soporte",
 };
 
-/** Roles asignables al invitar (orden institucional) */
+/** Roles asignables al invitar — identificados por código oficial (UI usa assignableRoles de la API) */
 export const CMS_INVITE_ROLES = [
-  { id: "admin", internalName: "Institution Admin", label: "Administrador" },
-  { id: "editor", internalName: "Editor", label: "Editor" },
-  { id: "comms", internalName: "Editor", label: "Comunicaciones" },
-  { id: "admissions", internalName: "Admissions", label: "Admisiones" },
-  { id: "student-affairs", internalName: "Student Affairs", label: "Asuntos estudiantiles" },
-  { id: "reviewer", internalName: "Reviewer", label: "Revisor" },
-  { id: "readonly", internalName: "Guest", label: "Solo lectura" },
+  { code: ROLE_CODES.INSTITUTION_ADMIN, label: "Administrador" },
+  { code: ROLE_CODES.SUPPORT, label: "Soporte" },
+  { code: ROLE_CODES.ADMISSIONS, label: "Admisiones" },
+  { code: ROLE_CODES.STUDENT_AFFAIRS, label: "Asuntos Estudiantiles" },
+  { code: ROLE_CODES.COMMUNICATIONS, label: "Comunicaciones" },
+  { code: ROLE_CODES.REVIEWER, label: "Revisor" },
+  { code: ROLE_CODES.GUEST, label: "Consulta" },
 ] as const;
 
-/** Grupos de filtro en Usuarios CMS */
+/** Grupos de filtro en Usuarios CMS — solo códigos oficiales */
 export const CMS_USER_GROUPS = [
   { id: "all", label: "Todos" },
-  { id: "admins", label: "Administradores", roles: ["Tenant Owner", "Institution Admin"] },
-  { id: "editors", label: "Editores", roles: ["Editor"] },
-  { id: "reviewers", label: "Revisores", roles: ["Reviewer"] },
+  { id: "admins", label: "Administradores", roleCodes: [ROLE_CODES.INSTITUTION_ADMIN] },
+  { id: "support", label: "Soporte", roleCodes: [ROLE_CODES.SUPPORT] },
+  { id: "communications", label: "Comunicaciones", roleCodes: [ROLE_CODES.COMMUNICATIONS] },
+  { id: "reviewers", label: "Revisores", roleCodes: [ROLE_CODES.REVIEWER] },
   {
     id: "student-affairs",
-    label: "Asuntos estudiantiles",
-    roles: ["Student Affairs"],
+    label: "Asuntos Estudiantiles",
+    roleCodes: [ROLE_CODES.STUDENT_AFFAIRS],
   },
-  { id: "guests", label: "Invitados", roles: ["Guest", "Admissions", "Teacher", "Finance", "Student"] },
+  { id: "admissions", label: "Admisiones", roleCodes: [ROLE_CODES.ADMISSIONS] },
+  { id: "guests", label: "Consulta", roleCodes: [ROLE_CODES.GUEST] },
 ] as const;
 
-export function getInstitutionalRoleLabel(internalName: string): string {
-  return INSTITUTIONAL_ROLE_LABELS[internalName] ?? "Colaborador";
+export function getInstitutionalRoleLabel(codeOrLegacyName: string, legacyName?: string): string {
+  const primary = INSTITUTIONAL_ROLE_LABELS[codeOrLegacyName];
+  if (primary) return primary;
+  if (legacyName) {
+    const fallback = INSTITUTIONAL_ROLE_LABELS[legacyName];
+    if (fallback) return fallback;
+  }
+  return "Colaborador";
 }
 
 export function isNavActive(pathname: string, item: AdminNavItem): boolean {
@@ -249,12 +300,6 @@ export const CONTENT_EDITORIAL_PRIMARY = [
     href: "/admin/portal/admission",
     label: "Centro de admisión",
     description: "Contenido y cierre editorial del proceso de ingreso",
-    collection: null,
-  },
-  {
-    href: "/admin/portal/forms",
-    label: "Centro de formularios",
-    description: "Convocatorias, asistencia y respuestas de formularios",
     collection: null,
   },
 ] as const;

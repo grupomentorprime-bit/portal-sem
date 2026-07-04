@@ -644,7 +644,9 @@
 .form-focused-shell .form-landing__form-card {
   position: relative;
   overflow: hidden;
-  max-width: 40rem;
+  width: 100%;
+  max-width: var(--fl-content-max, 42rem);
+  margin-inline: auto;
   padding: clamp(1.5rem, 4vw, 2.25rem);
   border: 1px solid color-mix(in srgb, var(--sem-primary) 14%, var(--border));
   border-radius: var(--radius-xl);

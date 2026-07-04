@@ -3,17 +3,21 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Layers, Menu, Navigation } from "lucide-react";
-import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
 import {
-  AdminModuleCenter,
-  AdminModuleHero,
-  AdminModuleSectionHeader,
-  AdminModuleStats,
-} from "@/components/admin/AdminModuleCenter";
-import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+  AdminDataTable,
+  ColumnActions,
+  ContentGrid,
+  EmptyState,
+  FilterBar,
+  KpiCard,
+  LoadingState,
+  StatusBadge,
+  type AdminDataTableColumn,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { countVisibleItems } from "@/lib/cms/menu-utils";
@@ -33,6 +37,8 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
   const [newLocation, setNewLocation] = useState("header");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const { confirm, dialog } = useConfirmDialog();
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/cms/menus");
@@ -114,12 +120,12 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
   };
 
   const handleDuplicate = async (menu: CmsMenu) => {
-    const newId = `${menu._id}-copy`;
+    const newMenuId = `${menu._id}-copy`;
     const res = await fetch("/api/cms/menus", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        _id: newId,
+        _id: newMenuId,
         name: `${menu.name} (copia)`,
         location: menu.location,
         active: false,
@@ -127,19 +133,67 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
       }),
     });
     const data = await res.json();
-    if (data.ok) router.push(`/admin/menus/${newId}`);
+    if (data.ok) router.push(`/admin/menus/${newMenuId}`);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(`¿Eliminar menú "${id}"?`)) return;
+    const ok = await confirm({
+      title: "Eliminar menú",
+      description: `¿Eliminar el menú "${id}"? Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      destructive: true,
+    });
+    if (!ok) return;
     await fetch(`/api/cms/menus/${id}`, { method: "DELETE" });
     await refresh();
   };
 
   const activeMenus = useMemo(() => menus.filter((menu) => menu.active).length, [menus]);
+  const visibleItems = useMemo(
+    () => menus.reduce((sum, menu) => sum + countVisibleItems(menu.items), 0),
+    [menus]
+  );
+
+  const filteredMenus = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return menus;
+    return menus.filter(
+      (menu) =>
+        menu.name.toLowerCase().includes(query) ||
+        menu._id.toLowerCase().includes(query) ||
+        menu.location.toLowerCase().includes(query)
+    );
+  }, [menus, search]);
+
+  const columns: AdminDataTableColumn<CmsMenu>[] = [
+    {
+      id: "name",
+      header: "Menú",
+      cell: (menu) => (
+        <div>
+          <p className="font-medium text-foreground">{menu.name}</p>
+          <p className="text-xs text-muted">
+            {menu.location} · {countVisibleItems(menu.items)} ítems
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: "Estado",
+      cell: (menu) => (
+        <StatusBadge tone={menu.active ? "active" : "inactive"} />
+      ),
+    },
+    {
+      id: "id",
+      header: "ID",
+      cell: (menu) => <span className="font-mono text-xs text-muted">{menu._id}</span>,
+    },
+  ];
 
   return (
-    <AdminModuleLayout
+    <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
         { label: "Portal", href: "/admin/pages" },
@@ -161,104 +215,95 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
         </>
       }
     >
-      <AdminModuleCenter>
-        {error ? (
-          <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {error}
-          </div>
-        ) : null}
-
-        <AdminModuleHero {...ADMIN_PANEL_META.menus} />
-
-        <AdminModuleStats
-          items={[
-            { label: "Menús totales", value: menus.length, icon: Menu, tone: "total" },
-            { label: "Activos", value: activeMenus, icon: Navigation, tone: "active" },
-            {
-              label: "Ítems visibles",
-              value: menus.reduce((sum, menu) => sum + countVisibleItems(menu.items), 0),
-              icon: Layers,
-              tone: "published",
-            },
-          ]}
-        />
-
-        <AdminModuleSectionHeader
-          icon={Menu}
-          title="Menús configurados"
-          description="Edita enlaces, duplica estructuras y activa ubicaciones del header o footer."
-        />
-
-        {showCreate ? (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Nuevo menú</CardTitle>
-            </CardHeader>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <Label className="mb-2 block">ID</Label>
-                <Input value={newId} onChange={(e) => setNewId(e.target.value)} placeholder="main" />
-              </div>
-              <div>
-                <Label className="mb-2 block">Nombre</Label>
-                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Menú Principal" />
-              </div>
-              <div>
-                <Label className="mb-2 block">Ubicación</Label>
-                <Input value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="header" />
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Button onClick={handleCreate} disabled={loading}>Crear</Button>
-              <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancelar</Button>
-            </div>
-          </Card>
-        ) : null}
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {menus.map((menu) => (
-            <Card key={menu._id}>
-              <CardHeader>
-                <CardTitle>{menu.name}</CardTitle>
-                <CardDescription>
-                  {menu.location} · {countVisibleItems(menu.items)} ítems
-                </CardDescription>
-              </CardHeader>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    menu.active
-                      ? "bg-success/15 text-success"
-                      : "bg-background-muted text-muted"
-                  }`}
-                >
-                  {menu.active ? "Activo" : "Inactivo"}
-                </span>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link href={`/admin/menus/${menu._id}`}>
-                  <Button variant="secondary">Editar</Button>
-                </Link>
-                <Button variant="ghost" onClick={() => handleToggle(menu)}>
-                  {menu.active ? "Desactivar" : "Activar"}
-                </Button>
-                <Button variant="ghost" onClick={() => handleDuplicate(menu)}>
-                  Duplicar
-                </Button>
-                <Button variant="ghost" onClick={() => handleDelete(menu._id)}>
-                  Eliminar
-                </Button>
-              </div>
-            </Card>
-          ))}
+      {error ? (
+        <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+          {error}
         </div>
+      ) : null}
 
-        {menus.length === 0 ? (
-          <p className="mt-8 text-center text-sm text-muted">
-            No hay menús. Crea uno o inicializa los predeterminados.
-          </p>
-        ) : null}
-      </AdminModuleCenter>
-    </AdminModuleLayout>
+      {loading ? <LoadingState variant="cards" className="mb-6" /> : null}
+
+      <ContentGrid cols={3} className="mb-6">
+        <KpiCard label="Menús totales" value={menus.length} />
+        <KpiCard label="Activos" value={activeMenus} variant="success" />
+        <KpiCard label="Ítems visibles" value={visibleItems} variant="info" />
+      </ContentGrid>
+
+      {showCreate ? (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Nuevo menú</CardTitle>
+          </CardHeader>
+          <div className="grid gap-4 px-6 pb-6 sm:grid-cols-3">
+            <div>
+              <Label className="mb-2 block">ID</Label>
+              <Input value={newId} onChange={(e) => setNewId(e.target.value)} placeholder="main" />
+            </div>
+            <div>
+              <Label className="mb-2 block">Nombre</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Menú Principal" />
+            </div>
+            <div>
+              <Label className="mb-2 block">Ubicación</Label>
+              <Input value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="header" />
+            </div>
+          </div>
+          <div className="flex gap-2 px-6 pb-6">
+            <Button onClick={handleCreate} disabled={loading}>
+              Crear
+            </Button>
+            <Button variant="secondary" onClick={() => setShowCreate(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
+      <FilterBar
+        className="mb-4"
+        search={{
+          placeholder: "Buscar por nombre, ID o ubicación…",
+          value: search,
+          onChange: setSearch,
+        }}
+        onReset={search ? () => setSearch("") : undefined}
+      />
+
+      {menus.length === 0 ? (
+        <EmptyState
+          title="Sin menús"
+          description="Crea uno nuevo o inicializa los menús predeterminados."
+          action={{ label: "Inicializar menús", onClick: handleSeed }}
+        />
+      ) : (
+        <AdminDataTable
+          columns={columns}
+          data={filteredMenus}
+          rowKey={(menu) => menu._id}
+          emptyTitle="Sin resultados"
+          emptyDescription="Prueba con otros términos de búsqueda."
+          rowActions={(menu) => (
+            <ColumnActions>
+              <Link href={`/admin/menus/${menu._id}`}>
+                <Button variant="secondary" size="sm">
+                  Editar
+                </Button>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={() => handleToggle(menu)}>
+                {menu.active ? "Desactivar" : "Activar"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleDuplicate(menu)}>
+                Duplicar
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(menu._id)}>
+                Eliminar
+              </Button>
+            </ColumnActions>
+          )}
+        />
+      )}
+
+      {dialog}
+    </AdminModulePage>
   );
 }

@@ -3,6 +3,11 @@ import type {
   ExperienceFormField,
   ExperienceFormFieldType,
 } from "@/types/experience-forms";
+import {
+  buildTestimonialAuthor,
+  buildTestimonialProgram,
+  TESTIMONIAL_FORM_LIMITS,
+} from "@/lib/experience/forms/testimonial-limits";
 import { hasJustificationAttachment } from "@/lib/experience/forms/attachments";
 import {
   CHILE_PHONE_INVALID_MESSAGE,
@@ -101,6 +106,27 @@ export function validateFormSubmission(
   return applyConditionalFormRules(form, data, errors);
 }
 
+function applyTestimonialFormRules(
+  form: ExperienceFormDefinition,
+  data: Record<string, unknown>,
+  errors: FieldErrors
+): FieldErrors {
+  const isTestimonial = form.fields.some((field) => field.name === "churchSection");
+  if (!isTestimonial) return errors;
+
+  const author = buildTestimonialAuthor(data.honorific, data.fullName);
+  if (author.length > TESTIMONIAL_FORM_LIMITS.author) {
+    errors.fullName = `Nombre y título combinados: máximo ${TESTIMONIAL_FORM_LIMITS.author} caracteres.`;
+  }
+
+  const program = buildTestimonialProgram(data.churchSection, data.city);
+  if (program.length > TESTIMONIAL_FORM_LIMITS.program) {
+    errors.city = `Iglesia y ciudad combinadas: máximo ${TESTIMONIAL_FORM_LIMITS.program} caracteres.`;
+  }
+
+  return errors;
+}
+
 export function normalizeFormSubmissionData(
   form: ExperienceFormDefinition,
   data: Record<string, unknown>
@@ -122,8 +148,10 @@ function applyConditionalFormRules(
   data: Record<string, unknown>,
   errors: FieldErrors
 ): FieldErrors {
+  let next = applyTestimonialFormRules(form, data, errors);
+
   const hasAttendance = form.fields.some((field) => field.name === "attendance");
-  if (!hasAttendance) return errors;
+  if (!hasAttendance) return next;
 
   const hasRosterLookup =
     form.fields.some((field) => field.name === "studentId") ||
@@ -134,10 +162,10 @@ function applyConditionalFormRules(
 
     if (registrationMode === "manual") {
       if (!asString(data.fullName)) {
-        errors.fullName = "Debe indicar su nombre completo.";
+        next.fullName = "Debe indicar su nombre completo.";
       }
     } else if (!studentId) {
-      errors.studentId =
+      next.studentId =
         "Busca tu nombre en el listado o usa la opción de registro manual si no apareces.";
     }
   }
@@ -146,17 +174,17 @@ function applyConditionalFormRules(
   if (attendance === "no") {
     const justification = asString(data.justification);
     if (!justification || justification.length < 10) {
-      errors.justification =
+      next.justification =
         "Debe explicar el motivo de inasistencia por fuerza mayor (mínimo 10 caracteres).";
     }
 
     if (!hasJustificationAttachment(data)) {
-      errors.justificationAttachment = "Debe adjuntar un justificativo de respaldo (PDF o imagen).";
+      next.justificationAttachment = "Debe adjuntar un justificativo de respaldo (PDF o imagen).";
     }
   } else {
-    delete errors.justification;
-    delete errors.justificationAttachment;
+    delete next.justification;
+    delete next.justificationAttachment;
   }
 
-  return errors;
+  return next;
 }

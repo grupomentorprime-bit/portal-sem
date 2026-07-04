@@ -1,8 +1,18 @@
 import { ConfigurationHub } from "@/components/config/ConfigurationHub";
 import { getSiteConfigUncached } from "@/lib/cms/config";
+import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
+
+function ConfigLoading() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center px-6">
+      <p className="text-sm text-muted">Cargando configuración…</p>
+    </div>
+  );
+}
 
 export default async function AdminConfigPage() {
   const config = await getSiteConfigUncached();
@@ -25,5 +35,11 @@ export default async function AdminConfigPage() {
     );
   }
 
-  return <ConfigurationHub initialConfig={config} />;
+  const shellV2 = isAdminShellV2Enabled();
+
+  return (
+    <Suspense fallback={<ConfigLoading />}>
+      <ConfigurationHub initialConfig={config} hideSectionNav={shellV2} />
+    </Suspense>
+  );
 }

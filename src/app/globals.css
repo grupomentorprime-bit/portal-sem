@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "../styles/tokens/brand.css";
 @import "../styles/tokens/colors.css";
+@import "../styles/tokens/admin-branding.css";
 @import "../styles/design-tokens.css";
 @import "../styles/cursor.css";
 @import "../styles/hero-premium.css";
@@ -23,7 +24,6 @@
 @import "../styles/admin-admission.css";
 @import "../styles/admin-module-center.css";
 @import "../styles/admin-forms-center.css";
-@import "../styles/student-affairs-ops.css";
 @import "../styles/experience-studio.css";
 @import "../styles/home-premium/index.css";
 

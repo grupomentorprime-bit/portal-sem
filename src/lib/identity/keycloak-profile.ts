@@ -1,28 +1,36 @@
 import "server-only";
 
 import type { KeycloakUserInfo } from "@/core/identity/auth/keycloak";
-import { ensureTenantRoles, findRoleByName } from "@/lib/identity/roles";
+import { ROLE_CODES, resolveRoleCode, type RoleCode } from "@/core/identity/roles/codes";
+import { ensureTenantRoles, findRoleByCode } from "@/lib/identity/roles";
 
 const IGNORED_REALM_ROLES = new Set([
   "offline_access",
   "uma_authorization",
 ]);
 
-/** Mapeo opcional: rol en Keycloak → rol interno del CMS */
-const KEYCLOAK_ROLE_ALIASES: Record<string, string> = {
-  owner: "Tenant Owner",
-  admin: "Institution Admin",
-  editor: "Editor",
-  reviewer: "Reviewer",
-  teacher: "Teacher",
-  admissions: "Admissions",
-  "tenant-owner": "Tenant Owner",
-  "institution-admin": "Institution Admin",
-  "director-general": "Tenant Owner",
-  "director_general": "Tenant Owner",
-  cms_owner: "Tenant Owner",
-  cms_admin: "Institution Admin",
-  cms_editor: "Editor",
+/** Mapeo: rol en Keycloak → código oficial del CMS */
+const KEYCLOAK_ROLE_TO_CODE: Record<string, RoleCode> = {
+  owner: ROLE_CODES.SUPER_ADMIN,
+  admin: ROLE_CODES.INSTITUTION_ADMIN,
+  editor: ROLE_CODES.COMMUNICATIONS,
+  communications: ROLE_CODES.COMMUNICATIONS,
+  reviewer: ROLE_CODES.REVIEWER,
+  teacher: ROLE_CODES.TEACHER,
+  admissions: ROLE_CODES.ADMISSIONS,
+  support: ROLE_CODES.SUPPORT,
+  guest: ROLE_CODES.GUEST,
+  "tenant-owner": ROLE_CODES.SUPER_ADMIN,
+  "institution-admin": ROLE_CODES.INSTITUTION_ADMIN,
+  "director-general": ROLE_CODES.SUPER_ADMIN,
+  director_general: ROLE_CODES.SUPER_ADMIN,
+  cms_owner: ROLE_CODES.SUPER_ADMIN,
+  cms_admin: ROLE_CODES.INSTITUTION_ADMIN,
+  cms_editor: ROLE_CODES.COMMUNICATIONS,
+  super_admin: ROLE_CODES.SUPER_ADMIN,
+  institution_admin: ROLE_CODES.INSTITUTION_ADMIN,
+  student_affairs: ROLE_CODES.STUDENT_AFFAIRS,
+  "student-affairs": ROLE_CODES.STUDENT_AFFAIRS,
 };
 
 export interface KeycloakIdentityClaims {
@@ -96,31 +104,15 @@ export function buildKeycloakIdentityClaims(
   return { displayName, jobTitle, realmRoles };
 }
 
-function resolveCmsRoleName(keycloakRole: string): string | null {
-  const normalized = keycloakRole.trim();
+function resolveCmsRoleCode(keycloakRole: string): RoleCode | null {
+  const normalized = keycloakRole.trim().toLowerCase();
   if (!normalized) return null;
 
-  const alias = KEYCLOAK_ROLE_ALIASES[normalized.toLowerCase()];
+  const alias = KEYCLOAK_ROLE_TO_CODE[normalized];
   if (alias) return alias;
 
-  // Coincidencia directa por nombre del rol CMS (Editor, Tenant Owner, etc.)
-  const direct = TENANT_ROLE_NAMES.find(
-    (name) => name.toLowerCase() === normalized.toLowerCase()
-  );
-  return direct ?? null;
+  return resolveRoleCode(keycloakRole);
 }
-
-const TENANT_ROLE_NAMES = [
-  "Tenant Owner",
-  "Institution Admin",
-  "Editor",
-  "Reviewer",
-  "Teacher",
-  "Admissions",
-  "Finance",
-  "Student",
-  "Guest",
-];
 
 export async function resolveCmsRoleIdsFromKeycloak(
   tenantId: string,
@@ -132,11 +124,13 @@ export async function resolveCmsRoleIdsFromKeycloak(
   const roleIds: string[] = [];
 
   for (const keycloakRole of realmRoles) {
-    const cmsRoleName = resolveCmsRoleName(keycloakRole);
-    if (!cmsRoleName) continue;
-    const role = await findRoleByName(tenantId, cmsRoleName);
+    const code = resolveCmsRoleCode(keycloakRole);
+    if (!code) continue;
+    const role = await findRoleByCode(tenantId, code);
     if (role) roleIds.push(role._id);
   }
 
   return [...new Set(roleIds)];
 }
+
+export { ROLE_CODES };

@@ -31,6 +31,8 @@ export interface IdentityUser {
   timezone?: string;
   locale?: string;
   status: UserStatus;
+  /** Cuenta reservada del sistema — protegida como Super Admin */
+  isSystemAccount?: boolean;
   lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -61,6 +63,8 @@ export interface IdentityMembership {
   status: MembershipStatus;
   /** Formularios y generaciones asignados (rol Asuntos Estudiantiles). */
   studentAffairsScope?: StudentAffairsScope;
+  /** Overrides granulares OT-IAM-002 — equivalente a user_permissions */
+  permissionOverrides?: Record<string, boolean>;
   joinedAt: string;
   invitedBy?: string;
   createdAt: string;
@@ -71,6 +75,10 @@ export interface IdentityRole {
   _id: string;
   tenantId: string;
   name: string;
+  /** Código estable — OT-IAM-SEM-001 */
+  code?: string;
+  /** Plantilla granular OT-IAM-002 — equivalente a role_permissions */
+  permissionMap?: Record<string, boolean>;
   description: string;
   permissionIds: string[];
   system: boolean;

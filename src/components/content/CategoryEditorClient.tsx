@@ -1,8 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  FormSection,
+  InlineActions,
+  ValidationSummary,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +24,7 @@ interface CategoryEditorClientProps {
 
 export function CategoryEditorClient({ tenant, sectionHref, item }: CategoryEditorClientProps) {
   const router = useRouter();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const isNew = !item;
 
   const [name, setName] = useState(item?.name ?? "");
@@ -65,7 +72,14 @@ export function CategoryEditorClient({ tenant, sectionHref, item }: CategoryEdit
   };
 
   const handleDelete = async () => {
-    if (!item || !confirm(`¿Eliminar la categoría «${name}»?`)) return;
+    if (!item) return;
+    const ok = await confirm({
+      title: "Eliminar categoría",
+      description: `¿Eliminar la categoría «${name}»? Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     setError(null);
     try {
@@ -88,37 +102,32 @@ export function CategoryEditorClient({ tenant, sectionHref, item }: CategoryEdit
   };
 
   return (
-    <div className="min-h-screen bg-background-soft">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div>
-            <Link href={sectionHref} className="text-sm text-muted hover:text-foreground">
-              ← Categorías
-            </Link>
-            <h1 className="text-xl font-semibold">
-              {isNew ? "Nueva categoría" : "Editar categoría"}
-            </h1>
-          </div>
-          <div className="flex gap-2">
-            {!isNew ? (
-              <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
-                {deleting ? "Eliminando…" : "Eliminar"}
-              </Button>
-            ) : null}
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Guardando…" : "Guardar"}
+    <AdminModulePage
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Comunicaciones", href: "/admin/content" },
+        { label: "Categorías", href: sectionHref },
+        { label: isNew ? "Nueva categoría" : "Editar categoría" },
+      ]}
+      title={isNew ? "Nueva categoría" : "Editar categoría"}
+      description="Categorías académicas del seminario"
+      maxWidth="6xl"
+      actions={
+        <>
+          {!isNew ? (
+            <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Eliminando…" : "Eliminar"}
             </Button>
-          </div>
-        </div>
-      </header>
+          ) : null}
+          <Button type="button" onClick={handleSave} disabled={saving}>
+            {saving ? "Guardando…" : "Guardar"}
+          </Button>
+        </>
+      }
+    >
+      {error ? <ValidationSummary errors={[error]} /> : null}
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
-        {error ? (
-          <div className="rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {error}
-          </div>
-        ) : null}
-
+      <FormSection title="Datos generales" description="Nombre, slug y descripción de la categoría.">
         <Input label="Nombre" value={name} onChange={(e) => setName(e.target.value)} required />
         <Input
           label="Slug"
@@ -134,6 +143,9 @@ export function CategoryEditorClient({ tenant, sectionHref, item }: CategoryEdit
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
         />
+      </FormSection>
+
+      <FormSection title="Publicación" description="Orden de aparición y visibilidad.">
         <Input
           label="Orden"
           type="number"
@@ -142,7 +154,23 @@ export function CategoryEditorClient({ tenant, sectionHref, item }: CategoryEdit
           helper="Menor número = aparece primero"
         />
         <Switch label="Activa" checked={enabled} onChange={setEnabled} />
-      </main>
-    </div>
+      </FormSection>
+
+      <InlineActions>
+        <Button type="button" variant="outline" href={sectionHref}>
+          Cancelar
+        </Button>
+        {!isNew ? (
+          <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Eliminando…" : "Eliminar"}
+          </Button>
+        ) : null}
+        <Button type="button" onClick={handleSave} disabled={saving}>
+          {saving ? "Guardando…" : "Guardar"}
+        </Button>
+      </InlineActions>
+
+      {confirmDialog}
+    </AdminModulePage>
   );
 }

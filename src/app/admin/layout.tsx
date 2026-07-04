@@ -1,9 +1,12 @@
 import { AdminShell } from "@/components/identity/AdminShell";
+import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
+import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
+import { buildAdminTenantBranding } from "@/lib/admin/tenant-branding";
 import { getSiteConfig } from "@/lib/cms/config";
 import { isIdentityEnforced } from "@/core/identity";
 import { ALL_PERMISSION_IDS } from "@/core/identity/permissions/registry";
-import { findRolesByIds, resolvePermissionsForRoles } from "@/lib/identity/roles";
+import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +18,15 @@ export default async function AdminLayout({
 }) {
   const [session, config] = await Promise.all([loadSessionContext(), getSiteConfig()]);
   let roleLabel = "Colaborador";
+  let roleCodes: string[] = [];
 
   if (session?.membership) {
     const roles = await findRolesByIds(session.session.tenantId, session.membership.roleIds);
-    if (roles[0]) roleLabel = getInstitutionalRoleLabel(roles[0].name);
+    if (roles[0]) {
+      const code = getRoleCode(roles[0]);
+      roleLabel = getInstitutionalRoleLabel(roles[0].name, code ?? undefined);
+    }
+    roleCodes = roles.map((r) => getRoleCode(r)).filter(Boolean) as string[];
   }
 
   if (session?.user.jobTitle?.trim()) {
@@ -26,11 +34,36 @@ export default async function AdminLayout({
   }
 
   const compatMode = !isIdentityEnforced();
+  const shellV2 = isAdminShellV2Enabled();
+  const branding = buildAdminTenantBranding(config);
+  const tenant = config?.institution.tenant ?? session?.session.tenantId ?? "default";
+  const tenantId = session?.session.tenantId ?? tenant;
   const permissions = compatMode
     ? [...ALL_PERMISSION_IDS]
     : session?.membership
-      ? await resolvePermissionsForRoles(session.session.tenantId, session.membership.roleIds)
+      ? await (async () => {
+          const { resolvePermissionsForMembership } = await import(
+            "@/lib/identity/permission-resolver"
+          );
+          return resolvePermissionsForMembership(
+            session.session.tenantId,
+            session.membership!
+          );
+        })()
       : [];
+
+  const navBadges = shellV2
+    ? await resolveAdminNavBadges({
+        tenant,
+        tenantId,
+        permissions,
+        compatMode,
+        roleCodes,
+        session: session?.session ?? null,
+        user: session?.user ?? null,
+        membership: session?.membership ?? null,
+      }).catch((): Record<string, number> => ({}))
+    : undefined;
 
   return (
     <AdminShell
@@ -46,6 +79,10 @@ export default async function AdminLayout({
       }
       compatMode={compatMode}
       permissions={permissions}
+      roleCodes={roleCodes}
+      shellV2={shellV2}
+      branding={branding}
+      navBadges={navBadges}
     >
       {children}
     </AdminShell>

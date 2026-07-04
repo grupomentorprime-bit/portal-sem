@@ -1,30 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ClipboardList, ExternalLink, Eye, Plus, RefreshCw } from "lucide-react";
 import {
-  Calendar,
-  ClipboardList,
-  ExternalLink,
-  Eye,
-  FileText,
-  MapPin,
-  Plus,
-  RefreshCw,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
-import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
-import {
-  AdminModuleCenter,
-  AdminModuleHero,
-  AdminModuleSectionHeader,
-  AdminModuleStats,
-} from "@/components/admin/AdminModuleCenter";
+  ActionMenu,
+  ActionMenuItem,
+  AdminDataTable,
+  ColumnActions,
+  ContentGrid,
+  FilterBar,
+  KpiCard,
+  LoadingState,
+  QuickActions,
+  StatusBadge,
+  type AdminDataTableColumn,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { CreateFormDialog } from "@/components/admin/forms/CreateFormDialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   FORM_CONVOCATORIAS,
   formatConvocatoriaDate,
@@ -32,29 +28,70 @@ import {
   getFormLandingByFormId,
   getSupersededFormIds,
   isExperienceFormArchived,
+  isExperienceFormPrivate,
+  isPrivateExperienceForm,
+  PRIVATE_EXPERIENCE_FORM_LABEL,
   publicFormUrl,
   type FormConvocatoria,
 } from "@/lib/admin/forms-center";
-import type { FormLandingTheme } from "@/lib/admin/forms-center";
-import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
 
 type FormsFilter = "live" | "archived";
+type PublishFilter = "all" | "published" | "unpublished";
+
+type FormTableRow =
+  | { kind: "form"; form: ExperienceFormDefinition }
+  | { kind: "orphan"; convocatoria: FormConvocatoria };
 
 interface FormsCenterClientProps {
   initialForms: ExperienceFormDefinition[];
+  scope?: "all" | "convocatorias";
 }
 
-export function FormsCenterClient({ initialForms }: FormsCenterClientProps) {
+function isFormPublished(
+  form: ExperienceFormDefinition,
+  supersededFormIds: Set<string>
+): boolean {
+  return form.active && form.visible && !supersededFormIds.has(form._id) && !isExperienceFormPrivate(form);
+}
+
+function canOpenDirectLink(form: ExperienceFormDefinition): boolean {
+  return form.active && !isExperienceFormArchived(form) && (form.visible || isExperienceFormPrivate(form));
+}
+
+function getFormTipo(
+  formId: string,
+  convocatoriaFormIds: Set<string>
+): "convocatoria" | "landing" | "none" {
+  if (convocatoriaFormIds.has(formId)) return "convocatoria";
+  if (getFormLandingByFormId(formId)) return "landing";
+  return "none";
+}
+
+const tipoLabel: Record<"convocatoria" | "landing" | "none", string> = {
+  convocatoria: "Convocatoria",
+  landing: "Con landing",
+  none: "—",
+};
+
+export function FormsCenterClient({ initialForms, scope = "all" }: FormsCenterClientProps) {
+  const isConvocatoriasScope = scope === "convocatorias";
   const router = useRouter();
   const [forms, setForms] = useState(initialForms);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [filter, setFilter] = useState<FormsFilter>("live");
+  const [publishFilter, setPublishFilter] = useState<PublishFilter>("all");
+  const [search, setSearch] = useState("");
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
-  const convocatoriaFormIds = new Set(FORM_CONVOCATORIAS.map((item) => item.formId));
+  const convocatoriaFormIds = useMemo(
+    () => new Set(FORM_CONVOCATORIAS.map((item) => item.formId)),
+    []
+  );
+  const supersededFormIds = useMemo(() => getSupersededFormIds(), []);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/experience/forms");
@@ -104,13 +141,12 @@ export function FormsCenterClient({ initialForms }: FormsCenterClientProps) {
   };
 
   const handleArchive = async (form: ExperienceFormDefinition) => {
-    if (
-      !window.confirm(
-        `¿Archivar "${form.name}"? Pasará a la pestaña Archivados y dejará de mostrarse en el portal.`
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Archivar formulario",
+      description: `¿Archivar "${form.name}"? Pasará a la pestaña Archivados y dejará de mostrarse en el portal.`,
+      confirmLabel: "Archivar",
+    });
+    if (!ok) return;
     await fetch(`/api/experience/forms/${form._id}`, { method: "DELETE" });
     await refresh();
   };
@@ -125,13 +161,13 @@ export function FormsCenterClient({ initialForms }: FormsCenterClientProps) {
   };
 
   const handlePurge = async (form: ExperienceFormDefinition) => {
-    if (
-      !window.confirm(
-        `¿Eliminar definitivamente "${form.name}"?\n\nSe borrará el formulario y todas sus respuestas. Esta acción no se puede deshacer.`
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Eliminar definitivamente",
+      description: `¿Eliminar definitivamente "${form.name}"?\n\nSe borrará el formulario y todas sus respuestas. Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/experience/forms/${form._id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -168,555 +204,423 @@ export function FormsCenterClient({ initialForms }: FormsCenterClientProps) {
     }
   };
 
-  const activeForms = forms.filter((f) => !isExperienceFormArchived(f));
-  const archivedForms = forms.filter((f) => isExperienceFormArchived(f));
-  const supersededFormIds = getSupersededFormIds();
-  const publishedForms = activeForms.filter(
-    (f) => f.active && f.visible && !supersededFormIds.has(f._id)
+  const activeForms = useMemo(
+    () => forms.filter((f) => !isExperienceFormArchived(f)),
+    [forms]
   );
-  const unpublishedForms = activeForms.filter(
-    (f) => !f.active || !f.visible || supersededFormIds.has(f._id)
+  const archivedForms = useMemo(
+    () => forms.filter((f) => isExperienceFormArchived(f)),
+    [forms]
   );
-  const orphanConvocatorias = FORM_CONVOCATORIAS.filter(
-    (convocatoria) => !forms.find((item) => item._id === convocatoria.formId)
+  const orphanConvocatorias = useMemo(
+    () =>
+      FORM_CONVOCATORIAS.filter(
+        (convocatoria) => !forms.find((item) => item._id === convocatoria.formId)
+      ),
+    [forms]
   );
 
-  const activeCount = activeForms.filter((f) => f.active).length;
-  const publishedCount = publishedForms.length;
+  const activeCount = useMemo(
+    () => activeForms.filter((f) => f.active).length,
+    [activeForms]
+  );
+  const publishedCount = useMemo(
+    () => activeForms.filter((f) => isFormPublished(f, supersededFormIds)).length,
+    [activeForms, supersededFormIds]
+  );
 
-  return (
-    <AdminModuleLayout
-      breadcrumbs={[
-        { label: "Inicio", href: "/admin" },
-        { label: "Portal", href: "/admin/pages" },
-        { label: "Centro de formularios" },
-      ]}
-      title="Centro de formularios"
-      description="Convocatorias, confirmaciones de asistencia, justificaciones y otros formularios del portal."
-      actions={
-        <>
-          <Button variant="primary" type="button" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Nuevo formulario
+  const tableRows = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    const matchesForm = (form: ExperienceFormDefinition) => {
+      if (!query) return true;
+      const landing = getFormLandingByFormId(form._id);
+      const convocatoria = getConvocatoriaByFormId(form._id);
+      const name = (convocatoria?.title ?? landing?.headline ?? form.name).toLowerCase();
+      const desc = (
+        landing?.subheadline ??
+        convocatoria?.description ??
+        form.description ??
+        ""
+      ).toLowerCase();
+      return name.includes(query) || desc.includes(query);
+    };
+
+    const matchesOrphan = (convocatoria: FormConvocatoria) => {
+      if (!query) return true;
+      const landing = convocatoria.landing;
+      const title = convocatoria.title.toLowerCase();
+      const desc = (landing?.subheadline ?? convocatoria.description).toLowerCase();
+      return title.includes(query) || desc.includes(query);
+    };
+
+    if (filter === "archived") {
+      return archivedForms
+        .filter(matchesForm)
+        .filter((form) => !isConvocatoriasScope || convocatoriaFormIds.has(form._id))
+        .map((form): FormTableRow => ({ kind: "form", form }));
+    }
+
+    let liveForms = activeForms;
+    if (publishFilter === "published") {
+      liveForms = liveForms.filter((f) => isFormPublished(f, supersededFormIds));
+    } else if (publishFilter === "unpublished") {
+      liveForms = liveForms.filter((f) => !isFormPublished(f, supersededFormIds));
+    }
+
+    const rows: FormTableRow[] = liveForms
+      .filter(matchesForm)
+      .filter((form) => !isConvocatoriasScope || convocatoriaFormIds.has(form._id))
+      .map((form) => ({ kind: "form", form }));
+
+    if (publishFilter === "all" || publishFilter === "unpublished") {
+      rows.push(
+        ...orphanConvocatorias
+          .filter(matchesOrphan)
+          .map((convocatoria): FormTableRow => ({ kind: "orphan", convocatoria }))
+      );
+    }
+
+    return rows;
+  }, [
+    filter,
+    publishFilter,
+    search,
+    activeForms,
+    archivedForms,
+    orphanConvocatorias,
+    supersededFormIds,
+    convocatoriaFormIds,
+    isConvocatoriasScope,
+  ]);
+
+  const renderFormActions = (form: ExperienceFormDefinition) => {
+    const archived = isExperienceFormArchived(form);
+    const published = isFormPublished(form, supersededFormIds);
+    const convocatoria = getConvocatoriaByFormId(form._id);
+    const formDetailHref = `/admin/portal/forms/${form._id}`;
+    const directLinkLabel = isExperienceFormPrivate(form) ? "Abrir enlace" : "Ver landing";
+
+    if (archived) {
+      return (
+        <ColumnActions>
+          <Button type="button" variant="primary" size="sm" onClick={() => handleRestore(form)}>
+            Restaurar
           </Button>
-          <Link href="/" target="_blank">
-            <Button variant="outline" type="button">
-              Ver portal público
-              <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+          <ActionMenu label="Más acciones">
+            <ActionMenuItem href={formDetailHref}>Ver detalle</ActionMenuItem>
+            <ActionMenuItem destructive onClick={() => handlePurge(form)}>
+              Eliminar definitivamente
+            </ActionMenuItem>
+          </ActionMenu>
+        </ColumnActions>
+      );
+    }
+
+    if (published) {
+      const manageHref = convocatoria
+        ? `/admin/portal/asuntos-estudiantiles/${encodeURIComponent(form._id)}`
+        : `${formDetailHref}?tab=respuestas`;
+
+      return (
+        <ColumnActions>
+          <Link href={manageHref}>
+            <Button type="button" variant="primary" size="sm">
+              {convocatoria ? "Ir a operación" : "Gestionar respuestas"}
             </Button>
           </Link>
-          <Button variant="secondary" onClick={handleSeed} loading={loading}>
-            <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
-            Sincronizar formularios base
-          </Button>
-        </>
-      }
-    >
-      <AdminModuleCenter className="admin-forms-center">
-        {error ? <p className="mb-4 text-sm font-medium text-primary">{error}</p> : null}
-
-        <AdminModuleHero {...ADMIN_PANEL_META.forms} />
-
-        <AdminModuleStats
-          items={[
-            { label: "Formularios totales", value: activeForms.length, icon: ClipboardList, tone: "total" },
-            { label: "Activos", value: activeCount, icon: Sparkles, tone: "active" },
-            { label: "Publicados en portal", value: publishedCount, icon: Eye, tone: "published" },
-          ]}
-        />
-
-        <div className="admin-forms-center__filters" role="toolbar" aria-label="Filtrar formularios">
-          <FilterButton active={filter === "live"} onClick={() => setFilter("live")}>
-            En uso ({activeForms.length})
-          </FilterButton>
-          <FilterButton active={filter === "archived"} onClick={() => setFilter("archived")}>
-            Archivados ({archivedForms.length})
-          </FilterButton>
-        </div>
-
-        {filter === "live" ? (
-          <>
-            <section>
-              <AdminModuleSectionHeader
-                icon={Eye}
-                title="Publicados en el portal"
-                description="Formularios activos y visibles para el público. Aparecen en /formularios y aceptan respuestas."
-              />
-
-              {publishedForms.length > 0 ? (
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {publishedForms.map((form) => (
-                    <FormFeaturedCard
-                      key={form._id}
-                      form={form}
-                      convocatoria={getConvocatoriaByFormId(form._id)}
-                      onToggle={handleToggle}
-                      onArchive={handleArchive}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted">
-                  No hay formularios publicados. Activa y publica uno desde la sección de abajo.
-                </p>
-              )}
-            </section>
-
-            <section className="mt-10">
-              <AdminModuleSectionHeader
-                icon={ClipboardList}
-                title="No publicados o cerrados"
-                description="Formularios ocultos, inactivos o en borrador. Publícalos para moverlos arriba."
-              />
-
-              <div className="grid gap-3">
-                {unpublishedForms.map((form) => (
-                  <FormRow
-                    key={form._id}
-                    form={form}
-                    isConvocatoria={convocatoriaFormIds.has(form._id)}
-                    onToggle={handleToggle}
-                    onDuplicate={handleDuplicate}
-                    onArchive={handleArchive}
-                    onRestore={handleRestore}
-                    onPurge={handlePurge}
-                  />
-                ))}
-
-                {orphanConvocatorias.map((convocatoria) => (
-                  <OrphanConvocatoriaRow
-                    key={convocatoria.slug}
-                    convocatoria={convocatoria}
-                    restoring={restoringId === convocatoria.formId}
-                    onRestore={() => handleRestoreConvocatoria(convocatoria.formId)}
-                  />
-                ))}
-              </div>
-
-              {unpublishedForms.length === 0 && orphanConvocatorias.length === 0 ? (
-                <p className="text-sm text-muted">No hay formularios pendientes de publicar.</p>
-              ) : null}
-            </section>
-          </>
-        ) : (
-          <section>
-            <AdminModuleSectionHeader
-              icon={ClipboardList}
-              title="Formularios archivados"
-              description="Formularios retirados del portal. Puedes restaurarlos o eliminarlos definitivamente."
-            />
-
-            <div className="grid gap-3">
-              {archivedForms.map((form) => (
-                <FormRow
-                  key={form._id}
-                  form={form}
-                  isConvocatoria={convocatoriaFormIds.has(form._id)}
-                  isArchived
-                  onToggle={handleToggle}
-                  onDuplicate={handleDuplicate}
-                  onArchive={handleArchive}
-                  onRestore={handleRestore}
-                  onPurge={handlePurge}
-                />
-              ))}
-            </div>
-
-            {archivedForms.length === 0 ? (
-              <p className="text-sm text-muted">No hay formularios archivados.</p>
+          <ActionMenu label="Más acciones">
+            <ActionMenuItem href={`${formDetailHref}${convocatoria ? "?tab=participantes" : ""}`}>
+              {convocatoria ? "Editar participantes" : "Ver detalle"}
+            </ActionMenuItem>
+            <ActionMenuItem href={`${formDetailHref}?tab=experiencia`}>
+              Editar experiencia
+            </ActionMenuItem>
+            <ActionMenuItem href={`${formDetailHref}?tab=campos`}>Editar campos</ActionMenuItem>
+            <ActionMenuItem onClick={() => handleToggle(form, "active")}>Desactivar</ActionMenuItem>
+            <ActionMenuItem onClick={() => handleToggle(form, "visible")}>
+              {form.visible ? "Ocultar del portal" : "Publicar en portal"}
+            </ActionMenuItem>
+            {canOpenDirectLink(form) ? (
+              <ActionMenuItem href={publicFormUrl(form._id)} external>
+                {directLinkLabel}
+              </ActionMenuItem>
             ) : null}
-          </section>
-        )}
+            <ActionMenuItem destructive onClick={() => handleArchive(form)}>
+              Archivar
+            </ActionMenuItem>
+          </ActionMenu>
+        </ColumnActions>
+      );
+    }
 
-      </AdminModuleCenter>
+    return (
+      <ColumnActions>
+        <Link href={`${formDetailHref}${convocatoria ? "?tab=participantes" : "?tab=campos"}`}>
+          <Button type="button" variant="primary" size="sm">
+            {convocatoria ? "Configurar" : "Gestionar"}
+          </Button>
+        </Link>
+        <ActionMenu label="Más acciones">
+          <ActionMenuItem onClick={() => handleToggle(form, "active")}>
+            {form.active ? "Desactivar" : "Activar"}
+          </ActionMenuItem>
+          <ActionMenuItem onClick={() => handleToggle(form, "visible")}>
+            {form.visible ? "Ocultar del portal" : "Publicar en portal"}
+          </ActionMenuItem>
+          <ActionMenuItem onClick={() => handleDuplicate(form)}>Duplicar</ActionMenuItem>
+          {canOpenDirectLink(form) ? (
+            <ActionMenuItem href={publicFormUrl(form._id)} external>
+              {directLinkLabel}
+            </ActionMenuItem>
+          ) : null}
+          <ActionMenuItem destructive onClick={() => handleArchive(form)}>
+            Archivar
+          </ActionMenuItem>
+        </ActionMenu>
+      </ColumnActions>
+    );
+  };
+
+  const columns: AdminDataTableColumn<FormTableRow>[] = [
+    {
+      id: "name",
+      header: "Formulario",
+      cell: (row) => {
+        if (row.kind === "orphan") {
+          const { convocatoria } = row;
+          const landing = convocatoria.landing;
+          return (
+            <div>
+              <p className="font-medium text-foreground">{convocatoria.title}</p>
+              <p className="text-xs text-muted">
+                {landing?.subheadline ?? convocatoria.description}
+              </p>
+            </div>
+          );
+        }
+
+        const { form } = row;
+        const landing = getFormLandingByFormId(form._id);
+        const convocatoria = getConvocatoriaByFormId(form._id);
+        const title = convocatoria?.title ?? landing?.headline ?? form.name;
+        const subtitle = convocatoria
+          ? `${formatConvocatoriaDate(convocatoria.date)} · ${convocatoria.location}`
+          : (landing?.subheadline ?? form.description);
+
+        return (
+          <div>
+            <p className="font-medium text-foreground">
+              <Link href={`/admin/portal/forms/${form._id}`} className="hover:underline">
+                {title}
+              </Link>
+            </p>
+            {subtitle ? <p className="text-xs text-muted">{subtitle}</p> : null}
+          </div>
+        );
+      },
+    },
+    {
+      id: "status",
+      header: "Estado",
+      cell: (row) => {
+        if (row.kind === "orphan") {
+          return <StatusBadge tone="pending" label="Sin formulario" />;
+        }
+        return (
+          <StatusBadge tone={row.form.active ? "active" : "inactive"} />
+        );
+      },
+    },
+    {
+      id: "portal",
+      header: "Portal",
+      cell: (row) => {
+        if (row.kind === "orphan") {
+          return <StatusBadge tone="inactive" label="Oculto" />;
+        }
+        const published = isFormPublished(row.form, supersededFormIds);
+        const isPrivate = isExperienceFormPrivate(row.form);
+        return (
+          <StatusBadge
+            tone={isPrivate ? "neutral" : published ? "active" : "inactive"}
+            label={isPrivate ? PRIVATE_EXPERIENCE_FORM_LABEL : published ? "Publicado" : "Oculto"}
+          />
+        );
+      },
+    },
+    {
+      id: "tipo",
+      header: "Tipo",
+      cell: (row) => {
+        if (row.kind === "orphan") {
+          return <span className="text-sm text-muted">Convocatoria</span>;
+        }
+        const tipo = getFormTipo(row.form._id, convocatoriaFormIds);
+        return <span className="text-sm text-muted">{tipoLabel[tipo]}</span>;
+      },
+    },
+  ];
+
+  return (
+    <AdminModulePage
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Formularios" },
+        { label: "Gestión" },
+      ]}
+      title="Gestión de formularios"
+      description="Crea, configura y publica formularios institucionales."
+    >
+      {error ? (
+        <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+          {error}
+        </div>
+      ) : null}
+
+      {loading ? <LoadingState variant="cards" className="mb-6" /> : null}
+
+      <ContentGrid cols={4} className="mb-6">
+        <KpiCard label="Formularios activos" value={activeForms.length} />
+        <KpiCard label="Activos" value={activeCount} variant="success" />
+        <KpiCard label="Publicados en portal" value={publishedCount} variant="info" />
+        <KpiCard label="Archivados" value={archivedForms.length} variant="neutral" />
+      </ContentGrid>
+
+      <QuickActions
+        className="mb-6"
+        items={[
+          {
+            id: "new",
+            title: "Nuevo formulario",
+            description: "Crear formulario personalizado",
+            onClick: () => setCreateOpen(true),
+            icon: <Plus className="h-5 w-5" />,
+          },
+          {
+            id: "portal",
+            title: "Ver portal",
+            description: "Abrir sitio público",
+            href: "/",
+            icon: <ExternalLink className="h-5 w-5" />,
+          },
+          {
+            id: "seed",
+            title: "Sincronizar",
+            description: "Formularios base del portal",
+            onClick: handleSeed,
+            icon: <RefreshCw className="h-5 w-5" />,
+          },
+        ]}
+      />
+
+      <FilterBar
+        className="mb-4"
+        search={{
+          placeholder: "Buscar por nombre…",
+          value: search,
+          onChange: setSearch,
+        }}
+        filters={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={filter === "live" ? "primary" : "outline"}
+              onClick={() => setFilter("live")}
+            >
+              <ClipboardList className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              En uso ({activeForms.length})
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={filter === "archived" ? "primary" : "outline"}
+              onClick={() => setFilter("archived")}
+            >
+              Archivados ({archivedForms.length})
+            </Button>
+            {filter === "live" ? (
+              <>
+                {(["all", "published", "unpublished"] as const).map((value) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    size="sm"
+                    variant={publishFilter === value ? "primary" : "outline"}
+                    onClick={() => setPublishFilter(value)}
+                  >
+                    {value === "all" ? (
+                      "Todos"
+                    ) : value === "published" ? (
+                      <>
+                        <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        Publicados
+                      </>
+                    ) : (
+                      "No publicados"
+                    )}
+                  </Button>
+                ))}
+              </>
+            ) : null}
+          </div>
+        }
+        onReset={
+          search || filter !== "live" || publishFilter !== "all"
+            ? () => {
+                setSearch("");
+                setFilter("live");
+                setPublishFilter("all");
+              }
+            : undefined
+        }
+      />
+
+      <AdminDataTable
+        columns={columns}
+        data={tableRows}
+        rowKey={(row) =>
+          row.kind === "form" ? row.form._id : `orphan-${row.convocatoria.slug}`
+        }
+        emptyTitle={
+          filter === "archived"
+            ? "Sin formularios archivados"
+            : "Sin formularios"
+        }
+        emptyDescription={
+          filter === "archived"
+            ? "Los formularios archivados aparecerán aquí."
+            : "Crea uno nuevo o sincroniza los formularios base."
+        }
+        rowActions={(row) => {
+          if (row.kind === "orphan") {
+            return (
+              <ColumnActions>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleRestoreConvocatoria(row.convocatoria.formId)}
+                  disabled={restoringId === row.convocatoria.formId}
+                >
+                  {restoringId === row.convocatoria.formId
+                    ? "Creando formulario…"
+                    : "Crear formulario"}
+                </Button>
+              </ColumnActions>
+            );
+          }
+          return renderFormActions(row.form);
+        }}
+      />
 
       <CreateFormDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={() => void refresh()}
       />
-    </AdminModuleLayout>
-  );
-}
-
-function FilterButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`admin-forms-center__filter-btn${active ? " admin-forms-center__filter-btn--active" : ""}`}
-      aria-pressed={active}
-    >
-      {children}
-    </button>
-  );
-}
-
-function featuredHeaderClass(theme: FormLandingTheme | undefined): string {
-  const base = "admin-forms-center__convocatoria-header";
-  if (!theme) return base;
-  return `${base} admin-forms-center__featured-header--${theme}`;
-}
-
-function FormFeaturedCard({
-  form,
-  convocatoria,
-  onToggle,
-  onArchive,
-}: {
-  form: ExperienceFormDefinition;
-  convocatoria?: FormConvocatoria;
-  onToggle: (form: ExperienceFormDefinition, field: "active" | "visible") => void;
-  onArchive: (form: ExperienceFormDefinition) => void;
-}) {
-  const landing = getFormLandingByFormId(form._id);
-  const theme = landing?.theme;
-  const title = convocatoria?.title ?? landing?.headline ?? form.name;
-  const subtitle = convocatoria
-    ? `${formatConvocatoriaDate(convocatoria.date)} · ${convocatoria.location}`
-    : landing?.eyebrow ?? form.description;
-
-  return (
-    <Card className="admin-forms-center__convocatoria-card">
-      <div className={featuredHeaderClass(theme)}>
-        <div className="admin-forms-center__convocatoria-header-top">
-          <div>
-            <h3 className="admin-forms-center__convocatoria-title">{title}</h3>
-            {subtitle ? (
-              <p className="admin-forms-center__convocatoria-subtitle">{subtitle}</p>
-            ) : null}
-          </div>
-          <span className="admin-forms-center__badge admin-forms-center__badge--active">Activo</span>
-          <span
-            className={`admin-forms-center__badge ${
-              form.visible
-                ? "admin-forms-center__badge--published"
-                : "admin-forms-center__badge--hidden"
-            }`}
-          >
-            {form.visible ? "Publicado" : "Oculto"}
-          </span>
-          {convocatoria ? (
-            <span className="admin-forms-center__badge admin-forms-center__badge--landing">
-              Convocatoria
-            </span>
-          ) : landing ? (
-            <span className="admin-forms-center__badge admin-forms-center__badge--landing">
-              Con landing
-            </span>
-          ) : null}
-        </div>
-
-        {convocatoria ? (
-          <div className="admin-forms-center__convocatoria-meta">
-            <span className="admin-forms-center__meta-pill">
-              <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
-              {formatConvocatoriaDate(convocatoria.date)}
-            </span>
-            <span className="admin-forms-center__meta-pill">
-              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-              {convocatoria.location}
-            </span>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="admin-forms-center__convocatoria-body">
-        <p className="admin-forms-center__convocatoria-desc">
-          {landing?.subheadline ?? convocatoria?.description ?? form.description}
-        </p>
-
-        {landing?.motivational ? (
-          <blockquote className="admin-forms-center__motivational">
-            <Sparkles className="admin-forms-center__motivational-icon" aria-hidden="true" />
-            <span>{landing.motivational}</span>
-          </blockquote>
-        ) : null}
-
-        <div className="admin-forms-center__actions">
-          <Link
-            href={
-              convocatoria
-                ? `/admin/portal/forms/convocatorias/${convocatoria.slug}`
-                : `/admin/portal/forms/${form._id}?tab=respuestas`
-            }
-            className="admin-forms-center__btn admin-forms-center__btn--primary"
-          >
-            Gestionar respuestas
-          </Link>
-          <Link
-            href={`/admin/portal/forms/${form._id}?tab=experiencia`}
-            className="admin-forms-center__btn admin-forms-center__btn--outline"
-          >
-            Editar experiencia
-          </Link>
-          <Link
-            href={`/admin/portal/forms/${form._id}?tab=campos`}
-            className="admin-forms-center__btn admin-forms-center__btn--outline"
-          >
-            Editar campos
-          </Link>
-          <button
-            type="button"
-            className="admin-forms-center__ghost-btn"
-            onClick={() => onToggle(form, "active")}
-          >
-            Desactivar
-          </button>
-          <button
-            type="button"
-            className="admin-forms-center__ghost-btn"
-            onClick={() => onToggle(form, "visible")}
-          >
-            {form.visible ? "Ocultar" : "Publicar"}
-          </button>
-          {form.visible ? (
-            <Link
-              href={publicFormUrl(form._id)}
-              target="_blank"
-              className="admin-forms-center__btn admin-forms-center__btn--accent"
-            >
-              Ver landing pública
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            </Link>
-          ) : null}
-          <button
-            type="button"
-            className="admin-forms-center__ghost-btn admin-forms-center__ghost-btn--danger"
-            onClick={() => onArchive(form)}
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-            Archivar
-          </button>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function OrphanConvocatoriaRow({
-  convocatoria,
-  restoring,
-  onRestore,
-}: {
-  convocatoria: FormConvocatoria;
-  restoring: boolean;
-  onRestore: () => void;
-}) {
-  const landing = convocatoria.landing;
-
-  return (
-    <Card className="admin-forms-center__form-row admin-forms-center__form-row--convocatoria">
-      <div className="admin-forms-center__form-row-inner">
-        <div className="admin-forms-center__form-content">
-          <span
-            className="admin-forms-center__form-icon admin-forms-center__form-icon--convocatoria"
-            aria-hidden="true"
-          >
-            <Calendar className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="admin-forms-center__form-title">{convocatoria.title}</h3>
-            <p className="admin-forms-center__form-desc">
-              {landing?.subheadline ?? convocatoria.description}
-            </p>
-            <div className="admin-forms-center__form-badges">
-              <span className="admin-forms-center__badge admin-forms-center__badge--hidden">
-                Sin formulario
-              </span>
-              <span className="admin-forms-center__badge admin-forms-center__badge--landing">
-                Convocatoria
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="admin-forms-center__form-actions">
-          <button
-            type="button"
-            className="admin-forms-center__btn admin-forms-center__btn--primary admin-forms-center__btn--sm"
-            onClick={onRestore}
-            disabled={restoring}
-          >
-            {restoring ? "Creando formulario…" : "Crear formulario de convocatoria"}
-          </button>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function themeClass(theme: FormLandingTheme | undefined): string {
-  if (!theme) return "";
-  return `admin-forms-center__form-row--${theme}`;
-}
-
-function iconClass(theme: FormLandingTheme | undefined): string {
-  if (!theme) return "admin-forms-center__form-icon--default";
-  return `admin-forms-center__form-icon--${theme}`;
-}
-
-function FormRow({
-  form,
-  isConvocatoria,
-  isArchived,
-  onToggle,
-  onDuplicate,
-  onArchive,
-  onRestore,
-  onPurge,
-}: {
-  form: ExperienceFormDefinition;
-  isConvocatoria?: boolean;
-  isArchived?: boolean;
-  onToggle: (form: ExperienceFormDefinition, field: "active" | "visible") => void;
-  onDuplicate: (form: ExperienceFormDefinition) => void;
-  onArchive: (form: ExperienceFormDefinition) => void;
-  onRestore: (form: ExperienceFormDefinition) => void;
-  onPurge: (form: ExperienceFormDefinition) => void;
-}) {
-  const landing = getFormLandingByFormId(form._id);
-  const theme = landing?.theme;
-
-  return (
-    <Card className={`admin-forms-center__form-row ${themeClass(theme)}`}>
-      <div className="admin-forms-center__form-row-inner">
-        <div className="admin-forms-center__form-content">
-          <span
-            className={`admin-forms-center__form-icon ${iconClass(theme)}`}
-            aria-hidden="true"
-          >
-            <FileText className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="admin-forms-center__form-title">
-              <Link href={`/admin/portal/forms/${form._id}`}>
-                {landing?.headline ?? form.name}
-              </Link>
-            </h3>
-            <p className="admin-forms-center__form-desc">
-              {landing?.subheadline ?? form.description ?? `Destino: ${form.destination}`}
-            </p>
-            <div className="admin-forms-center__form-badges">
-              <span
-                className={`admin-forms-center__badge ${
-                  form.active
-                    ? "admin-forms-center__badge--active"
-                    : "admin-forms-center__badge--closed"
-                }`}
-              >
-                {form.active ? "Activo" : "Inactivo"}
-              </span>
-              <span
-                className={`admin-forms-center__badge ${
-                  form.visible
-                    ? "admin-forms-center__badge--published"
-                    : "admin-forms-center__badge--hidden"
-                }`}
-              >
-                {form.visible ? "Publicado" : "Oculto"}
-              </span>
-              {landing ? (
-                <span className="admin-forms-center__badge admin-forms-center__badge--landing">
-                  Con landing
-                </span>
-              ) : null}
-              {isConvocatoria ? (
-                <span className="admin-forms-center__badge admin-forms-center__badge--landing">
-                  Convocatoria
-                </span>
-              ) : null}
-              {isArchived ? (
-                <span className="admin-forms-center__badge admin-forms-center__badge--hidden">
-                  Archivado
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        <div className="admin-forms-center__form-actions">
-          {isArchived ? (
-            <>
-              <button
-                type="button"
-                className="admin-forms-center__ghost-btn"
-                onClick={() => onRestore(form)}
-              >
-                Restaurar
-              </button>
-              <button
-                type="button"
-                className="admin-forms-center__ghost-btn admin-forms-center__ghost-btn--danger"
-                onClick={() => onPurge(form)}
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Eliminar definitivamente
-              </button>
-              <Link
-                href={`/admin/portal/forms/${form._id}`}
-                className="admin-forms-center__btn admin-forms-center__btn--outline admin-forms-center__btn--sm"
-              >
-                Ver detalle
-              </Link>
-            </>
-          ) : (
-            <>
-          <button
-            type="button"
-            className="admin-forms-center__ghost-btn"
-            onClick={() => onToggle(form, "active")}
-          >
-            {form.active ? "Desactivar" : "Activar"}
-          </button>
-          <button
-            type="button"
-            className="admin-forms-center__ghost-btn"
-            onClick={() => onToggle(form, "visible")}
-          >
-            {form.visible ? "Ocultar" : "Publicar"}
-          </button>
-          <button
-            type="button"
-            className="admin-forms-center__ghost-btn"
-            onClick={() => onDuplicate(form)}
-          >
-            Duplicar
-          </button>
-          <button
-            type="button"
-            className="admin-forms-center__ghost-btn admin-forms-center__ghost-btn--danger"
-            onClick={() => onArchive(form)}
-          >
-            Archivar
-          </button>
-          {form.visible ? (
-            <Link
-              href={publicFormUrl(form._id)}
-              target="_blank"
-              className="admin-forms-center__btn admin-forms-center__btn--outline admin-forms-center__btn--sm"
-            >
-              Ver
-              <ExternalLink className="h-3 w-3" aria-hidden="true" />
-            </Link>
-          ) : null}
-          <Link
-            href={`/admin/portal/forms/${form._id}?tab=campos`}
-            className="admin-forms-center__btn admin-forms-center__btn--primary admin-forms-center__btn--sm"
-          >
-            Gestionar
-          </Link>
-            </>
-          )}
-        </div>
-      </div>
-    </Card>
+      {dialog}
+    </AdminModulePage>
   );
 }

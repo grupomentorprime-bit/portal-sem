@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils";
 
 interface AdminGlobalSearchProps {
   className?: string;
+  compact?: boolean;
 }
 
-export function AdminGlobalSearch({ className }: AdminGlobalSearchProps) {
+export function AdminGlobalSearch({ className, compact = false }: AdminGlobalSearchProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -38,13 +39,14 @@ export function AdminGlobalSearch({ className }: AdminGlobalSearchProps) {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "hidden items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-muted transition hover:bg-background-muted xl:inline-flex",
+          "hidden items-center rounded-lg border border-border bg-background text-muted transition hover:bg-background-muted lg:inline-flex",
+          compact ? "gap-1.5 px-2 py-1 text-xs" : "gap-2 px-3 py-1.5 text-sm",
           className
         )}
       >
-        <Search className="h-4 w-4" />
-        <span>Buscar</span>
-        <kbd className="rounded border border-border px-1.5 text-[10px]">⌘K</kbd>
+        <Search className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+        {!compact ? <span>Buscar</span> : null}
+        <kbd className="rounded border border-border px-1 text-[9px] leading-none">⌘K</kbd>
       </button>
 
       <button

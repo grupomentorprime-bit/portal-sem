@@ -1,8 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import {
+  FormSection,
+  InlineActions,
+  ValidationSummary,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { MediaField } from "@/components/media/MediaPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +39,7 @@ interface PersonEditorClientProps {
 export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const isNew = !item;
   const defaultGroup =
     getTeamGroup(item?.category)?.slug ??
@@ -108,7 +115,14 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
   };
 
   const handleDelete = async () => {
-    if (!item || !confirm(`¿Eliminar a «${name}»?`)) return;
+    if (!item) return;
+    const ok = await confirm({
+      title: "Eliminar persona",
+      description: `¿Eliminar a «${name}»? Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     setError(null);
     try {
@@ -131,35 +145,32 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
   };
 
   return (
-    <div className="min-h-screen bg-background-soft">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div>
-            <Link href={sectionHref} className="text-sm text-muted hover:text-foreground">
-              ← Personas
-            </Link>
-            <h1 className="text-xl font-semibold">{isNew ? "Nueva persona" : "Editar persona"}</h1>
-          </div>
-          <div className="flex gap-2">
-            {!isNew ? (
-              <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
-                {deleting ? "Eliminando…" : "Eliminar"}
-              </Button>
-            ) : null}
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Guardando…" : "Guardar"}
+    <AdminModulePage
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Comunicaciones", href: "/admin/content" },
+        { label: "Personas", href: sectionHref },
+        { label: isNew ? "Nueva persona" : "Editar persona" },
+      ]}
+      title={isNew ? "Nueva persona" : "Editar persona"}
+      description="Perfil del equipo directivo, docente o técnico"
+      maxWidth="6xl"
+      actions={
+        <>
+          {!isNew ? (
+            <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Eliminando…" : "Eliminar"}
             </Button>
-          </div>
-        </div>
-      </header>
+          ) : null}
+          <Button type="button" onClick={handleSave} disabled={saving}>
+            {saving ? "Guardando…" : "Guardar"}
+          </Button>
+        </>
+      }
+    >
+      {error ? <ValidationSummary errors={[error]} /> : null}
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
-        {error ? (
-          <div className="rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {error}
-          </div>
-        ) : null}
-
+      <FormSection title="Identidad" description="Equipo, nombre y cargo visible en el portal.">
         <Select
           label="Tipo de equipo"
           value={category}
@@ -167,7 +178,6 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
           options={TEAM_GROUP_SELECT_OPTIONS}
           required
         />
-
         <Input label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required />
         <Input
           label="Cargo"
@@ -188,14 +198,18 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
           onChange={(e) => setSummary(e.target.value)}
           rows={4}
         />
+      </FormSection>
 
+      <FormSection title="Medios" description="Foto de perfil para listados y fichas.">
         <MediaField
           label="Foto de perfil"
           tenant={tenant}
           value={imageMediaId}
           onChange={setImageMediaId}
         />
+      </FormSection>
 
+      <FormSection title="Clasificación interna" description="Rol editorial y estado operativo.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
             label="Rol interno"
@@ -210,7 +224,6 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
             options={PERSON_STATUSES.map((value) => ({ value, label: value }))}
           />
         </div>
-
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label="Orden"
@@ -228,24 +241,42 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
             helper="Se genera automáticamente del nombre"
           />
         </div>
+      </FormSection>
 
+      <FormSection title="Contacto" description="Datos opcionales de contacto público.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <Input label="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
-
         <Input label="LinkedIn" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
+      </FormSection>
 
+      <FormSection title="Publicación" description="Visibilidad en el portal institucional.">
         <Select
           label="Estado de publicación"
           value={status}
           onChange={(e) => setStatus(e.target.value as ContentStatus)}
           options={STATUS_OPTIONS}
         />
-
         <Switch label="Destacado en home" checked={featured} onChange={setFeatured} />
         <Switch label="Visible en el portal" checked={visible} onChange={setVisible} />
-      </main>
-    </div>
+      </FormSection>
+
+      <InlineActions>
+        <Button type="button" variant="outline" href={sectionHref}>
+          Cancelar
+        </Button>
+        {!isNew ? (
+          <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Eliminando…" : "Eliminar"}
+          </Button>
+        ) : null}
+        <Button type="button" onClick={handleSave} disabled={saving}>
+          {saving ? "Guardando…" : "Guardar"}
+        </Button>
+      </InlineActions>
+
+      {confirmDialog}
+    </AdminModulePage>
   );
 }

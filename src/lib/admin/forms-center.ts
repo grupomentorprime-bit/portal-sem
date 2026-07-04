@@ -3,6 +3,11 @@
  */
 
 import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
+import type { ExperienceFormDefinition } from "@/types/experience-forms";
+import {
+  isExperienceFormPrivate,
+  isPrivateExperienceFormId,
+} from "@/lib/experience/forms/status";
 import {
   formatChilePhoneDisplay,
   isValidChilePhone,
@@ -14,7 +19,8 @@ export type FormLandingTheme =
   | "attendance"
   | "absence"
   | "information"
-  | "application";
+  | "application"
+  | "testimonial";
 
 export interface FormLandingHighlight {
   icon: "calendar" | "map-pin" | "users" | "book" | "heart" | "clock" | "sparkles" | "message";
@@ -140,6 +146,21 @@ export const FORM_LANDINGS: FormLandingConfig[] = [
     ],
     ctaLabel: "Iniciar postulación",
   },
+  {
+    formId: "testimonial-submission",
+    theme: "testimonial",
+    eyebrow: "Voces de nuestra comunidad",
+    headline: "Comparte tu experiencia en el SEM",
+    subheadline:
+      "Tu testimonio ayuda a otros a conocer la formación del seminario. Revisaremos tu respuesta antes de publicarla en el sitio.",
+    motivational: "Cada historia formativa fortalece nuestra comunidad.",
+    highlights: [
+      { icon: "heart", label: "Revisión", value: "El equipo editorial valida cada testimonio" },
+      { icon: "users", label: "Privacidad", value: "Tu correo no se publica" },
+      { icon: "message", label: "Formato", value: "Textos breves que caben en el carrusel de Home" },
+    ],
+    ctaLabel: "Enviar testimonio",
+  },
 ];
 
 export const FORM_CENTER_CATEGORIES = [
@@ -153,6 +174,12 @@ export const FORM_CENTER_CATEGORIES = [
     label: "Admisión e interés",
     description: "Postulaciones y solicitudes de información.",
     formIds: ["program-application", "information-request"],
+  },
+  {
+    id: "comunidad",
+    label: "Comunidad",
+    description: "Testimonios de alumnos y voces de la comunidad formativa.",
+    formIds: ["testimonial-submission"],
   },
   {
     id: "general",
@@ -223,7 +250,16 @@ export function getSupersededFormIds(): Set<string> {
 export {
   isExperienceFormArchived,
   isExperienceFormPublished,
+  isExperienceFormPrivate,
+  isPrivateExperienceFormId,
+  PRIVATE_EXPERIENCE_FORM_IDS,
 } from "@/lib/experience/forms/status";
+
+export const PRIVATE_EXPERIENCE_FORM_LABEL = "Formulario privado";
+
+export function isExperienceFormPrivateById(formId: string): boolean {
+  return isPrivateExperienceFormId(formId);
+}
 
 export function attendanceLabel(value: unknown): string {
   if (value === "yes") return "Asistirá";
@@ -239,6 +275,31 @@ export const ABSENCE_REVIEW_STATUS_OPTIONS = [
 
 export const ABSENCE_REVIEW_POLICY =
   "Las inasistencias solo se justifican por causa de fuerza mayor (enfermedad grave, duelo, emergencia familiar u otra situación equivalente) y deben respaldarse con documentación verificable.";
+
+export const TESTIMONIAL_REVIEW_STATUS_OPTIONS = [
+  { value: "pending", label: "Pendiente de revisión" },
+  { value: "approved", label: "Aprobado (sin publicar aún)" },
+  { value: "rejected", label: "No publicar" },
+  { value: "published", label: "Publicado en Home" },
+] as const;
+
+export const TESTIMONIAL_REVIEW_POLICY =
+  "Revisa el testimonio, edita si es necesario y elige qué datos se publican. El correo del alumno permanece interno. Publicar en Home crea un testimonio en el CMS.";
+
+export function testimonialReviewStatusLabel(status?: string): string {
+  return (
+    TESTIMONIAL_REVIEW_STATUS_OPTIONS.find((option) => option.value === status)?.label ??
+    "Pendiente de revisión"
+  );
+}
+
+export function isTestimonialSubmissionForm(formId: string): boolean {
+  return formId === "testimonial-submission";
+}
+
+export function isPrivateExperienceForm(form: Pick<ExperienceFormDefinition, "_id" | "private">): boolean {
+  return isExperienceFormPrivate(form);
+}
 
 export function absenceReviewStatusLabel(status?: string): string {
   return (

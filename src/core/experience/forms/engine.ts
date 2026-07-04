@@ -29,6 +29,7 @@ export async function processFormDestination(
     case "absence_justification":
     case "event_registration":
     case "subscription":
+    case "testimonial_submission":
       return;
     default:
       console.info("[Experience Forms] destination", destination, submission.formId);

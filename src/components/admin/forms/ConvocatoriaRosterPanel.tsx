@@ -1,10 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Pencil, Search, Upload, UserPlus, X } from "lucide-react";
+import { Download, Pencil, Upload, UserPlus } from "lucide-react";
+import {
+  AdminDataTable,
+  ColumnActions,
+  FilterBar,
+  LoadingState,
+  type AdminDataTableColumn,
+} from "@/components/admin/kit";
 import { Alert } from "@/components/ui";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ConvocatoriaRosterStudentDialog } from "@/components/admin/forms/ConvocatoriaRosterStudentDialog";
 import {
@@ -13,6 +19,7 @@ import {
   parseConvocatoriaRosterRowsFromSheet,
   rosterStudentsToCsv,
   rosterStudentMatchesQuery,
+  sortRosterImportSheetNames,
   summarizeRosterStudentsByGeneration,
   upsertRosterStudent,
   type RosterSheetImportSummary,
@@ -53,7 +60,7 @@ async function parseRosterFile(file: File): Promise<{
     const batches: ConvocatoriaRosterStudent[][] = [];
     const sheets: RosterSheetImportSummary[] = [];
 
-    for (const sheetName of workbook.SheetNames) {
+    for (const sheetName of sortRosterImportSheetNames(workbook.SheetNames)) {
       const sheet = workbook.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: "" });
       const students = parseConvocatoriaRosterRowsFromSheet(rows, sheetName);
@@ -246,7 +253,27 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
     }
   };
 
-  if (loading) return <p className="text-sm text-muted">Cargando listado de alumnos…</p>;
+  const columns: AdminDataTableColumn<ConvocatoriaRosterStudent>[] = [
+    {
+      id: "rut",
+      header: "RUT",
+      cell: (student) => <span className="text-muted">{student.rut ?? "—"}</span>,
+    },
+    {
+      id: "name",
+      header: "Nombre",
+      cell: (student) => <span className="font-medium">{student.fullName}</span>,
+    },
+    {
+      id: "generation",
+      header: "Generación",
+      cell: (student) => (
+        <span className="text-muted">{formatGenerationDisplay(student.generation)}</span>
+      ),
+    },
+  ];
+
+  if (loading) return <LoadingState variant="table" />;
 
   return (
     <div className="space-y-4">
@@ -305,114 +332,76 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
 
       {students.length > 0 ? (
         <div className="space-y-3 rounded-xl border border-border bg-background p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="min-w-0 flex-1 sm:max-w-md">
-              <Input
-                label="Buscar participante"
-                placeholder="Nombre, apellido o RUT…"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                icon={Search}
-                helper="Mínimo 2 caracteres para filtrar."
-              />
-            </div>
-            <p className="text-sm text-muted">
-              {filteredStudents.length} de {students.length} visible
-              {filteredStudents.length === 1 ? "" : "s"}
-            </p>
-          </div>
-
-          {generationSummary.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={`admin-form-detail__filter-pill ${
-                  generationFilter === null ? "admin-form-detail__filter-pill--active" : ""
-                }`}
-                onClick={() => setGenerationFilter(null)}
-              >
-                Todas ({students.length})
-              </button>
-              {generationSummary.map((item) => (
-                <button
-                  key={item.generation}
-                  type="button"
-                  className={`admin-form-detail__filter-pill ${
-                    generationFilter === item.generation
-                      ? "admin-form-detail__filter-pill--active"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setGenerationFilter((current) =>
-                      current === item.generation ? null : item.generation
-                    )
+          <FilterBar
+            search={{
+              placeholder: "Nombre, apellido o RUT…",
+              value: searchQuery,
+              onChange: setSearchQuery,
+            }}
+            filters={
+              generationSummary.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={generationFilter === null ? "primary" : "outline"}
+                    onClick={() => setGenerationFilter(null)}
+                  >
+                    Todas ({students.length})
+                  </Button>
+                  {generationSummary.map((item) => (
+                    <Button
+                      key={item.generation}
+                      type="button"
+                      size="sm"
+                      variant={generationFilter === item.generation ? "primary" : "outline"}
+                      onClick={() =>
+                        setGenerationFilter((current) =>
+                          current === item.generation ? null : item.generation
+                        )
+                      }
+                    >
+                      {item.generation}: {item.count}
+                    </Button>
+                  ))}
+                </div>
+              ) : undefined
+            }
+            onReset={
+              searchQuery || generationFilter
+                ? () => {
+                    setSearchQuery("");
+                    setGenerationFilter(null);
                   }
+                : undefined
+            }
+          />
+
+          <p className="text-sm text-muted">
+            {filteredStudents.length} de {students.length} visible
+            {filteredStudents.length === 1 ? "" : "s"}
+          </p>
+
+          <AdminDataTable
+            columns={columns}
+            data={filteredStudents}
+            rowKey={(student) => student.id}
+            emptyTitle="Sin resultados"
+            emptyDescription="No hay participantes que coincidan con la búsqueda o el filtro."
+            rowActions={(student) => (
+              <ColumnActions>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openEditDialog(student)}
                 >
-                  {item.generation}: {item.count}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="max-h-[28rem] overflow-auto rounded-xl border border-border">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="sticky top-0 z-10 border-b border-border bg-background-muted/90 backdrop-blur-sm">
-                <tr>
-                  <th className="px-4 py-3 font-medium">RUT</th>
-                  <th className="px-4 py-3 font-medium">Nombre</th>
-                  <th className="px-4 py-3 font-medium">Generación</th>
-                  <th className="px-4 py-3 font-medium text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted">
-                      No hay participantes que coincidan con la búsqueda o el filtro.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredStudents.map((student) => (
-                    <tr key={student.id} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3 text-muted">{student.rut ?? "—"}</td>
-                      <td className="px-4 py-3 font-medium">{student.fullName}</td>
-                      <td className="px-4 py-3 text-muted">
-                        {formatGenerationDisplay(student.generation)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(student)}
-                        >
-                          <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                          Editar
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {(searchQuery || generationFilter) && (
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery("");
-                  setGenerationFilter(null);
-                }}
-              >
-                <X className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                Limpiar filtros
-              </Button>
-            </div>
-          )}
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                  Editar
+                </Button>
+              </ColumnActions>
+            )}
+          />
         </div>
       ) : null}
 

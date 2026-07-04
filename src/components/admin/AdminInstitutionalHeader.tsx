@@ -18,21 +18,23 @@ interface AdminInstitutionalHeaderProps {
   user: AdminUserSummary | null;
   compatMode: boolean;
   permissions: string[];
+  roleCodes?: string[];
 }
 
 export function AdminInstitutionalHeader({
   user,
   compatMode,
   permissions,
+  roleCodes = [],
 }: AdminInstitutionalHeaderProps) {
   const pathname = usePathname();
-  const navItems = filterAdminNav(permissions, compatMode);
+  const navItems = filterAdminNav(permissions, compatMode, roleCodes);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       {/* Barra superior: marca + utilidades */}
       <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-2 sm:px-6">
-        <AdminNavDrawer compatMode={compatMode} permissions={permissions} />
+        <AdminNavDrawer compatMode={compatMode} permissions={permissions} roleCodes={roleCodes} />
 
         <Link
           href="/admin"

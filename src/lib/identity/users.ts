@@ -179,3 +179,11 @@ export async function changeUserPassword(
 
   return { ok: true };
 }
+
+export async function markUserAsSystemAccount(userId: string): Promise<void> {
+  const db = await getDatabase();
+  await db.collection<IdentityUser>("identity_users").updateOne(
+    { _id: userId },
+    { $set: { isSystemAccount: true, updatedAt: new Date().toISOString() } }
+  );
+}

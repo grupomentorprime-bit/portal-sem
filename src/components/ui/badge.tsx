@@ -8,10 +8,13 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const variants: Record<BadgeVariant, string> = {
-  success: "bg-success/15 text-primary border-success/30",
-  warning: "bg-light/20 text-primary border-light/40",
-  error: "bg-primary/10 text-primary border-primary/20",
-  info: "bg-accent/15 text-primary border-accent/30",
+  success:
+    "bg-[var(--state-success-bg)] text-[var(--state-success-fg)] border-[var(--state-success-border)]",
+  warning:
+    "bg-[var(--state-warning-bg)] text-[var(--state-warning-fg)] border-[var(--state-warning-border)]",
+  error:
+    "bg-[var(--state-danger-bg)] text-[var(--state-danger-fg)] border-[var(--state-danger-border)]",
+  info: "bg-[var(--state-info-bg)] text-[var(--state-info-fg)] border-[var(--state-info-border)]",
   neutral: "bg-background-muted text-muted border-border",
 };
 

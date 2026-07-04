@@ -1,8 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  FormSection,
+  InlineActions,
+  ValidationSummary,
+} from "@/components/admin/kit";
+import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { colorDefaults } from "@/design/tokens/colors";
 import { MediaField } from "@/components/media/MediaPicker";
 import { Button } from "@/components/ui/button";
@@ -15,6 +21,7 @@ import {
   INSTITUTIONAL_NOTICE_CATEGORIES,
 } from "@/types/academic-portal";
 import { slugify } from "@/lib/slugify";
+import { TESTIMONIAL_FORM_LIMITS, testimonialFieldHelper } from "@/lib/experience/forms/testimonial-limits";
 import { BlockIcon } from "@/components/portal/BlockIcon";
 import {
   programAudienceOptions,
@@ -53,6 +60,7 @@ export function ContentEditorClient({
   item,
 }: ContentEditorClientProps) {
   const router = useRouter();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const isNew = !item;
 
   const isProgram = collection === "academy_programs";
@@ -231,8 +239,15 @@ export function ContentEditorClient({
   };
 
   const handleDelete = async () => {
+    if (!item) return;
     const label = isTestimonial ? author : title;
-    if (!item || !confirm(`¿Eliminar «${label}»?`)) return;
+    const ok = await confirm({
+      title: "Eliminar contenido",
+      description: `¿Eliminar «${label}»? Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     setError(null);
     try {
@@ -275,35 +290,32 @@ export function ContentEditorClient({
               : "Nuevo";
 
   return (
-    <div className="min-h-screen bg-background-soft">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div>
-            <Link href={sectionHref} className="text-sm text-muted hover:text-foreground">
-              ← {sectionTitle}
-            </Link>
-            <h1 className="text-xl font-semibold">{isNew ? newLabel : "Editar"}</h1>
-          </div>
-          <div className="flex gap-2">
-            {!isNew ? (
-              <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
-                {deleting ? "Eliminando…" : "Eliminar"}
-              </Button>
-            ) : null}
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Guardando…" : "Guardar"}
+    <AdminModulePage
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Comunicaciones", href: "/admin/content" },
+        { label: sectionTitle, href: sectionHref },
+        { label: isNew ? newLabel : "Editar" },
+      ]}
+      title={isNew ? newLabel : "Editar"}
+      description={sectionTitle}
+      maxWidth="6xl"
+      actions={
+        <>
+          {!isNew ? (
+            <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Eliminando…" : "Eliminar"}
             </Button>
-          </div>
-        </div>
-      </header>
+          ) : null}
+          <Button type="button" onClick={handleSave} disabled={saving}>
+            {saving ? "Guardando…" : "Guardar"}
+          </Button>
+        </>
+      }
+    >
+      {error ? <ValidationSummary errors={[error]} /> : null}
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6">
-        {error ? (
-          <div className="rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {error}
-          </div>
-        ) : null}
-
+      <FormSection title="Contenido principal" description="Título, texto y campos específicos del tipo.">
         {isTestimonial ? (
           <>
             <Textarea
@@ -312,13 +324,30 @@ export function ContentEditorClient({
               onChange={(e) => setQuote(e.target.value)}
               rows={5}
               required
+              maxLength={TESTIMONIAL_FORM_LIMITS.quote}
+              helper={`${quote.length}/${TESTIMONIAL_FORM_LIMITS.quote} · ${testimonialFieldHelper("quote")}`}
             />
-            <Input label="Autor" value={author} onChange={(e) => setAuthor(e.target.value)} required />
-            <Input label="Cargo / generación" value={role} onChange={(e) => setRole(e.target.value)} />
+            <Input
+              label="Autor"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              required
+              maxLength={TESTIMONIAL_FORM_LIMITS.author}
+              helper={`${author.length}/${TESTIMONIAL_FORM_LIMITS.author} · ${testimonialFieldHelper("author")}`}
+            />
+            <Input
+              label="Cargo / generación"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              maxLength={TESTIMONIAL_FORM_LIMITS.generationRole}
+              helper={`${role.length}/${TESTIMONIAL_FORM_LIMITS.generationRole} · ${testimonialFieldHelper("generationRole")}`}
+            />
             <Input
               label="Programa / iglesia"
               value={program}
               onChange={(e) => setProgram(e.target.value)}
+              maxLength={TESTIMONIAL_FORM_LIMITS.program}
+              helper={`${program.length}/${TESTIMONIAL_FORM_LIMITS.program} · ${testimonialFieldHelper("program", "Formato «Iglesia, Ciudad».")}`}
             />
             <Input
               label="Calificación (1-5)"
@@ -485,7 +514,9 @@ export function ContentEditorClient({
         {isNotice ? (
           <Textarea label="Contenido" value={content} onChange={(e) => setContent(e.target.value)} rows={8} />
         ) : null}
+      </FormSection>
 
+      <FormSection title="Programación y visibilidad" description="Fechas, enlaces y estado de publicación.">
         {isAgenda ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -594,7 +625,9 @@ export function ContentEditorClient({
         {!isGallery && !isTestimonial ? (
           <Switch label="Destacado" checked={featured} onChange={setFeatured} />
         ) : null}
+      </FormSection>
 
+      <FormSection title="Medios" description="Imágenes y archivos adjuntos.">
         <MediaField
           label={isGallery ? "Imagen" : "Imagen de portada"}
           tenant={tenant}
@@ -610,7 +643,23 @@ export function ContentEditorClient({
             onChange={setAttachmentMediaId}
           />
         ) : null}
-      </main>
-    </div>
+      </FormSection>
+
+      <InlineActions>
+        <Button type="button" variant="outline" href={sectionHref}>
+          Cancelar
+        </Button>
+        {!isNew ? (
+          <Button type="button" variant="outline" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Eliminando…" : "Eliminar"}
+          </Button>
+        ) : null}
+        <Button type="button" onClick={handleSave} disabled={saving}>
+          {saving ? "Guardando…" : "Guardar"}
+        </Button>
+      </InlineActions>
+
+      {confirmDialog}
+    </AdminModulePage>
   );
 }

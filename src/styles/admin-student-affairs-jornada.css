@@ -1,0 +1,259 @@
+/**
+ * Vista jornada — Asuntos estudiantiles (convocatoria presencial)
+ */
+
+.student-affairs-jornada__layout {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1280px) {
+  .student-affairs-jornada__layout {
+    grid-template-columns: minmax(0, 1fr) 16rem;
+  }
+}
+
+.student-affairs-jornada__aside {
+  position: sticky;
+  top: 0.75rem;
+}
+
+.student-affairs-jornada__metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--gray-50);
+  padding: 0.5rem 0.75rem;
+}
+
+@media (max-width: 639px) {
+  .student-affairs-jornada__metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.student-affairs-jornada__metric {
+  min-width: 0;
+  padding: 0.125rem 0.25rem;
+  text-align: center;
+}
+
+.student-affairs-jornada__metric-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-foreground);
+}
+
+.student-affairs-jornada__metric-label {
+  margin-top: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-muted);
+}
+
+.student-affairs-jornada__progress-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.student-affairs-jornada__progress-track {
+  min-width: 0;
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--admin-progress-track);
+}
+
+.student-affairs-jornada__progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--admin-progress-fill);
+  transition: width 0.3s ease;
+}
+
+.student-affairs-jornada__search input {
+  height: 2.75rem;
+  border-color: color-mix(in srgb, var(--color-foreground) 14%, var(--color-border));
+  background: var(--admin-surface-muted);
+  box-shadow: var(--admin-shadow-card);
+  font-size: 0.875rem;
+}
+
+.student-affairs-jornada__search input::placeholder {
+  color: color-mix(in srgb, var(--color-muted) 75%, var(--color-foreground));
+}
+
+.student-affairs-jornada__search input:focus {
+  border-color: var(--color-secondary);
+  background: var(--color-background);
+  box-shadow: var(--focus-ring);
+}
+
+.student-affairs-jornada__search > svg:first-child {
+  height: 1.125rem;
+  width: 1.125rem;
+  color: color-mix(in srgb, var(--color-muted) 40%, var(--color-foreground));
+}
+
+.student-affairs-jornada__cohorts {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.student-affairs-jornada__cohort {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  padding: 0.375rem 0.5rem;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.student-affairs-jornada__cohort:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+}
+
+.student-affairs-jornada__cohort--active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 4%, white);
+}
+
+.student-affairs-jornada__cohort-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-foreground);
+}
+
+.student-affairs-jornada__cohort-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-top: 0.125rem;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  color: var(--color-muted);
+}
+
+.student-affairs-jornada__cohort-meta {
+  margin-top: 0.125rem;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  color: var(--color-muted);
+}
+
+.student-affairs-jornada__cohort-bar {
+  margin-top: 0.25rem;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--admin-progress-track);
+}
+
+.student-affairs-jornada__cohort-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--admin-progress-complete);
+  transition: width 0.3s ease;
+}
+
+@media (max-width: 639px) {
+  .student-affairs-jornada__cohorts {
+    overflow-x: auto;
+    padding-bottom: 0.125rem;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-muted) 45%, transparent) transparent;
+  }
+
+  .student-affairs-jornada__cohorts::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .student-affairs-jornada__cohorts::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .student-affairs-jornada__cohorts::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-muted) 40%, transparent);
+  }
+
+  .student-affairs-jornada__cohort {
+    flex: 0 0 auto;
+    min-width: 6.25rem;
+    max-width: 7.75rem;
+  }
+}
+
+.student-affairs-jornada__aside-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-background);
+  padding: 1rem;
+  box-shadow: var(--admin-shadow-card);
+}
+
+.student-affairs-jornada__aside-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.student-affairs-jornada__stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.student-affairs-jornada__stat-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.student-affairs-jornada__participant-avatar {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: white;
+}
+
+/* Por llegar = ámbar; Justificado = azul */
+.student-affairs-jornada__status-pending {
+  font-weight: 600;
+}
+
+.student-affairs-jornada__status-justified {
+  font-weight: 600;
+}

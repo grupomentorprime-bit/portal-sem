@@ -3,9 +3,11 @@ import { requirePermission } from "@/core/identity";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { createInvitation, listInvitationsByTenant } from "@/lib/identity/invitations";
 import { findMembership } from "@/lib/identity/memberships";
-import { ensureTenantRoles, findRoleByName } from "@/lib/identity/roles";
+import { ensureTenantRoles, findRoleByCode, findRoleByName, getCallerRoleCode, getRoleCode } from "@/lib/identity/roles";
 import { writeAudit } from "@/lib/identity/audit";
 import { findUserByEmail } from "@/lib/identity/users";
+import { assertCanAssignRole, auditIamDenied } from "@/lib/identity/iam-guard";
+import { ROLE_CODES, resolveRoleCode, type RoleCode } from "@/core/identity/roles/codes";
 import {
   isValidEmail,
   isValidFullName,
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
       email?: string;
       displayName?: string;
       roleName?: string;
+      roleCode?: string;
     };
 
     const email = body.email?.trim() ?? "";
@@ -81,12 +84,34 @@ export async function POST(request: Request) {
     }
 
     await ensureTenantRoles(ctx.tenantId);
-    const role = body.roleName
-      ? await findRoleByName(ctx.tenantId, body.roleName)
-      : await findRoleByName(ctx.tenantId, "Editor");
+    const roleCode = body.roleCode ? resolveRoleCode(body.roleCode) : null;
+    const role = roleCode
+      ? await findRoleByCode(ctx.tenantId, roleCode)
+      : body.roleName
+        ? await findRoleByName(ctx.tenantId, body.roleName)
+        : await findRoleByCode(ctx.tenantId, ROLE_CODES.COMMUNICATIONS);
 
     if (!role) {
       return NextResponse.json({ ok: false, error: "Rol no encontrado." }, { status: 400 });
+    }
+
+    const callerRoleCode = ctx.membership
+      ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
+      : null;
+    const newRoleCode = getRoleCode(role);
+    const assignCheck = assertCanAssignRole(callerRoleCode, newRoleCode);
+    if (!assignCheck.ok) {
+      if (!ctx.compatMode) {
+        await auditIamDenied({
+          tenantId: ctx.tenantId,
+          actorUserId: ctx.user._id,
+          actorRoleCode: callerRoleCode,
+          action: "user.invite",
+          targetRoleCode: newRoleCode,
+          reason: assignCheck.auditReason,
+        });
+      }
+      return NextResponse.json({ ok: false, error: assignCheck.error }, { status: 403 });
     }
 
     const invitation = await createInvitation({
@@ -116,7 +141,7 @@ export async function POST(request: Request) {
         action: "user.invite",
         entity: "invitation",
         entityId: invitation._id,
-        metadata: { email: normalizedEmail, displayName: invitation.displayName, role: role.name },
+        metadata: { email: normalizedEmail, displayName: invitation.displayName, roleCode: newRoleCode },
       });
     }
 
