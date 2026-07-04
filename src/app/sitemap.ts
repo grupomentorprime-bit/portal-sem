@@ -20,6 +20,9 @@ const STATIC_PUBLIC_PATHS = [
   "/formularios",
 ] as const;
 
+/** Evita prerender en build Docker (sin MONGODB_URI); se genera en runtime. */
+export const dynamic = "force-dynamic";
+
 function sitemapEntry(path: string, baseUrl: string): MetadataRoute.Sitemap[number] {
   return {
     url: `${baseUrl}${path}`,
@@ -31,13 +34,19 @@ function sitemapEntry(path: string, baseUrl: string): MetadataRoute.Sitemap[numb
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getAppBaseUrl().replace(/\/$/, "");
-  const ctx = await getActivePortal();
 
   const entries: MetadataRoute.Sitemap = STATIC_PUBLIC_PATHS.map((path) =>
     sitemapEntry(path, baseUrl)
   );
 
-  if (ctx) {
+  if (!process.env.MONGODB_URI?.trim() || !process.env.MONGODB_DB?.trim()) {
+    return entries;
+  }
+
+  try {
+    const ctx = await getActivePortal();
+    if (!ctx) return entries;
+
     const forms = await listPublicExperienceForms(ctx.tenant);
     const superseded = getSupersededFormIds();
 
@@ -45,6 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (superseded.has(form._id) || isExperienceFormPrivate(form)) continue;
       entries.push(sitemapEntry(publicFormUrl(form._id), baseUrl));
     }
+  } catch {
+    // Build sin MongoDB o BD no disponible: publicar solo rutas estáticas.
   }
 
   return entries;
