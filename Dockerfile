@@ -18,6 +18,7 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 # En Dockploy (obligatorio): MONGODB_URI, SESSION_SECRET, APP_URL, NEXT_PUBLIC_APP_URL
 # y S3_* (o integración de almacenamiento en MongoDB). Sin S3 no se pueden subir justificativos ni medios.
+# Opcional: ADMIN_SHELL_V2=false para volver al shell legacy (menú horizontal, sin sidebar).
 
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
