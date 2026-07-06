@@ -1,6 +1,7 @@
 import "server-only";
 
 import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
+import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 import type { AuthContext, StudentAffairsScope } from "@/types/identity";
 import type { ExperienceFormSubmission } from "@/types/experience-forms";
 
@@ -99,6 +100,19 @@ export function assertSubmissionInStudentAffairsScope(
     scope.formIds.includes(submission.formId) &&
     submissionMatchesGenerationScope(submission.data, scope.generationCodes)
   );
+}
+
+export function assertRosterStudentInStudentAffairsScope(
+  ctx: AuthContext,
+  formId: string,
+  student: ConvocatoriaRosterStudent
+): boolean {
+  if (!canAccessFormInStudentAffairs(ctx, formId)) return false;
+  const scope = resolveStudentAffairsScope(ctx);
+  if (!scope) return true;
+  const code = normalizeGenerationValue(student.generation);
+  if (!code) return false;
+  return scope.generationCodes.includes(code);
 }
 
 export function normalizeStudentAffairsScope(

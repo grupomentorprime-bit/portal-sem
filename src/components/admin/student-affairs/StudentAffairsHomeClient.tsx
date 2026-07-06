@@ -153,7 +153,7 @@ export function StudentAffairsHomeClient() {
               icon={<ClipboardList className="h-4 w-4" />}
             />
             <KpiCard
-              label="Pendientes de llegada"
+              label="Sin asistir"
               value={aggregateStats.pendingArrival}
               accent={aggregateStats.pendingArrival > 0 ? "warning" : "success"}
               variant={aggregateStats.pendingArrival > 0 ? "warning" : "success"}

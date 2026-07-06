@@ -114,6 +114,8 @@ export interface ExperienceFormSubmission {
   absenceReview?: ExperienceFormAbsenceReview;
   /** Registro de llegada el día de la jornada (check-in presencial). */
   dayCheckIn?: ExperienceFormDayCheckIn;
+  /** Historial de contactos del equipo con el participante (inasistencias). */
+  absenceContactLog?: AbsenceContactLogEntry[];
   /** Moderación editorial de testimonios enviados por alumnos. */
   testimonialReview?: ExperienceFormTestimonialReview;
   createdAt: string;
@@ -140,6 +142,43 @@ export interface ExperienceFormAbsenceReview {
   evidenceNotes?: string;
   reviewedAt?: string;
   reviewedByName?: string;
+  /** Cuándo se notificó al participante (correo o contacto) para justificar. */
+  justificationRequestedAt?: string;
+  /** Plazo límite para que el participante envíe su justificación. */
+  justificationDeadlineAt?: string;
+}
+
+export const ABSENCE_CONTACT_CHANNELS = [
+  "email",
+  "phone",
+  "whatsapp",
+  "in-person",
+  "other",
+] as const;
+
+export type AbsenceContactChannel = (typeof ABSENCE_CONTACT_CHANNELS)[number];
+
+export const ABSENCE_CONTACT_OUTCOMES = [
+  "reached",
+  "no-answer",
+  "invalid-number",
+  "other",
+] as const;
+
+export type AbsenceContactOutcome = (typeof ABSENCE_CONTACT_OUTCOMES)[number];
+
+export interface AbsenceContactLogEntry {
+  id: string;
+  channel: AbsenceContactChannel;
+  contactedAt: string;
+  operatorName?: string;
+  notes?: string;
+  /** Si este contacto inició el plazo de 3 días para justificar. */
+  startedJustificationDeadline?: boolean;
+  /** Resultado del intento de contacto (útil cuando no hubo respuesta). */
+  contactOutcome?: AbsenceContactOutcome;
+  email?: string;
+  phone?: string;
 }
 
 export const TESTIMONIAL_REVIEW_STATUSES = [

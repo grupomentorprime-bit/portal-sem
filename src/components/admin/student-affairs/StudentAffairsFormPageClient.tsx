@@ -29,7 +29,7 @@ export function StudentAffairsFormPageClient({
       }
       className="[&_header]:mb-3 [&_header]:pb-3"
     >
-      <StudentAffairsOperationsPanel formId={formId} />
+      <StudentAffairsOperationsPanel formId={formId} formName={formName} />
     </AdminModulePage>
   );
 }

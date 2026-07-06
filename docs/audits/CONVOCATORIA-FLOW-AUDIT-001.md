@@ -152,3 +152,48 @@ npx tsx --env-file=.env scripts/ensure-mongodb-indexes.ts
 ## 9. Aprobación
 
 Auditoría aprobada. Referencia técnica del flujo de convocatorias. Sin nuevas OTs ni ampliación de alcance en esta fase. UAT, runbook y checklist de producción: pendientes para fase pre-despliegue.
+
+---
+
+## 10. Base certificada — Plantilla de operación jornada presencial
+
+**Referencia UI:** panel en `/admin/portal/asuntos-estudiantiles/[formId]` (`StudentAffairsOperationsPanel`).
+
+Este tablero queda como **base certificada** para futuras jornadas (p. ej. fin de año). No es código exclusivo de Talca Aurora: el motor es **genérico por `formId`**.
+
+### Qué ya es reutilizable sin cambiar código
+
+| Capacidad | Cómo se activa |
+|-----------|----------------|
+| Tablero de operación (métricas, filtros, check-in, inasistencias, cierre jornada) | Formulario con destino `attendance_confirmation` y campo `attendance` |
+| Aparición en Asuntos Estudiantiles → Operación | `filterFormsForStudentAffairsPanel()` detecta convocatorias automáticamente |
+| Filtro por generación en el panel | Chips G-2023…G-2026 / Equipo / Otros (desde nómina + respuestas) |
+| Alcance por operador (formulario + generaciones) | Asuntos Estudiantiles → Equipo → marcar formulario y generaciones |
+| Nómina vs formulario (“Sin registrar ni justificar”) | Requiere nómina cargada (ver paso 3 abajo) |
+| Export CSV, cierre de jornada e informe | Por `formId` |
+
+### Qué hay que configurar por cada nueva jornada
+
+1. **Formulario** — Crear en Centro de formularios con plantilla de confirmación de asistencia (campos: búsqueda nómina, asistencia sí/no, teléfono, correo, justificación).
+2. **Convocatoria** — Registrar en `FORM_CONVOCATORIAS` (`src/lib/admin/forms-center.ts`): `slug`, `formId`, título, fecha, lugar, landing. Sin esto: no hay nómina enlazada, correos sin datos del evento ni pestaña Participantes con slug.
+3. **Nómina** — Admin → formulario → Participantes → importar Excel (hojas por generación + Otros/Equipo).
+4. **Operadores** — Asignar alcance: formulario de la jornada + generaciones a gestionar (p. ej. solo G-2025).
+5. **Infra** — `APP_URL`, Resend, S3, índices MongoDB (`scripts/ensure-mongodb-indexes.ts`).
+
+### Estados del tablero (certificados)
+
+| Etiqueta | Significado |
+|----------|-------------|
+| Asistió / Sin asistir | Check-in día D o confirmado pendiente de llegada |
+| Sin registrar ni justificar | En nómina, sin respuesta al formulario |
+| Pendiente contacto / Plazo / Sin justificar / Por revisar | Flujo de inasistencia tras marcar o declarar no asistencia |
+
+### Certificación Talca Aurora (jul-2026)
+
+Primera jornada operada con esta plantilla. Nómina reconciliada, flujo event-day auditado, bug crítico Centro de formularios corregido. Sirve como **referencia de comportamiento esperado** para la jornada de fin de año.
+
+### Pendiente para multi-jornada sin tocar código (fase posterior)
+
+- Convocatorias en BD en lugar de array estático `FORM_CONVOCATORIAS`
+- Wizard “Nueva jornada presencial” que cree formulario + convocatoria + enlace al panel en un paso
+

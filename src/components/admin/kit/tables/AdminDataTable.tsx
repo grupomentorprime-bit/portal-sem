@@ -36,7 +36,13 @@ export interface AdminDataTableProps<T> {
   bulkActions?: ReactNode;
   selectedCount?: number;
   rowActions?: (row: T) => ReactNode;
+  /** Encabezado visible de la columna de acciones (por defecto solo lectores de pantalla). */
+  rowActionsLabel?: string;
   className?: string;
+  /** Ancho mínimo de la tabla (clase Tailwind, ej. min-w-[52rem]). */
+  tableMinWidth?: string;
+  /** Mantiene la columna de acciones visible al hacer scroll horizontal. */
+  stickyEndColumn?: boolean;
 }
 
 /**
@@ -56,7 +62,10 @@ export function AdminDataTable<T>({
   bulkActions,
   selectedCount = 0,
   rowActions,
+  rowActionsLabel,
   className,
+  tableMinWidth = "min-w-[640px]",
+  stickyEndColumn = false,
 }: AdminDataTableProps<T>) {
   if (loading) {
     return <LoadingState variant="table" className={className} />;
@@ -75,8 +84,14 @@ export function AdminDataTable<T>({
   return (
     <div className={cn("space-y-3", className)}>
       {bulkActions ? <BulkActions selectedCount={selectedCount}>{bulkActions}</BulkActions> : null}
-      <div className={cn(aek.surface, "overflow-x-auto")}>
-        <table className="w-full min-w-[640px] border-collapse text-sm">
+      <div
+        className={cn(
+          aek.surface,
+          "admin-data-table__scroll w-full max-w-full overflow-x-auto",
+          stickyEndColumn && "admin-data-table--sticky-end"
+        )}
+      >
+        <table className={cn("w-full border-collapse text-sm", tableMinWidth)}>
           <thead>
             <tr className="border-b border-border bg-background-soft">
               {columns.map((col) => (
@@ -99,8 +114,14 @@ export function AdminDataTable<T>({
                 </th>
               ))}
               {rowActions ? (
-                <th scope="col" className="w-0 px-4 py-3 text-right">
-                  <span className="sr-only">Acciones</span>
+                <th scope="col" className="w-0 whitespace-nowrap px-4 py-3 text-right">
+                  {rowActionsLabel ? (
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      {rowActionsLabel}
+                    </span>
+                  ) : (
+                    <span className="sr-only">Acciones</span>
+                  )}
                 </th>
               ) : null}
             </tr>
@@ -120,7 +141,9 @@ export function AdminDataTable<T>({
                   </td>
                 ))}
                 {rowActions ? (
-                  <td className="px-4 py-3 text-right align-middle">{rowActions(row)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right align-middle">
+                    {rowActions(row)}
+                  </td>
                 ) : null}
               </tr>
             ))}

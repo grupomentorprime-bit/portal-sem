@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
-import {
-  getFormSubmissionById,
-  updateFormSubmissionEventDayStatus,
-} from "@/lib/experience/forms/repository";
+import { sendAbsenceJustificationRequest } from "@/lib/student-affairs/send-justification-request";
 import {
   assertSubmissionInStudentAffairsScope,
   canAccessStudentAffairsPanel,
 } from "@/lib/student-affairs/scope";
-import { assertOnSiteOperationsOpen } from "@/lib/student-affairs/operations-state";
+import { getFormSubmissionById } from "@/lib/experience/forms/repository";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-/** @deprecated Usar PATCH /api/student-affairs/submissions/[id]/event-day */
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function POST(request: Request, { params }: RouteParams) {
   try {
     const ctx = await requireAuth();
     if (ctx instanceof NextResponse) return ctx;
@@ -30,7 +26,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       !ctx.permissions.includes("experience.forms.manage") &&
       !ctx.permissions.includes("student-affairs.manage")
     ) {
-      return NextResponse.json({ ok: false, error: "Sin permiso para marcar asistencia." }, { status: 403 });
+      return NextResponse.json(
+        { ok: false, error: "Sin permiso para gestionar asistencia." },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;
@@ -43,29 +42,39 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Respuesta fuera de su alcance." }, { status: 403 });
     }
 
-    const body = (await request.json()) as { present?: boolean; notes?: string };
-    if (typeof body.present !== "boolean") {
-      return NextResponse.json({ ok: false, error: "Indique si asistió (present)." }, { status: 400 });
+    const body = (await request.json()) as { email?: string };
+    const email = String(body.email ?? existing.data.email ?? "").trim();
+    if (!email) {
+      return NextResponse.json(
+        { ok: false, error: "Debe indicar un correo para enviar la solicitud." },
+        { status: 400 }
+      );
     }
 
-    const action = body.present ? "check-in" : "undo-check-in";
-    const gate = await assertOnSiteOperationsOpen(ctx.tenantId, existing.formId);
-    if (!gate.ok) {
-      return NextResponse.json({ ok: false, error: gate.error }, { status: 409 });
-    }
-    const submission = await updateFormSubmissionEventDayStatus(
-      ctx.tenantId,
-      id,
-      action,
-      ctx.user.displayName,
-      body.notes
-    );
+    const result = await sendAbsenceJustificationRequest({
+      tenant: ctx.tenantId,
+      submissionId: id,
+      email,
+      operatorName: ctx.user.displayName,
+    });
 
-    if (!submission) {
-      return NextResponse.json({ ok: false, error: "No se pudo actualizar el check-in." }, { status: 422 });
+    if (!result.ok) {
+      const status =
+        result.reason === "invalid-email"
+          ? 400
+          : result.reason === "not-eligible"
+            ? 422
+            : result.reason === "email-failed"
+              ? 502
+              : 404;
+      return NextResponse.json({ ok: false, error: result.error }, { status });
     }
 
-    return NextResponse.json({ ok: true, submission });
+    return NextResponse.json({
+      ok: true,
+      submission: result.submission,
+      email: result.email,
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

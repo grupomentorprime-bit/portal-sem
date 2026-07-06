@@ -10,6 +10,7 @@ import {
   listFormSubmissions,
 } from "@/lib/experience/forms/repository";
 import { filterFormsForStudentAffairsPanel } from "@/lib/student-affairs/forms";
+import { classifyAbsenceSubmission } from "@/lib/student-affairs/absence-categories";
 import {
   canAccessStudentAffairsPanel,
   filterSubmissionsForStudentAffairs,
@@ -116,11 +117,14 @@ async function countStudentAffairsPending(ctx: AuthContext): Promise<number> {
         const attending = filtered.filter((s) => s.data.attendance === "yes").length;
         const checkedIn = filtered.filter((s) => s.dayCheckIn?.present).length;
         const pendingArrival = Math.max(0, attending - checkedIn);
-        const pendingAbsenceReviews = filtered.filter(
-          (s) =>
-            s.data.attendance === "no" &&
-            (!s.absenceReview || s.absenceReview.status === "pending")
-        ).length;
+        const pendingAbsenceReviews = filtered.filter((s) => {
+          const category = classifyAbsenceSubmission(s);
+          return (
+            category === "pending-email" ||
+            category === "pending-review" ||
+            category === "awaiting-justification"
+          );
+        }).length;
         return pendingArrival + pendingAbsenceReviews;
       } catch {
         return 0;

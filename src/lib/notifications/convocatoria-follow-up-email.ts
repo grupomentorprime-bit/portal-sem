@@ -7,6 +7,7 @@ import {
   type FormConvocatoria,
 } from "@/lib/admin/forms-center";
 import { buildParticipantJustifyUrl } from "@/lib/experience/forms/submission-participant-token";
+import { formatJustificationDeadline } from "@/lib/experience/forms/absence-justification-deadline";
 import { getAppBaseUrl } from "@/lib/app-url";
 import {
   renderCredentialRow,
@@ -121,8 +122,15 @@ function renderJornadaWelcomeEmail(input: ParticipantEmailBase & { arrivedFromAb
   };
 }
 
+export type NoShowJustifyReason = "confirmed-no-show" | "roster-no-response";
+
 export async function sendParticipantNoShowJustifyEmail(
-  input: ParticipantEmailBase & { submissionId: string; operatorNotes?: string }
+  input: ParticipantEmailBase & {
+    submissionId: string;
+    operatorNotes?: string;
+    reason?: NoShowJustifyReason;
+    justificationDeadlineAt?: string;
+  }
 ): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const to = input.to.trim();
   if (!to) return { ok: false, error: "Correo del participante no indicado." };
@@ -130,15 +138,34 @@ export async function sendParticipantNoShowJustifyEmail(
   const name = firstName(input.participantName);
   const justifyUrl = buildParticipantJustifyUrl(input.submissionId);
   const institution = input.institutionName?.trim() || "Seminario Eclesiástico Mayor";
+  const reason = input.reason ?? "confirmed-no-show";
+  const deadlineText = input.justificationDeadlineAt
+    ? formatJustificationDeadline(input.justificationDeadlineAt)
+    : null;
+
+  const introParagraph =
+    reason === "roster-no-response"
+      ? `<p style="margin:0 0 16px;">
+          En el registro de la jornada presencial anotamos que <strong>no asististe</strong> y no recibimos tu confirmación previa por formulario.
+        </p>`
+      : `<p style="margin:0 0 16px;">
+          En el registro de la jornada presencial anotamos que <strong>no llegaste</strong> pese a haber confirmado asistencia.
+        </p>`;
 
   const bodyHtml = `
-    <p style="margin:0 0 16px;">
-      En el registro de la jornada presencial anotamos que <strong>no llegaste</strong> pese a haber confirmado asistencia.
-    </p>
+    ${introParagraph}
     <p style="margin:0 0 16px;">
       Si tu inasistencia se debe a una situación de fuerza mayor, debes <strong>justificarla por escrito</strong> y
       <strong>adjuntar un respaldo documental</strong> (certificado médico, carta u otro documento verificable).
     </p>
+    ${
+      deadlineText
+        ? `<p style="margin:0 0 16px;padding:14px 16px;border-radius:12px;background:#fff8e6;border-left:4px solid #d97706;color:#7c4a03;">
+            <strong>Plazo:</strong> tienes hasta el <strong>${escapeHtml(deadlineText)}</strong> para completar tu justificación.
+            Si no respondes dentro de ese plazo, tu inasistencia quedará registrada <strong>sin justificación válida</strong>.
+          </p>`
+        : ""
+    }
     ${input.operatorNotes?.trim()
       ? `<p style="margin:0 0 16px;padding:14px 16px;border-radius:12px;background:#edf4fb;border-left:4px solid #246AA1;color:#1e3f5f;">
           <strong>Nota del equipo:</strong> ${escapeHtml(input.operatorNotes.trim())}

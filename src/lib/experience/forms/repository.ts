@@ -14,6 +14,7 @@ import type {
   ExperienceFormUpdate,
 } from "@/types/experience-forms";
 import type { FormSubmissionAttachment } from "@/lib/experience/forms/attachments";
+import { buildOperatorAbsenceMarked } from "@/lib/experience/forms/absence-justification-deadline";
 
 const COLLECTION = "experience_forms";
 const SUBMISSIONS = "experience_form_submissions";
@@ -457,14 +458,13 @@ export async function updateFormSubmissionEventDayStatus(
     }
     case "mark-absent": {
       if (attendance !== "yes") return null;
-      const absenceReview: ExperienceFormAbsenceReview = {
-        status: "pending",
-        managementNotes: notes,
-        reviewedAt: now,
-        reviewedByName: operator,
-      };
+      const absenceReview = buildOperatorAbsenceMarked({
+        operatorName: operator,
+        operatorNotes: notes,
+      });
       update = {
         "data.attendance": "no",
+        "data.operatorNoShow": true,
         absenceReview,
       };
       unset = { dayCheckIn: "" };

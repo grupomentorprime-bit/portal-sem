@@ -6,17 +6,146 @@
   display: grid;
   gap: 1rem;
   align-items: start;
+  min-width: 0;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1536px) {
   .student-affairs-jornada__layout {
     grid-template-columns: minmax(0, 1fr) 16rem;
   }
 }
 
-.student-affairs-jornada__aside {
+.student-affairs-jornada__main {
+  min-width: 0;
+}
+
+.student-affairs-jornada__card {
+  min-width: 0;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.student-affairs-jornada__table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-muted) 45%, transparent) transparent;
+}
+
+.student-affairs-jornada__table-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.student-affairs-jornada__table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.student-affairs-jornada__table-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-muted) 40%, transparent);
+}
+
+.student-affairs-jornada__table-scroll .admin-data-table__scroll {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.student-affairs-jornada__table-scroll .admin-data-table--sticky-end th:last-child,
+.student-affairs-jornada__table-scroll .admin-data-table--sticky-end td:last-child {
   position: sticky;
-  top: 0.75rem;
+  right: 0;
+  z-index: 1;
+  background: var(--color-background);
+  box-shadow: -6px 0 10px -8px color-mix(in srgb, var(--color-foreground) 22%, transparent);
+  text-align: center;
+}
+
+.student-affairs-jornada__table-scroll .admin-data-table--sticky-end tbody tr:hover td:last-child {
+  background: var(--admin-table-row-hover);
+}
+
+.student-affairs-jornada__table-scroll .admin-data-table--sticky-end thead th:last-child {
+  background: var(--background-soft, var(--color-background));
+}
+
+.student-affairs-jornada__action-btn--high {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--text-inverse, white);
+}
+
+.student-affairs-jornada__action-btn--high:hover:not(:disabled) {
+  border-color: var(--color-secondary, var(--color-primary));
+  background: var(--color-secondary, var(--color-primary));
+  color: var(--text-inverse, white);
+  opacity: 0.95;
+}
+
+.student-affairs-jornada__action-btn--normal {
+  border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-background));
+  color: var(--color-primary);
+}
+
+.student-affairs-jornada__action-btn--normal:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-primary) 60%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-background));
+  color: var(--color-primary);
+}
+
+.student-affairs-jornada__action-btn--low {
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.student-affairs-jornada__action-btn--low:hover:not(:disabled) {
+  color: var(--color-foreground);
+  background: var(--background-soft, var(--color-background));
+}
+
+.student-affairs-jornada__table-scroll th:last-child span {
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.75rem;
+}
+
+.student-affairs-jornada__aside {
+  min-width: 0;
+}
+
+@media (min-width: 1536px) {
+  .student-affairs-jornada__aside {
+    position: sticky;
+    top: 0.75rem;
+    align-self: start;
+    max-height: calc(100dvh - var(--admin-topbar-h, 3.5rem) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-muted) 45%, transparent) transparent;
+  }
+
+  .student-affairs-jornada__aside::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .student-affairs-jornada__aside::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .student-affairs-jornada__aside::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-muted) 40%, transparent);
+  }
 }
 
 .student-affairs-jornada__metrics {
@@ -81,7 +210,27 @@
   height: 100%;
   border-radius: 9999px;
   background: var(--admin-progress-fill);
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.student-affairs-jornada__progress-fill--complete,
+.student-affairs-jornada__cohort-bar-fill--complete {
+  background: var(--admin-progress-complete);
+}
+
+.student-affairs-jornada__progress-fill--good,
+.student-affairs-jornada__cohort-bar-fill--good {
+  background: var(--color-primary);
+}
+
+.student-affairs-jornada__progress-fill--warning,
+.student-affairs-jornada__cohort-bar-fill--warning {
+  background: var(--color-warning);
+}
+
+.student-affairs-jornada__progress-fill--low,
+.student-affairs-jornada__cohort-bar-fill--low {
+  background: var(--color-danger);
 }
 
 .student-affairs-jornada__search input {
@@ -179,6 +328,34 @@
   transition: width 0.3s ease;
 }
 
+@media (max-width: 1535px) {
+  .student-affairs-jornada__cohorts {
+    overflow-x: auto;
+    padding-bottom: 0.125rem;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-muted) 45%, transparent) transparent;
+  }
+
+  .student-affairs-jornada__cohorts::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .student-affairs-jornada__cohorts::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .student-affairs-jornada__cohorts::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-muted) 40%, transparent);
+  }
+
+  .student-affairs-jornada__cohort {
+    flex: 0 0 auto;
+    min-width: 6.25rem;
+    max-width: 7.75rem;
+  }
+}
+
 @media (max-width: 639px) {
   .student-affairs-jornada__cohorts {
     overflow-x: auto;
@@ -249,7 +426,7 @@
   color: white;
 }
 
-/* Por llegar = ámbar; Justificado = azul */
+/* Sin asistir = ámbar; Justificado = azul */
 .student-affairs-jornada__status-pending {
   font-weight: 600;
 }

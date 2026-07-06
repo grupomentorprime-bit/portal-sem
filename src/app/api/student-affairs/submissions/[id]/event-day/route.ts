@@ -9,12 +9,12 @@ import {
 import {
   sendParticipantArrivedEmail,
   sendParticipantCheckInEmail,
-  sendParticipantNoShowJustifyEmail,
 } from "@/lib/notifications/convocatoria-follow-up-email";
 import {
   assertSubmissionInStudentAffairsScope,
   canAccessStudentAffairsPanel,
 } from "@/lib/student-affairs/scope";
+import { assertOnSiteOperationsOpen } from "@/lib/student-affairs/operations-state";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -72,6 +72,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Acción inválida." }, { status: 400 });
     }
 
+    const onSiteOnlyActions = ["check-in", "undo-check-in", "mark-arrived-from-absence"] as const;
+    if (onSiteOnlyActions.includes(body.action as (typeof onSiteOnlyActions)[number])) {
+      const gate = await assertOnSiteOperationsOpen(ctx.tenantId, existing.formId);
+      if (!gate.ok) {
+        return NextResponse.json({ ok: false, error: gate.error }, { status: 409 });
+      }
+    }
+
     const submission = await updateFormSubmissionEventDayStatus(
       ctx.tenantId,
       id,
@@ -106,15 +114,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           | { ok: false; error: string }
           | undefined;
 
-        if (body.action === "mark-absent") {
-          result = await sendParticipantNoShowJustifyEmail({
-            to: participantEmail,
-            participantName,
-            convocatoria,
-            submissionId: id,
-            operatorNotes: body.notes,
-          });
-        } else if (body.action === "mark-arrived-from-absence") {
+        if (body.action === "mark-arrived-from-absence") {
           result = await sendParticipantArrivedEmail({
             to: participantEmail,
             participantName,

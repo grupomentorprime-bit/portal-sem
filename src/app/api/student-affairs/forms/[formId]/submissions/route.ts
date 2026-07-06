@@ -10,6 +10,11 @@ import {
   buildCohortRosterStats,
   sumCohortRosterStats,
 } from "@/lib/student-affairs/cohort-stats";
+import { countAbsenceCategories } from "@/lib/student-affairs/absence-categories";
+import {
+  filterRosterStudentsForStudentAffairs,
+  findRosterStudentsWithoutSubmission,
+} from "@/lib/student-affairs/roster-pending";
 import {
   canAccessFormInStudentAffairs,
   canAccessStudentAffairsPanel,
@@ -20,6 +25,22 @@ import {
 
 interface RouteContext {
   params: Promise<{ formId: string }>;
+}
+
+function statsWithAbsenceBreakdown(
+  submissions: Awaited<ReturnType<typeof listFormSubmissions>>["submissions"],
+  base: Record<string, number>
+) {
+  const absence = countAbsenceCategories(submissions);
+  return {
+    ...base,
+    notAttending: absence.total,
+    absencePendingEmail: absence.pendingEmail,
+    absenceUnjustified: absence.unjustified,
+    absenceAwaitingJustification: absence.awaitingJustification,
+    absencePendingReview: absence.pendingReview,
+    absenceApproved: absence.approved,
+  };
 }
 
 export async function GET(request: Request, context: RouteContext) {
@@ -51,49 +72,68 @@ export async function GET(request: Request, context: RouteContext) {
       if (scope) {
         const { submissions } = await listFormSubmissions(ctx.tenantId, { formId, limit: 1000 });
         const filtered = filterSubmissionsForStudentAffairs(submissions, scope);
+        const scopedRoster = filterRosterStudentsForStudentAffairs(rosterStudents, scope);
+        const rosterPending = findRosterStudentsWithoutSubmission(scopedRoster, filtered);
         const attending = filtered.filter((s) => s.data.attendance === "yes").length;
         const notAttending = filtered.filter((s) => s.data.attendance === "no").length;
-        const cohortStats = buildCohortRosterStats(filtered, rosterStudents);
+        const cohortStats = buildCohortRosterStats(filtered, scopedRoster);
         const cohortTotals = sumCohortRosterStats(cohortStats);
         return NextResponse.json({
           ok: true,
-          stats: {
+          stats: statsWithAbsenceBreakdown(filtered, {
             total: filtered.length,
             attending,
             notAttending,
             other: filtered.length - attending - notAttending,
             checkedIn: filtered.filter((s) => s.dayCheckIn?.present).length,
-          },
+            rosterPending: rosterPending.length,
+          }),
           cohortStats,
           cohortTotals,
-          hasRoster: rosterStudents.length > 0,
+          hasRoster: scopedRoster.length > 0,
+          rosterPending,
         });
       }
 
       const { submissions } = await listFormSubmissions(ctx.tenantId, { formId, limit: 1000 });
+      const rosterPending = findRosterStudentsWithoutSubmission(rosterStudents, submissions);
       const cohortStats = buildCohortRosterStats(submissions, rosterStudents);
       const cohortTotals = sumCohortRosterStats(cohortStats);
       return NextResponse.json({
         ok: true,
-        stats: {
-          ...stats,
+        stats: statsWithAbsenceBreakdown(submissions, {
+          total: stats.total,
+          attending: stats.attending,
+          notAttending: stats.notAttending,
+          other: stats.other,
           checkedIn: submissions.filter((s) => s.dayCheckIn?.present).length,
-        },
+          rosterPending: rosterPending.length,
+        }),
         cohortStats,
         cohortTotals,
         hasRoster: rosterStudents.length > 0,
+        rosterPending,
       });
     }
 
     const limit = Math.min(Number(url.searchParams.get("limit") ?? 500), 1000);
     const { submissions } = await listFormSubmissions(ctx.tenantId, { formId, limit });
     const filtered = filterSubmissionsForStudentAffairs(submissions, scope);
+    const convocatoria = getConvocatoriaByFormId(formId);
+    const roster = convocatoria
+      ? await getConvocatoriaRoster(ctx.tenantId, convocatoria.slug)
+      : null;
+    const rosterStudents = roster?.students ?? [];
+    const scopedRoster = filterRosterStudentsForStudentAffairs(rosterStudents, scope);
+    const rosterPending = findRosterStudentsWithoutSubmission(scopedRoster, filtered);
 
     return NextResponse.json({
       ok: true,
       submissions: filtered,
       total: filtered.length,
       canDeleteSubmissions: canDeleteStudentAffairsSubmission(ctx),
+      hasRoster: scopedRoster.length > 0,
+      rosterPending,
     });
   } catch (error) {
     console.error(error);
