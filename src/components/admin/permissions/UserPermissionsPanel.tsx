@@ -1,6 +1,7 @@
 "use client";
 
 import { PermissionMatrixEditor } from "@/components/admin/permissions/PermissionMatrixEditor";
+import { cn } from "@/lib/utils";
 
 interface UserPermissionsPanelProps {
   membershipId: string;
@@ -14,7 +15,7 @@ export function UserPermissionsPanel({
   onClose,
 }: UserPermissionsPanelProps) {
   return (
-    <div className="mt-4 rounded-xl border border-border bg-background-muted/20 p-4">
+    <div className={cn("rounded-xl border border-border bg-background-muted/20 p-4", onClose ? "" : "mt-4")}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h4 className="font-semibold">Permisos personalizados</h4>

@@ -7,9 +7,8 @@ export default function UsuariosCmsPage() {
   return (
     <AdminPageFrame
       title="Usuarios CMS"
-      description="Administradores, editores y colaboradores con acceso al panel"
-      backHref="/admin"
-      backLabel="Volver al inicio"
+      description="Equipo, invitaciones y actividad de accesos al panel."
+      actions={<></>}
     >
       <UsuariosCmsClient />
     </AdminPageFrame>

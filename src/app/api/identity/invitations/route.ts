@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
-import { createInvitation, listInvitationsByTenant } from "@/lib/identity/invitations";
+import { createInvitation, findInvitationById, listInvitationsByTenant, revokeInvitation } from "@/lib/identity/invitations";
 import { findMembership } from "@/lib/identity/memberships";
 import { ensureTenantRoles, findRoleByCode, findRoleByName, getCallerRoleCode, getRoleCode } from "@/lib/identity/roles";
 import { writeAudit } from "@/lib/identity/audit";
@@ -120,7 +120,6 @@ export async function POST(request: Request) {
       displayName: normalizeFullName(displayName),
       roleIds: [role._id],
       invitedBy: ctx.user._id,
-      expiresInMinutes: isKeycloakOnlyAuth() ? 60 * 24 * 7 : undefined,
     });
 
     if (isKeycloakOnlyAuth()) {
@@ -176,5 +175,51 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "Error desconocido";
     const status = message.includes("invitación pendiente") ? 409 : 500;
     return NextResponse.json({ ok: false, error: message }, { status });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const ctx = await requirePermission("settings.team");
+    if (ctx instanceof NextResponse) return ctx;
+
+    const body = (await request.json()) as { invitationId?: string };
+    const invitationId = body.invitationId?.trim();
+
+    if (!invitationId) {
+      return NextResponse.json({ ok: false, error: "ID de invitación obligatorio." }, { status: 400 });
+    }
+
+    const invitation = await findInvitationById(invitationId);
+    if (!invitation || invitation.tenantId !== ctx.tenantId) {
+      return NextResponse.json({ ok: false, error: "Invitación no encontrada." }, { status: 404 });
+    }
+    if (invitation.status !== "pending") {
+      return NextResponse.json(
+        { ok: false, error: "Solo se pueden cancelar invitaciones pendientes." },
+        { status: 400 }
+      );
+    }
+
+    await revokeInvitation(invitationId);
+
+    if (!ctx.compatMode) {
+      await writeAudit({
+        tenantId: ctx.tenantId,
+        userId: ctx.user._id,
+        action: "user.invite.revoke",
+        entity: "invitation",
+        entityId: invitationId,
+        metadata: { email: invitation.email },
+      });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
+      { status: 500 }
+    );
   }
 }

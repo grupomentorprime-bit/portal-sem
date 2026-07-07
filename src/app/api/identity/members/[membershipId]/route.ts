@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { writeAudit } from "@/lib/identity/audit";
-import { findMembershipById, updateMembershipRoles } from "@/lib/identity/memberships";
+import { findMembershipById, updateMembershipRoles, updateMembershipStatus, deleteMembership } from "@/lib/identity/memberships";
 import {
   ensureTenantRoles,
   findRoleByCode,
@@ -17,7 +17,8 @@ import {
   getTargetRoleCode,
   isSystemAccountUser,
 } from "@/lib/identity/iam-guard";
-import { findUserById } from "@/lib/identity/users";
+import { findUserById, updateUserStatus } from "@/lib/identity/users";
+import { deleteUserSessions } from "@/lib/identity/sessions";
 import { ROLE_CODES, resolveRoleCode, type RoleCode } from "@/core/identity/roles/codes";
 
 interface RouteContext {
@@ -138,6 +139,113 @@ export async function PATCH(request: Request, context: RouteContext) {
         roleCode: newRoleCode,
       },
     });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
+      { status: 500 }
+    );
+  }
+}
+
+const MEMBER_ACTIONS = ["suspend", "block", "archive", "restore", "remove"] as const;
+type MemberAction = (typeof MEMBER_ACTIONS)[number];
+
+export async function DELETE(request: Request, context: RouteContext) {
+  try {
+    const ctx = await requirePermission("settings.team");
+    if (ctx instanceof NextResponse) return ctx;
+
+    const { membershipId } = await context.params;
+    const { searchParams } = new URL(request.url);
+    const action = (searchParams.get("action") ?? "remove") as MemberAction;
+
+    if (!MEMBER_ACTIONS.includes(action)) {
+      return NextResponse.json({ ok: false, error: "Acción no válida." }, { status: 400 });
+    }
+
+    if (ctx.membership?._id === membershipId) {
+      return NextResponse.json(
+        { ok: false, error: "No puedes modificar tu propio acceso." },
+        { status: 403 }
+      );
+    }
+
+    const membership = await findMembershipById(membershipId);
+    if (!membership || membership.tenantId !== ctx.tenantId) {
+      return NextResponse.json({ ok: false, error: "Membresía no encontrada." }, { status: 404 });
+    }
+
+    const callerRoleCode = ctx.membership
+      ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
+      : null;
+
+    await ensureTenantRoles(ctx.tenantId);
+    const currentRoles = await findRolesByIds(ctx.tenantId, membership.roleIds);
+    const targetCode = getTargetRoleCode(currentRoles);
+    const targetUser = await findUserById(membership.userId);
+    const isSystemAccount = targetUser ? isSystemAccountUser(targetUser) : false;
+
+    const manageCheck = assertCanManageMember(callerRoleCode, targetCode, { isSystemAccount });
+    if (!manageCheck.ok) {
+      if (!ctx.compatMode) {
+        await auditIamDenied({
+          tenantId: ctx.tenantId,
+          actorUserId: ctx.user._id,
+          actorRoleCode: callerRoleCode,
+          action: `membership.${action}`,
+          targetRoleCode: targetCode,
+          targetUserId: membership.userId,
+          reason: manageCheck.auditReason,
+        });
+      }
+      return NextResponse.json({ ok: false, error: manageCheck.error }, { status: 403 });
+    }
+
+    if (action === "suspend") {
+      await updateMembershipStatus(membershipId, "suspended");
+      await deleteUserSessions(membership.userId);
+    } else if (action === "block") {
+      await updateUserStatus(membership.userId, "suspended");
+      await updateMembershipStatus(membershipId, "suspended");
+      await deleteUserSessions(membership.userId);
+    } else if (action === "archive") {
+      await updateMembershipStatus(membershipId, "archived");
+      await deleteUserSessions(membership.userId);
+    } else if (action === "restore") {
+      if (membership.status !== "archived") {
+        return NextResponse.json(
+          { ok: false, error: "Solo se pueden restaurar usuarios archivados." },
+          { status: 400 }
+        );
+      }
+      await updateMembershipStatus(membershipId, "active");
+    } else {
+      if (membership.status !== "archived") {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Debe archivar al usuario antes de eliminarlo del CMS.",
+          },
+          { status: 400 }
+        );
+      }
+      await deleteMembership(membershipId);
+      await deleteUserSessions(membership.userId);
+    }
+
+    if (!ctx.compatMode) {
+      await writeAudit({
+        tenantId: ctx.tenantId,
+        userId: ctx.user._id,
+        action: `membership.${action}`,
+        entity: "membership",
+        entityId: membershipId,
+        metadata: { targetUserId: membership.userId, action },
+      });
+    }
+
+    return NextResponse.json({ ok: true, action });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

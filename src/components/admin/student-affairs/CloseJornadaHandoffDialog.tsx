@@ -2,6 +2,7 @@
 
 import { Dialog } from "@/components/admin/kit/dialogs/Dialog";
 import { Button } from "@/components/ui/button";
+import { CONFIRMED_NO_SHOW_LABEL } from "@/lib/student-affairs/operations-labels";
 import { cn } from "@/lib/utils";
 import { ArrowRight, ClipboardCheck } from "lucide-react";
 
@@ -140,7 +141,7 @@ export function CloseJornadaHandoffDialog({
             />
             {pendingArrival > 0 ? (
               <HandoffStatCard
-                label="Sin asistir (confirmados)"
+                label={CONFIRMED_NO_SHOW_LABEL}
                 value={pendingArrival}
                 tone="warning"
               />

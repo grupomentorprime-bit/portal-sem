@@ -5,7 +5,8 @@ import type { IdentityInvitation } from "@/types/identity";
 import { generateId, generateToken } from "@/core/identity/auth/crypto";
 import { normalizeEmail } from "@/lib/validation/identity";
 
-const INVITATION_TTL_MINUTES = 15;
+export const INVITATION_TTL_MINUTES = 30;
+export const INVITATION_TTL_MAX_MINUTES = 30;
 
 export async function createInvitation(input: {
   tenantId: string;
@@ -25,8 +26,12 @@ export async function createInvitation(input: {
   }
 
   const now = new Date().toISOString();
+  const ttlMinutes = Math.min(
+    input.expiresInMinutes ?? INVITATION_TTL_MINUTES,
+    INVITATION_TTL_MAX_MINUTES
+  );
   const expires = new Date();
-  expires.setMinutes(expires.getMinutes() + (input.expiresInMinutes ?? INVITATION_TTL_MINUTES));
+  expires.setMinutes(expires.getMinutes() + ttlMinutes);
 
   const invitation: IdentityInvitation = {
     _id: generateId("inv"),
@@ -62,11 +67,19 @@ export async function listInvitationsByTenant(
   tenantId: string
 ): Promise<IdentityInvitation[]> {
   const db = await getDatabase();
+  const now = new Date().toISOString();
   return db
     .collection<IdentityInvitation>("identity_invitations")
-    .find({ tenantId, status: "pending" })
+    .find({ tenantId, status: "pending", expiresAt: { $gt: now } })
     .sort({ createdAt: -1 })
     .toArray();
+}
+
+export async function findInvitationById(
+  invitationId: string
+): Promise<IdentityInvitation | null> {
+  const db = await getDatabase();
+  return db.collection<IdentityInvitation>("identity_invitations").findOne({ _id: invitationId });
 }
 
 export async function findInvitationByToken(

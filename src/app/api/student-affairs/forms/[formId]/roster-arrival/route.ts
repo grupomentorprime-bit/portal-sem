@@ -11,6 +11,10 @@ import {
   type RosterOnSiteAction,
 } from "@/lib/student-affairs/roster-on-site";
 import {
+  CONTACT_INFO_REQUIRED_MESSAGE,
+  rosterStudentHasCompleteContactInfo,
+} from "@/lib/student-affairs/contact-info";
+import {
   assertRosterStudentInStudentAffairsScope,
   canAccessFormInStudentAffairs,
   canAccessStudentAffairsPanel,
@@ -106,6 +110,10 @@ export async function POST(request: Request, context: RouteContext) {
         { ok: false, error: "Participante fuera de su alcance." },
         { status: 403 }
       );
+    }
+
+    if (!rosterStudentHasCompleteContactInfo(student)) {
+      return NextResponse.json({ ok: false, error: CONTACT_INFO_REQUIRED_MESSAGE }, { status: 409 });
     }
 
     const result = await registerRosterStudentOnSite({

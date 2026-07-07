@@ -7,7 +7,12 @@ export type AbsenceListCategory =
   | "unjustified"
   | "awaiting-justification"
   | "pending-review"
-  | "approved";
+  | "approved"
+  | "dropout";
+
+export function isParticipantDropout(submission: ExperienceFormSubmission): boolean {
+  return submission.absenceReview?.closureReason === "dropout";
+}
 
 export function hasParticipantJustification(submission: ExperienceFormSubmission): boolean {
   const text = String(
@@ -26,6 +31,7 @@ export function classifyAbsenceSubmission(
   submission: ExperienceFormSubmission
 ): AbsenceListCategory | null {
   if (submission.data.attendance !== "no") return null;
+  if (isParticipantDropout(submission)) return "dropout";
 
   const reviewStatus = submission.absenceReview?.status;
   if (reviewStatus === "approved") return "approved";
@@ -67,6 +73,9 @@ export function countAbsenceCategories(submissions: ExperienceFormSubmission[]) 
     else if (category === "awaiting-justification") awaitingJustification++;
     else if (category === "pending-review") pendingReview++;
     else if (category === "approved") approved++;
+    else if (category === "dropout") {
+      /* no cuenta en gestión pendiente */
+    }
   }
 
   return {
@@ -91,6 +100,8 @@ export function absenceCategoryLabel(category: AbsenceListCategory): string {
       return "Por revisar";
     case "approved":
       return "Justificación aceptada";
+    case "dropout":
+      return "Desertor";
   }
 }
 

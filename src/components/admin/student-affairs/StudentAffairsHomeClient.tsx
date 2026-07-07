@@ -14,6 +14,8 @@ import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 import { ROLE_CODES } from "@/core/identity/roles/codes";
 import { rolesIncludeCode } from "@/core/identity/roles/helpers";
+import { CONFIRMED_NO_SHOW_LABEL } from "@/lib/student-affairs/operations-labels";
+import { STUDENT_AFFAIRS_HOME_PATH } from "@/lib/admin/nav-access";
 
 interface StudentAffairsForm {
   id: string;
@@ -125,7 +127,7 @@ export function StudentAffairsHomeClient() {
   return (
     <AdminModulePage
       breadcrumbs={[
-        { label: "Inicio", href: "/admin" },
+        { label: "Inicio", href: STUDENT_AFFAIRS_HOME_PATH },
         { label: "Formularios" },
         { label: "Operación" },
       ]}
@@ -153,7 +155,7 @@ export function StudentAffairsHomeClient() {
               icon={<ClipboardList className="h-4 w-4" />}
             />
             <KpiCard
-              label="Sin asistir"
+              label={CONFIRMED_NO_SHOW_LABEL}
               value={aggregateStats.pendingArrival}
               accent={aggregateStats.pendingArrival > 0 ? "warning" : "success"}
               variant={aggregateStats.pendingArrival > 0 ? "warning" : "success"}
@@ -174,8 +176,16 @@ export function StudentAffairsHomeClient() {
         <EmptyState
           icon={<Users className="h-8 w-8" />}
           title="Sin formularios asignados"
-          description="Un administrador debe configurar su alcance en Asignar encargadas."
-          action={{ label: "Asignar encargadas", href: "/admin/portal/asuntos-estudiantiles/equipo" }}
+          description={
+            canManageScope
+              ? "Un administrador debe configurar su alcance en Asignar encargadas."
+              : "Un administrador debe asignarte formularios y generaciones para operar en esta jornada."
+          }
+          action={
+            canManageScope
+              ? { label: "Asignar encargadas", href: "/admin/portal/asuntos-estudiantiles/equipo" }
+              : undefined
+          }
         />
       ) : null}
     </AdminModulePage>

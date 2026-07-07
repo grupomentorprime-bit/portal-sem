@@ -1,6 +1,11 @@
 import { AdminShell } from "@/components/identity/AdminShell";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
+import {
+  isStudentAffairsAllowedAdminPath,
+  STUDENT_AFFAIRS_HOME_PATH,
+  usesStudentAffairsFocusedShell,
+} from "@/lib/admin/nav-access";
 import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
 import { buildAdminTenantBranding } from "@/lib/admin/tenant-branding";
 import { getSiteConfig } from "@/lib/cms/config";
@@ -8,6 +13,8 @@ import { isIdentityEnforced } from "@/core/identity";
 import { ALL_PERMISSION_IDS } from "@/core/identity/permissions/registry";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +58,15 @@ export default async function AdminLayout({
           );
         })()
       : [];
+
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  if (
+    pathname &&
+    usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes) &&
+    !isStudentAffairsAllowedAdminPath(pathname, roleCodes)
+  ) {
+    redirect(STUDENT_AFFAIRS_HOME_PATH);
+  }
 
   const navBadges = shellV2
     ? await resolveAdminNavBadges({

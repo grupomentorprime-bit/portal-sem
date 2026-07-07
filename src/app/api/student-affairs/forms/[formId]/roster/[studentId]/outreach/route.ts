@@ -14,6 +14,10 @@ import type { AbsenceContactOutcome } from "@/types/experience-forms";
 import { sendAbsenceJustificationRequest } from "@/lib/student-affairs/send-justification-request";
 import { isOperatorManualContactChannel } from "@/lib/student-affairs/operator-contact-channels";
 import {
+  CONTACT_INFO_REQUIRED_MESSAGE,
+  rosterStudentHasCompleteContactInfo,
+} from "@/lib/student-affairs/contact-info";
+import {
   assertRosterStudentInStudentAffairsScope,
   canAccessFormInStudentAffairs,
   canAccessStudentAffairsPanel,
@@ -113,6 +117,12 @@ export async function POST(request: Request, context: RouteContext) {
       contactOutcome?: AbsenceContactOutcome;
       channel?: string;
     };
+
+    if (body.action === "send-justification" || body.action === "contact" || !body.action) {
+      if (!rosterStudentHasCompleteContactInfo(student)) {
+        return NextResponse.json({ ok: false, error: CONTACT_INFO_REQUIRED_MESSAGE }, { status: 409 });
+      }
+    }
 
     if (body.action === "send-justification") {
       const email = String(body.email ?? student.email ?? "").trim();

@@ -132,6 +132,10 @@ export interface ExperienceFormDayCheckIn {
   notes?: string;
 }
 
+export const PARTICIPANT_CLOSURE_REASONS = ["dropout"] as const;
+
+export type ParticipantClosureReason = (typeof PARTICIPANT_CLOSURE_REASONS)[number];
+
 export interface ExperienceFormAbsenceReview {
   status: AbsenceReviewStatus;
   /** Gestiones realizadas por el equipo (comunicaciones, seguimiento, etc.). */
@@ -146,6 +150,11 @@ export interface ExperienceFormAbsenceReview {
   justificationRequestedAt?: string;
   /** Plazo límite para que el participante envíe su justificación. */
   justificationDeadlineAt?: string;
+  /** Cierre institucional del expediente (p. ej. deserción confirmada). */
+  closureReason?: ParticipantClosureReason;
+  closureNotes?: string;
+  closedAt?: string;
+  closedByName?: string;
 }
 
 export const ABSENCE_CONTACT_CHANNELS = [
@@ -162,6 +171,7 @@ export const ABSENCE_CONTACT_OUTCOMES = [
   "reached",
   "no-answer",
   "invalid-number",
+  "dropout",
   "other",
 ] as const;
 

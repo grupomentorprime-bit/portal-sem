@@ -6,6 +6,7 @@ import type {
   StudentAffairsHandoffReport,
   StudentAffairsOperationsPhase,
 } from "@/types/student-affairs-operations";
+import { getHandoffValidationStatus } from "@/lib/student-affairs/follow-up-access";
 
 const COLLECTION = "student_affairs_form_operations";
 
@@ -57,6 +58,7 @@ export async function closeStudentAffairsOnSitePhase(input: {
     onSiteClosedByUserId: input.operatorUserId,
     onSiteClosedByName: input.operatorName,
     handoffReport: input.report,
+    handoffValidationStatus: "pending",
     updatedAt: now,
   };
 
@@ -64,6 +66,35 @@ export async function closeStudentAffairsOnSitePhase(input: {
     { tenant: input.tenant, formId: input.formId },
     { $set: document },
     { upsert: true }
+  );
+
+  return document;
+}
+
+export async function validateStudentAffairsHandoffReport(input: {
+  tenant: string;
+  formId: string;
+  validatorUserId: string;
+  validatorName: string;
+}): Promise<StudentAffairsFormOperations | null> {
+  const db = await getDatabase();
+  const existing = await getStudentAffairsFormOperations(input.tenant, input.formId);
+  if (!existing || existing.phase !== "follow-up") return null;
+  if (getHandoffValidationStatus(existing) === "validated") return existing;
+
+  const now = new Date().toISOString();
+  const document: StudentAffairsFormOperations = {
+    ...existing,
+    handoffValidationStatus: "validated",
+    handoffValidatedAt: now,
+    handoffValidatedByUserId: input.validatorUserId,
+    handoffValidatedByName: input.validatorName,
+    updatedAt: now,
+  };
+
+  await db.collection<StudentAffairsFormOperations>(COLLECTION).updateOne(
+    { tenant: input.tenant, formId: input.formId },
+    { $set: document }
   );
 
   return document;
@@ -91,6 +122,10 @@ export async function reopenStudentAffairsOnSitePhase(
         onSiteClosedByUserId: "",
         onSiteClosedByName: "",
         handoffReport: "",
+        handoffValidationStatus: "",
+        handoffValidatedAt: "",
+        handoffValidatedByUserId: "",
+        handoffValidatedByName: "",
       },
     },
     { upsert: true }

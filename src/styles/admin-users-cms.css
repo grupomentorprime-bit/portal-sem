@@ -1,0 +1,197 @@
+/* Usuarios CMS — layout operativo (equipo / invitar / actividad) */
+
+.users-cms-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.users-cms-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.users-cms-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-soft);
+}
+
+.users-cms-tab {
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.users-cms-tab:hover {
+  color: var(--color-foreground);
+  background: color-mix(in srgb, var(--color-background) 88%, var(--color-primary));
+}
+
+.users-cms-tab--active {
+  color: var(--color-foreground);
+  background: var(--color-background);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.users-cms-tab-badge {
+  margin-left: 0.35rem;
+  display: inline-flex;
+  min-width: 1.125rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  padding: 0 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.users-cms-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.users-cms-controls {
+  display: grid;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .users-cms-controls {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+  }
+}
+
+.users-cms-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: 0.45rem 0.75rem;
+}
+
+.users-cms-select {
+  border-radius: 0.625rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+  color: var(--color-foreground);
+}
+
+.users-cms-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.users-cms-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.users-cms-stat strong {
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.users-cms-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.users-cms-filter-chip {
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.users-cms-filter-chip:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  color: var(--color-foreground);
+}
+
+.users-cms-filter-chip--active {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-background));
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.users-cms-grid {
+  display: grid;
+  gap: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .users-cms-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .users-cms-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.users-cms-invite-layout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .users-cms-invite-layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: start;
+  }
+}
+
+.users-cms-pending-card {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: 1rem;
+}
+
+.users-cms-link-muted {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.users-cms-link-muted:hover {
+  color: var(--color-primary);
+}

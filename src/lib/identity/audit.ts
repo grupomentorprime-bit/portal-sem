@@ -40,3 +40,25 @@ export async function listAuditByTenant(
     .limit(limit)
     .toArray();
 }
+
+/** Eventos donde el usuario fue actor o fue afectado (cambios de rol, acceso, etc.). */
+export async function listAuditForMember(
+  tenantId: string,
+  input: { userId: string; membershipId: string },
+  limit = 40
+): Promise<IdentityAuditEntry[]> {
+  const db = await getDatabase();
+  return db
+    .collection<IdentityAuditEntry>("identity_audit")
+    .find({
+      tenantId,
+      $or: [
+        { userId: input.userId },
+        { "metadata.targetUserId": input.userId },
+        { entity: "membership", entityId: input.membershipId },
+      ],
+    })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .toArray();
+}

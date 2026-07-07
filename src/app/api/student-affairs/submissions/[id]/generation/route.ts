@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
 import {
   getFormSubmissionById,
@@ -33,7 +34,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Acceso denegado." }, { status: 403 });
     }
 
-    if (!canReclassifyStudentAffairsGeneration(ctx)) {
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
+    if (!canReclassifyStudentAffairsGeneration(ctx, roleCodes)) {
       return NextResponse.json(
         { ok: false, error: "Sin permiso para cambiar la generación." },
         { status: 403 }

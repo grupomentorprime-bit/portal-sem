@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import {
   deleteFormSubmission,
   getFormSubmissionById,
@@ -33,7 +34,8 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Acceso denegado." }, { status: 403 });
     }
 
-    if (!canDeleteStudentAffairsSubmission(ctx)) {
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
+    if (!canDeleteStudentAffairsSubmission(ctx, roleCodes)) {
       return NextResponse.json(
         { ok: false, error: "Solo un administrador puede eliminar registros." },
         { status: 403 }

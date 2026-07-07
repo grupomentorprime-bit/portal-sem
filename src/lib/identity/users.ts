@@ -187,3 +187,16 @@ export async function markUserAsSystemAccount(userId: string): Promise<void> {
     { $set: { isSystemAccount: true, updatedAt: new Date().toISOString() } }
   );
 }
+
+export async function updateUserStatus(
+  userId: string,
+  status: IdentityUser["status"]
+): Promise<IdentityUser | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  await db.collection<IdentityUser>("identity_users").updateOne(
+    { _id: userId },
+    { $set: { status, updatedAt: now } }
+  );
+  return findUserById(userId);
+}

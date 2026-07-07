@@ -3,26 +3,42 @@ import { ObjectId, type Document, type UpdateFilter } from "mongodb";
 import { requireAuth } from "@/core/identity";
 import { getFormSubmissionById } from "@/lib/experience/forms/repository";
 import { getDatabase } from "@/lib/mongodb";
-import { isValidEmail } from "@/lib/validation/identity";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import {
   assertSubmissionInStudentAffairsScope,
   canAccessStudentAffairsPanel,
 } from "@/lib/student-affairs/scope";
-import { assertCanManageSubmissionInFollowUp } from "@/lib/student-affairs/follow-up-guards";
-import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
-import type { ExperienceFormSubmission } from "@/types/experience-forms";
+import {
+  assertCanManageSubmissionInFollowUp,
+  assertSubmissionHasCompleteContactInfo,
+} from "@/lib/student-affairs/follow-up-guards";
+import { buildParticipantDropoutFields, validateDropoutNotes } from "@/lib/student-affairs/participant-closure";
+import { PARTICIPANT_CLOSURE_REASONS } from "@/types/experience-forms";
+import type { ExperienceFormSubmission, ParticipantClosureReason } from "@/types/experience-forms";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function POST(request: Request, { params }: RouteParams) {
   try {
     const ctx = await requireAuth();
     if (ctx instanceof NextResponse) return ctx;
 
     if (!canAccessStudentAffairsPanel(ctx)) {
       return NextResponse.json({ ok: false, error: "Acceso denegado." }, { status: 403 });
+    }
+
+    if (
+      !ctx.compatMode &&
+      !ctx.permissions.includes("student-affairs.checkin") &&
+      !ctx.permissions.includes("experience.forms.manage") &&
+      !ctx.permissions.includes("student-affairs.manage")
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "Sin permiso para gestionar asistencia." },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;
@@ -45,23 +61,27 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: followUpGate.error }, { status: followUpGate.status });
     }
 
-    const body = (await request.json()) as { email?: string; phone?: string };
-    const update: Record<string, string> = {};
-
-    if (body.email !== undefined) {
-      const email = body.email.trim().toLowerCase();
-      if (email && !isValidEmail(email)) {
-        return NextResponse.json({ ok: false, error: "Correo inválido." }, { status: 400 });
-      }
-      update["data.email"] = email;
+    const contactGate = assertSubmissionHasCompleteContactInfo(existing);
+    if (!contactGate.ok) {
+      return NextResponse.json({ ok: false, error: contactGate.error }, { status: contactGate.status });
     }
 
-    if (body.phone !== undefined) {
-      update["data.phone"] = body.phone.trim();
+    const body = (await request.json()) as { reason?: ParticipantClosureReason; notes?: string };
+    const reason = body.reason;
+    if (!reason || !PARTICIPANT_CLOSURE_REASONS.includes(reason)) {
+      return NextResponse.json({ ok: false, error: "Motivo de cierre inválido." }, { status: 400 });
     }
 
-    if (!Object.keys(update).length) {
-      return NextResponse.json({ ok: false, error: "Sin datos para actualizar." }, { status: 400 });
+    const validatedNotes = validateDropoutNotes(body.notes ?? "");
+    if (!validatedNotes.ok) {
+      return NextResponse.json({ ok: false, error: validatedNotes.error }, { status: 400 });
+    }
+
+    if (existing.absenceReview?.closureReason === "dropout") {
+      return NextResponse.json(
+        { ok: false, error: "Este participante ya está marcado como desertor." },
+        { status: 409 }
+      );
     }
 
     let objectId: ObjectId;
@@ -74,12 +94,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const db = await getDatabase();
     const result = await db.collection("experience_form_submissions").findOneAndUpdate(
       { _id: objectId, tenant: ctx.tenantId },
-      { $set: update } as UpdateFilter<Document>,
+      {
+        $set: buildParticipantDropoutFields({
+          operatorName: ctx.user.displayName,
+          notes: validatedNotes.normalized,
+        }),
+      } as unknown as UpdateFilter<Document>,
       { returnDocument: "after" }
     );
 
     if (!result) {
-      return NextResponse.json({ ok: false, error: "No se pudo actualizar." }, { status: 404 });
+      return NextResponse.json({ ok: false, error: "No se pudo cerrar el expediente." }, { status: 500 });
     }
 
     const doc = result as unknown as ExperienceFormSubmission & { _id: ObjectId };

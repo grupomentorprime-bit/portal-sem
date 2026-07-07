@@ -40,6 +40,8 @@ export function absenceContactOutcomeLabel(
       return "No contesta";
     case "invalid-number":
       return "Número inválido";
+    case "dropout":
+      return "Alumno desertor / baja institucional";
     case "other":
       return "Otro";
   }

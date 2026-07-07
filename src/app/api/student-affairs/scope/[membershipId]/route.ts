@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
 import { writeAudit } from "@/lib/identity/audit";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import { findMembershipById, updateMembershipStudentAffairsScope } from "@/lib/identity/memberships";
 import {
   ensureTenantRoles,
@@ -29,7 +30,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     const ctx = await requireAuth();
     if (ctx instanceof NextResponse) return ctx;
 
-    if (!canManageStudentAffairsScope(ctx)) {
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
+    if (!canManageStudentAffairsScope(ctx, roleCodes)) {
       return NextResponse.json({ ok: false, error: "Acceso denegado." }, { status: 403 });
     }
 

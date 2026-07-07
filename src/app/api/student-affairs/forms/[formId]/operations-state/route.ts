@@ -3,41 +3,36 @@ import { requireAuth } from "@/core/identity";
 import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
 import { listFormSubmissions } from "@/lib/experience/forms/repository";
 import { getConvocatoriaRoster } from "@/lib/experience/forms/roster";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import { buildStudentAffairsHandoffReport } from "@/lib/student-affairs/build-handoff-report";
+import { getHandoffValidationStatus } from "@/lib/student-affairs/follow-up-access";
 import {
   closeStudentAffairsOnSitePhase,
   getStudentAffairsFormOperations,
   reopenStudentAffairsOnSitePhase,
+  validateStudentAffairsHandoffReport,
 } from "@/lib/student-affairs/operations-state";
-import {
-  filterRosterStudentsForStudentAffairs,
-} from "@/lib/student-affairs/roster-pending";
+import { filterRosterStudentsForStudentAffairs } from "@/lib/student-affairs/roster-pending";
 import {
   canAccessFormInStudentAffairs,
   canAccessStudentAffairsPanel,
+  canReopenStudentAffairsJornada,
+  canValidateStudentAffairsHandoff,
   filterSubmissionsForStudentAffairs,
-  hasStudentAffairsFullAccess,
+  isStudentAffairsOperatorProfile,
   resolveStudentAffairsScope,
 } from "@/lib/student-affairs/scope";
-import type { AuthContext } from "@/types/identity";
 
 interface RouteContext {
   params: Promise<{ formId: string }>;
 }
 
-function canCloseOnSitePhase(ctx: AuthContext): boolean {
+function canCloseOnSitePhase(ctx: import("@/types/identity").AuthContext): boolean {
   if (ctx.compatMode) return true;
   return (
     ctx.permissions.includes("student-affairs.checkin") ||
     ctx.permissions.includes("student-affairs.manage") ||
     ctx.permissions.includes("experience.forms.manage")
-  );
-}
-
-function canReopenOnSitePhase(ctx: AuthContext): boolean {
-  if (ctx.compatMode) return true;
-  return (
-    hasStudentAffairsFullAccess(ctx) || ctx.permissions.includes("student-affairs.manage")
   );
 }
 
@@ -55,15 +50,21 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json({ ok: false, error: "Formulario no asignado." }, { status: 403 });
     }
 
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
     const operations = await getStudentAffairsFormOperations(ctx.tenantId, formId);
+    const handoffValidationStatus = getHandoffValidationStatus(operations);
 
     return NextResponse.json({
       ok: true,
       phase: operations?.phase ?? "on-site",
       operations,
+      handoffValidationStatus,
       permissions: {
         canCloseOnSite: canCloseOnSitePhase(ctx),
-        canReopenOnSite: canReopenOnSitePhase(ctx),
+        canReopenOnSite: canReopenStudentAffairsJornada(ctx, roleCodes),
+        canValidateHandoff: canValidateStudentAffairsHandoff(ctx, roleCodes),
+        isStudentAffairsOperator: isStudentAffairsOperatorProfile(roleCodes),
+        followUpLocksAttendees: handoffValidationStatus === "validated",
       },
     });
   } catch (error) {
@@ -86,6 +87,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ ok: false, error: "Formulario no asignado." }, { status: 403 });
     }
 
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
     const body = (await request.json()) as { action?: string };
     const action = body.action;
 
@@ -126,10 +128,44 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ ok: true, operations, report });
     }
 
-    if (action === "reopen-on-site") {
-      if (!canReopenOnSitePhase(ctx)) {
+    if (action === "validate-handoff") {
+      if (!canValidateStudentAffairsHandoff(ctx, roleCodes)) {
         return NextResponse.json(
-          { ok: false, error: "Sin permiso para reabrir la jornada presencial." },
+          { ok: false, error: "Sin permiso para validar el informe." },
+          { status: 403 }
+        );
+      }
+
+      const existing = await getStudentAffairsFormOperations(ctx.tenantId, formId);
+      if (!existing || existing.phase !== "follow-up") {
+        return NextResponse.json(
+          { ok: false, error: "No hay informe pendiente de validación." },
+          { status: 409 }
+        );
+      }
+
+      if (getHandoffValidationStatus(existing) === "validated") {
+        return NextResponse.json({ ok: false, error: "El informe ya fue validado." }, { status: 409 });
+      }
+
+      const operations = await validateStudentAffairsHandoffReport({
+        tenant: ctx.tenantId,
+        formId,
+        validatorUserId: ctx.user._id,
+        validatorName: ctx.user.displayName,
+      });
+
+      if (!operations) {
+        return NextResponse.json({ ok: false, error: "No se pudo validar el informe." }, { status: 500 });
+      }
+
+      return NextResponse.json({ ok: true, operations });
+    }
+
+    if (action === "reopen-on-site") {
+      if (!canReopenStudentAffairsJornada(ctx, roleCodes)) {
+        return NextResponse.json(
+          { ok: false, error: "Solo un encargado de calidad puede reabrir la jornada." },
           { status: 403 }
         );
       }

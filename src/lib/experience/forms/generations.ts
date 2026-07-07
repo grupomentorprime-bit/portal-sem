@@ -79,6 +79,39 @@ export function formatGenerationDisplay(value: unknown): string {
   return GENERATION_LABELS[canonical] ?? raw;
 }
 
+/** Código corto de generación para informes y tablas (p. ej. G-2023). */
+export function formatGenerationCode(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "—";
+
+  const canonical = normalizeGenerationValue(raw);
+  if (canonical === "staff") return "Equipo";
+  if (canonical === "other") return "Otros";
+  if (canonical && GENERATION_LABELS[canonical]) return canonical;
+
+  const codeInRaw = raw.match(/\bG-(\d{4})\b/i);
+  if (codeInRaw) return `G-${codeInRaw[1]}`;
+
+  const yearOnly = raw.match(/\b(20\d{2})\b/);
+  if (yearOnly) return `G-${yearOnly[1]}`;
+
+  for (const [code, label] of Object.entries(GENERATION_LABELS)) {
+    if (raw.toLowerCase() === label.toLowerCase()) return code;
+    const codeInLabel = label.match(/\bG-(\d{4})\b/);
+    if (codeInLabel && label.toLowerCase().includes(raw.toLowerCase()) && raw.length >= 6) {
+      return code;
+    }
+  }
+
+  if (canonical) {
+    const codeInCanonical = canonical.match(/\bG-(\d{4})\b/i);
+    if (codeInCanonical) return `G-${codeInCanonical[1]}`;
+    return canonical;
+  }
+
+  return raw;
+}
+
 export function isKnownGeneration(value: unknown): boolean {
   const canonical = normalizeGenerationValue(value);
   return Boolean(canonical && GENERATION_LABELS[canonical]);

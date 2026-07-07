@@ -13,6 +13,12 @@ const ACTION_LABELS: Record<string, string> = {
   "user.profile.update": "actualizó su perfil",
   "user.password.change": "cambió su contraseña",
   "membership.roles.update": "actualizó permisos de un usuario",
+  "membership.suspend": "suspendió el acceso de un usuario",
+  "membership.block": "bloqueó a un usuario",
+  "membership.archive": "archivó a un usuario del CMS",
+  "membership.restore": "restauró el acceso de un usuario",
+  "membership.remove": "eliminó a un usuario del CMS",
+  "user.invite.revoke": "canceló una invitación",
 };
 
 export function formatAuditMessage(
@@ -24,8 +30,15 @@ export function formatAuditMessage(
     if (entry.action === "user.invite" && entry.metadata?.email) {
       return `${actorName} invitó a ${entry.metadata.email as string}`;
     }
+    if (entry.action === "user.invite.revoke" && entry.metadata?.email) {
+      return `${actorName} canceló la invitación a ${entry.metadata.email as string}`;
+    }
     if (entry.action === "membership.roles.update" && entry.metadata?.role) {
       const role = getInstitutionalRoleLabel(String(entry.metadata.role));
+      return `${actorName} asignó el rol ${role}`;
+    }
+    if (entry.action === "membership.roles.update" && entry.metadata?.roleCode) {
+      const role = getInstitutionalRoleLabel(String(entry.metadata.roleCode));
       return `${actorName} asignó el rol ${role}`;
     }
     return `${actorName} ${verb}`;

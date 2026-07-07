@@ -16,6 +16,8 @@ interface InviteUserWizardProps {
   error?: string;
   onSuccess?: () => void;
   assignableRoles?: AssignableRole[];
+  /** Sin borde exterior cuando va dentro de otra tarjeta */
+  embedded?: boolean;
 }
 
 export function InviteUserWizard({
@@ -23,6 +25,7 @@ export function InviteUserWizard({
   error,
   onSuccess,
   assignableRoles = [],
+  embedded = false,
 }: InviteUserWizardProps) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
@@ -79,7 +82,7 @@ export function InviteUserWizard({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5">
+    <div className={cn(embedded ? "" : "rounded-xl border border-border bg-background p-5")}>
       {success ? (
         <div className="mb-4 rounded-xl border border-[var(--state-success-border)] bg-[var(--state-success-bg)] px-4 py-3 text-sm text-[var(--color-success)]">
           Invitación enviada. La persona recibirá un correo para crear su contraseña y acceder al CMS.

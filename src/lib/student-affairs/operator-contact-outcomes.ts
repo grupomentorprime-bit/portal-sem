@@ -1,37 +1,48 @@
 import type { AbsenceContactChannel, AbsenceContactOutcome } from "@/types/experience-forms";
 import type { OperatorManualContactChannel } from "@/lib/student-affairs/operator-contact-channels";
 
+const DROPOUT_OUTCOME_OPTION = {
+  value: "dropout" as const,
+  label: "Alumno desertor / baja institucional",
+};
+
+function withDropoutOption(
+  options: Array<{ value: AbsenceContactOutcome; label: string }>
+): Array<{ value: AbsenceContactOutcome; label: string }> {
+  return [...options, DROPOUT_OUTCOME_OPTION];
+}
+
 export function getContactOutcomeOptions(channel: OperatorManualContactChannel): Array<{
   value: AbsenceContactOutcome;
   label: string;
 }> {
   switch (channel) {
     case "phone":
-      return [
+      return withDropoutOption([
         { value: "reached", label: "Contacto exitoso" },
         { value: "no-answer", label: "No contesta" },
         { value: "invalid-number", label: "Número inválido" },
         { value: "other", label: "Otro" },
-      ];
+      ]);
     case "whatsapp":
-      return [
+      return withDropoutOption([
         { value: "reached", label: "Respondió por WhatsApp" },
         { value: "no-answer", label: "Sin respuesta en WhatsApp" },
         { value: "invalid-number", label: "Número sin WhatsApp / inválido" },
         { value: "other", label: "Otro" },
-      ];
+      ]);
     case "in-person":
-      return [
+      return withDropoutOption([
         { value: "reached", label: "Se conversó en persona" },
         { value: "no-answer", label: "No se encontró en el lugar" },
         { value: "other", label: "Otro" },
-      ];
+      ]);
     case "other":
-      return [
+      return withDropoutOption([
         { value: "reached", label: "Gestión exitosa" },
         { value: "no-answer", label: "No fue posible contactar" },
         { value: "other", label: "Otro" },
-      ];
+      ]);
   }
 }
 
@@ -53,6 +64,7 @@ export function isFailedContactOutcomeForChannel(
   channel: OperatorManualContactChannel,
   outcome: AbsenceContactOutcome
 ): boolean {
+  if (outcome === "dropout") return true;
   if (outcome === "reached") return false;
   if (outcome === "other") return false;
   if (outcome === "invalid-number") {
@@ -80,6 +92,8 @@ export function absenceContactOutcomeLabelForChannel(
       return "No contesta";
     case "invalid-number":
       return "Número inválido";
+    case "dropout":
+      return "Alumno desertor / baja institucional";
     case "other":
       return "Otro";
   }

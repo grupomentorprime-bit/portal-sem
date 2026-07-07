@@ -4,6 +4,7 @@ import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 import type { AuthContext, StudentAffairsScope } from "@/types/identity";
 import type { ExperienceFormSubmission } from "@/types/experience-forms";
+import { isStudentAffairsOperator } from "@/lib/admin/nav-access";
 
 export function submissionGenerationCode(data: Record<string, unknown>): string {
   return normalizeGenerationValue(data.generation ?? data.program);
@@ -36,7 +37,11 @@ export function canAccessStudentAffairsPanel(ctx: AuthContext): boolean {
   );
 }
 
-export function canManageStudentAffairsScope(ctx: AuthContext): boolean {
+export function canManageStudentAffairsScope(
+  ctx: AuthContext,
+  roleCodes: string[] = []
+): boolean {
+  if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
   if (ctx.compatMode) return true;
   return (
     hasStudentAffairsFullAccess(ctx) ||
@@ -46,18 +51,52 @@ export function canManageStudentAffairsScope(ctx: AuthContext): boolean {
 }
 
 /** Solo administradores del centro de formularios (p. ej. Director General). */
-export function canDeleteStudentAffairsSubmission(ctx: AuthContext): boolean {
+export function canDeleteStudentAffairsSubmission(
+  ctx: AuthContext,
+  roleCodes: string[] = []
+): boolean {
+  if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
   if (ctx.compatMode) return true;
   return ctx.permissions.includes("experience.forms.manage");
 }
 
-export function canReclassifyStudentAffairsGeneration(ctx: AuthContext): boolean {
+export function canReclassifyStudentAffairsGeneration(
+  ctx: AuthContext,
+  roleCodes: string[] = []
+): boolean {
+  if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
   if (ctx.compatMode) return true;
   return (
     ctx.permissions.includes("experience.forms.manage") ||
-    ctx.permissions.includes("student-affairs.manage") ||
-    ctx.permissions.includes("student-affairs.checkin")
+    ctx.permissions.includes("student-affairs.manage")
   );
+}
+
+/** Encargado de gestión: valida el informe de cierre en el sistema. */
+export function canValidateStudentAffairsHandoff(
+  ctx: AuthContext,
+  roleCodes: string[] = []
+): boolean {
+  if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
+  if (ctx.compatMode) return true;
+  return (
+    ctx.permissions.includes("experience.forms.manage") ||
+    ctx.permissions.includes("student-affairs.manage")
+  );
+}
+
+/** Encargado de calidad: único perfil que puede reabrir la jornada cerrada. */
+export function canReopenStudentAffairsJornada(
+  ctx: AuthContext,
+  roleCodes: string[] = []
+): boolean {
+  if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
+  if (ctx.compatMode) return true;
+  return ctx.permissions.includes("experience.forms.manage");
+}
+
+export function isStudentAffairsOperatorProfile(roleCodes: string[]): boolean {
+  return isStudentAffairsOperator(roleCodes);
 }
 
 export function resolveStudentAffairsScope(ctx: AuthContext): StudentAffairsScope | null {

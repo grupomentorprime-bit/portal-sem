@@ -6,6 +6,8 @@ import {
   canAccessStudentAffairsPanel,
 } from "@/lib/student-affairs/scope";
 import { getFormSubmissionById } from "@/lib/experience/forms/repository";
+import { assertCanManageSubmissionInFollowUp, assertSubmissionHasCompleteContactInfo } from "@/lib/student-affairs/follow-up-guards";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -40,6 +42,21 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     if (!assertSubmissionInStudentAffairsScope(ctx, existing)) {
       return NextResponse.json({ ok: false, error: "Respuesta fuera de su alcance." }, { status: 403 });
+    }
+
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
+    const followUpGate = await assertCanManageSubmissionInFollowUp({
+      ctx,
+      roleCodes,
+      submission: existing,
+    });
+    if (!followUpGate.ok) {
+      return NextResponse.json({ ok: false, error: followUpGate.error }, { status: followUpGate.status });
+    }
+
+    const contactGate = assertSubmissionHasCompleteContactInfo(existing);
+    if (!contactGate.ok) {
+      return NextResponse.json({ ok: false, error: contactGate.error }, { status: contactGate.status });
     }
 
     const body = (await request.json()) as { email?: string };

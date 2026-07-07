@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
 import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import {
   getFormSubmissionStats,
   listFormSubmissions,
@@ -19,6 +20,7 @@ import {
   canAccessFormInStudentAffairs,
   canAccessStudentAffairsPanel,
   canDeleteStudentAffairsSubmission,
+  canReclassifyStudentAffairsGeneration,
   filterSubmissionsForStudentAffairs,
   resolveStudentAffairsScope,
 } from "@/lib/student-affairs/scope";
@@ -126,12 +128,14 @@ export async function GET(request: Request, context: RouteContext) {
     const rosterStudents = roster?.students ?? [];
     const scopedRoster = filterRosterStudentsForStudentAffairs(rosterStudents, scope);
     const rosterPending = findRosterStudentsWithoutSubmission(scopedRoster, filtered);
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
 
     return NextResponse.json({
       ok: true,
       submissions: filtered,
       total: filtered.length,
-      canDeleteSubmissions: canDeleteStudentAffairsSubmission(ctx),
+      canDeleteSubmissions: canDeleteStudentAffairsSubmission(ctx, roleCodes),
+      canReclassifyGeneration: canReclassifyStudentAffairsGeneration(ctx, roleCodes),
       hasRoster: scopedRoster.length > 0,
       rosterPending,
     });

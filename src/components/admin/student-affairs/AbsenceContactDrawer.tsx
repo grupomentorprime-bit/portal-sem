@@ -18,6 +18,7 @@ import {
   defaultContactOutcomeForChannel,
   contactNotesPlaceholder,
 } from "@/lib/student-affairs/operator-contact-outcomes";
+import { isDropoutContactOutcome, validateDropoutNotes, DROPOUT_NOTES_MIN_LENGTH } from "@/lib/student-affairs/participant-closure";
 import {
   OPERATOR_CONTACT_CHANNEL_OPTIONS,
   type OperatorManualContactChannel,
@@ -107,6 +108,15 @@ export function AbsenceContactDrawer({
     setSaving(true);
     setError(null);
     try {
+      const trimmedNotes = notes.trim();
+      if (isDropoutContactOutcome(contactOutcome)) {
+        const validated = validateDropoutNotes(trimmedNotes);
+        if (!validated.ok) {
+          setError(validated.error);
+          setSaving(false);
+          return;
+        }
+      }
       const res = await fetch(
         `/api/student-affairs/submissions/${encodeURIComponent(submissionId)}/absence-contact`,
         {
@@ -114,7 +124,7 @@ export function AbsenceContactDrawer({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             channel,
-            notes: notes.trim(),
+            notes: trimmedNotes,
             phone,
             startJustificationDeadline: startDeadline,
             contactOutcome,
@@ -171,6 +181,12 @@ export function AbsenceContactDrawer({
             onChange={(event) => setStartDeadline(event.target.checked)}
             label="Informó plazo de 3 días para justificar (inicia conteo)"
           />
+        ) : isDropoutContactOutcome(contactOutcome) ? (
+          <p className="text-xs text-[var(--color-warning)]">
+            Al confirmar deserción, el expediente quedará cerrado como <strong>Desertor</strong> y
+            no seguirá en plazos de justificación. Antecedente mínimo: {DROPOUT_NOTES_MIN_LENGTH}{" "}
+            caracteres.
+          </p>
         ) : canStartDeadline && isFailedContactOutcomeForChannel(channel, contactOutcome) ? (
           <p className="text-xs text-muted">
             No se inicia plazo si no hubo contacto exitoso. Registre otro intento cuando logre

@@ -7,6 +7,11 @@ import { getFormSubmissionById } from "@/lib/experience/forms/repository";
 import { getDatabase } from "@/lib/mongodb";
 import { canSendJustificationRequest } from "@/lib/student-affairs/absence-categories";
 import { isFailedContactOutcomeForChannel } from "@/lib/student-affairs/operator-contact-outcomes";
+import {
+  buildParticipantDropoutFields,
+  isDropoutContactOutcome,
+  validateDropoutNotes,
+} from "@/lib/student-affairs/participant-closure";
 import type { OperatorManualContactChannel } from "@/lib/student-affairs/operator-contact-channels";
 import type {
   AbsenceContactChannel,
@@ -52,13 +57,25 @@ export async function recordAbsenceContact(input: {
     return {
       ok: false,
       reason: "notes-required",
-      error: "Indique el detalle del contacto (resultado, acuerdos, etc.).",
+      error: isDropoutContactOutcome(input.contactOutcome)
+        ? "Indique el antecedente de la deserción."
+        : "Indique el detalle del contacto (resultado, acuerdos, etc.).",
     };
+  }
+
+  let normalizedDropoutNotes: string | undefined;
+  if (isDropoutContactOutcome(input.contactOutcome)) {
+    const validated = validateDropoutNotes(notes ?? "");
+    if (!validated.ok) {
+      return { ok: false, reason: "notes-required", error: validated.error };
+    }
+    normalizedDropoutNotes = validated.normalized;
   }
 
   const shouldStartDeadline =
     Boolean(input.startJustificationDeadline) &&
     canSendJustificationRequest(existing) &&
+    !isDropoutContactOutcome(input.contactOutcome) &&
     !isFailedContactOutcomeForChannel(
       input.channel as OperatorManualContactChannel,
       input.contactOutcome ?? "reached"
@@ -102,6 +119,16 @@ export async function recordAbsenceContact(input: {
     if (input.email?.trim()) {
       (update.$set as Record<string, string>)["data.email"] = input.email.trim().toLowerCase();
     }
+  }
+
+  if (isDropoutContactOutcome(input.contactOutcome)) {
+    update.$set = {
+      ...(update.$set as Record<string, string> | undefined),
+      ...buildParticipantDropoutFields({
+        operatorName: input.operatorName,
+        notes: normalizedDropoutNotes,
+      }),
+    };
   }
 
   const result = await db.collection("experience_form_submissions").findOneAndUpdate(

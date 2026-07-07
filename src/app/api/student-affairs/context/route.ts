@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
+import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import { listExperienceForms } from "@/lib/experience/forms/repository";
 import { filterFormsForStudentAffairsPanel } from "@/lib/student-affairs/forms";
 import {
@@ -22,11 +23,12 @@ export async function GET() {
     const forms = scope
       ? allForms.filter((form) => scope.formIds.includes(form._id))
       : allForms;
+    const roleCodes = await resolveEffectiveRoleCodes(ctx);
 
     return NextResponse.json({
       ok: true,
       scope,
-      canManageScope: canManageStudentAffairsScope(ctx),
+      canManageScope: canManageStudentAffairsScope(ctx, roleCodes),
       forms: forms.map((form) => ({
         id: form._id,
         name: form.name,

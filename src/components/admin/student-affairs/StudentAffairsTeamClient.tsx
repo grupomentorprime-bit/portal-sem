@@ -1,16 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AlertBanner,
-  EmptyState,
-  LoadingState,
-  Section,
-} from "@/components/admin/kit";
+import { AlertBanner } from "@/components/admin/kit/states/AlertBanner";
+import { EmptyState } from "@/components/admin/kit/states/EmptyState";
+import { LoadingState } from "@/components/admin/kit/states/LoadingState";
+import { Section } from "@/components/admin/kit/layout/Section";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CONVOCATORIA_GENERATIONS } from "@/lib/experience/forms/generations";
+import { STUDENT_AFFAIRS_HOME_PATH } from "@/lib/admin/nav-access";
 import { ROLE_CODES } from "@/core/identity/roles/codes";
 import { rolesIncludeCode } from "@/core/identity/roles/helpers";
 import type { StudentAffairsScope } from "@/types/identity";
@@ -149,15 +148,15 @@ export function StudentAffairsTeamClient() {
   return (
     <AdminModulePage
       breadcrumbs={[
-        { label: "Inicio", href: "/admin" },
+        { label: "Inicio", href: STUDENT_AFFAIRS_HOME_PATH },
         { label: "Formularios" },
-        { label: "Operación", href: "/admin/portal/asuntos-estudiantiles" },
+        { label: "Operación", href: STUDENT_AFFAIRS_HOME_PATH },
         { label: "Equipo" },
       ]}
       title="Equipo y permisos"
       description="Defina qué formularios y generaciones puede gestionar cada persona de asuntos estudiantiles."
       actions={
-        <Button variant="outline" size="sm" href="/admin/portal/asuntos-estudiantiles">
+        <Button variant="outline" size="sm" href={STUDENT_AFFAIRS_HOME_PATH}>
           Volver a operación
         </Button>
       }

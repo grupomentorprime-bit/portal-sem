@@ -11,6 +11,7 @@ import {
   type ParticipantManageTarget,
 } from "@/components/admin/student-affairs/ParticipantManageDrawer";
 import { CloseJornadaHandoffDialog } from "@/components/admin/student-affairs/CloseJornadaHandoffDialog";
+import { ValidateHandoffDialog } from "@/components/admin/student-affairs/ValidateHandoffDialog";
 import { OperationsClosureRecord } from "@/components/admin/student-affairs/OperationsClosureRecord";
 import {
   AdminDataTable,
@@ -43,7 +44,7 @@ import type {
   ExperienceFormAbsenceReview,
   ExperienceFormSubmission,
 } from "@/types/experience-forms";
-import type { CohortRosterStat } from "@/lib/student-affairs/cohort-stats";
+import { CONFIRMED_NO_SHOW_LABEL, CONFIRMED_NO_SHOW_LABEL_SHORT, CONFIRMED_NO_SHOW_ROW_LABEL } from "@/lib/student-affairs/operations-labels";
 import {
   absenceCategoryLabel,
   canSendJustificationRequest,
@@ -53,6 +54,7 @@ import {
   pendingReviewContextLabel,
 } from "@/lib/student-affairs/absence-categories";
 import { downloadOperationsCsv } from "@/lib/student-affairs/export-operations-csv";
+import type { CohortRosterStat } from "@/lib/student-affairs/cohort-stats";
 import { formatAbsenceContactDate } from "@/lib/student-affairs/absence-contact-labels";
 import {
   getExcuseSubmissionDisplay,
@@ -64,6 +66,10 @@ import type {
   StudentAffairsFormOperations,
   StudentAffairsOperationsPhase,
 } from "@/types/student-affairs-operations";
+import {
+  getHandoffValidationStatus,
+  isSubmissionLockedForStudentAffairsOperator,
+} from "@/lib/student-affairs/follow-up-access";
 import { cn } from "@/lib/utils";
 
 interface SubmissionStats {
@@ -96,6 +102,7 @@ type AttendanceFilter =
   | "absence-pending-review-pre"
   | "absence-pending-review-post"
   | "absence-approved"
+  | "absence-dropout"
   | "checked-in"
   | "pending-checkin"
   | "roster-pending"
@@ -131,6 +138,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
   const [rosterSavingId, setRosterSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [canDeleteSubmissions, setCanDeleteSubmissions] = useState(false);
+  const [canReclassifyGeneration, setCanReclassifyGeneration] = useState(false);
   const [reviewSubmission, setReviewSubmission] = useState<ExperienceFormSubmission | null>(null);
   const [reclassifySubmission, setReclassifySubmission] =
     useState<ExperienceFormSubmission | null>(null);
@@ -149,11 +157,24 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
   const [operations, setOperations] = useState<StudentAffairsFormOperations | null>(null);
   const [canCloseOnSite, setCanCloseOnSite] = useState(false);
   const [canReopenOnSite, setCanReopenOnSite] = useState(false);
+  const [canValidateHandoff, setCanValidateHandoff] = useState(false);
+  const [isStudentAffairsOperator, setIsStudentAffairsOperator] = useState(false);
   const [operationsSaving, setOperationsSaving] = useState(false);
   const [closeJornadaOpen, setCloseJornadaOpen] = useState(false);
+  const [validateHandoffOpen, setValidateHandoffOpen] = useState(false);
   const { confirm, dialog } = useConfirmDialog();
 
   const onSiteClosed = operationsPhase === "follow-up";
+  const handoffValidationStatus = getHandoffValidationStatus(operations);
+  const handoffValidated = handoffValidationStatus === "validated";
+  const handoffPendingValidation = handoffValidationStatus === "pending";
+
+  const isSubmissionFollowUpLocked = useCallback(
+    (submission: ExperienceFormSubmission) =>
+      isStudentAffairsOperator &&
+      isSubmissionLockedForStudentAffairsOperator(submission, operations),
+    [isStudentAffairsOperator, operations]
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -180,12 +201,15 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
       setHasRoster(Boolean(statsData.hasRoster ?? subsData.hasRoster));
       setRosterPending(subsData.rosterPending ?? statsData.rosterPending ?? []);
       setCanDeleteSubmissions(Boolean(subsData.canDeleteSubmissions));
+      setCanReclassifyGeneration(Boolean(subsData.canReclassifyGeneration));
 
       if (opsData.ok) {
         setOperationsPhase(opsData.phase ?? "on-site");
         setOperations(opsData.operations ?? null);
         setCanCloseOnSite(Boolean(opsData.permissions?.canCloseOnSite));
         setCanReopenOnSite(Boolean(opsData.permissions?.canReopenOnSite));
+        setCanValidateHandoff(Boolean(opsData.permissions?.canValidateHandoff));
+        setIsStudentAffairsOperator(Boolean(opsData.permissions?.isStudentAffairsOperator));
       }
     } catch {
       setError("Error de red al cargar respuestas.");
@@ -598,6 +622,11 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     return fromStats ?? countAbsenceCategories(submissions);
   }, [stats, submissions]);
 
+  const dropoutCount = useMemo(
+    () => submissions.filter((s) => classifyAbsenceSubmission(s) === "dropout").length,
+    [submissions]
+  );
+
   const isSearchMode = search.trim().length > 0;
 
   const filtered = useMemo(() => {
@@ -626,6 +655,9 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
         }
         if (filter === "absence-approved") {
           if (classifyAbsenceSubmission(submission) !== "approved") return false;
+        }
+        if (filter === "absence-dropout") {
+          if (classifyAbsenceSubmission(submission) !== "dropout") return false;
         }
         if (filter === "checked-in" && !submission.dayCheckIn?.present) return false;
         if (
@@ -704,7 +736,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     () =>
       [
         {
-          label: "Sin asistir",
+          label: CONFIRMED_NO_SHOW_LABEL,
           value: pendingArrival,
           filter: "pending-checkin" as const,
           dotClass: "bg-[var(--color-warning)]",
@@ -765,7 +797,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
       const pdf = await import("@/lib/student-affairs/download-handoff-report-pdf");
       const report = pdf.resolveHandoffReportForDownload(data.operations ?? null, data.report);
       if (report) {
-        pdf.downloadHandoffReportPdf({ formName, formId, report });
+        await pdf.downloadHandoffReportPdf({ formName, formId, report });
       }
     } catch {
       setError("Error de red al cerrar la jornada.");
@@ -778,16 +810,30 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     const { downloadHandoffReportPdf, resolveHandoffReportForDownload } = await import(
       "@/lib/student-affairs/download-handoff-report-pdf"
     );
-    const report = resolveHandoffReportForDownload(operations);
+    let report = resolveHandoffReportForDownload(operations);
     if (!report) return;
-    downloadHandoffReportPdf({ formName, formId, report });
+
+    if (!report.nominations) {
+      const { buildHandoffNominations } = await import(
+        "@/lib/student-affairs/build-handoff-nominations"
+      );
+      report = {
+        ...report,
+        nominations: buildHandoffNominations({
+          submissions,
+          rosterStudents: rosterPending,
+        }),
+      };
+    }
+
+    await downloadHandoffReportPdf({ formName, formId, report });
   };
 
   const handleReopenOnSitePhase = async () => {
     const confirmed = await confirm({
       title: "Reabrir jornada presencial",
       description:
-        "Volverá a habilitarse el registro de asistencia presencial. Use solo si aún hay operación en terreno.",
+        "Solo el encargado de calidad puede reabrir la jornada. Volverá a habilitarse el registro de asistencia presencial.",
       confirmLabel: "Reabrir jornada",
     });
     if (!confirmed) return;
@@ -817,6 +863,32 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     }
   };
 
+  const submitValidateHandoff = async () => {
+    setOperationsSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/student-affairs/forms/${encodeURIComponent(formId)}/operations-state`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "validate-handoff" }),
+        }
+      );
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "No se pudo validar el informe.");
+        return;
+      }
+      setOperations(data.operations ?? null);
+      setValidateHandoffOpen(false);
+    } catch {
+      setError("Error de red al validar el informe.");
+    } finally {
+      setOperationsSaving(false);
+    }
+  };
+
   const publicFormHref = publicFormUrl(formId);
 
   const closureRecord = useMemo(() => {
@@ -824,8 +896,11 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     return {
       closedByName: report?.closedByName ?? operations?.onSiteClosedByName,
       closedAt: report?.closedAt ?? operations?.onSiteClosedAt ?? report?.generatedAt,
+      validatedByName: operations?.handoffValidatedByName,
+      validatedAt: operations?.handoffValidatedAt,
+      validationStatus: handoffValidationStatus,
     };
-  }, [operations]);
+  }, [operations, handoffValidationStatus]);
 
   const copyFormLink = async () => {
     const url =
@@ -901,7 +976,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
           formatSubmissionPhone(data.phone),
           String(data.email ?? ""),
           data.attendance === "yes" ? "Confirmó" : data.attendance === "no" ? "Inasistencia" : "—",
-          category ? absenceCategoryLabel(category) : submission.dayCheckIn?.present ? "Asistió" : "Sin asistir",
+          category ? absenceCategoryLabel(category) : submission.dayCheckIn?.present ? "Asistió" : CONFIRMED_NO_SHOW_ROW_LABEL,
           reviewContext ? pendingReviewContextLabel(reviewContext) : "",
         ];
         if (showJustificationColumns) {
@@ -1141,7 +1216,13 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     const isReclassifying = generationSavingId === submissionId;
     const participantName = String(submission.data.name ?? submission.data.fullName ?? "—");
     const busy = isSaving || isDeleting || isReclassifying;
-    const action = getSubmissionRowAction(submission, participantName, onSiteClosed);
+    const followUpLocked = isSubmissionFollowUpLocked(submission);
+    const action = getSubmissionRowAction(
+      submission,
+      participantName,
+      onSiteClosed,
+      followUpLocked
+    );
 
     return (
       <RowActionButton
@@ -1162,10 +1243,19 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
         <div className="space-y-3 rounded-xl border border-[color-mix(in_srgb,var(--color-success)_35%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-success)_5%,white)] p-3 sm:p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
-              <p className="font-semibold text-foreground">Jornada presencial cerrada</p>
+              <p className="font-semibold text-foreground">
+                {handoffValidated
+                  ? "Informe validado — seguimiento Asuntos Estudiantiles"
+                  : handoffPendingValidation
+                    ? "Informe pendiente de validación"
+                    : "Jornada presencial cerrada"}
+              </p>
               <p className="text-sm text-muted">
-                Asuntos Estudiantiles continúa con revisión de excusas y seguimiento a quienes no
-                asistieron ni completaron el formulario.
+                {handoffValidated
+                  ? "El equipo de Asuntos Estudiantiles gestiona inasistencias, excusas y quienes no asistieron o no completaron el formulario. Los que asistieron quedaron bloqueados para ese perfil."
+                  : handoffPendingValidation
+                    ? "El encargado de gestión debe validar el informe en el sistema. Mientras tanto, Asuntos Estudiantiles puede preparar el seguimiento de quienes no asistieron."
+                    : "Asuntos Estudiantiles continúa con revisión de excusas y seguimiento a quienes no asistieron ni completaron el formulario."}
               </p>
               {operations?.handoffReport ? (
                 <p className="text-xs text-muted">
@@ -1187,6 +1277,17 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                   Descargar PDF
                 </Button>
               ) : null}
+              {handoffPendingValidation && canValidateHandoff ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  loading={operationsSaving}
+                  disabled={operationsSaving}
+                  onClick={() => setValidateHandoffOpen(true)}
+                >
+                  Validar informe
+                </Button>
+              ) : null}
               {canReopenOnSite ? (
                 <Button
                   type="button"
@@ -1205,6 +1306,9 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
           <OperationsClosureRecord
             closedByName={closureRecord.closedByName}
             closedAt={closureRecord.closedAt}
+            validatedByName={closureRecord.validatedByName}
+            validatedAt={closureRecord.validatedAt}
+            validationStatus={closureRecord.validationStatus}
           />
         </div>
       ) : null}
@@ -1238,7 +1342,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                   <MetricCell label="Confirmaron" value={stats.attending} tone="success" />
                   <MetricCell label="Inasistencias" value={stats.notAttending} tone="warning" />
                   <MetricCell label="Asistieron" value={checkedInCount} tone="info" />
-                  <MetricCell label="Sin asistir" value={pendingArrival} tone="pending" />
+                  <MetricCell label={CONFIRMED_NO_SHOW_LABEL} value={pendingArrival} tone="pending" />
                 </div>
                 {expectedAttendees > 0 ? (
                   <div className="student-affairs-jornada__progress-inline">
@@ -1307,7 +1411,8 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                 />
                 <AttendanceFilterChip
                   active={filter === "pending-checkin"}
-                  label="Sin asistir"
+                  label={CONFIRMED_NO_SHOW_LABEL_SHORT}
+                  title={CONFIRMED_NO_SHOW_LABEL}
                   count={pendingArrival}
                   onClick={() => setFilter("pending-checkin")}
                 />
@@ -1351,6 +1456,14 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                     label="Por revisar"
                     count={absenceCounts.pendingReview}
                     onClick={() => setFilter("absence-pending-review")}
+                  />
+                ) : null}
+                {dropoutCount > 0 ? (
+                  <AttendanceFilterChip
+                    active={filter === "absence-dropout"}
+                    label="Desertores"
+                    count={dropoutCount}
+                    onClick={() => setFilter("absence-dropout")}
                   />
                 ) : null}
                 {(absenceCounts.approved ?? 0) > 0 ? (
@@ -1827,6 +1940,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
             formId={formId}
             target={manageTarget}
             canDeleteSubmissions={canDeleteSubmissions}
+            canReclassifyGeneration={canReclassifyGeneration}
             isSaving={
               manageTarget.kind === "roster"
                 ? rosterSavingId === manageTarget.student.id
@@ -1836,6 +1950,11 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
             }
             onClose={() => setManageTarget(null)}
             onSiteClosed={onSiteClosed}
+            followUpLocked={
+              manageTarget.kind === "submission"
+                ? isSubmissionFollowUpLocked(manageTarget.submission)
+                : false
+            }
             onCheckIn={(present) => {
               if (manageTarget.kind !== "submission" || !manageTarget.submission._id) return;
               void handleCheckIn(manageTarget.submission._id, present);
@@ -1965,6 +2084,15 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
         onConfirm={() => void submitCloseOnSitePhase()}
       />
 
+      <ValidateHandoffDialog
+        open={validateHandoffOpen}
+        loading={operationsSaving}
+        report={operations?.handoffReport ?? null}
+        closedByName={closureRecord.closedByName}
+        onClose={() => setValidateHandoffOpen(false)}
+        onConfirm={() => void submitValidateHandoff()}
+      />
+
       {dialog}
     </div>
   );
@@ -2043,16 +2171,19 @@ function AttendanceFilterChip({
   label,
   count,
   onClick,
+  title,
 }: {
   active: boolean;
   label: string;
   count: number;
   onClick: () => void;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
         active
@@ -2093,8 +2224,17 @@ type RowActionPriority = "high" | "normal" | "low";
 function getSubmissionRowAction(
   submission: ExperienceFormSubmission,
   participantName: string,
-  onSiteClosed = false
+  onSiteClosed = false,
+  followUpLocked = false
 ): { label: string; ariaLabel: string; priority: RowActionPriority } {
+  if (followUpLocked) {
+    return {
+      label: "Ver detalle",
+      ariaLabel: `Ver detalle de ${participantName} (bloqueado)`,
+      priority: "low",
+    };
+  }
+
   const rsvpYes = submission.data.attendance === "yes";
   const checkedIn = Boolean(submission.dayCheckIn?.present);
 
@@ -2150,6 +2290,12 @@ function getSubmissionRowAction(
       return {
         label: "Ver detalle",
         ariaLabel: `Ver detalle de ${participantName}`,
+        priority: "low",
+      };
+    case "dropout":
+      return {
+        label: "Ver expediente",
+        ariaLabel: `Ver expediente de ${participantName}`,
         priority: "low",
       };
     default:
@@ -2297,6 +2443,16 @@ function AttendanceStatusBadge({
         tone="active"
         label={absenceCategoryLabel("approved")}
         className="student-affairs-jornada__status-approved"
+      />
+    );
+  }
+  if (category === "dropout") {
+    return (
+      <StatusBadge
+        tone="neutral"
+        label="Desertor"
+        className="student-affairs-jornada__status-dropout"
+        title={submission.absenceReview?.closureNotes?.trim() || undefined}
       />
     );
   }

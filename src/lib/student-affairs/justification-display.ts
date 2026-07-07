@@ -76,6 +76,15 @@ export function getExcuseSubmissionDisplay(
     };
   }
 
+  if (category === "dropout") {
+    const note = submission.absenceReview?.closureNotes?.trim();
+    return {
+      label: "Desertor",
+      tone: "neutral",
+      title: note ? `Baja institucional: ${note}` : "Baja institucional confirmada.",
+    };
+  }
+
   if (category === "approved") {
     return {
       label: "Justificó",
@@ -150,6 +159,14 @@ export function getAbsenceValidationDisplay(
       label: "Pendiente",
       tone: "info",
       title: "Falta revisión del equipo (aprobar o rechazar)",
+    };
+  }
+
+  if (category === "dropout") {
+    return {
+      label: "Desertor",
+      tone: "neutral",
+      title: submission.absenceReview?.closureNotes?.trim() || "Baja institucional",
     };
   }
 

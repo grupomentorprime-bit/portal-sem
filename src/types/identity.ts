@@ -3,7 +3,7 @@
 export const USER_STATUSES = ["active", "suspended", "pending"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
-export const MEMBERSHIP_STATUSES = ["active", "invited", "suspended"] as const;
+export const MEMBERSHIP_STATUSES = ["active", "invited", "suspended", "archived"] as const;
 export type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
 
 export const IDENTITY_PROVIDERS = [

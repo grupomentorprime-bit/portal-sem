@@ -27,7 +27,7 @@ export async function listMembershipsByTenant(
   const db = await getDatabase();
   return db
     .collection<IdentityMembership>("identity_memberships")
-    .find({ tenantId })
+    .find({ tenantId, status: { $in: ["active", "suspended", "archived"] } })
     .sort({ joinedAt: -1 })
     .toArray();
 }
@@ -125,4 +125,25 @@ export async function clearMembershipPermissionOverrides(
   membershipId: string
 ): Promise<IdentityMembership | null> {
   return updateMembershipPermissionOverrides(membershipId, null);
+}
+
+export async function updateMembershipStatus(
+  membershipId: string,
+  status: IdentityMembership["status"]
+): Promise<IdentityMembership | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  await db.collection<IdentityMembership>("identity_memberships").updateOne(
+    { _id: membershipId },
+    { $set: { status, updatedAt: now } }
+  );
+  return findMembershipById(membershipId);
+}
+
+export async function deleteMembership(membershipId: string): Promise<boolean> {
+  const db = await getDatabase();
+  const result = await db.collection<IdentityMembership>("identity_memberships").deleteOne({
+    _id: membershipId,
+  });
+  return result.deletedCount > 0;
 }

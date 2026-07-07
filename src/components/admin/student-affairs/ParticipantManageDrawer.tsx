@@ -18,6 +18,7 @@ import {
   absenceContactOutcomeLabel,
   formatAbsenceContactDate,
 } from "@/lib/student-affairs/absence-contact-labels";
+import { CONFIRMED_NO_SHOW_ROW_LABEL } from "@/lib/student-affairs/operations-labels";
 import { formatJustificationDeadline } from "@/lib/experience/forms/absence-justification-deadline";
 import {
   formatSubmissionPhone,
@@ -28,6 +29,11 @@ import {
   OPERATOR_CONTACT_CHANNEL_OPTIONS,
   type OperatorManualContactChannel,
 } from "@/lib/student-affairs/operator-contact-channels";
+import {
+  DropoutClosureForm,
+  DropoutRecordCard,
+} from "@/components/admin/student-affairs/DropoutClosureSection";
+import { isDropoutContactOutcome, validateDropoutNotes, DROPOUT_NOTES_MIN_LENGTH } from "@/lib/student-affairs/participant-closure";
 import {
   contactNotesPlaceholder,
   defaultContactOutcomeForChannel,
@@ -40,6 +46,11 @@ import type {
   AbsenceContactOutcome,
   ExperienceFormSubmission,
 } from "@/types/experience-forms";
+import {
+  CONTACT_INFO_REQUIRED_MESSAGE,
+  rosterStudentHasCompleteContactInfo,
+  submissionNeedsContactInfoUpdate,
+} from "@/lib/student-affairs/contact-info";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 
 export type ParticipantManageTarget =
@@ -50,8 +61,10 @@ interface ParticipantManageDrawerProps {
   formId: string;
   target: ParticipantManageTarget;
   canDeleteSubmissions: boolean;
+  canReclassifyGeneration: boolean;
   isSaving: boolean;
   onSiteClosed?: boolean;
+  followUpLocked?: boolean;
   onClose: () => void;
   onCheckIn: (present: boolean) => void;
   onMarkAbsent: () => void;
@@ -113,6 +126,14 @@ function ParticipantSummary({
 
 function DrawerHint({ children }: { children: ReactNode }) {
   return <p className="text-xs text-muted">{children}</p>;
+}
+
+function ContactInfoRequiredBanner() {
+  return (
+    <p className="rounded-lg border border-[color-mix(in_srgb,var(--color-warning)_40%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-warning)_8%,white)] px-3 py-2 text-sm text-foreground">
+      {CONTACT_INFO_REQUIRED_MESSAGE}
+    </p>
+  );
 }
 
 function PrimaryDrawerAction({
@@ -186,6 +207,7 @@ function RosterContactSection({
   formId,
   student,
   isSaving,
+  allowManagement = true,
   onUpdated,
   onJustificationSent,
   confirmAction,
@@ -193,6 +215,7 @@ function RosterContactSection({
   formId: string;
   student: ConvocatoriaRosterStudent;
   isSaving: boolean;
+  allowManagement?: boolean;
   onUpdated: (student: ConvocatoriaRosterStudent) => void;
   onJustificationSent: (submission: ExperienceFormSubmission) => void;
   confirmAction: (options: ConfirmOptions) => Promise<boolean>;
@@ -258,6 +281,15 @@ function RosterContactSection({
     setSavingContact(true);
     setError(null);
     try {
+      const trimmedNotes = notes.trim();
+      if (isDropoutContactOutcome(contactOutcome)) {
+        const validated = validateDropoutNotes(trimmedNotes);
+        if (!validated.ok) {
+          setError(validated.error);
+          setSavingContact(false);
+          return;
+        }
+      }
       const res = await fetch(
         `/api/student-affairs/forms/${encodeURIComponent(formId)}/roster/${encodeURIComponent(student.id)}/outreach`,
         {
@@ -265,7 +297,7 @@ function RosterContactSection({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "contact",
-            notes: notes.trim(),
+            notes: trimmedNotes,
             channel,
             startJustificationDeadline: startDeadline,
             contactOutcome,
@@ -326,6 +358,7 @@ function RosterContactSection({
   };
 
   const busy = isSaving || savingFields || savingContact || sendingEmail;
+  const canSaveContactFields = email.trim().length > 0 && phone.trim().length > 0;
   const canStartDeadlineNow =
     !hasDeadlineStarted && !isFailedContactOutcomeForChannel(channel, contactOutcome);
   const canRegisterContact = notes.trim().length > 0;
@@ -335,8 +368,8 @@ function RosterContactSection({
     <div className="space-y-5">
       <ActionSection title="Datos de contacto">
         <DrawerHint>
-          Actualice correo y teléfono en nómina. Son necesarios para notificar la solicitud de
-          excusa.
+          Registre correo y teléfono antes de gestionar inasistencias o contactos. Ambos son
+          obligatorios.
         </DrawerHint>
         <Input
           label="Correo del participante"
@@ -354,13 +387,15 @@ function RosterContactSection({
         <Button
           variant="outline"
           loading={savingFields}
-          disabled={busy}
+          disabled={busy || !canSaveContactFields}
           onClick={() => void saveContactFields()}
         >
           Guardar correo y teléfono
         </Button>
       </ActionSection>
 
+      {!allowManagement ? null : (
+        <>
       {outreach.length > 0 ? <ContactLogList entries={outreach} /> : null}
 
       <ActionSection title="Registrar gestión">
@@ -393,6 +428,11 @@ function RosterContactSection({
             onChange={(event) => setStartDeadline(event.target.checked)}
             label="Informó plazo de 3 días para justificar (inicia al notificar al participante)"
           />
+        ) : isDropoutContactOutcome(contactOutcome) ? (
+          <DrawerHint>
+            Al registrar deserción confirmada, use un antecedente de al menos {DROPOUT_NOTES_MIN_LENGTH}{" "}
+            caracteres. El participante quedará como <strong>Desertor</strong>.
+          </DrawerHint>
         ) : hasDeadlineStarted ? (
           <DrawerHint>
             El plazo ya fue informado en un contacto anterior; esta gestión quedará en el historial.
@@ -432,6 +472,8 @@ function RosterContactSection({
           Marcar inasistencia y enviar solicitud por correo
         </Button>
       </ActionSection>
+        </>
+      )}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
@@ -452,6 +494,10 @@ function SubmissionContactInfoSection({
   const [phone, setPhone] = useState(existingPhone);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resolvedEmail = existingEmail || email.trim();
+  const resolvedPhone = existingPhone || phone.trim();
+  const canSave = Boolean(resolvedEmail && resolvedPhone) && !saving;
 
   if (existingEmail && existingPhone) return null;
 
@@ -486,6 +532,9 @@ function SubmissionContactInfoSection({
 
   return (
     <ActionSection title="Datos de contacto">
+      <DrawerHint>
+        Complete correo y teléfono para habilitar el resto de acciones de gestión.
+      </DrawerHint>
       {!existingEmail ? (
         <Input
           label="Correo del participante"
@@ -506,7 +555,7 @@ function SubmissionContactInfoSection({
       <Button
         variant="outline"
         loading={saving}
-        disabled={saving || (!email.trim() && !phone.trim())}
+        disabled={!canSave}
         onClick={() => void save()}
       >
         Guardar datos de contacto
@@ -520,8 +569,10 @@ export function ParticipantManageDrawer({
   formId,
   target,
   canDeleteSubmissions,
+  canReclassifyGeneration,
   isSaving,
   onSiteClosed = false,
+  followUpLocked = false,
   onClose,
   onCheckIn,
   onMarkAbsent,
@@ -541,6 +592,7 @@ export function ParticipantManageDrawer({
   if (target.kind === "roster") {
     const { student } = target;
     const phone = formatSubmissionPhone(student.phone);
+    const needsContactInfo = !rosterStudentHasCompleteContactInfo(student);
 
     return (
       <div className="space-y-5">
@@ -553,40 +605,45 @@ export function ParticipantManageDrawer({
           statusTone="neutral"
         />
 
-        <ActionSection title="Acción en jornada">
-          {onSiteClosed ? (
-            <DrawerHint>
-              La jornada presencial ya fue cerrada. Asuntos Estudiantiles continúa el seguimiento
-              desde contacto e inasistencia.
-            </DrawerHint>
-          ) : (
-            <>
+        {needsContactInfo ? <ContactInfoRequiredBanner /> : null}
+
+        {!needsContactInfo ? (
+          <ActionSection title="Acción en jornada">
+            {onSiteClosed ? (
               <DrawerHint>
-                Está en nómina pero no completó el formulario. Si asistió hoy, regístrelo aquí.
+                La jornada presencial ya fue cerrada. Asuntos Estudiantiles continúa el seguimiento
+                desde contacto e inasistencia.
               </DrawerHint>
-              <PrimaryDrawerAction
-                label="Registrar asistencia"
-                loading={isSaving}
-                disabled={isSaving}
-                onClick={onRosterCheckIn}
-              />
-            </>
-          )}
-          <Button
-            variant="outline"
-            className="w-full"
-            loading={isSaving}
-            disabled={isSaving}
-            onClick={onRosterMarkAbsent}
-          >
-            Marcar inasistencia (sin formulario)
-          </Button>
-        </ActionSection>
+            ) : (
+              <>
+                <DrawerHint>
+                  Está en nómina pero no completó el formulario. Si asistió hoy, regístrelo aquí.
+                </DrawerHint>
+                <PrimaryDrawerAction
+                  label="Registrar asistencia"
+                  loading={isSaving}
+                  disabled={isSaving}
+                  onClick={onRosterCheckIn}
+                />
+              </>
+            )}
+            <Button
+              variant="outline"
+              className="w-full"
+              loading={isSaving}
+              disabled={isSaving}
+              onClick={onRosterMarkAbsent}
+            >
+              Marcar inasistencia (sin formulario)
+            </Button>
+          </ActionSection>
+        ) : null}
 
         <RosterContactSection
           formId={formId}
           student={student}
           isSaving={isSaving}
+          allowManagement={!needsContactInfo}
           onUpdated={onRosterUpdated}
           onJustificationSent={onRosterJustificationSent}
           confirmAction={confirmAction}
@@ -612,23 +669,50 @@ export function ParticipantManageDrawer({
   const absenceCategory = rsvpNo ? classifyAbsenceSubmission(submission) : null;
   const contacts = submission.absenceContactLog ?? [];
   const deadline = submission.absenceReview?.justificationDeadlineAt;
+  const needsContactInfo = submissionNeedsContactInfoUpdate(submission);
 
   let statusLabel = "—";
   let statusTone: "active" | "pending" | "info" | "neutral" | "error" = "neutral";
   if (rsvpYes) {
-    statusLabel = checkedIn ? "Asistió" : "Sin asistir";
+    statusLabel = checkedIn ? "Asistió" : CONFIRMED_NO_SHOW_ROW_LABEL;
     statusTone = checkedIn ? "active" : "pending";
   } else if (absenceCategory) {
     statusLabel = absenceCategoryLabel(absenceCategory);
     statusTone =
       absenceCategory === "approved"
         ? "active"
+        : absenceCategory === "dropout"
+          ? "neutral"
         : absenceCategory === "unjustified"
           ? "error"
           : absenceCategory === "pending-review"
             ? "info"
             : "pending";
   }
+
+  const submitDropoutClosure = async (notes: string) => {
+    if (!submission._id) {
+      return { ok: false as const, error: "Respuesta sin identificador." };
+    }
+    try {
+      const res = await fetch(
+        `/api/student-affairs/submissions/${encodeURIComponent(submission._id)}/closure`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: "dropout", notes }),
+        }
+      );
+      const data = await res.json();
+      if (!data.ok) {
+        return { ok: false as const, error: data.error ?? "No se pudo marcar como desertor." };
+      }
+      onSubmissionUpdated(data.submission as ExperienceFormSubmission);
+      return { ok: true as const };
+    } catch {
+      return { ok: false as const, error: "Error de red al marcar como desertor." };
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -641,6 +725,29 @@ export function ParticipantManageDrawer({
         statusTone={statusTone}
       />
 
+      {followUpLocked ? (
+        <>
+          <DrawerHint>
+            Informe validado. Este participante asistió a la jornada presencial y su registro quedó
+            bloqueado para su perfil. Solo puede consultar el expediente.
+          </DrawerHint>
+          {contacts.length > 0 ? <ContactLogList entries={contacts} /> : null}
+          <div className="flex justify-end border-t border-border pt-4">
+            <Button variant="outline" onClick={onClose}>
+              Cerrar
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+      {needsContactInfo ? <ContactInfoRequiredBanner /> : null}
+
+      {needsContactInfo ? (
+        <SubmissionContactInfoSection submission={submission} onUpdated={onSubmissionUpdated} />
+      ) : null}
+
+      {!needsContactInfo ? (
+        <>
       {rsvpYes && !checkedIn && !onSiteClosed ? (
         <PrimaryDrawerAction
           label="Registrar asistencia"
@@ -684,8 +791,6 @@ export function ParticipantManageDrawer({
         />
       ) : null}
 
-      <SubmissionContactInfoSection submission={submission} onUpdated={onSubmissionUpdated} />
-
       {deadline && absenceCategory === "awaiting-justification" ? (
         <p className="rounded-lg border border-border bg-background-muted/30 px-3 py-2 text-sm text-muted">
           Plazo para justificar:{" "}
@@ -723,15 +828,20 @@ export function ParticipantManageDrawer({
       ) : null}
 
       {rsvpNo ? (
+        <>
+          {absenceCategory === "dropout" ? <DropoutRecordCard submission={submission} /> : null}
         <ActionSection title="Más acciones">
           {absenceCategory !== "pending-email" &&
           absenceCategory !== "awaiting-justification" &&
-          absenceCategory !== "pending-review" ? (
+          absenceCategory !== "pending-review" &&
+          absenceCategory !== "dropout" ? (
             <Button variant="outline" className="w-full" disabled={isSaving} onClick={onPhoneContact}>
               Registrar gestión de contacto
             </Button>
           ) : null}
-          {absenceCategory !== "pending-review" && absenceCategory !== "approved" ? (
+          {absenceCategory !== "pending-review" &&
+          absenceCategory !== "approved" &&
+          absenceCategory !== "dropout" ? (
             <Button
               variant="outline"
               className="w-full"
@@ -746,25 +856,51 @@ export function ParticipantManageDrawer({
               Ver revisión de justificación
             </Button>
           ) : null}
+          {absenceCategory !== "dropout" ? (
+            <DropoutClosureForm
+              participantName={name}
+              absenceCategory={absenceCategory}
+              busy={isSaving}
+              contactHint
+              onConfirm={confirmAction}
+              onSubmit={submitDropoutClosure}
+            />
+          ) : null}
         </ActionSection>
+        </>
       ) : null}
 
-      <ActionSection title="Administración">
-        <Button variant="outline" className="w-full" disabled={isSaving} onClick={onReclassifyGeneration}>
-          Cambiar generación
-        </Button>
-        {canDeleteSubmissions ? (
-          <Button variant="outline" className="w-full" disabled={isSaving} onClick={onDelete}>
-            Eliminar registro
-          </Button>
-        ) : null}
-      </ActionSection>
+      {needsContactInfo && contacts.length > 0 ? <ContactLogList entries={contacts} /> : null}
+
+      {canReclassifyGeneration || canDeleteSubmissions ? (
+        <ActionSection title="Administración">
+          {canReclassifyGeneration ? (
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={isSaving}
+              onClick={onReclassifyGeneration}
+            >
+              Cambiar generación
+            </Button>
+          ) : null}
+          {canDeleteSubmissions ? (
+            <Button variant="outline" className="w-full" disabled={isSaving} onClick={onDelete}>
+              Eliminar registro
+            </Button>
+          ) : null}
+        </ActionSection>
+      ) : null}
 
       <div className="flex justify-end border-t border-border pt-4">
         <Button variant="outline" onClick={onClose}>
           Cerrar
         </Button>
       </div>
+        </>
+      ) : null}
+        </>
+      )}
     </div>
   );
 }
