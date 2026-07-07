@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertBanner } from "@/components/admin/kit/states/AlertBanner";
+import { useToast } from "@/components/admin/kit/states/Toast";
 import { EmptyState } from "@/components/admin/kit/states/EmptyState";
 import { LoadingState } from "@/components/admin/kit/states/LoadingState";
 import { Section } from "@/components/admin/kit/layout/Section";
@@ -28,6 +29,7 @@ interface ExperienceFormOption {
 }
 
 export function StudentAffairsTeamClient() {
+  const { push } = useToast();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [forms, setForms] = useState<ExperienceFormOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,9 +114,13 @@ export function StudentAffairsTeamClient() {
   };
 
   const saveScope = async (membershipId: string) => {
+    const memberName =
+      members.find((member) => member.membershipId === membershipId)?.displayName ?? "la encargada";
     const scope = drafts[membershipId];
     if (!scope?.formIds.length || !scope.generationCodes.length) {
-      setError("Cada encargada debe tener al menos un formulario y una generación.");
+      const message = "Cada encargada debe tener al menos un formulario y una generación.";
+      setError(message);
+      push({ title: "No se pudo guardar", description: message, tone: "warning" });
       return;
     }
 
@@ -128,7 +134,9 @@ export function StudentAffairsTeamClient() {
       });
       const data = await res.json();
       if (!data.ok) {
-        setError(data.error ?? "No se pudo guardar.");
+        const message = data.error ?? "No se pudo guardar.";
+        setError(message);
+        push({ title: "No se pudo guardar", description: message, tone: "error" });
         return;
       }
       setMembers((current) =>
@@ -138,8 +146,15 @@ export function StudentAffairsTeamClient() {
             : member
         )
       );
+      push({
+        title: "Alcance guardado",
+        description: `Permisos de ${memberName} actualizados.`,
+        tone: "success",
+      });
     } catch {
-      setError("Error de red al guardar.");
+      const message = "Error de red al guardar.";
+      setError(message);
+      push({ title: "No se pudo guardar", description: message, tone: "error" });
     } finally {
       setSavingId(null);
     }
