@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import {
   AdminModuleCenter,
   AdminModuleHero,
@@ -49,7 +50,7 @@ export function RolesPermissionsClient() {
     }
   }, []);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void loadRoles();
   }, [loadRoles]);
 

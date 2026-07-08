@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -231,18 +232,18 @@ function RosterContactSection({
   const [sendingEmail, setSendingEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     setEmail(student.email ?? "");
     setPhone(student.phone ?? "");
   }, [student.email, student.phone, student.id]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!isContactOutcomeValidForChannel(channel, contactOutcome)) {
       setContactOutcome(defaultContactOutcomeForChannel(channel));
     }
   }, [channel, contactOutcome]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (isFailedContactOutcomeForChannel(channel, contactOutcome)) {
       setStartDeadline(false);
     }

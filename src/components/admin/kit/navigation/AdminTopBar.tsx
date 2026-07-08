@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { GlobalSearch } from "@/components/admin/kit/search/GlobalSearch";
 import type { AdminShellContext } from "@/components/admin/kit/utils/types";
 import { AdminStatusBadges } from "@/components/admin/AdminStatusBadges";
 import { AdminUserMenuPanel } from "@/components/admin/AdminUserMenuPanel";
+import { NotificationBell } from "@/components/admin/notifications/NotificationBell";
 
 export interface AdminTopBarProps extends AdminShellContext {
   collapsed: boolean;
@@ -84,19 +85,13 @@ export function AdminTopBar({
 
           <GlobalSearch compact className="!hidden lg:!inline-flex" />
 
+          <NotificationBell />
+
           <div className="mx-0.5 hidden h-6 w-px bg-border sm:block" aria-hidden />
 
           <div className="rounded-lg ring-1 ring-transparent transition hover:ring-border">
             <AdminUserMenuPanel user={user} compatMode={compatMode} />
           </div>
-
-          <Link
-            href="/admin/settings/notifications"
-            className="hidden rounded-lg p-1.5 text-muted transition hover:bg-background-muted hover:text-foreground md:inline-flex"
-            aria-label="Notificaciones"
-          >
-            <Bell className="h-4 w-4" />
-          </Link>
         </div>
       </div>
     </header>

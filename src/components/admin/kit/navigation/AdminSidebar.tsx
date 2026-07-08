@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { ChevronDown, LogOut, Settings2, UserRound } from "lucide-react";
 import { Drawer } from "@/components/admin/kit/drawers/Drawer";
-import { getNavIcon } from "@/components/admin/kit/navigation/sidebar-icons";
+import { NavIcon } from "@/components/admin/kit/navigation/NavIcon";
 import type { AdminShellContext } from "@/components/admin/kit/utils/types";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { useNavGroupExpanded } from "@/components/admin/shell-v2/use-nav-group-expanded";
@@ -105,7 +106,6 @@ function SidebarLink({
   showIcon?: boolean;
 }) {
   const active = isSidebarItemActive(pathname, item, searchParams);
-  const Icon = getNavIcon(item.icon);
   const isSub = variant === "sub";
 
   return (
@@ -130,7 +130,7 @@ function SidebarLink({
       )}
     >
       {(showIcon || collapsed) && !isSub ? (
-        <Icon className="h-[18px] w-[18px] shrink-0 opacity-90" />
+        <NavIcon icon={item.icon} className="h-[18px] w-[18px] shrink-0 opacity-90" />
       ) : null}
       {!collapsed ? (
         <>
@@ -163,7 +163,6 @@ function NavGroupSection({
   onFlyoutOpen?: () => void;
   flyoutOpen?: boolean;
 }) {
-  const GroupIcon = getNavIcon(group.icon);
   const isSingleItem = group.items.length === 1;
   const hasActiveChild = group.items.some((item) =>
     isSidebarItemActive(pathname, item, searchParams)
@@ -203,7 +202,7 @@ function NavGroupSection({
               : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)]"
           )}
         >
-          <GroupIcon className="h-[18px] w-[18px]" />
+          <NavIcon icon={group.icon} className="h-[18px] w-[18px]" />
         </button>
         {flyoutOpen ? (
           <div
@@ -260,7 +259,7 @@ function NavGroupSection({
           )}
           aria-hidden
         >
-          <GroupIcon className="h-4 w-4" />
+          <NavIcon icon={group.icon} className="h-4 w-4" />
         </span>
         <span className="flex-1 truncate text-[13px] font-semibold leading-tight tracking-tight">
           {group.label}
@@ -338,7 +337,7 @@ function SidebarNav({
     if (activeGroupId) expandGroup(activeGroupId);
   }, [activeGroupId, expandGroup]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!collapsed) setFlyoutGroupId(null);
   }, [collapsed]);
 

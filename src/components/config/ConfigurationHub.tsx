@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BrandingPanel } from "@/components/config/BrandingPanel";
 import { ConfigurationLayout } from "@/components/config/ConfigurationLayout";
@@ -50,7 +51,7 @@ export function ConfigurationHub({ initialConfig, hideSectionNav = false }: Conf
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     setActiveSection(sectionFromUrl);
   }, [sectionFromUrl]);
 

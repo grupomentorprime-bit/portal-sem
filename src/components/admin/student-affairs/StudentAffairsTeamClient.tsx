@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { AlertBanner } from "@/components/admin/kit/states/AlertBanner";
 import { useToast } from "@/components/admin/kit/states/Toast";
 import { EmptyState } from "@/components/admin/kit/states/EmptyState";
@@ -84,7 +85,7 @@ export function StudentAffairsTeamClient() {
     }
   }, []);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void load();
   }, [load]);
 

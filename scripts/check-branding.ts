@@ -68,7 +68,22 @@ const INFRASTRUCTURE_FILES = new Set([
 /** CSS de infraestructura no semántica (sombras rgba institucionales) */
 const CSS_INFRASTRUCTURE = new Set([
   "src/styles/design-tokens.css",
+  "src/styles/tokens/admin-branding.css",
 ]);
+
+/** Rutas bajo src/ exceptuadas: colores técnicamente inevitables (emails HTML, SVG, confetti, error API) */
+const EXEMPT_PREFIXES = [
+  "src/lib/notifications/",
+  "src/components/portal/experience/forms/AttendanceTeacherIcon.tsx",
+  "src/lib/experience/forms/celebration.ts",
+  "src/app/api/cms/media/stream/route.ts",
+];
+
+function isExemptFile(file: string): boolean {
+  return EXEMPT_PREFIXES.some(
+    (prefix) => file === prefix || file.startsWith(prefix)
+  );
+}
 
 const SKIP_DIRS = new Set(["node_modules", ".next", "dist", "build"]);
 const EXTENSIONS = new Set([".ts", ".tsx", ".css", ".scss", ".jsx", ".js"]);
@@ -127,6 +142,8 @@ function scanFile(filePath: string): Violation[] {
 
   lines.forEach((lineText, index) => {
     const line = index + 1;
+
+    if (isExemptFile(file)) return;
 
     let match: RegExpExecArray | null;
     HEX_RE.lastIndex = 0;

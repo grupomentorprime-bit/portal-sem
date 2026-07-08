@@ -4,7 +4,8 @@ import { Dialog } from "@/components/admin/kit/dialogs/Dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 
 export interface InputDialogField {
   id: string;
@@ -40,7 +41,7 @@ export function InputDialog({
 }: InputDialogProps) {
   const [values, setValues] = useState<Record<string, string>>({});
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!open) return;
     setValues(
       Object.fromEntries(fields.map((field) => [field.id, field.defaultValue ?? ""]))

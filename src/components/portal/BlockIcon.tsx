@@ -1,3 +1,4 @@
+import { createElement, type ComponentProps } from "react";
 import type { LucideProps } from "lucide-react";
 import {
   Award,
@@ -43,6 +44,5 @@ interface BlockIconProps extends LucideProps {
 
 export function BlockIcon({ name, ...props }: BlockIconProps) {
   const key = (name && name in ICONS ? name : "Circle") as IconName;
-  const Icon = ICONS[key];
-  return <Icon {...props} />;
+  return createElement(ICONS[key], props);
 }

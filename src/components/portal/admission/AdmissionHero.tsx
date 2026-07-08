@@ -1,4 +1,3 @@
-import { resolveBlockIcon } from "@/lib/cms/block-utils";
 import {
   sortMicroBenefits,
   sortVisibleHeroItems,
@@ -87,7 +86,6 @@ export async function AdmissionHero({
   const indicators = sortVisibleHeroItems(content.indicators);
   const microBenefits = sortMicroBenefits(content.microBenefits);
   const badge = content.statusBadge;
-  const BadgeIcon = badge?.icon ? resolveBlockIcon(badge.icon) : null;
   const animations = content.animations;
   const animateClass =
     animations?.enabled !== false
@@ -119,8 +117,8 @@ export async function AdmissionHero({
                 <div
                   className={`admission-hero__status-badge ${badgeToneClass(badge.tone)}`}
                 >
-                  {BadgeIcon ? (
-                    <BadgeIcon size={iconSizes.sm} strokeWidth={2} aria-hidden />
+                  {badge.icon ? (
+                    <BlockIcon name={badge.icon} size={iconSizes.sm} strokeWidth={2} aria-hidden />
                   ) : null}
                   <span>{badge.text}</span>
                 </div>
@@ -143,23 +141,20 @@ export async function AdmissionHero({
                     animations?.hoverCta !== false && "admission-hero__actions--interactive"
                   )}
                 >
-                  {actions.map((action) => {
-                    const ActionIcon = action.icon ? resolveBlockIcon(action.icon) : null;
-                    return (
-                      <Button
-                        key={action.id}
-                        href={action.href}
-                        size="lg"
-                        variant={actionVariant(action.variant)}
-                        className={actionClass(action.variant)}
-                      >
-                        {action.label}
-                        {ActionIcon ? (
-                          <ActionIcon size={iconSizes.sm} strokeWidth={2} aria-hidden />
-                        ) : null}
-                      </Button>
-                    );
-                  })}
+                  {actions.map((action) => (
+                    <Button
+                      key={action.id}
+                      href={action.href}
+                      size="lg"
+                      variant={actionVariant(action.variant)}
+                      className={actionClass(action.variant)}
+                    >
+                      {action.label}
+                      {action.icon ? (
+                        <BlockIcon name={action.icon} size={iconSizes.sm} strokeWidth={2} aria-hidden />
+                      ) : null}
+                    </Button>
+                  ))}
                 </div>
               ) : null}
 

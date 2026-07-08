@@ -67,7 +67,12 @@ export async function GET(request: Request) {
       entityId: session._id,
     });
 
-    const safeNext = nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/admin";
+    const isSafeNext = nextPath.startsWith("/") && !nextPath.startsWith("//");
+    const nextPathOnly = nextPath.split("?")[0];
+    const safeNext =
+      isSafeNext && nextPathOnly !== "/admin" && nextPathOnly !== "/admin/config"
+        ? nextPath
+        : "/admin";
     return NextResponse.redirect(new URL(safeNext, request.url));
   } catch (error) {
     if (error instanceof KeycloakAccessError) {

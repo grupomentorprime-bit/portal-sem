@@ -4,7 +4,6 @@ import { BlockIcon } from "@/components/portal/BlockIcon";
 import { PortalContainer } from "@/components/portal/layout";
 import { Button } from "@/components/ui/button";
 import { iconSizes } from "@/design";
-import { resolveBlockIcon } from "@/lib/cms/block-utils";
 
 interface AdmissionDatesHighlightBarProps {
   config: AdmissionDatesHighlight;
@@ -21,7 +20,6 @@ export function AdmissionDatesHighlightBar({
   if (items.length === 0) return null;
 
   const showCta = primaryAction?.visible !== false && primaryAction?.label && primaryAction?.href;
-  const ActionIcon = primaryAction?.icon ? resolveBlockIcon(primaryAction.icon) : null;
 
   return (
     <section className="admission-dates-bar" aria-label={config.title}>
@@ -66,8 +64,8 @@ export function AdmissionDatesHighlightBar({
                 className="admission-dates-bar__cta"
               >
                 {primaryAction.label}
-                {ActionIcon ? (
-                  <ActionIcon size={iconSizes.sm} strokeWidth={2} aria-hidden />
+                {primaryAction.icon ? (
+                  <BlockIcon name={primaryAction.icon} size={iconSizes.sm} strokeWidth={2} aria-hidden />
                 ) : null}
               </Button>
             </div>

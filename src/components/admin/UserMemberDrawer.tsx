@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { AuditTimeline, type AuditTimelineEntry } from "@/components/admin/AuditTimeline";
 import { Drawer } from "@/components/admin/kit/drawers/Drawer";
 import { LoadingState } from "@/components/admin/kit";
@@ -45,7 +46,7 @@ export function UserMemberDrawer({ target, mode, onClose }: UserMemberDrawerProp
     }
   }, []);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!target || mode !== "audit") {
       setAuditEntries([]);
       setAuditError(null);

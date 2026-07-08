@@ -76,7 +76,7 @@ export function FormExperienceAppearancePanel({
         <Input
           value={appearance.primaryColor ?? ""}
           onChange={(e) => onChange({ ...appearance, primaryColor: e.target.value })}
-          placeholder="#003366"
+          placeholder="Color primario institucional"
         />
       </Field>
       <Field label="Overlay (%)">

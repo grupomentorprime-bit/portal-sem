@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Clock3 } from "lucide-react";
+import { Clock3 } from "lucide-react";
 import { isNavActive } from "@/lib/admin/institutional";
+import { NotificationBell } from "@/components/admin/notifications/NotificationBell";
 import { filterAdminNav } from "@/lib/admin/nav-access";
 import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 import { AdminNavDrawer } from "@/components/admin/AdminNavDrawer";
@@ -47,13 +48,7 @@ export function AdminInstitutionalHeader({
           <AdminStatusBadges compatMode={compatMode} />
 
           <div className="hidden items-center sm:flex">
-            <Link
-              href="/admin/settings/notifications"
-              className="rounded-lg p-2 text-muted transition hover:bg-background-muted hover:text-foreground"
-              aria-label="Notificaciones"
-            >
-              <Bell className="h-4 w-4" />
-            </Link>
+            <NotificationBell />
 
             <Link
               href="/admin/settings/activity"

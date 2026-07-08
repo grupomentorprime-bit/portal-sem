@@ -15,7 +15,7 @@ import type { PortalPeopleGridSettings } from "@/types/people-grid";
 import { asBoolean, asString } from "@/lib/cms/block-utils";
 import type { TeacherItem } from "@/types/content";
 
-export interface TeachersSectionSettings extends PortalPeopleGridSettings {}
+export type TeachersSectionSettings = PortalPeopleGridSettings;
 
 interface TeachersSectionContentProps {
   teachers: TeacherItem[];

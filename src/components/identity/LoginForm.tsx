@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
@@ -14,9 +15,26 @@ const OAUTH_ERRORS: Record<string, string> = {
   tenant: "El tenant institucional no está configurado.",
 };
 
+const DASHBOARD_PATH = "/admin";
+
+/**
+ * Tras autenticarse siempre se aterriza en el Dashboard, salvo que el destino
+ * pendiente sea una página concreta distinta al home o a Configuración general.
+ */
+function resolvePostLoginDestination(next: string | null): string {
+  if (!next) return DASHBOARD_PATH;
+  const trimmed = next.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return DASHBOARD_PATH;
+  const pathOnly = trimmed.split("?")[0];
+  if (pathOnly === DASHBOARD_PATH || pathOnly === "/admin/config") {
+    return DASHBOARD_PATH;
+  }
+  return trimmed;
+}
+
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/admin";
+  const nextPath = resolvePostLoginDestination(searchParams.get("next"));
   const oauthError = searchParams.get("error");
   const emailFromQuery = searchParams.get("email")?.trim() ?? "";
 
@@ -28,13 +46,13 @@ export function LoginForm() {
   const [authReady, setAuthReady] = useState(false);
   const [institutionalOnly, setInstitutionalOnly] = useState(true);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (oauthError && OAUTH_ERRORS[oauthError]) {
       setError(OAUTH_ERRORS[oauthError]);
     }
   }, [oauthError]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (emailFromQuery) {
       setEmail(emailFromQuery);
     }

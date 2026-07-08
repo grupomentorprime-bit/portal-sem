@@ -19,6 +19,7 @@ const ACTION_LABELS: Record<string, string> = {
   "membership.restore": "restauró el acceso de un usuario",
   "membership.remove": "eliminó a un usuario del CMS",
   "user.invite.revoke": "canceló una invitación",
+  "student_affairs.handoff.validated": "validó el informe de cierre de jornada",
 };
 
 export function formatAuditMessage(

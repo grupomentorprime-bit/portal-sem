@@ -11,6 +11,7 @@ import {
   type ReactNode,
   type TouchEvent,
 } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { HOME_SECTION_ID } from "@/lib/navigation/home";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +60,7 @@ export function HeroPremiumInteractiveShell({
   const [motionReduced, setMotionReduced] = useState(false);
   const [particles, setParticles] = useState<FireParticle[]>([]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     setMounted(true);
 
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");

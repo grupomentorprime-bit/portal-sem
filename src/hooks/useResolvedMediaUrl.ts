@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { isMediaId } from "@/core/media/types";
 
 export function useResolvedMediaUrl(
@@ -9,7 +10,7 @@ export function useResolvedMediaUrl(
 ): string | undefined {
   const [url, setUrl] = useState<string | undefined>(legacyUrl?.trim() || undefined);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     const trimmedLegacy = legacyUrl?.trim();
     if (trimmedLegacy) {
       setUrl(trimmedLegacy);

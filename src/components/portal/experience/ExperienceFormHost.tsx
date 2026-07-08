@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Modal } from "@/components/ui/modal";
 import { PortalFormSkeleton } from "@/components/portal/experience/forms/PortalFormSkeleton";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
@@ -24,7 +25,7 @@ export function ExperienceFormHost({ formId, onClose }: ExperienceFormHostProps)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!formId) {
       setForm(null);
       setError(null);

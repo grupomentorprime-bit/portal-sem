@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { ExperienceFormSubmissionsTable } from "@/components/admin/forms/ExperienceFormSubmissionsTable";
 import type { ExperienceFormSubmission } from "@/types/experience-forms";
 
@@ -35,7 +36,7 @@ export function FormSubmissionsPanel({ formId }: FormSubmissionsPanelProps) {
     }
   }, [formId]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void load();
   }, [load]);
 

@@ -63,4 +63,4 @@ export interface PortalPeopleGridProps {
   editorialHome?: boolean;
 }
 
-export interface PersonItem extends PortalPersonCardData {}
+export type PersonItem = PortalPersonCardData;

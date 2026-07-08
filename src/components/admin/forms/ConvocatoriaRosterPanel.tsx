@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Download, Pencil, Upload, UserPlus } from "lucide-react";
 import {
   AdminDataTable,
@@ -133,7 +134,7 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
     }
   }, [convocatoriaSlug]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void load();
   }, [load]);
 

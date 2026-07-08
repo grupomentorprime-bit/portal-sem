@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { iconSizes } from "@/design";
 import { PortalContainer } from "@/components/portal/layout";
 import { focusRing } from "@/components/ui/shared";
@@ -258,8 +259,7 @@ export function HeroPremiumSection({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- reiniciar slide activo cuando cambian los datos del CMS
-  useEffect(() => {
+  useDeferredEffect(() => {
     setCurrentIndex(0);
   }, [slidesSignature]);
 
@@ -286,8 +286,7 @@ export function HeroPremiumSection({
     return () => clearInterval(timer);
   }, [carousel.autoplay, carousel.interval, isCarousel, next, paused]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- ajustar índice si se elimina el slide activo
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (currentIndex >= displaySlides.length) {
       setCurrentIndex(Math.max(0, displaySlides.length - 1));
     }
@@ -321,12 +320,6 @@ export function HeroPremiumSection({
     };
   }, [currentIndex, isCarousel, nextSlide, nextSlideIndex]);
 
-  if (displaySlides.length === 0) return null;
-
-  const activeSlide = displaySlides[currentIndex]!;
-  const showInlineIndicators =
-    Boolean(activeSlide.showBenefits) && isCarousel && carousel.showIndicators;
-
   const touchStartX = useRef<number | null>(null);
 
   const handleTouchStart = useCallback((event: TouchEvent<HTMLElement>) => {
@@ -346,6 +339,12 @@ export function HeroPremiumSection({
     },
     [isCarousel, next, prev]
   );
+
+  if (displaySlides.length === 0) return null;
+
+  const activeSlide = displaySlides[currentIndex]!;
+  const showInlineIndicators =
+    Boolean(activeSlide.showBenefits) && isCarousel && carousel.showIndicators;
 
   const durationClass =
     carousel.transitionDuration === 1

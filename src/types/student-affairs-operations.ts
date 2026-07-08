@@ -1,3 +1,5 @@
+import type { CohortRosterStat } from "@/lib/student-affairs/cohort-stats";
+
 export type StudentAffairsOperationsPhase = "on-site" | "follow-up";
 
 export type HandoffValidationStatus = "pending" | "validated";
@@ -14,8 +16,12 @@ export interface HandoffNominee {
 export interface HandoffNominations {
   /** Confirmaron asistencia pero no registraron check-in presencial. */
   noAttendance: HandoffNominee[];
-  /** Inasistencias sin justificación válida o sin registro en formulario. */
-  unjustified: HandoffNominee[];
+  /** Declararon inasistencia y presentaron excusa (por revisar, aceptada o en plazo). */
+  withJustification: HandoffNominee[];
+  /** Sin excusa válida: sin justificar, pendiente contacto o sin registro en formulario. */
+  withoutJustification: HandoffNominee[];
+  /** @deprecated Usar withoutJustification. */
+  unjustified?: HandoffNominee[];
 }
 
 export interface StudentAffairsHandoffReport {
@@ -34,6 +40,8 @@ export interface StudentAffairsHandoffReport {
   pendienteContacto: number;
   plazoJustificacion: number;
   nominations?: HandoffNominations;
+  /** Confirmación por programa/generación (nominados vs. confirmados). */
+  cohortStats?: CohortRosterStat[];
 }
 
 export interface StudentAffairsFormOperations {

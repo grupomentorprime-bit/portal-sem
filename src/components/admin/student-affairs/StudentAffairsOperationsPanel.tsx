@@ -3,6 +3,7 @@
 import "@/styles/admin-student-affairs-jornada.css";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { ClipboardList, Download, RefreshCw } from "lucide-react";
 import { AbsenceReviewEditor } from "@/components/admin/forms/AbsenceReviewEditor";
 import { AbsenceContactDrawer } from "@/components/admin/student-affairs/AbsenceContactDrawer";
@@ -24,6 +25,7 @@ import {
   StatusBadge,
   type AdminDataTableColumn,
 } from "@/components/admin/kit";
+import { useToast } from "@/components/admin/kit/states/Toast";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { getSubmissionAttachment } from "@/lib/experience/forms/attachments";
 import { Button } from "@/components/ui/button";
@@ -44,13 +46,20 @@ import type {
   ExperienceFormAbsenceReview,
   ExperienceFormSubmission,
 } from "@/types/experience-forms";
-import { CONFIRMED_NO_SHOW_LABEL, CONFIRMED_NO_SHOW_LABEL_SHORT, CONFIRMED_NO_SHOW_ROW_LABEL } from "@/lib/student-affairs/operations-labels";
+import {
+  CONFIRMED_NO_SHOW_LABEL,
+  CONFIRMED_NO_SHOW_LABEL_SHORT,
+  CONFIRMED_NO_SHOW_ROW_LABEL,
+  PENDING_VALIDATION_CONTACT_LABEL,
+  PENDING_VALIDATION_CONTACT_LABEL_FULL,
+} from "@/lib/student-affairs/operations-labels";
 import {
   absenceCategoryLabel,
   canSendJustificationRequest,
   classifyAbsenceSubmission,
   classifyPendingReviewContext,
   countAbsenceCategories,
+  isPendingValidationOrContact,
   pendingReviewContextLabel,
 } from "@/lib/student-affairs/absence-categories";
 import { downloadOperationsCsv } from "@/lib/student-affairs/export-operations-csv";
@@ -95,6 +104,7 @@ type AttendanceFilter =
   | "all"
   | "yes"
   | "no"
+  | "absence-pending-action"
   | "absence-pending-email"
   | "absence-unjustified"
   | "absence-awaiting-justification"
@@ -163,6 +173,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
   const [closeJornadaOpen, setCloseJornadaOpen] = useState(false);
   const [validateHandoffOpen, setValidateHandoffOpen] = useState(false);
   const { confirm, dialog } = useConfirmDialog();
+  const { push } = useToast();
 
   const onSiteClosed = operationsPhase === "follow-up";
   const handoffValidationStatus = getHandoffValidationStatus(operations);
@@ -218,7 +229,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     }
   }, [formId]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void loadData();
   }, [loadData]);
 
@@ -627,6 +638,9 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     [submissions]
   );
 
+  const pendingActionCount =
+    (absenceCounts.pendingEmail ?? 0) + (absenceCounts.pendingReview ?? 0);
+
   const isSearchMode = search.trim().length > 0;
 
   const filtered = useMemo(() => {
@@ -635,6 +649,9 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
       if (!isSearchMode) {
         if (filter === "yes" && submission.data.attendance !== "yes") return false;
         if (filter === "no" && submission.data.attendance !== "no") return false;
+        if (filter === "absence-pending-action") {
+          if (!isPendingValidationOrContact(classifyAbsenceSubmission(submission))) return false;
+        }
         if (filter === "absence-pending-email") {
           if (classifyAbsenceSubmission(submission) !== "pending-email") return false;
         }
@@ -742,9 +759,9 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
           dotClass: "bg-[var(--color-warning)]",
         },
         {
-          label: "Por revisar",
-          value: absenceCounts.pendingReview,
-          filter: "absence-pending-review" as const,
+          label: PENDING_VALIDATION_CONTACT_LABEL,
+          value: pendingActionCount,
+          filter: "absence-pending-action" as const,
           dotClass: "bg-[var(--state-info-fg)]",
         },
         {
@@ -754,19 +771,13 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
           dotClass: "bg-[var(--state-warning)]",
         },
         {
-          label: "Pendiente contacto",
-          value: absenceCounts.pendingEmail,
-          filter: "absence-pending-email" as const,
-          dotClass: "bg-muted",
-        },
-        {
           label: "Plazo justificación",
           value: absenceCounts.awaitingJustification,
           filter: "absence-awaiting-justification" as const,
           dotClass: "bg-[var(--color-primary)]",
         },
       ].filter((item) => item.value > 0),
-    [absenceCounts, pendingArrival, unclosedCount]
+    [absenceCounts, pendingActionCount, pendingArrival, unclosedCount]
   );
 
   const handleCloseOnSitePhase = () => {
@@ -810,21 +821,20 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     const { downloadHandoffReportPdf, resolveHandoffReportForDownload } = await import(
       "@/lib/student-affairs/download-handoff-report-pdf"
     );
-    let report = resolveHandoffReportForDownload(operations);
-    if (!report) return;
+    const baseReport = resolveHandoffReportForDownload(operations);
+    if (!baseReport) return;
 
-    if (!report.nominations) {
-      const { buildHandoffNominations } = await import(
-        "@/lib/student-affairs/build-handoff-nominations"
-      );
-      report = {
-        ...report,
-        nominations: buildHandoffNominations({
-          submissions,
-          rosterStudents: rosterPending,
-        }),
-      };
-    }
+    const { buildHandoffNominations } = await import(
+      "@/lib/student-affairs/build-handoff-nominations"
+    );
+    const report = {
+      ...baseReport,
+      nominations: buildHandoffNominations({
+        submissions,
+        rosterStudents: rosterPending,
+      }),
+      cohortStats: cohortStats.length > 0 ? cohortStats : baseReport.cohortStats,
+    };
 
     await downloadHandoffReportPdf({ formName, formId, report });
   };
@@ -882,6 +892,55 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
       }
       setOperations(data.operations ?? null);
       setValidateHandoffOpen(false);
+
+      const dispatch = data.dispatch as
+        | {
+            emailsSent?: number;
+            encargadaNotifications?: number;
+            qualityNotifications?: number;
+            errors?: string[];
+          }
+        | null
+        | undefined;
+
+      if (dispatch) {
+        const parts: string[] = [];
+        if (dispatch.emailsSent) {
+          parts.push(`${dispatch.emailsSent} correo${dispatch.emailsSent === 1 ? "" : "s"} a encargadas`);
+        }
+        if (dispatch.encargadaNotifications) {
+          parts.push(`${dispatch.encargadaNotifications} aviso${dispatch.encargadaNotifications === 1 ? "" : "s"} en plataforma`);
+        }
+        if (dispatch.qualityNotifications) {
+          parts.push(`${dispatch.qualityNotifications} registro${dispatch.qualityNotifications === 1 ? "" : "s"} en tu bandeja`);
+        }
+
+        if (parts.length > 0) {
+          push({
+            title: "Informe validado",
+            description: parts.join(" · "),
+            tone: "success",
+          });
+        } else if (dispatch.errors?.length) {
+          push({
+            title: "Informe validado con advertencias",
+            description: dispatch.errors.join(" "),
+            tone: "warning",
+          });
+        } else {
+          push({
+            title: "Informe validado",
+            description: "No hay encargadas con alcance asignado para esta jornada.",
+            tone: "info",
+          });
+        }
+      } else {
+        push({
+          title: "Informe validado",
+          description: "El seguimiento de inasistencias quedó habilitado.",
+          tone: "success",
+        });
+      }
     } catch {
       setError("Error de red al validar el informe.");
     } finally {
@@ -921,6 +980,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
 
   const showJustificationColumns = useMemo(() => {
     if (
+      filter === "absence-pending-action" ||
       filter === "absence-pending-review" ||
       filter === "absence-pending-review-pre" ||
       filter === "absence-pending-review-post" ||
@@ -1137,7 +1197,8 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
     : compactCohortView
       ? "min-w-[40rem]"
       : "min-w-[48rem]";
-  const showingPendingReviewFilter =
+  const showingPendingActionFilter =
+    filter === "absence-pending-action" ||
     filter === "absence-pending-review" ||
     filter === "absence-pending-review-pre" ||
     filter === "absence-pending-review-post";
@@ -1342,7 +1403,6 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                   <MetricCell label="Confirmaron" value={stats.attending} tone="success" />
                   <MetricCell label="Inasistencias" value={stats.notAttending} tone="warning" />
                   <MetricCell label="Asistieron" value={checkedInCount} tone="info" />
-                  <MetricCell label={CONFIRMED_NO_SHOW_LABEL} value={pendingArrival} tone="pending" />
                 </div>
                 {expectedAttendees > 0 ? (
                   <div className="student-affairs-jornada__progress-inline">
@@ -1422,12 +1482,19 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                   count={checkedInCount}
                   onClick={() => setFilter("checked-in")}
                 />
-                {(absenceCounts.pendingEmail ?? 0) > 0 ? (
+                {pendingActionCount > 0 ? (
                   <AttendanceFilterChip
-                    active={filter === "absence-pending-email"}
-                    label="Pendiente contacto"
-                    count={absenceCounts.pendingEmail}
-                    onClick={() => setFilter("absence-pending-email")}
+                    active={
+                      filter === "absence-pending-action" ||
+                      filter === "absence-pending-review" ||
+                      filter === "absence-pending-review-pre" ||
+                      filter === "absence-pending-review-post" ||
+                      filter === "absence-pending-email"
+                    }
+                    label={PENDING_VALIDATION_CONTACT_LABEL}
+                    title={PENDING_VALIDATION_CONTACT_LABEL_FULL}
+                    count={pendingActionCount}
+                    onClick={() => setFilter("absence-pending-action")}
                   />
                 ) : null}
                 {(absenceCounts.awaitingJustification ?? 0) > 0 ? (
@@ -1444,18 +1511,6 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                     label="Sin registrar ni justificar"
                     count={unclosedCount}
                     onClick={() => setFilter("unclosed")}
-                  />
-                ) : null}
-                {(absenceCounts.pendingReview ?? 0) > 0 ? (
-                  <AttendanceFilterChip
-                    active={
-                      filter === "absence-pending-review" ||
-                      filter === "absence-pending-review-pre" ||
-                      filter === "absence-pending-review-post"
-                    }
-                    label="Por revisar"
-                    count={absenceCounts.pendingReview}
-                    onClick={() => setFilter("absence-pending-review")}
                   />
                 ) : null}
                 {dropoutCount > 0 ? (
@@ -1724,32 +1779,29 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                 />
               ) : (
                 <>
-                  {(absenceCounts.pendingEmail ?? 0) > 0 ? (
+                  {showingPendingActionFilter ? (
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-2 sm:px-0">
-                      <p className="max-w-2xl text-sm text-muted">
-                        Participantes con inasistencia registrada pendientes de contacto.
-                        Envíe correo o registre llamada; el plazo de 3 días inicia al notificar
-                        a cada uno.
+                      <p className="max-w-3xl text-sm text-muted">
+                        Participantes con inasistencia pendientes de contacto o con excusa por
+                        revisar. Envíe correo o registre llamada; el plazo de 3 días inicia al
+                        notificar a cada uno.{" "}
+                        <strong className="font-semibold text-foreground">Excusa</strong> indica si
+                        enviaron respaldo;{" "}
+                        <strong className="font-semibold text-foreground">Estado</strong> y el botón
+                        de acción indican qué falta hacer.
                       </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        loading={bulkJustificationSaving}
-                        disabled={bulkJustificationSaving}
-                        onClick={() => void handleBulkSendJustificationRequests()}
-                      >
-                        Enviar correos listos
-                      </Button>
+                      {(absenceCounts.pendingEmail ?? 0) > 0 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          loading={bulkJustificationSaving}
+                          disabled={bulkJustificationSaving}
+                          onClick={() => void handleBulkSendJustificationRequests()}
+                        >
+                          Enviar correos listos
+                        </Button>
+                      ) : null}
                     </div>
-                  ) : null}
-                  {showingPendingReviewFilter ? (
-                    <p className="mb-3 max-w-3xl px-2 text-sm text-muted sm:px-0">
-                      <strong className="font-semibold text-foreground">Excusa</strong> indica si
-                      enviaron respaldo;{" "}
-                      <strong className="font-semibold text-foreground">Estado</strong> y el botón
-                      de acción indican qué falta hacer (por ejemplo{" "}
-                      <strong className="font-semibold text-foreground">Revisar</strong>).
-                    </p>
                   ) : null}
                   {filter === "absence-approved" ? (
                     <p className="mb-3 max-w-3xl px-2 text-sm text-muted sm:px-0">
@@ -1825,9 +1877,11 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
                       value={item.value}
                       active={
                         filter === item.filter ||
-                        (item.filter === "absence-pending-review" &&
-                          (filter === "absence-pending-review-pre" ||
-                            filter === "absence-pending-review-post"))
+                        (item.filter === "absence-pending-action" &&
+                          (filter === "absence-pending-review" ||
+                            filter === "absence-pending-review-pre" ||
+                            filter === "absence-pending-review-post" ||
+                            filter === "absence-pending-email"))
                       }
                       onClick={() => setFilter(item.filter)}
                     />
@@ -2362,12 +2416,20 @@ function ParticipantAvatar({ name }: { name: string }) {
       .map((part) => part.charAt(0))
       .join("")
       .toUpperCase() || "?";
-  const hue = [...name].reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+  const avatarBackgrounds = [
+    "var(--sem-primary)",
+    "var(--sem-secondary)",
+    "color-mix(in srgb, var(--sem-primary) 72%, var(--sem-accent))",
+    "color-mix(in srgb, var(--sem-secondary) 78%, var(--sem-primary))",
+    "color-mix(in srgb, var(--sem-accent) 55%, var(--sem-primary))",
+  ] as const;
+  const backgroundIndex =
+    [...name].reduce((acc, char) => acc + char.charCodeAt(0), 0) % avatarBackgrounds.length;
 
   return (
     <span
       className="student-affairs-jornada__participant-avatar"
-      style={{ background: `hsl(${hue} 42% 42%)` }}
+      style={{ background: avatarBackgrounds[backgroundIndex] }}
       aria-hidden
     >
       {initials}

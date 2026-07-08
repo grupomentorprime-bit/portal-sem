@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import {
   Eye,
   LayoutTemplate,
@@ -178,7 +179,7 @@ export function FormExperienceEditor({
     }
   }, [formId]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void load();
   }, [load]);
 
@@ -531,7 +532,7 @@ export function FormExperienceEditor({
             <Input
               value={experience.hero.heroColor ?? ""}
               onChange={(e) => update({ hero: { ...experience.hero, heroColor: e.target.value } })}
-              placeholder="#003366"
+              placeholder="Color primario institucional"
             />
           </Field>
           <div className="md:col-span-2">

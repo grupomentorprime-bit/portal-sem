@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import Link from "next/link";
 import {
   AdminModulePage,
@@ -74,7 +75,7 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
     }
   }, [convocatoria.formId]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void loadData();
   }, [loadData]);
 

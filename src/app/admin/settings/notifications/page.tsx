@@ -4,6 +4,7 @@ import {
   AdminModuleHero,
   AdminModuleSectionHeader,
 } from "@/components/admin/AdminModuleCenter";
+import { NotificationsClient } from "@/components/admin/notifications/NotificationsClient";
 import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 import { Bell } from "lucide-react";
 
@@ -22,14 +23,9 @@ export default function NotificationsSettingsPage() {
         <AdminModuleSectionHeader
           icon={Bell}
           title="Centro de notificaciones"
-          description="Publicaciones, invitaciones y cambios importantes aparecerán aquí en la siguiente fase."
+          description="Avisos de informes validados, asignaciones de seguimiento y gestiones del equipo."
         />
-        <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center">
-          <p className="font-medium text-foreground">Próximamente</p>
-          <p className="mt-2 text-sm text-muted">
-            Estamos preparando alertas en tiempo real para el equipo del seminario.
-          </p>
-        </div>
+        <NotificationsClient />
       </AdminModuleCenter>
     </AdminPageFrame>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Activity, Clock, Users } from "lucide-react";
 import { AuditTimeline, type AuditTimelineEntry } from "@/components/admin/AuditTimeline";
 import {
@@ -14,8 +15,9 @@ import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
 export function ActivityClient() {
   const [audit, setAudit] = useState<AuditTimelineEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsNow] = useState(() => Date.now());
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     fetch("/api/identity/team")
       .then((r) => r.json())
       .then((data) => {
@@ -26,6 +28,10 @@ export function ActivityClient() {
 
   if (loading) return <p className="text-sm text-muted">Cargando actividad…</p>;
 
+  const last24hCount = audit.filter(
+    (e) => statsNow - new Date(e.createdAt).getTime() < 86400000
+  ).length;
+
   return (
     <AdminModuleCenter>
       <AdminModuleHero {...ADMIN_PANEL_META.activity} />
@@ -35,7 +41,7 @@ export function ActivityClient() {
           { label: "Eventos registrados", value: audit.length, icon: Activity, tone: "total" },
           {
             label: "Últimas 24 h",
-            value: audit.filter((e) => Date.now() - new Date(e.createdAt).getTime() < 86400000).length,
+            value: last24hCount,
             icon: Clock,
             tone: "active",
           },

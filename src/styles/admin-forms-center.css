@@ -681,7 +681,7 @@
   padding: 0.875rem 1rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  background: var(--background-muted, #f8fafc);
+  background: var(--background-muted, var(--gray-50));
 }
 
 .admin-form-detail__summary-main {
@@ -822,12 +822,12 @@
 .admin-form-detail__section-tab--active {
   background: var(--sem-primary);
   border-color: var(--sem-primary);
-  color: #fff;
+  color: white;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--sem-primary) 22%, transparent);
 }
 
 .admin-form-detail__section-tab--active:hover {
-  color: #fff;
+  color: white;
   border-color: var(--sem-primary);
 }
 
@@ -858,11 +858,11 @@
 .admin-form-detail__viewport-tab--active {
   background: var(--sem-primary);
   border-color: var(--sem-primary);
-  color: #fff;
+  color: white;
 }
 
 .admin-form-detail__viewport-tab--active:hover {
-  color: #fff;
+  color: white;
 }
 
 .admin-form-detail__filter-pill {
@@ -891,11 +891,11 @@
 .admin-form-detail__filter-pill--active {
   background: var(--sem-primary);
   border-color: var(--sem-primary);
-  color: #fff;
+  color: white;
 }
 
 .admin-form-detail__filter-pill--active:hover {
-  color: #fff;
+  color: white;
   border-color: var(--sem-primary);
 }
 
@@ -925,11 +925,11 @@
 .admin-form-detail__chip-tab--active {
   background: var(--sem-primary);
   border-color: var(--sem-primary);
-  color: #fff;
+  color: white;
 }
 
 .admin-form-detail__chip-tab--active:hover {
-  color: #fff;
+  color: white;
   border-color: var(--sem-primary);
 }
 

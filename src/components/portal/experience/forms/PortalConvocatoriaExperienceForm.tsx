@@ -318,7 +318,7 @@ export function PortalConvocatoriaExperienceForm({
           <>
             <PortalFormSuccess message={successMessage} variant="inline" />
             {successNotice ? (
-              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="mt-3 rounded-lg border border-[var(--state-warning-border)] bg-[var(--state-warning-bg)] px-4 py-3 text-sm text-[var(--state-warning-fg)]">
                 {successNotice}
               </p>
             ) : null}

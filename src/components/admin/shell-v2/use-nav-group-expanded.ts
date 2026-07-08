@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import type { NavGroupId } from "@/lib/admin/nav-domains";
 
 const STORAGE_KEY = "sem-admin-nav-expanded-group";
@@ -9,7 +10,7 @@ export function useNavGroupExpanded(activeGroupId: NavGroupId | null) {
   const [expandedGroupId, setExpandedGroupId] = useState<NavGroupId | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as NavGroupId | null;
       if (stored) {
@@ -23,7 +24,7 @@ export function useNavGroupExpanded(activeGroupId: NavGroupId | null) {
     setHydrated(true);
   }, [activeGroupId]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!hydrated || !activeGroupId) return;
     setExpandedGroupId((current) => current ?? activeGroupId);
   }, [activeGroupId, hydrated]);

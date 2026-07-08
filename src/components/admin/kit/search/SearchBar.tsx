@@ -24,32 +24,36 @@ export function SearchBar({
   debounceMs = 300,
   className,
 }: SearchBarProps) {
-  const [internal, setInternal] = useState(value ?? defaultValue);
-
-  useEffect(() => {
-    if (value !== undefined) setInternal(value);
-  }, [value]);
+  const isControlled = value !== undefined;
+  const [uncontrolled, setUncontrolled] = useState(defaultValue);
+  const query = isControlled ? value : uncontrolled;
 
   useEffect(() => {
     if (!onChange) return;
-    const t = setTimeout(() => onChange(internal), debounceMs);
+    const t = setTimeout(() => onChange(query), debounceMs);
     return () => clearTimeout(t);
-  }, [internal, debounceMs, onChange]);
+  }, [query, debounceMs, onChange]);
 
   return (
     <div className={cn("relative max-w-md", className)}>
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
       <Input
-        value={internal}
-        onChange={(e) => setInternal(e.target.value)}
+        value={query}
+        onChange={(e) => {
+          const next = e.target.value;
+          if (!isControlled) setUncontrolled(next);
+        }}
         placeholder={placeholder}
         className="pl-9 pr-9"
       />
-      {internal ? (
+      {query ? (
         <button
           type="button"
           className={cn("absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-foreground", aek.focus)}
-          onClick={() => setInternal("")}
+          onClick={() => {
+            if (!isControlled) setUncontrolled("");
+            onChange?.("");
+          }}
           aria-label="Limpiar búsqueda"
         >
           <X className="h-4 w-4" />

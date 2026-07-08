@@ -110,7 +110,7 @@ export function AbsenceJustificationFields({
                 <p className="absence-attachment-card__meta">{formatFileSize(selectedSize)}</p>
               ) : null}
               {!isUploaded && !uploading && !errors.justificationAttachment ? (
-                <p className="absence-attachment-card__meta text-amber-700">
+                <p className="absence-attachment-card__meta text-[var(--state-warning-fg)]">
                   El archivo se subirá al enviar el formulario.
                 </p>
               ) : null}

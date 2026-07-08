@@ -72,22 +72,17 @@ export function ConvocatoriaParticipantFields({
   }, [manualEntry, values.studentId, values.fullName, values.generation, values.program]);
 
   const trimmedQuery = query.trim();
+  const visibleResults = trimmedQuery.length >= 2 ? results : [];
   const showEmptyResults =
     !manualEntry &&
     !selectedStudent &&
     !searching &&
     trimmedQuery.length >= 2 &&
     lastSearchedQuery === trimmedQuery &&
-    results.length === 0;
+    visibleResults.length === 0;
 
   useEffect(() => {
-    if (manualEntry) return;
-
-    if (trimmedQuery.length < 2) {
-      setResults([]);
-      setLastSearchedQuery("");
-      return;
-    }
+    if (manualEntry || trimmedQuery.length < 2) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
@@ -188,9 +183,9 @@ export function ConvocatoriaParticipantFields({
 
           {searching ? <p className="text-xs text-muted">Buscando…</p> : null}
 
-          {!selectedStudent && results.length > 0 ? (
+          {!selectedStudent && visibleResults.length > 0 ? (
             <ul className="portal-experience-form__lookup-results overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-              {results.map((student) => (
+              {visibleResults.map((student) => (
                 <li key={student.id} className="border-b border-border last:border-0">
                   <button
                     type="button"

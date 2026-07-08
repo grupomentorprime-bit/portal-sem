@@ -1,6 +1,11 @@
 import { jsPDF } from "jspdf";
 import { formatClosureDateTime } from "@/lib/student-affairs/closure-datetime";
 import { formatGenerationCode, formatGenerationDisplay } from "@/lib/experience/forms/generations";
+import { sumCohortRosterStats, type CohortRosterStat } from "@/lib/student-affairs/cohort-stats";
+import {
+  CONFIRMED_NO_SHOW_LABEL,
+  PENDING_VALIDATION_CONTACT_LABEL,
+} from "@/lib/student-affairs/operations-labels";
 import type {
   HandoffNominee,
   StudentAffairsFormOperations,
@@ -315,72 +320,237 @@ function drawMetricCard(
   doc.text(labelLines, x + 4, y + 13.5);
 }
 
+type MetricCardItem = {
+  label: string;
+  value: string;
+  accent?: [number, number, number];
+};
+
+function drawMetricCardsGrid(
+  ctx: ReturnType<typeof createPdfContext>,
+  items: MetricCardItem[]
+) {
+  const { doc, ensureSpace } = ctx;
+  const cardW = (CONTENT_W - 6) / 2;
+  const cardH = 20;
+  const cardGap = 3;
+
+  let rowY = ctx.y;
+  for (let i = 0; i < items.length; i += 2) {
+    ensureSpace(cardH + cardGap);
+    const left = items[i];
+    const right = items[i + 1];
+    drawMetricCard(doc, MARGIN, rowY, cardW, cardH, left.label, left.value, left.accent);
+    if (right) {
+      drawMetricCard(doc, MARGIN + cardW + 6, rowY, cardW, cardH, right.label, right.value, right.accent);
+    }
+    rowY += cardH + cardGap;
+  }
+
+  ctx.y = rowY;
+}
+
+function drawArrivalProgressBar(
+  ctx: ReturnType<typeof createPdfContext>,
+  checkedIn: number,
+  expected: number,
+  pct: number
+) {
+  const { doc, ensureSpace, advance } = ctx;
+  const barH = 3;
+  const blockH = LINE + 2 + barH + 2;
+
+  ensureSpace(blockH);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...BRAND.muted);
+  doc.text(`Avance de asistencia: ${checkedIn}/${expected} (${pct}%)`, MARGIN, ctx.y);
+  advance(LINE + 1.5);
+
+  doc.setFillColor(...BRAND.border);
+  doc.roundedRect(MARGIN, ctx.y, CONTENT_W, barH, 1, 1, "F");
+  const fillW = Math.max(0, Math.min(100, pct)) / 100 * CONTENT_W;
+  if (fillW > 0) {
+    doc.setFillColor(...BRAND.teal);
+    doc.roundedRect(MARGIN, ctx.y, Math.max(fillW, 1), barH, 1, 1, "F");
+  }
+  advance(barH + 4);
+}
+
 function drawSummaryGrid(ctx: ReturnType<typeof createPdfContext>, report: StudentAffairsHandoffReport) {
   const { doc, ensureSpace, advance } = ctx;
   const arrivalPct =
     report.confirmaron > 0 ? Math.round((report.asistieron / report.confirmaron) * 100) : 0;
-  const cardW = (CONTENT_W - 6) / 2;
-  const cardH = 20;
-  const cardGap = 3;
   const sectionGap = 8;
 
-  const drawCardRow = (rowY: number, left: [string, string, [number, number, number]?], right: [string, string, [number, number, number]?]) => {
-    drawMetricCard(doc, MARGIN, rowY, cardW, cardH, left[0], left[1], left[2]);
-    drawMetricCard(doc, MARGIN + cardW + 6, rowY, cardW, cardH, right[0], right[1], right[2]);
-    return rowY + cardH;
-  };
-
-  ensureSpace(cardH * 2 + sectionGap + 20);
+  ensureSpace(60);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10.5);
   doc.setTextColor(...BRAND.navy);
   doc.text("Resumen de la jornada", MARGIN, ctx.y);
   advance(LINE + 3);
 
-  let gridBottom = drawCardRow(ctx.y, 
-    ["Asistieron (confirmados)", `${report.asistieron} / ${report.confirmaron} (${arrivalPct}%)`, BRAND.teal],
-    ["Sin asistir (confirmados)", String(report.sinAsistir), [220, 38, 38]]
-  ) + cardGap;
-  gridBottom = drawCardRow(
-    gridBottom,
-    ["Respondieron formulario", String(report.respondieron)],
-    ["Inasistencias registradas", String(report.inasistencias)]
-  );
+  drawMetricCardsGrid(ctx, [
+    { label: "Respondieron formulario", value: String(report.respondieron) },
+    { label: "Confirmaron asistencia", value: String(report.confirmaron), accent: BRAND.teal },
+    { label: "Inasistencias registradas", value: String(report.inasistencias) },
+    { label: "Asistieron (check-in)", value: String(report.asistieron), accent: BRAND.blue },
+  ]);
 
-  ctx.y = gridBottom + sectionGap;
+  if (report.confirmaron > 0) {
+    drawArrivalProgressBar(ctx, report.asistieron, report.confirmaron, arrivalPct);
+  }
 
-  ensureSpace(cardH * 2 + sectionGap);
+  ctx.y += sectionGap - 3;
+
+  const followUpCards: MetricCardItem[] = [];
+
+  if (report.sinAsistir > 0) {
+    followUpCards.push({
+      label: CONFIRMED_NO_SHOW_LABEL,
+      value: String(report.sinAsistir),
+      accent: [220, 38, 38],
+    });
+  }
+
+  if (report.porRevisar > 0 && report.pendienteContacto > 0) {
+    followUpCards.push({
+      label: `${PENDING_VALIDATION_CONTACT_LABEL} (${report.porRevisar} excusas · ${report.pendienteContacto} contacto)`,
+      value: String(report.porRevisar + report.pendienteContacto),
+    });
+  } else if (report.porRevisar > 0) {
+    followUpCards.push({
+      label: "Por revisar (excusas)",
+      value: String(report.porRevisar),
+    });
+  } else if (report.pendienteContacto > 0) {
+    followUpCards.push({
+      label: "Pendiente contacto",
+      value: String(report.pendienteContacto),
+    });
+  }
+
+  if (report.sinRegistrarNiJustificar > 0) {
+    followUpCards.push({
+      label: "Sin registrar ni justificar",
+      value: String(report.sinRegistrarNiJustificar),
+      accent: [220, 38, 38],
+    });
+  }
+
+  if (report.plazoJustificacion > 0) {
+    followUpCards.push({
+      label: "Plazo justificación",
+      value: String(report.plazoJustificacion),
+    });
+  }
+
+  ensureSpace(LINE + 8);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10.5);
   doc.setTextColor(...BRAND.navy);
   doc.text("Traspaso a Asuntos Estudiantiles", MARGIN, ctx.y);
+  advance(LINE + 1);
+
+  if (followUpCards.length === 0) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...BRAND.muted);
+    doc.text("Sin pendientes operativos para seguimiento.", MARGIN, ctx.y);
+    advance(LINE + sectionGap);
+    return;
+  }
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...BRAND.muted);
+  doc.text(
+    "Casos que requieren gestión posterior: revisión de excusas, contacto e inasistencias sin registro.",
+    MARGIN,
+    ctx.y
+  );
   advance(LINE + 3);
 
-  gridBottom = drawCardRow(
-    ctx.y,
-    ["Por revisar (excusas)", String(report.porRevisar)],
-    ["Sin registrar ni justificar", String(report.sinRegistrarNiJustificar), [220, 38, 38]]
+  drawMetricCardsGrid(ctx, followUpCards);
+  ctx.y += sectionGap - 3;
+}
+
+function shortCohortLabel(generation: string): string {
+  const code = formatGenerationCode(generation);
+  if (code && code !== "—") return code;
+  if (/equipo/i.test(generation)) return "Equipo";
+  if (/otros/i.test(generation)) return "Otros";
+  return generation;
+}
+
+function drawCohortConfirmationSection(
+  ctx: ReturnType<typeof createPdfContext>,
+  cohortStats: CohortRosterStat[]
+) {
+  if (!cohortStats.length) return;
+
+  const { doc, ensureSpace, advance } = ctx;
+  const totals = sumCohortRosterStats(cohortStats);
+
+  const barH = 3;
+  const rowH = 10;
+
+  ensureSpace(LINE + 6 + rowH);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...BRAND.navy);
+  doc.text("Confirmación por programa", MARGIN, ctx.y);
+  advance(LINE + 1);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...BRAND.muted);
+  doc.text(
+    "Confirmaron asistencia sobre nominados de cada generación (según convocatoria oficial).",
+    MARGIN,
+    ctx.y
   );
+  advance(LINE + 2);
 
-  const extras: Array<{ label: string; value: string }> = [];
-  if (report.pendienteContacto > 0) {
-    extras.push({ label: "Pendiente contacto", value: String(report.pendienteContacto) });
-  }
-  if (report.plazoJustificacion > 0) {
-    extras.push({ label: "Plazo justificación activo", value: String(report.plazoJustificacion) });
-  }
+  const drawRow = (label: string, stat: { confirmed: number; nominated: number; pct: number }, emphasis: boolean) => {
+    ensureSpace(rowH);
+    const labelY = ctx.y + 3;
 
-  if (extras.length > 0) {
-    gridBottom += cardGap;
-    const rowY = gridBottom;
-    drawMetricCard(doc, MARGIN, rowY, cardW, cardH, extras[0].label, extras[0].value);
-    if (extras[1]) {
-      drawMetricCard(doc, MARGIN + cardW + 6, rowY, cardW, cardH, extras[1].label, extras[1].value);
+    doc.setFont("helvetica", emphasis ? "bold" : "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...(emphasis ? BRAND.navy : ([30, 41, 59] as [number, number, number])));
+    doc.text(label, MARGIN, labelY);
+
+    const detail = `${stat.confirmed}/${stat.nominated} · ${stat.pct}%`;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...BRAND.muted);
+    doc.text(detail, PAGE_W - MARGIN, labelY, { align: "right" });
+
+    const barY = ctx.y + 5;
+    doc.setFillColor(...BRAND.border);
+    doc.roundedRect(MARGIN, barY, CONTENT_W, barH, 1, 1, "F");
+    const fillW = Math.max(0, Math.min(100, stat.pct)) / 100 * CONTENT_W;
+    if (fillW > 0) {
+      doc.setFillColor(...(emphasis ? BRAND.blue : BRAND.teal));
+      doc.roundedRect(MARGIN, barY, Math.max(fillW, 1), barH, 1, 1, "F");
     }
-    gridBottom = rowY + cardH;
+
+    advance(rowH);
+  };
+
+  for (const cohort of cohortStats) {
+    drawRow(shortCohortLabel(cohort.generation), cohort, false);
   }
 
-  ctx.y = gridBottom + sectionGap;
+  doc.setDrawColor(...BRAND.border);
+  doc.setLineWidth(0.2);
+  doc.line(MARGIN, ctx.y, PAGE_W - MARGIN, ctx.y);
+  advance(2);
+
+  drawRow("Total", totals, true);
+
+  advance(4);
 }
 
 function drawSectionTitle(ctx: ReturnType<typeof createPdfContext>, title: string, subtitle?: string) {
@@ -598,25 +768,57 @@ export async function downloadHandoffReportPdf(input: {
   drawTitleBlock(ctx, input.formName, input.formId);
   drawMetaPanel(ctx, input.report);
   drawSummaryGrid(ctx, input.report);
+  drawCohortConfirmationSection(ctx, input.report.cohortStats ?? []);
 
   const nominations = input.report.nominations;
-  const noAttendanceCount = nominations?.noAttendance.length ?? input.report.sinAsistir;
-  const unjustifiedCount =
-    nominations?.unjustified.length ?? input.report.sinRegistrarNiJustificar;
+  const noAttendance = nominations?.noAttendance ?? [];
+  const withJustification = nominations?.withJustification ?? [];
+  const withoutJustification =
+    nominations?.withoutJustification ?? nominations?.unjustified ?? [];
 
-  drawSectionTitle(
-    ctx,
-    `Nómina sin asistencia presencial (${noAttendanceCount})`,
-    "Participantes que confirmaron asistencia pero no registraron check-in en la jornada."
-  );
-  drawNominationTablesByGeneration(ctx, nominations?.noAttendance ?? []);
+  const sections: Array<{
+    title: string;
+    subtitle: string;
+    items: HandoffNominee[];
+    showNote: boolean;
+  }> = [
+    {
+      title: "Nómina sin asistencia presencial",
+      subtitle:
+        "Participantes que confirmaron asistencia pero no registraron check-in en la jornada.",
+      items: noAttendance,
+      showNote: false,
+    },
+    {
+      title: "Inasistencias con justificación presentada",
+      subtitle:
+        "Participantes que declararon inasistencia y enviaron excusa (por revisar, aceptada o en plazo activo).",
+      items: withJustification,
+      showNote: true,
+    },
+    {
+      title: "Inasistencias sin justificación válida",
+      subtitle:
+        "Sin excusa aceptada: pendiente contacto, plazo vencido, rechazada o sin registro en formulario.",
+      items: withoutJustification,
+      showNote: true,
+    },
+  ];
 
-  drawSectionTitle(
-    ctx,
-    `Nómina sin justificación válida (${unjustifiedCount})`,
-    "Inasistencias cerradas sin excusa aceptada o participantes de nómina sin registro en el formulario."
-  );
-  drawNominationTablesByGeneration(ctx, nominations?.unjustified ?? [], { showNote: true });
+  const visibleSections = sections.filter((section) => section.items.length > 0);
+
+  if (visibleSections.length === 0) {
+    drawSectionTitle(
+      ctx,
+      "Sin nóminas pendientes de traspaso",
+      "No hay inasistencias ni participantes sin check-in que requieran seguimiento."
+    );
+  } else {
+    for (const section of visibleSections) {
+      drawSectionTitle(ctx, `${section.title} (${section.items.length})`, section.subtitle);
+      drawNominationTablesByGeneration(ctx, section.items, { showNote: section.showNote });
+    }
+  }
 
   const totalPages = doc.getNumberOfPages();
   for (let page = 1; page <= totalPages; page += 1) {

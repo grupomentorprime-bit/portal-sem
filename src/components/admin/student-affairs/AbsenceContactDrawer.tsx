@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select } from "@/components/ui/select";
@@ -90,13 +91,13 @@ export function AbsenceContactDrawer({
 
   const outcomeOptions = getContactOutcomeOptions(channel);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!isContactOutcomeValidForChannel(channel, contactOutcome)) {
       setContactOutcome(defaultContactOutcomeForChannel(channel));
     }
   }, [channel, contactOutcome]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (isFailedContactOutcomeForChannel(channel, contactOutcome)) {
       setStartDeadline(false);
     } else if (canStartDeadline) {

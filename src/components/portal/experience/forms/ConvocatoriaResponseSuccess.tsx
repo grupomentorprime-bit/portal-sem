@@ -33,7 +33,7 @@ export function ConvocatoriaResponseSuccess({
         <PortalFormSuccess message={message} variant="inline" />
       )}
       {notice ? (
-        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mt-3 rounded-lg border border-[var(--state-warning-border)] bg-[var(--state-warning-bg)] px-4 py-3 text-sm text-[var(--state-warning-fg)]">
           {notice}
         </p>
       ) : null}

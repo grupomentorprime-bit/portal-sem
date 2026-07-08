@@ -109,6 +109,12 @@ export function canSendJustificationRequest(submission: ExperienceFormSubmission
   return classifyAbsenceSubmission(submission) === "pending-email";
 }
 
+export function isPendingValidationOrContact(
+  category: AbsenceListCategory | null
+): boolean {
+  return category === "pending-email" || category === "pending-review";
+}
+
 export type PendingReviewContext = "pre-event" | "post-absence";
 
 /** Distingue justificaciones enviadas antes de la jornada vs. tras inasistencia operada. */

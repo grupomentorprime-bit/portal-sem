@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, Input, Label } from "@/components/ui";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -117,9 +118,9 @@ export function ProfileSettingsClient() {
           </CardDescription>
         </CardHeader>
         <div className="px-6 pb-6">
-          <a href="/admin/login" className="text-sm font-medium text-secondary underline">
+          <Link href="/admin/login" className="text-sm font-medium text-secondary underline">
             Ir a ingresar
-          </a>
+          </Link>
           {compatMode ? (
             <p className="mt-3 text-sm text-muted">
               El modo compatibilidad permite usar el admin sin login, pero el perfil personal requiere

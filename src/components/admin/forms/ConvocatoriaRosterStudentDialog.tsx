@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,7 +72,7 @@ export function ConvocatoriaRosterStudentDialog({
   const [submitting, setSubmitting] = useState(false);
   const isEdit = mode === "edit";
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (!open) return;
     setForm(student ? formFromStudent(student) : EMPTY_FORM);
     setError(null);

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Plus, RefreshCw } from "lucide-react";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
 import { ProgramHubCard } from "@/components/admin/programs/ProgramHubCard";
@@ -94,7 +95,7 @@ export function ProgramsHubClient({
     }
   }, [tenant]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void refresh();
   }, [refresh]);
 

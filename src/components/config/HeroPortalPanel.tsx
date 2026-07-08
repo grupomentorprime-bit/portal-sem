@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { HeroPortalPreview } from "@/components/config/HeroPortalPreview";
 import { HeroSlideEditor } from "@/components/config/HeroSlideEditor";
 import { HeroSlideList } from "@/components/config/HeroSlideList";
@@ -71,7 +72,7 @@ export function HeroPortalPanel({ value, onChange, tenant }: HeroPortalPanelProp
     [selectedSlideId, value.slides]
   );
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (value.slides.length === 0) {
       setSelectedSlideId(null);
       return;

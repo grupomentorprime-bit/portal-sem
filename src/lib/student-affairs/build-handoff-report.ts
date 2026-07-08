@@ -1,5 +1,6 @@
 import { countAbsenceCategories } from "@/lib/student-affairs/absence-categories";
 import { buildHandoffNominations } from "@/lib/student-affairs/build-handoff-nominations";
+import { buildCohortRosterStats } from "@/lib/student-affairs/cohort-stats";
 import { findRosterStudentsWithoutSubmission } from "@/lib/student-affairs/roster-pending";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 import type { StudentAffairsHandoffReport } from "@/types/student-affairs-operations";
@@ -19,6 +20,7 @@ export function buildStudentAffairsHandoffReport(input: {
   const asistieron = submissions.filter((s) => s.dayCheckIn?.present).length;
   const rosterPending = findRosterStudentsWithoutSubmission(rosterStudents, submissions);
   const nominations = buildHandoffNominations({ submissions, rosterStudents });
+  const cohortStats = buildCohortRosterStats(submissions, rosterStudents);
 
   return {
     generatedAt: closedAt,
@@ -35,5 +37,6 @@ export function buildStudentAffairsHandoffReport(input: {
     pendienteContacto: absence.pendingEmail,
     plazoJustificacion: absence.awaitingJustification,
     nominations,
+    cohortStats,
   };
 }

@@ -148,7 +148,7 @@ function applyConditionalFormRules(
   data: Record<string, unknown>,
   errors: FieldErrors
 ): FieldErrors {
-  let next = applyTestimonialFormRules(form, data, errors);
+  const next = applyTestimonialFormRules(form, data, errors);
 
   const hasAttendance = form.fields.some((field) => field.name === "attendance");
   if (!hasAttendance) return next;

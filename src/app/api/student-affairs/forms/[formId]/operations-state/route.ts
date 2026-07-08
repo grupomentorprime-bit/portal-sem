@@ -5,6 +5,7 @@ import { listFormSubmissions } from "@/lib/experience/forms/repository";
 import { getConvocatoriaRoster } from "@/lib/experience/forms/roster";
 import { resolveEffectiveRoleCodes } from "@/lib/identity/membership-role-codes";
 import { buildStudentAffairsHandoffReport } from "@/lib/student-affairs/build-handoff-report";
+import { dispatchHandoffValidationNotifications } from "@/lib/student-affairs/dispatch-handoff-validation";
 import { getHandoffValidationStatus } from "@/lib/student-affairs/follow-up-access";
 import {
   closeStudentAffairsOnSitePhase,
@@ -159,7 +160,29 @@ export async function PATCH(request: Request, context: RouteContext) {
         return NextResponse.json({ ok: false, error: "No se pudo validar el informe." }, { status: 500 });
       }
 
-      return NextResponse.json({ ok: true, operations });
+      const report = existing.handoffReport;
+      let dispatch = null;
+      if (report) {
+        try {
+          dispatch = await dispatchHandoffValidationNotifications({
+            tenantId: ctx.tenantId,
+            formId,
+            validatorUserId: ctx.user._id,
+            validatorName: ctx.user.displayName,
+            report,
+          });
+        } catch (dispatchError) {
+          console.error("[student-affairs/validate-handoff dispatch]", dispatchError);
+          dispatch = {
+            emailsSent: 0,
+            encargadaNotifications: 0,
+            qualityNotifications: 0,
+            errors: ["No se pudieron enviar los avisos automáticos."],
+          };
+        }
+      }
+
+      return NextResponse.json({ ok: true, operations, dispatch });
     }
 
     if (action === "reopen-on-site") {

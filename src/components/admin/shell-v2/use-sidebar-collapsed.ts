@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 
 const STORAGE_KEY = "aprendehoy-admin-sidebar-collapsed";
 
@@ -8,7 +9,7 @@ export function useSidebarCollapsed() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === "true") setCollapsed(true);

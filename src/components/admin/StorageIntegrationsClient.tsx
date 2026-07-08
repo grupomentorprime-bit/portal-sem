@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Cloud, Database, HardDrive, Plug } from "lucide-react";
 import {
   AdminModuleCenter,
@@ -91,7 +92,7 @@ export function StorageIntegrationsClient() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void load();
   }, [load]);
 

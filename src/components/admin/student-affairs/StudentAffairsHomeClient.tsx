@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { ClipboardList, Settings2, Users } from "lucide-react";
 import {
   AlertBanner,
@@ -96,7 +97,7 @@ export function StudentAffairsHomeClient() {
     }
   }, []);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
     void load();
   }, [load]);
 
