@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { aek } from "@/components/admin/kit/utils/tokens";
 import { cn } from "@/lib/utils";
+import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -25,12 +26,9 @@ export function SearchBar({
   className,
 }: SearchBarProps) {
   const [inner, setInner] = useState(value ?? defaultValue);
-  const onChangeRef = useRef(onChange);
   const lastEmittedRef = useRef(value ?? defaultValue);
 
-  onChangeRef.current = onChange;
-
-  useEffect(() => {
+  useDeferredEffect(() => {
     if (value === undefined) return;
     if (value === lastEmittedRef.current) return;
     lastEmittedRef.current = value;
@@ -38,20 +36,19 @@ export function SearchBar({
   }, [value]);
 
   useEffect(() => {
-    const cb = onChangeRef.current;
-    if (!cb) return;
+    if (!onChange) return;
     if (inner === lastEmittedRef.current) return;
     const t = window.setTimeout(() => {
       lastEmittedRef.current = inner;
-      cb(inner);
+      onChange(inner);
     }, debounceMs);
     return () => window.clearTimeout(t);
-  }, [inner, debounceMs]);
+  }, [inner, debounceMs, onChange]);
 
   const clear = () => {
     setInner("");
     lastEmittedRef.current = "";
-    onChangeRef.current?.("");
+    onChange?.("");
   };
 
   return (

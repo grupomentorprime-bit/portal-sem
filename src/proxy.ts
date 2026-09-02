@@ -12,7 +12,7 @@ function continueWithPathname(request: NextRequest) {
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (process.env.IDENTITY_ENFORCE !== "true") {
