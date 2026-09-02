@@ -692,15 +692,15 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
       }
 
       if (query) {
-        const name = String(submission.data.name ?? submission.data.fullName ?? "").toLowerCase();
-        const email = String(submission.data.email ?? "").toLowerCase();
-        const phone = String(submission.data.phone ?? "").toLowerCase();
-        const rut = String(submission.data.rut ?? "").toLowerCase();
         if (
-          !name.includes(query) &&
-          !email.includes(query) &&
-          !phone.includes(query) &&
-          !rut.includes(query)
+          !matchesParticipantQuery(
+            query,
+            submission.data.name,
+            submission.data.fullName,
+            submission.data.email,
+            submission.data.phone,
+            submission.data.rut
+          )
         ) {
           return false;
         }
@@ -722,15 +722,14 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
         }
       }
       if (query) {
-        const name = student.fullName.toLowerCase();
-        const rut = (student.rut ?? "").toLowerCase();
-        const phone = (student.phone ?? "").toLowerCase();
-        const email = (student.email ?? "").toLowerCase();
         if (
-          !name.includes(query) &&
-          !rut.includes(query) &&
-          !phone.includes(query) &&
-          !email.includes(query)
+          !matchesParticipantQuery(
+            query,
+            student.fullName,
+            student.rut,
+            student.phone,
+            student.email
+          )
         ) {
           return false;
         }
@@ -2614,6 +2613,20 @@ function getArrivalProgressToneClass(
   if (pct >= 70) return `${prefix}--good`;
   if (pct >= 40) return `${prefix}--warning`;
   return `${prefix}--low`;
+}
+
+function matchesParticipantQuery(query: string, ...fields: unknown[]): boolean {
+  const needle = foldSearchText(query);
+  if (!needle) return true;
+  return fields.some((field) => foldSearchText(String(field ?? "")).includes(needle));
+}
+
+function foldSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
 }
 
 function shortProgramLabel(generation: string): string {
