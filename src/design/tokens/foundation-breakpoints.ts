@@ -1,5 +1,5 @@
 /**
- * OT-UX-FOUNDATION-001 — Breakpoints oficiales AprendeHoy
+ * OT-UX-FOUNDATION-001 — Breakpoints oficiales de Growth OS
  * Fuente única para CSS (foundation/breakpoints.css) y TypeScript.
  */
 

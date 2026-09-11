@@ -31,9 +31,11 @@ export function AdminNavDrawer({ compatMode, permissions, roleCodes = [] }: Admi
         <Menu className="h-5 w-5" />
       </button>
 
-      <Drawer open={open} onClose={() => setOpen(false)} title="Centro de Administración" side="left">
+      <Drawer open={open} onClose={() => setOpen(false)} title="Growth OS" side="left">
         <nav className="space-y-1" aria-label="Navegación principal">
-          {navItems.map((item) => (
+          {navItems
+            .filter((item): item is typeof item & { href: string } => item.href != null)
+            .map((item) => (
             <Link
               key={item.href}
               href={item.href}

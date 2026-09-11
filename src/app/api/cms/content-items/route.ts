@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   createContentItem,
   isEditableCollection,
@@ -16,9 +16,10 @@ export async function POST(request: Request) {
     });
     if (denied) return denied;
 
-    const body = (await request.json()) as ContentWriteInput;
-    const tenantCheck = await assertActiveTenant(body.tenant);
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
+    const body = (await request.json()) as ContentWriteInput;
     body.tenant = tenantCheck.tenant;
 
     if (!isEditableCollection(body.collection)) {

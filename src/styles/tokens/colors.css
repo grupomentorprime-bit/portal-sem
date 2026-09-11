@@ -2,28 +2,30 @@
  * OT-BRANDING-002 — Sistema corporativo de color (alias, neutros, estados)
  * Requiere brand.css cargado antes en globals.css.
  * Única fuente autorizada de HEX institucionales fuera de brand.css.
+ *
+ * Defaults = Growth OS (neutros + azul). Identidad SEM/ADL llega vía site_config.
  */
 
 :root,
 [data-theme="light"] {
-  /* ─── Escala neutra única (usar --gray-*; no zinc/slate/stone/neutral Tailwind) ─── */
-  --gray-50: #f5f7f9;
-  --gray-100: #e8ecf0;
-  --gray-200: #d1d9e0;
-  --gray-300: #a8b5c2;
-  --gray-400: #7a8fa3;
-  --gray-500: #5c7289;
-  --gray-600: #475a6e;
-  --gray-700: #354656;
-  --gray-800: #243340;
-  --gray-900: #141f29;
+  /* ─── Escala neutra Growth OS (usar --gray-*; no zinc/slate/stone/neutral Tailwind) ─── */
+  --gray-50: #f4f7fb;
+  --gray-100: #eaf2fc;
+  --gray-200: #d9e4f2;
+  --gray-300: #b8c9de;
+  --gray-400: #8fa8c4;
+  --gray-500: #6c87ac;
+  --gray-600: #557194;
+  --gray-700: #3a5273;
+  --gray-800: #1e3355;
+  --gray-900: #0b1f3a;
 
   /* ─── Defaults de marca (desde brand.css) ─── */
   --color-primary-default: var(--sem-primary);
   --color-secondary-default: var(--sem-secondary);
   --color-accent-default: var(--sem-accent);
   --color-success-default: var(--sem-success);
-  --color-warning-default: #c98a2e;
+  --color-warning-default: var(--sem-light);
   --color-info-default: var(--sem-secondary);
 
   /* ─── Alias universales ─── */
@@ -33,7 +35,7 @@
 
   /* ─── Superficies y texto ─── */
   --color-surface-default: #ffffff;
-  --color-background-default: #ffffff;
+  --color-background-default: #f4f7fb;
   --color-foreground-default: var(--gray-900);
   --color-border-default: var(--gray-200);
   --color-muted-default: var(--gray-500);
@@ -81,7 +83,7 @@
 
   --background: var(--color-background);
   --background-soft: var(--gray-50);
-  --background-muted: var(--gray-50);
+  --background-muted: var(--gray-100);
   --text: var(--color-foreground);
   --text-muted: var(--color-muted);
   --text-inverse: var(--color-surface);

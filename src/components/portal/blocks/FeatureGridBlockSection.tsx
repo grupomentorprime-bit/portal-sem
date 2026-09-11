@@ -16,6 +16,7 @@ import type { PageBlock } from "@/types/page";
 
 interface FeatureGridBlockSectionProps {
   block: PageBlock;
+  tenant?: string;
   id?: string;
   muted?: boolean;
   pageSlug?: string;
@@ -23,15 +24,21 @@ interface FeatureGridBlockSectionProps {
 
 export function FeatureGridBlockSection({
   block,
+  tenant,
   id = "feature-grid",
   muted = false,
   pageSlug,
 }: FeatureGridBlockSectionProps) {
   const settings = mergeHomeFeatureGridSettings(
     blockSettings<PortalFeatureGridSettings>(block),
-    pageSlug
+    pageSlug,
+    tenant
   );
-  const features = withHomeDemoFeatures(extractFeatureGridItems(block), pageSlug);
+  const features = withHomeDemoFeatures(
+    extractFeatureGridItems(block),
+    pageSlug,
+    tenant
+  );
 
   if (isHomePageSlug(pageSlug ?? "")) {
     return (

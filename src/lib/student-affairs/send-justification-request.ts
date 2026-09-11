@@ -81,6 +81,7 @@ export async function sendAbsenceJustificationRequest(input: {
   );
 
   const emailResponse = await sendParticipantNoShowJustifyEmail({
+    tenantId: input.tenant,
     to: email,
     participantName,
     convocatoria,

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { Container } from "@/components/layout";
 
 export interface FooterLink {
@@ -39,7 +40,7 @@ const defaultColumns: FooterColumn[] = [
 
 export function Footer({
   columns = defaultColumns,
-  copyright = `© ${new Date().getFullYear()} Seminario Eclesiástico Mayor. Todos los derechos reservados.`,
+  copyright = `© ${new Date().getFullYear()} ${PLATFORM_DISPLAY_NAME}. Todos los derechos reservados.`,
   className,
 }: FooterProps) {
   return (
@@ -47,9 +48,9 @@ export function Footer({
       <Container>
         <div className="grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
-            <p className="text-lg font-bold">SEM</p>
+            <p className="text-lg font-bold">{PLATFORM_DISPLAY_NAME}</p>
             <p className="mt-2 text-sm text-text-inverse/75">
-              Seminario Eclesiástico Mayor
+              Institución
             </p>
           </div>
           {columns.map((col) => (

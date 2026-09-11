@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { duplicateMedia } from "@/lib/cms/media";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
+import { duplicateMedia, getMediaById } from "@/lib/cms/media";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
 
 interface RouteParams {
@@ -14,8 +15,16 @@ export async function POST(_request: Request, { params }: RouteParams) {
     });
     if (denied) return denied;
 
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const { id } = await params;
-    const media = await duplicateMedia(id);
+    const source = await getMediaById(id, tenantCheck.tenant);
+    if (!source) {
+      return NextResponse.json({ ok: false, error: "No se pudo duplicar." }, { status: 404 });
+    }
+
+    const media = await duplicateMedia(id, tenantCheck.tenant);
     if (!media) {
       return NextResponse.json({ ok: false, error: "No se pudo duplicar." }, { status: 404 });
     }

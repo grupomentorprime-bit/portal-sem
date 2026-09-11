@@ -4,6 +4,7 @@ import { writeAudit } from "@/lib/identity/audit";
 import {
   ensureTenantRoles,
   getRoleCode,
+  listRolesByTenant,
   updateRolePermissionMap,
 } from "@/lib/identity/roles";
 import { resolveRolePermissionMap } from "@/lib/identity/permission-resolver";
@@ -21,8 +22,8 @@ export async function GET(_request: Request, context: RouteContext) {
     if (ctx instanceof NextResponse) return ctx;
 
     const { roleId } = await context.params;
-    await ensureTenantRoles(ctx.tenantId);
-    const roles = await ensureTenantRoles(ctx.tenantId);
+    // Lectura pura — sync de roles solo en login/bootstrap/migración (SAAS-004).
+    const roles = await listRolesByTenant(ctx.tenantId);
     const role = roles.find((r) => r._id === roleId);
 
     if (!role || role.tenantId !== ctx.tenantId) {

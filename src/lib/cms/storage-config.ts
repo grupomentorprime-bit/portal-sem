@@ -9,6 +9,12 @@ import {
 } from "@/lib/cms/storage-normalize";
 import { getDatabase } from "@/lib/mongodb";
 import { decryptSecret, encryptSecret } from "@/lib/crypto/secrets";
+import { logServerError } from "@/core/security/redact";
+import { SEM_TENANT_ID } from "@/core/tenant/constants";
+import {
+  LEGACY_STORAGE_INTEGRATION_ID,
+  storageIntegrationIdForTenant,
+} from "@/core/tenant/resource-ids";
 import type {
   ResolvedStorageSettings,
   StorageIntegrationDocument,
@@ -16,17 +22,18 @@ import type {
   StorageIntegrationUpdate,
   StorageProvider,
 } from "@/types/integrations";
-import { STORAGE_INTEGRATION_ID } from "@/types/integrations";
 
 const COLLECTION = "platform_integrations";
 const CACHE_TTL_MS = 30_000;
 
-let cachedSettings: ResolvedStorageSettings | null = null;
-let cacheExpiresAt = 0;
+const cachedByTenant = new Map<string, { settings: ResolvedStorageSettings; expiresAt: number }>();
 
-export function invalidateStorageConfigCache(): void {
-  cachedSettings = null;
-  cacheExpiresAt = 0;
+export function invalidateStorageConfigCache(tenantId?: string): void {
+  if (tenantId) {
+    cachedByTenant.delete(tenantId);
+    return;
+  }
+  cachedByTenant.clear();
 }
 
 function normalizeUrl(value: string): string {
@@ -56,11 +63,29 @@ function resolveFromEnv(): ResolvedStorageSettings | null {
   };
 }
 
-async function fetchStorageDocument(): Promise<StorageIntegrationDocument | null> {
+/**
+ * Lectura por tenant. Compat SEM: si falta `storage:{tenantId}`, intenta
+ * el singleton legado `_id: "storage"` solo para T001.
+ */
+async function fetchStorageDocument(
+  tenantId: string
+): Promise<StorageIntegrationDocument | null> {
   const db = await getDatabase();
-  return db
-    .collection<StorageIntegrationDocument>(COLLECTION)
-    .findOne({ _id: STORAGE_INTEGRATION_ID });
+  const col = db.collection<StorageIntegrationDocument>(COLLECTION);
+  const scopedId = storageIntegrationIdForTenant(tenantId);
+
+  const scoped = await col.findOne({ _id: scopedId, tenantId });
+  if (scoped) return scoped;
+
+  // Compat temporal T001: documento legado sin tenantId.
+  if (tenantId === SEM_TENANT_ID) {
+    const legacy = await col.findOne({ _id: LEGACY_STORAGE_INTEGRATION_ID });
+    if (legacy && (!legacy.tenantId || legacy.tenantId === SEM_TENANT_ID)) {
+      return legacy;
+    }
+  }
+
+  return null;
 }
 
 function resolveFromDocument(doc: StorageIntegrationDocument): ResolvedStorageSettings | null {
@@ -86,38 +111,36 @@ function resolveFromDocument(doc: StorageIntegrationDocument): ResolvedStorageSe
   };
 }
 
-export async function resolveStorageSettings(): Promise<ResolvedStorageSettings> {
+export async function resolveStorageSettings(
+  tenantId: string
+): Promise<ResolvedStorageSettings> {
   const now = Date.now();
-  if (cachedSettings && cacheExpiresAt > now) {
-    return cachedSettings;
+  const cached = cachedByTenant.get(tenantId);
+  if (cached && cached.expiresAt > now) {
+    return cached.settings;
   }
 
-  const doc = await fetchStorageDocument();
-  if (doc?.enabled) {
+  const doc = await fetchStorageDocument(tenantId);
+  if (doc) {
     try {
       const fromDb = resolveFromDocument(doc);
       if (fromDb) {
-        cachedSettings = fromDb;
-        cacheExpiresAt = now + CACHE_TTL_MS;
+        cachedByTenant.set(tenantId, { settings: fromDb, expiresAt: now + CACHE_TTL_MS });
         return fromDb;
       }
     } catch (error) {
-      console.error("[storage] integration enabled but credentials unreadable", error);
+      logServerError("storage", error);
     }
-  } else if (doc) {
-    const fromDb = resolveFromDocument(doc);
-    if (fromDb) {
-      cachedSettings = fromDb;
-      cacheExpiresAt = now + CACHE_TTL_MS;
-      return fromDb;
-    }
+    // Documento propio del tenant (aunque esté deshabilitado): no usar S3 de proceso.
+    const local: ResolvedStorageSettings = { mode: "local", source: "none" };
+    cachedByTenant.set(tenantId, { settings: local, expiresAt: now + CACHE_TTL_MS });
+    return local;
   }
 
   const fromEnv = resolveFromEnv();
   const resolved = fromEnv ?? { mode: "local" as const, source: "none" as const };
 
-  cachedSettings = resolved;
-  cacheExpiresAt = now + CACHE_TTL_MS;
+  cachedByTenant.set(tenantId, { settings: resolved, expiresAt: now + CACHE_TTL_MS });
   return resolved;
 }
 
@@ -140,10 +163,10 @@ export function isS3StorageReady(
 }
 
 /** Todas las subidas de archivos deben ir a S3 (local solo para lectura legacy en desarrollo). */
-export async function assertS3StorageForUpload(): Promise<
-  NonNullable<ResolvedStorageSettings["s3"]>
-> {
-  const doc = await fetchStorageDocument();
+export async function assertS3StorageForUpload(
+  tenantId: string
+): Promise<NonNullable<ResolvedStorageSettings["s3"]>> {
+  const doc = await fetchStorageDocument(tenantId);
 
   if (doc?.enabled) {
     if (!doc.bucket?.trim() || !doc.accessKeyId?.trim() || !doc.secretAccessKeyEncrypted) {
@@ -154,12 +177,12 @@ export async function assertS3StorageForUpload(): Promise<
       const fromDb = resolveFromDocument(doc);
       if (fromDb?.s3) return fromDb.s3;
     } catch (error) {
-      console.error("[storage] upload blocked: cannot decrypt integration secret", error);
+      logServerError("storage", error);
       throw new Error(STORAGE_INTEGRATION_DECRYPT_MESSAGE);
     }
   }
 
-  const settings = await resolveStorageSettings();
+  const settings = await resolveStorageSettings(tenantId);
   if (isS3StorageReady(settings)) {
     return settings.s3;
   }
@@ -167,8 +190,10 @@ export async function assertS3StorageForUpload(): Promise<
   throw new Error(STORAGE_NOT_CONFIGURED_MESSAGE);
 }
 
-export async function getStorageIntegrationPublic(): Promise<StorageIntegrationPublic> {
-  const doc = await fetchStorageDocument();
+export async function getStorageIntegrationPublic(
+  tenantId: string
+): Promise<StorageIntegrationPublic> {
+  const doc = await fetchStorageDocument(tenantId);
   const envResolved = resolveFromEnv();
 
   if (doc) {
@@ -250,11 +275,13 @@ export function providerDefaults(provider: StorageProvider): Partial<StorageInte
 }
 
 export async function updateStorageIntegration(
+  tenantId: string,
   update: StorageIntegrationUpdate
 ): Promise<StorageIntegrationPublic> {
   const db = await getDatabase();
-  const existing = await fetchStorageDocument();
+  const existing = await fetchStorageDocument(tenantId);
   const now = new Date().toISOString();
+  const scopedId = storageIntegrationIdForTenant(tenantId);
 
   let secretAccessKeyEncrypted = existing?.secretAccessKeyEncrypted ?? "";
 
@@ -265,7 +292,8 @@ export async function updateStorageIntegration(
   }
 
   const document: StorageIntegrationDocument = {
-    _id: STORAGE_INTEGRATION_ID,
+    _id: scopedId,
+    tenantId,
     enabled: update.enabled,
     provider: update.provider,
     accessMode: update.accessMode ?? "private",
@@ -281,21 +309,23 @@ export async function updateStorageIntegration(
   };
 
   await db.collection<StorageIntegrationDocument>(COLLECTION).replaceOne(
-    { _id: STORAGE_INTEGRATION_ID },
+    { _id: scopedId },
     document,
     { upsert: true }
   );
 
-  invalidateStorageConfigCache();
+  // Si existía el singleton legado SEM, no lo borramos aquí — migración 008 lo mueve.
+  invalidateStorageConfigCache(tenantId);
   invalidateS3ClientCache();
-  return getStorageIntegrationPublic();
+  return getStorageIntegrationPublic(tenantId);
 }
 
 export async function getResolvedS3SettingsForTest(
+  tenantId: string,
   override?: StorageIntegrationUpdate
 ): Promise<NonNullable<ResolvedStorageSettings["s3"]>> {
   if (override) {
-    const existing = await fetchStorageDocument();
+    const existing = await fetchStorageDocument(tenantId);
     const secret =
       override.secretAccessKey?.trim() ||
       (existing?.secretAccessKeyEncrypted
@@ -318,7 +348,7 @@ export async function getResolvedS3SettingsForTest(
     });
   }
 
-  const resolved = await resolveStorageSettings();
+  const resolved = await resolveStorageSettings(tenantId);
   if (resolved.mode !== "s3" || !resolved.s3) {
     throw new Error("No hay almacenamiento S3 configurado.");
   }

@@ -1,6 +1,6 @@
 /**
  * Design Tokens — Breakpoints oficiales (DOC-002 / DOC-001)
- * Lista canónica AprendeHoy. Importar desde este archivo; no valores arbitrarios.
+ * Lista canónica de Growth OS. Importar desde este archivo; no valores arbitrarios.
  */
 export const breakpoints = {
   /** 360px — mobile compact */

@@ -12,7 +12,6 @@ import {
   getEmailCredential,
   updateUserLastLogin,
 } from "@/lib/identity/users";
-import { findMembership } from "@/lib/identity/memberships";
 import { createMembership } from "@/lib/identity/memberships";
 import { ensureTenantRoles, getSuperAdminRole } from "@/lib/identity/roles";
 import { ensureSuperAdminMembershipForEmail } from "@/lib/identity/iam-guard";
@@ -22,8 +21,12 @@ import type { IdentityUser } from "@/types/identity";
 export async function loginWithEmail(input: {
   email: string;
   password: string;
-  tenantId: string;
-}): Promise<{ ok: true; user: IdentityUser } | { ok: false; error: string }> {
+  /** Preferencia de Espacio (p. ej. host); solo se usa si hay membresía activa. */
+  preferredTenantId?: string | null;
+}): Promise<
+  | { ok: true; user: IdentityUser; activeTenantId: string | null }
+  | { ok: false; error: string }
+> {
   const user = await findUserByEmail(input.email);
   if (!user || user.status !== "active") {
     return { ok: false, error: "Credenciales inválidas." };
@@ -39,17 +42,19 @@ export async function loginWithEmail(input: {
     return { ok: false, error: "Credenciales inválidas." };
   }
 
-  const membership = await findMembership(user._id, input.tenantId);
-  if (!membership) {
-    return { ok: false, error: "Sin acceso a este tenant." };
+  const preferred = input.preferredTenantId?.trim() || null;
+  if (preferred) {
+    await ensureSuperAdminMembershipForEmail(user.email, preferred, user._id);
   }
 
-  await ensureSuperAdminMembershipForEmail(user.email, input.tenantId, user._id);
+  const { resolveActiveTenantForUser } = await import("@/lib/identity/active-space");
+  const resolved = await resolveActiveTenantForUser(user._id, preferred);
+  const activeTenantId = resolved.activeTenantId ?? "";
 
   const meta = await getRequestMeta();
   const session = await createSession({
     userId: user._id,
-    tenantId: input.tenantId,
+    tenantId: activeTenantId,
     ip: meta.ip,
     userAgent: meta.userAgent,
   });
@@ -57,24 +62,26 @@ export async function loginWithEmail(input: {
   await setSessionCookie(session._id);
   await updateUserLastLogin(user._id);
   await writeAudit({
-    tenantId: input.tenantId,
+    tenantId: activeTenantId || preferred || "none",
     userId: user._id,
     action: "auth.login",
     entity: "session",
     entityId: session._id,
   });
 
-  const { publish } = await import("@/core/events/publisher");
-  await publish({
-    type: "UserLoggedIn",
-    tenantId: input.tenantId,
-    entityType: "user",
-    entityId: user._id,
-    userId: user._id,
-    payload: { email: user.email, sessionId: session._id },
-  }).catch(console.error);
+  if (activeTenantId) {
+    const { publish } = await import("@/core/events/publisher");
+    await publish({
+      type: "UserLoggedIn",
+      tenantId: activeTenantId,
+      entityType: "user",
+      entityId: user._id,
+      userId: user._id,
+      payload: { email: user.email, sessionId: session._id },
+    }).catch(console.error);
+  }
 
-  return { ok: true, user };
+  return { ok: true, user, activeTenantId: resolved.activeTenantId };
 }
 
 export async function registerWithEmail(input: {

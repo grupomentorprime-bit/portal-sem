@@ -9,7 +9,7 @@ import { ADMIN_SIDEBAR_SUPPLEMENTAL, getAllNavTreeItems } from "@/lib/admin/nav-
 const ALL_NAV = [...ADMIN_PRIMARY_NAV, ...ADMIN_SIDEBAR_SUPPLEMENTAL, ...getAllNavTreeItems()];
 
 const SEGMENT_LABELS: Record<string, string> = {
-  admin: "Dashboard",
+  admin: "Inicio",
   config: "Institución",
   pages: "Páginas",
   menus: "Menús",
@@ -28,6 +28,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   forms: "Formularios",
   programs: "Programas",
   people: "Personas",
+  personas: "Personas",
   news: "Noticias",
   library: "Biblioteca",
   users: "Usuarios",
@@ -38,6 +39,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   security: "Seguridad",
   activity: "Actividad",
   integrations: "Integraciones",
+  channels: "Canales",
   notifications: "Notificaciones",
 };
 
@@ -46,6 +48,7 @@ function findNavMatch(pathname: string) {
   let bestLen = 0;
 
   for (const item of ALL_NAV) {
+    if (item.href == null) continue;
     const prefixes = item.matchPrefixes ?? [item.href];
     for (const prefix of prefixes) {
       if (
@@ -67,16 +70,15 @@ function findNavMatch(pathname: string) {
 export function resolveAdminBreadcrumbs(pathname: string): BreadcrumbItem[] {
   if (pathname === "/admin/login") return [];
 
-  const items: BreadcrumbItem[] = [{ label: "Dashboard", href: "/admin" }];
+  const items: BreadcrumbItem[] = [{ label: "Inicio", href: "/admin" }];
 
   if (pathname === "/admin") {
-    return [{ label: "Dashboard" }];
+    return [{ label: "Inicio" }];
   }
 
   const navMatch = findNavMatch(pathname);
-  if (navMatch && navMatch.href !== "/admin") {
-    const navLabel =
-      navMatch.href === "/admin" ? "Dashboard" : navMatch.label;
+  if (navMatch?.href && navMatch.href !== "/admin") {
+    const navLabel = navMatch.label;
     if (!items.some((i) => i.label === navLabel)) {
       items.push({
         label: navLabel,
@@ -88,7 +90,16 @@ export function resolveAdminBreadcrumbs(pathname: string): BreadcrumbItem[] {
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length > 2) {
     const tail = segments[segments.length - 1];
-    const tailLabel = SEGMENT_LABELS[tail] ?? decodeURIComponent(tail);
+    let tailLabel = SEGMENT_LABELS[tail] ?? decodeURIComponent(tail);
+    // Ficha de Persona / Oportunidad: no exponer el id técnico en la miga.
+    if (
+      segments[0] === "admin" &&
+      segments.length === 3 &&
+      !SEGMENT_LABELS[tail]
+    ) {
+      if (segments[1] === "personas") tailLabel = "Ficha";
+      if (segments[1] === "ventas") tailLabel = "Oportunidad";
+    }
     const parentHref = `/${segments.slice(0, -1).join("/")}`;
     const already = items.some((i) => i.label === tailLabel);
     const parentIsNav = navMatch?.href === pathname;
@@ -102,7 +113,7 @@ export function resolveAdminBreadcrumbs(pathname: string): BreadcrumbItem[] {
       items.push({ label: tailLabel });
     }
   } else if (navMatch && pathname === navMatch.href) {
-    items[items.length - 1] = { label: navMatch.href === "/admin" ? "Dashboard" : navMatch.label };
+    items[items.length - 1] = { label: navMatch.href === "/admin" ? "Inicio" : navMatch.label };
   }
 
   return items;

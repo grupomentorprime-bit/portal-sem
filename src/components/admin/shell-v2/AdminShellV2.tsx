@@ -12,19 +12,17 @@ interface AdminShellV2Props extends AdminShellV2Context {
   children: React.ReactNode;
 }
 
+/**
+ * Shell V2 — layout patrón maestro:
+ * sidebar full-height a la izquierda · topbar + main a la derecha.
+ */
 export function AdminShellV2({ children, ...ctx }: AdminShellV2Props) {
   const { collapsed, mobileOpen, toggleCollapsed, toggleMobile, closeMobile } =
     useSidebarCollapsed();
 
   return (
-    <div className="admin-shell-v2 min-h-screen bg-background-soft">
-      <AdminTopBarV2
-        {...ctx}
-        collapsed={collapsed}
-        onToggleSidebar={toggleCollapsed}
-        onOpenMobileNav={toggleMobile}
-      />
-      <div className="admin-shell-v2-body flex">
+    <div className="admin-shell-v2 min-h-screen bg-[var(--gray-50)] text-foreground">
+      <div className="flex min-h-screen">
         <Suspense
           fallback={
             <aside
@@ -40,7 +38,15 @@ export function AdminShellV2({ children, ...ctx }: AdminShellV2Props) {
             onMobileClose={closeMobile}
           />
         </Suspense>
-        <AdminLayoutMaster sidebarCollapsed={collapsed}>{children}</AdminLayoutMaster>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <AdminTopBarV2
+            {...ctx}
+            collapsed={collapsed}
+            onToggleSidebar={toggleCollapsed}
+            onOpenMobileNav={toggleMobile}
+          />
+          <AdminLayoutMaster sidebarCollapsed={collapsed}>{children}</AdminLayoutMaster>
+        </div>
       </div>
     </div>
   );

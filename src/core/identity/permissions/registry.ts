@@ -52,6 +52,14 @@ export const PERMISSIONS = {
   "events.manage": "Publicar y gestionar eventos",
   "events.replay": "Reprocesar eventos (replay)",
 
+  // Growth / Ventas (OT-GROWTH-SALES-001)
+  "growth.sales.read": "Ver cola de Ventas (Oportunidades)",
+  "growth.sales.operate": "Operar Oportunidades (estado, seguimiento, próxima acción)",
+
+  // Growth / Automatizaciones (OT-GROWTH-AUTOMATION-002)
+  "growth.automations.view": "Ver definiciones de Automatizaciones del Espacio",
+  "growth.automations.manage": "Crear, versionar, publicar y activar Automatizaciones",
+
   // Academic (futuro)
   "students.read": "Ver estudiantes",
   "finance.view": "Ver finanzas",

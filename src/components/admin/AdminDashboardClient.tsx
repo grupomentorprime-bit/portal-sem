@@ -135,7 +135,7 @@ export function AdminDashboardClient({
     },
     {
       id: "users",
-      title: "Usuarios CMS",
+      title: "Usuarios",
       description: "Accesos y roles",
       href: "/admin/settings/users",
       icon: <Shield className="h-4 w-4" />,
@@ -143,7 +143,7 @@ export function AdminDashboardClient({
     },
     {
       id: "config",
-      title: "Institución",
+      title: "Sitio",
       description: "Datos y configuración",
       href: "/admin/config",
       icon: <Settings className="h-4 w-4" />,
@@ -217,7 +217,7 @@ export function AdminDashboardClient({
             icon={<BookOpen className="h-3.5 w-3.5" />}
           />
           <KpiCard
-            label="Usuarios CMS"
+            label="Usuarios"
             value={memberCount}
             accent="neutral"
             delta="Accesos activos"
@@ -250,7 +250,7 @@ export function AdminDashboardClient({
         {/* 5. Actividad reciente */}
         <Section
           title="Actividad reciente"
-          description="Últimos movimientos del equipo en el CMS."
+          description="Últimos movimientos del equipo en el Espacio."
           actions={
             <Link
               href="/admin/settings/activity"
@@ -302,7 +302,7 @@ function DashboardWelcomeHero({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-            Centro de Administración SEM
+            Growth OS
           </p>
           <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Bienvenido, {firstName}
@@ -316,7 +316,7 @@ function DashboardWelcomeHero({
             </p>
           ) : null}
           <p className="hidden pt-0.5 text-xs leading-snug text-muted sm:block">
-            Resumen operativo del portal institucional.
+            Resumen operativo de tu Espacio.
           </p>
         </div>
 
@@ -327,7 +327,7 @@ function DashboardWelcomeHero({
           />
           <StatusBadge
             tone={cmsSecure ? "active" : "pending"}
-            label={cmsSecure ? "CMS seguro" : "CMS compat."}
+            label={cmsSecure ? "Panel protegido" : "Modo abierto"}
           />
           <StatusBadge tone="active" label="Accesos activos" />
         </div>
@@ -357,16 +357,16 @@ function DashboardSystemPanel({
 
       <ul className="mt-3 space-y-2">
         <SystemStatusDot
-          label="Portal"
+          label="Sitio"
           ok={portalActive}
           okLabel="Activo"
           warnLabel="En revisión"
         />
         <SystemStatusDot
-          label="CMS"
+          label="Panel"
           ok={cmsSecure}
-          okLabel="Seguro"
-          warnLabel="Modo compat."
+          okLabel="Protegido"
+          warnLabel="Modo abierto"
         />
         <SystemStatusDot label="Accesos" ok okLabel="Activo" warnLabel="Inactivo" />
       </ul>
@@ -377,7 +377,7 @@ function DashboardSystemPanel({
       <ul className="mt-3 space-y-2">
         <ActivityMetric label="Noticias" value={newsCount} />
         <ActivityMetric label="Programas" value={programsCount} />
-        <ActivityMetric label="Usuarios CMS" value={memberCount} />
+        <ActivityMetric label="Usuarios" value={memberCount} />
       </ul>
     </div>
   );

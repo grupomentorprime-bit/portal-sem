@@ -222,7 +222,7 @@ export function PeopleListClient({
         { label: "Comunicaciones", href: "/admin/content" },
         { label: "Personas" },
       ]}
-      title="Personas del seminario"
+      title="Personas"
       description="Gestiona el equipo directivo, docente y técnico por separado"
       actions={
         <>
@@ -327,7 +327,7 @@ export function PeopleListClient({
           description={
             activeGroup
               ? `No hay personas en «${activeGroup.label}».`
-              : "No hay personas registradas en el seminario."
+              : "No hay personas registradas."
           }
           action={{ label: "Agregar primera persona", href: newHref }}
         />

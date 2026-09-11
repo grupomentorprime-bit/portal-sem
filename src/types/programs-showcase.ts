@@ -1,6 +1,6 @@
 /**
  * OT-PORTAL-ADMISION-008 — Configuración genérica de showcase de programas.
- * Reutilizable en cualquier institución (AprendeHoy Learning OS).
+ * Reutilizable en cualquier institución (Growth OS).
  */
 
 import type { CmsAnimation } from "./cms-shared";

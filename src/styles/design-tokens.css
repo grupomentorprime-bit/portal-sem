@@ -48,12 +48,12 @@
   --radius-full: var(--radius-pill);
   --radius: var(--radius-md);
 
-  /* ─── Sombras ─── */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 42, 71, 0.03);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 42, 71, 0.04);
-  --shadow-md: 0 2px 8px 0 rgba(0, 42, 71, 0.06);
-  --shadow-lg: 0 4px 16px 0 rgba(0, 42, 71, 0.08);
-  --shadow-xl: 0 8px 24px 0 rgba(0, 42, 71, 0.1);
+  /* ─── Sombras (tint Growth OS text-strong) ─── */
+  --shadow-xs: 0 1px 2px 0 rgba(11, 31, 58, 0.03);
+  --shadow-sm: 0 1px 2px 0 rgba(11, 31, 58, 0.04);
+  --shadow-md: 0 2px 8px 0 rgba(11, 31, 58, 0.06);
+  --shadow-lg: 0 4px 16px 0 rgba(11, 31, 58, 0.08);
+  --shadow-xl: 0 8px 24px 0 rgba(11, 31, 58, 0.1);
   --shadow: var(--shadow-md);
 
   /* ─── Motion ─── */
@@ -113,6 +113,12 @@ body {
   --secondary: var(--color-secondary);
   --background: var(--color-background);
   --text: var(--color-foreground);
+
+  /* Alias legacy `--sem-*`: siguen el Theme del Site, no una institución fija. */
+  --sem-primary: var(--color-primary);
+  --sem-secondary: var(--color-secondary);
+  --color-brand: var(--color-primary);
+  --color-link: var(--color-secondary);
 }
 
 @media (min-width: 1024px) {

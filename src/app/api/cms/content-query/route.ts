@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   executeContentQuery,
   toContentQuery,
   validateContentQuery,
 } from "@/lib/content/query";
 import type { ContentQueryRequest } from "@/lib/content/types";
-import { ALLOWED_COLLECTIONS } from "@/lib/content/types";
+import { authorizeApiRead } from "@/lib/identity/api-guard";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenantParam = searchParams.get("tenant") ?? "";
-    const tenantCheck = await assertActiveTenant(tenantParam);
+    const denied = await authorizeApiRead("cms.pages.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
+    const { searchParams } = new URL(request.url);
     const collection = searchParams.get("collection") ?? "";
 
     const body: ContentQueryRequest = {
@@ -60,10 +62,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as ContentQueryRequest;
-    const tenantCheck = await assertActiveTenant(body.tenant);
+    const denied = await authorizeApiRead("cms.pages.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
+    const body = (await request.json()) as ContentQueryRequest;
     const securedBody = { ...body, tenant: tenantCheck.tenant };
     const errors = validateContentQuery(securedBody);
 
@@ -84,12 +89,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
-
-export async function OPTIONS() {
-  return NextResponse.json({
-    ok: true,
-    collections: ALLOWED_COLLECTIONS,
-    methods: ["GET", "POST"],
-  });
 }

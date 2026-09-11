@@ -29,7 +29,6 @@ interface RouteContext {
 }
 
 function canCloseOnSitePhase(ctx: import("@/types/identity").AuthContext): boolean {
-  if (ctx.compatMode) return true;
   return (
     ctx.permissions.includes("student-affairs.checkin") ||
     ctx.permissions.includes("student-affairs.manage") ||

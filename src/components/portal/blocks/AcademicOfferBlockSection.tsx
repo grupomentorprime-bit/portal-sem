@@ -27,7 +27,8 @@ export async function AcademicOfferBlockSection({
 }: AcademicOfferBlockSectionProps) {
   const settings = mergeHomeAcademicOfferSettings(
     blockSettings<PortalProgramsSectionSettings>(block),
-    pageSlug
+    pageSlug,
+    tenant
   );
 
   let programs: ProgramItem[] = [];
@@ -41,7 +42,7 @@ export async function AcademicOfferBlockSection({
     error = true;
   }
 
-  programs = withHomeDemoPrograms(programs, pageSlug);
+  programs = withHomeDemoPrograms(programs, pageSlug, tenant);
   programs = withProgramImageFallbacks(programs);
 
   return (

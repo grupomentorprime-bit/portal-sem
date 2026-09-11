@@ -30,7 +30,7 @@ export async function NewsBlockSection({ block, tenant, pageSlug }: NewsBlockSec
     error = true;
   }
 
-  items = withHomeDemoNews(items, pageSlug);
+  items = withHomeDemoNews(items, pageSlug, tenant);
 
   return (
     <PortalNewsGrid

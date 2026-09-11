@@ -41,6 +41,7 @@ export interface HeroPremiumSectionProps {
   slides: PremiumHeroSlideView[];
   type?: HeroPortalType;
   carousel?: HeroCarouselSettings;
+  brandMarkSrc?: string;
 }
 
 function CtaLink({
@@ -242,6 +243,7 @@ export function HeroPremiumSection({
   slides,
   type = "image",
   carousel = createDefaultCarouselSettings(),
+  brandMarkSrc,
 }: HeroPremiumSectionProps) {
   const displaySlides = type === "image" ? slides.slice(0, 1) : slides;
   const isCarousel = type === "carousel" && displaySlides.length > 1;
@@ -356,6 +358,7 @@ export function HeroPremiumSection({
   return (
     <HeroPremiumInteractiveShell
       aria-label="Presentación institucional"
+      particleMarkSrc={brandMarkSrc}
       className={cn(
         "hero-premium--dynamic",
         isCarousel && "hero-premium--carousel",

@@ -98,6 +98,7 @@ interface SubmissionStats {
 interface StudentAffairsOperationsPanelProps {
   formId: string;
   formName: string;
+  institutionName?: string;
 }
 
 type AttendanceFilter =
@@ -132,7 +133,11 @@ interface CohortTotals {
   pct: number;
 }
 
-export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffairsOperationsPanelProps) {
+export function StudentAffairsOperationsPanel({
+  formId,
+  formName,
+  institutionName,
+}: StudentAffairsOperationsPanelProps) {
   const [submissions, setSubmissions] = useState<ExperienceFormSubmission[]>([]);
   const [stats, setStats] = useState<SubmissionStats | null>(null);
   const [cohortStats, setCohortStats] = useState<CohortRosterStat[]>([]);
@@ -807,7 +812,12 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
       const pdf = await import("@/lib/student-affairs/download-handoff-report-pdf");
       const report = pdf.resolveHandoffReportForDownload(data.operations ?? null, data.report);
       if (report) {
-        await pdf.downloadHandoffReportPdf({ formName, formId, report });
+        await pdf.downloadHandoffReportPdf({
+          formName,
+          formId,
+          report,
+          institutionName,
+        });
       }
     } catch {
       setError("Error de red al cerrar la jornada.");
@@ -835,7 +845,7 @@ export function StudentAffairsOperationsPanel({ formId, formName }: StudentAffai
       cohortStats: cohortStats.length > 0 ? cohortStats : baseReport.cohortStats,
     };
 
-    await downloadHandoffReportPdf({ formName, formId, report });
+    await downloadHandoffReportPdf({ formName, formId, report, institutionName });
   };
 
   const handleReopenOnSitePhase = async () => {

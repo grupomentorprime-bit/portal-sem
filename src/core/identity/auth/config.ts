@@ -1,8 +1,13 @@
 export const SESSION_COOKIE = "ah_session";
 export const SESSION_TTL_DAYS = 30;
 
+/**
+ * Identity is always required for private zones.
+ * `IDENTITY_ENFORCE` is ignored for access control so a missing or false
+ * value cannot open administration or private APIs (OT-GROWTH-SEC-002).
+ */
 export function isIdentityEnforced(): boolean {
-  return process.env.IDENTITY_ENFORCE === "true";
+  return true;
 }
 
 /** Solo Keycloak; deshabilita login/registro por email y contraseña. */
@@ -15,11 +20,11 @@ export function isEmailAuthEnabled(): boolean {
 }
 
 export function getSessionSecret(): string {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret && process.env.NODE_ENV === "production") {
-    throw new Error("SESSION_SECRET es obligatorio en producción.");
+  const secret = process.env.SESSION_SECRET?.trim();
+  if (!secret) {
+    throw new Error("SESSION_SECRET es obligatorio.");
   }
-  return secret ?? "dev-session-secret-change-me";
+  return secret;
 }
 
 export function sessionExpiresAt(): string {

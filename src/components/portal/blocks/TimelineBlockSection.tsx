@@ -8,6 +8,7 @@ import type { PageBlock } from "@/types/page";
 
 interface TimelineBlockSectionProps {
   block: PageBlock;
+  tenant?: string;
   id?: string;
   muted?: boolean;
   pageSlug?: string;
@@ -15,6 +16,7 @@ interface TimelineBlockSectionProps {
 
 export function TimelineBlockSection({
   block,
+  tenant,
   id = "timeline",
   muted = false,
   pageSlug,
@@ -24,7 +26,7 @@ export function TimelineBlockSection({
   return (
     <PortalTimeline
       settings={settings}
-      items={withHomeDemoTimeline(extractTimelineItems(block), pageSlug)}
+      items={withHomeDemoTimeline(extractTimelineItems(block), pageSlug, tenant)}
       id={id}
       muted={muted}
     />

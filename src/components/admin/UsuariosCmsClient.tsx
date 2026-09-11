@@ -33,7 +33,7 @@ const MEMBER_ACTION_COPY: Record<
   { title: string; description: string; confirmLabel: string; destructive?: boolean }
 > = {
   suspend: {
-    title: "¿Suspender acceso al CMS?",
+    title: "¿Suspender acceso al Espacio?",
     description:
       "El usuario perderá acceso al panel hasta que lo restaure. Sus sesiones activas se cerrarán.",
     confirmLabel: "Sí, suspender",
@@ -49,13 +49,13 @@ const MEMBER_ACTION_COPY: Record<
   archive: {
     title: "¿Eliminar este usuario?",
     description:
-      "Primero quedará archivado: dejará de tener acceso activo al CMS. Luego podrá eliminarlo definitivamente si lo confirma otra vez.",
+      "Primero quedará archivado: dejará de tener acceso activo al Espacio. Luego podrá eliminarlo definitivamente si lo confirma otra vez.",
     confirmLabel: "Sí, archivar",
     destructive: true,
   },
   restore: {
     title: "¿Restaurar acceso?",
-    description: "El usuario volverá a estado activo y podrá acceder al CMS según su rol.",
+    description: "El usuario volverá a estado activo y podrá acceder al Espacio según su rol.",
     confirmLabel: "Sí, restaurar",
   },
   remove: {
@@ -295,7 +295,7 @@ export function UsuariosCmsClient() {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted">Cargando usuarios del CMS…</p>;
+    return <p className="text-sm text-muted">Cargando usuarios…</p>;
   }
 
   return (
@@ -308,7 +308,7 @@ export function UsuariosCmsClient() {
       />
 
       <div className="users-cms-toolbar">
-        <div className="users-cms-tabs" role="tablist" aria-label="Secciones de usuarios CMS">
+        <div className="users-cms-tabs" role="tablist" aria-label="Secciones de usuarios">
           {(
             [
               { id: "team" as const, label: "Equipo", badge: activeMemberCount },
@@ -349,7 +349,7 @@ export function UsuariosCmsClient() {
 
       {compatMode ? (
         <div className="rounded-xl border border-[var(--state-warning-border)] bg-[var(--state-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning)]">
-          Este entorno permite acceder al CMS sin iniciar sesión. Activa el modo seguro en producción.
+          Este entorno permite acceder al panel sin iniciar sesión. Activa el modo seguro en producción.
         </div>
       ) : null}
 
@@ -554,7 +554,7 @@ export function UsuariosCmsClient() {
               <Activity className="h-4 w-4 text-primary" aria-hidden />
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Actividad reciente</h3>
-                <p className="text-xs text-muted">Últimos cambios de accesos y roles en el CMS.</p>
+                <p className="text-xs text-muted">Últimos cambios de accesos y roles.</p>
               </div>
             </div>
             <Link

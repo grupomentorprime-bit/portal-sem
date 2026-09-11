@@ -1,4 +1,4 @@
-/** Event Bus — Domain Events de AprendeHoy Learning OS */
+/** Event Bus — Domain Events de Growth OS */
 
 export const EVENT_STATUSES = ["pending", "processing", "processed", "failed", "dead_letter"] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
@@ -52,6 +52,12 @@ export interface DeadLetterEntry {
   createdAt: string;
 }
 
+export type ScheduledEventStatus =
+  | "scheduled"
+  | "publishing"
+  | "published"
+  | "cancelled";
+
 export interface ScheduledEvent {
   _id: string;
   tenantId: string;
@@ -60,8 +66,11 @@ export interface ScheduledEvent {
   entityId: string;
   payload: Record<string, unknown>;
   scheduledFor: string;
-  status: "scheduled" | "published" | "cancelled";
+  status: ScheduledEventStatus;
   createdAt: string;
+  /** Último error de publicación/reanudación (reintento deja status=scheduled). */
+  lastError?: string;
+  updatedAt?: string;
 }
 
 export interface PublishInput {

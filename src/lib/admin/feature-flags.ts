@@ -1,5 +1,5 @@
 /**
- * Feature flags del BackOffice AprendeHoy.
+ * Feature flags del BackOffice de Growth OS.
  * OT-UX-IMPLEMENTACION-001 — Fase 1
  */
 

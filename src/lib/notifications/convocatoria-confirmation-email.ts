@@ -7,15 +7,21 @@ import {
   type FormConvocatoria,
 } from "@/lib/admin/forms-center";
 import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
-import { getAppBaseUrl, resolvePublicUrl } from "@/lib/app-url";
+import { resolvePublicUrl } from "@/lib/app-url";
 import {
   renderCredentialRow,
   renderInfoBox,
   renderTransactionalEmail,
 } from "@/lib/notifications/email-layout";
 import { sendTransactionalHtmlEmail } from "@/lib/notifications/email";
+import {
+  emailAbsoluteUrl,
+  type EmailIdentity,
+} from "@/lib/notifications/identity";
+import { resolveEmailIdentityForTenant } from "@/lib/notifications/resolve-identity";
 
 export interface ConvocatoriaConfirmationEmailInput {
+  tenantId: string;
   to: string;
   participantName: string;
   attendance: "yes" | "no";
@@ -23,7 +29,6 @@ export interface ConvocatoriaConfirmationEmailInput {
   phone?: string;
   generation?: string;
   professorMessage?: string;
-  institutionName?: string;
   /** Si se define, reemplaza el enlace por defecto al formulario público. */
   confirmationEmailCtaUrl?: string;
   /** Si se define, reemplaza la etiqueta por defecto del botón del correo. */
@@ -31,6 +36,11 @@ export interface ConvocatoriaConfirmationEmailInput {
   /** PDF u otro documento adjunto al correo (p. ej. programa de la jornada). */
   confirmationEmailAttachment?: { filename: string; content: Buffer };
 }
+
+type ConfirmationRenderInput = Omit<
+  ConvocatoriaConfirmationEmailInput,
+  "tenantId" | "to"
+> & { identity: EmailIdentity };
 
 const DEFAULT_YES_MESSAGE =
   "¡Qué alegría! Nos encantará verte en la jornada. ¡Contentos por vernos!";
@@ -45,7 +55,7 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function professorAvatarHtml(mood: "happy" | "sad"): string {
+function professorAvatarHtml(mood: "happy" | "sad", institutionName: string): string {
   const bg = mood === "happy" ? "#d8f3e4" : "#dbe8f4";
   const accent = mood === "happy" ? "#3ED6AF" : "#246AA1";
   const face = mood === "happy" ? "☺" : "☹";
@@ -63,7 +73,7 @@ function professorAvatarHtml(mood: "happy" | "sad"): string {
           <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#5C7289;">
             ${label}
           </p>
-          <p style="margin:0;font-size:12px;color:#5C7289;">Equipo académico — Seminario Eclesiástico Mayor</p>
+          <p style="margin:0;font-size:12px;color:#5C7289;">Equipo académico — ${escapeHtml(institutionName)}</p>
         </td>
       </tr>
     </table>
@@ -92,9 +102,9 @@ function attendanceBadge(attendance: "yes" | "no"): string {
 }
 
 export function renderConvocatoriaConfirmationEmail(
-  input: ConvocatoriaConfirmationEmailInput
+  input: ConfirmationRenderInput
 ): { subject: string; html: string; previewText: string } {
-  const institution = input.institutionName?.trim() || "Seminario Eclesiástico Mayor";
+  const institution = input.identity.displayName;
   const isAttending = input.attendance === "yes";
   const mood = isAttending ? "happy" : "sad";
   const eventTitle = input.convocatoria.landing?.headline ?? input.convocatoria.title;
@@ -103,8 +113,12 @@ export function renderConvocatoriaConfirmationEmail(
   const professorMessage =
     input.professorMessage?.trim() ||
     (isAttending ? DEFAULT_YES_MESSAGE : DEFAULT_NO_MESSAGE);
-  const formUrl = `${getAppBaseUrl()}${publicFormUrl(input.convocatoria.formId)}`;
-  const ctaUrl = resolvePublicUrl(input.confirmationEmailCtaUrl) || formUrl;
+  const formUrl = emailAbsoluteUrl(
+    input.identity,
+    publicFormUrl(input.convocatoria.formId)
+  );
+  const ctaUrl =
+    resolvePublicUrl(input.confirmationEmailCtaUrl, input.identity.origin) || formUrl;
   const defaultCtaLabel = isAttending ? "Ver detalles de la convocatoria" : "Revisar convocatoria";
   const ctaLabel = input.confirmationEmailCtaLabel?.trim() || defaultCtaLabel;
   const firstName = input.participantName.trim().split(/\s+/)[0] || input.participantName;
@@ -113,8 +127,9 @@ export function renderConvocatoriaConfirmationEmail(
     ? "¡Tu asistencia quedó confirmada!"
     : "Recibimos tu respuesta";
 
+  const locationBit = eventLocation.trim() ? ` en ${eventLocation.trim()}` : "";
   const previewText = isAttending
-    ? `¡Nos vemos en Talca Aurora, ${firstName}! Tu asistencia fue registrada.`
+    ? `¡Nos vemos${locationBit}, ${firstName}! Tu asistencia fue registrada.`
     : `${firstName}, gracias por avisarnos. El equipo académico revisará tu respuesta.`;
 
   const intro = isAttending
@@ -134,7 +149,7 @@ export function renderConvocatoriaConfirmationEmail(
   const bodyHtml = `
     ${intro}
     <div style="margin:22px 0;padding:20px;border-radius:16px;background:#F5F7F9;border:1px solid #D1D9E0;">
-      ${professorAvatarHtml(mood)}
+      ${professorAvatarHtml(mood, institution)}
       ${professorQuoteBox(mood, professorMessage)}
     </div>
     <h2 style="margin:24px 0 10px;font-size:15px;color:#141F29;">Resumen de tu respuesta</h2>
@@ -157,7 +172,7 @@ export function renderConvocatoriaConfirmationEmail(
     bodyHtml,
     ctaLabel,
     ctaUrl,
-    footerNote: "Este correo confirma el registro de tu respuesta en el portal institucional.",
+    footerNote: "Este correo confirma el registro de tu respuesta.",
   });
 
   const subject = isAttending
@@ -175,11 +190,16 @@ export async function sendConvocatoriaConfirmationEmail(
     return { ok: false, error: "Correo del participante no indicado." };
   }
 
-  const { subject, html } = renderConvocatoriaConfirmationEmail(input);
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const { subject, html } = renderConvocatoriaConfirmationEmail({
+    ...input,
+    identity,
+  });
   return sendTransactionalHtmlEmail({
     to,
     subject,
     html,
+    identity,
     attachments: input.confirmationEmailAttachment
       ? [input.confirmationEmailAttachment]
       : undefined,

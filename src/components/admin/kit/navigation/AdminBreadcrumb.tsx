@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useAdminChrome } from "@/components/admin/AdminChromeContext";
 import { Breadcrumb, type BreadcrumbItem } from "@/components/ui/breadcrumb";
 import { resolveAdminBreadcrumbs } from "@/lib/admin/breadcrumb-from-path";
 import { cn } from "@/lib/utils";
@@ -12,9 +13,15 @@ export interface AdminBreadcrumbProps {
 
 export function AdminBreadcrumb({ items, className }: AdminBreadcrumbProps) {
   const pathname = usePathname();
-  const resolved = items ?? resolveAdminBreadcrumbs(pathname);
+  const { breadcrumbOverride } = useAdminChrome();
+  const resolved =
+    items ?? breadcrumbOverride ?? resolveAdminBreadcrumbs(pathname);
 
-  if (resolved.length <= 1 && resolved[0]?.label === "Dashboard") {
+  if (
+    resolved.length === 0 ||
+    (resolved.length === 1 &&
+      (resolved[0]?.label === "Inicio" || resolved[0]?.label === "Dashboard"))
+  ) {
     return null;
   }
 

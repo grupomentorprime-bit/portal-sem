@@ -1,6 +1,10 @@
 import "server-only";
 
-import { getAppBaseUrl } from "@/lib/app-url";
+import {
+  emailAbsoluteUrl,
+  type EmailIdentity,
+} from "@/lib/notifications/identity";
+import { resolveEmailIdentityForTenant } from "@/lib/notifications/resolve-identity";
 import {
   renderInfoBox,
   renderTransactionalEmail,
@@ -24,6 +28,8 @@ export interface HandoffGenerationGroup {
 }
 
 export interface HandoffValidationEmailInput {
+  tenantId: string;
+  formId: string;
   to: string;
   encargadaName: string;
   formName: string;
@@ -31,8 +37,6 @@ export interface HandoffValidationEmailInput {
   eventLocation?: string;
   validatedByName: string;
   groups: HandoffGenerationGroup[];
-  panelUrl: string;
-  institutionName?: string;
 }
 
 function escapeHtml(value: string): string {
@@ -134,7 +138,8 @@ export async function sendHandoffValidationEmail(
     return { ok: false, error: "Sin registros pendientes para esta encargada." };
   }
 
-  const institution = input.institutionName?.trim() || "Seminario Eclesiástico Mayor";
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const institution = identity.displayName;
   const name = firstName(input.encargadaName);
   const totalRequest = activeGroups.reduce((sum, g) => sum + g.toRequest.length, 0);
   const totalReview = activeGroups.reduce((sum, g) => sum + g.toReview.length, 0);
@@ -166,7 +171,7 @@ export async function sendHandoffValidationEmail(
     greeting: `Hola, ${name}`,
     bodyHtml,
     ctaLabel: "Ir a la gestión de la jornada",
-    ctaUrl: input.panelUrl,
+    ctaUrl: buildStudentAffairsPanelUrl(input.formId, identity),
     footerNote:
       "Gestiona cada caso desde la plataforma: solicita las excusas pendientes y valida o rechaza las presentadas. Este correo fue generado automáticamente por Asuntos Estudiantiles.",
   });
@@ -175,9 +180,16 @@ export async function sendHandoffValidationEmail(
     to,
     subject: `Seguimiento de inasistencias — ${input.formName}`,
     html,
+    identity,
   });
 }
 
-export function buildStudentAffairsPanelUrl(formId: string): string {
-  return `${getAppBaseUrl()}/admin/portal/asuntos-estudiantiles/${encodeURIComponent(formId)}`;
+export function buildStudentAffairsPanelUrl(
+  formId: string,
+  identity: Pick<EmailIdentity, "origin">
+): string {
+  return emailAbsoluteUrl(
+    identity,
+    `/admin/portal/asuntos-estudiantiles/${encodeURIComponent(formId)}`
+  );
 }

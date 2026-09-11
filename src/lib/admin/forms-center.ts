@@ -2,6 +2,7 @@
  * Centro de formularios — convocatorias, categorías y landings públicas.
  */
 
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
 import {
@@ -83,6 +84,11 @@ export const FORM_CONVOCATORIAS: FormConvocatoria[] = [
     },
   },
 ];
+
+/** Convocatorias SEM — solo visibles/ligadas a T001. */
+export function listFormConvocatorias(tenantId: string): FormConvocatoria[] {
+  return isSemTenant(tenantId) ? FORM_CONVOCATORIAS : [];
+}
 
 /** Landings para formularios generales (no convocatoria). */
 export const FORM_LANDINGS: FormLandingConfig[] = [
@@ -189,20 +195,32 @@ export const FORM_CENTER_CATEGORIES = [
   },
 ] as const;
 
-export function getConvocatoriaBySlug(slug: string): FormConvocatoria | undefined {
-  return FORM_CONVOCATORIAS.find((item) => item.slug === slug);
+export function getConvocatoriaBySlug(
+  slug: string,
+  tenantId?: string
+): FormConvocatoria | undefined {
+  const list =
+    tenantId !== undefined ? listFormConvocatorias(tenantId) : FORM_CONVOCATORIAS;
+  return list.find((item) => item.slug === slug);
 }
 
-export function getConvocatoriaByFormId(formId: string): FormConvocatoria | undefined {
-  return FORM_CONVOCATORIAS.find((item) => item.formId === formId);
+export function getConvocatoriaByFormId(
+  formId: string,
+  tenantId?: string
+): FormConvocatoria | undefined {
+  const list =
+    tenantId !== undefined ? listFormConvocatorias(tenantId) : FORM_CONVOCATORIAS;
+  return list.find((item) => item.formId === formId);
 }
 
-export function getActiveConvocatoria(): FormConvocatoria | undefined {
-  return FORM_CONVOCATORIAS.find((item) => item.active);
+export function getActiveConvocatoria(tenantId?: string): FormConvocatoria | undefined {
+  const list =
+    tenantId !== undefined ? listFormConvocatorias(tenantId) : FORM_CONVOCATORIAS;
+  return list.find((item) => item.active);
 }
 
-export function activeConvocatoriaFormUrl(): string | null {
-  const convocatoria = getActiveConvocatoria();
+export function activeConvocatoriaFormUrl(tenantId?: string): string | null {
+  const convocatoria = getActiveConvocatoria(tenantId);
   return convocatoria ? publicFormUrl(convocatoria.formId) : null;
 }
 

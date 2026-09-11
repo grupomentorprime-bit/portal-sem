@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { SeminariosHomeSection } from "@/components/portal/SeminariosHomeSection";
 import { asString } from "@/lib/cms/block-utils";
 import { blockSettings } from "@/lib/portal/blocks";
@@ -9,6 +10,7 @@ import type { PageBlock } from "@/types/page";
 
 interface SeminariosHomeBlockSectionProps {
   block: PageBlock;
+  tenant?: string;
   pageSlug?: string;
 }
 
@@ -29,6 +31,7 @@ function extractSeminarios(raw: unknown): SeminarioCard[] {
 
 export function SeminariosHomeBlockSection({
   block,
+  tenant,
   pageSlug = "/",
 }: SeminariosHomeBlockSectionProps) {
   const settings = blockSettings<{
@@ -44,7 +47,7 @@ export function SeminariosHomeBlockSection({
   const items =
     seminarios.length > 0
       ? seminarios
-      : isHomePageSlug(pageSlug)
+      : isSemTenant(tenant) && isHomePageSlug(pageSlug)
         ? DEMO_SEMINARIOS
         : [];
 

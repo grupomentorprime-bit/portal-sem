@@ -1,0 +1,178 @@
+{
+  "ot": "OT-GROWTH-CAPTURE-SMOKE-001",
+  "tenantId": "adl",
+  "formId": "adl-smoke-info-request",
+  "case1": {
+    "okSubmit": true,
+    "sourceSaved": true,
+    "personaCreated": true,
+    "personaId": "6a9effbd4dfe2a5dd505247b",
+    "originPersisted": {
+      "kind": "form",
+      "sourceCollection": "experience_form_submissions",
+      "sourceId": "6a9effb84dfe2a5dd505247a",
+      "capturedAt": "2026-09-07T18:17:28.427Z",
+      "channel": "information_request",
+      "formId": "adl-smoke-info-request",
+      "formDestination": "information_request"
+    },
+    "originHuman": "Formulario / Solicitud de información",
+    "oportunidad": {
+      "id": "6a9effc04dfe2a5dd505247e",
+      "typeKey": "inquiry",
+      "status": "open"
+    },
+    "actividades": [
+      {
+        "summary": "Próxima acción: Llamar para confirmar interés"
+      },
+      {
+        "summary": "Oportunidad abierta (inquiry)"
+      },
+      {
+        "summary": "Solicitud de información recibida"
+      }
+    ],
+    "isolationOk": true,
+    "inVentas": true
+  },
+  "case2": {
+    "okSubmit": true,
+    "singlePersona": true,
+    "samePersonaId": true,
+    "oportunidadesCount": 1,
+    "reusedOpenOpportunity": true,
+    "activitiesIncreased": true,
+    "sourceSubmissions": 2,
+    "actividadTypeKeys": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "case3": {
+    "okAdmit": true,
+    "interesadoKept": false,
+    "interesadoTenant": null,
+    "handoff": {
+      "delivered": true,
+      "externalId": "local-lead-6a9effdb4dfe2a5dd505248b"
+    },
+    "adapter": "local(default)",
+    "personaCreated": true,
+    "originHuman": "Portal web / Admisión",
+    "conversionOpp": {
+      "id": "6a9effe34dfe2a5dd505248f",
+      "typeKey": "conversion",
+      "status": "handed_off"
+    },
+    "actividades": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "isolationOk": true
+  },
+  "case4": {
+    "okSubmit": true,
+    "automationId": "gauto-1788789203786-0781114e",
+    "personaId": "6a9f00024dfe2a5dd50524a1",
+    "oportunidadOpened": true,
+    "nextAction": {
+      "summary": "Llamar para confirmar interés",
+      "kind": "other",
+      "setAt": "2026-09-07T18:18:48.615Z"
+    },
+    "runsBefore": 2,
+    "newRuns": [
+      {
+        "id": "6a9f000b4dfe2a5dd50524a9",
+        "status": "waiting",
+        "lines": [
+          {
+            "at": "2026-09-07T18:18:51.288Z",
+            "text": "Se creó una oportunidad."
+          },
+          {
+            "at": "2026-09-07T18:18:51.288Z",
+            "text": "Definió qué hacer ahora: “Llamar para confirmar interés”."
+          },
+          {
+            "at": "2026-09-07T18:18:51.288Z",
+            "text": "Está esperando 2 días."
+          },
+          {
+            "at": "2026-09-07T18:18:51.288Z",
+            "text": "Continuará el 9 de septiembre."
+          }
+        ]
+      },
+      {
+        "id": "6a9effe94dfe2a5dd5052494",
+        "status": "waiting",
+        "lines": [
+          {
+            "at": "2026-09-07T18:18:17.256Z",
+            "text": "Se creó una oportunidad."
+          },
+          {
+            "at": "2026-09-07T18:18:17.256Z",
+            "text": "Definió qué hacer ahora: “Llamar para confirmar interés”."
+          },
+          {
+            "at": "2026-09-07T18:18:17.256Z",
+            "text": "Está esperando 2 días."
+          },
+          {
+            "at": "2026-09-07T18:18:17.256Z",
+            "text": "Continuará el 9 de septiembre."
+          }
+        ]
+      },
+      {
+        "id": "6a9effc64dfe2a5dd5052483",
+        "status": "waiting",
+        "lines": [
+          {
+            "at": "2026-09-07T18:17:42.666Z",
+            "text": "Se creó una oportunidad."
+          },
+          {
+            "at": "2026-09-07T18:17:42.666Z",
+            "text": "Definió qué hacer ahora: “Llamar para confirmar interés”."
+          },
+          {
+            "at": "2026-09-07T18:17:42.666Z",
+            "text": "Está esperando 2 días."
+          },
+          {
+            "at": "2026-09-07T18:17:42.666Z",
+            "text": "Continuará el 9 de septiembre."
+          }
+        ]
+      }
+    ],
+    "automationActivities": [],
+    "runRecorded": true,
+    "salesOpsEffect": true
+  },
+  "ui": {
+    "skipped": false,
+    "personasShowsName": true,
+    "personaDetailHasOrigin": true,
+    "ventasShowsPerson": true,
+    "autoHistoryHasSection": true,
+    "autoHistoryShowsExecution": true
+  },
+  "verdictHints": {
+    "case1Ok": true,
+    "case2Ok": true,
+    "case3Ok": false,
+    "case4Ok": true
+  }
+}

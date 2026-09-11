@@ -5,6 +5,7 @@ import {
   type Subscription,
 } from "@/core/events/subscribers";
 import { persistEvent, updateEventStatus, writeDeadLetter } from "@/core/events/persistence/store";
+import { redactSensitiveText } from "@/core/security/redact";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
@@ -54,8 +55,8 @@ export async function dispatch(event: DomainEvent, options?: { skipPersist?: boo
         tenantId: event.tenantId,
         type: event.type,
         handler: sub.name,
-        error: result.error.message,
-        stack: result.error.stack,
+        error: redactSensitiveText(result.error.message),
+        stack: result.error.stack ? redactSensitiveText(result.error.stack) : undefined,
         attempts: MAX_RETRIES,
         event,
       });

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import { seedContentCollections } from "@/lib/content/seed";
+import { authorizeApiWrite } from "@/lib/identity/api-guard";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const body = (await request.json()) as { tenant?: string };
-    const tenantCheck = await assertActiveTenant(body.tenant);
+    const denied = await authorizeApiWrite("cms.pages.create", {
+      action: "content.seed",
+      entity: "content",
+    });
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
     const result = await seedContentCollections(tenantCheck.tenant);

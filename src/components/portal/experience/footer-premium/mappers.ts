@@ -1,3 +1,4 @@
+import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import { asBoolean, asString } from "@/lib/cms/block-utils";
 import type { FooterColumn, NavLink } from "@/core/navigation";
 import type {
@@ -22,7 +23,6 @@ import type {
   PortalFooterSocialItem,
 } from "@/types/footer-premium";
 import { SOCIAL_NETWORKS } from "@/components/portal/layout/footer/social-config";
-import { SEM_FOOTER_LEGAL } from "@/lib/portal/footer-content";
 
 export const DEFAULT_FOOTER_PREMIUM_SETTINGS: Required<PortalFooterPremiumSettings> = {
   showDescription: true,
@@ -141,7 +141,7 @@ export function buildFooterPremiumViewModel(input: BuildFooterPremiumInput): Por
     adminAction: portalCopy.footerAdminLabel
       ? { type: "url", href: "/admin/config" }
       : undefined,
-    credits: portalCopy.footerCredits || SEM_FOOTER_LEGAL.credits,
+    credits: rewriteLegacyPlatformProductName(portalCopy.footerCredits) || undefined,
     backToTopLabel: portalCopy.footerBackToTopLabel,
   };
 }

@@ -1,5 +1,6 @@
 import type { WorkflowDefinition } from "@/types/workflow";
 import type { WorkflowStateType } from "@/types/workflow";
+import { GROWTH_OPPORTUNITY_WORKFLOW_TEMPLATE } from "@/core/growth/opportunity-definition";
 import { workflowStateColors } from "@/core/workflow/workflow-colors";
 
 export interface DefinitionTemplate {
@@ -81,6 +82,8 @@ export const SYSTEM_WORKFLOW_TEMPLATES: DefinitionTemplate[] = [
       { id: "publish-direct", fromState: "draft", toState: "published", label: "Publicar directo", permission: "news.publish", actions: ["audit"] },
     ],
   },
+  /** ADR-010 / OT-GROWTH-CORE-003 — un solo motor; sin estados académicos. */
+  GROWTH_OPPORTUNITY_WORKFLOW_TEMPLATE,
 ];
 
 export function templateToDefinition(

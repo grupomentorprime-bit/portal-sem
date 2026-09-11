@@ -31,11 +31,11 @@ import { ExperienceFormGrid } from "@/components/blocks/ExperienceFormGrid";
 import { FooterPremiumGrid } from "@/components/blocks/FooterPremiumGrid";
 import { AllianceSection } from "@/components/portal/conversion/AllianceSection";
 import { asBoolean, asString } from "@/lib/cms/block-utils";
+import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
 import {
   extractFaqItems,
   extractScholarshipItems,
 } from "@/lib/portal/blocks";
-import { CMS_ASSET_PATHS } from "@/lib/cms/asset-paths";
 import type { PageBlock } from "@/types/page";
 import type { SiteConfig } from "@/types/cms";
 import {
@@ -177,12 +177,13 @@ function BlockItem({
           slides={[
             buildLegacyHeroPreviewSlide(s, {
               institutionName: asString(s.institutionName, institution.name),
-              heroImage: asString(s.heroImage, branding.heroImage || CMS_ASSET_PATHS.hero),
+              heroImage: asString(s.heroImage, branding.heroImage || PLATFORM_ASSET_FALLBACKS.hero),
               ctaLabel: asString(s.ctaLabel, "Conoce nuestros programas"),
               ctaHref: asString(s.ctaHref, "/programas"),
             }),
           ]}
           type="image"
+          brandMarkSrc={branding.logo || undefined}
         />
       );
       break;
@@ -310,7 +311,7 @@ function BlockItem({
           legalLinks={[]}
           programs={[]}
           logos={{
-            primary: branding.logo || CMS_ASSET_PATHS.logoSem,
+            primary: branding.logo || "",
             secondary: branding.secondaryLogo,
           }}
         />

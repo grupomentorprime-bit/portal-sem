@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
-import { ensureTenantRoles, listRolesByTenant, getRoleCode } from "@/lib/identity/roles";
+import { listRolesByTenant, getRoleCode } from "@/lib/identity/roles";
 import { PORTAL_ROLE_CODES } from "@/core/identity/roles/codes";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 
@@ -9,7 +9,7 @@ export async function GET() {
     const ctx = await requireAuth();
     if (ctx instanceof NextResponse) return ctx;
 
-    await ensureTenantRoles(ctx.tenantId);
+    // Lectura pura — sync de roles solo en login/bootstrap/migración (SAAS-004).
     const roles = await listRolesByTenant(ctx.tenantId);
 
     return NextResponse.json({

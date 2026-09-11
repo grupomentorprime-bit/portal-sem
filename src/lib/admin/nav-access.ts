@@ -29,6 +29,9 @@ const ELEVATED_ADMIN_ROLE_CODES = new Set<RoleCode>([
 ]);
 
 function itemMatchesPermissions(item: AdminNavItem, permissions: string[]): boolean {
+  /** Placeholders del patrón maestro: visibles en shell completo (sin IAM propia). */
+  if (item.href == null) return true;
+
   if (item.requiredPermissions?.length) {
     return item.requiredPermissions.every((p) => permissions.includes(p));
   }
@@ -38,9 +41,7 @@ function itemMatchesPermissions(item: AdminNavItem, permissions: string[]): bool
   return false;
 }
 
-export function isStudentAffairsOnlyUser(permissions: string[], compatMode: boolean): boolean {
-  if (compatMode) return false;
-
+export function isStudentAffairsOnlyUser(permissions: string[], _compatMode: boolean): boolean {
   const hasStudentAffairs = permissions.some((permission) =>
     permission.startsWith("student-affairs.")
   );
@@ -93,7 +94,6 @@ export function usesStudentAffairsFocusedShell(
   compatMode: boolean,
   roleCodes: string[] = []
 ): boolean {
-  if (compatMode) return false;
   if (isStudentAffairsOperator(roleCodes)) return true;
   return isStudentAffairsOnlyUser(permissions, compatMode);
 }
@@ -105,6 +105,7 @@ const STUDENT_AFFAIRS_ALLOWED_IDS = new Set([
 ]);
 
 function isStudentAffairsAllowedItem(item: AdminNavItem): boolean {
+  if (item.href == null) return false;
   if (item.id && STUDENT_AFFAIRS_ALLOWED_IDS.has(item.id)) return true;
   return item.href === "/admin" || item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH);
 }
@@ -118,8 +119,6 @@ export function filterNavItem(
   if (isStudentAffairsOperator(roleCodes) && isStudentAffairsAdminOnlyNavItem(item)) {
     return false;
   }
-
-  if (compatMode) return true;
 
   if (usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes)) {
     return isStudentAffairsAllowedItem(item);
@@ -138,8 +137,6 @@ export function filterSupplementalNav(
   compatMode: boolean,
   roleCodes: string[] = []
 ): AdminNavItem[] {
-  if (compatMode) return ADMIN_SIDEBAR_SUPPLEMENTAL;
-
   if (usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes)) {
     return ADMIN_SIDEBAR_SUPPLEMENTAL.filter((item) => isStudentAffairsAllowedItem(item));
   }
@@ -154,16 +151,16 @@ export function filterAdminNav(
   compatMode: boolean,
   roleCodes: string[] = []
 ): AdminNavItem[] {
-  if (compatMode) return ADMIN_PRIMARY_NAV;
-
   if (usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes)) {
     return ADMIN_PRIMARY_NAV.filter(
       (item) =>
-        item.href === "/admin" || item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH)
+        item.href === "/admin" ||
+        (item.href != null && item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH))
     );
   }
 
   return ADMIN_PRIMARY_NAV.filter((item) => {
+    if (item.href == null) return false;
     if (item.requiredRole?.length) {
       const hasRole = item.requiredRole.some((r) => roleCodes.includes(r));
       if (!hasRole) return false;

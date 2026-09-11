@@ -63,7 +63,7 @@ export const componentSpecs: ComponentSpec[] = [
     tokens: ["--border", "--secondary", "--focus-ring", "--color-danger", "--muted"],
     accessibility: ["label asociado", "error visible", "aria-invalid cuando error"],
     props: ["label?", "error?", "helper?", "icon?", "loading?", "..."],
-    example: `<Input label="Email" placeholder="nombre@sem.edu" />`,
+    example: `<Input label="Email" placeholder="nombre@ejemplo.org" />`,
     source: "src/components/ui/input.tsx",
   },
   {
@@ -161,7 +161,7 @@ export const componentSpecs: ComponentSpec[] = [
     tokens: ["--primary", "--gray-*", "--border"],
     accessibility: ["nav con landmarks", "links descriptivos"],
     props: ["columns", "copyright?", "social?"],
-    example: `<Footer columns={[...]} copyright="© SEM" />`,
+    example: `<Footer columns={[...]} copyright="© Growth OS" />`,
     source: "src/components/ui/footer.tsx",
   },
   {

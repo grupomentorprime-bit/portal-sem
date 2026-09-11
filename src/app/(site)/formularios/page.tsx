@@ -2,10 +2,11 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PortalBreadcrumb, PortalContainer, PortalSection } from "@/components/portal/layout";
 import { getActivePortal } from "@/lib/portal/site";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding";
 import { listPublicExperienceForms } from "@/lib/experience/forms/repository";
 import {
-  FORM_CONVOCATORIAS,
   getSupersededFormIds,
+  listFormConvocatorias,
   publicFormUrl,
 } from "@/lib/admin/forms-center";
 import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experience";
@@ -13,10 +14,16 @@ import type { FormLandingTheme } from "@/lib/admin/forms-center";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Formularios",
-  description: "Formularios y convocatorias del Seminario Eclesiástico Mayor.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const ctx = await getActivePortal();
+  if (!ctx) return { title: "Formularios" };
+  const suffix =
+    ctx.config.institution.shortName || ctx.config.institution.name || PLATFORM_DISPLAY_NAME;
+  return {
+    title: `Formularios | ${suffix}`,
+    description: ctx.config.seo.description || undefined,
+  };
+}
 
 function themeForExperience(theme: FormLandingTheme): FormLandingTheme | "default" {
   return theme ?? "default";
@@ -37,7 +44,9 @@ export default async function FormulariosIndexPage() {
   );
 
   const convocatoriaFormIds = new Set(
-    FORM_CONVOCATORIAS.filter((item) => item.active).map((item) => item.formId)
+    listFormConvocatorias(ctx.tenant)
+      .filter((item) => item.active)
+      .map((item) => item.formId)
   );
   const convocatorias = experiences.filter(({ form }) => convocatoriaFormIds.has(form._id));
   const otros = experiences.filter(({ form }) => !convocatoriaFormIds.has(form._id));
@@ -69,7 +78,9 @@ export default async function FormulariosIndexPage() {
                 <h2 className="forms-hub__section-title">Convocatorias activas</h2>
                 <div className="forms-hub__grid forms-hub__grid--convocatorias">
                   {convocatorias.map(({ form, landing }) => {
-                    const convocatoria = FORM_CONVOCATORIAS.find((c) => c.formId === form._id);
+                    const convocatoria = listFormConvocatorias(ctx.tenant).find(
+                      (c) => c.formId === form._id
+                    );
                     return (
                       <Link
                         key={form._id}

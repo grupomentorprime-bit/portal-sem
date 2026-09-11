@@ -122,7 +122,7 @@ export function DesignSystemShowcase({ variant = "internal" }: DesignSystemShowc
       <Hero
         subtitle="OT-BRANDING-005 · Experience Kit v1.0"
         title="Catálogo visual del Design System"
-        description="Componentes, variantes, estados y tokens corporativos SEM. Documentación en docs/design/."
+        description="Componentes, variantes, estados y tokens corporativos. Documentación en docs/design/."
         primaryCta={{ label: "Explorar componentes", href: "#componentes" }}
         secondaryCta={{ label: "Guía de contribución", href: "#docs" }}
         align="center"
@@ -257,7 +257,7 @@ export function DesignSystemShowcase({ variant = "internal" }: DesignSystemShowc
             <Grid cols={1} mdCols={2} gap={6}>
               <Input
                 label="Correo electrónico"
-                placeholder="nombre@sem.edu"
+                placeholder="nombre@ejemplo.org"
                 helper="Usaremos este correo para contactarte."
                 icon={Mail}
               />
@@ -326,8 +326,8 @@ export function DesignSystemShowcase({ variant = "internal" }: DesignSystemShowc
                 <TabsContent value="tab3">Contenido de la pestaña Historial.</TabsContent>
               </Tabs>
               <Accordion>
-                <AccordionItem title="¿Qué es el SEM?" defaultOpen>
-                  El Seminario Eclesiástico Mayor es una institución de formación eclesiástica.
+                <AccordionItem title="¿Qué es un Espacio?" defaultOpen>
+                  Un Espacio es la organización que opera su sitio y su equipo en Growth OS.
                 </AccordionItem>
                 <AccordionItem title="¿Cómo me inscribo?">
                   Consulta la sección de admisiones en el portal institucional.
@@ -423,7 +423,7 @@ export function DesignSystemShowcase({ variant = "internal" }: DesignSystemShowc
                   ],
                 },
               ]}
-              copyright="© Ejemplo SEM"
+              copyright="© Ejemplo"
             />
           </ShowcaseBlock>
 
@@ -508,7 +508,7 @@ export function DesignSystemShowcase({ variant = "internal" }: DesignSystemShowc
         <Container>
           <SectionHeader
             title="Componentes institucionales"
-            description="OT-SEM-DESIGN-002 — Identidad visual del portal SEM."
+            description="Componentes institucionales reutilizables — identidad visual del portal."
           />
 
           <ShowcaseBlock title="SectionTitle y VerseBlock">

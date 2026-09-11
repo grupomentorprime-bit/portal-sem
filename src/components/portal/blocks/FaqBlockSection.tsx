@@ -6,10 +6,11 @@ import type { PageBlock } from "@/types/page";
 
 interface FaqBlockSectionProps {
   block: PageBlock;
+  tenant?: string;
   pageSlug?: string;
 }
 
-export function FaqBlockSection({ block, pageSlug }: FaqBlockSectionProps) {
+export function FaqBlockSection({ block, tenant, pageSlug }: FaqBlockSectionProps) {
   const settings = blockSettings<{
     overline?: string;
     title?: string;
@@ -21,7 +22,7 @@ export function FaqBlockSection({ block, pageSlug }: FaqBlockSectionProps) {
       overline={settings.overline}
       title={settings.title}
       description={settings.description}
-      items={withHomeDemoFaqItems(extractFaqItems(block), pageSlug)}
+      items={withHomeDemoFaqItems(extractFaqItems(block), pageSlug, tenant)}
       editorialHome={pageSlug ? isHomePageSlug(pageSlug) : false}
     />
   );

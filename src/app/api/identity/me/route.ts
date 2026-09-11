@@ -1,11 +1,13 @@
+import { PLATFORM_SPACE_FALLBACK } from "@/core/branding";
 import { NextResponse } from "next/server";
-import { requireAuth, requireSession } from "@/core/identity";
+import { hasPlatformOperatorCapability, requireAuth, requireSession } from "@/core/identity";
 import { isEmailAuthEnabled, isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
-import { getSiteConfig } from "@/lib/cms/config";
+import { getSiteConfigForTenant } from "@/lib/cms/config";
 import { findRolesByIds } from "@/lib/identity/roles";
 import { changeUserPassword, updateUserProfile } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
+import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
 
 function serializeUser(user: {
   _id: string;
@@ -34,18 +36,25 @@ export async function GET() {
     const ctx = await requireAuth();
     if (ctx instanceof NextResponse) return ctx;
 
-    const config = await getSiteConfig();
+    const config = await getSiteConfigForTenant(ctx.tenantId);
     const roles = ctx.membership
       ? await findRolesByIds(ctx.tenantId, ctx.membership.roleIds)
       : [];
     const primaryRole = roles[0]?.name;
     const user = ctx.user;
 
+    const spaces = await listAvailableSpacesForUser(user._id);
+
     return NextResponse.json({
       ok: true,
       user: serializeUser(user),
-      institutionName: config?.institution.name ?? "Institución",
-      tenantId: ctx.tenantId,
+      institutionName: config?.institution.name?.trim() || PLATFORM_SPACE_FALLBACK,
+      tenantId: ctx.tenantId || null,
+      activeTenantId: ctx.tenantId || null,
+      spaces,
+      hasSpace: Boolean(ctx.tenantId && ctx.membership),
+      isPlatformOperator: hasPlatformOperatorCapability(user),
+      platformRoles: ctx.platformRoles ?? [],
       permissions: ctx.permissions,
       roles: roles.map((r) => ({
         id: r._id,

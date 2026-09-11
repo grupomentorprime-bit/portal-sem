@@ -7,7 +7,7 @@ export default function ActivitySettingsPage() {
   return (
     <AdminPageFrame
       title="Mi actividad"
-      description="Historial de cambios y accesos en el CMS"
+      description="Historial de cambios y accesos en el Espacio"
       backHref="/admin"
       backLabel="Volver al inicio"
     >

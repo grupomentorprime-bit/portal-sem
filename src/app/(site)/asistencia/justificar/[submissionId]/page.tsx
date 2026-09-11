@@ -1,6 +1,7 @@
 import { ParticipantJustificationForm } from "@/components/portal/experience/forms/ParticipantJustificationForm";
 import { hasSubmissionAttachment } from "@/lib/experience/forms/attachments";
 import { getActivePortal } from "@/lib/portal/site";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding";
 import { getFormSubmissionById } from "@/lib/experience/forms/repository";
 import { verifySubmissionParticipantToken } from "@/lib/experience/forms/submission-participant-token";
 import type { Metadata } from "next";
@@ -11,10 +12,15 @@ interface PageProps {
   searchParams: Promise<{ token?: string }>;
 }
 
-export const metadata: Metadata = {
-  title: "Justificar inasistencia — Portal SEM",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const ctx = await getActivePortal();
+  return {
+    title: ctx
+      ? `Justificar inasistencia | ${ctx.config.institution.shortName || ctx.config.institution.name || PLATFORM_DISPLAY_NAME}`
+      : "Justificar inasistencia",
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function JustificarAsistenciaPage({ params, searchParams }: PageProps) {
   const { submissionId } = await params;

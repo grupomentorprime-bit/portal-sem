@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { getEventById } from "@/core/events/persistence/store";
+import { sanitizeStoredEventForClient } from "@/core/events/sanitize";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -18,7 +19,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Evento no encontrado." }, { status: 404 });
     }
 
-    return NextResponse.json({ ok: true, event });
+    return NextResponse.json({ ok: true, event: sanitizeStoredEventForClient(event) });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

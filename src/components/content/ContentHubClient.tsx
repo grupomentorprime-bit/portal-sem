@@ -133,7 +133,7 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
         { label: "Centro editorial" },
       ]}
       title="Centro editorial"
-      description="Gestiona programas, noticias, personas y recursos del portal SEM"
+      description="Gestiona programas, noticias, personas y recursos del Espacio"
       actions={
         <>
           <Link href="/" target="_blank">
@@ -198,7 +198,7 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
           {
             id: "media",
             title: "Subir imágenes",
-            description: "Biblioteca visual del seminario",
+            description: "Biblioteca visual",
             href: "/admin/media",
             icon: <Image className="h-5 w-5" aria-hidden="true" />,
           },

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getActiveTenantId } from "@/core/identity";
 import {
   exchangeKeycloakCode,
   fetchKeycloakUserInfo,
@@ -15,8 +14,12 @@ import {
   getRequestMeta,
   setSessionCookie,
 } from "@/lib/identity/sessions";
+import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
+import { logServerError } from "@/core/security/redact";
 import { updateUserLastLogin } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
+import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
+import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
 
 const STATE_COOKIE = "kc_oauth_state";
 const NEXT_COOKIE = "kc_oauth_next";
@@ -40,19 +43,21 @@ export async function GET(request: Request) {
   }
 
   try {
-    const tenantId = await getActiveTenantId();
-    if (!tenantId) {
-      return NextResponse.redirect(new URL("/admin/login?error=tenant", request.url));
-    }
+    // Preferencia de host (invitación/bootstrap SEM); no ata la identidad a SEM.
+    const preferredTenantId = await resolveActiveTenantIdFromRequest();
 
     const tokens = await exchangeKeycloakCode(code);
     const profile = await fetchKeycloakUserInfo(tokens.accessToken);
-    const { user } = await finishKeycloakLogin(profile, tenantId, tokens.accessToken);
+    const { user, activeTenantId } = await finishKeycloakLogin(
+      profile,
+      preferredTenantId,
+      tokens.accessToken
+    );
 
     const meta = await getRequestMeta();
     const session = await createSession({
       userId: user._id,
-      tenantId,
+      tenantId: activeTenantId ?? "",
       ip: meta.ip,
       userAgent: meta.userAgent,
     });
@@ -60,25 +65,24 @@ export async function GET(request: Request) {
     await updateUserLastLogin(user._id);
 
     await writeAudit({
-      tenantId,
+      tenantId: activeTenantId || preferredTenantId || "none",
       userId: user._id,
       action: "auth.login.keycloak",
       entity: "session",
       entityId: session._id,
     });
 
-    const isSafeNext = nextPath.startsWith("/") && !nextPath.startsWith("//");
-    const nextPathOnly = nextPath.split("?")[0];
-    const safeNext =
-      isSafeNext && nextPathOnly !== "/admin" && nextPathOnly !== "/admin/config"
-        ? nextPath
-        : "/admin";
-    return NextResponse.redirect(new URL(safeNext, request.url));
+    const destination = resolvePostAuthDestination({
+      hasSpace: Boolean(activeTenantId),
+      isPlatformOperator: hasPlatformOperatorCapability(user),
+      next: nextPath,
+    });
+    return NextResponse.redirect(new URL(destination, request.url));
   } catch (error) {
     if (error instanceof KeycloakAccessError) {
       return NextResponse.redirect(new URL(`/admin/login?error=${error.code}`, request.url));
     }
-    console.error("[keycloak] callback failed", error);
+    logServerError("keycloak-callback", error);
     return NextResponse.redirect(new URL("/admin/login?error=keycloak", request.url));
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Design System — Tokens oficiales AprendeHoy (DOC-002)
+ * Design System — Tokens oficiales de Growth OS (DOC-002)
  * @see docs/frontend/DOC-002-DESIGN-TOKENS.md
  */
 export * from "./tokens";

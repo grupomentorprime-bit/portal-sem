@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   createMenu,
   getAllMenusUncached,
   menuExists,
 } from "@/lib/cms/menus";
 import { validateMenuCreate } from "@/lib/cms/menu-validation";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsMenuCreate } from "@/types/menu";
 
 export async function GET() {
   try {
-    const menus = await getAllMenusUncached();
+    const denied = await authorizeApiRead("cms.menus.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
+    const menus = await getAllMenusUncached(tenantCheck.tenant);
     return NextResponse.json({ ok: true, menus });
   } catch (error) {
     console.error(error);
@@ -29,14 +36,19 @@ export async function POST(request: Request) {
     });
     if (denied) return denied;
 
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const body = (await request.json()) as CmsMenuCreate;
+    body.tenant = tenantCheck.tenant;
+
     const errors = validateMenuCreate(body);
 
     if (errors.length > 0) {
       return NextResponse.json({ ok: false, errors }, { status: 400 });
     }
 
-    if (await menuExists(body._id)) {
+    if (await menuExists(body._id, tenantCheck.tenant)) {
       return NextResponse.json(
         { ok: false, error: `Ya existe un menú con id "${body._id}".` },
         { status: 409 }

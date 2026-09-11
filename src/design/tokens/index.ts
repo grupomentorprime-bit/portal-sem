@@ -1,5 +1,5 @@
 /**
- * Design Tokens — Barrel oficial AprendeHoy (DOC-002)
+ * Design Tokens — Barrel oficial de Growth OS (DOC-002)
  * @see docs/frontend/DOC-002-DESIGN-TOKENS.md
  */
 export {

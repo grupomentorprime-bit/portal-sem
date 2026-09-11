@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:crypto";
 import { getSessionSecret } from "@/core/identity/auth/config";
 

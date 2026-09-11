@@ -9,6 +9,8 @@ interface MethodologyHomeExperienceProps {
   subtitle?: string;
   description?: string;
   items: FeatureItem[];
+  /** Badge del último paso (p. ej. certificación). Vacío = no mostrar. */
+  destinationBadge?: string;
   id?: string;
 }
 
@@ -18,11 +20,13 @@ export function MethodologyHomeExperience({
   subtitle,
   description,
   items,
+  destinationBadge,
   id = "metodologia",
 }: MethodologyHomeExperienceProps) {
   if (!title?.trim() && items.length === 0) return null;
 
   const destinationIndex = items.length - 1;
+  const badge = destinationBadge?.trim() ?? "";
 
   return (
     <PortalSection id={id} padding="lg" className="methodology-home-section">
@@ -69,8 +73,8 @@ export function MethodologyHomeExperience({
                   <div className="methodology-home__node-body">
                     <h3 className="methodology-home__node-title">{item.title}</h3>
                     <p className="methodology-home__node-description">{item.description}</p>
-                    {isDestination ? (
-                      <span className="methodology-home__node-badge">IPN Chile</span>
+                    {isDestination && badge ? (
+                      <span className="methodology-home__node-badge">{badge}</span>
                     ) : null}
                   </div>
                 </li>

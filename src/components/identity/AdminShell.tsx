@@ -36,6 +36,7 @@ export function AdminShell({
     return <>{children}</>;
   }
 
+  // Shell V2 es el camino activo (default ON). V1 solo con ADMIN_SHELL_V2=false.
   const shell = shellV2 && branding ? (
     <AdminChromeProvider shellV2>
       <AdminShellV2
@@ -52,6 +53,7 @@ export function AdminShell({
   ) : (
     <AdminChromeProvider shellV2={false}>
       <div className="min-h-screen bg-background-soft">
+        {/* @deprecated Shell V1 — compatibilidad de emergencia; no es el flujo activo */}
         <AdminInstitutionalHeader
           user={user}
           compatMode={compatMode}

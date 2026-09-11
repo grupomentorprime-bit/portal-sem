@@ -12,8 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!ctx) return { title: "Biblioteca institucional" };
   return {
     title: `Biblioteca institucional | ${ctx.config.institution.shortName}`,
-    description:
-      "Material formativo, estudios bíblicos y recursos académicos del Seminario Eclesiástico Mayor.",
+    description: ctx.config.seo.description || undefined,
   };
 }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   deleteMediaPermanent,
   getMediaById,
@@ -8,7 +9,7 @@ import {
 } from "@/lib/cms/media";
 import { writeMediaAudit } from "@/lib/cms/media-audit";
 import { validateMediaUpdate } from "@/lib/cms/media-validation";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import { requirePermission } from "@/core/identity";
 import type { CmsMediaUpdate } from "@/types/media";
 
@@ -16,14 +17,30 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+async function loadMediaForActiveTenant(id: string) {
+  const tenantCheck = await requireActiveTenant();
+  if (!tenantCheck.ok) {
+    return { error: tenantGuardResponse(tenantCheck) } as const;
+  }
+  const media = await getMediaById(id, tenantCheck.tenant);
+  if (!media) {
+    return {
+      error: NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 }),
+    } as const;
+  }
+  return { media, tenantId: tenantCheck.tenant } as const;
+}
+
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
+    const denied = await authorizeApiRead("cms.media.read");
+    if (denied) return denied;
+
     const { id } = await params;
-    const media = await getMediaById(id);
-    if (!media) {
-      return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
-    }
-    return NextResponse.json({ ok: true, media });
+    const loaded = await loadMediaForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+
+    return NextResponse.json({ ok: true, media: loaded.media });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -42,6 +59,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (ctx instanceof NextResponse) return ctx;
 
     const { id } = await params;
+    const loaded = await loadMediaForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+    const tenantId = loaded.tenantId;
+
     const body = (await request.json()) as CmsMediaUpdate & { restore?: boolean };
     const errors = validateMediaUpdate(body);
     if (errors.length > 0) {
@@ -49,7 +70,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     if (body.restore) {
-      const media = await restoreMedia(id);
+      const media = await restoreMedia(id, tenantId);
       if (!media) return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
       const { emitMediaRestoreRequested } = await import("@/lib/events/media");
       await emitMediaRestoreRequested(media).catch(console.error);
@@ -64,7 +85,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: true, media });
     }
 
-    const media = await updateMedia(id, body);
+    const media = await updateMedia(id, tenantId, body);
     if (!media) return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
 
     if (!ctx.compatMode) {
@@ -102,18 +123,22 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     if (ctx instanceof NextResponse) return ctx;
 
     const { id } = await params;
+    const loaded = await loadMediaForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+    const tenantId = loaded.tenantId;
+
     const { searchParams } = new URL(request.url);
     const permanent = searchParams.get("permanent") === "true";
 
     if (permanent) {
-      const deleted = await deleteMediaPermanent(id);
+      const deleted = await deleteMediaPermanent(id, tenantId);
       if (!deleted) {
         return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
       }
       return NextResponse.json({ ok: true, deleted: true });
     }
 
-    const media = await trashMedia(id);
+    const media = await trashMedia(id, tenantId);
     if (!media) {
       return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
     }

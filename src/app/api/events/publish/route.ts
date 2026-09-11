@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
+import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
 import { publish } from "@/core/events/publisher";
 import type { PublishInput } from "@/types/events";
 
@@ -16,9 +17,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const tenantCheck = await assertActiveTenant(body.tenantId);
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+    if (tenantCheck.tenant !== ctx.tenantId) {
+      return NextResponse.json(
+        { ok: false, error: "Acceso denegado entre tenants." },
+        { status: 403 }
+      );
+    }
+
     const event = await publish({
       ...body,
-      tenantId: body.tenantId || ctx.tenantId,
+      tenantId: ctx.tenantId,
       userId: body.userId ?? ctx.user._id,
     });
 

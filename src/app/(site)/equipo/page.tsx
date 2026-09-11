@@ -33,8 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!ctx) return { title: "Equipo docente" };
   return {
     title: `Equipo docente | ${ctx.config.institution.shortName}`,
-    description:
-      "Docentes y equipo institucional del Seminario Eclesiástico Mayor — autoridad académica al servicio de la Iglesia.",
+    description: ctx.config.seo.description || undefined,
   };
 }
 
@@ -54,8 +53,11 @@ export default async function EquipoPage() {
         ]}
       />
       <PortalPageHeader
-        title="Equipo del seminario"
-        description="Equipo directivo, docente y técnico comprometido con la formación bíblica, académica y pastoral del SEM."
+        title="Equipo"
+        description={
+          ctx.config.seo.description ||
+          `Equipo directivo, docente y técnico de ${ctx.config.institution.name || "la institución"}.`
+        }
       />
 
       {team.length === 0 ? (

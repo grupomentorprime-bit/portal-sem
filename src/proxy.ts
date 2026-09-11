@@ -15,12 +15,10 @@ function continueWithPathname(request: NextRequest) {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (process.env.IDENTITY_ENFORCE !== "true") {
-    return continueWithPathname(request);
-  }
-
   const isProtected =
-    pathname.startsWith("/admin") || pathname.startsWith("/internal");
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/internal") ||
+    pathname.startsWith("/platform");
 
   if (!isProtected) {
     return continueWithPathname(request);

@@ -4,7 +4,7 @@ import { PersonEditorClient } from "@/components/content/PersonEditorClient";
 import { ContentEditorClient } from "@/components/content/ContentEditorClient";
 import { getCategoryItem, getContentItem } from "@/lib/content/content-write";
 import { CONTENT_SECTIONS, getSectionBySlug } from "@/lib/content/content-sections";
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function ContentEditPage({ params }: PageProps) {
   const meta = getSectionBySlug(section);
   if (!meta) notFound();
 
-  const config = await getSiteConfigUncached();
+  const config = await getOperationalSiteConfig();
   const tenant = config?.institution.tenant ?? "default";
 
   if (meta.editor === "person") {

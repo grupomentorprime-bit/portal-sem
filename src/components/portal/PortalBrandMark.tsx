@@ -2,12 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
 import { cn } from "@/lib/utils";
-
-function isConfiguredAsset(src: string | undefined, fallback: string): boolean {
-  return Boolean(src && src.trim() && src !== fallback);
-}
 
 function splitInstitutionName(name: string): [string, string] {
   const parts = name.trim().split(/\s+/);
@@ -39,10 +34,10 @@ export function PortalBrandMark({
   const [primaryError, setPrimaryError] = useState(false);
   const [secondaryError, setSecondaryError] = useState(false);
 
-  const showPrimaryImage =
-    isConfiguredAsset(logoPrimary, PLATFORM_ASSET_FALLBACKS.logo) && !primaryError;
-  const showSecondaryImage =
-    isConfiguredAsset(logoSecondary, PLATFORM_ASSET_FALLBACKS.secondaryLogo) && !secondaryError;
+  const primarySrc = logoPrimary?.trim() || "";
+  const secondarySrc = logoSecondary?.trim() || "";
+  const showPrimaryImage = Boolean(primarySrc) && !primaryError;
+  const showSecondaryImage = Boolean(secondarySrc) && !secondaryError;
 
   const textClass = variant === "light" ? "text-primary" : "text-text-inverse";
   const secondaryFallback = organization
@@ -55,7 +50,7 @@ export function PortalBrandMark({
       <div className={cn("portal-brand-mark portal-brand-mark--partner flex items-center", className)}>
         {showSecondaryImage ? (
           <Image
-            src={logoSecondary!}
+            src={secondarySrc}
             alt={partnerLabel || "Logo institucional"}
             width={120}
             height={48}
@@ -78,11 +73,7 @@ export function PortalBrandMark({
   }
 
   const [institutionLine1, institutionLine2] = splitInstitutionName(institutionName);
-  const logoSrc = showPrimaryImage
-    ? logoPrimary!
-    : variant === "dark"
-      ? PLATFORM_ASSET_FALLBACKS.logoOnDark
-      : PLATFORM_ASSET_FALLBACKS.logo;
+  const shortLabel = institutionShortName.trim();
   const isCompact = layout === "default";
 
   return (
@@ -93,16 +84,20 @@ export function PortalBrandMark({
         className
       )}
     >
-      <Image
-        src={logoSrc}
-        alt={institutionName || "Seminario Eclesiástico Mayor"}
-        width={48}
-        height={54}
-        className="portal-brand-mark__premium-logo shrink-0 object-contain"
-        onError={() => setPrimaryError(true)}
-        priority
-      />
-      <span className="portal-brand-mark__premium-sem">{institutionShortName || "SEM"}</span>
+      {showPrimaryImage ? (
+        <Image
+          src={primarySrc}
+          alt={institutionName || "Logo institucional"}
+          width={48}
+          height={54}
+          className="portal-brand-mark__premium-logo shrink-0 object-contain"
+          onError={() => setPrimaryError(true)}
+          priority
+        />
+      ) : null}
+      {shortLabel ? (
+        <span className="portal-brand-mark__premium-sem">{shortLabel}</span>
+      ) : null}
       {institutionName ? (
         <>
           <span className="portal-brand-mark__premium-divider" aria-hidden />

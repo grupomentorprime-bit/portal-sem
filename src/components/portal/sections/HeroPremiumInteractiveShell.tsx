@@ -15,9 +15,6 @@ import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { HOME_SECTION_ID } from "@/lib/navigation/home";
 import { cn } from "@/lib/utils";
 
-/** Isotipo oficial — solo para partículas del hero, no modifica el logo del header */
-const HERO_FLAME_ISOTYPE = "/images/logo-sem-isotype.png";
-
 interface FireParticle {
   id: string;
   x: number;
@@ -33,6 +30,8 @@ interface HeroPremiumInteractiveShellProps {
   children: ReactNode;
   className?: string;
   "aria-label"?: string;
+  /** Isotipo del Site (partículas). Vacío = sin marca SEM. */
+  particleMarkSrc?: string;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   onTouchStart?: (event: TouchEvent<HTMLElement>) => void;
@@ -50,6 +49,7 @@ export function HeroPremiumInteractiveShell({
   children,
   className,
   "aria-label": ariaLabel,
+  particleMarkSrc,
   onMouseEnter,
   onMouseLeave,
   onTouchStart,
@@ -166,9 +166,9 @@ export function HeroPremiumInteractiveShell({
               } as CSSProperties
             }
           >
-            {particle.kind === "flame" ? (
+            {particle.kind === "flame" && particleMarkSrc ? (
               <Image
-                src={HERO_FLAME_ISOTYPE}
+                src={particleMarkSrc}
                 alt=""
                 width={48}
                 height={58}

@@ -1,13 +1,21 @@
 /**
- * OT-BRANDING-001 / OT-BRANDING-002 — Tokens oficiales de marca SEM
- * Paleta institucional única (Manual Corporativo).
- * Única fuente autorizada de colores de marca. No agregar tokens aquí.
- * Alias y neutros: src/styles/tokens/colors.css
+ * Paleta por defecto de plataforma (Growth OS).
+ * El Site activo la sobreescribe en runtime vía `--brand-*` (layout + design-tokens).
+ * Los nombres `--sem-*` son alias legacy, no identidad del tenant SEM.
+ * `--growth-os-*` no se remapean en body: sirven para aislar /platform y auth.
+ *
+ * Balance visual: neutros ~75%, azul Growth OS ~20%, acentos secundarios ~5%.
  */
 :root {
-  --sem-primary: #002A47;
-  --sem-secondary: #246AA1;
-  --sem-accent: #10BCE2;
-  --sem-success: #3ED6AF;
-  --sem-light: #8CE27F;
+  --growth-os-primary: #0e4f90;
+  --growth-os-secondary: #6c99cd;
+  --growth-os-accent: #7c5cfa;
+  --growth-os-success: #18b981;
+  --growth-os-light: #f59b45;
+
+  --sem-primary: var(--growth-os-primary);
+  --sem-secondary: var(--growth-os-secondary);
+  --sem-accent: var(--growth-os-accent);
+  --sem-success: var(--growth-os-success);
+  --sem-light: var(--growth-os-light);
 }

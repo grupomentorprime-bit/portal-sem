@@ -4,21 +4,24 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useDeferredEffect } from "@/hooks/use-deferred-effect";
-import { ChevronDown, LogOut, Settings2, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Settings2, Sparkles, UserRound } from "lucide-react";
 import { Drawer } from "@/components/admin/kit/drawers/Drawer";
 import { NavIcon } from "@/components/admin/kit/navigation/NavIcon";
 import type { AdminShellContext } from "@/components/admin/kit/utils/types";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
+import { ProductMark } from "@/components/product";
 import { useNavGroupExpanded } from "@/components/admin/shell-v2/use-nav-group-expanded";
 import type { AdminNavItem } from "@/lib/admin/institutional";
 import { filterAdminNavGroups } from "@/lib/admin/nav-access";
 import {
   findActiveNavGroupId,
+  isNavPlaceholder,
   isSidebarItemActive,
   NAV_SIDEBAR_ZONES,
   type AdminNavGroup,
   type NavGroupId,
 } from "@/lib/admin/nav-domains";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { cn } from "@/lib/utils";
 
 export interface AdminSidebarProps extends AdminShellContext {
@@ -34,12 +37,27 @@ function NavBadge({ count, subtle = false }: { count: number; subtle?: boolean }
       className={cn(
         "ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none text-white",
         subtle
-          ? "bg-[color-mix(in_srgb,var(--color-warning)_88%,var(--color-primary))]"
-          : "bg-[color-mix(in_srgb,var(--color-secondary)_88%,white)]"
+          ? "bg-[color-mix(in_srgb,var(--color-warning)_88%,var(--growth-os-primary))]"
+          : "bg-[var(--growth-os-primary)]"
       )}
       aria-label={`${count} pendientes`}
     >
       {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function GrowthOsMark({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-gradient-to-br from-[var(--growth-os-primary)] to-[var(--growth-os-secondary)] shadow-[0_8px_18px_-10px_rgba(14,79,144,0.55)]",
+        className
+      )}
+      aria-hidden
+    >
+      <span className="absolute inset-0 bg-[radial-gradient(circle_at_28%_22%,color-mix(in_srgb,white_42%,transparent),transparent_58%)]" />
+      <Sparkles className="relative h-4 w-4 text-white" strokeWidth={2.25} />
     </span>
   );
 }
@@ -51,39 +69,70 @@ function SidebarBrand({
   branding: AdminShellContext["branding"];
   collapsed: boolean;
 }) {
-  const initial = branding.centerLabel.trim().charAt(0).toUpperCase() || "S";
+  const spaceLabel =
+    branding.institutionShortName?.trim() || branding.institutionName;
+  const spaceInitial = spaceLabel.trim().charAt(0).toUpperCase() || "E";
 
   return (
     <div
       className={cn(
-        "flex h-12 shrink-0 items-center gap-2.5 border-b border-[var(--sidebar-border)] px-3",
-        collapsed && "justify-center px-2"
+        "flex shrink-0 flex-col border-b border-[var(--sidebar-border)]",
+        collapsed ? "items-center gap-2 px-2 py-3" : "gap-3 px-4 pb-4 pt-5"
       )}
     >
-      {branding.logoUrl?.trim() ? (
+      {collapsed ? (
+        <GrowthOsMark className="h-8 w-8 rounded-[10px]" />
+      ) : (
+        <Link
+          href="/admin"
+          className="inline-flex min-w-0 items-center gap-2.5 transition hover:opacity-90"
+        >
+          <GrowthOsMark />
+          <ProductMark size="md" className="min-w-0 [&_span]:text-[var(--gray-900)]" />
+        </Link>
+      )}
+
+      {!collapsed ? (
+        <div className="flex min-w-0 items-center gap-2.5 rounded-[12px] border border-[var(--color-border-default)] border-l-2 border-l-[color-mix(in_srgb,var(--brand-primary)_55%,var(--color-border-default))] bg-[var(--gray-50)] px-2.5 py-2">
+          {branding.logoUrl?.trim() ? (
+            <img
+              src={branding.logoUrl}
+              alt=""
+              className="h-7 w-7 shrink-0 rounded-md bg-white object-contain p-0.5"
+            />
+          ) : (
+            <span
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white text-[11px] font-bold text-[var(--growth-os-primary)]"
+              aria-hidden
+            >
+              {spaceInitial}
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--gray-500)]">
+              Espacio activo
+            </p>
+            <p className="truncate text-[12px] font-semibold leading-tight text-[var(--gray-900)]">
+              {spaceLabel}
+            </p>
+          </div>
+        </div>
+      ) : branding.logoUrl?.trim() ? (
         <img
           src={branding.logoUrl}
           alt=""
-          className="h-7 w-7 shrink-0 rounded-md object-contain"
+          title={`Espacio activo · ${spaceLabel}`}
+          className="h-6 w-6 rounded-md bg-white object-contain p-0.5"
         />
       ) : (
         <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--sidebar-active)] text-xs font-bold text-white"
-          aria-hidden
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--gray-100)] text-[10px] font-bold text-[var(--growth-os-primary)]"
+          title={`Espacio activo · ${spaceLabel}`}
+          aria-label={`Espacio activo ${spaceLabel}`}
         >
-          {initial}
+          {spaceInitial}
         </span>
       )}
-      {!collapsed ? (
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-tight text-white">
-            {branding.centerLabel}
-          </p>
-          <p className="truncate text-[10px] text-[var(--sidebar-fg-muted)]">
-            {branding.institutionShortName ?? branding.institutionName}
-          </p>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -105,32 +154,74 @@ function SidebarLink({
   variant?: "primary" | "sub";
   showIcon?: boolean;
 }) {
+  if (isNavPlaceholder(item)) {
+    const isSub = variant === "sub";
+    return (
+      <span
+        title="Dirección visual — este módulo aún no existe"
+        className={cn(
+          "relative flex cursor-default items-center gap-2 rounded-[12px] text-[var(--gray-500)]",
+          isSub
+            ? "py-1.5 pl-3 pr-2 text-[12.5px] leading-snug"
+            : "px-2.5 py-2 text-[13px] font-medium",
+          collapsed && !isSub && "justify-center px-2"
+        )}
+      >
+        {(showIcon || collapsed) && !isSub ? (
+          <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-[var(--gray-400)]">
+            <NavIcon icon={item.icon} className="h-4 w-4 shrink-0" />
+          </span>
+        ) : null}
+        {!collapsed ? <span className="truncate">{item.label}</span> : null}
+      </span>
+    );
+  }
+
   const active = isSidebarItemActive(pathname, item, searchParams);
   const isSub = variant === "sub";
+  const href = item.href as string;
 
   return (
     <Link
-      href={item.href}
+      href={href}
       onClick={onNavigate}
       title={collapsed ? item.label : undefined}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "relative flex items-center gap-2 rounded-md transition-colors duration-150",
+        "relative flex items-center gap-2 rounded-[12px] transition-colors duration-150",
         isSub
           ? "admin-nav-sub-link py-1.5 pl-3 pr-2 text-[12.5px] leading-snug"
-          : "px-2.5 py-2 text-sm font-medium",
-        isSub && active && "admin-nav-sub-link--active font-medium text-white",
+          : "px-2.5 py-2 text-[13px] font-medium",
+        isSub &&
+          active &&
+          "admin-nav-sub-link--active font-medium text-[var(--growth-os-primary)]",
         isSub &&
           !active &&
-          "text-[color-mix(in_srgb,white_62%,transparent)] hover:bg-[var(--sidebar-hover)] hover:text-[color-mix(in_srgb,white_90%,transparent)]",
+          "text-[var(--gray-700)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]",
         !isSub &&
           (active
-            ? "bg-[var(--sidebar-active)] text-white"
-            : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)]"),
+            ? "bg-[var(--gray-100)] text-[var(--growth-os-primary)]"
+            : "text-[var(--gray-800)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]"),
         collapsed && !isSub && "justify-center px-2"
       )}
     >
+      {active && !isSub ? (
+        <span
+          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--growth-os-primary)]"
+          aria-hidden
+        />
+      ) : null}
       {(showIcon || collapsed) && !isSub ? (
-        <NavIcon icon={item.icon} className="h-[18px] w-[18px] shrink-0 opacity-90" />
+        <span
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-[9px]",
+            active
+              ? "bg-white text-[var(--growth-os-primary)] shadow-[0_1px_2px_rgba(14,79,144,0.08)]"
+              : "text-[var(--gray-500)]"
+          )}
+        >
+          <NavIcon icon={item.icon} className="h-4 w-4 shrink-0" />
+        </span>
       ) : null}
       {!collapsed ? (
         <>
@@ -152,6 +243,7 @@ function NavGroupSection({
   onNavigate,
   onFlyoutOpen,
   flyoutOpen,
+  nested = false,
 }: {
   group: AdminNavGroup;
   pathname: string;
@@ -162,6 +254,7 @@ function NavGroupSection({
   onNavigate?: () => void;
   onFlyoutOpen?: () => void;
   flyoutOpen?: boolean;
+  nested?: boolean;
 }) {
   const isSingleItem = group.items.length === 1;
   const hasActiveChild = group.items.some((item) =>
@@ -171,10 +264,12 @@ function NavGroupSection({
 
   if (isSingleItem) {
     const item = group.items[0];
-    const linkItem =
-      group.id === "support"
-        ? item
-        : { ...item, label: group.label, icon: group.icon, badge: group.badge ?? item.badge };
+    const linkItem = {
+      ...item,
+      label: group.label,
+      icon: group.icon,
+      badge: group.badge ?? item.badge,
+    };
     return (
       <SidebarLink
         item={linkItem}
@@ -182,6 +277,7 @@ function NavGroupSection({
         searchParams={searchParams}
         collapsed={collapsed}
         onNavigate={onNavigate}
+        variant={nested ? "sub" : "primary"}
       />
     );
   }
@@ -196,10 +292,10 @@ function NavGroupSection({
           aria-expanded={flyoutOpen}
           aria-controls={panelId}
           className={cn(
-            "flex w-full items-center justify-center rounded-lg px-2 py-2 transition-colors duration-150",
+            "flex w-full items-center justify-center rounded-[12px] px-2 py-2 transition-colors duration-150",
             hasActiveChild || flyoutOpen
-              ? "bg-[var(--sidebar-active)] text-white"
-              : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)]"
+              ? "bg-[var(--gray-100)] text-[var(--growth-os-primary)]"
+              : "text-[var(--gray-800)] hover:bg-[var(--gray-50)]"
           )}
         >
           <NavIcon icon={group.icon} className="h-[18px] w-[18px]" />
@@ -214,7 +310,7 @@ function NavGroupSection({
             </p>
             {group.items.map((item) => (
               <SidebarLink
-                key={item.id ?? item.href}
+                key={item.id ?? item.href ?? item.label}
                 item={item}
                 pathname={pathname}
                 searchParams={searchParams}
@@ -233,9 +329,9 @@ function NavGroupSection({
   return (
     <div
       className={cn(
-        "admin-nav-group rounded-lg",
+        "admin-nav-group rounded-[12px]",
         expanded && "admin-nav-group--expanded bg-[var(--sidebar-group-bg)]",
-        !expanded && hasActiveChild && "bg-[color-mix(in_srgb,black_8%,transparent)]"
+        !expanded && hasActiveChild && "bg-[var(--gray-50)]"
       )}
     >
       <button
@@ -244,18 +340,18 @@ function NavGroupSection({
         aria-expanded={expanded}
         aria-controls={panelId}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-colors duration-150",
+          "flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-left transition-colors duration-150",
           hasActiveChild || expanded
-            ? "text-white"
-            : "text-[color-mix(in_srgb,white_70%,transparent)] hover:bg-[var(--sidebar-hover)] hover:text-white"
+            ? "text-[var(--growth-os-primary)]"
+            : "text-[var(--gray-800)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]"
         )}
       >
         <span
           className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]",
             hasActiveChild || expanded
-              ? "bg-[color-mix(in_srgb,white_16%,transparent)] text-white"
-              : "bg-[color-mix(in_srgb,white_8%,transparent)] text-[color-mix(in_srgb,white_75%,transparent)]"
+              ? "bg-white text-[var(--growth-os-primary)] shadow-[0_1px_2px_rgba(14,79,144,0.08)]"
+              : "text-[var(--gray-500)]"
           )}
           aria-hidden
         >
@@ -283,7 +379,7 @@ function NavGroupSection({
           <div className="admin-nav-subtree space-y-0.5 px-2.5 pb-2.5 pt-1.5">
             {group.items.map((item) => (
               <SidebarLink
-                key={item.id ?? item.href}
+                key={item.id ?? item.href ?? item.label}
                 item={item}
                 pathname={pathname}
                 searchParams={searchParams}
@@ -302,8 +398,8 @@ function NavGroupSection({
 
 function SidebarZoneLabel({ label }: { label: string }) {
   return (
-    <div className="admin-nav-zone-label px-2.5 pb-1.5 pt-4">
-      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[color-mix(in_srgb,white_45%,transparent)]">
+    <div className="admin-nav-zone-label px-2.5 pb-1.5 pt-1">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--gray-500)]">
         {label}
       </span>
     </div>
@@ -351,9 +447,7 @@ function SidebarNav({
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
-  const supportGroup = groupsById.get("support");
-
-  function renderGroup(group: AdminNavGroup) {
+  function renderGroup(group: AdminNavGroup, nested = false) {
     return (
       <NavGroupSection
         key={group.id}
@@ -364,6 +458,7 @@ function SidebarNav({
         expanded={isExpanded(group.id)}
         onToggle={() => toggleGroup(group.id)}
         onNavigate={onNavigate}
+        nested={nested}
         flyoutOpen={flyoutGroupId === group.id}
         onFlyoutOpen={() =>
           setFlyoutGroupId((current) => (current === group.id ? null : group.id))
@@ -375,8 +470,8 @@ function SidebarNav({
   return (
     <nav
       ref={navRef}
-      className="flex flex-1 flex-col overflow-y-auto px-2 py-2"
-      aria-label="Administración"
+      className="flex flex-1 flex-col gap-4 overflow-y-auto px-2.5 py-3"
+      aria-label={`${PLATFORM_DISPLAY_NAME} · Espacio`}
     >
       {NAV_SIDEBAR_ZONES.map((zone) => {
         const zoneGroups = zone.groupIds
@@ -385,22 +480,23 @@ function SidebarNav({
 
         if (zoneGroups.length === 0) return null;
 
-        const isHomeZone = zone.id === "home";
+        const isGrow = zone.id === "grow";
+        const isTools = zone.id === "tools";
 
         return (
-          <div key={zone.id} className={cn(!isHomeZone && "admin-nav-zone")}>
+          <div
+            key={zone.id}
+            className={cn(
+              isTools && "mt-auto border-t border-[var(--color-border-default)] pt-3"
+            )}
+          >
             {zone.label && !collapsed ? <SidebarZoneLabel label={zone.label} /> : null}
-            <div className="flex flex-col gap-1">{zoneGroups.map(renderGroup)}</div>
+            <div className={cn("flex flex-col", isGrow ? "gap-0.5" : "gap-0.5")}>
+              {zoneGroups.map((group) => renderGroup(group, isGrow))}
+            </div>
           </div>
         );
       })}
-
-      {supportGroup ? (
-        <div className="admin-nav-zone admin-nav-zone--support mt-auto">
-          {!collapsed ? <SidebarZoneLabel label="Soporte" /> : null}
-          {renderGroup(supportGroup)}
-        </div>
-      ) : null}
     </nav>
   );
 }
@@ -433,7 +529,6 @@ function SidebarProfileMenu({
 
   const label = user.displayName || user.email;
   const role = user.roleLabel ?? "Colaborador";
-  const institution = user.institutionName ?? ctx.branding.institutionName;
 
   async function handleLogout() {
     await fetch("/api/identity/logout", { method: "POST" });
@@ -448,7 +543,7 @@ function SidebarProfileMenu({
   }
 
   return (
-    <div ref={ref} className="relative border-t border-[var(--sidebar-border)] p-2">
+    <div ref={ref} className="relative border-t border-[var(--sidebar-border)] p-2 lg:hidden">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -456,16 +551,15 @@ function SidebarProfileMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg p-2 text-left transition-colors duration-200 hover:bg-[var(--sidebar-hover)]",
+          "flex w-full items-center gap-2.5 rounded-[12px] p-2 text-left transition-colors duration-200 hover:bg-[var(--gray-50)]",
           collapsed && "justify-center"
         )}
       >
         <AdminUserAvatar name={label} size="sm" />
         {!collapsed ? (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-white">{label}</p>
-            <p className="truncate text-xs text-[var(--sidebar-fg-muted)]">{role}</p>
-            <p className="truncate text-[11px] text-[var(--sidebar-fg-muted)]">{institution}</p>
+            <p className="truncate text-sm font-semibold text-[var(--gray-900)]">{label}</p>
+            <p className="truncate text-xs text-[var(--gray-500)]">{role}</p>
           </div>
         ) : null}
       </button>
@@ -483,7 +577,6 @@ function SidebarProfileMenu({
           <div className="border-b border-border px-3 py-2.5">
             <p className="truncate text-sm font-semibold text-foreground">{label}</p>
             <p className="truncate text-xs text-muted">{role}</p>
-            <p className="truncate text-[11px] text-muted">{institution}</p>
           </div>
           <button
             type="button"
@@ -534,7 +627,6 @@ export function AdminSidebar({
     >
       <SidebarBrand branding={ctx.branding} collapsed={collapsed} />
       <SidebarNav ctx={ctx} collapsed={collapsed} />
-      <SidebarProfileMenu ctx={ctx} collapsed={collapsed} />
     </aside>
   );
 
@@ -542,7 +634,7 @@ export function AdminSidebar({
     <Drawer
       open={mobileOpen}
       onClose={onMobileClose}
-      title={ctx.branding.centerLabel}
+      title={PLATFORM_DISPLAY_NAME}
       side="left"
       className="max-w-none sm:max-w-sm"
     >

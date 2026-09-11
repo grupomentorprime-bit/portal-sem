@@ -11,6 +11,8 @@
     "build:docker": "npm run build:institutional-media && next build",
     "start": "next start",
     "lint": "eslint",
+    "test:baseline": "tsx --test tests/baseline/**/*.test.ts tests/smoke/**/*.test.ts",
+    "test:smoke": "tsx --test tests/smoke/**/*.test.ts",
     "check:branding": "tsx scripts/check-branding.ts",
     "generate:editorial": "tsx scripts/generate-editorial-assets.ts",
     "build:institutional-media": "tsx scripts/build-institutional-media.ts",
@@ -19,6 +21,7 @@
     "migrate": "npx tsx scripts/migrate.ts",
     "migrate:hero-v2": "npx tsx scripts/migrate.ts 001-hero-v2",
     "migrate:local-media-to-s3": "npx tsx scripts/migrate-local-cms-media-to-s3.ts",
+    "backfill:growth": "node --require ./scripts/_stub-server-only.cjs ./node_modules/tsx/dist/cli.mjs --env-file=.env scripts/backfill-growth-core.ts",
     "sync:tenant-roles": "npx tsx scripts/sync-tenant-roles.ts",
     "setup:keycloak": "npx tsx scripts/setup-keycloak-client.ts",
     "check:keycloak": "npx tsx scripts/check-keycloak.ts"

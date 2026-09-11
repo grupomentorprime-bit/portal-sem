@@ -50,7 +50,7 @@ export function HomeInstitutional({ config }: HomeInstitutionalProps) {
   return (
     <>
       <HeroInstitutional
-        institutionName={institution.name || "Seminario Eclesiástico Mayor"}
+        institutionName={institution.name}
         heroImage={heroImage}
         logoSrc={logoSrc}
       />
@@ -61,7 +61,7 @@ export function HomeInstitutional({ config }: HomeInstitutionalProps) {
             <SectionTitle
               overline="Presentación"
               title="Formación al servicio de la Iglesia"
-              description={seo.description || "El Seminario Eclesiástico Mayor ofrece una formación integral para quienes responden al llamado al ministerio ordenado."}
+              description={seo.description || undefined}
             />
             <VerseBlock text={HOME_VERSE.text} reference={HOME_VERSE.reference} />
           </Grid>

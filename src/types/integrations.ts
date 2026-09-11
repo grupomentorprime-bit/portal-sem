@@ -1,12 +1,16 @@
-export const STORAGE_INTEGRATION_ID = "storage" as const;
-
 export type StorageProvider = "backblaze-b2" | "s3-compatible" | "aws";
 
 /** public = URLs directas al bucket/CDN; private = proxy vía el servidor (bucket no público) */
 export type StorageAccessMode = "public" | "private";
 
+/**
+ * Documento de integración S3 por tenant.
+ * `_id` canónico: `storage:{tenantId}` (SAAS-004).
+ * Compat: puede existir legado `_id: "storage"` sin tenantId hasta migración 008.
+ */
 export interface StorageIntegrationDocument {
-  _id: typeof STORAGE_INTEGRATION_ID;
+  _id: string;
+  tenantId?: string;
   enabled: boolean;
   provider: StorageProvider;
   accessMode: StorageAccessMode;
@@ -66,3 +70,6 @@ export interface ResolvedStorageSettings {
     accessMode: StorageAccessMode;
   };
 }
+
+/** @deprecated Usar storageIntegrationIdForTenant — legado SAAS-004 */
+export const STORAGE_INTEGRATION_ID = "storage" as const;

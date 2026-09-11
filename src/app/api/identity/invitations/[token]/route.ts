@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { findInvitationByToken } from "@/lib/identity/invitations";
+import { publicInternalError } from "@/core/security/public-error";
 import { findRolesByIds } from "@/lib/identity/roles";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 import { findUserByEmail } from "@/lib/identity/users";
@@ -37,10 +38,6 @@ export async function GET(_request: Request, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return publicInternalError("invitation-public", error);
   }
 }

@@ -63,6 +63,7 @@ export async function PortalShell({ children }: PortalShellProps) {
         {children}
       </main>
       <FooterPremiumShell
+        tenantId={tenant}
         institution={institution}
         seo={seo}
         contact={contact}

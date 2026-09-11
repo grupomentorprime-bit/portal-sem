@@ -13,6 +13,7 @@ import {
   AdminUserMenuPanel,
   type AdminUserSummary,
 } from "@/components/admin/AdminUserMenuPanel";
+import { ProductMark } from "@/components/product";
 import { cn } from "@/lib/utils";
 
 interface AdminInstitutionalHeaderProps {
@@ -22,6 +23,10 @@ interface AdminInstitutionalHeaderProps {
   roleCodes?: string[];
 }
 
+/**
+ * @deprecated Shell V1 — solo si `ADMIN_SHELL_V2=false`.
+ * Flujos activos usan Shell V2 (`AdminShellV2`). No eliminar aún: flag de emergencia.
+ */
 export function AdminInstitutionalHeader({
   user,
   compatMode,
@@ -33,16 +38,10 @@ export function AdminInstitutionalHeader({
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-      {/* Barra superior: marca + utilidades */}
       <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-2 sm:px-6">
         <AdminNavDrawer compatMode={compatMode} permissions={permissions} roleCodes={roleCodes} />
 
-        <Link
-          href="/admin"
-          className="shrink-0 text-sm font-semibold tracking-tight text-foreground"
-        >
-          Centro SEM
-        </Link>
+        <ProductMark href="/admin" size="sm" />
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           <AdminStatusBadges compatMode={compatMode} />
@@ -64,14 +63,15 @@ export function AdminInstitutionalHeader({
         </div>
       </div>
 
-      {/* Navegación principal — fila completa, sin scroll */}
       <div className="hidden border-t border-border/50 lg:block">
         <div className="mx-auto max-w-[90rem] px-4 sm:px-6">
           <nav
             className="-mb-px flex flex-wrap items-center gap-x-0.5"
-            aria-label="Administración institucional"
+            aria-label="Navegación de administración"
           >
-            {navItems.map((item) => {
+            {navItems
+              .filter((item): item is typeof item & { href: string } => item.href != null)
+              .map((item) => {
               const active = isNavActive(pathname, item);
               return (
                 <Link

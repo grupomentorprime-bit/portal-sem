@@ -9,6 +9,7 @@ import type { PageBlock } from "@/types/page";
 
 interface CtaPremiumBlockSectionProps {
   block: PageBlock;
+  tenant?: string;
   navigation: {
     quickLinks: Array<{ label: string; href: string; highlighted?: boolean }>;
   };
@@ -17,6 +18,7 @@ interface CtaPremiumBlockSectionProps {
 
 export function CtaPremiumBlockSection({
   block,
+  tenant,
   navigation,
   pageSlug,
 }: CtaPremiumBlockSectionProps) {
@@ -44,7 +46,8 @@ export function CtaPremiumBlockSection({
               ]
             : [],
     },
-    pageSlug
+    pageSlug,
+    tenant
   );
 
   if (!merged.title && (!merged.buttons || merged.buttons.length === 0)) return null;

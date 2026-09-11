@@ -151,16 +151,25 @@ export async function searchMedia(query: MediaSearchQuery): Promise<MediaListRes
   return fetchMediaList(query);
 }
 
-export async function getMediaById(id: string): Promise<CmsMediaAsset | null> {
+export async function getMediaById(
+  id: string,
+  tenant: string
+): Promise<CmsMediaAsset | null> {
   const db = await getDatabase();
-  const asset = await db.collection<CmsMediaAsset>("cms_media").findOne({ _id: id });
+  const asset = await db.collection<CmsMediaAsset>("cms_media").findOne({
+    _id: id,
+    tenant,
+  });
   return asset ? normalizeAsset(asset) : null;
 }
 
-export async function getMediaByIdCached(id: string): Promise<CmsMediaAsset | null> {
+export async function getMediaByIdCached(
+  id: string,
+  tenant: string
+): Promise<CmsMediaAsset | null> {
   return unstable_cache(
-    async () => getMediaById(id),
-    [`cms-media-${id}`],
+    async () => getMediaById(id, tenant),
+    [`cms-media-${tenant}-${id}`],
     { tags: [CMS_MEDIA_TAG, `cms-media-${id}`], revalidate: 60 }
   )();
 }
@@ -218,7 +227,9 @@ async function repairMissingMediaStorage(
     updatedAt: now,
   };
 
-  await db.collection<CmsMediaAsset>("cms_media").replaceOne({ _id: asset._id }, updated);
+  await db
+    .collection<CmsMediaAsset>("cms_media")
+    .replaceOne({ _id: asset._id, tenant: asset.tenant }, updated);
   revalidateMediaTags(asset.tenant, asset._id);
   invalidateMediaCache(asset._id);
   return normalizeAsset(updated);
@@ -326,18 +337,20 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
 
 export async function renameMedia(
   id: string,
+  tenant: string,
   originalName: string
 ): Promise<CmsMediaAsset | null> {
   const trimmed = originalName.trim();
   if (!trimmed) return null;
-  return updateMedia(id, { originalName: trimmed, title: trimmed });
+  return updateMedia(id, tenant, { originalName: trimmed, title: trimmed });
 }
 
 export async function moveMedia(
   id: string,
+  tenant: string,
   folder: MediaFolder
 ): Promise<CmsMediaAsset | null> {
-  return updateMedia(id, { folder });
+  return updateMedia(id, tenant, { folder });
 }
 
 async function readAssetBuffer(asset: CmsMediaAsset): Promise<Buffer | null> {
@@ -379,8 +392,11 @@ async function readAssetBuffer(asset: CmsMediaAsset): Promise<Buffer | null> {
   }
 }
 
-export async function duplicateMedia(id: string): Promise<CmsMediaAsset | null> {
-  const source = await getMediaById(id);
+export async function duplicateMedia(
+  id: string,
+  tenant: string
+): Promise<CmsMediaAsset | null> {
+  const source = await getMediaById(id, tenant);
   if (!source) return null;
 
   const buffer = await readAssetBuffer(source);
@@ -392,7 +408,7 @@ export async function duplicateMedia(id: string): Promise<CmsMediaAsset | null> 
     : `${baseName} (copia)${source.extension ? `.${source.extension}` : ""}`;
 
   return uploadMedia({
-    tenant: source.tenant,
+    tenant,
     buffer,
     originalName: copyName,
     mimeType: source.mimeType,
@@ -410,7 +426,7 @@ export async function replaceMediaFile(
   id: string,
   input: Pick<UploadMediaInput, "buffer" | "originalName" | "mimeType" | "tenant">
 ): Promise<CmsMediaAsset | null> {
-  const existing = await getMediaById(id);
+  const existing = await getMediaById(id, input.tenant);
   if (!existing) return null;
 
   await deleteMediaPrefix(`${existing.tenant}/${id}`);
@@ -465,7 +481,9 @@ export async function replaceMediaFile(
     updatedAt: now,
   };
 
-  await db.collection<CmsMediaAsset>("cms_media").replaceOne({ _id: id }, updated);
+  await db
+    .collection<CmsMediaAsset>("cms_media")
+    .replaceOne({ _id: id, tenant: input.tenant }, updated);
   revalidateMediaTags(existing.tenant, id);
   const { emitMediaReplaced } = await import("@/lib/events/media");
   await emitMediaReplaced(updated).catch(console.error);
@@ -474,21 +492,25 @@ export async function replaceMediaFile(
 
 export async function updateMedia(
   id: string,
+  tenant: string,
   data: CmsMediaUpdate
 ): Promise<CmsMediaAsset | null> {
   const db = await getDatabase();
-  const existing = await getMediaById(id);
+  const existing = await getMediaById(id, tenant);
   if (!existing) return null;
 
   const now = new Date().toISOString();
   const updated: CmsMediaAsset = {
     ...existing,
     ...data,
+    tenant,
     tags: data.tags ?? existing.tags,
     updatedAt: now,
   };
 
-  await db.collection<CmsMediaAsset>("cms_media").replaceOne({ _id: id }, updated);
+  await db
+    .collection<CmsMediaAsset>("cms_media")
+    .replaceOne({ _id: id, tenant }, updated);
   revalidateMediaTags(existing.tenant, id);
 
   const events = await import("@/lib/events/media");
@@ -507,8 +529,11 @@ export async function updateMedia(
   return updated;
 }
 
-export async function trashMedia(id: string): Promise<CmsMediaAsset | null> {
-  const existing = await getMediaById(id);
+export async function trashMedia(
+  id: string,
+  tenant: string
+): Promise<CmsMediaAsset | null> {
+  const existing = await getMediaById(id, tenant);
   if (!existing) return null;
   if (mediaHasUsage(existing)) {
     throw new Error(
@@ -519,11 +544,11 @@ export async function trashMedia(id: string): Promise<CmsMediaAsset | null> {
   const db = await getDatabase();
   const now = new Date().toISOString();
   await db.collection<CmsMediaAsset>("cms_media").updateOne(
-    { _id: id },
+    { _id: id, tenant },
     { $set: { visibility: "trash", trashedAt: now, updatedAt: now } }
   );
   revalidateMediaTags(existing.tenant, id);
-  const trashed = await getMediaById(id);
+  const trashed = await getMediaById(id, tenant);
   if (trashed) {
     const { emitMediaDeleted } = await import("@/lib/events/media");
     await emitMediaDeleted(trashed).catch(console.error);
@@ -531,17 +556,23 @@ export async function trashMedia(id: string): Promise<CmsMediaAsset | null> {
   return trashed;
 }
 
-export async function restoreMedia(id: string): Promise<CmsMediaAsset | null> {
+export async function restoreMedia(
+  id: string,
+  tenant: string
+): Promise<CmsMediaAsset | null> {
   const db = await getDatabase();
   await db.collection<CmsMediaAsset>("cms_media").updateOne(
-    { _id: id },
+    { _id: id, tenant },
     { $unset: { trashedAt: "" } }
   );
-  return updateMedia(id, { visibility: "active" });
+  return updateMedia(id, tenant, { visibility: "active" });
 }
 
-export async function deleteMediaPermanent(id: string): Promise<boolean> {
-  const existing = await getMediaById(id);
+export async function deleteMediaPermanent(
+  id: string,
+  tenant: string
+): Promise<boolean> {
+  const existing = await getMediaById(id, tenant);
   if (!existing) return false;
 
   if (existing.visibility !== "trash" && mediaHasUsage(existing)) {
@@ -551,7 +582,9 @@ export async function deleteMediaPermanent(id: string): Promise<boolean> {
   await deleteMediaPrefix(`${existing.tenant}/${id}`);
 
   const db = await getDatabase();
-  const result = await db.collection<CmsMediaAsset>("cms_media").deleteOne({ _id: id });
+  const result = await db
+    .collection<CmsMediaAsset>("cms_media")
+    .deleteOne({ _id: id, tenant });
   revalidateMediaTags(existing.tenant, id);
   if (result.deletedCount > 0) {
     const { emitMediaDeleted } = await import("@/lib/events/media");
@@ -561,39 +594,46 @@ export async function deleteMediaPermanent(id: string): Promise<boolean> {
 }
 
 export async function bulkMediaAction(body: MediaBulkAction): Promise<number> {
+  const tenant = body.tenant;
   let count = 0;
   for (const id of body.ids) {
     try {
       switch (body.action) {
         case "trash":
-          if (await trashMedia(id)) count++;
+          if (await trashMedia(id, tenant)) count++;
           break;
         case "restore":
-          if (await restoreMedia(id)) count++;
+          if (await restoreMedia(id, tenant)) count++;
           break;
         case "delete":
-          if (await deleteMediaPermanent(id)) count++;
+          if (await deleteMediaPermanent(id, tenant)) count++;
           break;
         case "move":
-          if (body.folder && (await updateMedia(id, { folder: body.folder }))) count++;
+          if (body.folder && (await updateMedia(id, tenant, { folder: body.folder }))) {
+            count++;
+          }
           break;
         case "tag":
           if (body.tags) {
-            const asset = await getMediaById(id);
+            const asset = await getMediaById(id, tenant);
             if (asset) {
               const merged = [...new Set([...(asset.tags ?? []), ...body.tags])];
-              if (await updateMedia(id, { tags: merged })) count++;
+              if (await updateMedia(id, tenant, { tags: merged })) count++;
             }
           }
           break;
         case "duplicate":
-          if (await duplicateMedia(id)) count++;
+          if (await duplicateMedia(id, tenant)) count++;
           break;
         case "activate":
-          if (await updateMedia(id, { status: "active", visibility: "active" })) count++;
+          if (
+            await updateMedia(id, tenant, { status: "active", visibility: "active" })
+          ) {
+            count++;
+          }
           break;
         case "deactivate":
-          if (await updateMedia(id, { status: "archived" })) count++;
+          if (await updateMedia(id, tenant, { status: "archived" })) count++;
           break;
       }
     } catch {
@@ -603,21 +643,22 @@ export async function bulkMediaAction(body: MediaBulkAction): Promise<number> {
   return count;
 }
 
-export async function purgeExpiredTrash(tenant?: string): Promise<number> {
+export async function purgeExpiredTrash(tenant: string): Promise<number> {
   const db = await getDatabase();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - TRASH_RETENTION_DAYS);
 
-  const filter: Record<string, unknown> = {
-    visibility: "trash",
-    trashedAt: { $lte: cutoff.toISOString() },
-  };
-  if (tenant) filter.tenant = tenant;
-
-  const expired = await db.collection<CmsMediaAsset>("cms_media").find(filter).toArray();
+  const expired = await db
+    .collection<CmsMediaAsset>("cms_media")
+    .find({
+      tenant,
+      visibility: "trash",
+      trashedAt: { $lte: cutoff.toISOString() },
+    })
+    .toArray();
   let count = 0;
   for (const asset of expired) {
-    if (await deleteMediaPermanent(asset._id)) count++;
+    if (await deleteMediaPermanent(asset._id, tenant)) count++;
   }
   return count;
 }

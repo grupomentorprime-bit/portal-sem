@@ -8,7 +8,6 @@ import {
 } from "@/lib/admin/forms-center";
 import { buildParticipantJustifyUrl } from "@/lib/experience/forms/submission-participant-token";
 import { formatJustificationDeadline } from "@/lib/experience/forms/absence-justification-deadline";
-import { getAppBaseUrl } from "@/lib/app-url";
 import {
   renderCredentialRow,
   renderInfoBox,
@@ -16,13 +15,18 @@ import {
   renderTransactionalEmail,
 } from "@/lib/notifications/email-layout";
 import { sendTransactionalHtmlEmail } from "@/lib/notifications/email";
+import {
+  emailAbsoluteUrl,
+  type EmailIdentity,
+} from "@/lib/notifications/identity";
+import { resolveEmailIdentityForTenant } from "@/lib/notifications/resolve-identity";
 import type { AbsenceReviewStatus } from "@/types/experience-forms";
 
 interface ParticipantEmailBase {
+  tenantId: string;
   to: string;
   participantName: string;
   convocatoria: FormConvocatoria;
-  institutionName?: string;
 }
 
 function escapeHtml(value: string): string {
@@ -97,9 +101,11 @@ function renderJornadaWelcomeBody(
   `;
 }
 
-function renderJornadaWelcomeEmail(input: ParticipantEmailBase & { arrivedFromAbsenceNote?: boolean }) {
+function renderJornadaWelcomeEmail(
+  input: ParticipantEmailBase & { arrivedFromAbsenceNote?: boolean; identity: EmailIdentity }
+) {
   const name = firstName(input.participantName);
-  const institution = input.institutionName?.trim() || "Seminario Eclesiástico Mayor";
+  const institution = input.identity.displayName;
   const eventTitle = input.convocatoria.landing?.headline ?? input.convocatoria.title;
 
   return {
@@ -114,7 +120,10 @@ function renderJornadaWelcomeEmail(input: ParticipantEmailBase & { arrivedFromAb
         arrivedFromAbsenceNote: input.arrivedFromAbsenceNote,
       }),
       ctaLabel: "Ver convocatoria",
-      ctaUrl: `${getAppBaseUrl()}/formularios/${encodeURIComponent(input.convocatoria.formId)}`,
+      ctaUrl: emailAbsoluteUrl(
+        input.identity,
+        `/formularios/${encodeURIComponent(input.convocatoria.formId)}`
+      ),
       footerNote:
         "Conserva este correo como comprobante de tu asistencia presencial. Registro realizado por el equipo de asuntos estudiantiles.",
     }),
@@ -136,8 +145,9 @@ export async function sendParticipantNoShowJustifyEmail(
   if (!to) return { ok: false, error: "Correo del participante no indicado." };
 
   const name = firstName(input.participantName);
-  const justifyUrl = buildParticipantJustifyUrl(input.submissionId);
-  const institution = input.institutionName?.trim() || "Seminario Eclesiástico Mayor";
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const justifyUrl = buildParticipantJustifyUrl(input.submissionId, identity.origin);
+  const institution = identity.displayName;
   const reason = input.reason ?? "confirmed-no-show";
   const deadlineText = input.justificationDeadlineAt
     ? formatJustificationDeadline(input.justificationDeadlineAt)
@@ -196,6 +206,7 @@ export async function sendParticipantNoShowJustifyEmail(
     to,
     subject: `Justifica tu inasistencia — ${input.convocatoria.title}`,
     html,
+    identity,
   });
 }
 
@@ -205,8 +216,10 @@ export async function sendParticipantArrivedEmail(
   const to = input.to.trim();
   if (!to) return { ok: false, error: "Correo del participante no indicado." };
 
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
   const { html, subject } = renderJornadaWelcomeEmail({
     ...input,
+    identity,
     arrivedFromAbsenceNote: true,
   });
 
@@ -214,6 +227,7 @@ export async function sendParticipantArrivedEmail(
     to,
     subject,
     html,
+    identity,
   });
 }
 
@@ -223,16 +237,22 @@ export async function sendParticipantCheckInEmail(
   const to = input.to.trim();
   if (!to) return { ok: false, error: "Correo del participante no indicado." };
 
-  const { html, subject } = renderJornadaWelcomeEmail(input);
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const { html, subject } = renderJornadaWelcomeEmail({
+    ...input,
+    identity,
+  });
 
   return sendTransactionalHtmlEmail({
     to,
     subject,
     html,
+    identity,
   });
 }
 
 export async function sendParticipantAbsenceReviewEmail(input: {
+  tenantId: string;
   to: string;
   participantName: string;
   formId: string;
@@ -240,13 +260,13 @@ export async function sendParticipantAbsenceReviewEmail(input: {
   managementNotes?: string;
   evidenceReceived?: boolean;
   evidenceNotes?: string;
-  institutionName?: string;
 }): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const to = input.to.trim();
   if (!to) return { ok: false, error: "Correo del participante no indicado." };
 
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
   const convocatoria = getConvocatoriaByFormId(input.formId);
-  const institution = input.institutionName?.trim() || "Seminario Eclesiástico Mayor";
+  const institution = identity.displayName;
   const name = firstName(input.participantName);
   const statusLabel = absenceReviewStatusLabel(input.status);
 
@@ -291,5 +311,6 @@ export async function sendParticipantAbsenceReviewEmail(input: {
     to,
     subject: `Actualización de inasistencia — ${statusLabel}`,
     html,
+    identity,
   });
 }

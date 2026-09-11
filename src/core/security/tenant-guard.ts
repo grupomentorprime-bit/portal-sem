@@ -1,10 +1,41 @@
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { loadSessionContext } from "@/lib/identity/sessions";
+import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
 
 export type TenantGuardResult =
   | { ok: true; tenant: string }
   | { ok: false; error: string; status: 400 | 403 | 503 };
 
-/** Deny by default — solo permite el tenant activo de la instancia */
+/**
+ * Tenant efectivo solo desde contexto — ignora body/query.
+ * Auth (SAAS-005): sesión.activeTenantId + membresía activa.
+ * Público / sin sesión: Host → TenantContext (SAAS-002).
+ */
+export async function requireActiveTenant(): Promise<TenantGuardResult> {
+  const loaded = await loadSessionContext();
+  if (loaded) {
+    const active = loaded.session.tenantId?.trim() ?? "";
+    if (!active || !loaded.membership) {
+      return {
+        ok: false,
+        error: "Sin Espacio activo.",
+        status: 403,
+      };
+    }
+    return { ok: true, tenant: active };
+  }
+
+  const activeTenant = await resolveActiveTenantIdFromRequest();
+  if (!activeTenant) {
+    return { ok: false, error: "Tenant no configurado.", status: 503 };
+  }
+  return { ok: true, tenant: activeTenant };
+}
+
+/**
+ * Deny by default — el tenant pedido debe coincidir con el del contexto
+ * (sesión o host), no con un ?tenant= spoofeable solo.
+ * @deprecated Preferir `requireActiveTenant()` y no leer tenant del body/query.
+ */
 export async function assertActiveTenant(
   requestedTenant: string | null | undefined
 ): Promise<TenantGuardResult> {
@@ -13,12 +44,10 @@ export async function assertActiveTenant(
     return { ok: false, error: "tenant es obligatorio.", status: 400 };
   }
 
-  const config = await getSiteConfigUncached();
-  if (!config?.institution.tenant) {
-    return { ok: false, error: "Tenant no configurado.", status: 503 };
-  }
+  const active = await requireActiveTenant();
+  if (!active.ok) return active;
 
-  if (trimmed !== config.institution.tenant) {
+  if (trimmed !== active.tenant) {
     return { ok: false, error: "Acceso denegado entre tenants.", status: 403 };
   }
 

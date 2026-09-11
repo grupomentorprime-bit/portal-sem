@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import type { AdmissionClosingCopyrightData } from "@/types/admission-closing";
 import { ClosingSealPills } from "./ClosingSeal";
 
@@ -12,6 +13,8 @@ export function ClosingCopyright({ data, sealLines }: ClosingCopyrightProps) {
     return null;
   }
 
+  const developerText = rewriteLegacyPlatformProductName(data.developerText);
+
   return (
     <div className="admission-closing__copyright">
       {sealLines?.length ? <ClosingSealPills lines={sealLines} /> : null}
@@ -19,8 +22,8 @@ export function ClosingCopyright({ data, sealLines }: ClosingCopyrightProps) {
       {data.secondaryText ? (
         <p className="admission-closing__copyright-secondary">{data.secondaryText}</p>
       ) : null}
-      {data.developerText ? (
-        <p className="admission-closing__copyright-developer">{data.developerText}</p>
+      {developerText ? (
+        <p className="admission-closing__copyright-developer">{developerText}</p>
       ) : data.developerName ? (
         <p className="admission-closing__copyright-developer">
           {data.developerUrl ? (

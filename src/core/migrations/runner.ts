@@ -129,7 +129,7 @@ export async function runMigrationsCli(only?: string): Promise<void> {
 }
 
 function logHeader(): void {
-  console.log("AprendeHoy — Migration Framework\n");
+  console.log("Growth OS — Migration Framework\n");
 }
 
 function logFooter(summary: RunMigrationsSummary): void {

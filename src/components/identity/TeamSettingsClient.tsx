@@ -145,7 +145,7 @@ export function TeamSettingsClient() {
       <Card>
         <CardHeader>
           <CardTitle>Miembros del equipo</CardTitle>
-          <CardDescription>Usuarios con acceso al tenant actual.</CardDescription>
+          <CardDescription>Usuarios con acceso al Espacio actual.</CardDescription>
         </CardHeader>
         <div className="overflow-x-auto px-6 pb-6">
           <table className="w-full text-left text-sm">

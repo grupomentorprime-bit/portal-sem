@@ -1,5 +1,6 @@
 import { MenuEditorClient } from "@/components/menu/MenuEditorClient";
 import { getMenuByIdUncached } from "@/lib/cms/menus";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,9 @@ interface PageProps {
 
 export default async function AdminMenuEditPage({ params }: PageProps) {
   const { id } = await params;
-  const menu = await getMenuByIdUncached(id);
+  const config = await getOperationalSiteConfig();
+  const activeTenant = config?.institution.tenant?.trim() ?? "";
+  const menu = activeTenant ? await getMenuByIdUncached(id, activeTenant) : null;
 
   if (!menu) {
     return (

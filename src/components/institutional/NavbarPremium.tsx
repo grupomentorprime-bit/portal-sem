@@ -17,8 +17,8 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { iconSizes } from "@/design";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { Button } from "@/components/ui";
-import { CMS_ASSET_PATHS } from "@/lib/cms/asset-paths";
 import { DEFAULT_NAV_LINKS } from "@/lib/cms/page-defaults";
 import { cn } from "@/lib/utils";
 import { focusRing } from "@/components/ui/shared";
@@ -41,10 +41,10 @@ export function NavbarPremium({
   loginHref = "/ingresar",
   logoSem,
   logoIpn,
-  institutionShortName = "SEM",
+  institutionShortName = "",
 }: NavbarPremiumProps) {
-  const semLogo = logoSem || CMS_ASSET_PATHS.logoSem;
-  const ipnLogo = logoIpn || CMS_ASSET_PATHS.logoIpn;
+  const primaryLogo = logoSem?.trim() || "";
+  const secondaryLogo = logoIpn?.trim() || "";
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -77,29 +77,39 @@ export function NavbarPremium({
         <Link
           href="/"
           className={cn("flex shrink-0 items-center gap-3", focusRing, "rounded-[var(--radius-sm)]")}
-          aria-label={`${institutionShortName} — Inicio`}
+          aria-label={`${institutionShortName || "Inicio"}`}
         >
-          <Image
-            src={ipnLogo}
-            alt="Instituto Patrístico Nacional"
-            width={40}
-            height={40}
-            className="h-8 w-auto sm:h-10"
-          />
-          <span
-            className={cn(
-              "hidden h-8 w-px sm:block",
-              scrolled ? "bg-border" : "bg-text-inverse/30"
-            )}
-            aria-hidden
-          />
-          <Image
-            src={semLogo}
-            alt="Seminario Eclesiástico Mayor"
-            width={40}
-            height={40}
-            className="h-8 w-auto sm:h-10"
-          />
+          {secondaryLogo ? (
+            <Image
+              src={secondaryLogo}
+              alt=""
+              width={40}
+              height={40}
+              className="h-8 w-auto sm:h-10"
+            />
+          ) : null}
+          {secondaryLogo && primaryLogo ? (
+            <span
+              className={cn(
+                "hidden h-8 w-px sm:block",
+                scrolled ? "bg-border" : "bg-text-inverse/30"
+              )}
+              aria-hidden
+            />
+          ) : null}
+          {primaryLogo ? (
+            <Image
+              src={primaryLogo}
+              alt={institutionShortName || "Logo institucional"}
+              width={40}
+              height={40}
+              className="h-8 w-auto sm:h-10"
+            />
+          ) : (
+            <span className="text-sm font-semibold">
+              {institutionShortName || PLATFORM_DISPLAY_NAME}
+            </span>
+          )}
         </Link>
 
         <nav

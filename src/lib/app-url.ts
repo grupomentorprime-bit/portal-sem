@@ -14,12 +14,15 @@ export function getAppBaseUrl(): string {
 }
 
 /** Convierte rutas relativas del CMS en URLs absolutas para correos y enlaces externos. */
-export function resolvePublicUrl(url: string | undefined | null): string | undefined {
+export function resolvePublicUrl(
+  url: string | undefined | null,
+  baseOrigin: string = getAppBaseUrl()
+): string | undefined {
   const trimmed = url?.trim();
   if (!trimmed) return undefined;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (trimmed.startsWith("//")) return `https:${trimmed}`;
-  const base = getAppBaseUrl().replace(/\/$/, "");
+  const base = (baseOrigin.trim() || getAppBaseUrl()).replace(/\/$/, "");
   const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return `${base}${path}`;
 }

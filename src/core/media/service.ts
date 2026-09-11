@@ -27,8 +27,8 @@ export const MediaService = {
     return uploadMedia(input);
   },
 
-  getById(id: string) {
-    return getMediaById(id);
+  getById(id: string, tenant: string) {
+    return getMediaById(id, tenant);
   },
 
   search(query: MediaListQuery | MediaSearchQuery) {
@@ -39,29 +39,29 @@ export const MediaService = {
     return listMedia(query);
   },
 
-  async delete(id: string, permanent = false) {
-    if (permanent) return deleteMediaPermanent(id);
-    return trashMedia(id);
+  async delete(id: string, tenant: string, permanent = false) {
+    if (permanent) return deleteMediaPermanent(id, tenant);
+    return trashMedia(id, tenant);
   },
 
   replace(id: string, input: Omit<UploadMediaInput, "tenant" | "folder"> & { tenant: string }) {
     return replaceMediaFile(id, input);
   },
 
-  move(id: string, folder: CmsMediaAsset["folder"]) {
-    return moveMedia(id, folder);
+  move(id: string, tenant: string, folder: CmsMediaAsset["folder"]) {
+    return moveMedia(id, tenant, folder);
   },
 
-  rename(id: string, originalName: string) {
-    return renameMedia(id, originalName);
+  rename(id: string, tenant: string, originalName: string) {
+    return renameMedia(id, tenant, originalName);
   },
 
-  duplicate(id: string) {
-    return duplicateMedia(id);
+  duplicate(id: string, tenant: string) {
+    return duplicateMedia(id, tenant);
   },
 
-  update(id: string, data: Parameters<typeof updateMedia>[1]) {
-    return updateMedia(id, data);
+  update(id: string, tenant: string, data: Parameters<typeof updateMedia>[2]) {
+    return updateMedia(id, tenant, data);
   },
 
   bulk(body: Parameters<typeof bulkMediaAction>[0]) {
@@ -70,7 +70,7 @@ export const MediaService = {
 
   async getUsage(tenant: string, id: string) {
     await rebuildUsageIndex(tenant);
-    const asset = await getMediaById(id);
+    const asset = await getMediaById(id, tenant);
     return asset?.usage ?? [];
   },
 

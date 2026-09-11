@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   deletePage,
   duplicatePage,
@@ -8,7 +9,7 @@ import {
 } from "@/lib/cms/pages";
 import { validatePageUpdate } from "@/lib/cms/page-validation";
 import { normalizeSlug } from "@/lib/cms/page-utils";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import { requirePermission, isAuthContext } from "@/core/identity";
 import { syncPageWorkflow } from "@/lib/workflow/integration";
 import type { CmsPageUpdate } from "@/types/page";
@@ -17,14 +18,30 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+async function loadPageForActiveTenant(id: string) {
+  const tenantCheck = await requireActiveTenant();
+  if (!tenantCheck.ok) {
+    return { error: tenantGuardResponse(tenantCheck) } as const;
+  }
+  const page = await getPageByIdUncached(id, tenantCheck.tenant);
+  if (!page) {
+    return {
+      error: NextResponse.json({ ok: false, error: "Página no encontrada." }, { status: 404 }),
+    } as const;
+  }
+  return { page, tenantId: tenantCheck.tenant } as const;
+}
+
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
+    const denied = await authorizeApiRead("cms.pages.read");
+    if (denied) return denied;
+
     const { id } = await params;
-    const page = await getPageByIdUncached(id);
-    if (!page) {
-      return NextResponse.json({ ok: false, error: "Página no encontrada." }, { status: 404 });
-    }
-    return NextResponse.json({ ok: true, page });
+    const loaded = await loadPageForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+
+    return NextResponse.json({ ok: true, page: loaded.page });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -43,6 +60,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (denied) return denied;
 
     const { id } = await params;
+    const loaded = await loadPageForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+    const existing = loaded.page;
+    const tenantId = loaded.tenantId;
+
     const body = (await request.json()) as CmsPageUpdate & {
       duplicateAs?: { newId: string; newTitle: string; newSlug: string };
       publish?: boolean;
@@ -51,6 +73,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (body.duplicateAs) {
       const duplicated = await duplicatePage(
         id,
+        tenantId,
         body.duplicateAs.newId,
         body.duplicateAs.newTitle,
         normalizeSlug(body.duplicateAs.newSlug)
@@ -68,15 +91,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, errors }, { status: 400 });
     }
 
-    const existing = await getPageByIdUncached(id);
-    if (!existing) {
-      return NextResponse.json({ ok: false, error: "Página no encontrada." }, { status: 404 });
-    }
-
-    if (
-      body.slug &&
-      (await pageSlugExists(body.slug, existing.tenant, id))
-    ) {
+    if (body.slug && (await pageSlugExists(body.slug, tenantId, id))) {
       return NextResponse.json(
         { ok: false, error: `Ya existe una página con slug "${body.slug}".` },
         { status: 409 }
@@ -84,7 +99,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     const saveVersion = body.publish === true || body.status === "published";
-    const page = await updatePage(id, body, { saveVersion });
+    const page = await updatePage(id, tenantId, body, { saveVersion });
 
     if (page) {
       const { rebuildUsageIndex } = await import("@/core/media/usage");
@@ -122,7 +137,10 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     if (denied) return denied;
 
     const { id } = await params;
-    const deleted = await deletePage(id);
+    const loaded = await loadPageForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+
+    const deleted = await deletePage(id, loaded.tenantId);
     if (!deleted) {
       return NextResponse.json({ ok: false, error: "Página no encontrada." }, { status: 404 });
     }

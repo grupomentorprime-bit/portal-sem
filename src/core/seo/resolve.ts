@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { resolveSeoImageUrls } from "@/core/media";
+import {
+  PLATFORM_DISPLAY_NAME,
+  seoDescriptionFromConfig,
+  seoTitleFromConfig,
+} from "@/core/branding";
 import type { SiteConfig } from "@/types/cms";
 
 export function resolvePageTitle(pageName: string, config: SiteConfig): string {
@@ -10,14 +15,14 @@ export function resolvePageTitle(pageName: string, config: SiteConfig): string {
 export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Metadata> {
   if (!config) {
     return {
-      title: "Portal Institucional",
+      title: PLATFORM_DISPLAY_NAME,
       description: "Portal institucional",
     };
   }
 
   const { institution, seo, branding } = config;
-  const title = seo.title || institution.name;
-  const description = seo.description;
+  const title = seoTitleFromConfig(config);
+  const description = seoDescriptionFromConfig(config);
   const tenant = institution.tenant;
 
   const images = tenant
@@ -45,9 +50,9 @@ export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Me
     openGraph: {
       title,
       description,
-      siteName: institution.name,
+      siteName: institution.name || PLATFORM_DISPLAY_NAME,
       images: images.ogImage
-        ? [{ url: images.ogImage, alt: institution.name }]
+        ? [{ url: images.ogImage, alt: institution.name || PLATFORM_DISPLAY_NAME }]
         : undefined,
       locale: "es_CL",
       type: "website",

@@ -3,6 +3,10 @@ import { getDatabase } from "@/lib/mongodb";
 import { mergeBlockSettings } from "@/lib/cms/page-validation";
 import { sortBlocks } from "@/lib/cms/page-utils";
 import { stripPageBlocksForSave } from "@/lib/content/block-queries";
+import {
+  resourceIdCandidates,
+  scopedResourceId,
+} from "@/core/tenant/resource-ids";
 import type { CmsPage, CmsPageCreate, CmsPageUpdate, PageBlock } from "@/types/page";
 
 const CMS_PAGES_TAG = "cms-pages";
@@ -22,21 +26,37 @@ function normalizePage(page: CmsPage): CmsPage {
   };
 }
 
-async function fetchAllPagesFromDb(tenant?: string): Promise<CmsPage[]> {
+function pageTenantFilter(tenant: string) {
+  return { tenant };
+}
+
+async function fetchAllPagesFromDb(tenant: string): Promise<CmsPage[]> {
   const db = await getDatabase();
-  const filter = tenant ? { tenant } : {};
   const pages = await db
     .collection<CmsPage>("cms_pages")
-    .find(filter)
+    .find(pageTenantFilter(tenant))
     .sort({ title: 1 })
     .toArray();
   return pages.map(normalizePage);
 }
 
-async function fetchPageByIdFromDb(id: string): Promise<CmsPage | null> {
+async function fetchPageByIdFromDb(id: string, tenant: string): Promise<CmsPage | null> {
   const db = await getDatabase();
-  const page = await db.collection<CmsPage>("cms_pages").findOne({ _id: id });
-  return page ? normalizePage(page) : null;
+  const candidates = resourceIdCandidates(tenant, id);
+  const pages = await db
+    .collection<CmsPage>("cms_pages")
+    .find({
+      _id: { $in: candidates },
+      ...pageTenantFilter(tenant),
+    })
+    .toArray();
+
+  if (pages.length === 0) return null;
+
+  // Preferir scoped sobre bare (compat).
+  const preferred =
+    pages.find((p) => p._id === candidates[0]) ?? pages[0];
+  return normalizePage(preferred);
 }
 
 async function fetchPageBySlugFromDb(
@@ -52,26 +72,29 @@ async function fetchPageBySlugFromDb(
   return page ? normalizePage(page) : null;
 }
 
-export const getAllPages = (tenant?: string) =>
+export const getAllPages = (tenant: string) =>
   unstable_cache(
     async () => fetchAllPagesFromDb(tenant),
-    [`cms-pages-all-${tenant ?? "all"}`],
+    [`cms-pages-all-${tenant}`],
     { tags: [CMS_PAGES_TAG], revalidate: 60 }
   );
 
-export async function getAllPagesUncached(tenant?: string): Promise<CmsPage[]> {
+export async function getAllPagesUncached(tenant: string): Promise<CmsPage[]> {
   return fetchAllPagesFromDb(tenant);
 }
 
-export const getPageById = (id: string) =>
+export const getPageById = (id: string, tenant: string) =>
   unstable_cache(
-    async () => fetchPageByIdFromDb(id),
-    [`cms-page-${id}`],
+    async () => fetchPageByIdFromDb(id, tenant),
+    [`cms-page-${tenant}-${id}`],
     { tags: [CMS_PAGES_TAG, `cms-page-${id}`], revalidate: 60 }
   );
 
-export async function getPageByIdUncached(id: string): Promise<CmsPage | null> {
-  return fetchPageByIdFromDb(id);
+export async function getPageByIdUncached(
+  id: string,
+  tenant: string
+): Promise<CmsPage | null> {
+  return fetchPageByIdFromDb(id, tenant);
 }
 
 export async function getPublishedPageBySlug(
@@ -91,9 +114,10 @@ export async function createPage(
 ): Promise<CmsPage> {
   const db = await getDatabase();
   const now = new Date().toISOString();
+  const physicalId = scopedResourceId(data.tenant, data._id);
 
   const document: CmsPage = {
-    _id: data._id,
+    _id: physicalId,
     tenant: data.tenant,
     title: data.title,
     slug: data.slug,
@@ -121,11 +145,12 @@ export async function createPage(
 
 export async function updatePage(
   id: string,
+  tenant: string,
   data: CmsPageUpdate,
   options?: { saveVersion?: boolean }
 ): Promise<CmsPage | null> {
   const db = await getDatabase();
-  const existing = await fetchPageByIdFromDb(id);
+  const existing = await fetchPageByIdFromDb(id, tenant);
   if (!existing) return null;
 
   const now = new Date().toISOString();
@@ -143,6 +168,7 @@ export async function updatePage(
 
   const document: CmsPage = {
     ...existing,
+    tenant,
     title: data.title ?? existing.title,
     slug: data.slug ?? existing.slug,
     description: data.description ?? existing.description,
@@ -159,16 +185,21 @@ export async function updatePage(
     updatedAt: now,
   };
 
-  await db.collection<CmsPage>("cms_pages").replaceOne({ _id: id }, document);
+  await db
+    .collection<CmsPage>("cms_pages")
+    .replaceOne({ _id: existing._id, tenant }, document);
   revalidatePageTags(document);
   return document;
 }
 
-export async function deletePage(id: string): Promise<boolean> {
+export async function deletePage(id: string, tenant: string): Promise<boolean> {
   const db = await getDatabase();
-  const existing = await fetchPageByIdFromDb(id);
-  const result = await db.collection<CmsPage>("cms_pages").deleteOne({ _id: id });
-  if (result.deletedCount > 0 && existing) {
+  const existing = await fetchPageByIdFromDb(id, tenant);
+  if (!existing) return false;
+  const result = await db
+    .collection<CmsPage>("cms_pages")
+    .deleteOne({ _id: existing._id, tenant });
+  if (result.deletedCount > 0) {
     revalidatePageTags(existing);
     return true;
   }
@@ -177,16 +208,17 @@ export async function deletePage(id: string): Promise<boolean> {
 
 export async function duplicatePage(
   sourceId: string,
+  tenant: string,
   newId: string,
   newTitle: string,
   newSlug: string
 ): Promise<CmsPage | null> {
-  const source = await fetchPageByIdFromDb(sourceId);
+  const source = await fetchPageByIdFromDb(sourceId, tenant);
   if (!source) return null;
 
   return createPage({
     _id: newId,
-    tenant: source.tenant,
+    tenant,
     title: newTitle,
     slug: newSlug,
     description: source.description,
@@ -201,10 +233,9 @@ export async function duplicatePage(
   });
 }
 
-export async function pageExists(id: string): Promise<boolean> {
-  const db = await getDatabase();
-  const count = await db.collection<CmsPage>("cms_pages").countDocuments({ _id: id });
-  return count > 0;
+export async function pageExists(id: string, tenant: string): Promise<boolean> {
+  const page = await fetchPageByIdFromDb(id, tenant);
+  return page !== null;
 }
 
 export async function pageSlugExists(
@@ -214,7 +245,10 @@ export async function pageSlugExists(
 ): Promise<boolean> {
   const db = await getDatabase();
   const filter: Record<string, unknown> = { slug, tenant };
-  if (excludeId) filter._id = { $ne: excludeId };
+  if (excludeId) {
+    const candidates = resourceIdCandidates(tenant, excludeId);
+    filter._id = { $nin: candidates };
+  }
   const count = await db.collection("cms_pages").countDocuments(filter);
   return count > 0;
 }

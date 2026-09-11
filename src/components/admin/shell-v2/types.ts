@@ -1,11 +1,13 @@
 import type { AdminUserSummary } from "@/components/admin/AdminUserMenuPanel";
 
-/** Branding del tenant activo — sin referencias fijas a institución. */
+/** Branding del Espacio activo para Shell V2.
+ * `centerLabel` = producto (Growth OS); institution* / logo = contexto Espacio.
+ */
 export interface AdminTenantBranding {
   institutionName: string;
   institutionShortName?: string;
   logoUrl?: string;
-  /** Etiqueta del centro admin, p. ej. «Centro [shortName]» */
+  /** Producto estable — Growth OS */
   centerLabel: string;
 }
 

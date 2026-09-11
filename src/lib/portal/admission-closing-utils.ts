@@ -1,5 +1,19 @@
 import type { AdmissionClosingBlock, AdmissionClosingConfig } from "@/types/admission-closing";
+import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { DEFAULT_ADMISSION_CLOSING } from "@/lib/portal/admission-closing-defaults";
+import { EMPTY_ADMISSION_CLOSING } from "@/lib/portal/empty-admission";
+
+function rewriteClosingBlock(block: AdmissionClosingBlock): AdmissionClosingBlock {
+  if (block.type !== "copyright" || !block.data.developerText) return block;
+  return {
+    ...block,
+    data: {
+      ...block.data,
+      developerText: rewriteLegacyPlatformProductName(block.data.developerText),
+    },
+  };
+}
 
 export function sortClosingBlocks<T extends { order: number }>(blocks: T[]): T[] {
   return [...blocks].sort((a, b) => a.order - b.order);
@@ -38,19 +52,34 @@ export function reorderClosingListItems<T extends { id: string; order: number }>
 }
 
 export function mergeClosingConfig(
-  saved?: AdmissionClosingConfig
+  saved?: AdmissionClosingConfig,
+  options?: { tenant?: string }
 ): AdmissionClosingConfig {
-  if (!saved) return DEFAULT_ADMISSION_CLOSING;
+  const base = isSemTenant(options?.tenant)
+    ? DEFAULT_ADMISSION_CLOSING
+    : EMPTY_ADMISSION_CLOSING;
+
+  if (!saved) {
+    return {
+      ...base,
+      blocks: base.blocks.map(rewriteClosingBlock),
+    };
+  }
+  if (base.blocks.length === 0) {
+    return {
+      ...base,
+      ...saved,
+      blocks: sortClosingBlocks((saved.blocks ?? []).map(rewriteClosingBlock)),
+    };
+  }
 
   const savedTypes = new Set(saved.blocks.map((block) => block.type));
-  const missingDefaults = DEFAULT_ADMISSION_CLOSING.blocks.filter(
-    (block) => !savedTypes.has(block.type)
-  );
+  const missingDefaults = base.blocks.filter((block) => !savedTypes.has(block.type));
 
   return {
-    ...DEFAULT_ADMISSION_CLOSING,
+    ...base,
     ...saved,
-    blocks: sortClosingBlocks([...saved.blocks, ...missingDefaults]),
+    blocks: sortClosingBlocks([...saved.blocks, ...missingDefaults].map(rewriteClosingBlock)),
   };
 }
 

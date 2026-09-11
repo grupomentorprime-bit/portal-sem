@@ -124,7 +124,7 @@ export function HeroPortalPanel({ value, onChange, tenant }: HeroPortalPanelProp
         <CardHeader>
           <CardTitle>Hero del Portal</CardTitle>
           <CardDescription>
-            Constructor de slides — módulo Core AprendeHoy (OT-HERO-006). El diseño queda en código; todo el contenido se administra aquí.
+            Constructor de slides — módulo Core de Growth OS (OT-HERO-006). El diseño queda en código; todo el contenido se administra aquí.
           </CardDescription>
         </CardHeader>
         <div className="space-y-6">

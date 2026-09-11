@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 export default function UsuariosCmsPage() {
   return (
     <AdminPageFrame
-      title="Usuarios CMS"
-      description="Equipo, invitaciones y actividad de accesos al panel."
+      title="Usuarios"
+      description="Equipo, invitaciones y actividad de accesos al Espacio."
       actions={<></>}
     >
       <UsuariosCmsClient />

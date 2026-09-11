@@ -37,7 +37,12 @@ if (!check.ok) return tenantGuardResponse(check);
 
 ## Theming
 
-Colores del tenant se inyectan en `app/layout.tsx` como CSS variables `--brand-*`. Componentes consumen tokens semánticos (`--primary`, `--secondary`) definidos en `globals.css`.
+| Superficie | Fuente |
+| --- | --- |
+| `/platform`, login global, sin Espacio | `--growth-os-*` vía `PlatformNeutralTheme` (Master) |
+| `/admin` + portal del Site | `site_config.branding` → `--brand-*` en `app/layout.tsx` |
+
+Componentes consumen tokens semánticos (`--color-primary`, etc.). No hardcodes por SEM/ADL. Edición: `/admin/config?section=branding`. Contrato: [BRANDING-SYSTEM.md](../design/BRANDING-SYSTEM.md).
 
 ## Rutas públicas
 

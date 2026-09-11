@@ -14,7 +14,7 @@ export default function NotificationsSettingsPage() {
   return (
     <AdminPageFrame
       title="Notificaciones"
-      description="Alertas del CMS y avisos institucionales"
+      description="Alertas del Espacio y avisos del equipo"
       backHref="/admin"
       backLabel="Volver al inicio"
     >

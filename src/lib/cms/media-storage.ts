@@ -75,14 +75,30 @@ export function storageKeyFromMediaUrl(url: string): string | null {
   return null;
 }
 
+async function resolveTenantId(explicit?: string): Promise<string> {
+  if (explicit?.trim()) return explicit.trim();
+  const { getOperationalTenantId } = await import("@/core/identity");
+  const tenantId = await getOperationalTenantId();
+  if (!tenantId) {
+    throw new Error("Tenant no configurado para almacenamiento.");
+  }
+  return tenantId;
+}
+
 /** Reconstruye la URL pública actual de un archivo según la configuración de almacenamiento activa. */
-export async function resolveMediaStoragePublicUrl(storageKey: string): Promise<string> {
-  const settings = await resolveStorageSettings();
+export async function resolveMediaStoragePublicUrl(
+  storageKey: string,
+  tenantId?: string
+): Promise<string> {
+  const settings = await resolveStorageSettings(await resolveTenantId(tenantId));
   return buildPublicUrl(settings, storageKey);
 }
 
-export async function readMediaFile(key: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
-  const settings = await resolveStorageSettings();
+export async function readMediaFile(
+  key: string,
+  tenantId?: string
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  const settings = await resolveStorageSettings(await resolveTenantId(tenantId));
   const ext = key.split(".").pop()?.toLowerCase() ?? "";
   const mimeType = guessMimeType(ext);
 
@@ -119,17 +135,19 @@ function guessMimeType(ext: string): string {
 export async function putMediaFile(
   key: string,
   buffer: Buffer,
-  mimeType: string
+  mimeType: string,
+  tenantId?: string
 ): Promise<StoragePutResult> {
-  const s3 = await assertS3StorageForUpload();
+  const resolvedTenant = await resolveTenantId(tenantId);
+  const s3 = await assertS3StorageForUpload(resolvedTenant);
   await putS3Object(s3, key, buffer, mimeType);
 
-  const settings = await resolveStorageSettings();
+  const settings = await resolveStorageSettings(resolvedTenant);
   return { key, publicUrl: buildPublicUrl(settings, key) };
 }
 
-export async function deleteMediaFile(key: string): Promise<void> {
-  const settings = await resolveStorageSettings();
+export async function deleteMediaFile(key: string, tenantId?: string): Promise<void> {
+  const settings = await resolveStorageSettings(await resolveTenantId(tenantId));
 
   if (settings.mode === "s3" && settings.s3) {
     await deleteS3Object(settings.s3, key);
@@ -144,8 +162,8 @@ export async function deleteMediaFile(key: string): Promise<void> {
   }
 }
 
-export async function deleteMediaPrefix(prefix: string): Promise<void> {
-  const settings = await resolveStorageSettings();
+export async function deleteMediaPrefix(prefix: string, tenantId?: string): Promise<void> {
+  const settings = await resolveStorageSettings(await resolveTenantId(tenantId));
   if (settings.mode === "s3") {
     return;
   }

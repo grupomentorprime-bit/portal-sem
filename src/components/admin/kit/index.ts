@@ -48,12 +48,13 @@ export { ValidationSummary } from "@/components/admin/kit/forms/ValidationSummar
 export { SearchBar } from "@/components/admin/kit/search/SearchBar";
 export { GlobalSearch } from "@/components/admin/kit/search/GlobalSearch";
 export { QuickFilter } from "@/components/admin/kit/search/QuickFilter";
-export { FilterBar } from "@/components/admin/kit/filters/FilterBar";
+export { FilterBar, FilterSelect } from "@/components/admin/kit/filters/FilterBar";
 export { FilterChip } from "@/components/admin/kit/filters/FilterChip";
 export { SavedFilters } from "@/components/admin/kit/filters/SavedFilters";
 
 // States
 export { StatusBadge } from "@/components/admin/kit/states/StatusBadge";
+export type { StatusBadgeTone, StatusBadgeProps } from "@/components/admin/kit/states/StatusBadge";
 export { ProgressBadge } from "@/components/admin/kit/states/ProgressBadge";
 export { AlertBanner } from "@/components/admin/kit/states/AlertBanner";
 export { EmptyState } from "@/components/admin/kit/states/EmptyState";

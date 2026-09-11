@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 interface StudentAffairsFormPageClientProps {
   formId: string;
   formName: string;
+  institutionName?: string;
 }
 
 export function StudentAffairsFormPageClient({
   formId,
   formName,
+  institutionName,
 }: StudentAffairsFormPageClientProps) {
   return (
     <AdminModulePage
@@ -30,7 +32,11 @@ export function StudentAffairsFormPageClient({
       }
       className="[&_header]:mb-3 [&_header]:pb-3"
     >
-      <StudentAffairsOperationsPanel formId={formId} formName={formName} />
+      <StudentAffairsOperationsPanel
+        formId={formId}
+        formName={formName}
+        institutionName={institutionName}
+      />
     </AdminModulePage>
   );
 }

@@ -1,8 +1,9 @@
 /**
- * OT-UX-002 — Contenido institucional demo / fallback para Home SEM.
- * Se usa cuando el CMS no tiene contenido publicado — el visitante nunca ve estados vacíos.
+ * OT-UX-002 — Contenido institucional demo / fallback para Home SEM (T001).
+ * Solo rellena vacíos cuando el tenant es SEM. Otros Espacios no heredan copy SEM.
  */
 
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
 import type { ProgramItem, NewsItem, TestimonialItem } from "@/types/content";
 import type { PersonItem } from "@/types/people-grid";
@@ -465,22 +466,30 @@ export const DEMO_INSTITUTIONAL_SOCIAL: SocialLinks = {
   spotify: "",
 };
 
-export function shouldUseHomeDemoContent(pageSlug?: string): boolean {
-  return isHomePageSlug(pageSlug ?? "");
+export function shouldUseHomeDemoContent(
+  pageSlug?: string,
+  tenantId?: string
+): boolean {
+  return isSemTenant(tenantId) && isHomePageSlug(pageSlug ?? "");
 }
 
 export function withHomeDemoPrograms(
   programs: ProgramItem[],
-  _pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): ProgramItem[] {
-  return programs.length > 0 ? programs : DEMO_ACADEMIC_PROGRAMS;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId) || programs.length > 0) {
+    return programs;
+  }
+  return DEMO_ACADEMIC_PROGRAMS;
 }
 
 export function mergeHomeAcademicOfferSettings(
   settings: PortalProgramsSectionSettings,
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): PortalProgramsSectionSettings {
-  if (!shouldUseHomeDemoContent(pageSlug)) return settings;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId)) return settings;
 
   return {
     ...settings,
@@ -510,9 +519,10 @@ export function mergeHomeAcademicOfferSettings(
 
 export function mergeHomeFeatureGridSettings(
   settings: PortalFeatureGridSettings,
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): PortalFeatureGridSettings {
-  if (!shouldUseHomeDemoContent(pageSlug)) return settings;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId)) return settings;
 
   return {
     ...settings,
@@ -525,41 +535,52 @@ export function mergeHomeFeatureGridSettings(
 /** Liderazgo académico visible en home — teaser editorial */
 export const HOME_FACULTY_TEASER_COUNT = 4;
 
-export function withHomeDemoPeople(people: PersonItem[], pageSlug?: string): PersonItem[] {
+export function withHomeDemoPeople(
+  people: PersonItem[],
+  pageSlug?: string,
+  tenantId?: string
+): PersonItem[] {
   const isHome = Boolean(pageSlug && isHomePageSlug(pageSlug));
   let result = people;
-  if (shouldUseHomeDemoContent(pageSlug) && people.length === 0) {
+  if (shouldUseHomeDemoContent(pageSlug, tenantId) && people.length === 0) {
     result = DEMO_FACULTY;
   }
   return isHome ? result.slice(0, HOME_FACULTY_TEASER_COUNT) : result;
 }
 
-export function withHomeDemoNews(items: NewsItem[], pageSlug?: string): NewsItem[] {
-  if (!shouldUseHomeDemoContent(pageSlug) || items.length > 0) return items;
+export function withHomeDemoNews(
+  items: NewsItem[],
+  pageSlug?: string,
+  tenantId?: string
+): NewsItem[] {
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId) || items.length > 0) return items;
   return DEMO_NEWS;
 }
 
 export function withHomeDemoFeatures(
   features: PortalFeatureItem[],
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): PortalFeatureItem[] {
-  if (!shouldUseHomeDemoContent(pageSlug) || features.length > 0) return features;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId) || features.length > 0) return features;
   return DEMO_FEATURE_GRID;
 }
 
 export function withHomeDemoTimeline(
   items: PortalTimelineItem[],
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): PortalTimelineItem[] {
-  if (!shouldUseHomeDemoContent(pageSlug) || items.length > 0) return items;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId) || items.length > 0) return items;
   return DEMO_FORMATIVE_ROUTE;
 }
 
 export function mergeHomeAudienceProfilesSettings(
   settings: Record<string, unknown>,
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): Record<string, unknown> {
-  if (!shouldUseHomeDemoContent(pageSlug)) return settings;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId)) return settings;
   return {
     ...settings,
     overline: settings.overline || PORTAL_001_AUDIENCE_PROFILES.overline,
@@ -575,33 +596,37 @@ export function mergeHomeAudienceProfilesSettings(
 
 export function withHomeDemoAudienceProfiles(
   profiles: AudienceProfileItem[],
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): AudienceProfileItem[] {
-  if (!shouldUseHomeDemoContent(pageSlug) || profiles.length > 0) return profiles;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId) || profiles.length > 0) return profiles;
   return PORTAL_001_AUDIENCE_PROFILES.profiles;
 }
 
 export function withHomeDemoTestimonials(
   items: TestimonialItem[],
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): TestimonialItem[] {
-  if (!shouldUseHomeDemoContent(pageSlug) || items.length > 0) return items;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId) || items.length > 0) return items;
   return DEMO_TESTIMONIALS;
 }
 
 export function withHomeDemoFaqItems(
   items: FaqItem[],
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): FaqItem[] {
-  if (!shouldUseHomeDemoContent(pageSlug) || items.length > 0) return items;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId) || items.length > 0) return items;
   return PORTAL_001_FAQ_ITEMS;
 }
 
 export function mergeHomeCtaSettings(
   settings: PortalCTAPremiumSettings,
-  pageSlug?: string
+  pageSlug?: string,
+  tenantId?: string
 ): PortalCTAPremiumSettings {
-  if (!shouldUseHomeDemoContent(pageSlug)) return settings;
+  if (!shouldUseHomeDemoContent(pageSlug, tenantId)) return settings;
 
   const hasStats =
     settings.showStats !== false &&
@@ -650,11 +675,13 @@ export function enrichInstitutionalSocial(social: SocialLinks): SocialLinks {
   };
 }
 
-export function enrichPortalContextForHome<T extends { config: { contact: ContactInfo; social: SocialLinks } }>(
-  ctx: T,
-  pageSlug?: string
-): T {
-  if (!shouldUseHomeDemoContent(pageSlug)) return ctx;
+export function enrichPortalContextForHome<
+  T extends {
+    tenant?: string;
+    config: { contact: ContactInfo; social: SocialLinks };
+  }
+>(ctx: T, pageSlug?: string): T {
+  if (!shouldUseHomeDemoContent(pageSlug, ctx.tenant)) return ctx;
   return {
     ...ctx,
     config: {

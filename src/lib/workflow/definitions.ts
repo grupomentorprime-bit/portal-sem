@@ -10,9 +10,7 @@ import {
 import { generateId } from "@/core/identity/auth/crypto";
 
 function definitionTenantFilter(tenantId: string): Filter<WorkflowDefinition> {
-  return {
-    $or: [{ tenantId }, { tenantId: { $exists: false } }],
-  };
+  return { tenantId };
 }
 
 export async function findDefinitionByKey(
@@ -27,9 +25,15 @@ export async function findDefinitionByKey(
   });
 }
 
-export async function getDefinitionById(id: string): Promise<WorkflowDefinition | null> {
+export async function getDefinitionById(
+  id: string,
+  tenantId: string
+): Promise<WorkflowDefinition | null> {
   const db = await getDatabase();
-  return db.collection<WorkflowDefinition>("workflow_definitions").findOne({ _id: id });
+  return db.collection<WorkflowDefinition>("workflow_definitions").findOne({
+    _id: id,
+    ...definitionTenantFilter(tenantId),
+  });
 }
 
 export async function listDefinitions(tenantId: string): Promise<WorkflowDefinition[]> {
@@ -55,7 +59,7 @@ export async function ensureSystemDefinitions(tenantId: string): Promise<Workflo
 
   for (const template of SYSTEM_WORKFLOW_TEMPLATES) {
     if (existingKeys.has(template.key)) continue;
-    const def = templateToDefinition(template);
+    const def = templateToDefinition(template, tenantId);
     toInsert.push({
       ...def,
       _id: generateId("wfdef"),

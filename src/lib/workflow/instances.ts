@@ -18,9 +18,15 @@ export async function findInstanceByEntity(
   });
 }
 
-export async function getInstanceById(id: string): Promise<WorkflowInstance | null> {
+export async function getInstanceById(
+  id: string,
+  tenantId: string
+): Promise<WorkflowInstance | null> {
   const db = await getDatabase();
-  return db.collection<WorkflowInstance>("workflow_instances").findOne({ _id: id });
+  return db.collection<WorkflowInstance>("workflow_instances").findOne({
+    _id: id,
+    tenantId,
+  });
 }
 
 export async function listActiveInstances(tenantId: string): Promise<WorkflowInstance[]> {
@@ -63,6 +69,7 @@ export async function createInstance(input: {
 
 export async function updateInstanceState(
   id: string,
+  tenantId: string,
   currentState: string,
   status: WorkflowInstance["status"],
   completedAt?: string
@@ -77,9 +84,9 @@ export async function updateInstanceState(
   };
 
   await db.collection<WorkflowInstance>("workflow_instances").updateOne(
-    { _id: id },
+    { _id: id, tenantId },
     { $set: update }
   );
 
-  return getInstanceById(id);
+  return getInstanceById(id, tenantId);
 }

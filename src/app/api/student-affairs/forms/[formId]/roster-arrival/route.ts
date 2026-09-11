@@ -152,6 +152,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (notifyParticipant && participantEmail && body.action === "check-in") {
       try {
         const emailResponse = await sendParticipantCheckInEmail({
+          tenantId: ctx.tenantId,
           to: participantEmail,
           participantName,
           convocatoria,

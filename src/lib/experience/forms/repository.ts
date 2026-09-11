@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
 import { createSemDefaultForms, SEM_DEFAULT_FORM_IDS } from "@/core/experience/forms/defaults";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { resolveFormId } from "@/core/experience/forms/engine";
 import { isExperienceFormPublished, isExperienceFormDirectAccessible } from "@/lib/experience/forms/status";
 import type {
@@ -568,6 +569,10 @@ export async function deleteFormSubmission(
 }
 
 export async function seedExperienceForms(tenant: string): Promise<ExperienceFormDefinition[]> {
+  if (!isSemTenant(tenant)) {
+    return listExperienceForms(tenant);
+  }
+
   const db = await getDatabase();
   const purged = await getPurgedFormIds(tenant);
   const existing = await db.collection(COLLECTION).countDocuments(tenantFilter(tenant));
@@ -584,8 +589,13 @@ export async function seedExperienceForms(tenant: string): Promise<ExperienceFor
   return listExperienceForms(tenant);
 }
 
-/** Inserta formularios base que falten. Respeta eliminaciones definitivas del admin. */
+/**
+ * Inserta formularios base SEM que falten (solo T001).
+ * Respeta eliminaciones definitivas del admin. Otros Espacios: no-op.
+ */
 export async function ensureDefaultExperienceForms(tenant: string): Promise<void> {
+  if (!isSemTenant(tenant)) return;
+
   const db = await getDatabase();
   const defaults = createSemDefaultForms(tenant);
   const purged = await getPurgedFormIds(tenant);
@@ -616,11 +626,13 @@ export async function ensureDefaultExperienceForms(tenant: string): Promise<void
   }
 }
 
-/** Restaura un formulario base eliminado (p. ej. convocatoria). */
+/** Restaura un formulario base SEM eliminado (solo T001). */
 export async function restoreDefaultExperienceForm(
   tenant: string,
   formId: string
 ): Promise<ExperienceFormDefinition | null> {
+  if (!isSemTenant(tenant)) return null;
+
   const resolvedId = resolveFormId(formId);
   if (!(SEM_DEFAULT_FORM_IDS as readonly string[]).includes(resolvedId)) {
     return null;

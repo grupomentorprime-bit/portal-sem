@@ -31,6 +31,7 @@ export function FooterPremiumGrid({
 
   return (
     <FooterPremiumShell
+      tenantId={config.institution.tenant}
       institution={config.institution}
       seo={config.seo}
       contact={config.contact}

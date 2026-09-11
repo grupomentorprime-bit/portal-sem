@@ -43,6 +43,17 @@ src/core/migrations/
   003-footer-v2.ts
   004-branding-v2.ts
   005-content-v2.ts
+  006-saas-foundation.ts
+  007-saas-isolation.ts
+  008-saas-singletons.ts
+  009-saas-branding.ts
+  010-saas-sem-content.ts
+  011-saas-domains.ts
+  012-saas-adl-tenant.ts
+  013-growth-personas.ts
+  014-growth-oportunidades.ts
+  015-growth-actividades.ts
+  016-growth-automations.ts
 
 scripts/migrate.ts   # Entrypoint CLI
 ```

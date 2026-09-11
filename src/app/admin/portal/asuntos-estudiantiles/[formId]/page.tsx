@@ -24,6 +24,10 @@ export default async function StudentAffairsFormPage({ params }: PageProps) {
   }
 
   return (
-    <StudentAffairsFormPageClient formId={form._id} formName={form.name} />
+    <StudentAffairsFormPageClient
+      formId={form._id}
+      formName={form.name}
+      institutionName={ctx.config.institution.name}
+    />
   );
 }

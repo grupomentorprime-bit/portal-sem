@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
+import { getEventById } from "@/core/events/persistence/store";
 import { replayEvent, replayEventsByType } from "@/core/events/replay/replay";
 
 export async function POST(request: Request) {
@@ -10,6 +11,10 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { eventId?: string; type?: string; limit?: number };
 
     if (body.eventId) {
+      const stored = await getEventById(body.eventId);
+      if (!stored || stored.tenantId !== ctx.tenantId) {
+        return NextResponse.json({ ok: false, error: "Evento no encontrado." }, { status: 404 });
+      }
       const result = await replayEvent(body.eventId);
       if (!result.ok) {
         return NextResponse.json({ ok: false, error: result.error }, { status: 404 });

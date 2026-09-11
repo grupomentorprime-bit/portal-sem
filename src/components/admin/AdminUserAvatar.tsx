@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
 
 type AdminUserAvatarSize = "sm" | "md" | "lg";
 
@@ -15,6 +14,13 @@ interface AdminUserAvatarProps {
   photoUrl?: string;
   size?: AdminUserAvatarSize;
   className?: string;
+}
+
+function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
 }
 
 export function AdminUserAvatar({
@@ -42,20 +48,13 @@ export function AdminUserAvatar({
     <span
       className={cn(
         "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-border",
-        "bg-gradient-to-br from-primary/15 via-background to-secondary/20",
+        "bg-gradient-to-br from-primary/15 via-background to-secondary/20 text-xs font-semibold text-primary",
         className
       )}
       style={{ width: pixels, height: pixels }}
       aria-label={name}
     >
-      <Image
-        src={PLATFORM_ASSET_FALLBACKS.logo}
-        alt=""
-        width={Math.round(pixels * 0.62)}
-        height={Math.round(pixels * 0.62)}
-        className="object-contain opacity-90"
-        aria-hidden
-      />
+      {initialsFromName(name)}
     </span>
   );
 }

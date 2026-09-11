@@ -1,164 +1,154 @@
-# Handbook — Portal Institucional SEM
+# Handbook — Growth OS
 
-Punto de entrada oficial del proyecto. Toda persona que se incorpore al desarrollo debe leer este documento antes de escribir código.
+Punto de entrada oficial del repositorio. Toda persona o agente que se incorpore debe leer esto antes de escribir código o proponer cambios.
 
-> El repositorio es la **única fuente de verdad** para arquitectura, UX, diseño y desarrollo. No debe existir documentación duplicada fuera de la estructura oficial en [`/docs`](./README.md).
+> **Growth OS** es el producto de este repo. **Espacio** = cliente en UI. **Tenant** = término técnico. SEM (T001) y ADL (T002) son clientes. Educación es la vertical. **Aprende Hoy** es otro producto (sistema académico), con handoff opt-in.
+>
+> Brújula: *atraer personas, no perder oportunidades y convertirlas en clientes, alumnos o participantes.*
+>
+> Principio: **Simple por fuera. Potente por dentro.**
 
-### Estrategia de entrega (2026)
+El repositorio es la **única fuente de verdad** vigente. Índice: [`docs/README.md`](./README.md). Glosario: [`GLOSSARY.md`](./GLOSSARY.md).
 
-| Etapa | Objetivo | Estado |
-| --- | --- | --- |
-| **I — Foundation** | Platform Core (Identity, Workflow, Events, Portal Engine) | ✅ [Cierre oficial](./strategy/FOUNDATION-COMPLETE.md) v2.0.0 |
-| **II — Business Platform** | CRM, Admisiones, Académico, Finanzas | 🟡 [EP-001](./strategy/epics/EP-001-CRM-ADMISSIONS.md) en diseño |
-| **Tenant SEM** | Portal premium en producción | 🟡 v2.4.0 — pendientes footer y producción |
+Contratos vigentes:
 
-Prioridad actual: **cerrar portal SEM** y **iniciar dominios de negocio** sobre el Core ya estable.
+| Documento | Qué fija |
+| --- | --- |
+| [ADR-008](./architecture/ADR-008.md) | Fundación multi-tenant (Tenant ≡ Espacio, Site, Domain) |
+| [ADR-009](./architecture/ADR-009.md) | Contrato de producto Growth OS |
+| [ADR-010](./architecture/ADR-010.md) | Contrato mínimo Growth Core V1 (Persona → … → Próxima acción) |
+| [ADR-011](./architecture/ADR-011.md) | Contrato mínimo Automatizaciones V1 (Evento → … → Resultado; ≠ Workflow) |
 
 ---
 
-## 1. Filosofía
+## 1. Mapa rápido
 
-El Portal SEM es el sitio institucional del **Seminario Eclesiástico Mayor**, integrado al ecosistema **AprendeHoy** con separación estricta entre:
+```text
+Growth OS                          ← este repositorio (producto)
+├── Platform Core                  ← Identity, Tenant, CMS, Media, Workflow, Events
+├── Productization                 ← nombre, chrome, correo, docs de entrada (cerrada en V1)
+├── Growth Core                    ← V1 cerrada (ADR-010 · CORE-001→007 · CLOSE-001); Personas en /admin
+└── Vertical educación
+      ├── Cliente SEM (T001)
+      ├── Cliente ADL (T002)
+      └── Handoff opt-in → Aprende Hoy
+```
 
-- **Portal Web** — Información institucional, CMS, contenido público.
-- **Core Académico** — Gestión académica vía AprendeHoy (integración futura).
+| Hoy | No asumir listo |
+| --- | --- |
+| Core multi-tenant, CMS, portal, formularios, interesados | CRM completo / recorridos / automatizaciones |
+| Chrome y créditos = Growth OS | Planes, self-serve completo |
+| Operador de Growth OS ≠ Owner de un Espacio (`requirePlatformOperator`) | UI de gestión de operadores / alta self-serve |
+| Platform Admin V1 + patrón visual `/platform` congelado ([UX-SHELL-003](./validation/OT-GROWTH-UX-SHELL-003/README.md)) | Más estilo en Platform Admin; Growth Core en `/platform` |
+| Patrón maestro Inicio Espacio + `/admin` productivo congelados ([UX-ADMIN-MASTER-001](./validation/OT-GROWTH-UX-ADMIN-MASTER-001/README.md) · [001A](./validation/OT-GROWTH-UX-ADMIN-MASTER-001A/README.md) · [SHELL-002](./validation/OT-GROWTH-UX-ADMIN-SHELL-002/README.md) · [002A](./validation/OT-GROWTH-UX-ADMIN-SHELL-002A/README.md) · **CERRADAS · APTO**) · **GROWTH OS ADMIN SHELL V1 cerrado** | Búsqueda global; módulos Crecer funcionales; más microajustes salvo OT explícita |
+| Identidad Master ≠ Espacio ([IDENTITY-MT-001](./validation/OT-GROWTH-IDENTITY-MT-001/README.md)) | Reabrir branding / tokens / Shell |
+| Adapter Aprende Hoy opt-in | ERP académico dentro de este repo |
+| Growth Core V1 ([CLOSE-001](./validation/OT-GROWTH-CORE-CLOSE-001/README.md) · [ADR-010](./architecture/ADR-010.md)) · **CERRADO · APTO** | CRM paralelo, Mensajes/Campañas/IA/Analítica, CORE-008, UI Growth en `/platform` — [CORE-001](./validation/OT-GROWTH-CORE-001/README.md)→[007](./validation/OT-GROWTH-CORE-007/README.md) (**CERRADAS**; 007 **APTO VISUAL**) |
+| Automatizaciones — runtime + WAIT + historial ([AUTOMATION-003](./validation/OT-GROWTH-AUTOMATION-003/README.md) · [005](./validation/OT-GROWTH-AUTOMATION-005/README.md) · [006](./validation/OT-GROWTH-AUTOMATION-006/README.md) · [007](./validation/OT-GROWTH-AUTOMATION-007/README.md) · [ADR-011](./architecture/ADR-011.md)) · **003 CERRADA** · **005–007 entregadas** | Pendiente validación visual humana 006/007; sin siguiente OT abierta |
 
-Principios rectores:
+---
 
-1. Una sola fuente de verdad documental en el repositorio.
+## 2. Filosofía
+
+1. Una sola fuente de verdad documental en el repo.
 2. Ningún desarrollo sin OT y sin revisión de documentación obligatoria.
-3. Identidad visual institucional por encima de plantillas genéricas.
-4. Datos siempre a través de API Routes; nunca acceso directo a MongoDB desde componentes.
+3. Branding visible = datos del **Espacio** / Site; chrome de plataforma = **Growth OS**.
+4. Datos siempre vía API Routes; nunca MongoDB directo desde componentes.
+5. Este producto **no** almacena alumnos, matrículas, pagos, expedientes ni campus — eso es Aprende Hoy.
 
 ---
 
-## 2. Arquitectura
+## 3. Arquitectura
 
 ```
-Usuario
-   ↓
-Portal SEM (Next.js — App Router)
-   ↓
-API Routes (/api/*)
-   ↓
-MongoDB (SeminarioIPN)
-   ↓
-AprendeHoy (integración futura)
+Usuario / operador
+        ↓
+Growth OS (Next.js — App Router)
+        ↓
+API Routes (/api/*) + TenantContext
+        ↓
+MongoDB (aislamiento por tenantId)
+        ↓
+Aprende Hoy (integración opt-in)
 ```
-
-Documentación oficial:
 
 | Documento | Descripción |
 | --- | --- |
-| [ARQ-001](./architecture/ARQ-001.md) | Arquitectura general |
-| [ARQ-002](./architecture/ARQ-002.md) | Arquitectura de integración |
-| [ARQ-003](./architecture/ARQ-003.md) | Arquitectura de desarrollo |
-
-Documentación técnica de infraestructura (migración pendiente a OT): [legacy/INFRAESTRUCTURA.md](./legacy/INFRAESTRUCTURA.md)
+| [ADR-008](./architecture/ADR-008.md) | Multi-tenant (fundación) |
+| [ADR-009](./architecture/ADR-009.md) | Producto Growth OS |
+| [ADR-010](./architecture/ADR-010.md) | Growth Core V1 (contrato; V1 cerrada · [CLOSE-001](./validation/OT-GROWTH-CORE-CLOSE-001/README.md)) |
+| [ADR-011](./architecture/ADR-011.md) | Automatizaciones V1 (contrato + persistencia + runtime mínimo; sin WAIT/editor) |
+| [TENANT-GUIDELINES](./core/TENANT-GUIDELINES.md) | Tenant / Site / Domain operativos |
+| [GROWTH-OS-HANDOFF-APRENDE-HOY](./architecture/GROWTH-OS-HANDOFF-APRENDE-HOY.md) | Corte portal → académico |
+| [ARQ-001](./architecture/ARQ-001.md) · [002](./architecture/ARQ-002.md) · [003](./architecture/ARQ-003.md) | ARQ generales (legado; priorizar ADR-008/009) |
 
 ---
 
-## 3. Principios de desarrollo
+## 4. Principios de desarrollo
 
-- Toda lectura/escritura de datos ocurre en **API Routes** del servidor.
-- Los componentes React **no** acceden directamente a MongoDB.
-- La información institucional proviene del CMS (`cms_config`, Content Engine, Media Library).
-- No se almacena información académica en este portal.
+- Lectura/escritura en **API Routes** del servidor.
+- Componentes React **no** acceden a MongoDB.
+- Configuración de portal desde `site_config` / CMS del Site activo.
+- Identidad: Growth OS Master (`/platform`) ≠ branding del Espacio (`site_config`); ver [BRANDING-SYSTEM](./design/BRANDING-SYSTEM.md).
+- Sin lógica `if (cliente === …)` como identidad de producto; `isSemTenant` solo gate del **pack SEM**.
 - Conexión MongoDB reutilizable (singleton en desarrollo).
 
-Detalle operativo: [Guía de Desarrollo](./development/DEVELOPER-GUIDE.md) · [Estándares de código](./development/CODING-STANDARDS.md)
+Detalle: [Guía de Desarrollo](./development/DEVELOPER-GUIDE.md) · [CODING-STANDARDS](./development/CODING-STANDARDS.md)
 
 ---
 
-## 4. Flujo de Órdenes de Trabajo (OT)
-
-Toda funcionalidad nueva se implementa mediante una **OT** documentada.
+## 5. Flujo de Órdenes de Trabajo (OT)
 
 1. Revisar documentación obligatoria ([DEVELOPER-GUIDE](./development/DEVELOPER-GUIDE.md)).
-2. Consultar o crear la OT en [`docs/ot/`](./ot/).
-3. Seguir la estructura de [OT-STANDARD](./development/OT-STANDARD.md).
-4. Implementar, documentar y cerrar con criterios de aceptación verificables.
-5. Actualizar [CHANGELOG](../CHANGELOG.md), [RELEASES](../RELEASES.md) y [README](../README.md) cuando corresponda.
+2. Consultar o crear la OT (`docs/ot/` o `docs/validation/` según el frente).
+3. Seguir [OT-STANDARD](./development/OT-STANDARD.md).
+4. Implementar, documentar y cerrar con criterios verificables.
+5. Actualizar changelog / releases cuando corresponda a un release.
 
-Índice de OT: [docs/ot/](./ot/)
-
----
-
-## 5. Manual de Marca
-
-La identidad visual del SEM es obligatoria en todo el portal.
-
-- [Manual de Marca](./design/MANUAL-DE-MARCA.md)
-- [Moodboard](./design/MOODBOARD.md)
+Validaciones Growth recientes: [`docs/validation/`](./validation/).
 
 ---
 
-## 6. UX
+## 6. Diseño y UX
 
-Experiencia de usuario gobernada por estándares institucionales.
+- Canon UI: [CORE-UI-CANON](./frontend/CORE-UI-CANON.md)
+- Tokens: [DOC-002](./frontend/DOC-002-DESIGN-TOKENS.md)
+- Design System: [DESIGN-SYSTEM](./design/DESIGN-SYSTEM.md)
+- Catálogo en vivo: `/internal/design-system`
 
-- [UX-SEM-001](./ux/UX-SEM-001.md)
+**Marca del cliente SEM (T001):** [Manual de Marca](./design/MANUAL-DE-MARCA.md) y [Moodboard](./design/MOODBOARD.md) aplican al pack SEM, no al nombre del producto Growth OS.
 
----
-
-## 7. Diseño
-
-Sistema visual y lenguaje de interfaz del portal.
-
-| Documento | Descripción |
-| --- | --- |
-| [CORE-UI-CANON](./frontend/CORE-UI-CANON.md) | **Canon oficial Core UI v1.0** — componentes autorizados y estados |
-| [DOC-002 — Design Tokens](./frontend/DOC-002-DESIGN-TOKENS.md) | **Tokens oficiales** — colores, tipografía, spacing, motion |
-| [UI-INVENTORY](./frontend/UI-INVENTORY.md) | Inventario de componentes (OT-CORE-UI-001) |
-| [Design System](./design/DESIGN-SYSTEM.md) | Componentes, tokens y catálogo visual |
-| [Design Language](./design/DESIGN-LANGUAGE.md) | Lenguaje visual del portal público |
-
-Catálogo en vivo: `/internal/design-system`
+**UX histórica SEM:** [UX-SEM-001](./ux/UX-SEM-001.md) — estándares del portal del cliente SEM.
 
 ### Reglas Core UI (obligatorias)
 
-1. **Ningún desarrollo nuevo** podrá utilizar componentes marcados como `DEPRECATED` (`institutional/`, `navigation/`, `blocks/`).
-2. **Todo desarrollo público** (`src/app/(site)/`) debe usar únicamente componentes **CANONICAL** o **LOCKED** definidos en [CORE-UI-CANON](./frontend/CORE-UI-CANON.md).
-3. Estados oficiales: `CANONICAL` · `LOCKED` · `INTERNAL` · `EXPERIMENTAL` · `DEPRECATED`.
+1. Ningún desarrollo nuevo con componentes `DEPRECATED` (`institutional/`, `navigation/`, `blocks/`).
+2. Todo desarrollo público (`src/app/(site)/`) usa solo componentes **CANONICAL** o **LOCKED**.
+3. Estados: `CANONICAL` · `LOCKED` · `INTERNAL` · `EXPERIMENTAL` · `DEPRECATED`.
 
-### Experience Action Rule (obligatoria)
+### Experience Action Rule
 
-**Ningún componente público del Portal** ejecutará navegación, aperturas de ventanas o lógica específica de acciones de forma directa. Todas las acciones interactivas (enlaces, formularios, modales, WhatsApp, descargas, flujos de postulación, etc.) **deben resolverse mediante el [Experience Actions Engine](./core/CORE-EXPERIENCE-ACTIONS-v1.md)** (`src/core/experience/actions/`).
+Ningún componente público ejecuta navegación o lógica de acción ad hoc. Resolver vía [Experience Actions](./core/CORE-EXPERIENCE-ACTIONS-v1.md).
 
-### Contact Hub Rule (obligatoria)
+### Contact Hub Rule
 
-**Ningún componente público** almacenará teléfonos, correos, WhatsApp, direcciones u horarios propios. Toda la información de contacto institucional **debe obtenerse desde Institution Config → [Experience Contact Hub](./core/CORE-CONTACT-HUB-v1.md)**.
+Contacto institucional solo desde [Experience Contact Hub](./core/CORE-CONTACT-HUB-v1.md).
 
-### Footer Rule (obligatoria)
+### Footer Rule
 
-**El Footer no podrá contener datos institucionales propios.** Toda la información debe provenir de Institution Config, [Navigation](./core/PORTAL-ENGINE.md) y [Experience Contact Hub](./core/CORE-CONTACT-HUB-v1.md), renderizada por [Footer Premium](./core/CORE-FOOTER-PREMIUM-v1.md) (`PortalFooterPremium`).
+Footer sin datos institucionales propios — Institution Config, Navigation y Contact Hub vía [Footer Premium](./core/CORE-FOOTER-PREMIUM-v1.md).
 
-El Footer, CTA Premium, Hero y futuros módulos consumen Contact Hub — no duplican datos.
+### Experience Forms Rule
 
-### Experience Forms Rule (obligatoria)
+Formularios de captura vía [Experience Forms](./core/CORE-EXPERIENCE-FORMS-v1.md).
 
-**Ningún componente público** implementará formularios de captura propios. Toda experiencia de formulario (contacto, postulación, asistencia, inscripción, etc.) **debe usar [Experience Forms](./core/CORE-EXPERIENCE-FORMS-v1.md)** (`PortalExperienceForm` + motor en `src/core/experience/forms/`). Las aperturas modales se resuelven vía Experience Actions `type=form` → `ExperienceFormHost`.
+### Home Experience Rule
 
-### Home Experience Rule (obligatoria)
-
-La **Home Premium** no se diseña bloque a bloque. Toda mejora visual de la Home debe aplicarse vía la **capa de composición** documentada en [EP-UX-001](./ux/EP-UX-001-PORTAL-EXPERIENCE-DESIGN.md) — sin modificar módulos LOCKED del Experience Kit. Cada sección responde: emoción, acción esperada y conexión con la siguiente.
-
-Componentes UI usan `ExperienceActionButton` / `FooterExperienceLink` — nunca `window.open`, `mailto:` ni `<Link href>` ad hoc para acciones configurables desde CMS.
-
-Épica activa: **EP-CORE-001** — ver [OT-CORE-UI-002](./ot/OT-CORE-UI-002.md) · [OT-CORE-EXP-001](./ot/OT-CORE-EXP-001.md).
+Mejoras de Home vía composición en [EP-UX-001](./ux/EP-UX-001-PORTAL-EXPERIENCE-DESIGN.md), sin romper módulos LOCKED.
 
 ---
 
-## 8. Coding standards
-
-- [CODING-STANDARDS](./development/CODING-STANDARDS.md)
-- [GIT-WORKFLOW](./development/GIT-WORKFLOW.md)
-
----
-
-## 9. CMS
-
-Módulos de gestión de contenido documentados en [`docs/cms/`](./cms/):
+## 7. CMS
 
 | Documento | Módulo |
 | --- | --- |
@@ -170,31 +160,27 @@ Módulos de gestión de contenido documentados en [`docs/cms/`](./cms/):
 
 ---
 
-## 10. Releases
+## 8. Coding standards y releases
 
-Historial oficial de versiones:
-
-- [CHANGELOG.md](../CHANGELOG.md) — Registro de cambios por versión
-- [RELEASES.md](../RELEASES.md) — Historial de releases
+- [CODING-STANDARDS](./development/CODING-STANDARDS.md)
+- [GIT-WORKFLOW](./development/GIT-WORKFLOW.md)
+- [CHANGELOG](../CHANGELOG.md) · [RELEASES](../RELEASES.md)
 
 ---
 
-## 11. Documentación legacy
+## 9. Legacy e historia
 
-Documentos históricos pendientes de migración a la estructura oficial: [`docs/legacy/`](./legacy/)
+Documentos históricos (incl. OTs SEM, auditorías, actas): [`docs/legacy/`](./legacy/), [`docs/ot/`](./ot/), [`docs/audits/`](./audits/). **No se reescriben** solo para renombrar el producto. La orientación vigente es este Handbook + ADR-008/009 + Glosario.
 
 ---
 
 ## Lectura obligatoria antes de desarrollar
 
-Ver regla completa en [DEVELOPER-GUIDE](./development/DEVELOPER-GUIDE.md).
-
 | Documento | Enlace |
 | --- | --- |
 | Handbook | Este documento |
-| ARQ correspondiente | [architecture/](./architecture/) |
-| UX correspondiente | [UX-SEM-001](./ux/UX-SEM-001.md) |
-| Manual de Marca | [MANUAL-DE-MARCA](./design/MANUAL-DE-MARCA.md) |
-| Moodboard | [MOODBOARD](./design/MOODBOARD.md) |
-| OT correspondiente | [ot/](./ot/) |
+| Glosario | [GLOSSARY](./GLOSSARY.md) |
+| ADR-008 / ADR-009 | [architecture/](./architecture/) |
+| Guía de desarrollo | [DEVELOPER-GUIDE](./development/DEVELOPER-GUIDE.md) |
+| OT correspondiente | [validation/](./validation/) o [ot/](./ot/) |
 | OT Standard | [OT-STANDARD](./development/OT-STANDARD.md) |

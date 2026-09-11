@@ -1,10 +1,12 @@
+import { isSemTenant } from "@/core/tenant/is-sem";
+
 export interface ConvocatoriaGenerationOption {
   value: string;
   label: string;
 }
 
-/** Catálogo institucional de generaciones / programas para convocatorias. */
-export const CONVOCATORIA_GENERATIONS: ConvocatoriaGenerationOption[] = [
+/** Generaciones SEM (T001) — Diploma Teología Bíblica G-2023… */
+export const SEM_CONVOCATORIA_GENERATIONS: ConvocatoriaGenerationOption[] = [
   {
     value: "G-2023",
     label: "Diploma Teología Bíblica — G-2023 (Pastores(as))",
@@ -31,6 +33,29 @@ export const CONVOCATORIA_GENERATIONS: ConvocatoriaGenerationOption[] = [
   },
 ];
 
+/** Catálogo de plataforma — sin cohortes de cliente. */
+export const PLATFORM_CONVOCATORIA_GENERATIONS: ConvocatoriaGenerationOption[] = [
+  {
+    value: "staff",
+    label: "Equipo docente / administrativo",
+  },
+  {
+    value: "other",
+    label: "Otros",
+  },
+];
+
+/** @deprecated Preferir getConvocatoriaGenerations(tenant) */
+export const CONVOCATORIA_GENERATIONS = SEM_CONVOCATORIA_GENERATIONS;
+
+export function getConvocatoriaGenerations(
+  tenantId: string
+): ConvocatoriaGenerationOption[] {
+  return isSemTenant(tenantId)
+    ? SEM_CONVOCATORIA_GENERATIONS
+    : PLATFORM_CONVOCATORIA_GENERATIONS;
+}
+
 const GENERATION_ALIASES: Record<string, string> = {
   g2023: "G-2023",
   "g-2023": "G-2023",
@@ -53,7 +78,7 @@ const GENERATION_ALIASES: Record<string, string> = {
 };
 
 const GENERATION_LABELS = Object.fromEntries(
-  CONVOCATORIA_GENERATIONS.map((option) => [option.value, option.label])
+  SEM_CONVOCATORIA_GENERATIONS.map((option) => [option.value, option.label])
 ) as Record<string, string>;
 
 export function normalizeGenerationValue(value: unknown): string {

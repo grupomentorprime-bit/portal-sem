@@ -1,4 +1,5 @@
 import { computeItemLevels } from "@/lib/cms/menu-utils";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import type { CmsMenu, MenuItem } from "@/types/menu";
 
 function item(
@@ -152,7 +153,8 @@ const QUICK_LINK_ITEMS: MenuItem[] = computeItemLevels([
 
 const MOBILE_ITEMS: MenuItem[] = [...MAIN_ITEMS];
 
-export const DEFAULT_MENUS: CmsMenu[] = [
+/** Menús SEM (T001) — IPN / El Seminario. */
+export const SEM_DEFAULT_MENUS: CmsMenu[] = [
   {
     _id: "main",
     name: "Menú Principal",
@@ -199,3 +201,100 @@ export const DEFAULT_MENUS: CmsMenu[] = [
     updatedAt: "",
   },
 ];
+
+/** @deprecated Usar SEM_DEFAULT_MENUS o getDefaultMenusForTenant */
+export const DEFAULT_MENUS = SEM_DEFAULT_MENUS;
+
+const PLATFORM_MAIN_ITEMS: MenuItem[] = computeItemLevels([
+  item({ id: "home", title: "Inicio", slug: "/", icon: "house", order: 1 }),
+  item({ id: "programs", title: "Programas", slug: "/programas", icon: "book", order: 2 }),
+  item({ id: "news", title: "Noticias", slug: "/noticias", icon: "newspaper", order: 3 }),
+  item({ id: "contact", title: "Contacto", slug: "/contacto", icon: "mail", order: 4 }),
+]);
+
+const PLATFORM_FOOTER_ITEMS: MenuItem[] = computeItemLevels([
+  item({ id: "resources-group", title: "Recursos", slug: "#", order: 1 }),
+  item({
+    id: "news-footer",
+    title: "Noticias",
+    slug: "/noticias",
+    icon: "newspaper",
+    order: 1,
+    parent: "resources-group",
+  }),
+  item({ id: "admission-group", title: "Admisión", slug: "#", order: 2 }),
+  item({
+    id: "apply-footer",
+    title: "Postular",
+    slug: "/admision",
+    icon: "send",
+    order: 1,
+    parent: "admission-group",
+    highlighted: true,
+  }),
+]);
+
+const PLATFORM_QUICK_LINK_ITEMS: MenuItem[] = computeItemLevels([
+  item({ id: "login", title: "Ingresar", slug: "/ingresar", icon: "log-in", order: 1 }),
+  item({
+    id: "apply",
+    title: "Postular ahora",
+    slug: "/admision",
+    icon: "send",
+    order: 2,
+    highlighted: true,
+  }),
+]);
+
+/** Menús neutros de plataforma — sin SEM/IPN. */
+export const PLATFORM_DEFAULT_MENUS: CmsMenu[] = [
+  {
+    _id: "main",
+    name: "Menú Principal",
+    location: "header",
+    active: true,
+    items: PLATFORM_MAIN_ITEMS,
+    createdAt: "",
+    updatedAt: "",
+  },
+  {
+    _id: "footer",
+    name: "Menú Footer",
+    location: "footer",
+    active: true,
+    items: PLATFORM_FOOTER_ITEMS,
+    createdAt: "",
+    updatedAt: "",
+  },
+  {
+    _id: "mobile",
+    name: "Menú Mobile",
+    location: "mobile",
+    active: true,
+    items: PLATFORM_MAIN_ITEMS,
+    createdAt: "",
+    updatedAt: "",
+  },
+  {
+    _id: "legal",
+    name: "Menú Legal",
+    location: "legal",
+    active: true,
+    items: LEGAL_ITEMS,
+    createdAt: "",
+    updatedAt: "",
+  },
+  {
+    _id: "quick-links",
+    name: "Enlaces rápidos",
+    location: "quick-links",
+    active: true,
+    items: PLATFORM_QUICK_LINK_ITEMS,
+    createdAt: "",
+    updatedAt: "",
+  },
+];
+
+export function getDefaultMenusForTenant(tenantId: string): CmsMenu[] {
+  return isSemTenant(tenantId) ? SEM_DEFAULT_MENUS : PLATFORM_DEFAULT_MENUS;
+}

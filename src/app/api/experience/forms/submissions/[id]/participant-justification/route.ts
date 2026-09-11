@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
 import { uploadMedia } from "@/lib/cms/media";
-import { assertS3StorageForUpload } from "@/lib/cms/storage-config";
+import {
+  assertS3StorageForUpload,
+  STORAGE_INTEGRATION_DECRYPT_MESSAGE,
+  STORAGE_INTEGRATION_INCOMPLETE_MESSAGE,
+  STORAGE_NOT_CONFIGURED_MESSAGE,
+} from "@/lib/cms/storage-config";
+import { logServerError } from "@/core/security/redact";
 import {
   FORM_ATTACHMENT_MAX_BYTES,
   hasSubmissionAttachment,
@@ -84,7 +90,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
-    await assertS3StorageForUpload();
+    await assertS3StorageForUpload(tenant);
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const asset = await uploadMedia({
@@ -120,10 +126,15 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ ok: true, message: "Justificación enviada correctamente." });
   } catch (error) {
-    console.error(error);
-    const message = error instanceof Error ? error.message : "Error desconocido.";
+    logServerError("participant-justification", error);
+    const message = error instanceof Error ? error.message : "";
     const isConfigError =
-      message.includes("Integraciones") || message.includes("almacenamiento");
-    return NextResponse.json({ ok: false, error: message }, { status: isConfigError ? 503 : 500 });
+      message === STORAGE_NOT_CONFIGURED_MESSAGE ||
+      message === STORAGE_INTEGRATION_INCOMPLETE_MESSAGE ||
+      message === STORAGE_INTEGRATION_DECRYPT_MESSAGE;
+    return NextResponse.json(
+      { ok: false, error: isConfigError ? message : "No se pudo enviar la justificación." },
+      { status: isConfigError ? 503 : 500 }
+    );
   }
 }

@@ -106,7 +106,7 @@ Media: `MediaUploaded`, `MediaUpdated`, `MediaDeleted`
 
 Identity: `UserRegistered`, `UserLoggedIn`, `InvitationCreated`, `InvitationAccepted`
 
----
+Growth: `GrowthPersonaUpserted`, `GrowthOpportunityOpened`, `GrowthOpportunityTransitioned`, `GrowthActivityRecorded`, `GrowthNextActionSet`, `GrowthHandoffRecorded`, `GrowthAutomationResume` (reanudación tras WAIT)
 
 ## Integraciones
 
@@ -116,6 +116,7 @@ Identity: `UserRegistered`, `UserLoggedIn`, `InvitationCreated`, `InvitationAcce
 | Identity | ✓ | — |
 | Media | ✓ | — |
 | CMS | ✓ | — |
+| Growth Core | ✓ (Actividad) | — |
 | Search | — | `PagePublished`, `NewsPublished`, `ProgramPublished` |
 | Notifications | — | `InvitationCreated` |
 | Analytics | — | `WorkflowTransitioned`, `UserLoggedIn` |
@@ -129,7 +130,7 @@ Identity: `UserRegistered`, `UserLoggedIn`, `InvitationCreated`, `InvitationAcce
 | `POST` | `/api/events/publish` | `events.manage` |
 | `GET` | `/api/events` | `events.read` |
 | `GET` | `/api/events/:id` | `events.read` |
-| `POST` | `/api/events/replay` | `events.replay` |
+| `POST` | `/api/events/scheduled/flush` | `CRON_SECRET` Bearer o `events.manage` |
 
 UI: `/admin/events`
 

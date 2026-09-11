@@ -1,4 +1,4 @@
-/** Identity & Access Management — AprendeHoy Learning OS */
+/** Identity & Access Management — Growth OS */
 
 export const USER_STATUSES = ["active", "suspended", "pending"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
@@ -33,6 +33,11 @@ export interface IdentityUser {
   status: UserStatus;
   /** Cuenta reservada del sistema — protegida como Super Admin */
   isSystemAccount?: boolean;
+  /**
+   * Capacidad global de Growth OS (`platform_owner` / `platform_operator`).
+   * Independiente de membresías y del Espacio activo. No autoriza por email ni `isSystemAccount`.
+   */
+  platformRoles?: Array<"platform_owner" | "platform_operator">;
   lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -89,6 +94,10 @@ export interface IdentityRole {
 export interface IdentitySession {
   _id: string;
   userId: string;
+  /**
+   * Espacio activo (ADR-008 `activeTenantId`).
+   * Vacío cuando la cuenta no tiene membresías activas (“sin espacio”).
+   */
   tenantId: string;
   ip?: string;
   userAgent?: string;
@@ -99,7 +108,10 @@ export interface IdentitySession {
 
 export interface IdentityAuditEntry {
   _id: string;
-  tenantId: string;
+  /** Espacio de la acción. Ausente en auditoría global (`scope: "platform"`). */
+  tenantId?: string;
+  /** `platform` = acción de Growth OS; omitido = auditoría de Espacio (histórico). */
+  scope?: "tenant" | "platform";
   userId: string;
   action: string;
   entity: string;
@@ -129,5 +141,7 @@ export interface AuthContext {
   membership: IdentityMembership | null;
   permissions: string[];
   tenantId: string;
+  /** Copia de `user.platformRoles` cuando el contexto viene de sesión. */
+  platformRoles?: Array<"platform_owner" | "platform_operator">;
   compatMode: boolean;
 }

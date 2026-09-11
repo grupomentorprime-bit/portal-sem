@@ -40,7 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       heroSeo?.description ??
       config?.hero.description ??
-      "Centro de Admisión del Seminario Eclesiástico Mayor.",
+      ctx?.config.seo.description ??
+      "Centro de Admisión",
   };
 }
 

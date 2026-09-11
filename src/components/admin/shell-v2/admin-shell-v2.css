@@ -1,6 +1,6 @@
 /**
  * Shell Administrativo V2 — tokens de layout
- * OT-UX-IMPLEMENTACION-001 Fase 1
+ * OT-UX-IMPLEMENTACION-001 Fase 1 · OT-GROWTH-UX-ADMIN-SHELL-002 (sidebar claro)
  */
 
 .admin-shell-v2 {
@@ -25,7 +25,7 @@
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--sem-primary) 7%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--growth-os-primary) 7%, transparent);
 }
 
 .admin-status-pill__dot {
@@ -58,8 +58,8 @@
 }
 
 .admin-status-pill--info .admin-status-pill__dot {
-  background: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, white);
+  background: var(--growth-os-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--growth-os-primary) 18%, white);
 }
 
 .admin-status-pill--warning {
@@ -73,20 +73,22 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-warning) 28%, white);
 }
 
+/* Sidebar claro — patrón maestro Growth OS */
 .admin-shell-v2-sidebar {
   position: sticky;
-  top: var(--admin-topbar-h);
-  height: calc(100vh - var(--admin-topbar-h));
+  top: 0;
+  height: 100vh;
   flex-shrink: 0;
-  border-right: 1px solid color-mix(in srgb, var(--color-primary) 88%, black);
-  background: var(--color-primary);
-  --sidebar-fg: color-mix(in srgb, white 92%, transparent);
-  --sidebar-fg-muted: color-mix(in srgb, white 58%, transparent);
-  --sidebar-hover: color-mix(in srgb, white 10%, transparent);
-  --sidebar-active: color-mix(in srgb, white 14%, transparent);
-  --sidebar-border: color-mix(in srgb, white 12%, transparent);
-  --sidebar-group-bg: color-mix(in srgb, black 14%, transparent);
+  border-right: 1px solid var(--color-border-default);
+  background: var(--color-surface-default);
+  --sidebar-fg: var(--gray-800);
+  --sidebar-fg-muted: var(--gray-500);
+  --sidebar-hover: var(--gray-50);
+  --sidebar-active: var(--gray-100);
+  --sidebar-border: var(--color-border-default);
+  --sidebar-group-bg: var(--gray-50);
   transition: width 0.2s ease;
+  z-index: 30;
 }
 
 .admin-shell-v2-sidebar--expanded {
@@ -101,12 +103,9 @@
   transition: margin-left 0.2s ease;
 }
 
-.admin-shell-v2-main--expanded {
-  width: calc(100% - var(--admin-sidebar-w));
-}
-
+.admin-shell-v2-main--expanded,
 .admin-shell-v2-main--collapsed {
-  width: calc(100% - var(--admin-sidebar-collapsed-w));
+  width: 100%;
 }
 
 @media (max-width: 1023px) {
@@ -140,15 +139,11 @@
 }
 
 .admin-shell-v2-sidebar .admin-nav-group + .admin-nav-group {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .admin-nav-zone + .admin-nav-zone {
-  margin-top: 0.625rem;
-}
-
-.admin-nav-zone--support {
-  padding-top: 0.625rem;
+  margin-top: 0;
 }
 
 .admin-nav-subtree {
@@ -157,7 +152,7 @@
 }
 
 .admin-nav-sub-link--active {
-  background: color-mix(in srgb, white 16%, transparent);
+  background: color-mix(in srgb, var(--growth-os-primary) 8%, white);
 }
 
 .admin-nav-group--expanded .admin-nav-group__panel {
@@ -175,8 +170,4 @@
 
 .admin-nav-zone-label:first-child {
   padding-top: 0.125rem;
-}
-
-.admin-nav-zone + .admin-nav-zone .admin-nav-zone-label {
-  padding-top: 0.625rem;
 }

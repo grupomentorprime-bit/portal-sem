@@ -3,6 +3,7 @@
  */
 
 import Link from "next/link";
+import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import { focusRing } from "@/components/ui/shared";
 import { cn } from "@/lib/utils";
 import type { NavLink } from "@/core/navigation";
@@ -50,7 +51,9 @@ export function FooterBottom({
           ) : null}
         </div>
         {portalCopy.footerCredits ? (
-          <p className="portal-footer-premium__credits">{portalCopy.footerCredits}</p>
+          <p className="portal-footer-premium__credits">
+            {rewriteLegacyPlatformProductName(portalCopy.footerCredits)}
+          </p>
         ) : null}
       </div>
     </div>

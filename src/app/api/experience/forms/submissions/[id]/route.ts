@@ -82,6 +82,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     if (participantEmail) {
       try {
         const result = await sendParticipantAbsenceReviewEmail({
+          tenantId: ctx.tenantId,
           to: participantEmail,
           participantName: String(
             submission.data.name ?? submission.data.fullName ?? "Participante"

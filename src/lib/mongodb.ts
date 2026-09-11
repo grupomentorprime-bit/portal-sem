@@ -1,4 +1,7 @@
+import "server-only";
+
 import { MongoClient } from "mongodb";
+import { logServerError } from "@/core/security/redact";
 
 declare global {
   var mongo: Promise<MongoClient> | undefined;
@@ -10,15 +13,23 @@ function requireMongoEnv(): { uri: string; dbName: string } {
   const uri = process.env.MONGODB_URI;
   const dbName = process.env.MONGODB_DB;
 
-  if (!uri) {
-    throw new Error("MONGODB_URI no está definida.");
-  }
-
-  if (!dbName) {
-    throw new Error("MONGODB_DB no está definida.");
+  if (!uri || !dbName) {
+    throw new Error("La base de datos no está configurada.");
   }
 
   return { uri, dbName };
+}
+
+function connectMongo(uri: string): Promise<MongoClient> {
+  try {
+    return new MongoClient(uri).connect().catch((error: unknown) => {
+      logServerError("mongodb", error);
+      throw new Error("No se pudo conectar a la base de datos.");
+    });
+  } catch (error) {
+    logServerError("mongodb", error);
+    throw new Error("No se pudo conectar a la base de datos.");
+  }
 }
 
 function getClientPromise(): Promise<MongoClient> {
@@ -26,13 +37,13 @@ function getClientPromise(): Promise<MongoClient> {
 
   if (process.env.NODE_ENV === "development") {
     if (!global.mongo) {
-      global.mongo = new MongoClient(uri).connect();
+      global.mongo = connectMongo(uri);
     }
     return global.mongo;
   }
 
   if (!clientPromise) {
-    clientPromise = new MongoClient(uri).connect();
+    clientPromise = connectMongo(uri);
   }
 
   return clientPromise;

@@ -8,9 +8,8 @@ import {
 } from "@/lib/admin/nav-access";
 import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
 import { buildAdminTenantBranding } from "@/lib/admin/tenant-branding";
-import { getSiteConfig } from "@/lib/cms/config";
-import { isIdentityEnforced } from "@/core/identity";
-import { ALL_PERMISSION_IDS } from "@/core/identity/permissions/registry";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
+import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { headers } from "next/headers";
@@ -18,14 +17,43 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+const NO_SPACE_PATH = "/admin/sin-espacio";
+
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [session, config] = await Promise.all([loadSessionContext(), getSiteConfig()]);
+  const [session, config] = await Promise.all([
+    loadSessionContext(),
+    getOperationalSiteConfig(),
+  ]);
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const isLoginRoute = pathname === "/admin/login";
+  const isNoSpaceRoute = pathname === NO_SPACE_PATH;
+
+  if (!session && !isLoginRoute) {
+    const loginUrl = pathname
+      ? `/admin/login?next=${encodeURIComponent(pathname)}`
+      : "/admin/login";
+    redirect(loginUrl);
+  }
+
+  const hasSpace = Boolean(session?.membership && session.session.tenantId?.trim());
+
+  // Cero Espacios → estado dedicado; nunca cascarón vacío.
+  if (session && !hasSpace && !isLoginRoute && !isNoSpaceRoute) {
+    redirect(NO_SPACE_PATH);
+  }
+
+  if (session && hasSpace && isNoSpaceRoute) {
+    redirect("/admin");
+  }
+
   let roleLabel = "Colaborador";
   let roleCodes: string[] = [];
+  const spaces = session ? await listAvailableSpacesForUser(session.user._id) : [];
+  const activeSpace = spaces.find((s) => s.tenantId === session?.session.tenantId);
 
   if (session?.membership) {
     const roles = await findRolesByIds(session.session.tenantId, session.membership.roleIds);
@@ -40,46 +68,57 @@ export default async function AdminLayout({
     roleLabel = session.user.jobTitle.trim();
   }
 
-  const compatMode = !isIdentityEnforced();
+  const compatMode = false;
   const shellV2 = isAdminShellV2Enabled();
-  const branding = buildAdminTenantBranding(config);
-  const tenant = config?.institution.tenant ?? session?.session.tenantId ?? "default";
-  const tenantId = session?.session.tenantId ?? tenant;
-  const permissions = compatMode
-    ? [...ALL_PERMISSION_IDS]
-    : session?.membership
-      ? await (async () => {
-          const { resolvePermissionsForMembership } = await import(
-            "@/lib/identity/permission-resolver"
-          );
-          return resolvePermissionsForMembership(
-            session.session.tenantId,
-            session.membership!
-          );
-        })()
-      : [];
+  const brandingBase = buildAdminTenantBranding(config);
+  const spaceDisplayName =
+    activeSpace?.name?.trim() ||
+    config?.institution.name?.trim() ||
+    "";
+  const branding = spaceDisplayName
+    ? { ...brandingBase, institutionName: spaceDisplayName }
+    : brandingBase;
+  const tenant = session?.session.tenantId?.trim() || config?.institution.tenant || "default";
+  const tenantId = session?.session.tenantId?.trim() || tenant;
+  const permissions = session?.membership
+    ? await (async () => {
+        const { resolvePermissionsForMembership } = await import(
+          "@/lib/identity/permission-resolver"
+        );
+        return resolvePermissionsForMembership(
+          session.session.tenantId,
+          session.membership!
+        );
+      })()
+    : [];
 
-  const pathname = (await headers()).get("x-pathname") ?? "";
   if (
     pathname &&
+    hasSpace &&
     usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes) &&
     !isStudentAffairsAllowedAdminPath(pathname, roleCodes)
   ) {
     redirect(STUDENT_AFFAIRS_HOME_PATH);
   }
 
-  const navBadges = shellV2
-    ? await resolveAdminNavBadges({
-        tenant,
-        tenantId,
-        permissions,
-        compatMode,
-        roleCodes,
-        session: session?.session ?? null,
-        user: session?.user ?? null,
-        membership: session?.membership ?? null,
-      }).catch((): Record<string, number> => ({}))
-    : undefined;
+  const navBadges =
+    shellV2 && hasSpace
+      ? await resolveAdminNavBadges({
+          tenant,
+          tenantId,
+          permissions,
+          compatMode,
+          roleCodes,
+          session: session?.session ?? null,
+          user: session?.user ?? null,
+          membership: session?.membership ?? null,
+        }).catch((): Record<string, number> => ({}))
+      : undefined;
+
+  // Sin espacio: sin cascarón (solo el estado).
+  if (isNoSpaceRoute || isLoginRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <AdminShell
@@ -89,7 +128,12 @@ export default async function AdminLayout({
               displayName: session.user.displayName,
               email: session.user.email,
               roleLabel,
-              institutionName: config?.institution.name,
+              institutionName:
+                activeSpace?.name?.trim() ||
+                config?.institution.name?.trim() ||
+                branding.institutionName,
+              activeTenantId: session.session.tenantId || null,
+              spaces: spaces.map((s) => ({ tenantId: s.tenantId, name: s.name })),
             }
           : null
       }

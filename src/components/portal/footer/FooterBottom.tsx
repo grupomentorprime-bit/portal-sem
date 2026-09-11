@@ -1,4 +1,5 @@
 import { FooterExperienceLink } from "@/components/portal/experience/footer-premium/FooterExperienceLink";
+import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import type { FooterLegalContent } from "@/lib/portal/footer-content";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,9 @@ export function FooterBottom({ copyright, legal, className }: FooterBottomProps)
           {legal.copyrightSuffix ? `. ${legal.copyrightSuffix}` : null}
         </p>
         {legal.credits ? (
-          <p className="footer-premium__credits">{legal.credits}</p>
+          <p className="footer-premium__credits">
+            {rewriteLegacyPlatformProductName(legal.credits)}
+          </p>
         ) : null}
         {legal.adminLabel ? (
           <FooterExperienceLink

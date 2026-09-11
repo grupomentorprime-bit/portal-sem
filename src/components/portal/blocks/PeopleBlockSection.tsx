@@ -38,7 +38,7 @@ export async function PeopleBlockSection({ block, tenant, pageSlug }: PeopleBloc
   }
 
   const isHome = pageSlug ? isHomePageSlug(pageSlug) : false;
-  people = withHomeDemoPeople(people, pageSlug);
+  people = withHomeDemoPeople(people, pageSlug, tenant);
 
   return (
     <PortalPeopleGrid

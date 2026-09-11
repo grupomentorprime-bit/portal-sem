@@ -8,11 +8,11 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variants: Record<CardVariant, string> = {
-  default: "border border-border bg-background",
-  outlined: "border-2 border-border bg-background",
-  elevated: "border border-border bg-background shadow-[var(--shadow-md)]",
+  default: "border border-border bg-surface",
+  outlined: "border-2 border-border bg-surface",
+  elevated: "border border-border bg-surface shadow-[var(--shadow-md)]",
   interactive:
-    "border border-border bg-background shadow-[var(--shadow-sm)] hover-lift cursor-pointer hover:shadow-[var(--shadow-md)]",
+    "border border-border bg-surface shadow-[var(--shadow-sm)] hover-lift cursor-pointer hover:shadow-[var(--shadow-md)]",
 };
 
 export function Card({

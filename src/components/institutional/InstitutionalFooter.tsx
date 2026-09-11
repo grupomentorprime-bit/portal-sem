@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { iconSizes } from "@/design";
 import { Container, Grid, Stack } from "@/components/layout";
-import { CMS_ASSET_PATHS } from "@/lib/cms/asset-paths";
 import type { ContactInfo, SocialLinks } from "@/types/cms";
 
 interface FooterColumn {
@@ -83,8 +82,8 @@ export function InstitutionalFooter({
   logoSem,
   logoIpn,
 }: InstitutionalFooterProps) {
-  const semLogo = logoSem || CMS_ASSET_PATHS.logoSem;
-  const ipnLogo = logoIpn || CMS_ASSET_PATHS.logoIpn;
+  const primaryLogo = logoSem?.trim() || "";
+  const secondaryLogo = logoIpn?.trim() || "";
   const year = new Date().getFullYear();
 
   return (
@@ -94,20 +93,24 @@ export function InstitutionalFooter({
           <Grid cols={1} mdCols={2} lgCols={12} gap={8}>
             <div className="lg:col-span-4">
               <div className="flex items-center gap-4">
-                <Image
-                  src={ipnLogo}
-                  alt="IPN"
-                  width={48}
-                  height={48}
-                  className="h-10 w-auto brightness-0 invert"
-                />
-                <Image
-                  src={semLogo}
-                  alt="SEM"
-                  width={48}
-                  height={48}
-                  className="h-10 w-auto brightness-0 invert"
-                />
+                {secondaryLogo ? (
+                  <Image
+                    src={secondaryLogo}
+                    alt=""
+                    width={48}
+                    height={48}
+                    className="h-10 w-auto brightness-0 invert"
+                  />
+                ) : null}
+                {primaryLogo ? (
+                  <Image
+                    src={primaryLogo}
+                    alt={institutionName || "Logo institucional"}
+                    width={48}
+                    height={48}
+                    className="h-10 w-auto brightness-0 invert"
+                  />
+                ) : null}
               </div>
               <p className="mt-4 text-heading font-semibold">{institutionName}</p>
               {organization ? (

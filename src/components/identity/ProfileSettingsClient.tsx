@@ -114,7 +114,7 @@ export function ProfileSettingsClient() {
         <CardHeader>
           <CardTitle>Sesión requerida</CardTitle>
           <CardDescription>
-            Para ver y editar tu perfil debes iniciar sesión en el CMS.
+            Para ver y editar tu perfil debes iniciar sesión con tu Cuenta.
           </CardDescription>
         </CardHeader>
         <div className="px-6 pb-6">
@@ -155,7 +155,7 @@ export function ProfileSettingsClient() {
           </div>
           {roles.length > 0 ? (
             <div className="space-y-1.5">
-              <Label>Roles en este tenant</Label>
+              <Label>Roles en este Espacio</Label>
               <p className="text-sm text-muted">{roles.map((r) => r.name).join(", ")}</p>
             </div>
           ) : null}
@@ -178,7 +178,7 @@ export function ProfileSettingsClient() {
       <Card>
         <CardHeader>
           <CardTitle>Contraseña</CardTitle>
-          <CardDescription>Actualiza tu contraseña de acceso al CMS.</CardDescription>
+          <CardDescription>Actualiza tu contraseña de acceso.</CardDescription>
         </CardHeader>
         <form onSubmit={handlePasswordSave} className="space-y-4 px-6 pb-6">
           <div className="space-y-1.5">

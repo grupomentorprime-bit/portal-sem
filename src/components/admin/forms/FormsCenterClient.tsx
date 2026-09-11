@@ -22,7 +22,7 @@ import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog"
 import { CreateFormDialog } from "@/components/admin/forms/CreateFormDialog";
 import { Button } from "@/components/ui/button";
 import {
-  FORM_CONVOCATORIAS,
+  listFormConvocatorias,
   formatConvocatoriaDate,
   getConvocatoriaByFormId,
   getFormLandingByFormId,
@@ -45,6 +45,7 @@ type FormTableRow =
 
 interface FormsCenterClientProps {
   initialForms: ExperienceFormDefinition[];
+  tenantId: string;
   scope?: "all" | "convocatorias";
 }
 
@@ -74,7 +75,11 @@ const tipoLabel: Record<"convocatoria" | "landing" | "none", string> = {
   none: "—",
 };
 
-export function FormsCenterClient({ initialForms, scope = "all" }: FormsCenterClientProps) {
+export function FormsCenterClient({
+  initialForms,
+  tenantId,
+  scope = "all",
+}: FormsCenterClientProps) {
   const isConvocatoriasScope = scope === "convocatorias";
   const router = useRouter();
   const [forms, setForms] = useState(initialForms);
@@ -87,9 +92,13 @@ export function FormsCenterClient({ initialForms, scope = "all" }: FormsCenterCl
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const { confirm, dialog } = useConfirmDialog();
 
+  const tenantConvocatorias = useMemo(
+    () => listFormConvocatorias(tenantId),
+    [tenantId]
+  );
   const convocatoriaFormIds = useMemo(
-    () => new Set(FORM_CONVOCATORIAS.map((item) => item.formId)),
-    []
+    () => new Set(tenantConvocatorias.map((item) => item.formId)),
+    [tenantConvocatorias]
   );
   const supersededFormIds = useMemo(() => getSupersededFormIds(), []);
 
@@ -214,10 +223,10 @@ export function FormsCenterClient({ initialForms, scope = "all" }: FormsCenterCl
   );
   const orphanConvocatorias = useMemo(
     () =>
-      FORM_CONVOCATORIAS.filter(
+      tenantConvocatorias.filter(
         (convocatoria) => !forms.find((item) => item._id === convocatoria.formId)
       ),
-    [forms]
+    [forms, tenantConvocatorias]
   );
 
   const activeCount = useMemo(

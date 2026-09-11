@@ -74,7 +74,7 @@ export function AekCatalog() {
     <div className="space-y-10">
       <ModuleHeader
         title="Experience Kit Administrativo"
-        description="Catálogo AEK v1 — AprendeHoy BackOffice. Componentes presentacionales reutilizables."
+        description="Catálogo AEK v1 — BackOffice de Growth OS. Componentes presentacionales reutilizables."
         actions={
           <Button size="sm" variant="outline" href="/internal/design-system">
             Design System portal

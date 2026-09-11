@@ -31,7 +31,7 @@ export function SeoEditor({ value, onChange }: SeoEditorProps) {
           <Input
             value={value.title}
             onChange={(e) => update("title", e.target.value)}
-            placeholder="Seminario Eclesiástico Mayor"
+            placeholder="Título del sitio"
           />
         </div>
 
@@ -40,7 +40,7 @@ export function SeoEditor({ value, onChange }: SeoEditorProps) {
           <Textarea
             value={value.description}
             onChange={(e) => update("description", e.target.value)}
-            placeholder="Equipando a los santos para la obra del ministerio."
+            placeholder="Descripción del sitio"
           />
         </div>
 
@@ -57,7 +57,7 @@ export function SeoEditor({ value, onChange }: SeoEditorProps) {
                   .filter(Boolean)
               )
             }
-            placeholder="seminario, teología, biblia, ministerio"
+            placeholder="educación, programas, admisión"
           />
           <p className="mt-1 text-xs text-gray-400">Separadas por comas.</p>
         </div>

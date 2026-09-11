@@ -45,6 +45,14 @@ const EVENTS_FULL: PermissionId[] = [
   "events.read", "events.manage", "events.replay",
 ];
 
+const GROWTH_SALES_FULL: PermissionId[] = [
+  "growth.sales.read", "growth.sales.operate",
+];
+
+const GROWTH_AUTOMATIONS_FULL: PermissionId[] = [
+  "growth.automations.view", "growth.automations.manage",
+];
+
 /** Roles oficiales del Portal Institucional + CRM + Convocatorias (OT-IAM-SEM-001) */
 export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
   {
@@ -60,6 +68,8 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       ...IDENTITY_IAM,
       ...WORKFLOW_FULL,
       ...EVENTS_FULL,
+      ...GROWTH_SALES_FULL,
+      ...GROWTH_AUTOMATIONS_FULL,
     ],
     system: true,
   },
@@ -74,6 +84,8 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       ...CONTENT_FULL,
       ...SETTINGS_ADMIN,
       "identity.members.manage",
+      ...GROWTH_SALES_FULL,
+      ...GROWTH_AUTOMATIONS_FULL,
     ],
     system: true,
   },
@@ -90,6 +102,8 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       "settings.team",
       "identity.members.manage",
       "identity.audit.read",
+      ...GROWTH_SALES_FULL,
+      ...GROWTH_AUTOMATIONS_FULL,
     ],
     system: true,
   },
@@ -101,6 +115,8 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       "cms.pages.read",
       "experience.forms.read",
       "students.read",
+      ...GROWTH_SALES_FULL,
+      ...GROWTH_AUTOMATIONS_FULL,
     ],
     system: true,
   },
@@ -171,7 +187,12 @@ export const ERP_TENANT_ROLES: RoleTemplate[] = [
   },
 ];
 
-/** Roles globales de plataforma (tenantId = platform) */
+/**
+ * LEGACY — no activar.
+ * Códigos colisionan con roles de Espacio (`super_admin`, `institution_admin`, `support`)
+ * y asumen un Tenant `platform` (prohibido). Autorización global:
+ * `platform_owner` / `platform_operator` en `identity_users.platformRoles`.
+ */
 export const PLATFORM_ROLES: RoleTemplate[] = [
   {
     code: ROLE_CODES.SUPER_ADMIN,
@@ -186,6 +207,7 @@ export const PLATFORM_ROLES: RoleTemplate[] = [
       ...IDENTITY_IAM,
       ...WORKFLOW_FULL,
       ...EVENTS_FULL,
+      ...GROWTH_SALES_FULL,
       "students.read", "finance.view", "finance.manage",
     ],
     system: true,
@@ -203,6 +225,7 @@ export const PLATFORM_ROLES: RoleTemplate[] = [
       ...CONTENT_FULL,
       ...SETTINGS_ADMIN,
       "identity.members.manage", "identity.audit.read",
+      ...GROWTH_SALES_FULL,
     ],
     system: true,
   },

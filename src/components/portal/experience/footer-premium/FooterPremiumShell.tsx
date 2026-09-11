@@ -10,6 +10,7 @@ import type { ProgramItem } from "@/types/content";
 import type { PortalFooterPremiumSettings } from "@/types/footer-premium";
 
 export interface FooterPremiumShellProps {
+  tenantId?: string;
   institution: Institution;
   seo: SeoConfig;
   contact: ContactInfo;
@@ -23,6 +24,7 @@ export interface FooterPremiumShellProps {
 }
 
 export function FooterPremiumShell({
+  tenantId,
   institution,
   seo,
   contact,
@@ -47,7 +49,13 @@ export function FooterPremiumShell({
     programs,
   });
 
-  return <FooterPremium viewModel={viewModel} whatsapp={contact.whatsapp} />;
+  return (
+    <FooterPremium
+      viewModel={viewModel}
+      tenantId={tenantId ?? institution.tenant}
+      whatsapp={contact.whatsapp}
+    />
+  );
 }
 
 export { normalizeFooterPremiumSettings };

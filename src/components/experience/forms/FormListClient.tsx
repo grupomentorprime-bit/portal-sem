@@ -69,11 +69,11 @@ export function FormListClient({ initialForms }: FormListClientProps) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Experience Forms</h1>
-          <p className="text-sm text-muted">Motor oficial de formularios del Portal.</p>
+          <p className="text-sm text-muted">Motor oficial de formularios.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={handleSeed} loading={loading}>
-            Inicializar SEM
+            Inicializar formularios
           </Button>
         </div>
       </div>
@@ -126,7 +126,7 @@ export function FormListClient({ initialForms }: FormListClientProps) {
 
       {forms.length === 0 ? (
         <p className="text-sm text-muted">
-          No hay formularios. Usa &quot;Inicializar SEM&quot; para crear los cuatro formularios base.
+          No hay formularios en este Espacio.
         </p>
       ) : null}
     </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { getHistory } from "@/core/workflow";
 import { listRecentHistory } from "@/lib/workflow/history";
+import { getInstanceById } from "@/lib/workflow/instances";
 
 export async function GET(request: Request) {
   try {
@@ -12,7 +13,14 @@ export async function GET(request: Request) {
     const instanceId = searchParams.get("instanceId");
 
     if (instanceId) {
-      const history = await getHistory(instanceId);
+      const instance = await getInstanceById(instanceId, auth.tenantId);
+      if (!instance) {
+        return NextResponse.json(
+          { ok: false, error: "Instancia de workflow no encontrada." },
+          { status: 404 }
+        );
+      }
+      const history = await getHistory(auth.tenantId, instanceId);
       return NextResponse.json({ ok: true, history });
     }
 

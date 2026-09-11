@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   deleteContentItem,
   getContentItem,
@@ -9,7 +9,7 @@ import {
   type ContentWriteInput,
 } from "@/lib/content/content-write";
 import type { AllowedCollection } from "@/lib/content/types";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,13 +17,15 @@ interface RouteParams {
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
+    const denied = await authorizeApiRead("cms.pages.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const tenantParam = searchParams.get("tenant");
     const collection = searchParams.get("collection");
-
-    const tenantCheck = await assertActiveTenant(tenantParam);
-    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
     if (!collection || !isEditableCollection(collection)) {
       return NextResponse.json({ ok: false, error: "Colección no válida." }, { status: 400 });
@@ -56,10 +58,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
     });
     if (denied) return denied;
 
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const { id } = await params;
     const body = (await request.json()) as ContentWriteInput;
-    const tenantCheck = await assertActiveTenant(body.tenant);
-    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
     body.tenant = tenantCheck.tenant;
     body._id = id;
 
@@ -98,13 +101,12 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     });
     if (denied) return denied;
 
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const tenantParam = searchParams.get("tenant");
     const collection = searchParams.get("collection");
-
-    const tenantCheck = await assertActiveTenant(tenantParam);
-    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
     if (!collection || !isEditableCollection(collection)) {
       return NextResponse.json({ ok: false, error: "Colección no válida." }, { status: 400 });

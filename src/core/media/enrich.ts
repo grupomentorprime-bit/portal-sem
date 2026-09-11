@@ -18,11 +18,10 @@ export async function resolveBrandingMediaUrls(
   const { PLATFORM_ASSET_FALLBACKS } = await import("@/lib/cms/asset-paths");
 
   const [logo, secondaryLogo, hero, favicon] = await Promise.all([
-    resolveMediaRefWithFallback(
-      tenant,
-      { mediaId: branding.logoMediaId, legacyUrl: branding.logo },
-      PLATFORM_ASSET_FALLBACKS.logo
-    ),
+    resolveMediaRef(tenant, {
+      mediaId: branding.logoMediaId,
+      legacyUrl: branding.logo,
+    }),
     branding.secondaryLogoMediaId || branding.secondaryLogo
       ? resolveMediaRef(tenant, {
           mediaId: branding.secondaryLogoMediaId,
@@ -43,7 +42,7 @@ export async function resolveBrandingMediaUrls(
   ]);
 
   return {
-    logo,
+    logo: logo ?? "",
     secondaryLogo: secondaryLogo ?? undefined,
     hero,
     favicon: favicon ?? undefined,

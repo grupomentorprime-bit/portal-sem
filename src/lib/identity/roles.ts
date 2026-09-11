@@ -171,7 +171,10 @@ export async function findRoleByCode(
   if (byCode) return byCode;
 
   const targetId = roleIdForTenant(tenantId, code);
-  const byId = await db.collection<IdentityRole>("identity_roles").findOne({ _id: targetId });
+  const byId = await db.collection<IdentityRole>("identity_roles").findOne({
+    _id: targetId,
+    tenantId,
+  });
   if (byId) return byId;
 
   for (const [legacyName, legacyCode] of Object.entries(LEGACY_ROLE_NAME_TO_CODE)) {
@@ -198,7 +201,7 @@ export async function updateRolePermissionMap(
 }
 
 export async function getSuperAdminRole(tenantId: string): Promise<IdentityRole | null> {
-  await ensureTenantRoles(tenantId);
+  // Sin ensure — el caller (login/bootstrap) debe haber sincronizado roles.
   return findRoleByCode(tenantId, ROLE_CODES.SUPER_ADMIN);
 }
 

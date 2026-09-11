@@ -17,11 +17,19 @@ import {
 import { cn } from "@/lib/utils";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 
+export interface AdminSpaceSummary {
+  tenantId: string;
+  name: string;
+}
+
 export interface AdminUserSummary {
   displayName: string;
   email: string;
   roleLabel?: string;
   institutionName?: string;
+  /** Espacio activo. */
+  activeTenantId?: string | null;
+  spaces?: AdminSpaceSummary[];
 }
 
 interface AdminUserMenuPanelProps {
@@ -52,6 +60,23 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
   function navigate(href: string) {
     setOpen(false);
     router.push(href);
+  }
+
+  async function switchSpace(tenantId: string) {
+    if (!tenantId || tenantId === user?.activeTenantId) {
+      setOpen(false);
+      return;
+    }
+    setOpen(false);
+    const res = await fetch("/api/identity/spaces/switch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenantId }),
+    });
+    const data = await res.json().catch(() => ({ ok: false }));
+    if (!data.ok) return;
+    // Contrato UX: al cambiar de Espacio, volver a Inicio.
+    window.location.assign("/admin");
   }
 
   if (!user) {
@@ -106,7 +131,7 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
             </div>
           </div>
 
-          <MenuSection label="Mi cuenta">
+          <MenuSection label="Cuenta">
             <MenuItem icon={UserRound} onClick={() => navigate("/admin/settings/profile")}>
               Mi perfil
             </MenuItem>
@@ -119,6 +144,37 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
             <MenuItem icon={Settings2} onClick={() => navigate("/admin/settings/profile")}>
               Preferencias
             </MenuItem>
+          </MenuSection>
+
+          <MenuSection label="Espacio">
+            {(user.spaces?.length ?? 0) === 0 ? (
+              <p className="px-2.5 py-2 text-sm text-muted">Sin Espacio asignado</p>
+            ) : (
+              (user.spaces ?? []).map((space) => {
+                const isActive = space.tenantId === user.activeTenantId;
+                return (
+                  <button
+                    key={space.tenantId}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => switchSpace(space.tenantId)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition",
+                      isActive
+                        ? "bg-primary/5 font-semibold text-foreground"
+                        : "text-foreground hover:bg-background-muted"
+                    )}
+                  >
+                    <span className="truncate">{space.name}</span>
+                    {isActive ? (
+                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary">
+                        Activo
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })
+            )}
           </MenuSection>
 
           <MenuSection label="Administración">

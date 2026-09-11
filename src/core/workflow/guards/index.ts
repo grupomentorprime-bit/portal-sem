@@ -11,8 +11,6 @@ export async function evaluateGuard(
   ctx: ExecutionContext,
   transition: WorkflowTransition
 ): Promise<GuardResult> {
-  if (ctx.compatMode) return { ok: true };
-
   if (transition.permission) {
     const authCtx = {
       user: ctx.user,
@@ -60,7 +58,6 @@ export function canTransitionGuard(
   ctx: ExecutionContext,
   transition: WorkflowTransition
 ): boolean {
-  if (ctx.compatMode) return true;
   if (transition.permission && !ctx.permissions.includes(transition.permission)) {
     return false;
   }

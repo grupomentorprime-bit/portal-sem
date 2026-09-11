@@ -22,8 +22,16 @@ export async function AudienceProfilesBlockSection({
   tenant,
   pageSlug,
 }: AudienceProfilesBlockSectionProps) {
-  const settings = mergeHomeAudienceProfilesSettings(blockSettings(block), pageSlug);
-  const profiles = withHomeDemoAudienceProfiles(parseAudienceProfiles(block.settings?.profiles), pageSlug);
+  const settings = mergeHomeAudienceProfilesSettings(
+    blockSettings(block),
+    pageSlug,
+    tenant
+  );
+  const profiles = withHomeDemoAudienceProfiles(
+    parseAudienceProfiles(block.settings?.profiles),
+    pageSlug,
+    tenant
+  );
   const image = await resolveMediaRef(tenant, {
     mediaId: asString(settings.imageMediaId) || undefined,
     legacyUrl: asString(settings.image) || undefined,

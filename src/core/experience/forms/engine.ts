@@ -4,6 +4,10 @@ import type {
   ExperienceFormSubmission,
 } from "@/types/experience-forms";
 import { EXPERIENCE_FORM_ID_ALIASES } from "@/types/experience-forms";
+import {
+  isGrowthV1FormDestination,
+} from "@/core/growth";
+import { ingestFormSubmissionToGrowthSafe } from "@/lib/growth";
 import { validateFormSubmission } from "./validation";
 
 export interface FormSubmitResult {
@@ -17,17 +21,22 @@ export interface FormSubmissionStore {
   save(submission: ExperienceFormSubmission): Promise<{ id: string }>;
 }
 
-/** Enruta el envío según destino — extensible hacia CRM / Admisiones */
+/**
+ * Enruta el envío según destino — Growth Core V1 proyecta contact /
+ * information_request / event_registration (después de persistir).
+ */
 export async function processFormDestination(
   destination: ExperienceFormDestination,
   submission: ExperienceFormSubmission
 ): Promise<void> {
+  if (isGrowthV1FormDestination(destination)) {
+    await ingestFormSubmissionToGrowthSafe(submission);
+    return;
+  }
+
   switch (destination) {
-    case "contact":
-    case "information_request":
     case "attendance_confirmation":
     case "absence_justification":
-    case "event_registration":
     case "subscription":
     case "testimonial_submission":
       return;
@@ -56,8 +65,10 @@ export async function submitExperienceForm(input: {
     createdAt: new Date().toISOString(),
   };
 
-  await processFormDestination(form.destination, submission);
+  // ADR-010 §4.1 — persistir fuente primero; luego proyectar a Growth.
   const { id } = await store.save(submission);
+  submission._id = id;
+  await processFormDestination(form.destination, submission);
 
   return {
     ok: true,

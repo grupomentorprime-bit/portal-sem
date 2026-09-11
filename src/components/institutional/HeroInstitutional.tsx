@@ -16,7 +16,6 @@ import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { iconSizes } from "@/design";
 import { Button } from "@/components/ui";
-import { CMS_ASSET_PATHS } from "@/lib/cms/asset-paths";
 
 interface HeroInstitutionalProps {
   institutionName: string;
@@ -35,8 +34,8 @@ export function HeroInstitutional({
   ctaLabel = "Conoce nuestros programas",
   ctaHref = "/programas",
 }: HeroInstitutionalProps) {
-  const imageSrc = heroImage || CMS_ASSET_PATHS.hero;
-  const logo = logoSrc || CMS_ASSET_PATHS.logoSem;
+  const imageSrc = heroImage?.trim() || "";
+  const logo = logoSrc?.trim() || "";
   const scrollToContent = () => {
     document.getElementById("presentacion")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -47,14 +46,18 @@ export function HeroInstitutional({
       aria-label="Presentación institucional"
     >
       <div className="absolute inset-0">
-        <Image
-          src={imageSrc}
-          alt=""
-          fill
-          priority
-          className="hero-parallax object-cover"
-          sizes="100vw"
-        />
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt=""
+            fill
+            priority
+            className="hero-parallax object-cover"
+            sizes="100vw"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-primary" />
+        )}
         <div
           className="absolute inset-0 bg-primary/75"
           aria-hidden
@@ -66,16 +69,18 @@ export function HeroInstitutional({
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl px-4 py-32 text-center sm:px-6">
-        <div className="animate-fade-in">
-          <Image
-            src={logo}
-            alt="Logo del Seminario Eclesiástico Mayor"
-            width={120}
-            height={120}
-            className="mx-auto h-20 w-auto sm:h-28"
-            priority
-          />
-        </div>
+        {logo ? (
+          <div className="animate-fade-in">
+            <Image
+              src={logo}
+              alt={institutionName || "Logo institucional"}
+              width={120}
+              height={120}
+              className="mx-auto h-20 w-auto sm:h-28"
+              priority
+            />
+          </div>
+        ) : null}
 
         <h1 className="mt-8 animate-slide-up text-display-xxl uppercase tracking-wide text-text-inverse">
           {institutionName}

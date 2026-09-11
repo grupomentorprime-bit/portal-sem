@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
-import { ensureSystemDefinitions, listDefinitions } from "@/lib/workflow/definitions";
+import { listDefinitions } from "@/lib/workflow/definitions";
 import { listActiveInstances } from "@/lib/workflow/instances";
 
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
     const auth = await requirePermission("workflow.read");
     if (auth instanceof NextResponse) return auth;
 
-    await ensureSystemDefinitions(auth.tenantId);
+    // Lectura pura — sync de defs solo en publish/start/migración (SAAS-004).
     const [definitions, instances] = await Promise.all([
       listDefinitions(auth.tenantId),
       listActiveInstances(auth.tenantId),

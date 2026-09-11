@@ -1,5 +1,7 @@
-import { getSiteConfig } from "@/lib/cms/config";
+import { getTenantContext } from "@/core/tenant";
+import { buildBrandThemeStyle } from "@/core/branding";
 import { getSiteMetadata } from "@/lib/cms/metadata";
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
@@ -21,18 +23,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const config = await getSiteConfig();
-  const branding = config?.branding;
-
-  const themeStyle = branding
-    ? ({
-        /* Branding CMS → mapeados a --color-* en design-tokens.css (body) */
-        "--brand-primary": branding.primaryColor,
-        "--brand-secondary": branding.secondaryColor,
-        "--brand-background": branding.backgroundColor,
-        "--brand-text": branding.textColor,
-      } as React.CSSProperties)
-    : undefined;
+  const ctx = await getTenantContext();
+  const themeStyle = buildBrandThemeStyle(ctx?.config.branding) as
+    | CSSProperties
+    | undefined;
 
   return (
     <html

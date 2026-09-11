@@ -11,7 +11,6 @@ export { hashPassword, verifyPassword, generateToken, generateId } from "./auth/
 export { isIdentityEnforced, isKeycloakOnlyAuth, isEmailAuthEnabled, SESSION_COOKIE, SESSION_TTL_DAYS } from "./auth/config";
 export {
   isKeycloakEnabled,
-  getKeycloakConfig,
   buildKeycloakAuthorizeUrl,
 } from "./auth/keycloak";
 export { loginWithEmail, registerWithEmail, logoutCurrentSession } from "./auth/login";
@@ -20,17 +19,32 @@ export {
   cannot,
   authorize,
   authorizeOrThrow,
-  createCompatContext,
 } from "./policies/engine";
 export type { AuthorizeResult, AuthorizeFailure, AuthorizeResponse } from "./policies/engine";
 export {
   requireAuth,
+  requireSpace,
   requireTenant,
   requirePermission,
   requireRole,
   requireRoleCode,
   requireOwner,
+  requirePlatformOperator,
   requireSession,
   getActiveTenantId,
+  getSessionActiveTenantId,
+  getOperationalTenantId,
   isAuthContext,
 } from "./middleware/guards";
+export {
+  PLATFORM_ROLE_CODES,
+  PLATFORM_ADMIN_HOME,
+  isPlatformRoleCode,
+  normalizePlatformRoles,
+} from "./platform/codes";
+export {
+  hasPlatformOperatorCapability,
+  evaluatePlatformOperatorAccess,
+  readPlatformRoles,
+} from "./platform/capability";
+export { resolvePostAuthDestination } from "./platform/landing";

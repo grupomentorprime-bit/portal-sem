@@ -110,7 +110,7 @@ export function CategoryEditorClient({ tenant, sectionHref, item }: CategoryEdit
         { label: isNew ? "Nueva categoría" : "Editar categoría" },
       ]}
       title={isNew ? "Nueva categoría" : "Editar categoría"}
-      description="Categorías académicas del seminario"
+      description="Categorías académicas"
       maxWidth="6xl"
       actions={
         <>

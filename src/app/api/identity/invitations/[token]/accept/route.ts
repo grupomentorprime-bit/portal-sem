@@ -5,6 +5,7 @@ import {
   loginWithKeycloakPassword,
 } from "@/core/identity/auth/keycloak";
 import { finishKeycloakLogin } from "@/lib/identity/keycloak-access";
+import { logServerError } from "@/core/security/redact";
 import {
   keycloakUserNeedsPassword,
   setKeycloakPasswordForInvite,
@@ -64,7 +65,7 @@ async function handleKeycloakAccept(
       roleIds: invitation.roleIds,
       invitedBy: invitation.invitedBy,
     });
-    await acceptInvitation(invitation._id, user._id);
+    await acceptInvitation(invitation._id, user._id, invitation.tenantId);
 
     return NextResponse.json({
       ok: true,
@@ -89,7 +90,7 @@ async function handleKeycloakAccept(
 
   if (!passwordResult.ok) {
     return NextResponse.json(
-      { ok: false, error: passwordResult.error },
+      { ok: false, error: "No se pudo completar el acceso. Intenta de nuevo." },
       { status: passwordResult.code === "not_configured" ? 503 : 502 }
     );
   }
@@ -118,7 +119,7 @@ async function handleKeycloakAccept(
 
     return NextResponse.json({ ok: true, userId: user._id, existing: false });
   } catch (error) {
-    console.error("[invite] keycloak accept failed", error);
+    logServerError("invite-keycloak", error);
     return NextResponse.json(
       { ok: false, error: "No se pudo completar el acceso. Intenta de nuevo." },
       { status: 500 }
@@ -140,7 +141,7 @@ async function handleLocalAccept(
       roleIds: invitation.roleIds,
       invitedBy: invitation.invitedBy,
     });
-    await acceptInvitation(invitation._id, existing._id);
+    await acceptInvitation(invitation._id, existing._id, invitation.tenantId);
 
     const meta = await getRequestMeta();
     const session = await createSession({
@@ -174,6 +175,6 @@ async function handleLocalAccept(
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
 
-  await acceptInvitation(invitation._id, result.user._id);
+  await acceptInvitation(invitation._id, result.user._id, invitation.tenantId);
   return NextResponse.json({ ok: true, userId: result.user._id, existing: false });
 }

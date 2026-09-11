@@ -1,4 +1,3 @@
-import { SEM_FOOTER_INSTITUTION } from "@/lib/portal/footer-content";
 import { cn } from "@/lib/utils";
 
 interface FooterSealProps {
@@ -8,11 +7,12 @@ interface FooterSealProps {
   line3?: string;
 }
 
+/** Sello: líneas vacías por defecto; SEM las aporta vía resolveFooterContent(T001). */
 export function FooterSeal({
   className,
-  line1 = SEM_FOOTER_INSTITUTION.sealLine1,
-  line2 = SEM_FOOTER_INSTITUTION.sealLine2,
-  line3 = SEM_FOOTER_INSTITUTION.sealLine3,
+  line1 = "",
+  line2 = "",
+  line3 = "",
 }: FooterSealProps) {
   return (
     <figure

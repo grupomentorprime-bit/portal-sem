@@ -44,8 +44,8 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
 
   const seedCms = async () => {
     setLoading(true);
-    await fetch("/api/cms/blocks?seed=true");
-    await fetch("/api/cms/templates?seed=true");
+    await fetch("/api/cms/blocks", { method: "POST" });
+    await fetch("/api/cms/templates", { method: "POST" });
     setLoading(false);
     router.refresh();
   };
@@ -292,7 +292,7 @@ export function PageListClient({ pages, templates, tenant }: PageListClientProps
               <Button type="button" variant="outline" size="sm" onClick={() => duplicatePage(page)}>
                 Duplicar
               </Button>
-              {page._id !== "home" ? (
+              {page.slug !== "/" && !page._id.endsWith(":home") && page._id !== "home" ? (
                 <Button type="button" variant="ghost" size="sm" onClick={() => deletePage(page._id)}>
                   Eliminar
                 </Button>

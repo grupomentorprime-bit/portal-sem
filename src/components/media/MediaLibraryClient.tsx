@@ -26,7 +26,7 @@ export function MediaLibraryClient({ tenant }: MediaLibraryClientProps) {
         { label: "Biblioteca de medios" },
       ]}
       title="Biblioteca de medios"
-      description="Imágenes, documentos y piezas gráficas del seminario — organizadas por carpetas y categorías"
+      description="Imágenes, documentos y piezas gráficas del Espacio — organizadas por carpetas y categorías"
       maxWidth="7xl"
       actions={
         <>

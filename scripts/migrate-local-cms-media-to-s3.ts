@@ -14,7 +14,9 @@ import { MongoClient } from "mongodb";
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB;
 const dryRun = process.argv.includes("--dry-run");
-const STORAGE_INTEGRATION_ID = "storage";
+const SEM_TENANT_ID = "seminario-ipn";
+const STORAGE_INTEGRATION_ID = `storage:${SEM_TENANT_ID}`;
+const LEGACY_STORAGE_INTEGRATION_ID = "storage";
 
 if (!uri || !dbName) {
   console.error("Faltan MONGODB_URI o MONGODB_DB en el entorno.");
@@ -251,9 +253,13 @@ async function main() {
   await client.connect();
   const db = client.db(dbName);
 
-  const doc = await db
-    .collection<StorageDocument>("platform_integrations")
-    .findOne({ _id: STORAGE_INTEGRATION_ID });
+  const doc =
+    (await db
+      .collection<StorageDocument>("platform_integrations")
+      .findOne({ _id: STORAGE_INTEGRATION_ID })) ??
+    (await db
+      .collection<StorageDocument>("platform_integrations")
+      .findOne({ _id: LEGACY_STORAGE_INTEGRATION_ID }));
   const fromEnv = resolveFromEnv();
   const s3 = fromEnv ?? (doc ? resolveFromDocument(doc) : null);
 

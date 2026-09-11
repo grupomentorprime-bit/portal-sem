@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { ModalitySectionContent } from "@/components/portal/institution/InstitutionSectionContent";
 import { MethodologyHomeExperience } from "@/components/portal/home/methodology";
 import { blockSettings, extractModalityItems } from "@/lib/portal/blocks";
@@ -27,6 +28,7 @@ export async function ModalityBlockSection({
     imageMediaId?: string;
     buttonLabel?: string;
     buttonHref?: string;
+    destinationBadge?: string;
   }>(block);
 
   const image = await resolveMediaRef(tenant, {
@@ -35,6 +37,9 @@ export async function ModalityBlockSection({
   });
 
   const items = extractModalityItems(block);
+  const destinationBadge =
+    settings.destinationBadge?.trim() ||
+    (isSemTenant(tenant) ? "IPN Chile" : "");
 
   if (isHomePageSlug(pageSlug ?? "")) {
     return (
@@ -44,6 +49,7 @@ export async function ModalityBlockSection({
         subtitle={settings.subtitle}
         description={settings.description}
         items={items}
+        destinationBadge={destinationBadge}
       />
     );
   }

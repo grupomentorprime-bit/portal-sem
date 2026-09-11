@@ -1,37 +1,48 @@
 # Colores
 
-**Fuente única:** `src/styles/tokens/brand.css` y `src/styles/tokens/colors.css`
+**Fuentes:** `src/styles/tokens/brand.css` (Master) + `colors.css` (alias) + `site_config.branding` (Espacio).  
+**Contrato:** [BRANDING-SYSTEM.md](./BRANDING-SYSTEM.md) — Growth OS Master ≠ identidad del Espacio.
 
 ---
 
-## Paleta de marca (`--sem-*`)
+## Paleta Master Growth OS (`--growth-os-*`)
 
-| Token | Rol | Cuándo usar |
-| --- | --- | --- |
-| `--sem-primary` | Identidad principal | Headers, fondos hero, textos de alto contraste, botones primarios |
-| `--sem-secondary` | Soporte y enlaces | Links, botones secundarios, estados hover de navegación |
-| `--sem-accent` | Destaque y foco | CTAs destacados, badges info, anillos de foco, iconografía activa |
-| `--sem-success` | Confirmación | Estados completados, validación OK, badges success |
-| `--sem-light` | Acento suave | Advertencias leves, highlights decorativos, badges warning |
+Solo para `/platform`, login global y estados sin Espacio (`PlatformNeutralTheme`).
 
-**No agregar colores a `brand.css` sin aprobación de arquitectura.**
+| Token | Rol |
+| --- | --- |
+| `--growth-os-primary` | Primario de producto |
+| `--growth-os-secondary` | Secundario |
+| `--growth-os-accent` | Acento |
+| `--growth-os-success` | Éxito |
+| `--growth-os-light` | Warning / acento cálido |
+
+Los nombres `--sem-*` en `:root` son **alias legacy** hacia Master. No representan al tenant SEM.
+
+---
+
+## Identidad del Espacio (`--brand-*`)
+
+Cada Site inyecta colores desde `site_config` en `layout.tsx`. En `body`, `--color-*` sigue `--brand-*`. SEM/ADL/futuros clientes no comparten paleta.
+
+Edición: `/admin/config?section=branding` (`BrandingPanel`).
 
 ---
 
 ## Alias semánticos (`--color-*`)
 
-Consumir estos en componentes y CSS:
+Consumir estos en componentes y CSS (nunca HEX de cliente):
 
-| Alias | Resuelve a | Cuándo usar |
+| Alias | Origen típico | Cuándo usar |
 | --- | --- | --- |
-| `--color-primary` | `--sem-primary` | Texto/fondo de marca |
-| `--color-secondary` | `--sem-secondary` | Enlaces, acciones secundarias |
-| `--color-accent` | `--sem-accent` | Destacados interactivos |
-| `--color-success` | `--sem-success` | Feedback positivo |
-| `--color-warning` | `--sem-light` | Advertencias no críticas |
-| `--color-danger` | escala UI | Errores, eliminación |
-| `--color-link` | `--sem-secondary` | Hipervínculos en prosa |
-| `--color-action` | `--sem-accent` | Acciones primarias en formularios |
+| `--color-primary` | `--brand-primary` o Master | Texto/fondo de marca |
+| `--color-secondary` | `--brand-secondary` o Master | Enlaces, acciones secundarias |
+| `--color-accent` | Master / tokens | Destacados interactivos |
+| `--color-success` | tokens | Feedback positivo |
+| `--color-warning` | tokens | Advertencias no críticas |
+| `--color-danger` | tokens | Errores, eliminación |
+| `--color-link` | secondary | Hipervínculos en prosa |
+| `--color-action` | accent | Acciones primarias en formularios |
 
 Clases Tailwind mapeadas: `bg-primary`, `text-secondary`, `border-accent`, `text-success`, `text-muted`, etc.
 
@@ -65,13 +76,15 @@ Ejemplo admin: `adminUi.errorBanner` en `src/lib/admin/admin-ui.ts`.
 ## Flujo multi-tenant
 
 ```
-Tenant A: brand.css → --sem-primary: #002A47
-Tenant B: brand.css → --sem-primary: #003366  (solo tokens de marca)
+/platform          → PlatformNeutralTheme → --growth-os-*
+Espacio A (SEM)    → site_config A → --brand-* → --color-*
+Espacio B (ADL)    → site_config B → --brand-* → --color-*
+Espacio N (futuro) → site_config N → --brand-* → --color-*
          ↓
-colors.css hereda alias automáticamente
-         ↓
-Componentes sin cambios
+Componentes sin cambios (solo tokens semánticos)
 ```
+
+Cambiar un Espacio no altera otro ni la paleta Master.
 
 ---
 

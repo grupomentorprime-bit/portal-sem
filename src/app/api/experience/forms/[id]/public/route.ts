@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
 import { getPublicExperienceForm } from "@/lib/experience/forms/repository";
+import { publicInternalError } from "@/core/security/public-error";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -26,10 +27,6 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ ok: true, form });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return publicInternalError("experience-form-public", error);
   }
 }

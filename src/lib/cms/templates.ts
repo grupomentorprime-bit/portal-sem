@@ -4,6 +4,11 @@ import { blocksFromTemplate, DEFAULT_TEMPLATES, SEED_HOME_BLOCK_DATA } from "@/l
 import { buildPortal001HomeBlocks } from "@/lib/cms/home-portal-001";
 import type { CmsPage, CmsTemplate } from "@/types/page";
 
+/**
+ * Catálogo global de plataforma (ADR-008 D5 / SAAS-004).
+ * No se aísla por Espacio — no es dato SEM ni se duplica por cliente.
+ * seedDefaultHomePage escribe la página home del tenant (sí tenantizada).
+ */
 const CMS_TEMPLATES_TAG = "cms-templates";
 
 async function fetchTemplatesFromDb(): Promise<CmsTemplate[]> {
@@ -53,7 +58,7 @@ export async function seedDefaultHomePage(
   options?: { revalidate?: boolean }
 ): Promise<CmsPage | null> {
   const { getPageByIdUncached, createPage, pageExists } = await import("@/lib/cms/pages");
-  if (await pageExists("home")) return getPageByIdUncached("home");
+  if (await pageExists("home", tenant)) return getPageByIdUncached("home", tenant);
 
   const homeTemplate = DEFAULT_TEMPLATES.find((t) => t._id === "home");
   if (!homeTemplate) return null;

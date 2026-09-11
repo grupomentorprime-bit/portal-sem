@@ -183,8 +183,8 @@ export function StudentAffairsTeamClient() {
       {!loading && members.length === 0 ? (
         <EmptyState
           title="Sin usuarios de asuntos estudiantiles"
-          description="Invite usuarios con rol Asuntos estudiantiles desde Usuarios CMS."
-          action={{ label: "Ir a Usuarios CMS", href: "/admin/settings/users" }}
+          description="Invite usuarios con rol Asuntos estudiantiles desde Usuarios."
+          action={{ label: "Ir a Usuarios", href: "/admin/settings/users" }}
         />
       ) : null}
 

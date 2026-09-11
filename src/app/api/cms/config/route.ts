@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { getSiteConfigUncached, updateSiteConfig } from "@/lib/cms/config";
+import { requirePermission, isAuthContext } from "@/core/identity";
+import { getSiteConfigForTenant, updateSiteConfig } from "@/lib/cms/config";
 import { validateSiteConfigUpdate } from "@/lib/cms/validation";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { SiteConfigUpdate } from "@/types/cms";
 
 export async function GET() {
   try {
-    const config = await getSiteConfigUncached();
+    const ctx = await requirePermission("settings.update");
+    if (!isAuthContext(ctx)) return ctx;
+
+    const config = await getSiteConfigForTenant(ctx.tenantId);
 
     if (!config) {
       return NextResponse.json(
@@ -31,12 +34,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const denied = await authorizeApiWrite("settings.update", {
-      action: "settings.update",
-      entity: "cms_config",
-      entityId: "site",
-    });
-    if (denied) return denied;
+    const ctx = await requirePermission("settings.update");
+    if (!isAuthContext(ctx)) return ctx;
 
     const body = (await request.json()) as SiteConfigUpdate;
     const errors = validateSiteConfigUpdate(body);
@@ -48,7 +47,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const config = await updateSiteConfig(body);
+    const config = await updateSiteConfig(body, { tenantId: ctx.tenantId });
 
     if (!config) {
       return NextResponse.json(

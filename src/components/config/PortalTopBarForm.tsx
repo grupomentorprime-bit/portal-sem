@@ -50,7 +50,7 @@ export function PortalTopBarForm({ value, onChange }: PortalTopBarFormProps) {
               type="email"
               value={value.email}
               onChange={(e) => update("email", e.target.value)}
-              placeholder="contacto@seminarioipn.cl"
+              placeholder="contacto@ejemplo.org"
             />
           </div>
 

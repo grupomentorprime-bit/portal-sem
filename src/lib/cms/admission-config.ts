@@ -1,11 +1,16 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import {
   ADMISSION_CONFIG_ID,
   DEFAULT_ADMISSION_CONFIG,
 } from "@/lib/portal/admission-content";
 import { mergeClosingConfig } from "@/lib/portal/admission-closing-utils";
 import { migrateAdmissionConfig } from "@/lib/portal/admission-migration";
+import {
+  createEmptyAdmissionConfig,
+  EMPTY_ADMISSION_CLOSING,
+} from "@/lib/portal/empty-admission";
 import type { AdmissionConfig, AdmissionSuccessContent } from "@/types/admission";
 import type { CmsVersionSnapshot } from "@/types/cms-shared";
 import { createCmsId } from "@/types/cms-shared";
@@ -14,65 +19,80 @@ const COLLECTION = "portal_admission_config";
 const CACHE_TAG = "portal-admission-config";
 const MAX_VERSIONS = 20;
 
+function admissionBaseForTenant(tenant: string): Omit<AdmissionConfig, "tenant" | "updatedAt"> {
+  if (isSemTenant(tenant)) return DEFAULT_ADMISSION_CONFIG;
+  const empty = createEmptyAdmissionConfig(tenant);
+  const { tenant: _t, updatedAt: _u, ...rest } = empty;
+  return rest;
+}
+
 function mergeConfig(
   tenant: string,
   partial: Partial<AdmissionConfig> | null
 ): AdmissionConfig {
   const now = new Date().toISOString();
+  const base = admissionBaseForTenant(tenant);
+
   if (!partial) {
-    return migrateAdmissionConfig({
-      ...DEFAULT_ADMISSION_CONFIG,
-      tenant,
-      updatedAt: now,
-    });
+    if (isSemTenant(tenant)) {
+      return migrateAdmissionConfig({
+        ...base,
+        tenant,
+        updatedAt: now,
+      });
+    }
+    return createEmptyAdmissionConfig(tenant);
   }
 
+  const closingFallback = isSemTenant(tenant)
+    ? base.closing
+    : EMPTY_ADMISSION_CLOSING;
+
   const merged: AdmissionConfig = {
-    ...DEFAULT_ADMISSION_CONFIG,
+    ...base,
     ...partial,
     tenant,
-    hero: { ...DEFAULT_ADMISSION_CONFIG.hero, ...partial.hero },
+    hero: { ...base.hero, ...partial.hero },
     datesHighlight: {
-      ...DEFAULT_ADMISSION_CONFIG.datesHighlight,
+      ...base.datesHighlight,
       ...partial.datesHighlight,
     },
-  heroPrograms: {
-    ...DEFAULT_ADMISSION_CONFIG.programsSection,
-    ...partial.programsSection,
-    ...partial.heroPrograms,
-  },
-  programsSection: {
-    ...DEFAULT_ADMISSION_CONFIG.programsSection,
-    ...partial.programsSection,
-    ...partial.heroPrograms,
-  },
+    heroPrograms: {
+      ...base.programsSection,
+      ...partial.programsSection,
+      ...partial.heroPrograms,
+    },
+    programsSection: {
+      ...base.programsSection,
+      ...partial.programsSection,
+      ...partial.heroPrograms,
+    },
     calendarLabels: {
-      ...DEFAULT_ADMISSION_CONFIG.calendarLabels,
+      ...base.calendarLabels,
       ...partial.calendarLabels,
     },
-    intro: { ...DEFAULT_ADMISSION_CONFIG.intro, ...partial.intro },
-    calendar: { ...DEFAULT_ADMISSION_CONFIG.calendar, ...partial.calendar },
-    sections: partial.sections ?? DEFAULT_ADMISSION_CONFIG.sections,
+    intro: { ...base.intro, ...partial.intro },
+    calendar: { ...base.calendar, ...partial.calendar },
+    sections: partial.sections ?? base.sections,
     sectionLayouts: {
-      ...DEFAULT_ADMISSION_CONFIG.sectionLayouts,
+      ...base.sectionLayouts,
       ...partial.sectionLayouts,
     },
     sectionSeo: {
-      ...DEFAULT_ADMISSION_CONFIG.sectionSeo,
+      ...base.sectionSeo,
       ...partial.sectionSeo,
     },
-    formFields: partial.formFields ?? DEFAULT_ADMISSION_CONFIG.formFields,
+    formFields: partial.formFields ?? base.formFields,
     successContent: {
-      ...DEFAULT_ADMISSION_CONFIG.successContent,
+      ...base.successContent,
       ...partial.successContent,
     } as AdmissionSuccessContent,
-    closing: mergeClosingConfig(partial.closing ?? DEFAULT_ADMISSION_CONFIG.closing),
+    closing: mergeClosingConfig(partial.closing ?? closingFallback, { tenant }),
     updatedAt: partial.updatedAt ?? now,
   };
 
   return migrateAdmissionConfig(merged);
 }
-
 async function fetchAdmissionConfig(tenant: string): Promise<AdmissionConfig> {
   const db = await getDatabase();
   const doc = await db.collection<AdmissionConfig>(COLLECTION).findOne({

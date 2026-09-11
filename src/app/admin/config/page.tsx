@@ -1,5 +1,5 @@
 import { ConfigurationHub } from "@/components/config/ConfigurationHub";
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -15,7 +15,7 @@ function ConfigLoading() {
 }
 
 export default async function AdminConfigPage() {
-  const config = await getSiteConfigUncached();
+  const config = await getOperationalSiteConfig();
 
   if (!config) {
     return (
@@ -25,7 +25,7 @@ export default async function AdminConfigPage() {
             Configuración no encontrada
           </h1>
           <p className="mt-2 text-sm text-muted">
-            No existe el documento cms_config con _id &quot;site&quot;.
+            No existe configuración de Site para este Espacio.
           </p>
           <Link href="/" className="mt-4 inline-block text-sm text-muted underline">
             Volver al portal

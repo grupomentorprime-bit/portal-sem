@@ -97,7 +97,7 @@ async function createOrUpdateClient(
 
   const payload = {
     clientId: CLIENT_ID,
-    name: "Portal SEM CMS",
+    name: "Growth OS",
     enabled: true,
     publicClient: false,
     clientAuthenticatorType: "client-secret",

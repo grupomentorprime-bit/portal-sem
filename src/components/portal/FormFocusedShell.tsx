@@ -1,6 +1,7 @@
 import { PortalBrandMark } from "@/components/portal/PortalBrandMark";
 import { PortalExperienceProvider } from "@/components/portal/PortalExperienceProvider";
 import { ExperienceActionProvider } from "@/components/portal/experience/ExperienceActionProvider";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding";
 import { DEFAULT_PORTAL_CURSOR } from "@/lib/portal/cursor-defaults";
 import { getPortalContext } from "@/lib/portal/site";
 
@@ -18,7 +19,7 @@ export async function FormFocusedShell({ children }: FormFocusedShellProps) {
       <div className="form-focused-shell">
         <main className="form-focused-shell__main">{children}</main>
         <footer className="form-focused-shell__legal" aria-label="Aviso legal">
-          <p>© {year} Seminario Eclesiástico Mayor. Todos los derechos reservados.</p>
+          <p>© {year} {PLATFORM_DISPLAY_NAME}. Todos los derechos reservados.</p>
         </footer>
       </div>
     );
@@ -34,7 +35,7 @@ export async function FormFocusedShell({ children }: FormFocusedShellProps) {
       <ExperienceActionProvider>
         <div className="form-focused-shell">
           <header className="form-focused-shell__header">
-            <div className="form-focused-shell__brand" aria-label="Seminario Eclesiástico Mayor">
+            <div className="form-focused-shell__brand" aria-label={institution.name || PLATFORM_DISPLAY_NAME}>
               <PortalBrandMark
                 logoPrimary={logos.primary}
                 institutionName={institution.name}

@@ -12,7 +12,6 @@ import {
 import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experience";
 import { getActivePortal } from "@/lib/portal/site";
 import {
-  ensureDefaultExperienceForms,
   getDirectAccessibleExperienceForm,
   getExperienceFormById,
 } from "@/lib/experience/forms/repository";
@@ -101,8 +100,6 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
 
   const ctx = await getActivePortal();
   if (!ctx) notFound();
-
-  await ensureDefaultExperienceForms(ctx.tenant);
 
   const storedForm = await getExperienceFormById(ctx.tenant, id);
   const experience = await getFormExperience(ctx.tenant, id, storedForm?.name);

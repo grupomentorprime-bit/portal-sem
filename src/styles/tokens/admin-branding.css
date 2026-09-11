@@ -1,18 +1,19 @@
 /**
- * OT-SEM-BRANDING-001 — Tokens visuales del Portal Administrativo SEM
- * Paleta sobria: azul institucional dominante; verde/ámbar/rojo solo en estados.
+ * Tokens visuales del Portal Administrativo (/admin).
+ * Acentos siguen --color-primary/--color-secondary del Espacio (--brand-* / site_config).
+ * No hardcodea SEM ni ADL; /platform usa PlatformNeutralTheme + --growth-os-*.
  */
 
 :root,
 [data-theme="light"] {
-  /* Advertencia institucional (ámbar suave — no verde) */
-  --color-warning-default: #c98a2e;
+  /* Advertencia = acento naranja Growth OS (`--sem-light`); el Espacio puede teñir primary/secondary */
+  --color-warning-default: var(--sem-light);
   --color-warning: var(--color-warning-default);
 
   /* Alias admin */
   --admin-accent-primary: var(--color-primary);
   --admin-accent-secondary: var(--color-secondary);
-  --admin-surface: #ffffff;
+  --admin-surface: var(--color-surface-default);
   --admin-surface-muted: var(--gray-50);
   --admin-border-subtle: color-mix(in srgb, var(--color-border) 85%, transparent);
 
@@ -42,8 +43,8 @@
   --state-info-border: color-mix(in srgb, var(--color-secondary) 22%, transparent);
 
   /* Sombras admin (más suaves) */
-  --admin-shadow-card: 0 1px 2px 0 rgba(0, 42, 71, 0.04);
-  --admin-shadow-panel: 0 1px 3px 0 rgba(0, 42, 71, 0.05);
+  --admin-shadow-card: 0 1px 2px 0 rgba(11, 31, 58, 0.04);
+  --admin-shadow-panel: 0 1px 3px 0 rgba(11, 31, 58, 0.05);
 
   /* Pills de estado — top bar (contraste sobre fondo blanco) */
   --admin-status-success-bg: color-mix(in srgb, var(--color-success) 24%, white);

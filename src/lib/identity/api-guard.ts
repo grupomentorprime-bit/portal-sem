@@ -3,6 +3,14 @@ import { requirePermission, isAuthContext } from "@/core/identity";
 import type { PermissionId } from "@/core/identity/permissions/registry";
 import { writeAudit } from "@/lib/identity/audit";
 
+export async function authorizeApiRead(
+  permission: PermissionId | string
+): Promise<NextResponse | null> {
+  const ctx = await requirePermission(permission);
+  if (ctx instanceof NextResponse) return ctx;
+  return null;
+}
+
 export async function authorizeApiWrite(
   permission: PermissionId | string,
   audit?: { action: string; entity: string; entityId?: string }
@@ -10,7 +18,7 @@ export async function authorizeApiWrite(
   const ctx = await requirePermission(permission);
   if (ctx instanceof NextResponse) return ctx;
 
-  if (!ctx.compatMode && audit) {
+  if (audit) {
     await writeAudit({
       tenantId: ctx.tenantId,
       userId: ctx.user._id,

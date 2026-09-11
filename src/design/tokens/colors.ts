@@ -1,36 +1,58 @@
 /**
  * Design Tokens — Colores semánticos oficiales (DOC-002 / OT-BRANDING-002)
  * Fuente CSS canónica: src/styles/tokens/brand.css + colors.css
- * Sin nombres de institución. Valores por defecto de plataforma;
+ * Sin nombres de institución. Valores por defecto de plataforma (Growth OS);
  * en runtime los sobreescribe el Branding CMS vía --brand-* → --color-*.
  */
 export const colorDefaults = {
+  primary: "#0E4F90",
+  secondary: "#6C99CD",
+  accent: "#7C5CFA",
+  success: "#18B981",
+  warning: "#F59B45",
+  danger: "#B42318",
+  info: "#6C99CD",
+  surface: "#FFFFFF",
+  background: "#F4F7FB",
+  foreground: "#0B1F3A",
+  border: "#D9E4F2",
+  muted: "#6C87AC",
+} as const;
+
+/** Escala neutra Growth OS (no semántica de marca) */
+export const neutralScale = {
+  50: "#F4F7FB",
+  100: "#EAF2FC",
+  200: "#D9E4F2",
+  300: "#B8C9DE",
+  400: "#8FA8C4",
+  500: "#6C87AC",
+  600: "#557194",
+  700: "#3A5273",
+  800: "#1E3355",
+  900: "#0B1F3A",
+} as const;
+
+/**
+ * Pack de identidad SEM (dato T001/S001) — no es default de plataforma.
+ * site_config lo materializa; /admin lo consume vía --brand-*.
+ */
+export const semSiteBrandColors = {
   primary: "#002A47",
   secondary: "#246AA1",
   accent: "#10BCE2",
   success: "#3ED6AF",
-  warning: "#8CE27F",
-  danger: "#B42318",
-  info: "#10BCE2",
+  light: "#8CE27F",
   surface: "#FFFFFF",
-  background: "#FFFFFF",
   foreground: "#141F29",
-  border: "#D1D9E0",
-  muted: "#5C7289",
 } as const;
 
-/** Escala neutra (no semántica de marca) */
-export const neutralScale = {
-  50: "#F5F7F9",
-  100: "#E8ECF0",
-  200: "#D1D9E0",
-  300: "#A8B5C2",
-  400: "#7A8FA3",
-  500: "#5C7289",
-  600: "#475A6E",
-  700: "#354656",
-  800: "#243340",
-  900: "#141F29",
+/** Pack bootstrap ADL (dato T002) — combinación distinta de SEM */
+export const adlSiteBrandColors = {
+  primary: "#18B981",
+  secondary: "#B42318",
+  surface: "#FFFFFF",
+  foreground: "#0B1F3A",
 } as const;
 
 /** @deprecated Use colorDefaults — alias retrocompatibilidad */

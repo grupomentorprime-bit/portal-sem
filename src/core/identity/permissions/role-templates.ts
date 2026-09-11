@@ -38,6 +38,8 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["identity.audit.read", true],
     ["workflow.view", true], ["workflow.manage", true], ["workflow.transition", true],
     ["events.view", true], ["events.manage", true], ["events.replay", false],
+    ["growth.sales.view", true], ["growth.sales.operate", true],
+    ["growth.automations.view", true], ["growth.automations.manage", true],
     ["academic.students.view", true], ["academic.finance.view", false], ["academic.finance.manage", false],
   ]),
 
@@ -56,6 +58,8 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["identity.audit.read", true],
     ["workflow.view", true], ["workflow.manage", false], ["workflow.transition", true],
     ["events.view", true], ["events.manage", false], ["events.replay", false],
+    ["growth.sales.view", true], ["growth.sales.operate", true],
+    ["growth.automations.view", true], ["growth.automations.manage", true],
     ["academic.students.view", true], ["academic.finance.view", false], ["academic.finance.manage", false],
   ]),
 
@@ -64,6 +68,8 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["convocations.publish", false], ["convocations.close", false], ["convocations.delete", false],
     ["participants.view", true], ["participants.update", false], ["participants.checkin", false], ["participants.export", false],
     ["portal.pages.view", true],
+    ["growth.sales.view", true], ["growth.sales.operate", true],
+    ["growth.automations.view", true], ["growth.automations.manage", true],
     ["academic.students.view", true],
   ]),
 

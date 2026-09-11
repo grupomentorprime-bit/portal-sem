@@ -3,10 +3,10 @@ import { requirePermission } from "@/core/identity";
 import { listMembershipsByTenant } from "@/lib/identity/memberships";
 import { listUsersByIds } from "@/lib/identity/users";
 import {
-  ensureTenantRoles,
   findRolesByIds,
   getCallerRoleCode,
   getRoleCode,
+  listRolesByTenant,
 } from "@/lib/identity/roles";
 import { listInvitationsByTenant } from "@/lib/identity/invitations";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
@@ -23,8 +23,7 @@ export async function GET() {
     const ctx = await requirePermission("settings.team");
     if (ctx instanceof NextResponse) return ctx;
 
-    await ensureTenantRoles(ctx.tenantId);
-
+    // Lectura pura — sync de roles solo en login/bootstrap/migración (SAAS-004).
     const callerRoleCode = ctx.membership
       ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
       : null;
@@ -33,7 +32,7 @@ export async function GET() {
       listMembershipsByTenant(ctx.tenantId),
       listInvitationsByTenant(ctx.tenantId),
       listAuditByTenant(ctx.tenantId, 50),
-      ensureTenantRoles(ctx.tenantId),
+      listRolesByTenant(ctx.tenantId),
     ]);
 
     const userIds = memberships.map((membership) => membership.userId);
@@ -84,7 +83,6 @@ export async function GET() {
         };
       })
       .filter((member) => {
-        if (ctx.compatMode) return true;
         return !shouldHideMemberFromCaller(
           callerRoleCode,
           member._targetCode as RoleCode | null,
@@ -121,7 +119,6 @@ export async function GET() {
         };
       })
       .filter((invitation) => {
-        if (ctx.compatMode) return true;
         return !shouldHideMemberFromCaller(callerRoleCode, invitation._targetCode as RoleCode | null);
       })
       .map(({ _targetCode: _, ...invitation }) => invitation);

@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/identity/LoginForm";
-import { isIdentityEnforced, isKeycloakOnlyAuth } from "@/core/identity/auth/config";
+import { ProductAuthFrame } from "@/components/product";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding";
+import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { isKeycloakEnabled } from "@/core/identity/auth/keycloak";
 
 export const dynamic = "force-dynamic";
@@ -10,30 +12,28 @@ export default async function AdminLoginPage() {
   const authReady = isKeycloakEnabled();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-background p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <h1 className="text-xl font-semibold">Centro de Administración</h1>
-          <p className="mt-1 text-sm text-muted">
+    <ProductAuthFrame
+      title="Acceso"
+      description={
+        <>
+          <p>
             {institutionalOnly
-              ? "Ingresa con tu correo y contraseña institucional."
-              : "Acceso institucional al CMS del SEM"}
+              ? "Ingresa con tu correo y contraseña de Cuenta."
+              : `Ingresa a tu Espacio en ${PLATFORM_DISPLAY_NAME}.`}
           </p>
           {institutionalOnly && !authReady ? (
             <p className="mt-2 text-xs text-[var(--color-danger)]">
-              El servicio de autenticación no está disponible. Contacta al administrador del sistema.
+              El servicio de autenticación no está disponible. Contacta al
+              administrador del Espacio.
             </p>
           ) : null}
-          {!isIdentityEnforced() ? (
-            <p className="mt-2 text-xs text-[var(--color-warning)]">
-              El acceso sin autenticación está habilitado en este entorno.
-            </p>
-          ) : null}
-        </div>
-        <Suspense fallback={<p className="text-sm text-muted">Cargando…</p>}>
-          <LoginForm />
-        </Suspense>
-      </div>
-    </div>
+        </>
+      }
+      className="text-left sm:text-center"
+    >
+      <Suspense fallback={<p className="text-sm text-muted">Cargando…</p>}>
+        <LoginForm />
+      </Suspense>
+    </ProductAuthFrame>
   );
 }

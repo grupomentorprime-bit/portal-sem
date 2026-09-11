@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
-import { createInvitation, findInvitationById, listInvitationsByTenant, revokeInvitation } from "@/lib/identity/invitations";
+import { createInvitation, findInvitationById, listInvitationsByTenant, revokeInvitation, serializeInvitationWithoutToken } from "@/lib/identity/invitations";
 import { findMembership } from "@/lib/identity/memberships";
 import { ensureTenantRoles, findRoleByCode, findRoleByName, getCallerRoleCode, getRoleCode } from "@/lib/identity/roles";
 import { writeAudit } from "@/lib/identity/audit";
@@ -21,7 +21,10 @@ export async function GET() {
     if (ctx instanceof NextResponse) return ctx;
 
     const invitations = await listInvitationsByTenant(ctx.tenantId);
-    return NextResponse.json({ ok: true, invitations });
+    return NextResponse.json({
+      ok: true,
+      invitations: invitations.map(serializeInvitationWithoutToken),
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -154,7 +157,6 @@ export async function POST(request: Request) {
       payload: {
         email: invitation.email,
         displayName: invitation.displayName,
-        token: invitation.token,
         roleIds: invitation.roleIds,
         expiresAt: invitation.expiresAt,
       },
@@ -190,8 +192,8 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ ok: false, error: "ID de invitación obligatorio." }, { status: 400 });
     }
 
-    const invitation = await findInvitationById(invitationId);
-    if (!invitation || invitation.tenantId !== ctx.tenantId) {
+    const invitation = await findInvitationById(invitationId, ctx.tenantId);
+    if (!invitation) {
       return NextResponse.json({ ok: false, error: "Invitación no encontrada." }, { status: 404 });
     }
     if (invitation.status !== "pending") {
@@ -201,7 +203,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await revokeInvitation(invitationId);
+    await revokeInvitation(invitationId, ctx.tenantId);
 
     if (!ctx.compatMode) {
       await writeAudit({

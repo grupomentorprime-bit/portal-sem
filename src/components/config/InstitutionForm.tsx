@@ -29,7 +29,7 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
           <Input
             value={value.name}
             onChange={(e) => update("name", e.target.value)}
-            placeholder="Seminario Eclesiástico Mayor"
+            placeholder="Nombre de la institución"
           />
         </Field>
 
@@ -37,7 +37,7 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
           <Input
             value={value.shortName}
             onChange={(e) => update("shortName", e.target.value)}
-            placeholder="SEM"
+            placeholder="Sigla"
           />
         </Field>
 
@@ -45,7 +45,7 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
           <Input
             value={value.tenant}
             onChange={(e) => update("tenant", e.target.value)}
-            placeholder="seminario-ipn"
+            placeholder="mi-espacio"
           />
         </Field>
 
@@ -53,7 +53,7 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
           <Input
             value={value.organization}
             onChange={(e) => update("organization", e.target.value)}
-            placeholder="Iglesia Pentecostal Nazareth"
+            placeholder="Organización o red"
           />
         </Field>
 
@@ -62,7 +62,7 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
             type="url"
             value={value.website}
             onChange={(e) => update("website", e.target.value)}
-            placeholder="https://seminarioipn.cl"
+            placeholder="https://www.ejemplo.org"
           />
         </Field>
 
@@ -70,7 +70,7 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
           <Input
             value={value.tagline}
             onChange={(e) => update("tagline", e.target.value)}
-            placeholder="Equipando a los santos para la obra del ministerio"
+            placeholder="Lema institucional"
           />
         </Field>
       </div>

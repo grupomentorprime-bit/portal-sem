@@ -16,7 +16,7 @@ export function isConfigNavPath(pathname: string): boolean {
 }
 
 export function getNavItemConfigSection(item: AdminNavItem): ConfigSectionId | null {
-  if (!item.href.includes("/admin/config")) return null;
+  if (item.href == null || !item.href.includes("/admin/config")) return null;
 
   try {
     const url = new URL(item.href, "http://localhost");

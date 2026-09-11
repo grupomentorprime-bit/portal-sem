@@ -150,7 +150,7 @@ export async function HeroBlockSection({ block, tenant, ctx, allBlocks }: HeroBl
   const { heroPortal } = config;
 
   if (heroPortal?.enabled && heroPortal.slides.some((s) => isSlideVisibleForDisplay(s))) {
-    return <HeroPortalSection tenant={tenant} heroPortal={heroPortal} />;
+    return <HeroPortalSection tenant={tenant} heroPortal={heroPortal} brandMarkSrc={logos.primary} />;
   }
 
   const heroFromBlock = await resolveMediaRef(tenant, {
@@ -165,7 +165,7 @@ export async function HeroBlockSection({ block, tenant, ctx, allBlocks }: HeroBl
     resolveConvocatoriaHeroLinks([resolved]);
     const view = mapResolvedSlideToPremiumView(resolved);
 
-    return <HeroPremiumSection slides={[view]} type="image" />;
+    return <HeroPremiumSection slides={[view]} type="image" brandMarkSrc={logos.primary} />;
   }
 
   const applyQuickLink =

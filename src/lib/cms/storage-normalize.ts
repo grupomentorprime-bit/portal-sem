@@ -87,5 +87,5 @@ export function formatStorageError(error: unknown): string {
     return `Error S3${status ? ` HTTP ${status}` : ""}. Revisa endpoint, región y permisos de la Application Key.`;
   }
 
-  return message || "No se pudo conectar con el bucket.";
+  return "No se pudo conectar con el bucket. Revise la configuración en Integraciones → Almacenamiento.";
 }

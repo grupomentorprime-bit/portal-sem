@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   createPage,
   getAllPagesUncached,
@@ -6,14 +7,18 @@ import {
 } from "@/lib/cms/pages";
 import { validatePageCreate } from "@/lib/cms/page-validation";
 import { normalizeSlug } from "@/lib/cms/page-utils";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsPageCreate } from "@/types/page";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenant = searchParams.get("tenant") ?? undefined;
-    const pages = await getAllPagesUncached(tenant);
+    const denied = await authorizeApiRead("cms.pages.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
+    const pages = await getAllPagesUncached(tenantCheck.tenant);
     return NextResponse.json({ ok: true, pages });
   } catch (error) {
     console.error(error);
@@ -32,7 +37,12 @@ export async function POST(request: Request) {
     });
     if (denied) return denied;
 
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const body = (await request.json()) as CmsPageCreate;
+    body.tenant = tenantCheck.tenant;
+
     body.slug = normalizeSlug(body.slug);
     const errors = validatePageCreate(body);
 
@@ -40,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, errors }, { status: 400 });
     }
 
-    if (await pageExists(body._id)) {
+    if (await pageExists(body._id, tenantCheck.tenant)) {
       return NextResponse.json(
         { ok: false, error: `Ya existe una página con id "${body._id}".` },
         { status: 409 }

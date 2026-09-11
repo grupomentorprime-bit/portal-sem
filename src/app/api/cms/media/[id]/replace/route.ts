@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import { replaceMediaFile } from "@/lib/cms/media";
 import { writeMediaAudit } from "@/lib/cms/media-audit";
 import { validateMediaUpload } from "@/lib/cms/media-validation";
@@ -19,13 +19,12 @@ export async function POST(request: Request, { params }: RouteParams) {
     const ctx = await requirePermission("cms.media.update");
     if (ctx instanceof NextResponse) return ctx;
 
+    const tenantCheck = await requireActiveTenant();
+    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
+
     const { id } = await params;
     const formData = await request.formData();
     const file = formData.get("file");
-    const tenantParam = String(formData.get("tenant") ?? "");
-
-    const tenantCheck = await assertActiveTenant(tenantParam);
-    if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
     if (!(file instanceof File)) {
       return NextResponse.json({ ok: false, error: "Archivo requerido." }, { status: 400 });

@@ -69,13 +69,13 @@ export async function PortalBlockSection({
     case "academic_offer":
       return <AcademicOfferBlockSection tenant={tenant} block={block} pageSlug={pageSlug} />;
     case "seminarios_home":
-      return <SeminariosHomeBlockSection block={block} pageSlug={pageSlug} />;
+      return <SeminariosHomeBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "audience_profiles":
       return <AudienceProfilesBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "presentation":
       return <PresentationBlockSection block={block} />;
     case "feature_grid":
-      return <FeatureGridBlockSection block={block} pageSlug={pageSlug} />;
+      return <FeatureGridBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "modality":
       return <ModalityBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "stats":
@@ -105,11 +105,11 @@ export async function PortalBlockSection({
     case "admission_process":
       return <AdmissionProcessBlockSection block={block} />;
     case "timeline":
-      return <TimelineBlockSection block={block} pageSlug={pageSlug} />;
+      return <TimelineBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "scholarships":
       return <ScholarshipsBlockSection block={block} />;
     case "faq":
-      return <FaqBlockSection block={block} pageSlug={pageSlug} />;
+      return <FaqBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "quick_contact":
       return <QuickContactBlockSection block={block} contact={ctx.config.contact} social={ctx.config.social} />;
     case "contact_hub":
@@ -158,7 +158,7 @@ export async function PortalBlockSection({
         ctaLabel: asString(firstButton?.label, asString(ctaSettings.primaryLabel)),
         ctaHref: asString(firstButton?.href, asString(ctaSettings.primaryHref)),
       });
-      return <CtaPremiumBlockSection block={block} navigation={ctx.navigation} pageSlug={pageSlug} />;
+      return <CtaPremiumBlockSection block={block} tenant={tenant} navigation={ctx.navigation} pageSlug={pageSlug} />;
     }
     case "text":
     case "contact":

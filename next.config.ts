@@ -22,6 +22,8 @@ function buildRemotePatterns(): NonNullable<NextConfig["images"]>["remotePattern
 }
 
 const nextConfig: NextConfig = {
+  // Windows: Playwright/scripts suelen usar 127.0.0.1; sin esto Next bloquea /_next/* en dev.
+  allowedDevOrigins: ["127.0.0.1"],
   images: {
     localPatterns: [
       {

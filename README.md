@@ -1,34 +1,64 @@
-# Portal Institucional SEM
+# Growth OS
 
-Portal web del **Seminario Eclesiástico Mayor (SEM)**, construido con Next.js y MongoDB, integrado al ecosistema **AprendeHoy**.
+**Growth OS** ayuda a atraer personas, no perder oportunidades y convertirlas en clientes, alumnos o participantes.
 
-**Versión actual:** 2.4.0 (tenant SEM) · **Platform Core:** 2.0.0 — [Foundation Complete](./docs/strategy/FOUNDATION-COMPLETE.md)
+> **Simple por fuera. Potente por dentro.**
+
+Este repositorio es el producto **Growth OS**. No es el Portal SEM ni AprendeHoy Learning OS.
+
+| Concepto | Significado |
+| --- | --- |
+| **Growth OS** | Producto de este repo (plataforma) |
+| **Espacio** | Cliente / organización en la UI |
+| **Tenant** | Término técnico interno (`tenantId`) |
+| **SEM (T001)** / **ADL (T002)** | Clientes reales sobre el mismo core |
+| **Educación** | Primera vertical (no el nombre del producto) |
+| **Aprende Hoy** | Sistema académico separado; integración **opt-in** |
+
+Nombre histórico del repo / package: `portal-sem`. No se renombra en Productization V1 ([ADR-009](./docs/architecture/ADR-009.md)).
+
+**Punto de entrada:** [docs/HANDBOOK.md](./docs/HANDBOOK.md) · [Glosario](./docs/GLOSSARY.md)
 
 ---
 
-## Introducción
+## Hoy vs roadmap
 
-El Portal SEM es el sitio institucional oficial del seminario. Gestiona contenido público, configuración institucional y módulos CMS, manteniendo separación estricta del Core Académico (AprendeHoy).
+### Disponible hoy (Foundation + Productization)
 
-Punto de entrada para desarrolladores: [docs/HANDBOOK.md](./docs/HANDBOOK.md)
+- Platform Core multi-tenant: Identity, Tenant/Site/Domain, CMS, Media, Workflow, Event Bus, Portal Engine
+- Portal público y admin por **Espacio** (host → Site; sesión → Espacio activo)
+- Clientes **SEM (T001)** y **ADL (T002)** en la misma instancia ([ADR-008](./docs/architecture/ADR-008.md))
+- Formularios de experiencia, admisión de **interesados**, handoff opt-in a Aprende Hoy
+- Identidad de producto Growth OS en chrome, correo y créditos (PROD-001→003)
+
+### Roadmap (no asumir como listo)
+
+| Frente | Estado |
+| --- | --- |
+| Growth Core (Persona → … → Próxima acción) | Contrato [ADR-010](./docs/architecture/ADR-010.md) — núcleo 002–006 **CERRADAS · APTO**; UI pendiente (CORE-007); no es CRM/recorridos/planes |
+| Planes / entitlements / onboarding self-serve | No en V1 |
+| DNS/TLS automático de dominios | Fuera de app |
+| Aprende Hoy como producto dentro de este repo | **No** — otro sistema |
+
+Contrato de producto: [ADR-009](./docs/architecture/ADR-009.md). Fundación multi-tenant: [ADR-008](./docs/architecture/ADR-008.md).
 
 ---
 
-## Arquitectura
+## Arquitectura (vista actual)
 
 ```
-Usuario
-   ↓
-Portal SEM (Next.js — App Router)
-   ↓
-API Routes (/api/*)
-   ↓
-MongoDB (SeminarioIPN)
-   ↓
-AprendeHoy (integración futura)
+Visitante / operador
+        ↓
+Growth OS (Next.js — App Router)
+        ↓
+API Routes (/api/*) + TenantContext (host o sesión)
+        ↓
+MongoDB compartida (aislamiento por tenantId)
+        ↓
+Aprende Hoy (handoff opt-in de interesados — otro producto)
 ```
 
-Documentación: [docs/architecture/](./docs/architecture/)
+Detalle: [docs/architecture/](./docs/architecture/) · [TENANT-GUIDELINES](./docs/core/TENANT-GUIDELINES.md)
 
 ---
 
@@ -37,16 +67,19 @@ Documentación: [docs/architecture/](./docs/architecture/)
 | Recurso | Enlace |
 | --- | --- |
 | Handbook (inicio) | [docs/HANDBOOK.md](./docs/HANDBOOK.md) |
+| Glosario | [docs/GLOSSARY.md](./docs/GLOSSARY.md) |
 | Índice completo | [docs/README.md](./docs/README.md) |
+| ADR-008 — Multi-tenant | [docs/architecture/ADR-008.md](./docs/architecture/ADR-008.md) |
+| ADR-009 — Producto Growth OS | [docs/architecture/ADR-009.md](./docs/architecture/ADR-009.md) |
+| ADR-010 — Growth Core V1 | [docs/architecture/ADR-010.md](./docs/architecture/ADR-010.md) |
+| Handoff → Aprende Hoy | [docs/architecture/GROWTH-OS-HANDOFF-APRENDE-HOY.md](./docs/architecture/GROWTH-OS-HANDOFF-APRENDE-HOY.md) |
 | Guía de desarrollo | [docs/development/DEVELOPER-GUIDE.md](./docs/development/DEVELOPER-GUIDE.md) |
-| Changelog | [CHANGELOG.md](./CHANGELOG.md) |
-| Releases | [RELEASES.md](./RELEASES.md) |
 
 ---
 
 ## Cómo iniciar
 
-**Requisitos:** Node.js 20+, npm, acceso a MongoDB `SeminarioIPN`.
+**Requisitos:** Node.js 20+, npm, MongoDB.
 
 ```bash
 npm install
@@ -55,9 +88,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000).
-
-Validar infraestructura: `GET /api/test`
+Abrir [http://localhost:3000](http://localhost:3000) (host SEM / T001 según `APP_URL`).  
+Espacio ADL (T002) en desarrollo: host configurado en `ADL_DEV_HOST` (p. ej. `adl.localhost:3000`).
 
 ---
 
@@ -68,72 +100,21 @@ npm run build
 npm run start
 ```
 
-Variables de entorno requeridas en producción:
-
-```env
-MONGODB_URI=...
-MONGODB_DB=SeminarioIPN
-```
+Variables mínimas: ver [.env.example](./.env.example).
 
 ---
 
-## Roadmap
+## Clientes y pack de datos
 
-| Fase | OT / Módulo | Estado |
+| Cliente | Código | Rol |
 | --- | --- | --- |
-| Infraestructura base | OT-SEM-INFRA-001 | Completado |
-| Configuration Hub | OT-SEM-CMS-001 | Completado |
-| Menu Engine | OT-SEM-CMS-002 | Completado |
-| Page Builder | OT-SEM-CMS-003 | Completado |
-| Content Engine | OT-SEM-CMS-004 | Completado |
-| Media Library | OT-SEM-CMS-005 | Completado |
-| Gobierno documental | OT-SEM-DOC-001 | Completado |
-| Home Premium — Header & Hero | [OT-SEM-PORTAL-001](./docs/ot/OT-SEM-PORTAL-001.md) / [002](./docs/ot/OT-SEM-PORTAL-002.md) | Completado |
-| Home Premium — Programas | [OT-SEM-PORTAL-003](./docs/ot/OT-SEM-PORTAL-003.md) | Completado |
-| Home Premium — Confianza | [OT-SEM-PORTAL-004](./docs/ot/OT-SEM-PORTAL-004.md) | Completado |
-| Home Premium — Ecosistema | [OT-SEM-PORTAL-005](./docs/ot/OT-SEM-PORTAL-005.md) | Completado |
-| **Auditoría UX/UI** | [UX-AUDIT-001](./docs/audits/UX-AUDIT-001.md) | Completado |
-| **Conversión y CMS** | [OT-SEM-PORTAL-006](./docs/ot/OT-SEM-PORTAL-006.md) | Completado |
-| **Portal Engine (Core)** | [OT-CORE-PORTAL-001](./docs/core/PORTAL-ENGINE.md) · `v2.0.0-portal-engine` | Completado |
-| **Event Bus (Core)** | [OT-CORE-EVENTS-001](./docs/core/EVENTS.md) · `v1.9.0-event-bus` | Completado |
-| **Demo oficial v2.4.0** | [DEMO-001](./docs/demo/DEMO-001.md) | Completado |
-| Footer Premium | OT-SEM-PORTAL-007 | Pendiente |
-| Optimización Producción | OT-SEM-PORTAL-008 | Pendiente |
-| Integración AprendeHoy | — | Planificado |
-| Pagos (Mercado Pago) | — | Planificado |
+| Seminario Eclesiástico Mayor | T001 (`seminario-ipn`) | Primer cliente; pack editorial SEM/IPN |
+| Academia ADL | T002 (`adl`) | Segundo cliente; sin heredar branding SEM |
 
-Roadmap estratégico: [PRODUCT-ROADMAP-2026-2028](./docs/strategy/PRODUCT-ROADMAP-2026-2028.md) · Cierre Foundation: [FOUNDATION-COMPLETE](./docs/strategy/FOUNDATION-COMPLETE.md)
-
-### Estrategia de entrega
-
-1. **Foundation (completada):** Core multi-tenant, CMS, Identity, Workflow, Event Bus, Portal Engine; portal SEM premium v2.4.
-2. **Platform Infrastructure (actual):** Search, Notifications, Analytics, Forms, Observability.
-3. **Business Platform (siguiente):** CRM, Admisiones, Académico, Finanzas, Certificación.
-
-Ver [Product Roadmap 2026–2028](./docs/strategy/PRODUCT-ROADMAP-2026-2028.md).
-
----
-
-## Estado del proyecto
-
-| Versión | Tag | Módulos principales |
-| --- | --- | --- |
-| 2.4.0 | — | Conversión, Home CMS-driven, correcciones P0 |
-| 2.0.0 | v2.0.0-portal-engine | Portal Engine CMS-driven |
-| 1.9.0 | v1.9.0-event-bus | Event Bus & Domain Events |
-| 2.3.0 | — | Ecosistema Académico (noticias, eventos, biblioteca, recursos) |
-| 2.2.0 | — | Confianza Institucional |
-| 2.1.0 | — | Programas Premium |
-| 1.4.0 | v1.4.0-portal-ux | Portal UX público, gobierno documental |
-| 1.3.0 | v1.3.0-media-library | Media Library |
-| 1.2.0 | v1.2-content-engine | Content Engine |
-| 1.1.0 | v1.1-menu-engine | Menu Engine |
-| 1.0.0 | v1.0-base | Infraestructura, Configuration Hub, Design System |
-
-Detalle: [RELEASES.md](./RELEASES.md)
+El pack SEM es **dato del Espacio**, no la identidad de Growth OS.
 
 ---
 
 ## Licencia
 
-Proyecto privado — Seminario Eclesiástico Mayor.
+Proyecto privado.

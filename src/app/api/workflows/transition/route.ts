@@ -5,6 +5,7 @@ import {
   transition,
   getAvailableTransitions,
 } from "@/core/workflow";
+import { getInstanceById } from "@/lib/workflow/instances";
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +22,14 @@ export async function POST(request: Request) {
 
     if (!body.instanceId) {
       return NextResponse.json({ ok: false, error: "instanceId es obligatorio." }, { status: 400 });
+    }
+
+    const existing = await getInstanceById(body.instanceId, auth.tenantId);
+    if (!existing) {
+      return NextResponse.json(
+        { ok: false, error: "Instancia de workflow no encontrada." },
+        { status: 404 }
+      );
     }
 
     const ctx = buildExecutionContext(auth);

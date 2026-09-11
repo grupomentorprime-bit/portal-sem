@@ -5,7 +5,8 @@ import {
   ListObjectsV2Command,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
-import { normalizeS3Fields } from "@/lib/cms/storage-normalize";
+import { formatStorageError, normalizeS3Fields } from "@/lib/cms/storage-normalize";
+import { logServerError } from "@/core/security/redact";
 import type { ResolvedStorageSettings } from "@/types/integrations";
 
 const TEST_OBJECT_KEY = "media/.portal-sem-connection-test";
@@ -98,14 +99,19 @@ export async function putS3Object(
   mimeType: string
 ): Promise<void> {
   const client = getS3Client(s3);
-  await client.send(
-    new PutObjectCommand({
-      Bucket: s3.bucket,
-      Key: `media/${key}`,
-      Body: buffer,
-      ContentType: mimeType,
-    })
-  );
+  try {
+    await client.send(
+      new PutObjectCommand({
+        Bucket: s3.bucket,
+        Key: `media/${key}`,
+        Body: buffer,
+        ContentType: mimeType,
+      })
+    );
+  } catch (error) {
+    logServerError("s3", error);
+    throw new Error(formatStorageError(error));
+  }
 }
 
 export async function deleteS3Object(
@@ -113,12 +119,17 @@ export async function deleteS3Object(
   key: string
 ): Promise<void> {
   const client = getS3Client(s3);
-  await client.send(
-    new DeleteObjectCommand({
-      Bucket: s3.bucket,
-      Key: `media/${key}`,
-    })
-  );
+  try {
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: s3.bucket,
+        Key: `media/${key}`,
+      })
+    );
+  } catch (error) {
+    logServerError("s3", error);
+    throw new Error(formatStorageError(error));
+  }
 }
 
 export async function getS3ObjectBuffer(

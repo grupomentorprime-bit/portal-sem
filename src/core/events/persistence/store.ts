@@ -83,11 +83,13 @@ export async function scheduleEvent(input: {
   scheduledFor: string;
 }): Promise<ScheduledEvent> {
   const db = await getDatabase();
+  const now = new Date().toISOString();
   const doc: ScheduledEvent = {
     _id: `sched-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     ...input,
     status: "scheduled",
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
   await db.collection<ScheduledEvent>("core_scheduled_events").insertOne(doc);
   return doc;
@@ -97,16 +99,34 @@ export async function cancelScheduledEvent(id: string): Promise<boolean> {
   const db = await getDatabase();
   const result = await db.collection<ScheduledEvent>("core_scheduled_events").updateOne(
     { _id: id, status: "scheduled" },
-    { $set: { status: "cancelled" } }
+    { $set: { status: "cancelled", updatedAt: new Date().toISOString() } }
   );
   return result.modifiedCount > 0;
 }
 
+/**
+ * Claim atómico de un vencido: scheduled → publishing.
+ * Evita doble publicación entre runners concurrentes.
+ */
+export async function claimDueScheduledEvent(
+  nowIso = new Date().toISOString()
+): Promise<ScheduledEvent | null> {
+  const db = await getDatabase();
+  const result = await db.collection<ScheduledEvent>("core_scheduled_events").findOneAndUpdate(
+    { status: "scheduled", scheduledFor: { $lte: nowIso } },
+    { $set: { status: "publishing", updatedAt: nowIso } },
+    { sort: { scheduledFor: 1 }, returnDocument: "after" }
+  );
+  return result ?? null;
+}
+
+/** Lista vencidos sin claim (inspección / tests). Preferir claimDueScheduledEvent en runners. */
 export async function listDueScheduledEvents(): Promise<ScheduledEvent[]> {
   const db = await getDatabase();
   return db
     .collection<ScheduledEvent>("core_scheduled_events")
     .find({ status: "scheduled", scheduledFor: { $lte: new Date().toISOString() } })
+    .sort({ scheduledFor: 1 })
     .limit(20)
     .toArray();
 }
@@ -115,6 +135,36 @@ export async function markScheduledPublished(id: string): Promise<void> {
   const db = await getDatabase();
   await db.collection<ScheduledEvent>("core_scheduled_events").updateOne(
     { _id: id },
-    { $set: { status: "published" } }
+    {
+      $set: { status: "published", updatedAt: new Date().toISOString() },
+      $unset: { lastError: "" },
+    }
   );
+}
+
+/**
+ * Devuelve a scheduled tras fallo — reintento sin duplicar si el publish no llegó a ejecutarse.
+ */
+export async function releaseScheduledClaim(
+  id: string,
+  error?: string
+): Promise<void> {
+  const db = await getDatabase();
+  await db.collection<ScheduledEvent>("core_scheduled_events").updateOne(
+    { _id: id, status: "publishing" },
+    {
+      $set: {
+        status: "scheduled",
+        updatedAt: new Date().toISOString(),
+        ...(error ? { lastError: error.slice(0, 500) } : {}),
+      },
+    }
+  );
+}
+
+export async function getScheduledEventById(
+  id: string
+): Promise<ScheduledEvent | null> {
+  const db = await getDatabase();
+  return db.collection<ScheduledEvent>("core_scheduled_events").findOne({ _id: id });
 }

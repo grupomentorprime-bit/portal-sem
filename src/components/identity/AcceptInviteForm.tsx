@@ -82,7 +82,7 @@ export function AcceptInviteForm({
 
       {existingUser ? (
         <p className="rounded-xl bg-background-muted/50 p-4 text-sm text-muted">
-          Ya tienes una cuenta con este correo. Al aceptar se agregará tu acceso al CMS institucional.
+          Ya tienes una Cuenta con este correo. Al aceptar se agregará tu acceso al Espacio.
         </p>
       ) : (
         <>

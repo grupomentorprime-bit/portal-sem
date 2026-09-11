@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isEmailAuthEnabled } from "@/core/identity/auth/config";
-import { getActiveTenantId, loginWithEmail } from "@/core/identity";
+import { hasPlatformOperatorCapability, loginWithEmail } from "@/core/identity";
+import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
+import { publicInternalError } from "@/core/security/public-error";
 
 export async function POST(request: Request) {
   try {
@@ -12,11 +14,8 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as { email?: string; password?: string };
-    const tenantId = await getActiveTenantId();
-
-    if (!tenantId) {
-      return NextResponse.json({ ok: false, error: "Tenant no configurado." }, { status: 503 });
-    }
+    // Host solo como preferencia; el Espacio activo sale de membresías.
+    const preferredTenantId = await resolveActiveTenantIdFromRequest();
 
     if (!body.email?.trim() || !body.password) {
       return NextResponse.json(
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
     const result = await loginWithEmail({
       email: body.email,
       password: body.password,
-      tenantId,
+      preferredTenantId,
     });
 
     if (!result.ok) {
@@ -42,12 +41,12 @@ export async function POST(request: Request) {
         email: result.user.email,
         displayName: result.user.displayName,
       },
+      activeTenantId: result.activeTenantId,
+      hasSpace: Boolean(result.activeTenantId),
+      isPlatformOperator: hasPlatformOperatorCapability(result.user),
+      platformRoles: result.user.platformRoles ?? [],
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return publicInternalError("identity-login", error);
   }
 }

@@ -13,6 +13,7 @@ export type PermissionModuleId =
   | "identity"
   | "workflow"
   | "events"
+  | "growth"
   | "academic";
 
 export interface PermissionDefinition {
@@ -182,6 +183,40 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       { code: "events.view", label: "Ver eventos", description: "Ver eventos del bus", module: "events", impliesLegacy: ["events.read"] },
       { code: "events.manage", label: "Gestionar eventos", description: "Publicar eventos", module: "events", impliesLegacy: ["events.manage"] },
       { code: "events.replay", label: "Replay", description: "Reprocesar eventos", module: "events", impliesLegacy: ["events.replay"] },
+    ],
+  },
+  {
+    id: "growth",
+    label: "Growth / Ventas",
+    permissions: [
+      {
+        code: "growth.sales.view",
+        label: "Ver Ventas",
+        description: "Ver cola de Oportunidades del Espacio",
+        module: "growth",
+        impliesLegacy: ["growth.sales.read"],
+      },
+      {
+        code: "growth.sales.operate",
+        label: "Operar Ventas",
+        description: "Cambiar estado, registrar seguimiento y próxima acción",
+        module: "growth",
+        impliesLegacy: ["growth.sales.operate"],
+      },
+      {
+        code: "growth.automations.view",
+        label: "Ver Automatizaciones",
+        description: "Ver definiciones de Automatizaciones del Espacio",
+        module: "growth",
+        impliesLegacy: ["growth.automations.view"],
+      },
+      {
+        code: "growth.automations.manage",
+        label: "Gestionar Automatizaciones",
+        description: "Crear, versionar, publicar y activar Automatizaciones",
+        module: "growth",
+        impliesLegacy: ["growth.automations.manage"],
+      },
     ],
   },
   {

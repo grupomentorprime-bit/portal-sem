@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getKeycloakConfig } from "@/core/identity/auth/keycloak";
+import { logServerError } from "@/core/security/redact";
 
 interface KeycloakAdminConfig {
   baseUrl: string;
@@ -81,8 +82,9 @@ async function getAdminToken(config: KeycloakAdminConfig): Promise<string> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`No se pudo autenticar en Keycloak: ${text}`);
+    await res.text();
+    console.error("[keycloak-admin] token failed", res.status);
+    throw new Error("No se pudo autenticar en el servicio de identidad.");
   }
 
   const json = (await res.json()) as { access_token: string };
@@ -113,8 +115,9 @@ async function findKeycloakUserId(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Error buscando usuario en Keycloak: ${text}`);
+    await res.text();
+    console.error("[keycloak-admin] user lookup failed", res.status);
+    throw new Error("No se pudo consultar el usuario institucional.");
   }
 
   const users = (await res.json()) as Array<{ id: string }>;
@@ -153,8 +156,9 @@ async function createKeycloakUserShell(
   }
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`No se pudo crear el usuario en Keycloak: ${text}`);
+    await res.text();
+    console.error("[keycloak-admin] user create failed", res.status);
+    throw new Error("No se pudo crear el usuario institucional.");
   }
 
   const location = res.headers.get("Location");
@@ -194,8 +198,9 @@ async function setKeycloakUserPassword(
   );
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`No se pudo establecer la contraseña: ${text}`);
+    await res.text();
+    console.error("[keycloak-admin] password reset failed", res.status);
+    throw new Error("No se pudo establecer la contraseña institucional.");
   }
 }
 
@@ -229,7 +234,7 @@ export async function provisionKeycloakUserForInvite(
   if (!config) {
     return {
       ok: false,
-      error: "KEYCLOAK_ADMIN y KEYCLOAK_ADMIN_PASSWORD no están configurados.",
+      error: "El aprovisionamiento institucional no está configurado.",
       code: "not_configured",
     };
   }
@@ -246,10 +251,10 @@ export async function provisionKeycloakUserForInvite(
     const userId = await createKeycloakUserShell(config, token, { ...input, email });
     return { ok: true, created: true, userId };
   } catch (error) {
-    console.error("[keycloak-admin] provision failed", error);
+    logServerError("keycloak-admin", error);
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Error desconocido en Keycloak.",
+      error: "No se pudo aprovisionar el usuario institucional.",
       code: "keycloak_error",
     };
   }
@@ -264,7 +269,7 @@ export async function setKeycloakPasswordForInvite(input: {
   if (!config) {
     return {
       ok: false,
-      error: "KEYCLOAK_ADMIN y KEYCLOAK_ADMIN_PASSWORD no están configurados.",
+      error: "El aprovisionamiento institucional no está configurado.",
       code: "not_configured",
     };
   }
@@ -284,10 +289,10 @@ export async function setKeycloakPasswordForInvite(input: {
     await setKeycloakUserPassword(config, token, userId, input.password);
     return { ok: true, userId };
   } catch (error) {
-    console.error("[keycloak-admin] set password failed", error);
+    logServerError("keycloak-admin", error);
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Error desconocido en Keycloak.",
+      error: "No se pudo completar el acceso institucional.",
       code: "keycloak_error",
     };
   }

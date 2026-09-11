@@ -2,7 +2,7 @@ import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
 import type { CmsMediaAsset, MediaUsageRef } from "@/types/media";
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { getSiteConfigForTenant } from "@/lib/cms/config";
 import {
   scanAcademicAgenda,
   scanBranding,
@@ -15,7 +15,7 @@ import {
 } from "./scanners";
 
 async function collectAllRefs(tenant: string): Promise<Map<string, MediaUsageRef[]>> {
-  const config = await getSiteConfigUncached();
+  const config = await getSiteConfigForTenant(tenant);
   const scans = await Promise.all([
     config ? scanBranding(tenant, config) : Promise.resolve([]),
     scanPages(tenant),

@@ -1,5 +1,5 @@
 import { PageEditorClient } from "@/components/page-builder/PageEditorClient";
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getPageByIdUncached } from "@/lib/cms/pages";
 import { getBlockLibraryUncached } from "@/lib/cms/blocks";
 import { getTemplatesUncached } from "@/lib/cms/templates";
@@ -12,14 +12,15 @@ interface PageProps {
 
 export default async function AdminPageEditorPage({ params }: PageProps) {
   const { id } = await params;
-  const [page, config, blockLibrary, templates] = await Promise.all([
-    getPageByIdUncached(id),
-    getSiteConfigUncached(),
+  const config = await getOperationalSiteConfig();
+  const activeTenant = config?.institution.tenant?.trim() ?? "";
+  const [page, blockLibrary, templates] = await Promise.all([
+    activeTenant ? getPageByIdUncached(id, activeTenant) : Promise.resolve(null),
     getBlockLibraryUncached(),
     getTemplatesUncached(),
   ]);
 
-  if (!page || !config) {
+  if (!page || !config || !activeTenant) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">

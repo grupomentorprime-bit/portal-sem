@@ -3,6 +3,10 @@ import { getDatabase } from "@/lib/mongodb";
 import { DEFAULT_BLOCK_DEFINITIONS } from "@/lib/cms/page-defaults";
 import type { BlockDefinition } from "@/types/page";
 
+/**
+ * Catálogo global de plataforma (ADR-008 D5 / SAAS-004).
+ * No se aísla por Espacio — no es dato SEM ni se duplica por cliente.
+ */
 const CMS_BLOCKS_TAG = "cms-blocks";
 
 async function fetchBlocksFromDb(): Promise<BlockDefinition[]> {

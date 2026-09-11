@@ -133,12 +133,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
         if (body.action === "mark-arrived-from-absence") {
           result = await sendParticipantArrivedEmail({
+            tenantId: ctx.tenantId,
             to: participantEmail,
             participantName,
             convocatoria,
           });
         } else if (body.action === "check-in" && !existing.dayCheckIn?.checkedInAt) {
           result = await sendParticipantCheckInEmail({
+            tenantId: ctx.tenantId,
             to: participantEmail,
             participantName,
             convocatoria,

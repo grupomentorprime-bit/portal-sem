@@ -6,35 +6,20 @@ import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
 import Link from "next/link";
+import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
 
 const OAUTH_ERRORS: Record<string, string> = {
   keycloak: "No se pudo completar el inicio de sesión.",
   oauth_state: "La sesión de autenticación expiró. Intenta de nuevo.",
-  email: "No se pudo validar el correo de tu cuenta institucional.",
-  no_access: "Tu cuenta no tiene acceso al CMS. Solicita una invitación al administrador.",
-  tenant: "El tenant institucional no está configurado.",
+  email: "No se pudo validar el correo de tu Cuenta.",
+  no_access:
+    "Tu Cuenta no tiene acceso a un Espacio. Solicita una invitación al administrador.",
+  tenant: "El Espacio no está configurado.",
 };
-
-const DASHBOARD_PATH = "/admin";
-
-/**
- * Tras autenticarse siempre se aterriza en el Dashboard, salvo que el destino
- * pendiente sea una página concreta distinta al home o a Configuración general.
- */
-function resolvePostLoginDestination(next: string | null): string {
-  if (!next) return DASHBOARD_PATH;
-  const trimmed = next.trim();
-  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return DASHBOARD_PATH;
-  const pathOnly = trimmed.split("?")[0];
-  if (pathOnly === DASHBOARD_PATH || pathOnly === "/admin/config") {
-    return DASHBOARD_PATH;
-  }
-  return trimmed;
-}
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const nextPath = resolvePostLoginDestination(searchParams.get("next"));
+  const nextParam = searchParams.get("next");
   const oauthError = searchParams.get("error");
   const emailFromQuery = searchParams.get("email")?.trim() ?? "";
 
@@ -87,7 +72,11 @@ export function LoginForm() {
         return;
       }
 
-      const destination = nextPath.startsWith("/") ? nextPath : "/admin";
+      const destination = resolvePostAuthDestination({
+        hasSpace: data.hasSpace === true,
+        isPlatformOperator: data.isPlatformOperator === true,
+        next: nextParam,
+      });
       // Navegación completa para que el navegador aplique la cookie de sesión recién emitida.
       window.location.assign(destination);
     } catch {
@@ -102,12 +91,12 @@ export function LoginForm() {
       <div className="space-y-4 text-center">
         <p className="text-sm text-muted">
           {institutionalOnly
-            ? "El servicio de autenticación no está disponible. Contacta al administrador del sistema."
+            ? "El servicio de autenticación no está disponible. Contacta al administrador del Espacio."
             : "Cargando opciones de acceso…"}
         </p>
         <p className="text-center text-xs text-muted">
           <Link href="/" className="underline">
-            Volver al portal
+            Volver al Sitio público
           </Link>
         </p>
       </div>
@@ -117,7 +106,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="email">Correo institucional</Label>
+        <Label htmlFor="email">Correo de Cuenta</Label>
         <Input
           id="email"
           type="email"
@@ -163,7 +152,7 @@ export function LoginForm() {
 
       <p className="text-center text-xs text-muted">
         <Link href="/" className="underline">
-          Volver al portal
+          Volver al Sitio público
         </Link>
       </p>
     </form>

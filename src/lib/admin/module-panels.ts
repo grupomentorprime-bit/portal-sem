@@ -7,9 +7,9 @@ export interface AdminPanelMeta {
 export const ADMIN_PANEL_META = {
   dashboard: {
     eyebrow: "Centro de administración",
-    heroTitle: "Panel institucional del SEM",
+    heroTitle: "Panel de tu Espacio",
     heroDescription:
-      "Resumen operativo del portal, comunicaciones, admisiones y accesos del equipo CMS.",
+      "Resumen operativo del portal, comunicaciones, admisiones y accesos del equipo.",
   },
   forms: {
     eyebrow: "Portal · Experiencia de formularios",
@@ -33,7 +33,7 @@ export const ADMIN_PANEL_META = {
     eyebrow: "Comunicaciones · Centro editorial",
     heroTitle: "Programas, noticias y recursos del portal",
     heroDescription:
-      "Gestiona la oferta académica, comunicados institucionales y piezas editoriales del seminario.",
+      "Gestiona la oferta académica, comunicados institucionales y piezas editoriales del Espacio.",
   },
   media: {
     eyebrow: "Medios · Biblioteca visual",
@@ -49,7 +49,7 @@ export const ADMIN_PANEL_META = {
   },
   users: {
     eyebrow: "Administración · Accesos",
-    heroTitle: "Usuarios, roles e invitaciones al CMS",
+    heroTitle: "Usuarios, roles e invitaciones",
     heroDescription:
       "Invita colaboradores, asigna roles institucionales y revisa el historial de actividad.",
   },
@@ -79,13 +79,13 @@ export const ADMIN_PANEL_META = {
   },
   profile: {
     eyebrow: "Cuenta · Perfil profesional",
-    heroTitle: "Tu ficha en el equipo del SEM",
+    heroTitle: "Tu ficha en el equipo",
     heroDescription:
       "Nombre, cargo, preferencias regionales y permisos asignados según tu rol institucional.",
   },
   security: {
     eyebrow: "Cuenta · Seguridad",
-    heroTitle: "Protección de tu acceso al CMS",
+    heroTitle: "Protección de tu acceso",
     heroDescription:
       "Contraseña, autenticación institucional y controles de sesión de tu cuenta.",
   },
@@ -101,6 +101,12 @@ export const ADMIN_PANEL_META = {
     heroDescription:
       "Configura Backblaze B2 u otro proveedor S3 para medios y archivos del portal.",
   },
+  channels: {
+    eyebrow: "Ajustes · Canales",
+    heroTitle: "Canales de mensajería",
+    heroDescription:
+      "Administrá WhatsApp y revisá qué canales estarán disponibles más adelante.",
+  },
   notifications: {
     eyebrow: "Cuenta · Notificaciones",
     heroTitle: "Alertas del CMS y avisos institucionales",
@@ -111,7 +117,7 @@ export const ADMIN_PANEL_META = {
     eyebrow: "Cuenta · Ayuda",
     heroTitle: "Guías para administrar el portal",
     heroDescription:
-      "Enlaces rápidos a usuarios, configuración institucional y comunicaciones del seminario.",
+      "Enlaces rápidos a usuarios, configuración institucional y comunicaciones del Espacio.",
   },
 } as const satisfies Record<string, AdminPanelMeta>;
 
@@ -119,12 +125,12 @@ export const CONTENT_SECTION_PANELS: Record<string, AdminPanelMeta> = {
   programs: {
     eyebrow: "Comunicaciones · Programas",
     heroTitle: "Oferta académica y cursos",
-    heroDescription: "Gestiona programas formativos, modalidades y fichas públicas del seminario.",
+    heroDescription: "Gestiona programas formativos, modalidades y fichas públicas del Espacio.",
   },
   news: {
     eyebrow: "Comunicaciones · Noticias",
     heroTitle: "Comunicados y novedades institucionales",
-    heroDescription: "Publica noticias, convocatorias y avisos para la comunidad SEM.",
+    heroDescription: "Publica noticias, convocatorias y avisos para la comunidad.",
   },
   people: {
     eyebrow: "Comunicaciones · Personas",
@@ -159,7 +165,7 @@ export const CONTENT_SECTION_PANELS: Record<string, AdminPanelMeta> = {
   gallery: {
     eyebrow: "Comunicaciones · Galería",
     heroTitle: "Galería visual",
-    heroDescription: "Imágenes destacadas de la vida institucional del seminario.",
+    heroDescription: "Imágenes destacadas de la vida institucional.",
   },
   categories: {
     eyebrow: "Comunicaciones · Categorías",
@@ -178,7 +184,7 @@ export function getContentSectionPanel(sectionSlug: string): AdminPanelMeta {
     CONTENT_SECTION_PANELS[sectionSlug] ?? {
       eyebrow: "Comunicaciones",
       heroTitle: "Contenido editorial",
-      heroDescription: "Gestiona elementos de esta colección del portal SEM.",
+      heroDescription: "Gestiona elementos de esta colección del Espacio.",
     }
   );
 }

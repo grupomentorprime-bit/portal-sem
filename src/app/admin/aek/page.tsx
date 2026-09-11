@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Experience Kit — Catálogo AEK",
-  description: "Catálogo visual del Experience Kit Administrativo AprendeHoy v1",
+  description: "Catálogo visual del Experience Kit Administrativo de Growth OS v1",
   robots: { index: false, follow: false },
 };
 

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/core/identity";
+import { requireAuth, requirePermission, isAuthContext } from "@/core/identity";
 import { authorize } from "@/core/identity/policies/engine";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { writeAudit } from "@/lib/identity/audit";
 import { resolvePermissionsForRoles } from "@/lib/identity/roles";
 import {
   getStorageIntegrationPublic,
   updateStorageIntegration,
 } from "@/lib/cms/storage-config";
-import { ensureTenantRoles } from "@/lib/identity/roles";
 import type { StorageIntegrationUpdate } from "@/types/integrations";
 
 export async function GET() {
@@ -15,8 +14,7 @@ export async function GET() {
     const auth = await requireAuth();
     if (auth instanceof NextResponse) return auth;
 
-    await ensureTenantRoles(auth.tenantId);
-
+    // Lectura pura — sync de roles solo en login/bootstrap/migración (SAAS-004).
     const permissions = auth.membership
       ? await resolvePermissionsForRoles(auth.tenantId, auth.membership.roleIds)
       : [];
@@ -25,7 +23,7 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
     }
 
-    const config = await getStorageIntegrationPublic();
+    const config = await getStorageIntegrationPublic(auth.tenantId);
     return NextResponse.json({ ok: true, config });
   } catch (error) {
     console.error(error);
@@ -38,12 +36,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const denied = await authorizeApiWrite("settings.integrations", {
-      action: "settings.integrations.update",
-      entity: "platform_integrations",
-      entityId: "storage",
-    });
-    if (denied) return denied;
+    const auth = await requirePermission("settings.integrations");
+    if (!isAuthContext(auth)) return auth;
 
     const body = (await request.json()) as StorageIntegrationUpdate;
 
@@ -61,7 +55,18 @@ export async function PUT(request: Request) {
       );
     }
 
-    const config = await updateStorageIntegration(body);
+    const config = await updateStorageIntegration(auth.tenantId, body);
+
+    if (!auth.compatMode) {
+      await writeAudit({
+        tenantId: auth.tenantId,
+        userId: auth.user._id,
+        action: "settings.integrations.update",
+        entity: "platform_integrations",
+        entityId: `storage:${auth.tenantId}`,
+      });
+    }
+
     return NextResponse.json({ ok: true, config });
   } catch (error) {
     console.error(error);

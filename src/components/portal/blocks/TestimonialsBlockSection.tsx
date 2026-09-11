@@ -37,15 +37,16 @@ export async function TestimonialsBlockSection({
     const resolved = await resolveBlockContent(block, tenant);
     items = withHomeDemoTestimonials(
       (resolved as TestimonialItem[]).slice(0, getQueryLimit(block.settings, 4)),
-      pageSlug
+      pageSlug,
+      tenant
     );
   } catch {
     error = true;
-    items = withHomeDemoTestimonials([], pageSlug);
+    items = withHomeDemoTestimonials([], pageSlug, tenant);
   }
 
   if (!error && items.length === 0) {
-    items = withHomeDemoTestimonials([], pageSlug);
+    items = withHomeDemoTestimonials([], pageSlug, tenant);
   }
 
   return (

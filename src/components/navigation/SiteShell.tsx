@@ -12,7 +12,7 @@
 
 import { NavbarPremium, InstitutionalFooter } from "@/components/institutional";
 import { getActiveMenuById } from "@/lib/cms/menus";
-import { getSiteConfig } from "@/lib/cms/config";
+import { getTenantContext } from "@/core/tenant";
 import type { NavLinkItem } from "@/components/institutional";
 import { DEFAULT_NAV_LINKS } from "@/lib/cms/page-defaults";
 import { resolveMenuItemHref } from "@/lib/cms/menu-utils";
@@ -40,10 +40,10 @@ function mapMenuToLinks(items: MenuItem[]): NavLinkItem[] {
 }
 
 export async function SiteShell({ children }: SiteShellProps) {
-  const [config, mainMenu] = await Promise.all([
-    getSiteConfig(),
-    getActiveMenuById("main"),
-  ]);
+  const ctx = await getTenantContext();
+  const config = ctx?.config ?? null;
+  const tenant = config?.institution.tenant?.trim() ?? "";
+  const mainMenu = tenant ? await getActiveMenuById("main", tenant) : null;
 
   const navLinks = mainMenu?.items?.length
     ? mapMenuToLinks(mainMenu.items)

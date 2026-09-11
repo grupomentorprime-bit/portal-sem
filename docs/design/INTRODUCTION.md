@@ -8,11 +8,13 @@
 
 ## Qué es el Experience Kit
 
-El **Experience Kit** es el conjunto oficial de tokens, patrones y componentes visuales de AprendeHoy. Garantiza que el portal público, el CMS y futuros tenants compartan la misma gramática visual sin duplicar implementaciones.
+El **Experience Kit** es el conjunto oficial de tokens, patrones y componentes visuales de **Growth OS**. Garantiza que la plataforma y los Espacios compartan la misma gramática de UI sin duplicar implementaciones ni mezclar marcas.
 
 No es solo una biblioteca de UI: es la **política obligatoria** de cómo se construye cualquier interfaz en el proyecto.
 
-La **identidad editorial del SEM** — cómo debe *sentirse* y *comunicarse* el portal — está definida en [EDITORIAL-ART-DIRECTION.md](./EDITORIAL-ART-DIRECTION.md). Consultar ambos documentos antes de diseñar o implementar pantallas públicas.
+**Identidad:** Growth OS tiene paleta Master (`--growth-os-*` / `/platform`). Cada Espacio (SEM, ADL, futuros) tiene la suya en `site_config`. Ver [BRANDING-SYSTEM.md](./BRANDING-SYSTEM.md).
+
+La **identidad editorial del SEM** como cliente — cómo debe *sentirse* su portal público — está en [EDITORIAL-ART-DIRECTION.md](./EDITORIAL-ART-DIRECTION.md). No es la marca de Growth OS.
 
 ---
 
@@ -30,29 +32,28 @@ La **identidad editorial del SEM** — cómo debe *sentirse* y *comunicarse* el 
 
 ## Arquitectura multi-tenant
 
-Un nuevo tenant **nunca modifica componentes**. Solo define su identidad mediante tokens:
+Un nuevo Espacio **nunca modifica componentes** ni la paleta Master. Solo define identidad en `site_config` (edición: `/admin/config?section=branding`).
 
 ```
-Brand Tokens (brand.css — --sem-*)
-        ↓
-Semantic Tokens (colors.css — --color-*, --gray-*, --state-*)
-        ↓
-Experience Kit (design-tokens.css, patrones CSS)
-        ↓
-UI Components (@/components/ui)
-        ↓
-Portal público + CMS
+Growth OS Master (--growth-os-*)     Espacio (site_config → --brand-*)
+        │                                      │
+        └──────────┬───────────────────────────┘
+                   ↓
+        Semantic Tokens (--color-*, --gray-*, --state-*)
+                   ↓
+        Experience Kit + UI (@/components/ui)
+                   ↓
+        /platform (Master)  |  /admin + portal (Espacio)
 ```
 
-| Capa | Responsabilidad | Modificable por tenant |
+| Capa | Responsabilidad | Quién cambia |
 | --- | --- | --- |
-| Brand Tokens | 5 colores institucionales | ✅ Solo aquí |
-| Semantic Tokens | Alias y estados UI | ⚠️ Con aprobación |
-| Experience Kit | Tipografía, motion, sombras | ❌ |
-| UI Components | Variantes, accesibilidad | ❌ |
-| Portal / CMS | Composición y contenido | ✅ Contenido, no estilos |
+| Master `--growth-os-*` | Identidad de producto | Solo plataforma |
+| `site_config.branding` | Logo/colores del Espacio | Admin del Espacio |
+| Semantic Tokens | Alias y estados UI | Arquitectura |
+| Experience Kit / UI | Tipografía, motion, componentes | Producto (compartido) |
 
-Ver detalle en [BRANDING-SYSTEM.md](./BRANDING-SYSTEM.md) y [COLORS.md](./COLORS.md).
+Ver [BRANDING-SYSTEM.md](./BRANDING-SYSTEM.md) y [COLORS.md](./COLORS.md).
 
 ---
 

@@ -9,9 +9,9 @@ export function AdminStatusBadges({ compatMode }: AdminStatusBadgesProps) {
     <div className="admin-status-badges hidden items-center gap-1.5 xl:flex" aria-label="Estado del sistema">
       <StatusPill label="Portal" tone="success" detail="Activo" />
       <StatusPill
-        label="CMS"
+        label="Panel"
         tone={compatMode ? "warning" : "info"}
-        detail={compatMode ? "Abierto" : "Seguro"}
+        detail={compatMode ? "Abierto" : "Protegido"}
       />
       <StatusPill label="Accesos" tone="success" detail="Activo" />
     </div>

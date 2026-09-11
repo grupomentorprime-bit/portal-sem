@@ -9,6 +9,12 @@ import {
   type FormSubmissionAttachment,
 } from "@/lib/experience/forms/attachments";
 import { getDirectAccessibleExperienceForm } from "@/lib/experience/forms/repository";
+import { logServerError } from "@/core/security/redact";
+import {
+  STORAGE_INTEGRATION_DECRYPT_MESSAGE,
+  STORAGE_INTEGRATION_INCOMPLETE_MESSAGE,
+  STORAGE_NOT_CONFIGURED_MESSAGE,
+} from "@/lib/cms/storage-config";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -27,7 +33,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Formulario no disponible." }, { status: 404 });
     }
 
-    await assertS3StorageForUpload();
+    await assertS3StorageForUpload(tenant);
 
     const formData = await request.formData();
     const file = formData.get("file");
@@ -75,10 +81,15 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ ok: true, attachment });
   } catch (error) {
-    console.error(error);
-    const message = error instanceof Error ? error.message : "Error al subir el archivo.";
+    logServerError("form-attachments", error);
+    const message = error instanceof Error ? error.message : "";
     const isConfigError =
-      message.includes("Integraciones") || message.includes("almacenamiento");
-    return NextResponse.json({ ok: false, error: message }, { status: isConfigError ? 503 : 500 });
+      message === STORAGE_NOT_CONFIGURED_MESSAGE ||
+      message === STORAGE_INTEGRATION_INCOMPLETE_MESSAGE ||
+      message === STORAGE_INTEGRATION_DECRYPT_MESSAGE;
+    return NextResponse.json(
+      { ok: false, error: isConfigError ? message : "No se pudo subir el archivo." },
+      { status: isConfigError ? 503 : 500 }
+    );
   }
 }

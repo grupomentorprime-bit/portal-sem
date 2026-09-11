@@ -3,6 +3,7 @@ import { getActiveTenantId } from "@/core/identity";
 import { getConvocatoriaBySlug } from "@/lib/admin/forms-center";
 import { searchConvocatoriaRoster } from "@/lib/experience/forms/roster";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
+import { publicInternalError } from "@/core/security/public-error";
 
 function toPublicRosterSearchResult(
   student: ConvocatoriaRosterStudent
@@ -44,10 +45,6 @@ export async function GET(request: Request, { params }: RouteParams) {
       students: students.map(toPublicRosterSearchResult),
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return publicInternalError("roster-search", error);
   }
 }

@@ -1,5 +1,5 @@
+import { PLATFORM_CREDITS } from "@/core/branding/display";
 import { createDefaultHeroPortal } from "@/lib/cms/hero-portal-defaults";
-import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
 import { colorDefaults } from "@/design/tokens/colors";
 import {
   createDefaultSiteConfigModules,
@@ -9,6 +9,10 @@ import { DEFAULT_PORTAL_CURSOR } from "@/lib/portal/cursor-defaults";
 import type { SiteConfig } from "@/types/cms";
 import { SITE_CONFIG_ID } from "@/types/cms";
 
+/**
+ * Plantilla vacía de Site — paleta de plataforma, sin identidad SEM.
+ * SEM se materializa en T001/S001 (OT-GROWTH-SAAS-006).
+ */
 export function createDefaultSiteConfig(): SiteConfig {
   const now = new Date().toISOString();
 
@@ -30,13 +34,13 @@ export function createDefaultSiteConfig(): SiteConfig {
       logoMediaId: "",
       secondaryLogo: "",
       secondaryLogoMediaId: "",
-      favicon: PLATFORM_ASSET_FALLBACKS.favicon,
+      favicon: "",
       faviconMediaId: "",
       heroImage: "",
       heroMediaId: "",
       primaryColor: colorDefaults.primary,
       secondaryColor: colorDefaults.secondary,
-      backgroundColor: colorDefaults.surface,
+      backgroundColor: colorDefaults.background,
       textColor: colorDefaults.foreground,
     },
     heroPortal: createDefaultHeroPortal(),
@@ -46,18 +50,18 @@ export function createDefaultSiteConfig(): SiteConfig {
       keywords: [],
     },
     contact: {
-      email: "contacto@seminarioipn.cl",
-      phone: "+56 2 2345 6789",
-      whatsapp: "+56912345678",
-      address: "Av. Seminario 1234, Providencia",
-      city: "Santiago",
-      country: "Chile",
+      email: "",
+      phone: "",
+      whatsapp: "",
+      address: "",
+      city: "",
+      country: "",
       hours: "",
     },
     social: {
-      facebook: "https://facebook.com/seminarioipn",
-      instagram: "https://instagram.com/seminarioipn",
-      youtube: "https://youtube.com/@seminarioipn",
+      facebook: "",
+      instagram: "",
+      youtube: "",
       linkedin: "",
       tiktok: "",
       spotify: "",
@@ -81,16 +85,16 @@ export function createDefaultSiteConfig(): SiteConfig {
       footerContactTitle: "Contacto",
       footerAdminLabel: "Administración",
       footerCopyrightSuffix: "Todos los derechos reservados.",
-      footerCredits: "Desarrollado por Grupo Mentor Prime · Learning OS",
+      footerCredits: PLATFORM_CREDITS,
       footerBackToTopLabel: "Volver arriba",
     },
     topBar: {
       enabled: false,
-      tagline: "100% Online",
-      email: "contacto@seminarioipn.cl",
-      phone: "+56 9 1234 5678",
+      tagline: "",
+      email: "",
+      phone: "",
       virtualCampusLabel: "Aula Virtual",
-      virtualCampusHref: "https://campus.aprendehoy.cl",
+      virtualCampusHref: "",
     },
     portalExperience: {
       cursor: { ...DEFAULT_PORTAL_CURSOR },

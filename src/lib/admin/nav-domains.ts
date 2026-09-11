@@ -1,12 +1,12 @@
 /**
- * Sidebar V2 — navegación por dominios institucionales (OT-SEM-NAV-001).
- * Mismas rutas y permisos IAM; solo reorganización visual.
+ * Sidebar V2 — navegación Growth OS (OT-GROWTH-UX-ADMIN-SHELL-002).
+ * Misma IAM y rutas; reorganización al patrón maestro aprobado.
+ * Módulos futuros: representación visual sin páginas vacías.
  */
 
 import type { AdminNavItem } from "@/lib/admin/institutional";
 import { isNavActive } from "@/lib/admin/institutional";
 import {
-  buildInstitutionConfigNavItems,
   getNavItemConfigSection,
   isConfigNavPath,
   parseConfigSection,
@@ -14,6 +14,17 @@ import {
 
 export type NavGroupId =
   | "dashboard"
+  | "personas"
+  | "ventas"
+  | "mensajes"
+  | "actividad"
+  | "campanas"
+  | "automatizaciones"
+  | "analitica"
+  | "sitio-web"
+  | "equipo"
+  | "ajustes"
+  /** @deprecated Conservados para imports / tipos legacy */
   | "institution"
   | "academic"
   | "formularios"
@@ -36,6 +47,11 @@ interface AdminNavGroupDef {
   label: string;
   icon: string;
   items: AdminNavItem[];
+}
+
+/** Ítem de navegación sin destino — dirección visual (sin página vacía). */
+export function isNavPlaceholder(item: AdminNavItem): boolean {
+  return item.href == null;
 }
 
 /** Enlaces complementarios — breadcrumbs y rutas auxiliares (sin cambios IAM). */
@@ -76,6 +92,13 @@ export const ADMIN_SIDEBAR_SUPPLEMENTAL: AdminNavItem[] = [
     requiredAnyPermission: ["settings.team", "cms.pages.read", "student-affairs.read"],
   },
   {
+    href: "/admin/settings/channels",
+    label: "Canales",
+    icon: "messages",
+    matchPrefixes: ["/admin/settings/channels"],
+    requiredAnyPermission: ["settings.integrations"],
+  },
+  {
     href: "/admin/settings/integrations",
     label: "Integraciones",
     icon: "admin",
@@ -94,7 +117,7 @@ export const ADMIN_SIDEBAR_SUPPLEMENTAL: AdminNavItem[] = [
 const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
   {
     id: "dashboard",
-    label: "Dashboard",
+    label: "Inicio",
     icon: "home",
     items: [
       {
@@ -108,89 +131,118 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     ],
   },
   {
-    id: "institution",
-    label: "Institución",
-    icon: "institution",
-    items: (() => {
-      const configItems = buildInstitutionConfigNavItems(["settings.update"]);
-      const [info, ...restConfig] = configItems;
-      return [
-        info,
-        {
-          id: "institution-authorities",
-          href: "/admin/content/people",
-          label: "Autoridades",
-          icon: "people",
-          matchPrefixes: ["/admin/content/people", "/admin/content/team"],
-          requiredAnyPermission: ["cms.pages.read", "cms.pages.update", "programs.manage"],
-        },
-        ...restConfig,
-      ];
-    })(),
-  },
-  {
-    id: "academic",
-    label: "Oferta académica",
-    icon: "programs",
+    id: "personas",
+    label: "Personas",
+    icon: "people",
     items: [
       {
-        id: "academic-programs",
-        href: "/admin/content/programs",
-        label: "Programas",
-        icon: "programs",
-        matchPrefixes: ["/admin/content/programs"],
-        requiredAnyPermission: ["programs.manage", "cms.pages.read"],
-      },
-      {
-        id: "academic-courses",
-        href: "/admin/content/courses",
-        label: "Cursos",
-        icon: "programs",
-        matchPrefixes: ["/admin/content/courses"],
-        requiredAnyPermission: ["programs.manage", "cms.pages.read"],
-      },
-    ],
-  },
-  {
-    id: "formularios",
-    label: "Formularios",
-    icon: "admission",
-    items: [
-      {
-        id: "convocatorias-config",
-        href: "/admin/portal/forms",
-        label: "Gestión",
-        icon: "admission",
-        matchPrefixes: [
-          "/admin/portal/forms",
-          "/admin/portal/convocatorias/configuracion",
-        ],
+        id: "growth-personas",
+        href: "/admin/personas",
+        label: "Personas",
+        icon: "people",
+        matchPrefixes: ["/admin/personas"],
         requiredAnyPermission: [
           "cms.pages.read",
           "experience.forms.read",
           "experience.forms.manage",
-        ],
-      },
-      {
-        id: "convocatorias-resultados",
-        href: "/admin/portal/asuntos-estudiantiles",
-        label: "Operación",
-        icon: "students",
-        matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
-        requiredAnyPermission: [
-          "student-affairs.read",
-          "student-affairs.checkin",
-          "student-affairs.manage",
-          "experience.forms.read",
-          "experience.forms.manage",
+          "settings.team",
         ],
       },
     ],
   },
   {
-    id: "portal-web",
-    label: "Portal web",
-    icon: "portal",
+    id: "ventas",
+    label: "Ventas",
+    icon: "sales",
+    items: [
+      {
+        id: "nav-ventas",
+        href: "/admin/ventas",
+        label: "Ventas",
+        icon: "sales",
+        matchPrefixes: ["/admin/ventas"],
+        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
+      },
+    ],
+  },
+  {
+    id: "mensajes",
+    label: "Mensajes",
+    icon: "messages",
+    items: [
+      {
+        id: "nav-mensajes",
+        href: "/admin/mensajes",
+        label: "Mensajes",
+        icon: "messages",
+        matchPrefixes: ["/admin/mensajes"],
+        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
+      },
+    ],
+  },
+  {
+    id: "actividad",
+    label: "Actividad",
+    icon: "activity",
+    items: [
+      {
+        id: "nav-actividad",
+        href: "/admin/settings/activity",
+        label: "Actividad",
+        icon: "activity",
+        matchPrefixes: ["/admin/settings/activity"],
+        requiredAnyPermission: ["identity.audit.read", "settings.team"],
+      },
+    ],
+  },
+  {
+    id: "campanas",
+    label: "Campañas",
+    icon: "campaigns",
+    items: [
+      {
+        id: "nav-campanas",
+        href: null,
+        label: "Campañas",
+        icon: "campaigns",
+      },
+    ],
+  },
+  {
+    id: "automatizaciones",
+    label: "Automatizaciones",
+    icon: "automations",
+    items: [
+      {
+        id: "nav-automatizaciones",
+        href: "/admin/automatizaciones",
+        label: "Automatizaciones",
+        icon: "automations",
+        matchPrefixes: ["/admin/automatizaciones"],
+        requiredAnyPermission: [
+          "growth.automations.view",
+          "growth.automations.manage",
+        ],
+      },
+    ],
+  },
+  {
+    id: "analitica",
+    label: "Analítica",
+    icon: "analytics",
+    items: [
+      {
+        id: "nav-analitica",
+        href: null,
+        label: "Analítica",
+        icon: "analytics",
+      },
+    ],
+  },
+  {
+    id: "sitio-web",
+    label: "Sitio web",
+    icon: "site",
     items: [
       {
         id: "portal-pages",
@@ -216,13 +268,80 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/experience-studio"],
         requiredAnyPermission: ["cms.pages.update", "experience.forms.manage"],
       },
-    ],
-  },
-  {
-    id: "communications",
-    label: "Comunicaciones",
-    icon: "communications",
-    items: [
+      {
+        id: "institution-info",
+        href: "/admin/config",
+        label: "Institución",
+        icon: "institution",
+        matchPrefixes: ["/admin/config"],
+        requiredAnyPermission: ["settings.update"],
+      },
+      {
+        id: "institution-authorities",
+        href: "/admin/content/people",
+        label: "Autoridades",
+        icon: "people",
+        matchPrefixes: ["/admin/content/people", "/admin/content/team"],
+        requiredAnyPermission: ["cms.pages.read", "cms.pages.update", "programs.manage"],
+      },
+      {
+        id: "academic-programs",
+        href: "/admin/content/programs",
+        label: "Programas",
+        icon: "programs",
+        matchPrefixes: ["/admin/content/programs"],
+        requiredAnyPermission: ["programs.manage", "cms.pages.read"],
+      },
+      {
+        id: "academic-courses",
+        href: "/admin/content/courses",
+        label: "Cursos",
+        icon: "programs",
+        matchPrefixes: ["/admin/content/courses"],
+        requiredAnyPermission: ["programs.manage", "cms.pages.read"],
+      },
+      {
+        id: "convocatorias-config",
+        href: "/admin/portal/forms",
+        label: "Formularios",
+        icon: "admission",
+        matchPrefixes: [
+          "/admin/portal/forms",
+          "/admin/portal/convocatorias/configuracion",
+        ],
+        requiredAnyPermission: [
+          "cms.pages.read",
+          "experience.forms.read",
+          "experience.forms.manage",
+        ],
+      },
+      {
+        id: "convocatorias-resultados",
+        href: "/admin/portal/asuntos-estudiantiles",
+        label: "Operación de formularios",
+        icon: "students",
+        matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
+        requiredAnyPermission: [
+          "student-affairs.read",
+          "student-affairs.checkin",
+          "student-affairs.manage",
+          "experience.forms.read",
+          "experience.forms.manage",
+        ],
+      },
+      {
+        id: "portal-admission",
+        href: "/admin/portal/admission",
+        label: "Centro de admisión",
+        icon: "admission",
+        matchPrefixes: ["/admin/portal/admission"],
+        requiredAnyPermission: [
+          "cms.pages.read",
+          "experience.forms.read",
+          "experience.forms.manage",
+          "students.read",
+        ],
+      },
       {
         id: "communications-hub",
         href: "/admin/content",
@@ -255,18 +374,32 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     ],
   },
   {
-    id: "configuration",
-    label: "Configuración",
-    icon: "admin",
+    id: "equipo",
+    label: "Equipo",
+    icon: "team",
+    items: [
+      {
+        id: "nav-equipo",
+        href: "/admin/settings/team",
+        label: "Equipo",
+        icon: "team",
+        matchPrefixes: ["/admin/settings/team"],
+        requiredAnyPermission: ["settings.team"],
+      },
+    ],
+  },
+  {
+    id: "ajustes",
+    label: "Ajustes",
+    icon: "settings",
     items: [
       {
         id: "config-administration",
         href: "/admin/settings/users",
-        label: "Administración",
+        label: "Usuarios",
         icon: "admin",
         matchPrefixes: [
           "/admin/settings/users",
-          "/admin/settings/team",
           "/admin/workflows",
           "/admin/events",
           "/admin/experience",
@@ -277,14 +410,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "workflow.read",
           "identity.roles.manage",
         ],
-      },
-      {
-        id: "config-people",
-        href: "/admin/content/people",
-        label: "Personas",
-        icon: "people",
-        matchPrefixes: ["/admin/content/people", "/admin/content/team"],
-        requiredAnyPermission: ["cms.pages.read", "cms.pages.update", "programs.manage"],
       },
       {
         id: "config-roles",
@@ -303,20 +428,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         requiredAnyPermission: ["settings.team", "identity.roles.manage"],
       },
       {
-        id: "config-audit",
-        href: "/admin/settings/users",
-        label: "Auditoría",
-        icon: "admin",
-        matchPrefixes: ["/admin/settings/users"],
-        requiredAnyPermission: ["identity.audit.read", "settings.team"],
-      },
-      {
-        id: "config-parameters",
-        href: "/admin/config",
-        label: "Parámetros",
-        icon: "admin",
-        matchPrefixes: ["/admin/config"],
-        requiredAnyPermission: ["settings.update", "settings.team"],
+        id: "config-channels",
+        href: "/admin/settings/channels",
+        label: "Canales",
+        icon: "messages",
+        matchPrefixes: ["/admin/settings/channels"],
+        requiredAnyPermission: ["settings.integrations"],
       },
       {
         id: "config-integrations",
@@ -326,13 +443,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/settings/integrations"],
         requiredAnyPermission: ["settings.team"],
       },
-    ],
-  },
-  {
-    id: "development",
-    label: "Desarrollo",
-    icon: "development",
-    items: [
       {
         id: "development-aek",
         href: "/admin/aek",
@@ -341,13 +451,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/aek"],
         requiredAnyPermission: ["settings.team"],
       },
-    ],
-  },
-  {
-    id: "support",
-    label: "Soporte",
-    icon: "help",
-    items: [
       {
         id: "support-help",
         href: "/admin/settings/help",
@@ -368,18 +471,16 @@ export function buildAdminNavGroups(
   visibleItems: AdminNavItem[],
   navBadges?: Record<string, number>
 ): AdminNavGroup[] {
-  const visibleKeys = new Set(
-    visibleItems.map((item) => item.id ?? item.href)
-  );
+  const visibleKeys = new Set(visibleItems.map((item) => item.id ?? item.href ?? item.label));
 
   function itemVisible(item: AdminNavItem): boolean {
-    return visibleKeys.has(item.id ?? item.href);
+    return visibleKeys.has(item.id ?? item.href ?? item.label);
   }
 
   return ADMIN_NAV_GROUPS.map((group) => {
     const items = group.items.filter(itemVisible).map((item) => ({
       ...item,
-      badge: navBadges?.[item.id ?? item.href] ?? item.badge,
+      badge: navBadges?.[item.id ?? item.href ?? item.label] ?? item.badge,
     }));
 
     const groupBadge = items.reduce((sum, item) => sum + (item.badge ?? 0), 0);
@@ -416,6 +517,12 @@ export function isSidebarItemActive(
   item: AdminNavItem,
   searchParams?: Pick<URLSearchParams, "get"> | null
 ): boolean {
+  if (isNavPlaceholder(item)) return false;
+
+  if (item.id === "institution-info") {
+    return isConfigNavPath(pathname);
+  }
+
   const configSection = getNavItemConfigSection(item);
   if (configSection !== null) {
     if (!isConfigNavPath(pathname)) return false;
@@ -433,10 +540,6 @@ export function isSidebarItemActive(
     if (pathname.startsWith("/admin/portal/convocatorias/configuracion")) return true;
     if (pathname === "/admin/portal/forms") return true;
     return pathname.startsWith("/admin/portal/forms/");
-  }
-
-  if (item.id === "config-audit") {
-    return false;
   }
 
   if (item.id === "config-administration") {
@@ -468,24 +571,23 @@ export interface NavSidebarZone {
   groupIds: NavGroupId[];
 }
 
-/** Agrupación visual del sidebar — OT-SEM-NAV-001 / jerarquía OT-SEM-DASHBOARD-002 */
+/**
+ * Agrupación visual del sidebar — patrón maestro Growth OS.
+ * Core · Crecer · herramientas secundarias.
+ */
 export const NAV_SIDEBAR_ZONES: NavSidebarZone[] = [
-  { id: "home", groupIds: ["dashboard"] },
   {
-    id: "operations",
-    label: "Operación",
-    groupIds: [
-      "institution",
-      "portal-web",
-      "academic",
-      "formularios",
-      "communications",
-    ],
+    id: "core",
+    groupIds: ["dashboard", "personas", "ventas", "mensajes", "actividad"],
   },
   {
-    id: "platform",
-    label: "Plataforma",
-    groupIds: ["configuration", "development"],
+    id: "grow",
+    label: "Crecer",
+    groupIds: ["campanas", "automatizaciones", "analitica"],
+  },
+  {
+    id: "tools",
+    groupIds: ["sitio-web", "equipo", "ajustes"],
   },
 ];
 

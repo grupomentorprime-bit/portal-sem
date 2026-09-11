@@ -14,7 +14,7 @@ export default function HelpSettingsPage() {
   return (
     <AdminPageFrame
       title="Centro de ayuda"
-      description="Guías para administrar el portal institucional"
+      description="Guías para administrar tu Espacio"
       backHref="/admin"
       backLabel="Volver al inicio"
     >
@@ -23,12 +23,12 @@ export default function HelpSettingsPage() {
         <AdminModuleSectionHeader
           icon={BookOpen}
           title="Recursos rápidos"
-          description="Enlaces frecuentes para el equipo del Seminario Eclesiástico Mayor."
+          description="Enlaces frecuentes para el equipo del Espacio."
         />
         <ul className="space-y-2 text-sm">
           <li>
             <Link href="/admin/settings/users" className="text-primary underline">
-              Administrar usuarios del CMS
+              Administrar usuarios
             </Link>
           </li>
           <li>

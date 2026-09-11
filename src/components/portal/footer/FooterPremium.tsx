@@ -11,13 +11,19 @@ import { FooterBottom } from "./FooterBottom";
 
 interface FooterPremiumProps {
   viewModel: PortalFooterPremiumViewModel;
+  tenantId?: string;
   whatsapp?: string;
   className?: string;
 }
 
-export function FooterPremium({ viewModel, whatsapp, className }: FooterPremiumProps) {
+export function FooterPremium({
+  viewModel,
+  tenantId,
+  whatsapp,
+  className,
+}: FooterPremiumProps) {
   const { settings } = viewModel;
-  const content = resolveFooterContent(viewModel, whatsapp);
+  const content = resolveFooterContent(viewModel, { tenantId, whatsapp });
 
   const hasMain =
     content.brand.institutionName ||
@@ -34,7 +40,7 @@ export function FooterPremium({ viewModel, whatsapp, className }: FooterPremiumP
       )}
       aria-label="Pie de página institucional"
     >
-      <FooterCTA content={content.cta} />
+      {content.cta.title.trim() ? <FooterCTA content={content.cta} /> : null}
 
       {hasMain ? (
         <div className="footer-premium__main">

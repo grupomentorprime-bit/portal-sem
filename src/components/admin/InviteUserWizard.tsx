@@ -85,7 +85,7 @@ export function InviteUserWizard({
     <div className={cn(embedded ? "" : "rounded-xl border border-border bg-background p-5")}>
       {success ? (
         <div className="mb-4 rounded-xl border border-[var(--state-success-border)] bg-[var(--state-success-bg)] px-4 py-3 text-sm text-[var(--color-success)]">
-          Invitación enviada. La persona recibirá un correo para crear su contraseña y acceder al CMS.
+          Invitación enviada. La persona recibirá un correo para crear su contraseña y acceder al Espacio.
         </div>
       ) : null}
 
@@ -200,7 +200,7 @@ export function InviteUserWizard({
           <div>
             <h3 className="font-medium">Paso 3 — Permisos</h3>
             <p className="text-sm text-muted">
-              El rol <strong>{selectedRole?.label ?? "—"}</strong> incluye los permisos estándar del CMS para
+              El rol <strong>{selectedRole?.label ?? "—"}</strong> incluye los permisos estándar del Espacio para
               esa función.
             </p>
           </div>

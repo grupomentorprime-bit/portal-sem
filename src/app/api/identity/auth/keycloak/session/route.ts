@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getActiveTenantId } from "@/core/identity";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import {
   fetchKeycloakUserInfo,
@@ -16,8 +15,11 @@ import {
   getRequestMeta,
   setSessionCookie,
 } from "@/lib/identity/sessions";
+import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
 import { updateUserLastLogin } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
+import { logServerError } from "@/core/security/redact";
+import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
 
 export async function POST(request: Request) {
   if (!isKeycloakOnlyAuth() || !isKeycloakEnabled()) {
@@ -39,19 +41,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const tenantId = await getActiveTenantId();
-    if (!tenantId) {
-      return NextResponse.json({ ok: false, error: "Tenant no configurado." }, { status: 503 });
-    }
+    const preferredTenantId = await resolveActiveTenantIdFromRequest();
 
     const tokens = await loginWithKeycloakPassword({ username: email, password });
     const profile = await fetchKeycloakUserInfo(tokens.accessToken);
-    const { user } = await finishKeycloakLogin(profile, tenantId, tokens.accessToken);
+    const { user, activeTenantId } = await finishKeycloakLogin(
+      profile,
+      preferredTenantId,
+      tokens.accessToken
+    );
 
     const meta = await getRequestMeta();
     const session = await createSession({
       userId: user._id,
-      tenantId,
+      tenantId: activeTenantId ?? "",
       ip: meta.ip,
       userAgent: meta.userAgent,
     });
@@ -59,7 +62,7 @@ export async function POST(request: Request) {
     await updateUserLastLogin(user._id);
 
     await writeAudit({
-      tenantId,
+      tenantId: activeTenantId || preferredTenantId || "none",
       userId: user._id,
       action: "auth.login.keycloak",
       entity: "session",
@@ -73,6 +76,10 @@ export async function POST(request: Request) {
         email: user.email,
         displayName: user.displayName,
       },
+      activeTenantId,
+      hasSpace: Boolean(activeTenantId),
+      isPlatformOperator: hasPlatformOperatorCapability(user),
+      platformRoles: user.platformRoles ?? [],
     });
   } catch (error) {
     if (error instanceof KeycloakAuthError) {
@@ -89,7 +96,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 403 });
     }
 
-    console.error("[keycloak] embedded login failed", error);
+    logServerError("keycloak-session", error);
     return NextResponse.json(
       { ok: false, error: "No se pudo completar el inicio de sesión." },
       { status: 500 }

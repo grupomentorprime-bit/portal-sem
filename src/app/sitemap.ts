@@ -18,6 +18,11 @@ const STATIC_PUBLIC_PATHS = [
   "/avisos",
   "/institucion",
   "/formularios",
+  /** Legales de plataforma Growth OS (no CMS de Espacio). */
+  "/legal",
+  "/legal/privacidad",
+  "/legal/terminos",
+  "/legal/eliminacion-de-datos",
 ] as const;
 
 /** Evita prerender en build Docker (sin MONGODB_URI); se genera en runtime. */

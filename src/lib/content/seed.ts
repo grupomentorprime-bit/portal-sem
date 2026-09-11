@@ -1,6 +1,7 @@
 import "server-only";
 
 import { colorDefaults } from "@/design/tokens/colors";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { getDatabase } from "@/lib/mongodb";
 import { revalidateContentCache } from "@/lib/content/cache";
 import { DEMO_ACADEMIC_PROGRAMS } from "@/lib/portal/institutional-demo";
@@ -82,10 +83,18 @@ function programToSeedDoc(
   });
 }
 
+/**
+ * Seeds CMS de contenido SEM — solo T001.
+ * Un Espacio nuevo no recibe generaciones, equipo, noticias ni copy SEM.
+ */
 export async function seedContentCollections(
   tenant: string,
   options?: { revalidate?: boolean }
 ): Promise<{ seeded: string[] }> {
+  if (!isSemTenant(tenant)) {
+    return { seeded: [] };
+  }
+
   const db = await getDatabase();
   const seeded: string[] = [];
 

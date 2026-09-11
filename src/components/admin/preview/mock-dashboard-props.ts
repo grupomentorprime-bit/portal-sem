@@ -6,7 +6,7 @@ export const MOCK_BRANDING: AdminTenantBranding = {
   institutionName: "Seminario Eclesiástico Mayor",
   institutionShortName: "SEM",
   logoUrl: "/images/logo-sem-isotype.png",
-  centerLabel: "Centro SEM",
+  centerLabel: "Growth OS",
 };
 
 export const MOCK_USER: AdminUserSummary = {

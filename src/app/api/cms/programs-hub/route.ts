@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import { getAdmissionConfigUncached } from "@/lib/cms/admission-config";
 import { getDatabase } from "@/lib/mongodb";
+import { authorizeApiRead } from "@/lib/identity/api-guard";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenantParam = searchParams.get("tenant") ?? "";
-    const tenantCheck = await assertActiveTenant(tenantParam);
+    const denied = await authorizeApiRead("cms.pages.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
     const tenant = tenantCheck.tenant;

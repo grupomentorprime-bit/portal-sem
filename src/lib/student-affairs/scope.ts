@@ -21,7 +21,6 @@ export function submissionMatchesGenerationScope(
 }
 
 export function hasStudentAffairsFullAccess(ctx: AuthContext): boolean {
-  if (ctx.compatMode) return true;
   return (
     ctx.permissions.includes("experience.forms.manage") ||
     ctx.permissions.includes("student-affairs.manage")
@@ -29,7 +28,6 @@ export function hasStudentAffairsFullAccess(ctx: AuthContext): boolean {
 }
 
 export function canAccessStudentAffairsPanel(ctx: AuthContext): boolean {
-  if (ctx.compatMode) return true;
   return (
     hasStudentAffairsFullAccess(ctx) ||
     ctx.permissions.includes("student-affairs.read") ||
@@ -42,7 +40,6 @@ export function canManageStudentAffairsScope(
   roleCodes: string[] = []
 ): boolean {
   if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
-  if (ctx.compatMode) return true;
   return (
     hasStudentAffairsFullAccess(ctx) ||
     ctx.permissions.includes("student-affairs.manage") ||
@@ -56,7 +53,6 @@ export function canDeleteStudentAffairsSubmission(
   roleCodes: string[] = []
 ): boolean {
   if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
-  if (ctx.compatMode) return true;
   return ctx.permissions.includes("experience.forms.manage");
 }
 
@@ -65,7 +61,6 @@ export function canReclassifyStudentAffairsGeneration(
   roleCodes: string[] = []
 ): boolean {
   if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
-  if (ctx.compatMode) return true;
   return (
     ctx.permissions.includes("experience.forms.manage") ||
     ctx.permissions.includes("student-affairs.manage")
@@ -78,7 +73,6 @@ export function canValidateStudentAffairsHandoff(
   roleCodes: string[] = []
 ): boolean {
   if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
-  if (ctx.compatMode) return true;
   return (
     ctx.permissions.includes("experience.forms.manage") ||
     ctx.permissions.includes("student-affairs.manage")
@@ -91,7 +85,6 @@ export function canReopenStudentAffairsJornada(
   roleCodes: string[] = []
 ): boolean {
   if (roleCodes.length > 0 && isStudentAffairsOperator(roleCodes)) return false;
-  if (ctx.compatMode) return true;
   return ctx.permissions.includes("experience.forms.manage");
 }
 

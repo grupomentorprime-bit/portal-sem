@@ -7,7 +7,11 @@ import { ROLE_CODES } from "@/core/identity/roles/codes";
 export interface AdminNavItem {
   /** Identificador estable para sub-ítems que comparten href. */
   id?: string;
-  href: string;
+  /**
+   * Destino. `null` = representación visual (módulo futuro; sin página vacía).
+   * OT-GROWTH-UX-ADMIN-SHELL-002
+   */
+  href: string | null;
   label: string;
   icon?: string;
   /** Contador opcional para badge en sidebar. */
@@ -208,6 +212,8 @@ export function getInstitutionalRoleLabel(codeOrLegacyName: string, legacyName?:
 }
 
 export function isNavActive(pathname: string, item: AdminNavItem): boolean {
+  if (item.href == null) return false;
+
   if (item.href === "/admin") {
     return pathname === "/admin";
   }
@@ -234,7 +240,7 @@ export function isNavActive(pathname: string, item: AdminNavItem): boolean {
 
 export const ADMIN_SEARCH_CATEGORIES = [
   { id: "news", label: "Noticias", href: "/admin/content/news" },
-  { id: "people", label: "Personas", href: "/admin/content/people" },
+  { id: "people", label: "Personas", href: "/admin/personas" },
   { id: "programs", label: "Programas", href: "/admin/content/programs" },
   { id: "library", label: "Biblioteca", href: "/admin/content/library" },
   { id: "users", label: "Usuarios", href: "/admin/settings/users" },

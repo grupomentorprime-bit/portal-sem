@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getDatabase } from "@/lib/mongodb";
 import { getAdmissionAdapter } from "@/core/admission/admission-adapter";
+import { ingestInteresadoToGrowthSafe } from "@/lib/growth";
 import type {
   AdmissionApplicationInput,
   AdmissionHandoffPayload,
@@ -84,6 +85,9 @@ export async function createInteresadoFromApplication(
     ...interesado,
     _id,
   });
+
+  // Growth Core: proyección después de persistir (fail-soft; no revierte captación).
+  await ingestInteresadoToGrowthSafe(interesado);
 
   return {
     ok: true,

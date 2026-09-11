@@ -26,9 +26,13 @@ import type { CmsMenu } from "@/types/menu";
 
 interface MenuListClientProps {
   initialMenus: CmsMenu[];
+  seedMenus?: CmsMenu[];
 }
 
-export function MenuListClient({ initialMenus }: MenuListClientProps) {
+export function MenuListClient({
+  initialMenus,
+  seedMenus = DEFAULT_MENUS,
+}: MenuListClientProps) {
   const router = useRouter();
   const [menus, setMenus] = useState(initialMenus);
   const [showCreate, setShowCreate] = useState(false);
@@ -81,8 +85,10 @@ export function MenuListClient({ initialMenus }: MenuListClientProps) {
     setLoading(true);
     setError(null);
     try {
-      for (const menu of DEFAULT_MENUS) {
-        const exists = menus.some((m) => m._id === menu._id);
+      for (const menu of seedMenus) {
+        const exists = menus.some(
+          (m) => m._id === menu._id || m._id.endsWith(`:${menu._id}`)
+        );
         if (!exists) {
           await fetch("/api/cms/menus", {
             method: "POST",

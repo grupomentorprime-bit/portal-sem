@@ -37,12 +37,13 @@ export async function appendHistory(input: {
 }
 
 export async function getHistoryByInstance(
-  instanceId: string
+  instanceId: string,
+  tenantId: string
 ): Promise<WorkflowHistoryEntry[]> {
   const db = await getDatabase();
   return db
     .collection<WorkflowHistoryEntry>("workflow_history")
-    .find({ workflowInstanceId: instanceId })
+    .find({ workflowInstanceId: instanceId, tenantId })
     .sort({ performedAt: -1 })
     .toArray();
 }

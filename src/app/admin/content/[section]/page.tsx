@@ -5,7 +5,7 @@ import { enrichContentDocumentsMedia } from "@/core/media";
 import { filterByAcademicCatalogKind } from "@/lib/admin/catalog-kind";
 import { executeContentQuery } from "@/lib/content/query";
 import { CONTENT_SECTIONS, getSectionBySlug } from "@/lib/content/content-sections";
-import { getSiteConfigUncached } from "@/lib/cms/config";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
 import type { ContentDocument } from "@/types/content";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export default async function AdminContentSectionPage({ params }: PageProps) {
     );
   }
 
-  const config = await getSiteConfigUncached();
+  const config = await getOperationalSiteConfig();
   const tenant = config?.institution.tenant ?? "default";
 
   let initialItems: ContentDocument[] = [];

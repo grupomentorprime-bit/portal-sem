@@ -76,10 +76,14 @@ export async function listInvitationsByTenant(
 }
 
 export async function findInvitationById(
-  invitationId: string
+  invitationId: string,
+  tenantId: string
 ): Promise<IdentityInvitation | null> {
   const db = await getDatabase();
-  return db.collection<IdentityInvitation>("identity_invitations").findOne({ _id: invitationId });
+  return db.collection<IdentityInvitation>("identity_invitations").findOne({
+    _id: invitationId,
+    tenantId,
+  });
 }
 
 export async function findInvitationByToken(
@@ -95,11 +99,12 @@ export async function findInvitationByToken(
 
 export async function acceptInvitation(
   invitationId: string,
-  userId: string
+  userId: string,
+  tenantId: string
 ): Promise<void> {
   const db = await getDatabase();
   await db.collection<IdentityInvitation>("identity_invitations").updateOne(
-    { _id: invitationId },
+    { _id: invitationId, tenantId },
     {
       $set: {
         status: "accepted",
@@ -110,10 +115,33 @@ export async function acceptInvitation(
   );
 }
 
-export async function revokeInvitation(invitationId: string): Promise<void> {
+export function serializeInvitationWithoutToken(invitation: IdentityInvitation) {
+  return {
+    _id: invitation._id,
+    tenantId: invitation.tenantId,
+    email: invitation.email,
+    displayName: invitation.displayName,
+    roleIds: invitation.roleIds,
+    status: invitation.status,
+    invitedBy: invitation.invitedBy,
+    expiresAt: invitation.expiresAt,
+    acceptedAt: invitation.acceptedAt,
+    acceptedBy: invitation.acceptedBy,
+    createdAt: invitation.createdAt,
+  };
+}
+
+export async function revokeInvitation(
+  invitationId: string,
+  tenantId: string
+): Promise<void> {
   const db = await getDatabase();
   await db.collection<IdentityInvitation>("identity_invitations").updateOne(
-    { _id: invitationId },
-    { $set: { status: "revoked" } }
+    { _id: invitationId, tenantId },
+    {
+      $set: {
+        status: "revoked",
+      },
+    }
   );
 }

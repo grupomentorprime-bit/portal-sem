@@ -20,10 +20,11 @@
 ```text
 src/core/identity/
 ├── auth/          # Login, registro, crypto, configuración
+├── platform/      # Capacidad global Growth OS (OT-GROWTH-PROD-005)
 ├── permissions/   # Catálogo de permisos
-├── roles/         # Plantillas de roles del sistema
+├── roles/         # Plantillas de roles de Espacio
 ├── policies/      # Motor de autorización
-├── middleware/    # requireAuth, requirePermission, etc.
+├── middleware/    # requireAuth, requirePermission, requirePlatformOperator
 └── index.ts
 
 src/lib/identity/  # Persistencia MongoDB
@@ -33,7 +34,7 @@ src/lib/identity/  # Persistencia MongoDB
 
 | Colección | Propósito |
 | --- | --- |
-| `identity_users` | Personas únicas |
+| `identity_users` | Personas únicas (`platformRoles` = capacidad global) |
 | `identity_credentials` | Proveedores de autenticación (email, OAuth futuro) |
 | `identity_memberships` | Usuario ↔ tenant + roles |
 | `identity_roles` | Roles por tenant con permissionIds |
@@ -48,7 +49,9 @@ src/lib/identity/  # Persistencia MongoDB
 | POST | `/api/identity/login` | Iniciar sesión |
 | POST | `/api/identity/logout` | Cerrar sesión |
 | POST | `/api/identity/register` | Bootstrap primer admin (solo si no hay usuarios) |
-| GET | `/api/identity/me` | Sesión y permisos actuales |
+| GET | `/api/identity/me` | Sesión, permisos y Espacios |
+| GET | `/api/identity/spaces` | Espacios disponibles (membresías activas) |
+| POST | `/api/identity/spaces/switch` | Cambiar Espacio activo (vuelve a Inicio) |
 | GET | `/api/identity/team` | Miembros, invitaciones, auditoría |
 | POST | `/api/identity/invitations` | Crear invitación |
 | POST | `/api/identity/invitations/[token]/accept` | Aceptar invitación |
@@ -63,13 +66,23 @@ const ctx = await requirePermission("cms.pages.update");
 if (ctx instanceof NextResponse) return ctx;
 ```
 
-Helpers disponibles: `requireAuth`, `requireTenant`, `requirePermission`, `requireRole`, `requireOwner` (Super Admin).
+Helpers disponibles: `requireAuth`, `requireSpace`, `requirePermission`, `requireRole`, `requireOwner` (Owner del Espacio), `requirePlatformOperator` (operador de Growth OS; no usa el Espacio activo).
 
-## Roles del Portal SEM (OT-IAM-SEM-001)
+## Roles del Espacio (OT-IAM-SEM-001)
 
 8 roles oficiales con códigos estables (`super_admin`, `institution_admin`, …). Ver [OT-IAM-SEM-001](../ot/OT-IAM-SEM-001.md).
 
-Super Admin reservado: `soporte@mentorprime.cl` — identificado por rol, protegido en APIs y oculto en listados para otros roles.
+`super_admin` significa **solo Owner del Espacio**. No otorga acceso a Platform Admin.
+
+## Operador de Growth OS (OT-GROWTH-PROD-005)
+
+Capacidad global en `identity_users.platformRoles`: `platform_owner` y/o `platform_operator`. Códigos distintos de los roles de Espacio. No hay Tenant `platform`. Los `PLATFORM_ROLES` legado (mismos códigos que Espacio) **no se activan**.
+
+Autorización: `requirePlatformOperator` — sesión + `platformRoles`. No usa membresía, Espacio activo, email ni `isSystemAccount`. Un operador no recibe membresías de clientes por el hecho de serlo.
+
+Superficie: `/platform` y `/api/platform/*` (separadas de `/admin`). Catálogo global: `GET /api/platform/spaces` y ficha `GET /api/platform/spaces/:tenantId`. Alta: `POST /api/platform/spaces`. Entrar: switch vía `POST /api/identity/spaces/switch` (membresía obligatoria); acceso acotado opcional `POST /api/platform/spaces/:tenantId/access` (rol Soporte, nunca Dueño). No usar `GET /api/identity/spaces` como catálogo global. Grant operativo: `scripts/grant-platform-role.ts` (`--user-id` o `--email` obligatorio; sin destinatario por defecto).
+
+Acciones globales se registran en `identity_audit` con `scope: "platform"`.
 
 ## Permisos granulares (OT-IAM-002)
 
@@ -77,21 +90,22 @@ Roles como plantillas (`permissionMap`) + overrides por membresía (`permissionO
 
 UI: `/admin/settings/users` (overrides), `/admin/settings/roles` (plantillas).
 
-## Modo compatibilidad
+## Identidad obligatoria
 
-Por defecto `IDENTITY_ENFORCE` no está activo: las APIs de escritura siguen funcionando sin sesión (contexto compat con todos los permisos).
+La identidad es **siempre obligatoria** en zonas privadas (OT-GROWTH-SEC-002). `IDENTITY_ENFORCE` ya no abre el backoffice ni las APIs privadas si falta o vale `false`.
 
-Para activar enforcement en producción:
+`requireAuth`, `requirePermission` y el proxy de `/admin`, `/internal` y `/platform` exigen sesión real. Las rutas públicas del Portal, login, invitaciones y endpoints de render/submit público no cambian.
 
 ```env
-IDENTITY_ENFORCE=true
 SESSION_SECRET=generar-secreto-largo-aleatorio
 ```
 
 ## UI administrativa
 
-- `/admin/login` — Ingreso / bootstrap primer administrador
-- `/admin/settings/team` — Miembros, invitaciones, auditoría
+- `/admin/login` — Ingreso
+- `/admin` — administración del **Espacio** activo
+- `/platform` — Platform Admin (operadores de Growth OS; catálogo, ficha, crear y entrar a Espacios)
+- `/admin/settings/team` — Miembros, invitaciones, auditoría del Espacio
 
 ## Integración CMS
 
@@ -102,4 +116,4 @@ Los endpoints de escritura del CMS invocan `authorizeApiWrite()` con el permiso 
 1. Configurar tenant en `cms_config`.
 2. Visitar `/admin/login` — si no hay usuarios, permite crear el primer Super Admin.
 3. Ejecutar `scripts/sync-tenant-roles.ts` y `scripts/bootstrap-super-admin.ts` para producción.
-4. Activar `IDENTITY_ENFORCE=true` cuando el equipo esté listo.
+4. La identidad queda activa en zonas privadas sin depender de `IDENTITY_ENFORCE`.

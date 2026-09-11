@@ -13,7 +13,7 @@ export function AdminLayoutMaster({ children, sidebarCollapsed }: AdminLayoutMas
   return (
     <div
       className={cn(
-        "admin-shell-v2-main flex min-h-[calc(100vh-3.5rem)] min-w-0 flex-1 flex-col",
+        "admin-shell-v2-main flex min-h-0 min-w-0 flex-1 flex-col",
         sidebarCollapsed
           ? "admin-shell-v2-main--collapsed"
           : "admin-shell-v2-main--expanded"

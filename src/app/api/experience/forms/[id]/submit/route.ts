@@ -13,6 +13,7 @@ import {
   upsertConvocatoriaRosterStudent,
 } from "@/lib/experience/forms/roster";
 import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
+import { publicInternalError } from "@/core/security/public-error";
 import { normalizeChilePhone, formatChilePhoneDisplay } from "@/lib/experience/forms/phone-chile";
 import {
   getDirectAccessibleExperienceForm,
@@ -297,6 +298,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
         try {
           const emailResult = await sendConvocatoriaConfirmationEmail({
+            tenantId: tenant,
             to: participantEmail,
             participantName: String(data.fullName ?? "Participante"),
             attendance,
@@ -341,10 +343,6 @@ export async function POST(request: Request, { params }: RouteParams) {
       message: result.message,
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return publicInternalError("experience-form-submit", error);
   }
 }

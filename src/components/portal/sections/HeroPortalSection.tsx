@@ -11,9 +11,14 @@ import type { HeroPortalConfig } from "@/types/hero-portal";
 interface HeroPortalSectionProps {
   tenant: string;
   heroPortal: HeroPortalConfig;
+  brandMarkSrc?: string;
 }
 
-export async function HeroPortalSection({ tenant, heroPortal }: HeroPortalSectionProps) {
+export async function HeroPortalSection({
+  tenant,
+  heroPortal,
+  brandMarkSrc,
+}: HeroPortalSectionProps) {
   const resolvedSlides = await resolveHeroSlides(tenant, heroPortal);
 
   if (resolvedSlides.length === 0) return null;
@@ -30,6 +35,7 @@ export async function HeroPortalSection({ tenant, heroPortal }: HeroPortalSectio
       slides={views}
       type={heroPortal.type}
       carousel={heroPortal.carousel}
+      brandMarkSrc={brandMarkSrc}
     />
   );
 }

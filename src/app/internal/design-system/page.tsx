@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Experience Kit — Catálogo interno",
-  description: "Catálogo visual del Design System AprendeHoy. Variantes, estados, tokens y ejemplos.",
+  description: "Catálogo visual del Design System de Growth OS. Variantes, estados, tokens y ejemplos.",
   robots: { index: false, follow: false },
 };
 

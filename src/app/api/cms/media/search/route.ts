@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import { searchMedia } from "@/lib/cms/media";
 import { validateMediaSearch } from "@/lib/cms/media-validation";
+import { authorizeApiRead } from "@/lib/identity/api-guard";
 import type { MediaSearchQuery } from "@/types/media";
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as MediaSearchQuery;
-    const tenantCheck = await assertActiveTenant(body.tenant);
+    const denied = await authorizeApiRead("cms.media.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
+    const body = (await request.json()) as MediaSearchQuery;
     const secured = { ...body, tenant: tenantCheck.tenant };
     const errors = validateMediaSearch(secured);
     if (errors.length > 0) {
@@ -29,11 +33,13 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenantParam = searchParams.get("tenant") ?? "";
-    const tenantCheck = await assertActiveTenant(tenantParam);
+    const denied = await authorizeApiRead("cms.media.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
+    const { searchParams } = new URL(request.url);
     const body: MediaSearchQuery = {
       tenant: tenantCheck.tenant,
       search: searchParams.get("q") ?? undefined,

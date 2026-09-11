@@ -3,7 +3,6 @@ import "server-only";
 import { ROLE_CODES } from "@/core/identity/roles/codes";
 import { rolesIncludeCode } from "@/core/identity/roles/helpers";
 import { getConvocatoriaByFormId, formatConvocatoriaDate } from "@/lib/admin/forms-center";
-import { getSiteConfig } from "@/lib/cms/config";
 import {
   formatGenerationCode,
   formatGenerationDisplay,
@@ -18,7 +17,6 @@ import { createNotifications } from "@/lib/identity/notifications";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { listUsersByIds } from "@/lib/identity/users";
 import {
-  buildStudentAffairsPanelUrl,
   sendHandoffValidationEmail,
   type HandoffGenerationGroup,
 } from "@/lib/notifications/handoff-validation-email";
@@ -182,8 +180,7 @@ export async function dispatchHandoffValidationNotifications(
   let encargadaNotifications = 0;
   let qualityNotifications = 0;
 
-  const [config, form, nominations, encargadas] = await Promise.all([
-    getSiteConfig(),
+  const [form, nominations, encargadas] = await Promise.all([
     getExperienceFormById(tenantId, formId),
     resolveNominations(tenantId, formId, report),
     listEncargadasForForm(tenantId, formId),
@@ -192,9 +189,8 @@ export async function dispatchHandoffValidationNotifications(
   const convocatoria = getConvocatoriaByFormId(formId);
   const formName =
     form?.name ?? convocatoria?.landing?.headline ?? convocatoria?.title ?? formId;
-  const institutionName = config?.institution.name ?? "Seminario Eclesiástico Mayor";
   const eventDateLabel = convocatoria ? formatConvocatoriaDate(convocatoria.date) : undefined;
-  const panelUrl = buildStudentAffairsPanelUrl(formId);
+  const panelHref = `/admin/portal/asuntos-estudiantiles/${encodeURIComponent(formId)}`;
 
   const toRequest = nominations.withoutJustification ?? nominations.unjustified ?? [];
   const toReview = nominations.withJustification ?? [];
@@ -216,6 +212,8 @@ export async function dispatchHandoffValidationNotifications(
     if (total === 0) continue;
 
     const emailResult = await sendHandoffValidationEmail({
+      tenantId,
+      formId,
       to: encargada.email,
       encargadaName: encargada.displayName,
       formName,
@@ -223,8 +221,6 @@ export async function dispatchHandoffValidationNotifications(
       eventLocation: convocatoria?.location,
       validatedByName: validatorName,
       groups,
-      panelUrl,
-      institutionName,
     });
 
     if (emailResult.ok) {
@@ -247,7 +243,7 @@ export async function dispatchHandoffValidationNotifications(
           `${requestCount} por solicitar justificación · ${reviewCount} excusas por revisar`,
           "Revisa el correo institucional con el detalle por generación.",
         ].join("\n"),
-        href: panelUrl,
+        href: panelHref,
         entity: "form",
         entityId: formId,
         metadata: {
@@ -274,7 +270,7 @@ export async function dispatchHandoffValidationNotifications(
             group.label,
             encargada.displayName
           ),
-          href: panelUrl,
+          href: panelHref,
           entity: "form",
           entityId: formId,
           metadata: {
@@ -298,7 +294,7 @@ export async function dispatchHandoffValidationNotifications(
             group.label,
             encargada.displayName
           ),
-          href: panelUrl,
+          href: panelHref,
           entity: "form",
           entityId: formId,
           metadata: {
@@ -322,7 +318,7 @@ export async function dispatchHandoffValidationNotifications(
             group.label,
             encargada.displayName
           ),
-          href: panelUrl,
+          href: panelHref,
           entity: "form",
           entityId: formId,
           metadata: {

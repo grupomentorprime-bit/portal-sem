@@ -19,7 +19,7 @@ export function ContactForm({ value, onChange }: ContactFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Contacto institucional</CardTitle>
-        <CardDescription>Datos de contacto públicos del seminario.</CardDescription>
+        <CardDescription>Datos de contacto públicos del Espacio.</CardDescription>
       </CardHeader>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -29,7 +29,7 @@ export function ContactForm({ value, onChange }: ContactFormProps) {
             type="email"
             value={value.email}
             onChange={(e) => update("email", e.target.value)}
-            placeholder="contacto@seminarioipn.cl"
+            placeholder="contacto@ejemplo.org"
           />
         </div>
 

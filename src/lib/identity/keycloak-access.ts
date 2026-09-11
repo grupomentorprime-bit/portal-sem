@@ -118,7 +118,7 @@ export async function resolveKeycloakMembership(
       roleIds,
       invitedBy: invitation.invitedBy,
     });
-    await acceptInvitation(invitation._id, user._id);
+    await acceptInvitation(invitation._id, user._id, invitation.tenantId);
     return membership;
   }
 
@@ -153,21 +153,38 @@ export async function resolveKeycloakMembership(
   return null;
 }
 
+/**
+ * Keycloak = identidad global. Membresías viven en Mongo (ADR-008 D6).
+ * `preferredTenantId` (host) solo bootstrap/invitación; el Espacio activo
+ * se elige entre todas las membresías activas de la cuenta.
+ */
 export async function finishKeycloakLogin(
   profile: KeycloakUserInfo,
-  tenantId: string,
+  preferredTenantId: string | null,
   accessToken: string
-): Promise<{ user: IdentityUser; membership: IdentityMembership }> {
-  const user = await upsertUserFromKeycloak(profile, tenantId, accessToken);
-  await ensureSuperAdminMembershipForEmail(user.email, tenantId, user._id);
-  const membership = await resolveKeycloakMembership(user, tenantId, accessToken);
+): Promise<{
+  user: IdentityUser;
+  membership: IdentityMembership | null;
+  activeTenantId: string | null;
+}> {
+  const preferred = preferredTenantId?.trim() || null;
+  const user = await upsertUserFromKeycloak(
+    profile,
+    preferred ?? "platform",
+    accessToken
+  );
 
-  if (!membership) {
-    throw new KeycloakAccessError(
-      "Tu cuenta no tiene acceso al CMS. Solicita una invitación al administrador.",
-      "no_access"
-    );
+  if (preferred) {
+    await ensureSuperAdminMembershipForEmail(user.email, preferred, user._id);
+    await resolveKeycloakMembership(user, preferred, accessToken);
   }
 
-  return { user, membership };
+  const { resolveActiveTenantForUser } = await import("@/lib/identity/active-space");
+  const resolved = await resolveActiveTenantForUser(user._id, preferred);
+
+  return {
+    user,
+    membership: resolved.membership,
+    activeTenantId: resolved.activeTenantId,
+  };
 }

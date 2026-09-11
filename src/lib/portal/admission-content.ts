@@ -1,6 +1,7 @@
 /**
- * OT-PORTAL-004 — Contenido canónico del Centro de Admisión SEM.
- * Fuente por defecto; editable vía CMS (portal_admission_config).
+ * OT-PORTAL-004 — Contenido canónico del Centro de Admisión SEM (T001).
+ * No usar como default de Espacios nuevos: ver createEmptyAdmissionConfig.
+ * Editable vía CMS (portal_admission_config).
  */
 import type { AdmissionConfig } from "@/types/admission";
 import { DEFAULT_ADMISSION_CLOSING } from "@/lib/portal/admission-closing-defaults";

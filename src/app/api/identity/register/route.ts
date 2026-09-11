@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isEmailAuthEnabled } from "@/core/identity/auth/config";
 import { getActiveTenantId, registerWithEmail } from "@/core/identity";
 import { getDatabase } from "@/lib/mongodb";
+import { publicInternalError } from "@/core/security/public-error";
 
 export async function POST(request: Request) {
   try {
@@ -59,10 +60,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return publicInternalError("identity-register", error);
   }
 }

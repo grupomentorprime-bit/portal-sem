@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
 import {
   getAdmissionConfigUncached,
-  seedAdmissionConfig,
   updateAdmissionConfig,
 } from "@/lib/cms/admission-config";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
-import { getActiveTenantId } from "@/core/identity";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
+import { getOperationalTenantId } from "@/core/identity";
 import type { AdmissionConfig } from "@/types/admission";
 
 export async function GET() {
   try {
-    const tenant = await getActiveTenantId();
+    const denied = await authorizeApiRead("cms.pages.read");
+    if (denied) return denied;
+
+    const tenant = await getOperationalTenantId();
     if (!tenant) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
 
-    await seedAdmissionConfig(tenant);
     const config = await getAdmissionConfigUncached(tenant);
     return NextResponse.json({ ok: true, config });
   } catch (error) {
@@ -36,7 +37,7 @@ export async function PUT(request: Request) {
     });
     if (denied) return denied;
 
-    const tenant = await getActiveTenantId();
+    const tenant = await getOperationalTenantId();
     if (!tenant) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }

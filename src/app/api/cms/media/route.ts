@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertActiveTenant, tenantGuardResponse } from "@/core/security";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   listMedia,
   uploadMedia,
@@ -9,7 +9,7 @@ import {
   validateMediaListQuery,
   validateMediaUpload,
 } from "@/lib/cms/media-validation";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import { requirePermission } from "@/core/identity";
 import { writeMediaAudit } from "@/lib/cms/media-audit";
 import { buildOptimizationSummary } from "@/lib/cms/media-optimization";
@@ -17,11 +17,13 @@ import type { MediaFolder, MediaListQuery } from "@/types/media";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenantParam = searchParams.get("tenant") ?? "";
-    const tenantCheck = await assertActiveTenant(tenantParam);
+    const denied = await authorizeApiRead("cms.media.read");
+    if (denied) return denied;
+
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
+    const { searchParams } = new URL(request.url);
     const query: MediaListQuery = {
       tenant: tenantCheck.tenant,
       folder: searchParams.get("folder") ?? undefined,
@@ -67,12 +69,11 @@ export async function POST(request: Request) {
     const denied = await authorizeApiWrite("cms.media.upload");
     if (denied) return denied;
 
-    const formData = await request.formData();
-    const file = formData.get("file");
-    const tenantParam = String(formData.get("tenant") ?? "");
-    const tenantCheck = await assertActiveTenant(tenantParam);
+    const tenantCheck = await requireActiveTenant();
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
+    const formData = await request.formData();
+    const file = formData.get("file");
     const tenant = tenantCheck.tenant;
     const folder = formData.get("folder") ? String(formData.get("folder")) : undefined;
     const alt = formData.get("alt") ? String(formData.get("alt")) : undefined;

@@ -23,7 +23,6 @@ async function assertCanEditPermissions(ctx: AuthContext | NextResponse, members
   if (ctx instanceof NextResponse) return { error: ctx };
 
   const hasOverridePerm =
-    ctx.compatMode ||
     ctx.permissions.includes("identity.permissions.override") ||
     ctx.permissions.includes("identity.roles.manage");
 

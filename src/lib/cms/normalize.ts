@@ -1,3 +1,4 @@
+import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import { createDefaultSiteConfig } from "@/lib/cms/defaults";
 import { normalizeHeroPortal } from "@/lib/cms/hero-portal-normalize";
 import { normalizeSiteConfigModules } from "@/lib/cms/normalize-modules";
@@ -91,7 +92,13 @@ export function normalizeSiteConfig(raw: RawSiteConfig | null): SiteConfig | nul
     contact: normalizeContact(raw, defaults.contact),
     social: { ...defaults.social, ...raw.social },
     features: normalizeFeatures(raw.features, defaults.features),
-    portalCopy: { ...defaults.portalCopy, ...raw.portalCopy },
+    portalCopy: (() => {
+      const portalCopy = { ...defaults.portalCopy, ...raw.portalCopy };
+      return {
+        ...portalCopy,
+        footerCredits: rewriteLegacyPlatformProductName(portalCopy.footerCredits),
+      };
+    })(),
     topBar: { ...defaults.topBar, ...raw.topBar },
     portalExperience: {
       cursor: {

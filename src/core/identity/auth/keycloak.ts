@@ -130,8 +130,9 @@ export async function exchangeKeycloakCode(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Keycloak token error: ${text}`);
+    await res.text();
+    console.error("[keycloak] token exchange failed", res.status);
+    throw new Error("No se pudo completar el inicio de sesión institucional.");
   }
 
   const json = (await res.json()) as { access_token: string; id_token?: string };
@@ -160,8 +161,9 @@ export async function fetchKeycloakUserInfo(accessToken: string): Promise<Keyclo
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Keycloak userinfo error: ${text}`);
+    await res.text();
+    console.error("[keycloak] userinfo failed", res.status);
+    throw new Error("No se pudo validar el perfil institucional.");
   }
 
   return (await res.json()) as KeycloakUserInfo;
@@ -214,13 +216,13 @@ function parseTokenError(res: Response, body: { error?: string; error_descriptio
 
   if (errorCode === "invalid_grant") {
     throw new KeycloakAuthError(
-      description || "No se pudo validar las credenciales institucionales.",
+      "No se pudo validar las credenciales institucionales.",
       "invalid_credentials"
     );
   }
 
-  console.error("[keycloak] token error", { status: res.status, errorCode, description });
-  throw new KeycloakAuthError(description || "No se pudo iniciar sesión.", "keycloak_unavailable");
+  console.error("[keycloak] token error", { status: res.status, errorCode });
+  throw new KeycloakAuthError("No se pudo iniciar sesión.", "keycloak_unavailable");
 }
 
 /** Login embebido: valida usuario/contraseña (Direct Access Grants). */

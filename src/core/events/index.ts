@@ -3,9 +3,22 @@ export type { DomainEventType } from "@/core/events/registry";
 
 export { subscribe, subscribeMany, once, unsubscribe, listSubscriptions } from "@/core/events/subscribers";
 
-export { publish, publishMany, schedule, cancelScheduled, flushScheduledEvents } from "@/core/events/publisher";
+export {
+  publish,
+  publishMany,
+  schedule,
+  cancelScheduled,
+  flushScheduledEvents,
+  flushScheduledEventsDetailed,
+} from "@/core/events/publisher";
+export type { FlushScheduledResult } from "@/core/events/publisher";
 
 export { dispatch } from "@/core/events/bus/dispatcher";
+
+export {
+  ensureScheduledEventsRunner,
+  stopScheduledEventsRunnerForTests,
+} from "@/core/events/scheduled-runner";
 
 export { replayEvent, replayEventsByType } from "@/core/events/replay/replay";
 

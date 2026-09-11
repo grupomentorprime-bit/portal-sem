@@ -14,6 +14,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { NavMenu } from "@/components/navigation/NavMenu";
 import type { CmsMenu } from "@/types/menu";
 import type { SiteConfig } from "@/types/cms";
@@ -46,7 +47,7 @@ export function SiteHeader({ config, mainMenu, mobileMenu }: SiteHeaderProps) {
               className="text-lg font-semibold"
               style={{ color: branding?.primaryColor }}
             >
-              {institution?.shortName ?? "Portal"}
+              {institution?.shortName ?? PLATFORM_DISPLAY_NAME}
             </span>
           )}
         </Link>

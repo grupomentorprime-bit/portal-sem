@@ -115,10 +115,10 @@ export async function canTransition(
   instanceId: string,
   transitionId: string
 ): Promise<boolean> {
-  const instance = await getInstanceById(instanceId);
+  const instance = await getInstanceById(instanceId, ctx.tenant);
   if (!instance || instance.status !== "active") return false;
 
-  const definition = await getDefinitionById(instance.definitionId);
+  const definition = await getDefinitionById(instance.definitionId, ctx.tenant);
   if (!definition) return false;
 
   const transition = findTransition(definition, {
@@ -136,11 +136,11 @@ export async function transition(
   ctx: ExecutionContext,
   input: TransitionWorkflowInput
 ): Promise<WorkflowInstance> {
-  const instance = await getInstanceById(input.instanceId);
+  const instance = await getInstanceById(input.instanceId, ctx.tenant);
   if (!instance) throw new Error("Instancia de workflow no encontrada.");
   if (instance.status !== "active") throw new Error("El workflow no está activo.");
 
-  const definition = await getDefinitionById(instance.definitionId);
+  const definition = await getDefinitionById(instance.definitionId, ctx.tenant);
   if (!definition) throw new Error("Definición de workflow no encontrada.");
 
   const transitionDef = findTransition(definition, {
@@ -180,6 +180,7 @@ export async function transition(
 
   const updated = await updateInstanceState(
     instance._id,
+    ctx.tenant,
     toState,
     isFinal ? "completed" : "active",
     isFinal ? new Date().toISOString() : undefined
@@ -218,13 +219,16 @@ export async function transition(
   return updated!;
 }
 
-export async function getCurrentState(instanceId: string): Promise<string | null> {
-  const instance = await getInstanceById(instanceId);
+export async function getCurrentState(
+  tenantId: string,
+  instanceId: string
+): Promise<string | null> {
+  const instance = await getInstanceById(instanceId, tenantId);
   return instance?.currentState ?? null;
 }
 
-export async function getHistory(instanceId: string) {
-  return getHistoryByInstance(instanceId);
+export async function getHistory(tenantId: string, instanceId: string) {
+  return getHistoryByInstance(instanceId, tenantId);
 }
 
 export async function cancelWorkflow(
@@ -234,16 +238,17 @@ export async function cancelWorkflow(
 ): Promise<WorkflowInstance> {
   authorizeOrThrow(authFromContext(ctx), "workflow.manage");
 
-  const instance = await getInstanceById(instanceId);
+  const instance = await getInstanceById(instanceId, ctx.tenant);
   if (!instance) throw new Error("Instancia no encontrada.");
 
-  const definition = await getDefinitionById(instance.definitionId);
+  const definition = await getDefinitionById(instance.definitionId, ctx.tenant);
   const cancelledState =
     definition?.states.find((s) => s.type === "cancelled")?.key ?? "cancelled";
 
   const fromState = instance.currentState;
   const updated = await updateInstanceState(
     instanceId,
+    ctx.tenant,
     cancelledState,
     "cancelled",
     new Date().toISOString()
@@ -284,14 +289,15 @@ export async function restartWorkflow(
 ): Promise<WorkflowInstance> {
   authorizeOrThrow(authFromContext(ctx), "workflow.manage");
 
-  const instance = await getInstanceById(instanceId);
+  const instance = await getInstanceById(instanceId, ctx.tenant);
   if (!instance) throw new Error("Instancia no encontrada.");
 
-  const definition = await getDefinitionById(instance.definitionId);
+  const definition = await getDefinitionById(instance.definitionId, ctx.tenant);
   if (!definition) throw new Error("Definición no encontrada.");
 
   const updated = await updateInstanceState(
     instanceId,
+    ctx.tenant,
     definition.initialState,
     "active",
     undefined
@@ -316,10 +322,10 @@ export async function getAvailableTransitions(
   ctx: ExecutionContext,
   instanceId: string
 ): Promise<WorkflowTransition[]> {
-  const instance = await getInstanceById(instanceId);
+  const instance = await getInstanceById(instanceId, ctx.tenant);
   if (!instance || instance.status !== "active") return [];
 
-  const definition = await getDefinitionById(instance.definitionId);
+  const definition = await getDefinitionById(instance.definitionId, ctx.tenant);
   if (!definition) return [];
 
   const candidates = definition.transitions.filter(

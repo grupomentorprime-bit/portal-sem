@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createInteresadoFromApplication } from "@/core/admission";
 import { getActiveTenantId } from "@/core/identity";
 import { fetchPrograms } from "@/lib/portal/content";
+import { publicInternalError } from "@/core/security/public-error";
 
 export async function POST(request: Request) {
   try {
@@ -58,10 +59,6 @@ export async function POST(request: Request) {
       redirectTo: "/postulacion/enviada",
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Error desconocido" },
-      { status: 500 }
-    );
+    return publicInternalError("admission-apply", error);
   }
 }

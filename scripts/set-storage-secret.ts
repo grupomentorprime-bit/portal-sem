@@ -1,11 +1,14 @@
 /**
  * Actualiza la clave S3 cifrada en MongoDB (sin pasar por el admin).
- * Uso: npx tsx --env-file=.env scripts/set-storage-secret.ts <applicationKey>
+ * Uso: npx tsx --env-file=.env scripts/set-storage-secret.ts <applicationKey> [tenantId]
  */
 import { createCipheriv, randomBytes, scryptSync } from "node:crypto";
 import { MongoClient } from "mongodb";
-
-const STORAGE_INTEGRATION_ID = "storage";
+import { SEM_TENANT_ID } from "../src/core/tenant/constants";
+import {
+  LEGACY_STORAGE_INTEGRATION_ID,
+  storageIntegrationIdForTenant,
+} from "../src/core/tenant/resource-ids";
 
 function deriveKey(): Buffer {
   const secret = process.env.SESSION_SECRET?.trim();
@@ -24,24 +27,46 @@ function encryptSecret(plaintext: string): string {
 async function main() {
   const applicationKey = process.argv[2]?.trim();
   if (!applicationKey) {
-    console.error("Uso: npx tsx --env-file=.env scripts/set-storage-secret.ts <applicationKey>");
+    console.error(
+      "Uso: npx tsx --env-file=.env scripts/set-storage-secret.ts <applicationKey> [tenantId]"
+    );
     process.exit(1);
   }
+
+  const tenantId = process.argv[3]?.trim() || SEM_TENANT_ID;
+  const scopedId = storageIntegrationIdForTenant(tenantId);
 
   const client = new MongoClient(process.env.MONGODB_URI!);
   await client.connect();
   const db = client.db(process.env.MONGODB_DB!);
+  const col = db.collection("platform_integrations");
 
   const encrypted = encryptSecret(applicationKey);
-  const result = await db.collection("platform_integrations").updateOne(
-    { _id: STORAGE_INTEGRATION_ID },
+  const now = new Date().toISOString();
+
+  let result = await col.updateOne(
+    { _id: scopedId },
     {
       $set: {
         secretAccessKeyEncrypted: encrypted,
-        updatedAt: new Date().toISOString(),
+        tenantId,
+        updatedAt: now,
       },
     }
   );
+
+  // Compat: documento legado `_id: storage` (pre-migración 008).
+  if (result.matchedCount === 0 && tenantId === SEM_TENANT_ID) {
+    result = await col.updateOne(
+      { _id: LEGACY_STORAGE_INTEGRATION_ID },
+      {
+        $set: {
+          secretAccessKeyEncrypted: encrypted,
+          updatedAt: now,
+        },
+      }
+    );
+  }
 
   await client.close();
 
@@ -50,7 +75,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("✓ Clave S3 actualizada y cifrada con SESSION_SECRET actual.");
+  console.log(`✓ Clave S3 actualizada (${scopedId}) con SESSION_SECRET actual.`);
 }
 
 main().catch((error) => {

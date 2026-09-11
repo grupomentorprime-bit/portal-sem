@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import {
   applyFormExperienceTemplateForForm,
   getFormExperienceUncached,
-  seedFormExperience,
   updateFormExperience,
 } from "@/lib/cms/form-experience";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
-import { getActiveTenantId } from "@/core/identity";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
+import { getOperationalTenantId } from "@/core/identity";
 import type { ExperienceFormExperience, FormExperienceTemplateId } from "@/types/experience-form-experience";
 import { FORM_EXPERIENCE_TEMPLATE_IDS } from "@/types/experience-form-experience";
 
@@ -17,7 +16,10 @@ interface RouteContext {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
-    const tenant = await getActiveTenantId();
+    const denied = await authorizeApiRead("experience.forms.read");
+    if (denied) return denied;
+
+    const tenant = await getOperationalTenantId();
     if (!tenant) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
@@ -28,7 +30,6 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json({ ok: false, error: "Formulario no encontrado." }, { status: 404 });
     }
 
-    await seedFormExperience(tenant, formId, form.name);
     const experience = await getFormExperienceUncached(tenant, formId, form.name);
     return NextResponse.json({ ok: true, experience });
   } catch (error) {
@@ -48,7 +49,7 @@ export async function PUT(request: Request, context: RouteContext) {
     });
     if (denied) return denied;
 
-    const tenant = await getActiveTenantId();
+    const tenant = await getOperationalTenantId();
     if (!tenant) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }

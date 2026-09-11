@@ -51,7 +51,7 @@ export function AdminDashboardLegacyPreview({
         items={[
           { label: "Noticias", value: newsCount, icon: BookOpen, tone: "total" },
           { label: "Programas", value: programsCount, icon: Activity, tone: "active" },
-          { label: "Usuarios CMS", value: memberCount, icon: Users, tone: "published" },
+          { label: "Usuarios", value: memberCount, icon: Users, tone: "published" },
           {
             label: "Invitaciones pendientes",
             value: invitationsPending,
@@ -98,7 +98,7 @@ export function AdminDashboardLegacyPreview({
           value={String(invitationsPending)}
           href="/admin/settings/users"
         />
-        <StatCard label="Usuarios CMS" value={String(memberCount)} href="/admin/settings/users" />
+        <StatCard label="Usuarios" value={String(memberCount)} href="/admin/settings/users" />
         </div>
       </section>
 
@@ -129,7 +129,7 @@ export function AdminDashboardLegacyPreview({
             { href: "/admin/media", label: "Subir medios", description: "Biblioteca visual" },
             { href: "/admin/config", label: "Instituci├│n", description: "Datos y configuraci├│n" },
             { href: "/admin/pages", label: "P├íginas del portal", description: "Estructura del sitio" },
-            { href: "/admin/settings/users", label: "Usuarios CMS", description: "Accesos y roles" },
+            { href: "/admin/settings/users", label: "Usuarios", description: "Accesos y roles" },
           ]}
         />
       </section>

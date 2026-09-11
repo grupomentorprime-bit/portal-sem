@@ -1,30 +1,45 @@
 import { NextResponse } from "next/server";
+import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import {
   deleteMenu,
   getMenuByIdUncached,
   updateMenu,
 } from "@/lib/cms/menus";
 import { validateMenuUpdate } from "@/lib/cms/menu-validation";
-import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import type { CmsMenuUpdate } from "@/types/menu";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(_request: Request, context: RouteContext) {
-  try {
-    const { id } = await context.params;
-    const menu = await getMenuByIdUncached(id);
-
-    if (!menu) {
-      return NextResponse.json(
+async function loadMenuForActiveTenant(id: string) {
+  const tenantCheck = await requireActiveTenant();
+  if (!tenantCheck.ok) {
+    return { error: tenantGuardResponse(tenantCheck) } as const;
+  }
+  const menu = await getMenuByIdUncached(id, tenantCheck.tenant);
+  if (!menu) {
+    return {
+      error: NextResponse.json(
         { ok: false, error: `Menú "${id}" no encontrado.` },
         { status: 404 }
-      );
-    }
+      ),
+    } as const;
+  }
+  return { menu, tenantId: tenantCheck.tenant } as const;
+}
 
-    return NextResponse.json({ ok: true, menu });
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const denied = await authorizeApiRead("cms.menus.read");
+    if (denied) return denied;
+
+    const { id } = await context.params;
+    const loaded = await loadMenuForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+
+    return NextResponse.json({ ok: true, menu: loaded.menu });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -43,6 +58,9 @@ export async function PUT(request: Request, context: RouteContext) {
     if (denied) return denied;
 
     const { id } = await context.params;
+    const loaded = await loadMenuForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+
     const body = (await request.json()) as CmsMenuUpdate;
     const errors = validateMenuUpdate(body);
 
@@ -50,7 +68,7 @@ export async function PUT(request: Request, context: RouteContext) {
       return NextResponse.json({ ok: false, errors }, { status: 400 });
     }
 
-    const menu = await updateMenu(id, body);
+    const menu = await updateMenu(id, loaded.tenantId, body);
 
     if (!menu) {
       return NextResponse.json(
@@ -78,7 +96,10 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (denied) return denied;
 
     const { id } = await context.params;
-    const deleted = await deleteMenu(id);
+    const loaded = await loadMenuForActiveTenant(id);
+    if ("error" in loaded) return loaded.error;
+
+    const deleted = await deleteMenu(id, loaded.tenantId);
 
     if (!deleted) {
       return NextResponse.json(

@@ -11,8 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!ctx) return { title: "Programas formativos" };
   return {
     title: resolvePageTitle("Programas formativos", ctx.config),
-    description:
-      "Programas formativos en Teología Bíblica del Seminario Eclesiástico Mayor — formación para el servicio cristiano.",
+    description: ctx.config.seo.description || undefined,
   };
 }
 

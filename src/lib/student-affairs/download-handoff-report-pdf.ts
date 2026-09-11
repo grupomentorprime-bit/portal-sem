@@ -16,7 +16,7 @@ const MARGIN = 16;
 const PAGE_W = 210;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const LINE = 5.2;
-const INSTITUTION_NAME = "SEMINARIO ECLESIASTICO MAYOR";
+const INSTITUTION_NAME_FALLBACK = "Institución";
 const LOGO_PATH = "/images/logo-sem-isotype-line.png";
 const LOGO_ASPECT = 827 / 1024;
 const HEADER_H = 32;
@@ -147,7 +147,12 @@ function groupNomineesByGeneration(
     }));
 }
 
-function drawPageFooter(doc: jsPDF, pageNumber: number, totalPages: number) {
+function drawPageFooter(
+  doc: jsPDF,
+  pageNumber: number,
+  totalPages: number,
+  institutionName: string
+) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const y = pageHeight - 10;
 
@@ -158,7 +163,11 @@ function drawPageFooter(doc: jsPDF, pageNumber: number, totalPages: number) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...BRAND.muted);
-  doc.text(`${INSTITUTION_NAME} · Portal SEM — Asuntos Estudiantiles`, MARGIN, y);
+  doc.text(
+    `${institutionName} · Asuntos Estudiantiles`,
+    MARGIN,
+    y
+  );
   doc.text(`Página ${pageNumber} de ${totalPages}`, PAGE_W - MARGIN, y, { align: "right" });
 }
 
@@ -189,7 +198,7 @@ function createPdfContext(doc: jsPDF) {
   };
 }
 
-function drawHeader(doc: jsPDF, logoDataUrl: string | null) {
+function drawHeader(doc: jsPDF, logoDataUrl: string | null, institutionName: string) {
   doc.setFillColor(...BRAND.navy);
   doc.rect(0, 0, PAGE_W, HEADER_H, "F");
 
@@ -209,7 +218,7 @@ function drawHeader(doc: jsPDF, logoDataUrl: string | null) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11.5);
   doc.setTextColor(...BRAND.white);
-  doc.text(INSTITUTION_NAME, textX, textTop);
+  doc.text(institutionName, textX, textTop);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
@@ -759,12 +768,15 @@ export async function downloadHandoffReportPdf(input: {
   formName: string;
   formId: string;
   report: StudentAffairsHandoffReport;
+  institutionName?: string;
 }): Promise<void> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const logoDataUrl = await loadSemLogoDataUrl();
   const ctx = createPdfContext(doc);
+  const institutionName =
+    input.institutionName?.trim() || INSTITUTION_NAME_FALLBACK;
 
-  drawHeader(doc, logoDataUrl);
+  drawHeader(doc, logoDataUrl, institutionName);
   drawTitleBlock(ctx, input.formName, input.formId);
   drawMetaPanel(ctx, input.report);
   drawSummaryGrid(ctx, input.report);
@@ -823,7 +835,7 @@ export async function downloadHandoffReportPdf(input: {
   const totalPages = doc.getNumberOfPages();
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page);
-    drawPageFooter(doc, page, totalPages);
+    drawPageFooter(doc, page, totalPages, institutionName);
   }
 
   const stamp = input.report.closedAt.slice(0, 10);

@@ -14,12 +14,13 @@ const BASELINE_PATH = path.join(ROOT, "scripts", "branding-baseline.json");
 const BRAND_FILE = "src/styles/tokens/brand.css";
 const COLORS_FILE = "src/styles/tokens/colors.css";
 
+/** HEX autorizados en brand.css — defaults Growth OS (`--growth-os-*`) */
 const CORPORATE_HEX = new Set([
-  "#002a47",
-  "#246aa1",
-  "#10bce2",
-  "#3ed6af",
-  "#8ce27f",
+  "#0e4f90",
+  "#6c99cd",
+  "#7c5cfa",
+  "#18b981",
+  "#f59b45",
 ]);
 
 const FORBIDDEN_HEX = new Set([
@@ -43,16 +44,16 @@ const FORBIDDEN_HEX = new Set([
 ]);
 
 const COLORS_CSS_ALLOWED = new Set([
-  "#f5f7f9",
-  "#e8ecf0",
-  "#d1d9e0",
-  "#a8b5c2",
-  "#7a8fa3",
-  "#5c7289",
-  "#475a6e",
-  "#354656",
-  "#243340",
-  "#141f29",
+  "#f4f7fb",
+  "#eaf2fc",
+  "#d9e4f2",
+  "#b8c9de",
+  "#8fa8c4",
+  "#6c87ac",
+  "#557194",
+  "#3a5273",
+  "#1e3355",
+  "#0b1f3a",
   "#ffffff",
   "#b42318",
 ]);

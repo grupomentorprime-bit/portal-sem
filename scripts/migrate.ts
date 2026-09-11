@@ -1,5 +1,5 @@
 /**
- * AprendeHoy — Migration Framework
+ * Growth OS — Migration Framework
  *
  * Uso:
  *   npm run migrate           # todas las pendientes

@@ -1,5 +1,6 @@
 import type { DomainEvent } from "@/types/events";
-import { subscribe } from "@/core/events/subscribers";
+import { subscribe, subscribeMany } from "@/core/events/subscribers";
+import { GROWTH_DOMAIN_EVENT_TYPES } from "@/core/growth/event-bus-port";
 
 /** Search: indexa contenido al publicar páginas */
 export function registerSearchHandlers(): void {
@@ -41,25 +42,27 @@ export function registerNotificationHandlers(): void {
     async (event: DomainEvent) => {
       const email = String(event.payload.email ?? "");
       const displayName = String(event.payload.displayName ?? "");
-      const token = String(event.payload.token ?? "");
       const expiresAt = String(event.payload.expiresAt ?? "");
 
-      if (!email || !token) return;
+      if (!email) return;
+
+      const { findInvitationById } = await import("@/lib/identity/invitations");
+      const invitation = await findInvitationById(event.entityId, event.tenantId);
+      const token = invitation?.token ?? "";
+      if (!token) return;
 
       const { sendInvitationEmail } = await import("@/lib/notifications/email");
-      const { getSiteConfigUncached } = await import("@/lib/cms/config");
-      const config = await getSiteConfigUncached();
 
       const result = await sendInvitationEmail({
         to: email,
         displayName: displayName || email,
         token,
-        institutionName: config?.institution.name,
+        tenantId: event.tenantId,
         expiresAt,
       });
 
       if (!result.ok) {
-        console.error("[events:notifications] invitation email failed", result.error);
+        console.error("[events:notifications] invitation email failed");
       }
     },
     { name: "notifications.invitationEmail" }
@@ -89,6 +92,35 @@ export function registerAnalyticsHandlers(): void {
   );
 }
 
+/**
+ * OT-GROWTH-AUTOMATION-003/005 — subscriber in-process al Event Bus existente.
+ * Growth*: Automatizaciones active → sales-ops (fail-soft).
+ * GrowthAutomationResume: continúa tras WAIT (propaga fallo al flush).
+ */
+export function registerGrowthAutomationHandlers(): void {
+  subscribeMany(
+    [...GROWTH_DOMAIN_EVENT_TYPES],
+    async (event: DomainEvent) => {
+      const { onGrowthAutomationDomainEvent } = await import(
+        "@/lib/growth/automations-runtime"
+      );
+      await onGrowthAutomationDomainEvent(event);
+    },
+    { name: "growth.automations" }
+  );
+
+  subscribe(
+    "GrowthAutomationResume",
+    async (event: DomainEvent) => {
+      const { onGrowthAutomationDomainEvent } = await import(
+        "@/lib/growth/automations-runtime"
+      );
+      await onGrowthAutomationDomainEvent(event);
+    },
+    { name: "growth.automations.resume" }
+  );
+}
+
 let registered = false;
 
 export function registerBuiltinHandlers(): void {
@@ -97,4 +129,8 @@ export function registerBuiltinHandlers(): void {
   registerSearchHandlers();
   registerNotificationHandlers();
   registerAnalyticsHandlers();
+  registerGrowthAutomationHandlers();
+  void import("@/core/events/scheduled-runner").then((m) => {
+    m.ensureScheduledEventsRunner();
+  });
 }

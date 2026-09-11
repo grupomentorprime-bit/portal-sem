@@ -11,6 +11,7 @@ const ENTITY_WORKFLOW_KEYS: Record<string, string> = {
   "cms.page": "cms.page",
   "academy.program": "academy.program",
   "content.news": "content.news",
+  "growth.opportunity": "growth.opportunity",
 };
 
 export async function ensureEntityWorkflow(

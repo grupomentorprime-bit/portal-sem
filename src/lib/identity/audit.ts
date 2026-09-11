@@ -3,9 +3,11 @@ import "server-only";
 import { getDatabase } from "@/lib/mongodb";
 import type { IdentityAuditEntry } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
+import { platformAuditFilter, tenantAuditFilter } from "@/core/identity/platform/audit";
 
 export async function writeAudit(input: {
-  tenantId: string;
+  tenantId?: string;
+  scope?: "tenant" | "platform";
   userId: string;
   action: string;
   entity: string;
@@ -13,9 +15,9 @@ export async function writeAudit(input: {
   metadata?: Record<string, unknown>;
 }): Promise<IdentityAuditEntry> {
   const db = await getDatabase();
+  const scope = input.scope ?? "tenant";
   const entry: IdentityAuditEntry = {
     _id: generateId("audit"),
-    tenantId: input.tenantId,
     userId: input.userId,
     action: input.action,
     entity: input.entity,
@@ -23,6 +25,12 @@ export async function writeAudit(input: {
     metadata: input.metadata,
     createdAt: new Date().toISOString(),
   };
+
+  if (scope === "platform") {
+    entry.scope = "platform";
+  } else {
+    entry.tenantId = input.tenantId ?? "";
+  }
 
   await db.collection<IdentityAuditEntry>("identity_audit").insertOne(entry);
   return entry;
@@ -35,7 +43,17 @@ export async function listAuditByTenant(
   const db = await getDatabase();
   return db
     .collection<IdentityAuditEntry>("identity_audit")
-    .find({ tenantId })
+    .find(tenantAuditFilter(tenantId))
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .toArray();
+}
+
+export async function listPlatformAudit(limit = 50): Promise<IdentityAuditEntry[]> {
+  const db = await getDatabase();
+  return db
+    .collection<IdentityAuditEntry>("identity_audit")
+    .find(platformAuditFilter())
     .sort({ createdAt: -1 })
     .limit(limit)
     .toArray();

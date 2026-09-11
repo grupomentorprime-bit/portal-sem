@@ -55,8 +55,11 @@ export function verifySubmissionParticipantToken(
   }
 }
 
-export function buildParticipantJustifyUrl(submissionId: string): string {
+export function buildParticipantJustifyUrl(
+  submissionId: string,
+  origin: string = getAppBaseUrl()
+): string {
   const token = createSubmissionParticipantToken(submissionId);
-  const baseUrl = getAppBaseUrl();
+  const baseUrl = origin.replace(/\/$/, "") || getAppBaseUrl();
   return `${baseUrl}/asistencia/justificar/${encodeURIComponent(submissionId)}?token=${encodeURIComponent(token)}`;
 }

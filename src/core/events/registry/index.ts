@@ -25,6 +25,18 @@ export const DOMAIN_EVENT_TYPES = [
   "PageViewed",
   "BlockRendered",
   "CTAViewed",
+  // Growth Core (ADR-010 §4.4 / OT-GROWTH-CORE-004)
+  "GrowthPersonaUpserted",
+  "GrowthOpportunityOpened",
+  "GrowthOpportunityTransitioned",
+  "GrowthActivityRecorded",
+  "GrowthNextActionSet",
+  "GrowthHandoffRecorded",
+  // Messaging base (OT-GROWTH-MESSAGING-001 / 003)
+  "GrowthMessageReceived",
+  "GrowthMessageSent",
+  // Automatizaciones — reanudación tras WAIT (OT-GROWTH-AUTOMATION-005)
+  "GrowthAutomationResume",
   // Futuro
   "EnrollmentCreated",
   "PaymentReceived",

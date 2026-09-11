@@ -120,12 +120,14 @@ export const loadSessionContext = cache(async (): Promise<{
   });
   if (!user) return null;
 
-  const membership = await db.collection<IdentityMembership>("identity_memberships").findOne({
-    userId: session.userId,
-    tenantId: session.tenantId,
-    status: "active",
-  });
+  // SAAS-005: activeTenantId = session.tenantId; recupera si la membresía caducó.
+  const { reconcileSessionActiveTenant } = await import("@/lib/identity/active-space");
+  const reconciled = await reconcileSessionActiveTenant(session);
 
-  await touchSessionIfStale(session);
-  return { session, user, membership };
+  await touchSessionIfStale(reconciled.session);
+  return {
+    session: reconciled.session,
+    user,
+    membership: reconciled.membership,
+  };
 });
