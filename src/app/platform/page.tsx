@@ -94,9 +94,9 @@ export default async function PlatformHomePage() {
                 className="absolute inset-y-[-14%] right-0 w-[64%]"
                 style={{
                   WebkitMaskImage:
-                    "linear-gradient(115deg, transparent 0%, transparent 26%, rgba(0,0,0,0.35) 40%, #000 58%, #000 100%)",
+                    "linear-gradient(115deg, transparent 0%, transparent 26%, #00000059 40%, #000 58%, #000 100%)",
                   maskImage:
-                    "linear-gradient(115deg, transparent 0%, transparent 26%, rgba(0,0,0,0.35) 40%, #000 58%, #000 100%)",
+                    "linear-gradient(115deg, transparent 0%, transparent 26%, #00000059 40%, #000 58%, #000 100%)",
                 }}
               >
                 <Image
@@ -117,15 +117,31 @@ export default async function PlatformHomePage() {
               >
                 <defs>
                   <linearGradient id="shell003b-fade" x1="0" y1="0" x2="1" y2="0.12">
-                    <stop offset="0" stopColor="#fff" stopOpacity="1" />
-                    <stop offset="0.03" stopColor="#fff" stopOpacity="0.85" />
-                    <stop offset="0.1" stopColor="#fff" stopOpacity="0" />
+                    <stop offset="0" stopColor="var(--color-surface)" stopOpacity="1" />
+                    <stop offset="0.03" stopColor="var(--color-surface)" stopOpacity="0.85" />
+                    <stop offset="0.1" stopColor="var(--color-surface)" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="shell003b-wedge" x1="0.05" y1="0" x2="1" y2="0.08">
-                    <stop offset="0" stopColor="rgb(186 216 240)" stopOpacity="0.95" />
-                    <stop offset="0.45" stopColor="rgb(176 212 240)" stopOpacity="0.75" />
-                    <stop offset="0.7" stopColor="rgb(168 208 238)" stopOpacity="0.28" />
-                    <stop offset="1" stopColor="rgb(168 208 238)" stopOpacity="0" />
+                    <stop
+                      offset="0"
+                      stopColor="color-mix(in srgb, var(--growth-os-secondary) 42%, white)"
+                      stopOpacity="0.95"
+                    />
+                    <stop
+                      offset="0.45"
+                      stopColor="color-mix(in srgb, var(--growth-os-secondary) 38%, white)"
+                      stopOpacity="0.75"
+                    />
+                    <stop
+                      offset="0.7"
+                      stopColor="color-mix(in srgb, var(--growth-os-secondary) 35%, white)"
+                      stopOpacity="0.28"
+                    />
+                    <stop
+                      offset="1"
+                      stopColor="color-mix(in srgb, var(--growth-os-secondary) 35%, white)"
+                      stopOpacity="0"
+                    />
                   </linearGradient>
                   <clipPath id="shell003b-diag">
                     <polygon points="42,0 600,0 600,210 2,210" />
@@ -149,7 +165,7 @@ export default async function PlatformHomePage() {
                   <g filter="url(#shell003b-soft)">
                     <polygon
                       points="55,-10 265,4 185,235 18,235"
-                      fill="rgb(214 234 249)"
+                      fill="color-mix(in srgb, var(--growth-os-secondary) 18%, white)"
                       opacity="0.42"
                     />
                   </g>

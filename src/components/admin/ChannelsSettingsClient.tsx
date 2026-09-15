@@ -73,14 +73,14 @@ const FUTURE_CHANNELS = [
     description: "Mensajes directos con tu audiencia",
     Icon: InstagramMark,
     accent:
-      "bg-gradient-to-br from-[#f58529]/15 via-[#dd2a7b]/15 to-[#8134af]/15 text-[#c13584]",
+      "bg-gradient-to-br from-warning/15 via-accent/15 to-accent/15 text-accent",
   },
   {
     id: "facebook",
     label: "Facebook",
     description: "Conversaciones desde Messenger",
     Icon: FacebookMark,
-    accent: "bg-[#1877F2]/12 text-[#1877F2]",
+    accent: "bg-primary/12 text-primary",
   },
   {
     id: "site-chat",
@@ -94,7 +94,7 @@ const FUTURE_CHANNELS = [
     label: "Correo",
     description: "Bandeja unificada de correo",
     Icon: Mail,
-    accent: "bg-amber-500/12 text-amber-700 dark:text-amber-400",
+    accent: "bg-warning/12 text-warning",
   },
 ] as const;
 
@@ -149,7 +149,7 @@ function CapabilityRow({
         className={cn(
           "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs",
           ok
-            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+            ? "bg-success/15 text-success"
             : "bg-muted/60 text-muted"
         )}
         aria-hidden
@@ -172,12 +172,9 @@ function ChannelStatusPill({
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide",
-        status === "connected" &&
-          "bg-emerald-500/12 text-emerald-800 dark:text-emerald-300",
-        status === "paused" &&
-          "bg-amber-500/12 text-amber-800 dark:text-amber-300",
-        status === "incomplete" &&
-          "bg-amber-500/12 text-amber-800 dark:text-amber-300",
+        status === "connected" && "bg-success/12 text-success",
+        status === "paused" && "bg-warning/12 text-warning",
+        status === "incomplete" && "bg-warning/12 text-warning",
         status === "not_connected" && "bg-muted/70 text-muted"
       )}
       data-channel-status-label
@@ -499,13 +496,13 @@ export function ChannelsSettingsClient() {
         data-status={status}
       >
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-[#25D366]"
+          className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-[var(--color-success)]"
           aria-hidden
         />
         <div className="space-y-6 p-5 sm:p-6 lg:p-7">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3.5">
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[#25D366]/15 text-[#25D366] shadow-[inset_0_0_0_1px_rgba(37,211,102,0.18)]">
+              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-success/15 text-success shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-success)_18%,transparent)]">
                 <WhatsAppMark className="h-6 w-6" />
               </span>
               <div className="min-w-0">
@@ -569,7 +566,7 @@ export function ChannelsSettingsClient() {
               className={cn(
                 "text-sm",
                 testStatus === "success"
-                  ? "text-emerald-700 dark:text-emerald-400"
+                  ? "text-success"
                   : "text-destructive"
               )}
               data-channel-test-result
@@ -665,7 +662,7 @@ export function ChannelsSettingsClient() {
       >
         <form onSubmit={handleSave} className="space-y-6 p-6 pt-1">
           <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-muted)] px-4 py-3">
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[#25D366]/15 text-[#25D366]">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-success/15 text-success">
               <WhatsAppMark className="h-4 w-4" />
             </span>
             <div className="min-w-0 space-y-0.5">

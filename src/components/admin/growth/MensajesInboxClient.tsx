@@ -109,7 +109,7 @@ function ChannelMark({
   const iconClass = cn("h-3.5 w-3.5 shrink-0", className);
   switch (channel) {
     case "whatsapp":
-      return <WhatsAppMark className={cn(iconClass, "text-[#25D366]")} />;
+      return <WhatsAppMark className={cn(iconClass, "text-success")} />;
     case "web_chat":
       return <MessageSquare className={iconClass} aria-hidden />;
     case "instagram":

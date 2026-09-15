@@ -207,7 +207,7 @@ export function GrowthOsAdminHomeMaster({
                       {item.label}
                     </p>
                     {showActionHint ? (
-                      <p className="mt-1 text-[11px] font-semibold text-[var(--color-danger,#dc2626)]">
+                      <p className="mt-1 text-[11px] font-semibold text-[var(--color-danger)]">
                         Requieren tu acción
                       </p>
                     ) : null}
@@ -227,7 +227,7 @@ export function GrowthOsAdminHomeMaster({
                 {GROWTH_NEXT_ACTION_SECTION_LABEL}
               </h2>
               {pendingCount > 0 ? (
-                <span className="inline-flex rounded-full bg-[color-mix(in_srgb,var(--color-danger,#dc2626)_12%,white)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-danger,#dc2626)]">
+                <span className="inline-flex rounded-full bg-[color-mix(in_srgb,var(--color-danger)_12%,white)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-danger)]">
                   {pendingCount} pendiente{pendingCount === 1 ? "" : "s"}
                 </span>
               ) : null}
