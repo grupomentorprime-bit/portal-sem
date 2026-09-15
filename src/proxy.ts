@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/core/identity/auth/config";
+import { applyPrivateNoStoreHeader } from "@/core/security/http-headers";
 import { isPlatformOriginHost, resolveRequestHost } from "@/core/tenant/hosts";
+
+function withPrivateCacheControl(response: NextResponse, pathname: string) {
+  applyPrivateNoStoreHeader(response.headers, pathname);
+  return response;
+}
 
 function continueWithPathname(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
@@ -10,7 +16,10 @@ function continueWithPathname(request: NextRequest) {
   if (/^\/formularios\/[^/]+$/.test(pathname)) {
     requestHeaders.set("x-form-focused", "1");
   }
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  return withPrivateCacheControl(
+    NextResponse.next({ request: { headers: requestHeaders } }),
+    pathname
+  );
 }
 
 function isPlatformProductPath(pathname: string): boolean {
@@ -32,7 +41,10 @@ export function proxy(request: NextRequest) {
   const host = resolveRequestHost(request.headers);
 
   if (isPlatformOriginHost(host) && !isPlatformProductPath(pathname)) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    return withPrivateCacheControl(
+      NextResponse.redirect(new URL("/admin", request.url)),
+      pathname
+    );
   }
 
   const isProtected =
@@ -52,7 +64,7 @@ export function proxy(request: NextRequest) {
   if (!sessionId) {
     const loginUrl = new URL("/admin/login", request.url);
     loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    return withPrivateCacheControl(NextResponse.redirect(loginUrl), pathname);
   }
 
   return continueWithPathname(request);

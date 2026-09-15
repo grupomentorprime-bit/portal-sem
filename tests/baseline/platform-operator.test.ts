@@ -278,12 +278,28 @@ describe("OT-GROWTH-PROD-005 — superficie y guard", () => {
     }
   });
 
-  it("landing: operador sin Espacio → /platform; owner de cliente → no", () => {
+  it("landing: operador → /platform aunque tenga Espacio; next=/platform solo con capacidad", () => {
     assert.equal(
       resolvePostAuthDestination({
         hasSpace: false,
         isPlatformOperator: true,
         next: null,
+      }),
+      PLATFORM_ADMIN_HOME
+    );
+    assert.equal(
+      resolvePostAuthDestination({
+        hasSpace: true,
+        isPlatformOperator: true,
+        next: null,
+      }),
+      PLATFORM_ADMIN_HOME
+    );
+    assert.equal(
+      resolvePostAuthDestination({
+        hasSpace: true,
+        isPlatformOperator: true,
+        next: "/admin",
       }),
       PLATFORM_ADMIN_HOME
     );
@@ -310,6 +326,14 @@ describe("OT-GROWTH-PROD-005 — superficie y guard", () => {
         next: "/platform",
       }),
       "/platform"
+    );
+    assert.equal(
+      resolvePostAuthDestination({
+        hasSpace: true,
+        isPlatformOperator: true,
+        next: "/platform/spaces/seminario-ipn",
+      }),
+      "/platform/spaces/seminario-ipn"
     );
   });
 });

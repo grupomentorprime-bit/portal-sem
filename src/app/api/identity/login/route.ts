@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isEmailAuthEnabled } from "@/core/identity/auth/config";
 import { hasPlatformOperatorCapability, loginWithEmail } from "@/core/identity";
+import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
 import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
 import { publicInternalError } from "@/core/security/public-error";
 
@@ -13,7 +14,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json()) as { email?: string; password?: string };
+    const body = (await request.json()) as {
+      email?: string;
+      password?: string;
+      next?: string;
+    };
     // Host solo como preferencia; el Espacio activo sale de membresías.
     const preferredTenantId = await resolveActiveTenantIdFromRequest();
 
@@ -34,6 +39,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: result.error }, { status: 401 });
     }
 
+    const isPlatformOperator = hasPlatformOperatorCapability(result.user);
+    const hasSpace = Boolean(result.activeTenantId);
+    const redirectTo = resolvePostAuthDestination({
+      hasSpace,
+      isPlatformOperator,
+      next: body.next,
+    });
+
     return NextResponse.json({
       ok: true,
       user: {
@@ -42,9 +55,10 @@ export async function POST(request: Request) {
         displayName: result.user.displayName,
       },
       activeTenantId: result.activeTenantId,
-      hasSpace: Boolean(result.activeTenantId),
-      isPlatformOperator: hasPlatformOperatorCapability(result.user),
+      hasSpace,
+      isPlatformOperator,
       platformRoles: result.user.platformRoles ?? [],
+      redirectTo,
     });
   } catch (error) {
     return publicInternalError("identity-login", error);

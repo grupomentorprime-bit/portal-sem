@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import {
+  PRIVATE_CACHE_CONTROL,
+  buildAppSecurityHeaders,
+} from "./src/core/security/http-headers";
 
 function buildRemotePatterns(): NonNullable<NextConfig["images"]>["remotePatterns"] {
   const patterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [];
@@ -21,9 +25,31 @@ function buildRemotePatterns(): NonNullable<NextConfig["images"]>["remotePattern
   return patterns;
 }
 
+/**
+ * no-store explícito en next.config para zonas pedidas por la OT.
+ * Prefijos CMS/experience adicionales (con excepciones públicas) van vía `src/proxy.ts`.
+ */
+const PRIVATE_NO_STORE_SOURCES = [
+  "/admin",
+  "/admin/:path*",
+  "/platform",
+  "/platform/:path*",
+  "/internal",
+  "/internal/:path*",
+  "/api/identity",
+  "/api/identity/:path*",
+  "/api/platform",
+  "/api/platform/:path*",
+  "/api/growth",
+  "/api/growth/:path*",
+  "/api/admin",
+  "/api/admin/:path*",
+] as const;
+
 const nextConfig: NextConfig = {
   // Windows: Playwright/scripts suelen usar 127.0.0.1; sin esto Next bloquea /_next/* en dev.
   allowedDevOrigins: ["127.0.0.1"],
+  poweredByHeader: false,
   images: {
     localPatterns: [
       {
@@ -44,6 +70,20 @@ const nextConfig: NextConfig = {
       },
     ],
     remotePatterns: buildRemotePatterns(),
+  },
+  async headers() {
+    const security = buildAppSecurityHeaders(process.env);
+
+    return [
+      {
+        source: "/:path*",
+        headers: security,
+      },
+      ...PRIVATE_NO_STORE_SOURCES.map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: PRIVATE_CACHE_CONTROL }],
+      })),
+    ];
   },
 };
 
