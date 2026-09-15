@@ -135,7 +135,8 @@ function validateConditionRule(
       };
     }
     case "origin.channel":
-    case "origin.formDestination": {
+    case "origin.formDestination":
+    case "origin.campaign": {
       if (raw.op !== "eq" || typeof raw.value !== "string" || !raw.value.trim()) {
         return {
           ok: false,

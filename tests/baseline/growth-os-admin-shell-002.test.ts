@@ -25,8 +25,7 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
     assert.match(nav, /id: "ajustes"/);
     assert.match(nav, /label: "Crecer"/);
     assert.match(nav, /id: "nav-mensajes"[\s\S]*?href: "\/admin\/mensajes"/);
-    // Placeholder visual (sin página vacía): Campañas
-    assert.match(nav, /id: "nav-campanas"[\s\S]*?href: null/);
+    assert.match(nav, /id: "nav-campanas"[\s\S]*?href: "\/admin\/campanas"/);
   });
 
   it("reubica legacy bajo Sitio web / Ajustes sin borrar rutas", () => {

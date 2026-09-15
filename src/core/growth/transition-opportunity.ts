@@ -7,6 +7,7 @@
 import { recordGrowthActivity } from "./activity";
 import type { GrowthEventBusPort } from "./event-bus-port";
 import { buildGrowthIngestKey } from "./ingest-key";
+import { clearGrowthNextAction } from "./next-action";
 import { isGrowthOpportunityFinalStatus } from "./opportunity-definition";
 import type { GrowthOpportunityStore } from "./opportunity-store";
 import type { GrowthOpportunityWorkflowPort } from "./opportunity-workflow-port";
@@ -95,7 +96,8 @@ export async function transitionGrowthOpportunity(
     updated.handoff = existing.handoff;
   }
 
-  const saved = await store.replace(updated);
+  const savedInitial = await store.replace(updated);
+  let saved = savedInitial;
 
   const sourceCollection = input.sourceCollection ?? "growth_oportunidades";
   const sourceId =
@@ -160,6 +162,23 @@ export async function transitionGrowthOpportunity(
       { eventBus: input.eventBus }
     );
     if (handoffRecorded.ok) handoffActivity = handoffRecorded.activity;
+  }
+
+  // E2E-FIX-001 — higiene: estados finales no conservan nextAction obsoleto.
+  if (
+    isGrowthOpportunityFinalStatus(toState) &&
+    existing.nextAction != null
+  ) {
+    const cleared = await clearGrowthNextAction(store, {
+      tenantId: saved.tenantId,
+      oportunidadId: saved._id,
+      now,
+      actorUserId: input.actorUserId,
+      eventBus: input.eventBus,
+    });
+    if (cleared.ok) {
+      saved = cleared.oportunidad;
+    }
   }
 
   return {

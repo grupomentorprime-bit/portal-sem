@@ -225,7 +225,8 @@ describe("OT-GROWTH-UX-ADMIN-MASTER-001 — maqueta Inicio", () => {
     );
     assert.match(home, /GROWTH_TIMELINE_SECTION_LABEL/);
     assert.match(home, /Ver toda la actividad/);
-    assert.match(home, /\/admin\/settings\/activity/);
+    assert.match(home, /\/admin\/actividad/);
+    assert.doesNotMatch(home, /\/admin\/settings\/activity/);
     assert.match(home, /Tienes \$\{pendingCount\} cosas que necesitan tu atención/);
     assert.match(home, /Todo está al día/);
     assert.doesNotMatch(home, /Acciones rápidas/);

@@ -76,6 +76,12 @@ export async function ensureGrowthPersonaIndexes(db: Db): Promise<{
       keys: { tenantId: 1, updatedAt: -1 },
       name: "tenantId_updatedAt",
     },
+    // OT-GROWTH-ANALYTICS-IMPLEMENT-003 — Personas nuevas / Captación
+    {
+      collection: personas,
+      keys: { tenantId: 1, createdAt: -1 },
+      name: "tenantId_createdAt",
+    },
     // Mínimo para idempotencia (CORE-004 ampliará el resto de actividades)
     {
       collection: actividades,
@@ -132,6 +138,29 @@ export async function ensureGrowthOpportunityIndexes(db: Db): Promise<{
         subjectId: 1,
       },
       name: "tenantId_personaId_typeKey_subject",
+    },
+    // OT-GROWTH-ANALYTICS-IMPLEMENT-003 — cohorte / cierres / campañas periodizadas
+    {
+      collection: oportunidades,
+      keys: { tenantId: 1, openedAt: -1 },
+      name: "tenantId_openedAt",
+    },
+    {
+      collection: oportunidades,
+      keys: { tenantId: 1, status: 1, openedAt: -1 },
+      name: "tenantId_status_openedAt",
+    },
+    {
+      collection: oportunidades,
+      keys: { tenantId: 1, closedAt: -1 },
+      name: "tenantId_closedAt",
+      sparse: true,
+    },
+    {
+      collection: oportunidades,
+      keys: { tenantId: 1, "origin.campaign": 1, openedAt: -1 },
+      name: "tenantId_originCampaign_openedAt",
+      sparse: true,
     },
     {
       collection: spaceConfigs,
@@ -201,6 +230,12 @@ export async function ensureGrowthActivityIndexes(db: Db): Promise<{
       name: "tenantId_ingestKey_unique",
       unique: true,
       sparse: true,
+    },
+    // OT-GROWTH-ACTIVITY-001 — feed global /admin/actividad (tenant + tiempo)
+    {
+      collection: actividades,
+      keys: { tenantId: 1, occurredAt: -1 },
+      name: "tenantId_occurredAt",
     },
   ];
 

@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# typescript incremental build info (Nixpacks treats this path as a cache dir)
+*.tsbuildinfo
+
 # production
 /build
 

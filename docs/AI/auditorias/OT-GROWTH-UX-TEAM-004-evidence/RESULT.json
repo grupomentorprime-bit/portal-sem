@@ -1,0 +1,21 @@
+{
+  "ot": "OT-GROWTH-UX-TEAM-004",
+  "tenantId": "seminario-ipn",
+  "memberCount": 7,
+  "invitationCount": 0,
+  "rolePanelOpened": true,
+  "removeOpened": true,
+  "permsPatched": false,
+  "emptyKind": "busqueda",
+  "shots": {
+    "listadoDesktop": "01-desktop-listado.png",
+    "invitarDesktop": "02-desktop-invitar.png",
+    "invitacionesDesktop": "03-desktop-invitaciones.png",
+    "cambiarRolDesktop": "04-desktop-cambiar-rol.png",
+    "quitarAccesoDesktop": "05-desktop-quitar-acceso.png",
+    "estadoVacio": "06-estado-vacio.png",
+    "listadoMobile": "07-mobile-listado.png",
+    "invitarMobile": "08-mobile-invitar.png"
+  },
+  "capturedAt": "2026-09-14T14:33:22.895Z"
+}

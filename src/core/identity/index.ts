@@ -2,6 +2,7 @@ export * from "./permissions/registry";
 export * from "./permissions/catalog";
 export * from "./permissions/role-templates";
 export * from "./permissions/resolver";
+export * from "./permissions/sync-system-role";
 export * from "./permissions/scopes";
 export * from "./roles/defaults";
 export * from "./roles/codes";
@@ -12,6 +13,8 @@ export { isIdentityEnforced, isKeycloakOnlyAuth, isEmailAuthEnabled, SESSION_COO
 export {
   isKeycloakEnabled,
   buildKeycloakAuthorizeUrl,
+  createPkcePair,
+  GROWTH_OS_KEYCLOAK_CLIENT_ID,
 } from "./auth/keycloak";
 export { loginWithEmail, registerWithEmail, logoutCurrentSession } from "./auth/login";
 export {

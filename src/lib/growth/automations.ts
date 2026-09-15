@@ -1,6 +1,7 @@
 /**
- * OT-GROWTH-AUTOMATION-002 — fachada server-only sobre Mongo (definiciones).
+ * OT-GROWTH-AUTOMATION-002 / E2E-FIX-001 — fachada server-only sobre Mongo (definiciones).
  * Runtime: automations-runtime.ts (AUTOMATION-003).
+ * ensure de playbook de arranque al listar (Espacios existentes).
  */
 
 import "server-only";
@@ -8,6 +9,8 @@ import "server-only";
 import {
   createGrowthAutomation,
   createMongoGrowthAutomationStore,
+  ensureGrowthAutomationIndexes,
+  ensureGrowthStartupNextActionAutomation,
   getGrowthAutomation,
   listGrowthAutomations,
   publishGrowthAutomation,
@@ -22,7 +25,26 @@ async function store() {
   return createMongoGrowthAutomationStore(db);
 }
 
+/** Ensure idempotente del playbook de arranque (fail-soft). */
+async function ensureStartupSeed(tenantId: string): Promise<void> {
+  try {
+    const db = await getDatabase();
+    await ensureGrowthAutomationIndexes(db);
+    await ensureGrowthStartupNextActionAutomation(
+      createMongoGrowthAutomationStore(db),
+      tenantId
+    );
+  } catch (error) {
+    console.error(
+      "[Growth] startup nextAction ensure failed",
+      tenantId,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
 export async function automationsList(tenantId: string) {
+  await ensureStartupSeed(tenantId);
   return listGrowthAutomations(await store(), tenantId);
 }
 

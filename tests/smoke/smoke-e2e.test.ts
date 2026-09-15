@@ -99,7 +99,7 @@ describe("OT-GROWTH-TEST-002 — admin anónimo + login institucional (inicio)",
     assert.equal(providers?.local, false);
   });
 
-  it("login Keycloak inicia redirect OAuth (sin completar credenciales)", async (t) => {
+  it("login Keycloak inicia redirect OAuth con PKCE (sin completar credenciales)", async (t) => {
     if (skipIfOffline(t)) return;
     const res = await smokeFetch("/api/identity/auth/keycloak/login");
     if (res.status === 503) {
@@ -115,6 +115,22 @@ describe("OT-GROWTH-TEST-002 — admin anónimo + login institucional (inicio)",
     assert.match(loc, /openid-connect\/auth|protocol\/openid-connect/);
     assert.match(loc, /client_id=/);
     assert.match(loc, /redirect_uri=/);
+    assert.match(loc, /code_challenge=/);
+    assert.match(loc, /code_challenge_method=S256/);
+    assert.match(loc, /state=/);
+  });
+
+  it("sesión Keycloak rechaza credenciales inválidas en el servidor (no redirige al IdP)", async (t) => {
+    if (skipIfOffline(t)) return;
+    const res = await smokeFetch("/api/identity/auth/keycloak/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "x@y.z", password: "nope" }),
+    });
+    assert.notEqual(res.status, 410);
+    assert.ok([400, 401, 502, 503].includes(res.status), `status inesperado ${res.status}`);
+    const body = asRecord(res.json);
+    assert.equal(body?.ok, false);
   });
 });
 

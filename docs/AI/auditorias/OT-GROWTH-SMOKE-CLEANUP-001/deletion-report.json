@@ -1,0 +1,399 @@
+{
+  "ot": "OT-GROWTH-SMOKE-CLEANUP-001",
+  "deletedAt": "2026-09-11T21:15:00.740Z",
+  "backupPath": "C:\\Users\\semip\\Proyectos\\portal-sem\\docs\\AI\\auditorias\\OT-GROWTH-SMOKE-CLEANUP-001\\backup-before-delete-2026-09-11T21-14-55-498Z.json",
+  "deletedCount": 59,
+  "deletedByCollection": {
+    "experience_forms": 1,
+    "experience_form_submissions": 3,
+    "growth_personas": 5,
+    "growth_oportunidades": 4,
+    "growth_actividades": 14,
+    "growth_conversaciones": 2,
+    "growth_mensajes": 5,
+    "growth_whatsapp_connections": 1,
+    "identity_sessions": 6,
+    "portal_interesados": 1,
+    "core_events": 14,
+    "core_scheduled_events": 3
+  },
+  "deleted": [
+    {
+      "collection": "growth_mensajes",
+      "_id": "msg-capture-messaging-004a-a1-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_mensajes",
+      "_id": "msg-capture-messaging-004a-a2-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_mensajes",
+      "_id": "msg-capture-messaging-004a-a3-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_mensajes",
+      "_id": "msg-capture-messaging-004a-b1-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_mensajes",
+      "_id": "msg-capture-messaging-004a-b2-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effc24dfe2a5dd505247f",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effc44dfe2a5dd5052481",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effc74dfe2a5dd5052484",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effd54dfe2a5dd5052489",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effe44dfe2a5dd5052490",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effe64dfe2a5dd5052492",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effea4dfe2a5dd5052495",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9effed4dfe2a5dd5052498",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9efff14dfe2a5dd505249a",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9efff54dfe2a5dd505249c",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9efff74dfe2a5dd505249e",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9f00064dfe2a5dd50524a5",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9f00084dfe2a5dd50524a7",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_actividades",
+      "_id": "6a9f000c4dfe2a5dd50524aa",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_scheduled_events",
+      "_id": "sched-1788805062428-e8zd",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_scheduled_events",
+      "_id": "sched-1788805097025-p33w",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_scheduled_events",
+      "_id": "sched-1788805131051-mxzs",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effc24dfe2a5dd5052480",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effc44dfe2a5dd5052482",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effc84dfe2a5dd5052485",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effd54dfe2a5dd505248a",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effe54dfe2a5dd5052491",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effe74dfe2a5dd5052493",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effea4dfe2a5dd5052496",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effee4dfe2a5dd5052499",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9efff14dfe2a5dd505249b",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9efff54dfe2a5dd505249d",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9efff84dfe2a5dd505249f",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9f00074dfe2a5dd50524a6",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9f00094dfe2a5dd50524a8",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9f000d4dfe2a5dd50524ab",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_conversaciones",
+      "_id": "conv-capture-messaging-004a-a-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_conversaciones",
+      "_id": "conv-capture-messaging-004a-b-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_oportunidades",
+      "_id": "6a9effc04dfe2a5dd505247e",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_oportunidades",
+      "_id": "6a9effe34dfe2a5dd505248f",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_oportunidades",
+      "_id": "6a9f00054dfe2a5dd50524a4",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_oportunidades",
+      "_id": "oportunidad-capture-messaging-004a-a-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "experience_form_submissions",
+      "_id": "6a9effb84dfe2a5dd505247a",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "experience_form_submissions",
+      "_id": "6a9effcd4dfe2a5dd5052486",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "experience_form_submissions",
+      "_id": "6a9efffd4dfe2a5dd50524a0",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "portal_interesados",
+      "_id": "6a9effdb4dfe2a5dd505248b",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_personas",
+      "_id": "6a9effbd4dfe2a5dd505247b",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_personas",
+      "_id": "6a9effe04dfe2a5dd505248c",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_personas",
+      "_id": "6a9f00024dfe2a5dd50524a1",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_personas",
+      "_id": "persona-capture-messaging-004a-a-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_personas",
+      "_id": "persona-capture-messaging-004a-b-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "experience_forms",
+      "_id": "adl-smoke-info-request",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "growth_whatsapp_connections",
+      "_id": "6aa03af46235c0e6669ea6fc",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "identity_sessions",
+      "_id": "sess-capture-messaging-004-1788836703762",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "identity_sessions",
+      "_id": "sess-capture-messaging-004a-1788837779788",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "identity_sessions",
+      "_id": "sess-capture-messaging-004a-1788837881428",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "identity_sessions",
+      "_id": "sess-capture-messaging-004a-1788837984377",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "identity_sessions",
+      "_id": "sess-capture-messaging-005-mtswdrdh",
+      "deletedCount": 1,
+      "tenant": "adl"
+    },
+    {
+      "collection": "identity_sessions",
+      "_id": "sess-capture-smoke-1788805040542",
+      "deletedCount": 1,
+      "tenant": "adl"
+    }
+  ],
+  "verification": {
+    "remainingForm": null,
+    "remainingSubsForSmokeForm": 3,
+    "remainingCaptureWaConnections": 0,
+    "orphanActividadesForDeletedPersonas": 0,
+    "orphanOportunidadesForDeletedPersonas": 0
+  },
+  "baselinesBefore": {
+    "experience_forms_adl": 1,
+    "experience_forms_sem": 7,
+    "growth_whatsapp_connections_adl": 1,
+    "growth_whatsapp_connections_sem": 0,
+    "growth_personas_adl": 6,
+    "growth_personas_sem": 1
+  },
+  "baselinesAfter": {
+    "experience_forms_adl": 0,
+    "experience_forms_sem": 7,
+    "growth_whatsapp_connections_adl": 0,
+    "growth_whatsapp_connections_sem": 0,
+    "growth_personas_adl": 1,
+    "growth_personas_sem": 1
+  }
+}

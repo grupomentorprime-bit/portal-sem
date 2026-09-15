@@ -20,9 +20,11 @@ import { updateUserLastLogin } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
 import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
-
-const STATE_COOKIE = "kc_oauth_state";
-const NEXT_COOKIE = "kc_oauth_next";
+import {
+  NEXT_COOKIE,
+  PKCE_COOKIE,
+  STATE_COOKIE,
+} from "@/core/identity/auth/oauth-cookies";
 
 export async function GET(request: Request) {
   if (!isKeycloakEnabled()) {
@@ -34,19 +36,27 @@ export async function GET(request: Request) {
   const state = url.searchParams.get("state");
   const jar = await cookies();
   const savedState = jar.get(STATE_COOKIE)?.value;
+  const codeVerifier = jar.get(PKCE_COOKIE)?.value;
   const nextPath = jar.get(NEXT_COOKIE)?.value || "/admin";
+
+  // Consumir cookies de un solo uso antes de validar / intercambiar.
   jar.delete(STATE_COOKIE);
+  jar.delete(PKCE_COOKIE);
   jar.delete(NEXT_COOKIE);
 
   if (!code || !state || !savedState || state !== savedState) {
     return NextResponse.redirect(new URL("/admin/login?error=oauth_state", request.url));
   }
 
+  if (!codeVerifier) {
+    return NextResponse.redirect(new URL("/admin/login?error=oauth_pkce", request.url));
+  }
+
   try {
     // Preferencia de host (invitación/bootstrap SEM); no ata la identidad a SEM.
     const preferredTenantId = await resolveActiveTenantIdFromRequest();
 
-    const tokens = await exchangeKeycloakCode(code);
+    const tokens = await exchangeKeycloakCode(code, codeVerifier);
     const profile = await fetchKeycloakUserInfo(tokens.accessToken);
     const { user, activeTenantId } = await finishKeycloakLogin(
       profile,

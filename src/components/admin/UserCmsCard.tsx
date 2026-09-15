@@ -1,13 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { History, Settings2 } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
-import { formatRelativeTime } from "@/lib/admin/audit-labels";
-import { ROLE_CODES } from "@/core/identity/roles/codes";
-import { isProtectedMember, rolesIncludeCode } from "@/core/identity/roles/helpers";
-import type { UserMemberDrawerMode } from "@/components/admin/UserMemberDrawer";
+import { isProtectedMember } from "@/core/identity/roles/helpers";
 import { cn } from "@/lib/utils";
 
 interface UserRole {
@@ -24,7 +19,7 @@ export interface AssignableRole {
   label: string;
 }
 
-export type MemberAction = "suspend" | "block" | "archive" | "restore" | "remove";
+export type MemberAction = "remove-access";
 
 export type UserCmsCardPanel = "roles" | "actions";
 
@@ -43,11 +38,17 @@ interface UserCmsCardProps {
   assignableRoles?: AssignableRole[];
   activePanel?: UserCmsCardPanel | null;
   onPanelToggle?: (panel: UserCmsCardPanel) => void;
-  onOpenDrawer?: (mode: UserMemberDrawerMode) => void;
   onRoleChange?: (membershipId: string, roleCode: string) => void;
   onMemberAction?: (membershipId: string, action: MemberAction) => void;
   saving?: boolean;
   actionSaving?: MemberAction | null;
+}
+
+function statusLabel(status: string): string | null {
+  if (status === "active") return null;
+  if (status === "archived") return "Sin acceso";
+  if (status === "suspended") return "Sin acceso";
+  return status;
 }
 
 export function UserCmsCard({
@@ -55,7 +56,6 @@ export function UserCmsCard({
   assignableRoles = [],
   activePanel = null,
   onPanelToggle,
-  onOpenDrawer,
   onRoleChange,
   onMemberAction,
   saving,
@@ -65,23 +65,13 @@ export function UserCmsCard({
   const showActions = activePanel === "actions";
   const primaryRole = member.roles[0];
   const isProtected = isProtectedMember(member.roles);
-  const isStudentAffairs = rolesIncludeCode(member.roles, ROLE_CODES.STUDENT_AFFAIRS);
   const label = member.displayName || member.email;
-  const canEditRole = !isProtected && member.status === "active" && onRoleChange && assignableRoles.length > 0;
-  const canManage = !isProtected && onMemberAction;
-  const isArchived = member.status === "archived";
+  const roleLabel = primaryRole?.label ?? "Colaborador";
+  const canEditRole =
+    !isProtected && member.status === "active" && onRoleChange && assignableRoles.length > 0;
+  const canManage = !isProtected && onMemberAction && member.status === "active";
   const busy = Boolean(saving || actionSaving);
-
-  const statusLabel =
-    member.status === "active"
-      ? "Activo"
-      : member.status === "archived"
-        ? "Archivado"
-        : member.status === "suspended"
-          ? "Suspendido"
-          : member.status;
-  const statusVariant =
-    member.status === "active" ? "success" : member.status === "archived" ? "warning" : "neutral";
+  const usefulStatus = statusLabel(member.status);
 
   const panelButtonClass = (panel: UserCmsCardPanel) =>
     cn(
@@ -95,132 +85,72 @@ export function UserCmsCard({
     <article
       className={cn(
         "rounded-xl border border-border bg-background p-4 shadow-sm transition-shadow",
-        isArchived && "border-[var(--state-warning-border)] bg-[var(--state-warning-bg)]/25",
+        member.status !== "active" &&
+          "border-[var(--state-warning-border)] bg-[var(--state-warning-bg)]/25",
         activePanel && "ring-1 ring-primary/15"
       )}
+      data-team-member
     >
       <div className="flex items-start gap-3">
         <AdminUserAvatar name={label} size="md" />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-semibold text-foreground">{label}</h3>
-          <p className="truncate text-sm text-muted">{member.email}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <Badge variant="neutral">{primaryRole?.label ?? "Colaborador"}</Badge>
-            <Badge variant={statusVariant}>{statusLabel}</Badge>
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <h3 className="truncate font-semibold text-foreground">{label}</h3>
+            <span className="text-sm font-medium text-foreground/80">{roleLabel}</span>
           </div>
-          <p className="mt-1.5 text-[11px] text-muted">
-            Último acceso:{" "}
-            {member.lastLoginAt ? formatRelativeTime(member.lastLoginAt) : "Sin registro"}
-          </p>
+          <p className="mt-0.5 truncate text-sm text-muted">{member.email}</p>
+          {usefulStatus ? (
+            <div className="mt-2">
+              <Badge variant="warning">{usefulStatus}</Badge>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
-        {canEditRole ? (
-          <button
-            type="button"
-            onClick={() => onPanelToggle?.("roles")}
-            disabled={busy}
-            className={panelButtonClass("roles")}
-          >
-            Editar rol
-          </button>
-        ) : null}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onOpenDrawer?.("permissions")}
-          className={panelButtonClass("roles")}
-        >
-          Permisos
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onOpenDrawer?.("audit")}
-          className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition hover:bg-background-muted hover:text-foreground disabled:opacity-50"
-        >
-          <History className="h-3.5 w-3.5" aria-hidden />
-          Historial
-        </button>
-        {canManage ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onPanelToggle?.("actions")}
-            className={panelButtonClass("actions")}
-          >
-            Acciones
-          </button>
-        ) : null}
-      </div>
-
-      {showActions && canManage ? (
-        <div className="mt-3 rounded-lg border border-border/80 bg-background-soft p-3">
-          <div className="grid gap-2 sm:grid-cols-3">
-            {isArchived ? (
-              <>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onMemberAction(member.membershipId, "restore")}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-left text-sm hover:bg-background-muted disabled:opacity-50"
-                >
-                  {actionSaving === "restore" ? "Restaurando…" : "Restaurar"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onMemberAction(member.membershipId, "remove")}
-                  className="rounded-lg border border-[var(--state-danger-border)] bg-background px-3 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] disabled:opacity-50 sm:col-span-2"
-                >
-                  {actionSaving === "remove" ? "Eliminando…" : "Eliminar definitivamente"}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onMemberAction(member.membershipId, "suspend")}
-                  className="rounded-lg border border-[var(--state-warning-border)] bg-background px-3 py-2 text-left text-sm text-[var(--color-warning)] hover:bg-[var(--state-warning-bg)] disabled:opacity-50"
-                >
-                  {actionSaving === "suspend" ? "Suspendiendo…" : "Suspender"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onMemberAction(member.membershipId, "block")}
-                  className="rounded-lg border border-[var(--state-danger-border)] bg-background px-3 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] disabled:opacity-50"
-                >
-                  {actionSaving === "block" ? "Bloqueando…" : "Bloquear"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onMemberAction(member.membershipId, "archive")}
-                  className="rounded-lg border border-[var(--state-danger-border)] bg-background px-3 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] disabled:opacity-50"
-                >
-                  {actionSaving === "archive" ? "Archivando…" : "Eliminar"}
-                </button>
-              </>
-            )}
-          </div>
+      {(canEditRole || canManage) && (
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
+          {canEditRole ? (
+            <button
+              type="button"
+              onClick={() => onPanelToggle?.("roles")}
+              disabled={busy}
+              className={panelButtonClass("roles")}
+            >
+              Cambiar rol
+            </button>
+          ) : null}
+          {canManage ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onPanelToggle?.("actions")}
+              className={panelButtonClass("actions")}
+            >
+              Gestionar
+            </button>
+          ) : null}
         </div>
+      )}
+
+      {isProtected && member.status === "active" ? (
+        <p className="mt-3 text-xs text-muted">Dueño del Espacio — rol no modificable desde Equipo.</p>
       ) : null}
 
-      {isStudentAffairs ? (
-        <Link
-          href="/admin/portal/asuntos-estudiantiles/equipo"
-          className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-        >
-          <Settings2 className="h-3 w-3" aria-hidden />
-          Asignar formularios y generaciones
-        </Link>
+      {showActions && canManage ? (
+        <div className="mt-3 rounded-lg border border-border/80 bg-background-soft p-3" data-team-remove>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onMemberAction(member.membershipId, "remove-access")}
+            className="w-full rounded-lg border border-[var(--state-danger-border)] bg-background px-3 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] disabled:opacity-50"
+          >
+            {actionSaving === "remove-access" ? "Quitando acceso…" : "Quitar acceso"}
+          </button>
+        </div>
       ) : null}
 
       {showRoles && canEditRole ? (
-        <div className="mt-3 rounded-lg border border-border/80 bg-background-soft p-3">
+        <div className="mt-3 rounded-lg border border-border/80 bg-background-soft p-3" data-team-roles>
           <div className="grid gap-2 sm:grid-cols-2">
             {assignableRoles.map((role) => (
               <button
@@ -240,12 +170,6 @@ export function UserCmsCard({
             ))}
           </div>
         </div>
-      ) : null}
-
-      {showRoles && isProtected ? (
-        <p className="mt-3 text-sm text-muted">
-          Este usuario tiene acceso reservado de Super Admin.
-        </p>
       ) : null}
     </article>
   );

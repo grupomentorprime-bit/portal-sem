@@ -32,14 +32,14 @@ export const GROWTH_OS_MASTER_NAV = {
     { id: "personas", label: "Personas", href: "/admin/personas", icon: "people" },
     { id: "ventas", label: "Ventas", href: null, icon: "sales" },
     { id: "mensajes", label: "Mensajes", href: null, icon: "messages" },
-    { id: "actividad", label: "Actividad", href: "/admin/settings/activity", icon: "activity" },
+    { id: "actividad", label: "Actividad", href: "/admin/actividad", icon: "activity" },
   ] satisfies MasterNavItem[],
   grow: {
     label: "Crecer",
     items: [
-      { id: "campanas", label: "Campañas", href: null, icon: "campaigns" },
+      { id: "campanas", label: "Campañas", href: "/admin/campanas", icon: "campaigns" },
       { id: "automatizaciones", label: "Automatizaciones", href: null, icon: "automations" },
-      { id: "analitica", label: "Analítica", href: null, icon: "analytics" },
+      { id: "analitica", label: "Analítica", href: "/admin/analitica", icon: "analytics" },
     ] satisfies MasterNavItem[],
   },
   tools: [

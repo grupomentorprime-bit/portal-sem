@@ -1,5 +1,5 @@
 /**
- * OT-GROWTH-MESSAGING-004 — proyección pura Conversación / Mensaje → vista UI.
+ * OT-GROWTH-MESSAGING-004 / E2E-FIX-003 — proyección pura Conversación / Mensaje → vista UI.
  * Sin I/O. Sin IDs técnicos ni lenguaje de proveedor en lo que se muestra.
  */
 
@@ -8,6 +8,12 @@ import type {
   GrowthMessageDirection,
   GrowthMessageStatus,
 } from "@/core/growth/messaging";
+import type { GrowthOportunidad } from "@/core/growth/types";
+import {
+  GROWTH_NO_NEXT_ACTION_LABEL,
+  growthOpportunityStatusLabel,
+  growthOpportunityTypeLabel,
+} from "./labels";
 
 const CHANNEL_LABELS: Record<GrowthConversationChannel, string> = {
   whatsapp: "WhatsApp",
@@ -39,6 +45,16 @@ export interface GrowthMensajeThreadItemView {
   sendFailed?: boolean;
 }
 
+/** Contexto comercial mínimo (SSOT Oportunidad); sin controles de Ventas. */
+export interface GrowthMensajesThreadOpportunityView {
+  typeLabel: string;
+  statusLabel: string;
+  /** Clave de estado solo para tono visual; la UI muestra statusLabel. */
+  status: string;
+  /** Summary humano o «No hay nada pendiente por ahora.» */
+  nextActionLabel: string;
+}
+
 export interface GrowthMensajesThreadView {
   id: string;
   personaId: string;
@@ -46,7 +62,26 @@ export interface GrowthMensajesThreadView {
   channel: GrowthConversationChannel;
   channelLabel: string;
   oportunidadId?: string;
+  /** Presente solo si el vínculo resolvió una Oportunidad del Espacio. */
+  opportunity?: GrowthMensajesThreadOpportunityView;
   messages: GrowthMensajeThreadItemView[];
+}
+
+/**
+ * Proyecta la Oportunidad vinculada a etiquetas humanas (mismas que Ventas).
+ */
+export function toMensajesThreadOpportunityView(
+  oportunidad: Pick<GrowthOportunidad, "typeKey" | "status" | "nextAction" | "subjectLabel">
+): GrowthMensajesThreadOpportunityView {
+  const typeLabel = growthOpportunityTypeLabel(oportunidad.typeKey);
+  const subject = oportunidad.subjectLabel?.trim();
+  return {
+    typeLabel: subject ? `${typeLabel} · ${subject}` : typeLabel,
+    statusLabel: growthOpportunityStatusLabel(oportunidad.status),
+    status: oportunidad.status,
+    nextActionLabel:
+      oportunidad.nextAction?.summary?.trim() || GROWTH_NO_NEXT_ACTION_LABEL,
+  };
 }
 
 export function growthConversationChannelLabel(

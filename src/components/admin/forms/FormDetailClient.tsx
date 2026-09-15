@@ -46,10 +46,10 @@ const TAB_HELP: Record<TabId, string> = {
     "Sube el Excel institucional con Rut, Nombre, Apellidos y Generación. El alumno completa el resto.",
   campos: "Define las preguntas: tipo, etiqueta y si son obligatorias.",
   experiencia:
-    "Diseña hero, tarjetas, bloques editoriales, banners, estados y pie de página sin escribir código.",
-  seo: "Título, descripción, Open Graph y textos para compartir en redes.",
-  apariencia: "Tema visual, diseño, colores, sombras y espaciado del formulario público.",
-  configuracion: "Nombre, mensajes del motor y si el formulario está abierto al público.",
+    "Ajusta cómo se ve el enlace público del formulario (hero, textos y bloques). No reemplaza las páginas del sitio: para una landing de captación usa Sitio web → Páginas.",
+  seo: "Título, descripción y textos para compartir en redes.",
+  apariencia: "Colores, tipografía y estilo visual del formulario público.",
+  configuracion: "Nombre, mensajes y si el formulario acepta envíos.",
 };
 
 interface FormDetailClientProps {
@@ -225,7 +225,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
       title={form.name}
       description={
         convocatoria
-          ? "Configura participantes, campos, experiencia y publicación de la convocatoria."
+          ? "Configura participantes, campos, presentación y publicación de la convocatoria."
           : (form.description ?? "Gestiona respuestas, campos y publicación.")
       }
       actions={
@@ -349,7 +349,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
             icon={Layout}
             onClick={() => setTab("experiencia")}
           >
-            Experiencia
+            Presentación
           </TabButton>
           <TabButton active={tab === "seo"} icon={Search} onClick={() => setTab("seo")}>
             SEO

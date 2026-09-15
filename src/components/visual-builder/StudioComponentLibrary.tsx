@@ -8,6 +8,10 @@ import {
   listStudioCategories,
   type StudioComponentEntry,
 } from "@/lib/experience-studio/registry";
+import {
+  growthBlockSortIndex,
+  humanBlockLabel,
+} from "@/lib/cms/growth-block-palette";
 import type { BlockDefinition, PageBlock } from "@/types/page";
 import { SortableBlocks } from "@/components/page-builder/SortableBlocks";
 import { useMemo, useState } from "react";
@@ -32,12 +36,39 @@ export function StudioComponentLibrary({
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"canvas" | "library">("canvas");
 
-  const registry = useMemo(
-    () => buildComponentRegistry(blockLibrary).filter((entry) => !entry.adminOnly),
-    [blockLibrary]
-  );
+  const registry = useMemo(() => {
+    return buildComponentRegistry(blockLibrary)
+      .filter((entry) => !entry.adminOnly)
+      .map((entry) => ({
+        ...entry,
+        name: humanBlockLabel(entry.type, entry.name),
+      }))
+      .sort((a, b) => growthBlockSortIndex(a.type) - growthBlockSortIndex(b.type));
+  }, [blockLibrary]);
 
-  const categories = useMemo(() => listStudioCategories(registry), [registry]);
+  const categories = useMemo(() => {
+    const ordered = listStudioCategories(registry);
+    const growthFirst = [
+      "hero",
+      "content",
+      "cards",
+      "programs",
+      "testimonials",
+      "cta",
+      "form",
+      "faq",
+      "team",
+      "footer",
+      "conversion",
+    ];
+    return [...ordered].sort((a, b) => {
+      const ai = growthFirst.indexOf(a.id);
+      const bi = growthFirst.indexOf(b.id);
+      const av = ai === -1 ? 100 : ai;
+      const bv = bi === -1 ? 100 : bi;
+      return av - bv;
+    });
+  }, [registry]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -73,7 +104,7 @@ export function StudioComponentLibrary({
             onClick={() => setTab("library")}
             className={tab === "library" ? "flex-1 rounded-md bg-background px-2 py-1.5 text-xs font-medium" : "flex-1 rounded-md px-2 py-1.5 text-xs text-muted"}
           >
-            Componentes
+            Bloques
           </button>
         </div>
         {tab === "library" ? (
@@ -81,7 +112,7 @@ export function StudioComponentLibrary({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar componente…"
+            placeholder="Buscar bloque…"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           />
         ) : null}

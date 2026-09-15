@@ -20,6 +20,24 @@ export const GROWTH_AUTOMATION_RUNS_COLLECTION =
 /** Actor de sistema para ejecuciones futuras (ADR-011). No es cuenta Identity. */
 export const GROWTH_AUTOMATION_SYSTEM_ACTOR = "growth-automation" as const;
 
+/** Actor de plataforma para seeds de arranque (no Identity). */
+export const GROWTH_PLATFORM_SEED_ACTOR = "growth-platform" as const;
+
+/**
+ * Marcador estable de playbook de arranque: primera próxima acción al abrir oportunidad.
+ * Unicidad: tenantId + seedKey.
+ */
+export const GROWTH_STARTUP_NEXT_ACTION_SEED_KEY =
+  "growth.startup.next_action_on_opportunity" as const;
+
+/** Nombre humano del playbook de arranque (editable por el Espacio). */
+export const GROWTH_STARTUP_NEXT_ACTION_AUTOMATION_NAME =
+  "Primera acción al crear oportunidad" as const;
+
+/** Summary neutro multi-negocio (opción B / E2E-FIX-001). */
+export const GROWTH_STARTUP_NEXT_ACTION_SUMMARY =
+  "Contactar a la persona" as const;
+
 export const GROWTH_AUTOMATION_ACTION_TYPES = [
   "salesTransitionOpportunity",
   "salesRecordFollowUp",
@@ -54,6 +72,11 @@ export type GrowthAutomationConditionRule =
     }
   | {
       field: "origin.formDestination";
+      op: "eq";
+      value: string;
+    }
+  | {
+      field: "origin.campaign";
       op: "eq";
       value: string;
     }
@@ -124,6 +147,11 @@ export interface GrowthAutomation {
   tenantId: string;
   name: string;
   status: GrowthAutomationStatus;
+  /**
+   * Marcador de seed de plataforma (opcional).
+   * Si existe, unicidad por tenantId + seedKey. El ensure no recrea ni reactiva.
+   */
+  seedKey?: string;
   /** Versión publicada vigente (inmutable). */
   publishedVersion: number | null;
   /** Borrador editable actual, si existe. */

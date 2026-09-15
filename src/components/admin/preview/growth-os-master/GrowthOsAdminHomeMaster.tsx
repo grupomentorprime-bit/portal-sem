@@ -29,7 +29,7 @@ const cardClass = cn(
 );
 
 const ATTEND_CTA_LABEL = "Atender";
-const ACTIVITY_LINK = "/admin/settings/activity";
+const ACTIVITY_LINK = "/admin/actividad";
 
 const METRIC_ITEMS = [
   {

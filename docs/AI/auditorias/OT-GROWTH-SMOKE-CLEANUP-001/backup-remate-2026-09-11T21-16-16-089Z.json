@@ -1,0 +1,787 @@
+{
+  "ot": "OT-GROWTH-SMOKE-CLEANUP-001",
+  "phase": "remate",
+  "createdAt": "2026-09-11T21:16:16.092Z",
+  "count": 18,
+  "records": [
+    {
+      "collection": "experience_form_submissions",
+      "evidence": "formId=adl-smoke-info-request",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effb84dfe2a5dd505247a",
+        "tenant": "adl",
+        "formId": "adl-smoke-info-request",
+        "destination": "information_request",
+        "data": {
+          "fullName": "Smoke Formulario 1788805040542",
+          "email": "smoke.form.1788805040542@example.com",
+          "phone": "+56 9 0504 0542",
+          "interest": "admission",
+          "message": "Smoke CAPTURE-001 caso 1: quiero información."
+        },
+        "createdAt": "2026-09-07T18:17:28.427Z"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "evidence": "formId=adl-smoke-info-request",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effcd4dfe2a5dd5052486",
+        "tenant": "adl",
+        "formId": "adl-smoke-info-request",
+        "destination": "information_request",
+        "data": {
+          "fullName": "Smoke Formulario 1788805040542",
+          "email": "smoke.form.1788805040542@example.com",
+          "phone": "+56 9 0504 0542",
+          "interest": "programs",
+          "message": "Smoke CAPTURE-001 caso 2: reenvío misma persona."
+        },
+        "createdAt": "2026-09-07T18:17:49.566Z"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "evidence": "formId=adl-smoke-info-request",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9efffd4dfe2a5dd50524a0",
+        "tenant": "adl",
+        "formId": "adl-smoke-info-request",
+        "destination": "information_request",
+        "data": {
+          "fullName": "Smoke Auto 1788805040542",
+          "email": "smoke.auto.1788805040542@example.com",
+          "phone": "+56 9 0504 0564",
+          "interest": "admission",
+          "message": "Smoke CAPTURE-001 caso 4: disparar automatización."
+        },
+        "createdAt": "2026-09-07T18:18:37.391Z"
+      }
+    },
+    {
+      "collection": "portal_interesados",
+      "evidence": "programId=smoke-program-capture-001",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effdb4dfe2a5dd505248b",
+        "tenant": "adl",
+        "status": "interesado",
+        "firstName": "Smoke",
+        "lastName": "Admision1788805040542",
+        "email": "smoke.admit.1788805040542@example.com",
+        "phone": "+56 9 05040553",
+        "church": "Iglesia Smoke",
+        "city": "Santiago",
+        "programId": "smoke-program-capture-001",
+        "programLabel": null,
+        "message": "Smoke CAPTURE-001 caso 3 admisión",
+        "source": "portal-admision",
+        "createdAt": "2026-09-07T18:18:03.398Z",
+        "handoff": {
+          "delivered": true,
+          "externalId": "local-lead-6a9effdb4dfe2a5dd505248b",
+          "deliveredAt": "2026-09-07T18:18:03.398Z",
+          "adapter": "local"
+        }
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effc24dfe2a5dd5052480",
+        "id": "evt-1788805058777-dd03317f",
+        "type": "GrowthOpportunityOpened",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effc24dfe2a5dd505247f",
+        "occurredAt": "2026-09-07T18:17:38.777Z",
+        "userId": null,
+        "correlationId": "66eb93d61f7b27427d3622c3",
+        "causationId": null,
+        "payload": {
+          "kind": "opportunity_opened",
+          "personaId": "6a9effbd4dfe2a5dd505247b",
+          "oportunidadId": "6a9effc04dfe2a5dd505247e",
+          "ingestKey": "experience_form_submissions:6a9effb84dfe2a5dd505247a:opportunity_opened",
+          "activityPayload": {
+            "typeKey": "inquiry",
+            "status": "open",
+            "workflowInstanceId": "wfinst-1788805057594-af9d694b"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "66eb93d61f7b27427d3622c3",
+          "requestId": "7143d6f9ff189086",
+          "traceId": "ccd5eec4c1e4d0ec",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:17:38.778Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:17:43.383Z",
+        "processingMs": 4604
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effc44dfe2a5dd5052482",
+        "id": "evt-1788805060661-7891e321",
+        "type": "GrowthNextActionSet",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effc44dfe2a5dd5052481",
+        "occurredAt": "2026-09-07T18:17:40.661Z",
+        "userId": "growth-automation",
+        "correlationId": "65c1274bd216632a1825e391",
+        "causationId": null,
+        "payload": {
+          "kind": "next_action_set",
+          "personaId": "6a9effbd4dfe2a5dd505247b",
+          "oportunidadId": "6a9effc04dfe2a5dd505247e",
+          "ingestKey": "growth_oportunidades:6a9effc04dfe2a5dd505247e:next_action:2026-09-07T18:17:39.953Z:next_action_set",
+          "activityPayload": {
+            "nextAction": {
+              "summary": "Llamar para confirmar interés",
+              "kind": "other",
+              "setAt": "2026-09-07T18:17:39.953Z"
+            }
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "65c1274bd216632a1825e391",
+          "requestId": "954a97cb3942e712",
+          "traceId": "74fc44d85c0f6434",
+          "userId": "growth-automation",
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:17:40.661Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:17:41.865Z",
+        "processingMs": 1202
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effc84dfe2a5dd5052485",
+        "id": "evt-1788805064414-57da56c3",
+        "type": "GrowthActivityRecorded",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effc74dfe2a5dd5052484",
+        "occurredAt": "2026-09-07T18:17:44.415Z",
+        "userId": null,
+        "correlationId": "d982b8539839c35fb166d63b",
+        "causationId": null,
+        "payload": {
+          "kind": "form_submitted",
+          "personaId": "6a9effbd4dfe2a5dd505247b",
+          "oportunidadId": "6a9effc04dfe2a5dd505247e",
+          "ingestKey": "experience_form_submissions:6a9effb84dfe2a5dd505247a:form_submitted",
+          "activityPayload": {
+            "typeKey": "inquiry",
+            "subjectId": "adl-smoke-info-request",
+            "formId": "adl-smoke-info-request",
+            "destination": "information_request"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "d982b8539839c35fb166d63b",
+          "requestId": "723862429c51e174",
+          "traceId": "ca684f813b37411e",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:17:44.415Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:17:45.597Z",
+        "processingMs": 1182
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effd54dfe2a5dd505248a",
+        "id": "evt-1788805077625-6cbbd7a0",
+        "type": "GrowthActivityRecorded",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effd54dfe2a5dd5052489",
+        "occurredAt": "2026-09-07T18:17:57.626Z",
+        "userId": null,
+        "correlationId": "f3b33f7403d0d596326f5631",
+        "causationId": null,
+        "payload": {
+          "kind": "form_submitted",
+          "personaId": "6a9effbd4dfe2a5dd505247b",
+          "oportunidadId": "6a9effc04dfe2a5dd505247e",
+          "ingestKey": "experience_form_submissions:6a9effcd4dfe2a5dd5052486:form_submitted",
+          "activityPayload": {
+            "typeKey": "inquiry",
+            "subjectId": "adl-smoke-info-request",
+            "formId": "adl-smoke-info-request",
+            "destination": "information_request"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "f3b33f7403d0d596326f5631",
+          "requestId": "3c0c50fb8f38a4eb",
+          "traceId": "f0f152a37fc14680",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:17:57.626Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:17:58.847Z",
+        "processingMs": 1218
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effe54dfe2a5dd5052491",
+        "id": "evt-1788805093428-6c25ca42",
+        "type": "GrowthOpportunityOpened",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effe44dfe2a5dd5052490",
+        "occurredAt": "2026-09-07T18:18:13.429Z",
+        "userId": null,
+        "correlationId": "4cc6923c9d3823cff49d05d1",
+        "causationId": null,
+        "payload": {
+          "kind": "opportunity_opened",
+          "personaId": "6a9effe04dfe2a5dd505248c",
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:opportunity_opened",
+          "activityPayload": {
+            "typeKey": "conversion",
+            "status": "open",
+            "workflowInstanceId": "wfinst-1788805092251-ab6e647c"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "4cc6923c9d3823cff49d05d1",
+          "requestId": "0b3b76227bf12832",
+          "traceId": "7023aad7224d136a",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:13.429Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:21.122Z",
+        "processingMs": 7692
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effe74dfe2a5dd5052493",
+        "id": "evt-1788805095300-993c33d7",
+        "type": "GrowthNextActionSet",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effe64dfe2a5dd5052492",
+        "occurredAt": "2026-09-07T18:18:15.301Z",
+        "userId": "growth-automation",
+        "correlationId": "b996d50d93da834a1309cab0",
+        "causationId": null,
+        "payload": {
+          "kind": "next_action_set",
+          "personaId": "6a9effe04dfe2a5dd505248c",
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "ingestKey": "growth_oportunidades:6a9effe34dfe2a5dd505248f:next_action:2026-09-07T18:18:14.599Z:next_action_set",
+          "activityPayload": {
+            "nextAction": {
+              "summary": "Llamar para confirmar interés",
+              "kind": "other",
+              "setAt": "2026-09-07T18:18:14.599Z"
+            }
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "b996d50d93da834a1309cab0",
+          "requestId": "945b8641fdd00bc7",
+          "traceId": "06f14858df9a677a",
+          "userId": "growth-automation",
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:15.302Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:16.463Z",
+        "processingMs": 1161
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effea4dfe2a5dd5052496",
+        "id": "evt-1788805098905-99640fce",
+        "type": "GrowthNextActionSet",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effea4dfe2a5dd5052495",
+        "occurredAt": "2026-09-07T18:18:18.906Z",
+        "userId": "growth-automation",
+        "correlationId": "9239788029b0583914fd56d2",
+        "causationId": null,
+        "payload": {
+          "kind": "next_action_set",
+          "personaId": "6a9effe04dfe2a5dd505248c",
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "ingestKey": "growth_oportunidades:6a9effe34dfe2a5dd505248f:next_action:2026-09-07T18:18:18.203Z:next_action_set",
+          "activityPayload": {
+            "nextAction": {
+              "summary": "Llamar para confirmar interés",
+              "kind": "other",
+              "setAt": "2026-09-07T18:18:18.203Z"
+            }
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "9239788029b0583914fd56d2",
+          "requestId": "029ffcfcbb1d92d6",
+          "traceId": "bad53a75851bade8",
+          "userId": "growth-automation",
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:18.906Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:20.083Z",
+        "processingMs": 1176
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effee4dfe2a5dd5052499",
+        "id": "evt-1788805102173-49f8c2ad",
+        "type": "GrowthActivityRecorded",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9effed4dfe2a5dd5052498",
+        "occurredAt": "2026-09-07T18:18:22.173Z",
+        "userId": null,
+        "correlationId": "1dd04407766b978412e44c21",
+        "causationId": null,
+        "payload": {
+          "kind": "application_received",
+          "personaId": "6a9effe04dfe2a5dd505248c",
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:application_received",
+          "activityPayload": {
+            "typeKey": "conversion",
+            "subjectId": "smoke-program-capture-001",
+            "programId": "smoke-program-capture-001",
+            "handoffDelivered": true
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "1dd04407766b978412e44c21",
+          "requestId": "3867b2b7f2dd3c26",
+          "traceId": "9933808290567320",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:22.174Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:23.330Z",
+        "processingMs": 1156
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9efff14dfe2a5dd505249b",
+        "id": "evt-1788805105987-3c97d8e8",
+        "type": "GrowthOpportunityTransitioned",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9efff14dfe2a5dd505249a",
+        "occurredAt": "2026-09-07T18:18:25.988Z",
+        "userId": null,
+        "correlationId": "2193f236ce352151d3d64afb",
+        "causationId": null,
+        "payload": {
+          "kind": "opportunity_transitioned",
+          "personaId": "6a9effe04dfe2a5dd505248c",
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:activate:opportunity_transitioned",
+          "activityPayload": {
+            "fromState": "open",
+            "toState": "active",
+            "workflowInstanceId": "wfinst-1788805092251-ab6e647c"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "2193f236ce352151d3d64afb",
+          "requestId": "7202e8bf77f4f798",
+          "traceId": "d8ef66bd7246df53",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:25.988Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:27.153Z",
+        "processingMs": 1165
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9efff54dfe2a5dd505249d",
+        "id": "evt-1788805109816-05cf6926",
+        "type": "GrowthOpportunityTransitioned",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9efff54dfe2a5dd505249c",
+        "occurredAt": "2026-09-07T18:18:29.817Z",
+        "userId": null,
+        "correlationId": "4ff3a51a3d2574845b8c73db",
+        "causationId": null,
+        "payload": {
+          "kind": "opportunity_transitioned",
+          "personaId": "6a9effe04dfe2a5dd505248c",
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:hand_off:opportunity_transitioned",
+          "activityPayload": {
+            "fromState": "active",
+            "toState": "handed_off",
+            "workflowInstanceId": "wfinst-1788805092251-ab6e647c",
+            "handoff": {
+              "interesadoId": "6a9effdb4dfe2a5dd505248b",
+              "delivered": true,
+              "externalId": "local-lead-6a9effdb4dfe2a5dd505248b",
+              "adapter": "local"
+            }
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "4ff3a51a3d2574845b8c73db",
+          "requestId": "55578b2bfc035479",
+          "traceId": "caf7a56a254e79cb",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:29.817Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:30.986Z",
+        "processingMs": 1168
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9efff84dfe2a5dd505249f",
+        "id": "evt-1788805112003-1975fdd9",
+        "type": "GrowthHandoffRecorded",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9efff74dfe2a5dd505249e",
+        "occurredAt": "2026-09-07T18:18:32.003Z",
+        "userId": null,
+        "correlationId": "f9c280479aec162ad1134d98",
+        "causationId": null,
+        "payload": {
+          "kind": "handoff",
+          "personaId": "6a9effe04dfe2a5dd505248c",
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:hand_off:handoff",
+          "activityPayload": {
+            "handoff": {
+              "interesadoId": "6a9effdb4dfe2a5dd505248b",
+              "delivered": true,
+              "externalId": "local-lead-6a9effdb4dfe2a5dd505248b",
+              "adapter": "local"
+            },
+            "fromState": "active",
+            "toState": "handed_off"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "f9c280479aec162ad1134d98",
+          "requestId": "6d41ceca86738888",
+          "traceId": "6d53bc4a25bf6869",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:32.003Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:33.208Z",
+        "processingMs": 1204
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f00074dfe2a5dd50524a6",
+        "id": "evt-1788805127441-ecefdce5",
+        "type": "GrowthOpportunityOpened",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9f00064dfe2a5dd50524a5",
+        "occurredAt": "2026-09-07T18:18:47.442Z",
+        "userId": null,
+        "correlationId": "78055c44243b19a647924562",
+        "causationId": null,
+        "payload": {
+          "kind": "opportunity_opened",
+          "personaId": "6a9f00024dfe2a5dd50524a1",
+          "oportunidadId": "6a9f00054dfe2a5dd50524a4",
+          "ingestKey": "experience_form_submissions:6a9efffd4dfe2a5dd50524a0:opportunity_opened",
+          "activityPayload": {
+            "typeKey": "inquiry",
+            "status": "open",
+            "workflowInstanceId": "wfinst-1788805126261-173d03c0"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "78055c44243b19a647924562",
+          "requestId": "0eaa1eab2fc5c07a",
+          "traceId": "7e3a81416dd2160e",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:47.442Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:51.995Z",
+        "processingMs": 4552
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f00094dfe2a5dd50524a8",
+        "id": "evt-1788805129319-ac4b2ce4",
+        "type": "GrowthNextActionSet",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9f00084dfe2a5dd50524a7",
+        "occurredAt": "2026-09-07T18:18:49.320Z",
+        "userId": "growth-automation",
+        "correlationId": "6067b8602d7eaf160ed4d515",
+        "causationId": null,
+        "payload": {
+          "kind": "next_action_set",
+          "personaId": "6a9f00024dfe2a5dd50524a1",
+          "oportunidadId": "6a9f00054dfe2a5dd50524a4",
+          "ingestKey": "growth_oportunidades:6a9f00054dfe2a5dd50524a4:next_action:2026-09-07T18:18:48.615Z:next_action_set",
+          "activityPayload": {
+            "nextAction": {
+              "summary": "Llamar para confirmar interés",
+              "kind": "other",
+              "setAt": "2026-09-07T18:18:48.615Z"
+            }
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "6067b8602d7eaf160ed4d515",
+          "requestId": "77b2bde073c1e5ab",
+          "traceId": "e7c74d5e89fad2a3",
+          "userId": "growth-automation",
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:49.320Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:50.490Z",
+        "processingMs": 1169
+      }
+    },
+    {
+      "collection": "core_events",
+      "evidence": "payload.personaId → persona smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f000d4dfe2a5dd50524ab",
+        "id": "evt-1788805133018-88622c63",
+        "type": "GrowthActivityRecorded",
+        "version": 1,
+        "tenantId": "adl",
+        "entityType": "growth.activity",
+        "entityId": "6a9f000c4dfe2a5dd50524aa",
+        "occurredAt": "2026-09-07T18:18:53.019Z",
+        "userId": null,
+        "correlationId": "a2f241d1e319b98a1336724c",
+        "causationId": null,
+        "payload": {
+          "kind": "form_submitted",
+          "personaId": "6a9f00024dfe2a5dd50524a1",
+          "oportunidadId": "6a9f00054dfe2a5dd50524a4",
+          "ingestKey": "experience_form_submissions:6a9efffd4dfe2a5dd50524a0:form_submitted",
+          "activityPayload": {
+            "typeKey": "inquiry",
+            "subjectId": "adl-smoke-info-request",
+            "formId": "adl-smoke-info-request",
+            "destination": "information_request"
+          }
+        },
+        "metadata": null,
+        "context": {
+          "tenantId": "adl",
+          "correlationId": "a2f241d1e319b98a1336724c",
+          "requestId": "3d6e2e3427395607",
+          "traceId": "2f9d9e5692e3eab4",
+          "userId": null,
+          "sessionId": null,
+          "causationId": null
+        },
+        "status": "processed",
+        "retries": 0,
+        "handlersExecuted": [
+          "growth.automations"
+        ],
+        "createdAt": "2026-09-07T18:18:53.019Z",
+        "error": null,
+        "processedAt": "2026-09-07T18:18:54.183Z",
+        "processingMs": 1163
+      }
+    }
+  ]
+}

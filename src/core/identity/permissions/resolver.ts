@@ -15,7 +15,6 @@ import {
   mergeRolePermissionMaps,
   type PermissionMap,
 } from "@/core/identity/permissions/role-templates";
-import { getRoleCode } from "@/lib/identity/roles";
 
 export type PermissionOrigin = "role" | "override" | "denied";
 

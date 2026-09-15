@@ -1,6 +1,7 @@
 /**
- * OT-GROWTH-MESSAGING-004 — lectura tenant-scoped para bandeja /admin/mensajes.
+ * OT-GROWTH-MESSAGING-004 / E2E-FIX-003 — lectura tenant-scoped para bandeja /admin/mensajes.
  * Reutiliza colecciones de MESSAGING-001; no altera el motor de envío/recepción.
+ * Resuelve Oportunidad vinculada (mismo SSOT que Ventas) sin inventar controles comerciales.
  */
 
 import "server-only";
@@ -24,6 +25,7 @@ import {
   formatMensajeWhen,
   growthConversationChannelLabel,
   isOutboundSendFailed,
+  toMensajesThreadOpportunityView,
   truncateMessagePreview,
   type GrowthMensajeThreadItemView,
   type GrowthMensajesListItemView,
@@ -33,12 +35,14 @@ import {
 export type {
   GrowthMensajeThreadItemView,
   GrowthMensajesListItemView,
+  GrowthMensajesThreadOpportunityView,
   GrowthMensajesThreadView,
 } from "./mensajes-view";
 
 export {
   formatMensajeWhen,
   growthConversationChannelLabel,
+  toMensajesThreadOpportunityView,
   truncateMessagePreview,
 } from "./mensajes-view";
 
@@ -190,10 +194,7 @@ export async function getGrowthMensajesThread(
     conversation.oportunidadId
       ? db
           .collection<GrowthOportunidad>(GROWTH_OPORTUNIDADES_COLLECTION)
-          .findOne(
-            { tenantId, _id: conversation.oportunidadId },
-            { projection: { _id: 1 } }
-          )
+          .findOne({ tenantId, _id: conversation.oportunidadId })
       : Promise.resolve(null),
   ]);
 
@@ -208,6 +209,10 @@ export async function getGrowthMensajesThread(
       : {}),
   }));
 
+  const opportunityContext = oportunidad
+    ? toMensajesThreadOpportunityView(oportunidad)
+    : undefined;
+
   return {
     id: conversation._id,
     personaId: conversation.personaId,
@@ -215,7 +220,10 @@ export async function getGrowthMensajesThread(
     channel: conversation.channel,
     channelLabel: growthConversationChannelLabel(conversation.channel),
     ...(oportunidad?._id
-      ? { oportunidadId: String(oportunidad._id) }
+      ? {
+          oportunidadId: String(oportunidad._id),
+          opportunity: opportunityContext,
+        }
       : {}),
     messages: threadMessages,
   };

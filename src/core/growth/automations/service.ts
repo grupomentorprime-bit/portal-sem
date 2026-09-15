@@ -40,6 +40,8 @@ export async function createGrowthAutomation(
     name: string;
     steps: unknown;
     actor: AutomationActor;
+    /** Marcador de seed de plataforma (opcional). */
+    seedKey?: string;
     now?: string;
   }
 ): Promise<
@@ -53,6 +55,24 @@ export async function createGrowthAutomation(
   const name = requireName(input.name);
   if (!name) {
     return { ok: false, code: "validation", error: "Nombre obligatorio." };
+  }
+
+  const seedKey =
+    typeof input.seedKey === "string" && input.seedKey.trim()
+      ? input.seedKey.trim()
+      : undefined;
+  if (seedKey) {
+    const existingSeed = await store.findAutomationBySeedKey(
+      input.tenantId,
+      seedKey
+    );
+    if (existingSeed) {
+      return {
+        ok: false,
+        code: "conflict",
+        error: "Ya existe una automatización con ese seedKey en el Espacio.",
+      };
+    }
   }
 
   const validated = validateAutomationSteps(input.steps);
@@ -74,6 +94,7 @@ export async function createGrowthAutomation(
     tenantId: input.tenantId,
     name,
     status: "draft",
+    ...(seedKey ? { seedKey } : {}),
     publishedVersion: null,
     draftVersion: 1,
     createdAt: ts,

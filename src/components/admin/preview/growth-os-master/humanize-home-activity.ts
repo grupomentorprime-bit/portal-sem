@@ -1,6 +1,7 @@
 /**
- * OT-GROWTH-UX-HOME-003 — historias humanas para «Qué ha pasado» (solo presentación).
- * No cambia resúmenes persistidos ni Growth Core.
+ * OT-GROWTH-UX-HOME-003 / OT-GROWTH-ACTIVITY-001 —
+ * historias humanas para «Qué ha pasado» e historial comercial Actividad.
+ * Solo presentación. No cambia resúmenes persistidos ni Growth Core.
  */
 
 import { growthOpportunityStatusLabel, growthOpportunityTypeLabel } from "@/lib/growth/labels";
@@ -40,17 +41,37 @@ export function scrubTechnicalActivityTokens(summary: string): string {
   return text;
 }
 
-/**
- * Convierte un hecho de actividad en una frase cotidiana para el Inicio.
- */
-export function humanizeHomeActivityStory(input: {
+export type HumanizeHomeActivityInput = {
   kind: string;
   summary: string;
   personaName?: string;
-}): { story: string; tone: HomeActivityTone } {
+  /** Etiqueta humana del actor (operador, Growth OS, Formulario web…). */
+  actorLabel?: string;
+  channelLabel?: string;
+  messageDirection?: "inbound" | "outbound";
+  /** «hoy» / «mañana» / fecha corta para próximas acciones. */
+  dueLabel?: string;
+  captureOrigin?: "form" | "application" | "other";
+  /**
+   * `home` = frases del Inicio (compat).
+   * `feed` = historial comercial Actividad (sujeto Persona / origen más explícito).
+   */
+  variant?: "home" | "feed";
+};
+
+/**
+ * Convierte un hecho de actividad en una frase cotidiana.
+ * Un solo catálogo para Inicio y Actividad.
+ */
+export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
+  story: string;
+  tone: HomeActivityTone;
+} {
   const name = input.personaName?.trim();
   const summary = input.summary.trim();
   const kind = input.kind;
+  const variant = input.variant ?? "home";
+  const feed = variant === "feed";
 
   switch (kind) {
     case "form_submitted":
@@ -65,17 +86,40 @@ export function humanizeHomeActivityStory(input: {
           : "Se recibió una postulación.",
         tone: "form",
       };
-    case "opportunity_opened":
+    case "opportunity_opened": {
+      if (feed && (input.captureOrigin === "form" || !input.captureOrigin)) {
+        return {
+          story: name
+            ? `Formulario web creó una oportunidad para ${name}.`
+            : "Formulario web creó una nueva oportunidad.",
+          tone: "opportunity",
+        };
+      }
+      if (feed && input.captureOrigin === "application") {
+        return {
+          story: name
+            ? `Admisión creó una oportunidad para ${name}.`
+            : "Admisión creó una nueva oportunidad.",
+          tone: "opportunity",
+        };
+      }
       return {
         story: name
           ? `Se creó una oportunidad para ${name}.`
           : "Se creó una nueva oportunidad.",
         tone: "opportunity",
       };
+    }
     case "opportunity_transitioned": {
       const match = summary.match(TRANSITION_ARROW);
       if (match) {
         const toLabel = growthOpportunityStatusLabel(match[2].toLowerCase());
+        if (feed && name) {
+          return {
+            story: `${name} pasó a ${toLabel}.`,
+            tone: "opportunity",
+          };
+        }
         return {
           story: `La oportunidad pasó a ${toLabel}.`,
           tone: "opportunity",
@@ -93,6 +137,26 @@ export function humanizeHomeActivityStory(input: {
           tone: "followup",
         };
       }
+      const actor = input.actorLabel?.trim();
+      const due = input.dueLabel?.trim();
+      if (feed && actor && due) {
+        return {
+          story: `${actor} programó un seguimiento para ${due}.`,
+          tone: "followup",
+        };
+      }
+      if (feed && actor) {
+        return {
+          story: `${actor} programó un seguimiento.`,
+          tone: "followup",
+        };
+      }
+      if (due) {
+        return {
+          story: `Growth OS programó un seguimiento para ${due}.`,
+          tone: "followup",
+        };
+      }
       return {
         story: "Growth OS programó un seguimiento.",
         tone: "followup",
@@ -100,7 +164,9 @@ export function humanizeHomeActivityStory(input: {
     }
     case "handoff":
       return {
-        story: "Una oportunidad fue traspasada.",
+        story: name && feed
+          ? `La oportunidad de ${name} fue traspasada.`
+          : "Una oportunidad fue traspasada.",
         tone: "transfer",
       };
     case "identity_updated":
@@ -110,11 +176,18 @@ export function humanizeHomeActivityStory(input: {
           : "Se actualizaron los datos.",
         tone: "other",
       };
-    case "note":
+    case "note": {
+      if (feed) {
+        return {
+          story: "Se agregó una nota a la oportunidad.",
+          tone: "note",
+        };
+      }
       return {
         story: capitalizePhrase(scrubTechnicalActivityTokens(summary)) || "Se dejó una nota.",
         tone: "note",
       };
+    }
     case "contact":
       return {
         story:
@@ -122,6 +195,25 @@ export function humanizeHomeActivityStory(input: {
           (name ? `Hubo contacto con ${name}.` : "Se registró un contacto."),
         tone: "note",
       };
+    case "message": {
+      const channel = input.channelLabel?.trim();
+      const byChannel = channel ? ` por ${channel}` : "";
+      if (input.messageDirection === "outbound") {
+        const actor = input.actorLabel?.trim();
+        return {
+          story: actor
+            ? `${actor} envió un mensaje${byChannel}.`
+            : `Se envió un mensaje${byChannel}.`,
+          tone: "other",
+        };
+      }
+      return {
+        story: name
+          ? `${name} envió un mensaje${byChannel}.`
+          : `Se recibió un mensaje${byChannel}.`,
+        tone: "other",
+      };
+    }
     default: {
       const cleaned = scrubTechnicalActivityTokens(summary);
       if (name && cleaned) {

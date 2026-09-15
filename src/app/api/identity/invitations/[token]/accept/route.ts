@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
-import {
-  fetchKeycloakUserInfo,
-  loginWithKeycloakPassword,
-} from "@/core/identity/auth/keycloak";
-import { finishKeycloakLogin } from "@/lib/identity/keycloak-access";
 import { logServerError } from "@/core/security/redact";
 import {
   keycloakUserNeedsPassword,
   setKeycloakPasswordForInvite,
 } from "@/lib/identity/keycloak-admin";
 import { acceptInvitation, findInvitationByToken } from "@/lib/identity/invitations";
-import { createMembership } from "@/lib/identity/memberships";
+import {
+  ensureActiveMembership,
+  findMembership,
+  MembershipConflictError,
+} from "@/lib/identity/memberships";
 import { createSession, getRequestMeta, setSessionCookie } from "@/lib/identity/sessions";
 import { findUserByEmail, updateUserLastLogin } from "@/lib/identity/users";
 
@@ -42,6 +41,10 @@ export async function POST(request: Request, { params }: RouteParams) {
   return handleLocalAccept(invitation, body);
 }
 
+/**
+ * Tras provisionar password en Keycloak, NO usa ROPC (DAG OFF en growth-os-web).
+ * Deja membresía lista y pide Auth Code + PKCE vía /admin/login.
+ */
 async function handleKeycloakAccept(
   invitation: NonNullable<Awaited<ReturnType<typeof findInvitationByToken>>>,
   body: { password?: string }
@@ -59,12 +62,27 @@ async function handleKeycloakAccept(
         emailVerified: true,
       }));
 
-    await createMembership({
-      tenantId: invitation.tenantId,
-      userId: user._id,
-      roleIds: invitation.roleIds,
-      invitedBy: invitation.invitedBy,
-    });
+    const active = await findMembership(user._id, invitation.tenantId);
+    if (active) {
+      await acceptInvitation(invitation._id, user._id, invitation.tenantId);
+      return NextResponse.json({
+        ok: true,
+        userId: user._id,
+        existing: true,
+        redirectLogin: true,
+      });
+    }
+
+    try {
+      await ensureActiveMembership({
+        tenantId: invitation.tenantId,
+        userId: user._id,
+        roleIds: invitation.roleIds,
+        invitedBy: invitation.invitedBy,
+      });
+    } catch (error) {
+      if (!(error instanceof MembershipConflictError)) throw error;
+    }
     await acceptInvitation(invitation._id, user._id, invitation.tenantId);
 
     return NextResponse.json({
@@ -96,28 +114,34 @@ async function handleKeycloakAccept(
   }
 
   try {
-    const tokens = await loginWithKeycloakPassword({
-      username: invitation.email,
-      password: body.password,
-    });
-    const profile = await fetchKeycloakUserInfo(tokens.accessToken);
-    const { user } = await finishKeycloakLogin(
-      profile,
-      invitation.tenantId,
-      tokens.accessToken
-    );
+    const { createUser } = await import("@/lib/identity/users");
+    const user =
+      existing ??
+      (await createUser({
+        email: invitation.email,
+        displayName: invitation.displayName,
+        emailVerified: true,
+      }));
 
-    const meta = await getRequestMeta();
-    const session = await createSession({
+    try {
+      await ensureActiveMembership({
+        tenantId: invitation.tenantId,
+        userId: user._id,
+        roleIds: invitation.roleIds,
+        invitedBy: invitation.invitedBy,
+      });
+    } catch (error) {
+      if (!(error instanceof MembershipConflictError)) throw error;
+    }
+    await acceptInvitation(invitation._id, user._id, invitation.tenantId);
+
+    // Sesión solo vía Authorization Code + PKCE (cliente growth-os-web sin DAG).
+    return NextResponse.json({
+      ok: true,
       userId: user._id,
-      tenantId: invitation.tenantId,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
+      existing: false,
+      redirectLogin: true,
     });
-    await setSessionCookie(session._id);
-    await updateUserLastLogin(user._id);
-
-    return NextResponse.json({ ok: true, userId: user._id, existing: false });
   } catch (error) {
     logServerError("invite-keycloak", error);
     return NextResponse.json(
@@ -135,12 +159,15 @@ async function handleLocalAccept(
   const existing = await findUserByEmail(invitation.email);
 
   if (existing) {
-    await createMembership({
-      tenantId: invitation.tenantId,
-      userId: existing._id,
-      roleIds: invitation.roleIds,
-      invitedBy: invitation.invitedBy,
-    });
+    const active = await findMembership(existing._id, invitation.tenantId);
+    if (!active) {
+      await ensureActiveMembership({
+        tenantId: invitation.tenantId,
+        userId: existing._id,
+        roleIds: invitation.roleIds,
+        invitedBy: invitation.invitedBy,
+      });
+    }
     await acceptInvitation(invitation._id, existing._id, invitation.tenantId);
 
     const meta = await getRequestMeta();

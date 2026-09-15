@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/core/identity/auth/config";
+import { isPlatformOriginHost, resolveRequestHost } from "@/core/tenant/hosts";
 
 function continueWithPathname(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
@@ -12,8 +13,27 @@ function continueWithPathname(request: NextRequest) {
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
+function isPlatformProductPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/platform") ||
+    pathname.startsWith("/internal") ||
+    pathname.startsWith("/legal") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/invite") ||
+    pathname.startsWith("/ingresar") ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml"
+  );
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = resolveRequestHost(request.headers);
+
+  if (isPlatformOriginHost(host) && !isPlatformProductPath(pathname)) {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
 
   const isProtected =
     pathname.startsWith("/admin") ||

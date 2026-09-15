@@ -18,7 +18,7 @@ import {
   Send,
   UserRound,
 } from "lucide-react";
-import { EmptyState, aek } from "@/components/admin/kit";
+import { EmptyState, StatusBadge, aek } from "@/components/admin/kit";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +29,7 @@ import {
   GROWTH_MENSAJES_EMPTY_TITLE,
   GROWTH_MENSAJES_NO_MATCH_DESCRIPTION,
   GROWTH_MENSAJES_NO_MATCH_TITLE,
+  GROWTH_MENSAJES_OPPORTUNITY_FIELD_LABEL,
   GROWTH_MENSAJES_PAGE_DESCRIPTION,
   GROWTH_MENSAJES_PAGE_TITLE,
   GROWTH_MENSAJES_REPLY_ERROR_GENERIC,
@@ -37,8 +38,10 @@ import {
   GROWTH_MENSAJES_SELECT_TITLE,
   GROWTH_MENSAJES_SEND_FAILED_LABEL,
   GROWTH_MENSAJES_SEND_LABEL,
+  GROWTH_MENSAJES_STATUS_FIELD_LABEL,
   GROWTH_MENSAJES_VIEW_OPPORTUNITY_LABEL,
   GROWTH_MENSAJES_VIEW_PERSONA_LABEL,
+  GROWTH_NEXT_ACTION_SECTION_LABEL,
 } from "@/lib/growth/labels";
 import type {
   GrowthMensajesListItemView,
@@ -153,6 +156,14 @@ const threadLinkClass = cn(
   aek.focus,
   "rounded-[var(--radius-sm)]"
 );
+
+function opportunityStatusTone(
+  status: string
+): "active" | "inactive" | "info" {
+  if (status === "won" || status === "handed_off") return "active";
+  if (status === "lost" || status === "archived") return "inactive";
+  return "info";
+}
 
 export function MensajesInboxClient({
   items,
@@ -441,20 +452,62 @@ export function MensajesInboxClient({
                       <UserRound className="h-3.5 w-3.5" aria-hidden />
                       {GROWTH_MENSAJES_VIEW_PERSONA_LABEL}
                     </Link>
-                    {thread.oportunidadId ? (
-                      <Link
-                        href={`/admin/ventas/${encodeURIComponent(thread.oportunidadId)}`}
-                        className={threadLinkClass}
-                      >
-                        <Handshake className="h-3.5 w-3.5" aria-hidden />
-                        {GROWTH_MENSAJES_VIEW_OPPORTUNITY_LABEL}
-                      </Link>
-                    ) : null}
                   </div>
                 </div>
               </div>
             </div>
           </header>
+
+          {thread.oportunidadId && thread.opportunity ? (
+            <div
+              className={cn(
+                "shrink-0 border-b border-[var(--admin-border-subtle)]",
+                "bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--admin-surface))]",
+                "px-3 py-3 sm:px-4"
+              )}
+              data-mensajes-opportunity-context
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <dl className="min-w-0 grid flex-1 gap-2 sm:grid-cols-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <dt className={aek.label}>
+                      {GROWTH_MENSAJES_OPPORTUNITY_FIELD_LABEL}
+                    </dt>
+                    <dd className="mt-0.5 truncate text-sm font-semibold tracking-tight text-foreground">
+                      {thread.opportunity.typeLabel}
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className={aek.label}>
+                      {GROWTH_MENSAJES_STATUS_FIELD_LABEL}
+                    </dt>
+                    <dd className="mt-0.5">
+                      <StatusBadge
+                        tone={opportunityStatusTone(thread.opportunity.status)}
+                        label={thread.opportunity.statusLabel}
+                      />
+                    </dd>
+                  </div>
+                  <div className="min-w-0 sm:col-span-1">
+                    <dt className={aek.label}>
+                      {GROWTH_NEXT_ACTION_SECTION_LABEL}
+                    </dt>
+                    <dd className="mt-0.5 text-sm text-foreground">
+                      {thread.opportunity.nextActionLabel}
+                    </dd>
+                  </div>
+                </dl>
+                <Button
+                  href={`/admin/ventas/${encodeURIComponent(thread.oportunidadId)}`}
+                  size="sm"
+                  className="w-full shrink-0 sm:w-auto"
+                >
+                  <Handshake className="h-3.5 w-3.5" aria-hidden />
+                  {GROWTH_MENSAJES_VIEW_OPPORTUNITY_LABEL}
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--admin-surface-muted)]">
             <div className="flex min-h-full flex-col justify-end px-3 py-3 sm:px-4 sm:py-3">

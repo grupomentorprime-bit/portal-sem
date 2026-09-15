@@ -54,8 +54,8 @@ export function AcceptInviteForm({
       }
 
       if (data.redirectLogin) {
-        router.push(`/admin/login?email=${encodeURIComponent(email)}`);
-        router.refresh();
+        // Auth Code + PKCE: el login redirige a Keycloak (sin ROPC).
+        window.location.assign("/admin/login");
         return;
       }
 

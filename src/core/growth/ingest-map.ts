@@ -35,6 +35,8 @@ export interface GrowthSubmissionSourceRow {
   destination: string;
   data: Record<string, unknown>;
   createdAt?: string;
+  /** OT-GROWTH-CAMPAIGNS-003 — trackingKey resuelto server-side (no hidden/UTM). */
+  campaign?: string;
 }
 
 export function toGrowthAdmissionInput(
@@ -77,5 +79,6 @@ export function toGrowthFormInput(
     destination: row.destination,
     data: row.data ?? {},
     ...(row.createdAt ? { capturedAt: row.createdAt } : {}),
+    ...(row.campaign ? { campaign: row.campaign } : {}),
   };
 }

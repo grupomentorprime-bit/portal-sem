@@ -122,7 +122,10 @@ describe("OT-GROWTH-CORE-007 — labels humanos", () => {
     assert.equal(GROWTH_SITUATION_SECTION_LABEL, "Situación");
     assert.equal(GROWTH_RELATED_HISTORY_LABEL, "Hechos de esta Oportunidad");
     assert.equal(GROWTH_VIEW_DETAIL_LABEL, "Ver detalle");
-    assert.equal(GROWTH_NO_NEXT_ACTION_LABEL, "Sin próxima acción");
+    assert.equal(
+      GROWTH_NO_NEXT_ACTION_LABEL,
+      "No hay nada pendiente por ahora."
+    );
   });
 
   it("labels sin jerga prohibida", () => {
@@ -225,7 +228,7 @@ describe("OT-GROWTH-CORE-007 — proyección de vista", () => {
     assert.equal(primary.oportunidadId, "o-soon");
   });
 
-  it("listado muestra Sin próxima acción cuando no hay nextAction", () => {
+  it("listado muestra copy de sin pendiente cuando no hay nextAction", () => {
     const view = toPersonaListItemView(persona({ _id: "p1" }), [
       oportunidad({ _id: "o1", personaId: "p1", nextAction: null }),
     ]);
@@ -361,19 +364,21 @@ describe("OT-GROWTH-CORE-007 — superficie /admin", () => {
       "utf8"
     );
     assert.match(labels, /GROWTH_PERSONAS_EMPTY_TITLE/);
-    assert.match(labels, /formularios, consultas o postulaciones/);
-    assert.match(labels, /de dónde llegaron, qué buscan y qué hacer después/);
+    assert.match(labels, /WhatsApp|formulario|postule/i);
+    assert.match(labels, /relacionado con tu negocio/);
   });
 
-  it("listado jerarquiza Persona → Situación → Qué hacer ahora", () => {
+  it("listado jerarquiza Persona → origen → oportunidades → Qué hacer ahora", () => {
     const list = readFileSync(
       resolve(process.cwd(), "src/components/admin/growth/PersonasListClient.tsx"),
       "utf8"
     );
-    assert.match(list, /GROWTH_SITUATION_SECTION_LABEL/);
     assert.match(list, /GROWTH_NEXT_ACTION_SECTION_LABEL/);
-    assert.match(list, /sm:grid-cols-\[minmax\(0,1\.35fr\)/);
+    assert.match(list, /GROWTH_VIEW_PERSONA_LABEL/);
+    assert.match(list, /opportunityCountLabel|oportunidad/);
+    assert.match(list, /sm:grid-cols-\[minmax\(0,1\.4fr\)/);
     assert.doesNotMatch(list, /Próxima acción/);
+    assert.doesNotMatch(list, /GROWTH_SITUATION_SECTION_LABEL/);
 
     const detail = readFileSync(
       resolve(process.cwd(), "src/components/admin/growth/PersonaDetailClient.tsx"),

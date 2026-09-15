@@ -18,9 +18,14 @@ import {
 import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
 import { updateUserLastLogin } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
-import { logServerError } from "@/core/security/redact";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
+import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
+import { publicInternalError } from "@/core/security/public-error";
 
+/**
+ * Login embebido de Growth OS: el navegador nunca va a Keycloak.
+ * El servidor valida correo/contraseña contra el IdP (ROPC) y emite sesión opaca.
+ */
 export async function POST(request: Request) {
   if (!isKeycloakOnlyAuth() || !isKeycloakEnabled()) {
     return NextResponse.json(
@@ -30,7 +35,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { email?: string; password?: string };
+    const body = (await request.json()) as {
+      email?: string;
+      password?: string;
+      next?: string;
+    };
     const email = body.email?.trim() ?? "";
     const password = body.password ?? "";
 
@@ -42,7 +51,6 @@ export async function POST(request: Request) {
     }
 
     const preferredTenantId = await resolveActiveTenantIdFromRequest();
-
     const tokens = await loginWithKeycloakPassword({ username: email, password });
     const profile = await fetchKeycloakUserInfo(tokens.accessToken);
     const { user, activeTenantId } = await finishKeycloakLogin(
@@ -69,6 +77,13 @@ export async function POST(request: Request) {
       entityId: session._id,
     });
 
+    const isPlatformOperator = hasPlatformOperatorCapability(user);
+    const redirectTo = resolvePostAuthDestination({
+      hasSpace: Boolean(activeTenantId),
+      isPlatformOperator,
+      next: body.next,
+    });
+
     return NextResponse.json({
       ok: true,
       user: {
@@ -78,8 +93,8 @@ export async function POST(request: Request) {
       },
       activeTenantId,
       hasSpace: Boolean(activeTenantId),
-      isPlatformOperator: hasPlatformOperatorCapability(user),
-      platformRoles: user.platformRoles ?? [],
+      isPlatformOperator,
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof KeycloakAuthError) {
@@ -96,10 +111,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 403 });
     }
 
-    logServerError("keycloak-session", error);
-    return NextResponse.json(
-      { ok: false, error: "No se pudo completar el inicio de sesión." },
-      { status: 500 }
-    );
+    return publicInternalError("keycloak-embedded-login", error);
   }
 }

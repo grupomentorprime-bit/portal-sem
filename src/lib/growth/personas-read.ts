@@ -1,6 +1,8 @@
 /**
- * OT-GROWTH-CORE-007 — lectura Mongo tenant-scoped para UI de Personas.
+ * OT-GROWTH-CORE-007 / OT-GROWTH-PERSONAS-IMPLEMENT-003 —
+ * lectura Mongo tenant-scoped para UI de Personas.
  * Reutiliza stores Core (002/003) donde existen; listado/búsqueda sobre growth_*.
+ * Paginación V1: limit 1–200 (default 100). Sin cursor pagination.
  */
 
 import "server-only";
@@ -17,14 +19,31 @@ import {
   type GrowthOpportunityStatus,
   type GrowthPersona,
 } from "@/core/growth";
+import {
+  GROWTH_CONVERSACIONES_COLLECTION,
+  GROWTH_MENSAJES_COLLECTION,
+  type GrowthConversation,
+  type GrowthMessage,
+} from "@/core/growth/messaging";
 import { getDatabase } from "@/lib/mongodb";
-import { humanizeOriginDisplayLabel } from "./humanize-origin-display";
+import {
+  humanizeOriginDisplayLabel,
+  isKnownHumanOriginChannel,
+} from "./humanize-origin-display";
+import type { GrowthPersonaOriginFilterToken } from "./labels";
+import {
+  formatMensajeWhen,
+  growthConversationChannelLabel,
+  truncateMessagePreview,
+} from "./mensajes-view";
+import { buildPersonaOriginMongoFilter } from "./personas-origin-filter";
 import {
   escapeGrowthSearchRegex,
   toOportunidadDetailView,
   toPersonaDetailView,
   toPersonaListItemView,
   type GrowthOportunidadDetailView,
+  type GrowthPersonaConversationView,
   type GrowthPersonaDetailView,
   type GrowthPersonaListItemView,
 } from "./persona-view";
@@ -66,6 +85,7 @@ export type {
   GrowthNextActionView,
   GrowthOportunidadDetailView,
   GrowthOportunidadView,
+  GrowthPersonaConversationView,
   GrowthPersonaDetailView,
   GrowthPersonaListItemView,
 } from "./persona-view";
@@ -83,12 +103,24 @@ export {
   toPersonaListItemView,
 } from "./persona-view";
 
+export type GrowthPersonaOriginFilter = GrowthPersonaOriginFilterToken | string;
+
 export interface GrowthPersonasListFilters {
   q?: string;
   opportunityType?: string;
   opportunityStatus?: GrowthOpportunityStatus | string;
+  /** Token UI de origen V1 (§5.3). */
+  origin?: GrowthPersonaOriginFilter;
   limit?: number;
 }
+
+const CONVERSATION_STATUS_LABELS: Record<string, string> = {
+  open: "Abierta",
+  closed: "Cerrada",
+  archived: "Archivada",
+};
+
+export { buildPersonaOriginMongoFilter } from "./personas-origin-filter";
 
 async function personaIdsMatchingOpportunityFilters(
   db: Db,
@@ -109,6 +141,66 @@ async function personaIdsMatchingOpportunityFilters(
     .toArray();
 
   return [...new Set(rows.map((r) => r.personaId))];
+}
+
+async function loadLatestMessagesByConversation(
+  tenantId: string,
+  conversationIds: string[]
+): Promise<Map<string, GrowthMessage>> {
+  const map = new Map<string, GrowthMessage>();
+  if (conversationIds.length === 0) return map;
+  const db = await getDatabase();
+  const rows = await db
+    .collection<GrowthMessage>(GROWTH_MENSAJES_COLLECTION)
+    .find({ tenantId, conversationId: { $in: conversationIds } })
+    .sort({ occurredAt: -1 })
+    .toArray();
+  for (const message of rows) {
+    if (!map.has(message.conversationId)) {
+      map.set(message.conversationId, message);
+    }
+  }
+  return map;
+}
+
+/**
+ * Proyección READ-ONLY de conversaciones de una Persona (Mensajes dueño).
+ * Siempre tenantId + personaId.
+ */
+export async function listPersonaConversationViews(
+  tenantId: string,
+  personaId: string,
+  limit = 20
+): Promise<GrowthPersonaConversationView[]> {
+  const db = await getDatabase();
+  const conversations = await db
+    .collection<GrowthConversation>(GROWTH_CONVERSACIONES_COLLECTION)
+    .find({ tenantId, personaId })
+    .sort({ lastMessageAt: -1, updatedAt: -1 })
+    .limit(Math.min(Math.max(limit, 1), 50))
+    .toArray();
+
+  if (conversations.length === 0) return [];
+
+  const lastMessages = await loadLatestMessagesByConversation(
+    tenantId,
+    conversations.map((c) => c._id)
+  );
+  const now = new Date();
+
+  return conversations.map((conversation) => {
+    const last = lastMessages.get(conversation._id);
+    const whenIso =
+      last?.occurredAt ?? conversation.lastMessageAt ?? conversation.updatedAt;
+    return {
+      id: conversation._id,
+      channelLabel: growthConversationChannelLabel(conversation.channel),
+      statusLabel: CONVERSATION_STATUS_LABELS[conversation.status],
+      lastMessageAt: conversation.lastMessageAt ?? last?.occurredAt,
+      lastMessagePreview: truncateMessagePreview(last?.body ?? ""),
+      timeLabel: formatMensajeWhen(whenIso, now),
+    };
+  });
 }
 
 export async function listGrowthPersonaViews(
@@ -133,6 +225,11 @@ export async function listGrowthPersonaViews(
   };
   if (opportunityPersonaIds) {
     personaFilter._id = { $in: opportunityPersonaIds };
+  }
+
+  const originFilter = buildPersonaOriginMongoFilter(filters.origin);
+  if (originFilter) {
+    Object.assign(personaFilter, originFilter);
   }
 
   const q = filters.q?.trim();
@@ -185,7 +282,7 @@ export async function getGrowthPersonaDetailView(
   const persona = await personas.findById(tenantId, personaId);
   if (!persona) return null;
 
-  const [oportunidades, activities] = await Promise.all([
+  const [oportunidades, activities, conversations] = await Promise.all([
     oportunidadesStore.listByPersona(tenantId, personaId),
     db
       .collection<GrowthActivity>(GROWTH_ACTIVIDADES_COLLECTION)
@@ -193,10 +290,11 @@ export async function getGrowthPersonaDetailView(
       .sort({ occurredAt: -1 })
       .limit(100)
       .toArray(),
+    listPersonaConversationViews(tenantId, personaId),
   ]);
 
   return presentPersonaDetail(
-    toPersonaDetailView(persona, oportunidades, activities)
+    toPersonaDetailView(persona, oportunidades, activities, conversations)
   );
 }
 
@@ -229,3 +327,6 @@ export async function getGrowthOportunidadDetailView(
     toOportunidadDetailView(oportunidad, persona, activities)
   );
 }
+
+/** Reexport util for tests: unclear filter excludes known human channels. */
+export { isKnownHumanOriginChannel };

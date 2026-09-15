@@ -475,11 +475,11 @@ export function FormsCenterClient({
     <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
+        { label: "Sitio web", href: "/admin/pages" },
         { label: "Formularios" },
-        { label: "Gestión" },
       ]}
-      title="Gestión de formularios"
-      description="Crea, configura y publica formularios institucionales."
+      title="Formularios"
+      description="Crea formularios de captación. Para una landing completa, usa Páginas e inserta el formulario."
     >
       {error ? (
         <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">

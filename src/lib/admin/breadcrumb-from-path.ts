@@ -32,6 +32,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   news: "Noticias",
   library: "Biblioteca",
   users: "Usuarios",
+  team: "Equipo",
   roles: "Permisos por rol",
   help: "Ayuda",
   aek: "Catálogo AEK",

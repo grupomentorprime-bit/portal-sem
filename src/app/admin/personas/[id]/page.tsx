@@ -2,6 +2,7 @@ import { PersonaDetailClient } from "@/components/admin/growth/PersonaDetailClie
 import { EmptyState } from "@/components/admin/kit";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
+import { can } from "@/core/identity/policies/engine";
 import { getGrowthPersonaDetailView } from "@/lib/growth/personas-read";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { UserRoundX } from "lucide-react";
@@ -14,14 +15,62 @@ interface PageProps {
   searchParams: Promise<{ oportunidad?: string }>;
 }
 
+function canViewPeople(authCtx: Parameters<typeof can>[0]): boolean {
+  return (
+    can(authCtx, "growth.people.view") || can(authCtx, "growth.people.manage")
+  );
+}
+
+function canOpenSales(authCtx: Parameters<typeof can>[0]): boolean {
+  return (
+    can(authCtx, "growth.sales.view") ||
+    can(authCtx, "growth.sales.read") ||
+    can(authCtx, "growth.sales.operate")
+  );
+}
+
+function canOpenMessages(authCtx: Parameters<typeof can>[0]): boolean {
+  return canOpenSales(authCtx);
+}
+
+function canOpenActivity(authCtx: Parameters<typeof can>[0]): boolean {
+  return (
+    can(authCtx, "growth.sales.read") || can(authCtx, "growth.sales.operate")
+  );
+}
+
 export default async function AdminPersonaDetailPage({
   params,
   searchParams,
 }: PageProps) {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
-  if (!session || !tenantId) {
+  if (!session || !tenantId || !session.membership) {
     redirect("/admin/login?next=/admin/personas");
+  }
+
+  const { resolvePermissionsForMembership } = await import(
+    "@/lib/identity/permission-resolver"
+  );
+  const { readPlatformRoles } = await import(
+    "@/core/identity/platform/capability"
+  );
+  const permissions = await resolvePermissionsForMembership(
+    tenantId,
+    session.membership
+  );
+  const authCtx = {
+    user: session.user,
+    session: session.session,
+    membership: session.membership,
+    permissions,
+    tenantId,
+    platformRoles: readPlatformRoles(session.user),
+    compatMode: false,
+  };
+
+  if (!canViewPeople(authCtx)) {
+    redirect("/admin");
   }
 
   const { id } = await params;
@@ -29,6 +78,7 @@ export default async function AdminPersonaDetailPage({
   const persona = await getGrowthPersonaDetailView(tenantId, id);
 
   if (!persona) {
+    // Persona inexistente y Persona de otro Espacio: misma respuesta.
     return (
       <AdminModulePage
         breadcrumbs={[
@@ -57,6 +107,9 @@ export default async function AdminPersonaDetailPage({
     <PersonaDetailClient
       persona={persona}
       focusOportunidadId={oportunidad?.trim() || undefined}
+      canOpenSales={canOpenSales(authCtx)}
+      canOpenMessages={canOpenMessages(authCtx)}
+      canOpenActivity={canOpenActivity(authCtx)}
     />
   );
 }

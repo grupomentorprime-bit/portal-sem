@@ -13,8 +13,10 @@ import {
 } from "../../src/core/tenant/constants";
 import {
   isLoopbackHost,
+  isPlatformOriginHost,
   resolveAppHostsFromEnv,
   resolveSemBootstrapHostsFromEnv,
+  shouldEnterPlatformHome,
 } from "../../src/core/tenant/hosts";
 import {
   isSemEligibleHost,
@@ -115,6 +117,21 @@ describe("OT-GROWTH-PLATFORM-HOST-ISOLATION-001 — reglas unitarias", () => {
       }),
       ["localhost:3000"]
     );
+  });
+
+  it("isPlatformOriginHost solo coincide con APP_URL público", () => {
+    const env = { APP_URL: PLATFORM_URL, NEXT_PUBLIC_APP_URL: PLATFORM_URL };
+    assert.equal(isPlatformOriginHost(PLATFORM_HOST, env), true);
+    assert.equal(isPlatformOriginHost("localhost:3000", env), false);
+    assert.equal(isPlatformOriginHost("seminarioipn.cl", env), false);
+  });
+
+  it("shouldEnterPlatformHome: host público sin Espacio entra a Growth OS", () => {
+    assert.equal(shouldEnterPlatformHome(PLATFORM_HOST, false), true);
+    assert.equal(shouldEnterPlatformHome(PLATFORM_HOST, true), false);
+    assert.equal(shouldEnterPlatformHome("localhost:3000", false), false);
+    assert.equal(shouldEnterPlatformHome("seminarioipn.cl", true), false);
+    assert.equal(shouldEnterPlatformHome("seminarioipn.cl", false), true);
   });
 });
 

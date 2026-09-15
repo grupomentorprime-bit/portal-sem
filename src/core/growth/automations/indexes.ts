@@ -1,5 +1,5 @@
 /**
- * Índices tenant-scoped Automatizaciones (OT-GROWTH-AUTOMATION-002).
+ * Índices tenant-scoped Automatizaciones (OT-GROWTH-AUTOMATION-002 / E2E-FIX-001).
  */
 
 import type { Db } from "mongodb";
@@ -18,6 +18,7 @@ async function ensureIndex(
   options: {
     name: string;
     unique?: boolean;
+    partialFilterExpression?: Record<string, unknown>;
   }
 ): Promise<EnsureIndexResult> {
   try {
@@ -25,6 +26,9 @@ async function ensureIndex(
       name: options.name,
       background: true,
       ...(options.unique ? { unique: true } : {}),
+      ...(options.partialFilterExpression
+        ? { partialFilterExpression: options.partialFilterExpression }
+        : {}),
     });
     return "created";
   } catch (error) {
@@ -46,6 +50,7 @@ export async function ensureGrowthAutomationIndexes(db: Db): Promise<{
     keys: Record<string, 1 | -1>;
     name: string;
     unique?: boolean;
+    partialFilterExpression?: Record<string, unknown>;
   }> = [
     {
       collection: automations,
@@ -56,6 +61,15 @@ export async function ensureGrowthAutomationIndexes(db: Db): Promise<{
       collection: automations,
       keys: { tenantId: 1, status: 1 },
       name: "tenantId_status",
+    },
+    {
+      collection: automations,
+      keys: { tenantId: 1, seedKey: 1 },
+      name: "tenantId_seedKey_unique",
+      unique: true,
+      partialFilterExpression: {
+        seedKey: { $exists: true, $type: "string" },
+      },
     },
     {
       collection: versions,
@@ -86,6 +100,7 @@ export async function ensureGrowthAutomationIndexes(db: Db): Promise<{
     const result = await ensureIndex(spec.collection, spec.keys, {
       name: spec.name,
       unique: spec.unique,
+      partialFilterExpression: spec.partialFilterExpression,
     });
     results.push({ name: spec.name, result });
   }

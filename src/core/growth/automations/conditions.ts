@@ -17,6 +17,8 @@ export function evaluateAutomationConditionRule(
       return (oportunidad.origin.channel ?? "") === rule.value;
     case "origin.formDestination":
       return (oportunidad.origin.formDestination ?? "") === rule.value;
+    case "origin.campaign":
+      return (oportunidad.origin.campaign ?? "") === rule.value;
     case "status":
       return oportunidad.status === rule.value;
     case "typeKey":

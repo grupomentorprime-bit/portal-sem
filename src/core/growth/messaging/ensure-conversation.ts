@@ -36,6 +36,8 @@ export type EnsureGrowthConversationResult =
 /**
  * Reutiliza por externalThreadId (canal) o por Persona+canal abierta.
  * Solo guarda FKs — sin datos de Persona/Oportunidad.
+ * Si se pasa oportunidadId y difiere del actual, re-vincula (p. ej. nueva
+ * intención comercial tras oportunidad final).
  */
 export async function ensureGrowthConversation(
   store: GrowthMessagingStore,
@@ -79,7 +81,8 @@ export async function ensureGrowthConversation(
     let next = existing;
     let changed = false;
 
-    if (oportunidadId && !next.oportunidadId) {
+    // Vincular / re-vincular contexto comercial (p. ej. nueva intención tras won/lost).
+    if (oportunidadId && next.oportunidadId !== oportunidadId) {
       next = { ...next, oportunidadId };
       changed = true;
     }

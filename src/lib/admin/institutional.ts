@@ -127,8 +127,8 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
     requiredAnyPermission: ["cms.media.read", "cms.media.upload"],
   },
   {
-    href: "/admin/settings/users",
-    label: "Administración",
+    href: "/admin/settings/team",
+    label: "Equipo",
     icon: "admin",
     matchPrefixes: [
       "/admin/settings",
@@ -149,9 +149,9 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
 
 /** Roles internos → etiquetas institucionales visibles en el CMS */
 export const INSTITUTIONAL_ROLE_LABELS: Record<string, string> = {
-  [ROLE_CODES.SUPER_ADMIN]: "Super Admin",
-  "Super Admin": "Super Admin",
-  "Tenant Owner": "Super Admin",
+  [ROLE_CODES.SUPER_ADMIN]: "Dueño del Espacio",
+  "Super Admin": "Dueño del Espacio",
+  "Tenant Owner": "Dueño del Espacio",
   [ROLE_CODES.INSTITUTION_ADMIN]: "Administrador",
   "Institution Admin": "Administrador",
   [ROLE_CODES.SUPPORT]: "Soporte",
@@ -170,7 +170,7 @@ export const INSTITUTIONAL_ROLE_LABELS: Record<string, string> = {
   Teacher: "Docente",
   Finance: "Finanzas",
   Student: "Estudiante",
-  "Platform Owner": "Super Admin",
+  "Platform Owner": "Dueño del Espacio",
   "Platform Admin": "Administrador",
 };
 
@@ -243,7 +243,7 @@ export const ADMIN_SEARCH_CATEGORIES = [
   { id: "people", label: "Personas", href: "/admin/personas" },
   { id: "programs", label: "Programas", href: "/admin/content/programs" },
   { id: "library", label: "Biblioteca", href: "/admin/content/library" },
-  { id: "users", label: "Usuarios", href: "/admin/settings/users" },
+  { id: "users", label: "Equipo", href: "/admin/settings/team" },
   { id: "pages", label: "Páginas", href: "/admin/pages" },
   { id: "forms", label: "Formularios", href: "/admin/portal/forms" },
 ] as const;

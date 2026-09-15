@@ -111,6 +111,11 @@ function buildConditionRule(
         if (!value) return null;
         return { field: "origin.channel", op: "eq", value };
       }
+      if (raw.startsWith("campaign:")) {
+        const value = raw.slice("campaign:".length).trim();
+        if (!value) return null;
+        return { field: "origin.campaign", op: "eq", value };
+      }
       return null;
     }
     case "status": {
@@ -356,6 +361,10 @@ export function automationFormFromSteps(
         case "origin.formDestination":
           form.conditionKind = "origin";
           form.originValue = `channel:${rule.value}`;
+          break;
+        case "origin.campaign":
+          form.conditionKind = "origin";
+          form.originValue = `campaign:${rule.value}`;
           break;
         case "status":
           form.conditionKind = "status";

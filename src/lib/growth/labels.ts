@@ -82,23 +82,76 @@ export function growthNextActionKindLabel(
   return NEXT_ACTION_KIND_LABELS[kind as GrowthNextActionKind] ?? "Acción";
 }
 
-export const GROWTH_NO_NEXT_ACTION_LABEL = "Sin próxima acción";
+export const GROWTH_NO_NEXT_ACTION_LABEL = "No hay nada pendiente por ahora.";
 export const GROWTH_ORIGIN_SECTION_LABEL = "De dónde llegó";
 export const GROWTH_TIMELINE_SECTION_LABEL = "Qué ha pasado";
 export const GROWTH_NEXT_ACTION_SECTION_LABEL = "Qué hacer ahora";
 export const GROWTH_SITUATION_SECTION_LABEL = "Situación";
 export const GROWTH_RELATED_HISTORY_LABEL = "Hechos de esta Oportunidad";
 export const GROWTH_VIEW_DETAIL_LABEL = "Ver detalle";
+export const GROWTH_VIEW_PERSONA_LABEL = "Ver persona";
+
+/** Cabecera del listado Personas. */
+export const GROWTH_PERSONAS_PAGE_TITLE = "Personas";
+export const GROWTH_PERSONAS_PAGE_DESCRIPTION =
+  "Todas las personas que se han relacionado con tu negocio.";
 
 /** Estado vacío real (sin Personas en el Espacio). */
-export const GROWTH_PERSONAS_EMPTY_TITLE = "Aún no hay Personas";
+export const GROWTH_PERSONAS_EMPTY_TITLE = "Aún no hay personas";
 export const GROWTH_PERSONAS_EMPTY_DESCRIPTION =
-  "Aquí aparecerán las personas que lleguen desde formularios, consultas o postulaciones. Growth OS te ayudará a saber de dónde llegaron, qué buscan y qué hacer después.";
+  "Aparecerán cuando alguien escriba por WhatsApp, complete un formulario, postule o las registres tú.";
 
 /** Estado vacío por búsqueda/filtros sin coincidencias. */
-export const GROWTH_PERSONAS_NO_MATCH_TITLE = "No encontramos Personas";
+export const GROWTH_PERSONAS_NO_MATCH_TITLE =
+  "No encontramos personas con esos filtros.";
 export const GROWTH_PERSONAS_NO_MATCH_DESCRIPTION =
-  "Prueba con otro nombre, correo, teléfono o quita los filtros.";
+  "Prueba con otro nombre, correo o teléfono, o limpia los filtros.";
+
+export const GROWTH_PERSONAS_CREATE_CTA = "Crear persona";
+export const GROWTH_PERSONAS_CREATE_TITLE = "Crear persona";
+export const GROWTH_PERSONAS_CREATE_DESCRIPTION =
+  "Agrega un correo o un teléfono.";
+export const GROWTH_PERSONAS_CREATED_MESSAGE = "Persona creada.";
+export const GROWTH_PERSONAS_MATCHED_MESSAGE =
+  "Esta persona ya estaba registrada.";
+export const GROWTH_PERSONAS_CONFLICT_MESSAGE =
+  "Encontramos datos que podrían pertenecer a personas distintas.";
+export const GROWTH_PERSONAS_VALIDATION_MESSAGE =
+  "Necesitamos un correo o un teléfono válido.";
+export const GROWTH_PERSONAS_NAME_REQUIRED_MESSAGE = "Indica el nombre.";
+export const GROWTH_PERSONAS_CONVERSATIONS_SECTION = "Conversaciones";
+export const GROWTH_PERSONAS_CONVERSATIONS_EMPTY_TITLE =
+  "Todavía no hay conversaciones";
+export const GROWTH_PERSONAS_CONVERSATIONS_EMPTY_DESCRIPTION =
+  "Cuando haya mensajes con esta persona, se verán aquí como contexto reciente.";
+export const GROWTH_PERSONAS_OPEN_IN_MESSAGES = "Abrir en Mensajes";
+export const GROWTH_PERSONAS_OPEN_IN_SALES = "Abrir en Ventas";
+export const GROWTH_PERSONAS_OPEN_ACTIVITY = "Ver actividad";
+export const GROWTH_PERSONAS_LIMIT_NOTE =
+  "Mostramos hasta 100 personas recientes. Usa búsqueda o filtros para acotar.";
+export const GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_TITLE =
+  "Todavía no hay oportunidades";
+export const GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_DESCRIPTION =
+  "Cuando esta persona muestre una intención, la verás aquí.";
+export const GROWTH_PERSONAS_ACTIVITY_EMPTY_TITLE = "Todavía no hay hechos";
+export const GROWTH_PERSONAS_ACTIVITY_EMPTY_DESCRIPTION =
+  "Cuando pase algo con esta persona, se contará aquí.";
+export const GROWTH_PERSONAS_ARRIVED_PREFIX = "Llegó por";
+
+/** Filtro de origen V1 — tokens resolubles; no inventan GrowthOriginKind. */
+export const GROWTH_PERSONA_ORIGIN_FILTER_OPTIONS = [
+  { value: "", label: "Todos" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "form", label: "Formulario" },
+  { value: "admission", label: "Admisión" },
+  { value: "manual", label: "Registro manual" },
+  { value: "event", label: "Evento" },
+  { value: "portal-web", label: "Portal web" },
+  { value: "unclear", label: "Sin origen claro" },
+] as const;
+
+export type GrowthPersonaOriginFilterToken =
+  (typeof GROWTH_PERSONA_ORIGIN_FILTER_OPTIONS)[number]["value"];
 
 export const GROWTH_OPPORTUNITY_STATUS_FILTER_OPTIONS: Array<{
   value: GrowthOpportunityStatus;
@@ -161,10 +214,37 @@ export const GROWTH_MENSAJES_REPLY_PLACEHOLDER = "Escribe una respuesta…";
 export const GROWTH_MENSAJES_SEND_LABEL = "Enviar";
 export const GROWTH_MENSAJES_VIEW_PERSONA_LABEL = "Ver persona";
 export const GROWTH_MENSAJES_VIEW_OPPORTUNITY_LABEL = "Ver oportunidad";
+/** OT-GROWTH-E2E-FIX-003 — contexto comercial mínimo en el hilo. */
+export const GROWTH_MENSAJES_OPPORTUNITY_FIELD_LABEL = "Oportunidad";
+export const GROWTH_MENSAJES_STATUS_FIELD_LABEL = "Estado";
 export const GROWTH_MENSAJES_BACK_LABEL = "Conversaciones";
 export const GROWTH_MENSAJES_SEND_FAILED_LABEL = "No se pudo enviar";
 export const GROWTH_MENSAJES_REPLY_ERROR_GENERIC =
   "No se pudo enviar la respuesta. Intentalo de nuevo.";
+
+/** OT-GROWTH-ACTIVITY-001 / UX-002 — historial comercial del Espacio. */
+export const GROWTH_ACTIVIDAD_PAGE_TITLE = "Actividad";
+export const GROWTH_ACTIVIDAD_PAGE_DESCRIPTION =
+  "Todo lo que ha pasado en tu negocio, en un solo lugar.";
+export const GROWTH_ACTIVIDAD_EMPTY_TITLE = "Aún no hay actividad";
+export const GROWTH_ACTIVIDAD_EMPTY_DESCRIPTION =
+  "Cuando lleguen personas, mensajes o avances en ventas, los verás aquí.";
+export const GROWTH_ACTIVIDAD_NO_MATCH_TITLE = "No hay actividad en este filtro";
+export const GROWTH_ACTIVIDAD_NO_MATCH_DESCRIPTION =
+  "Prueba con otro filtro o vuelve a Todos.";
+export const GROWTH_ACTIVIDAD_LOAD_MORE_LABEL = "Cargar más";
+export const GROWTH_ACTIVIDAD_LOADING_LABEL = "Cargando actividad…";
+export const GROWTH_ACTIVIDAD_ERROR_TITLE = "No pudimos cargar la actividad";
+export const GROWTH_ACTIVIDAD_ERROR_DESCRIPTION =
+  "Revisa tu conexión e inténtalo de nuevo.";
+export const GROWTH_ACTIVIDAD_RETRY_LABEL = "Reintentar";
+export const GROWTH_ACTIVIDAD_VIEW_PERSONA_LABEL = "Ver persona";
+export const GROWTH_ACTIVIDAD_VIEW_OPPORTUNITY_LABEL = "Ver oportunidad";
+export const GROWTH_ACTIVIDAD_FILTER_ALL_LABEL = "Todos";
+export const GROWTH_ACTIVIDAD_FILTER_PERSONAS_LABEL = "Personas";
+export const GROWTH_ACTIVIDAD_FILTER_VENTAS_LABEL = "Ventas";
+export const GROWTH_ACTIVIDAD_FILTER_MENSAJES_LABEL = "Mensajes";
+export const GROWTH_ACTIVIDAD_FILTER_AUTOMATIZACIONES_LABEL = "Automatizaciones";
 
 /** OT-GROWTH-MESSAGING-005 — Ajustes → Canales. */
 export const GROWTH_CHANNELS_PAGE_TITLE = "Canales";
@@ -186,3 +266,32 @@ export const GROWTH_CHANNELS_TEST_FAIL =
   "No pudimos conectar. Revisa la configuración.";
 export const GROWTH_CHANNELS_COMING_SOON = "Disponible más adelante";
 export const GROWTH_CHANNELS_UPDATED_LABEL = "Última actualización";
+
+/** OT-GROWTH-UX-ANALYTICS-004 — copy humano Analítica V1. */
+export const GROWTH_ANALITICA_PAGE_TITLE = "Analítica";
+export const GROWTH_ANALITICA_PAGE_DESCRIPTION =
+  "Entiende cómo está funcionando tu negocio.";
+export const GROWTH_ANALITICA_LOADING_LABEL = "Cargando analítica…";
+export const GROWTH_ANALITICA_ERROR_TITLE = "No pudimos cargar la analítica.";
+export const GROWTH_ANALITICA_ERROR_DESCRIPTION =
+  "Revisa tu conexión e inténtalo de nuevo.";
+export const GROWTH_ANALITICA_RETRY_LABEL = "Intentar nuevamente";
+export const GROWTH_ANALITICA_EMPTY_DESCRIPTION =
+  "Aún no hay datos en este período.";
+export const GROWTH_ANALITICA_EMPTY_OPPORTUNITIES =
+  "Aún no hay oportunidades en este período.";
+export const GROWTH_ANALITICA_EMPTY_CAMPAIGNS =
+  "No hay campañas con actividad en este período.";
+export const GROWTH_ANALITICA_EMPTY_MESSAGES =
+  "Aún no hay mensajes en este período.";
+export const GROWTH_ANALITICA_EMPTY_LOSSES =
+  "No hay pérdidas en este período.";
+export const GROWTH_ANALITICA_EMPTY_ORIGINS =
+  "Aún no hay personas nuevas en este período.";
+export const GROWTH_ANALITICA_PERIOD_LABELS = {
+  last_7d: "Últimos 7 días",
+  last_30d: "Últimos 30 días",
+  this_month: "Este mes",
+  previous_month: "Mes anterior",
+  custom: "Personalizado",
+} as const;

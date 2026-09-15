@@ -1,14 +1,19 @@
 /**
- * Crea o actualiza el cliente OAuth del portal en Keycloak (confidential + Direct Access Grants).
- * Requiere en .env: KEYCLOAK_ADMIN y KEYCLOAK_ADMIN_PASSWORD
+ * Provisiona un cliente OAuth de desarrollo en Keycloak (confidential + Standard flow).
  *
+ * Growth OS de producción ya usa `growth-os-web` creado manualmente:
+ *  - Client authentication ON · Standard flow ON · Direct access grants OFF
+ *  - NO ejecutar este script contra ese cliente (no recrea ni regenera secret).
+ *
+ * Requiere: KEYCLOAK_ADMIN y KEYCLOAK_ADMIN_PASSWORD
  * Uso: npx tsx scripts/setup-keycloak-client.ts
  */
 import { readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
 const ENV_PATH = resolve(process.cwd(), ".env");
-const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID?.trim() || "seminario-ipn-web";
+const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID?.trim() || "growth-os-web";
+const PROTECTED_PROD_CLIENT = "growth-os-web";
 
 function loadEnv(): Record<string, string> {
   const raw = readFileSync(ENV_PATH, "utf8");
@@ -78,21 +83,19 @@ async function findClientUuid(
   );
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Error listando clientes: ${text}`);
+    throw new Error(`Error buscando cliente: ${await res.text()}`);
   }
 
-  const clients = (await res.json()) as Array<{ id: string }>;
-  return clients[0]?.id ?? null;
+  const list = (await res.json()) as Array<{ id: string; clientId: string }>;
+  return list[0]?.id ?? null;
 }
 
-async function createOrUpdateClient(
+async function createDevClient(
   baseUrl: string,
   realm: string,
   token: string,
   redirectUri: string
 ): Promise<string> {
-  const existingUuid = await findClientUuid(baseUrl, realm, token, CLIENT_ID);
   const webOrigin = new URL(redirectUri).origin;
 
   const payload = {
@@ -101,35 +104,17 @@ async function createOrUpdateClient(
     enabled: true,
     publicClient: false,
     clientAuthenticatorType: "client-secret",
-    directAccessGrantsEnabled: true,
+    directAccessGrantsEnabled: false,
     standardFlowEnabled: true,
     serviceAccountsEnabled: false,
     redirectUris: [redirectUri],
-    webOrigins: [webOrigin, "+"],
+    webOrigins: [webOrigin],
     protocol: "openid-connect",
     attributes: {
-      "post.logout.redirect.uris": "+",
+      "pkce.code.challenge.method": "S256",
+      "post.logout.redirect.uris": webOrigin + "/*",
     },
   };
-
-  if (existingUuid) {
-    const res = await fetch(
-      `${baseUrl}/admin/realms/${encodeURIComponent(realm)}/clients/${existingUuid}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-    if (!res.ok) {
-      throw new Error(`Error actualizando cliente: ${await res.text()}`);
-    }
-    console.log(`✓ Cliente existente actualizado: ${CLIENT_ID}`);
-    return existingUuid;
-  }
 
   const res = await fetch(`${baseUrl}/admin/realms/${encodeURIComponent(realm)}/clients`, {
     method: "POST",
@@ -180,7 +165,7 @@ async function main(): Promise<void> {
     env.KEYCLOAK_REDIRECT_URI?.trim() ||
     `${env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000"}/api/identity/auth/keycloak/callback`;
 
-  console.log("\n── Configuración cliente Keycloak (confidential) ──\n");
+  console.log("\n── Configuración cliente Keycloak (Auth Code + PKCE) ──\n");
 
   if (!baseUrl || !realm) {
     console.error("✗ Faltan KEYCLOAK_URL o KEYCLOAK_REALM en .env");
@@ -201,7 +186,32 @@ async function main(): Promise<void> {
   const token = await getAdminToken(baseUrl, adminUser, adminPassword);
   console.log("✓ Autenticado como admin de Keycloak");
 
-  const clientUuid = await createOrUpdateClient(baseUrl, realm, token, redirectUri);
+  const existingUuid = await findClientUuid(baseUrl, realm, token, CLIENT_ID);
+
+  if (existingUuid && CLIENT_ID === PROTECTED_PROD_CLIENT) {
+    console.log(
+      `✓ Cliente ${PROTECTED_PROD_CLIENT} ya existe — no se actualiza ni se regenera el secret (OT-GROWTH-AUTH-HARDENING-001).`
+    );
+    console.log("  Configura KEYCLOAK_CLIENT_SECRET manualmente desde el panel de Keycloak si falta en .env.");
+    upsertEnvValue("KEYCLOAK_CLIENT_ID", CLIENT_ID);
+    upsertEnvValue("KEYCLOAK_REDIRECT_URI", redirectUri);
+    if (!env.KEYCLOAK_CLIENT_SECRET?.trim()) {
+      console.log("\n⚠ KEYCLOAK_CLIENT_SECRET vacío en .env — pégalo desde Credentials sin regenerarlo.\n");
+      process.exit(1);
+    }
+    console.log("\nListo. Reinicia npm run dev y verifica /api/identity/auth/keycloak/login\n");
+    return;
+  }
+
+  if (existingUuid) {
+    console.error(
+      `✗ El cliente "${CLIENT_ID}" ya existe. Este script no actualiza clientes existentes para evitar regenerar secretos.`
+    );
+    console.error("  Usa KEYCLOAK_CLIENT_ID distinto para un cliente de desarrollo, o configura el secret a mano.\n");
+    process.exit(1);
+  }
+
+  const clientUuid = await createDevClient(baseUrl, realm, token, redirectUri);
   const secret = await getClientSecret(baseUrl, realm, token, clientUuid);
 
   upsertEnvValue("KEYCLOAK_CLIENT_ID", CLIENT_ID);
@@ -209,7 +219,7 @@ async function main(): Promise<void> {
   upsertEnvValue("KEYCLOAK_REDIRECT_URI", redirectUri);
 
   console.log(`✓ Secret guardado en .env (${secret.slice(0, 4)}…${secret.slice(-4)})`);
-  console.log("\nReinicia npm run dev y ejecuta: npx tsx scripts/check-keycloak.ts\n");
+  console.log("\nReinicia npm run dev y abre /admin/login (Auth Code + PKCE).\n");
 }
 
 main().catch((err) => {

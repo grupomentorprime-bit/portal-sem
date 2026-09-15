@@ -1,9 +1,15 @@
 /**
- * OT-GROWTH-MESSAGING-002 — webhook POST: autenticar, resolver Espacio/Persona, inbound.
- * Reutiliza upsertGrowthPersona + recordGrowthInboundMessage. Sin envío ni bandeja.
+ * OT-GROWTH-MESSAGING-002 / E2E-FIX-002 — webhook POST: autenticar, Persona,
+ * Oportunidad comercial (open/reuse), Conversación vinculada, inbound.
+ * Reutiliza upsertGrowthPersona + openGrowthOpportunity + recordGrowthInboundMessage.
+ * Sin segundo pipeline ni automatización especial WhatsApp.
  */
 
 import type { GrowthEventBusPort } from "../event-bus-port";
+import { isGrowthOpportunityFinalStatus } from "../opportunity-definition";
+import { openGrowthOpportunity } from "../open-opportunity";
+import type { GrowthOpportunityStore } from "../opportunity-store";
+import type { GrowthOpportunityWorkflowPort } from "../opportunity-workflow-port";
 import {
   recordGrowthInboundMessage,
   type RecordGrowthInboundMessageResult,
@@ -20,6 +26,7 @@ import {
 } from "./parse";
 import {
   GROWTH_WHATSAPP_CHANNEL,
+  GROWTH_WHATSAPP_OPPORTUNITY_TYPE_KEY,
   GROWTH_WHATSAPP_SOURCE_COLLECTION,
   type GrowthWhatsAppConnection,
   type WhatsAppInboundExtracted,
@@ -35,7 +42,15 @@ export interface ReceiveWhatsAppCloudWebhookDeps {
   connections: GrowthWhatsAppConnectionStore;
   personas: GrowthPersonaStore;
   messaging: GrowthMessagingStore;
+  /** Cableado comercial (E2E-FIX-002). Sin ellos → solo Persona + Conversación. */
+  oportunidades?: GrowthOpportunityStore;
+  workflow?: GrowthOpportunityWorkflowPort;
   eventBus?: GrowthEventBusPort;
+  /**
+   * Fail-soft: se invoca al resolver el Espacio, antes de abrir Oportunidad
+   * (p. ej. ensure del playbook H1). Errores no deben tumbar el inbound.
+   */
+  onTenantResolved?: (tenantId: string) => Promise<void>;
 }
 
 export type ReceiveWhatsAppCloudWebhookResult =
@@ -57,6 +72,9 @@ export interface WhatsAppReceiveItem {
   conversationCreated: boolean;
   duplicated: boolean;
   published: boolean;
+  oportunidadId?: string;
+  opportunityCreated?: boolean;
+  opportunityReused?: boolean;
   inbound: RecordGrowthInboundMessageResult;
 }
 
@@ -145,9 +163,95 @@ async function resolvePersonaForInbound(
   };
 }
 
+function whatsappThreadId(extracted: WhatsAppInboundExtracted): string {
+  return `${extracted.phoneNumberId}:${extracted.from}`;
+}
+
 /**
- * Autentica el webhook, resuelve Espacio por phone_number_id, Persona por teléfono
- * y llama a recordGrowthInboundMessage (idempotente por wamid).
+ * Resuelve Oportunidad comercial para el inbound WhatsApp.
+ * 1) Si el hilo ya apunta a una opp abierta → reutilizarla.
+ * 2) Si no → openGrowthOpportunity (inquiry / none) con reglas existentes
+ *    (reusa compatible no final; crea si la previa está won/lost/handed_off/archived).
+ */
+async function resolveOpportunityForInbound(
+  deps: {
+    oportunidades: GrowthOpportunityStore;
+    workflow: GrowthOpportunityWorkflowPort;
+    messaging: GrowthMessagingStore;
+    eventBus?: GrowthEventBusPort;
+  },
+  input: {
+    tenantId: string;
+    personaId: string;
+    extracted: WhatsAppInboundExtracted;
+    now: string;
+  }
+): Promise<
+  | { ok: true; oportunidadId: string; created: boolean; reused: boolean }
+  | { ok: false }
+> {
+  const externalThreadId = whatsappThreadId(input.extracted);
+
+  const existingConv =
+    (await deps.messaging.findConversationByExternalThread({
+      tenantId: input.tenantId,
+      channel: GROWTH_WHATSAPP_CHANNEL,
+      externalThreadId,
+    })) ??
+    (await deps.messaging.findOpenConversationByPersonaChannel({
+      tenantId: input.tenantId,
+      personaId: input.personaId,
+      channel: GROWTH_WHATSAPP_CHANNEL,
+    }));
+
+  if (existingConv?.oportunidadId) {
+    const linked = await deps.oportunidades.findById(
+      input.tenantId,
+      existingConv.oportunidadId
+    );
+    if (linked && !isGrowthOpportunityFinalStatus(linked.status)) {
+      return {
+        ok: true,
+        oportunidadId: linked._id,
+        created: false,
+        reused: true,
+      };
+    }
+  }
+
+  const opened = await openGrowthOpportunity(
+    deps.oportunidades,
+    deps.workflow,
+    {
+      tenantId: input.tenantId,
+      personaId: input.personaId,
+      typeKey: GROWTH_WHATSAPP_OPPORTUNITY_TYPE_KEY,
+      subjectType: "none",
+      origin: {
+        kind: "unknown",
+        channel: GROWTH_WHATSAPP_CHANNEL,
+        sourceCollection: GROWTH_WHATSAPP_SOURCE_COLLECTION,
+        sourceId: externalThreadId,
+      },
+      sourceCollection: GROWTH_WHATSAPP_SOURCE_COLLECTION,
+      sourceId: input.extracted.messageId,
+      now: input.now,
+      eventBus: deps.eventBus,
+    }
+  );
+
+  if (!opened.ok) return { ok: false };
+  return {
+    ok: true,
+    oportunidadId: opened.oportunidad._id,
+    created: opened.outcome === "created",
+    reused: opened.outcome === "reused",
+  };
+}
+
+/**
+ * Autentica el webhook, resuelve Espacio por phone_number_id, Persona por teléfono,
+ * abre/reutiliza Oportunidad comercial, vincula Conversación y registra inbound.
  */
 export async function receiveWhatsAppCloudWebhook(
   deps: ReceiveWhatsAppCloudWebhookDeps,
@@ -177,6 +281,10 @@ export async function receiveWhatsAppCloudWebhook(
   const messages = extractWhatsAppInboundMessages(payload);
   const processed: WhatsAppReceiveItem[] = [];
   let ignored = 0;
+  const commercial =
+    deps.oportunidades && deps.workflow
+      ? { oportunidades: deps.oportunidades, workflow: deps.workflow }
+      : null;
 
   for (const extracted of messages) {
     const connection = await resolveUniqueConnection(
@@ -186,6 +294,14 @@ export async function receiveWhatsAppCloudWebhook(
     if (!connection) {
       ignored += 1;
       continue;
+    }
+
+    if (deps.onTenantResolved) {
+      try {
+        await deps.onTenantResolved(connection.tenantId);
+      } catch {
+        // Fail-soft: inbound y Oportunidad siguen.
+      }
     }
 
     const persona = await resolvePersonaForInbound(
@@ -199,6 +315,32 @@ export async function receiveWhatsAppCloudWebhook(
       continue;
     }
 
+    let oportunidadId: string | undefined;
+    let opportunityCreated: boolean | undefined;
+    let opportunityReused: boolean | undefined;
+
+    if (commercial) {
+      const opportunity = await resolveOpportunityForInbound(
+        {
+          ...commercial,
+          messaging: deps.messaging,
+          eventBus: deps.eventBus,
+        },
+        {
+          tenantId: connection.tenantId,
+          personaId: persona.personaId,
+          extracted,
+          now,
+        }
+      );
+      if (opportunity.ok) {
+        oportunidadId = opportunity.oportunidadId;
+        opportunityCreated = opportunity.created;
+        opportunityReused = opportunity.reused;
+      }
+      // Fail-soft: si no hay opp, el mensaje igual entra al hilo.
+    }
+
     const inbound = await recordGrowthInboundMessage(
       deps.messaging,
       {
@@ -207,7 +349,8 @@ export async function receiveWhatsAppCloudWebhook(
         channel: GROWTH_WHATSAPP_CHANNEL,
         body: extracted.body,
         externalMessageId: extracted.messageId,
-        externalThreadId: `${extracted.phoneNumberId}:${extracted.from}`,
+        externalThreadId: whatsappThreadId(extracted),
+        ...(oportunidadId ? { oportunidadId } : {}),
         occurredAt: occurredAtFromWhatsAppTimestamp(extracted.timestamp, now),
       },
       { eventBus: deps.eventBus }
@@ -226,6 +369,13 @@ export async function receiveWhatsAppCloudWebhook(
       conversationCreated: inbound.conversationCreated,
       duplicated: inbound.duplicated,
       published: inbound.published,
+      ...(oportunidadId
+        ? {
+            oportunidadId,
+            opportunityCreated,
+            opportunityReused,
+          }
+        : {}),
       inbound,
     });
   }

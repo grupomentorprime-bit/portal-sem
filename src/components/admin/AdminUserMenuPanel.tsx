@@ -178,8 +178,8 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
           </MenuSection>
 
           <MenuSection label="Administración">
-            <MenuItem icon={Users} onClick={() => navigate("/admin/settings/users")}>
-              Administrar usuarios
+            <MenuItem icon={Users} onClick={() => navigate("/admin/settings/team")}>
+              Equipo
             </MenuItem>
             <MenuItem icon={HelpCircle} onClick={() => navigate("/admin/settings/help")}>
               Centro de ayuda

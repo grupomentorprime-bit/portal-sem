@@ -60,6 +60,17 @@ export const PERMISSIONS = {
   "growth.automations.view": "Ver definiciones de Automatizaciones del Espacio",
   "growth.automations.manage": "Crear, versionar, publicar y activar Automatizaciones",
 
+  // Growth / Campañas (OT-GROWTH-CAMPAIGNS-003)
+  "growth.campaigns.view": "Ver campañas del Espacio",
+  "growth.campaigns.manage": "Crear y editar campañas del Espacio",
+
+  // Growth / Analítica (OT-GROWTH-ANALYTICS-IMPLEMENT-003)
+  "growth.analytics.view": "Ver Analítica del Espacio",
+
+  // Growth / Personas (OT-GROWTH-PERSONAS-IMPLEMENT-003)
+  "growth.people.view": "Ver Personas del Espacio",
+  "growth.people.manage": "Gestionar Personas del Espacio",
+
   // Academic (futuro)
   "students.read": "Ver estudiantes",
   "finance.view": "Ver finanzas",

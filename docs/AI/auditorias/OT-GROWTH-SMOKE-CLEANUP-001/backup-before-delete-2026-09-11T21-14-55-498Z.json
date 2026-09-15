@@ -1,0 +1,1071 @@
+{
+  "ot": "OT-GROWTH-SMOKE-CLEANUP-001",
+  "createdAt": "2026-09-11T21:14:55.500Z",
+  "count": 41,
+  "records": [
+    {
+      "collection": "experience_forms",
+      "evidence": "FORM_ID exacto adl-smoke-info-request (scripts/smoke-growth-capture-001.ts)",
+      "tenant": "adl",
+      "document": {
+        "_id": "adl-smoke-info-request",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:17:21.959Z",
+        "updatedAt": "2026-09-07T18:17:21.959Z",
+        "name": "Solicitud de información (smoke captación)",
+        "description": "Solicita información sobre programas, admisión o actividades del seminario.",
+        "successMessage": "¡Gracias por contactarnos! Te responderemos a la brevedad al correo indicado.",
+        "errorMessage": "No fue posible enviar tu solicitud. Intenta nuevamente.",
+        "destination": "information_request",
+        "postSubmit": {
+          "type": "message"
+        },
+        "active": true,
+        "visible": true,
+        "fields": [
+          {
+            "id": "fullName",
+            "type": "text",
+            "name": "fullName",
+            "label": "Nombre completo",
+            "validation": {
+              "required": true
+            }
+          },
+          {
+            "id": "email",
+            "type": "email",
+            "name": "email",
+            "label": "Correo electrónico",
+            "validation": {
+              "required": true
+            }
+          },
+          {
+            "id": "phone",
+            "type": "phone",
+            "name": "phone",
+            "label": "Teléfono (opcional)"
+          },
+          {
+            "id": "interest",
+            "type": "select",
+            "name": "interest",
+            "label": "Área de interés",
+            "validation": {
+              "required": true
+            },
+            "options": [
+              {
+                "label": "Programas académicos",
+                "value": "programs"
+              },
+              {
+                "label": "Proceso de admisión",
+                "value": "admission"
+              },
+              {
+                "label": "Becas y beneficios",
+                "value": "scholarships"
+              },
+              {
+                "label": "Otro",
+                "value": "other"
+              }
+            ]
+          },
+          {
+            "id": "message",
+            "type": "textarea",
+            "name": "message",
+            "label": "Mensaje",
+            "validation": {
+              "required": true,
+              "minLength": 10,
+              "maxLength": 2000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effbd4dfe2a5dd505247b",
+        "tenantId": "adl",
+        "status": "active",
+        "displayName": "Smoke Formulario 1788805040542",
+        "email": "smoke.form.1788805040542@example.com",
+        "emailNormalized": "smoke.form.1788805040542@example.com",
+        "phone": "+56 9 0504 0542",
+        "phoneNormalized": "905040542",
+        "emails": [
+          {
+            "value": "smoke.form.1788805040542@example.com",
+            "normalized": "smoke.form.1788805040542@example.com",
+            "firstSeenAt": "2026-09-07T18:17:28.427Z",
+            "lastSeenAt": "2026-09-07T18:17:28.427Z"
+          }
+        ],
+        "phones": [
+          {
+            "value": "+56 9 0504 0542",
+            "normalized": "905040542",
+            "firstSeenAt": "2026-09-07T18:17:28.427Z",
+            "lastSeenAt": "2026-09-07T18:17:28.427Z"
+          }
+        ],
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9effb84dfe2a5dd505247a",
+          "capturedAt": "2026-09-07T18:17:28.427Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "createdAt": "2026-09-07T18:17:28.427Z",
+        "updatedAt": "2026-09-07T18:17:28.427Z"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effe04dfe2a5dd505248c",
+        "tenantId": "adl",
+        "status": "active",
+        "displayName": "Smoke Admision1788805040542",
+        "firstName": "Smoke",
+        "lastName": "Admision1788805040542",
+        "email": "smoke.admit.1788805040542@example.com",
+        "emailNormalized": "smoke.admit.1788805040542@example.com",
+        "phone": "+56 9 0504 0553",
+        "phoneNormalized": "905040553",
+        "emails": [
+          {
+            "value": "smoke.admit.1788805040542@example.com",
+            "normalized": "smoke.admit.1788805040542@example.com",
+            "firstSeenAt": "2026-09-07T18:18:03.398Z",
+            "lastSeenAt": "2026-09-07T18:18:03.398Z"
+          }
+        ],
+        "phones": [
+          {
+            "value": "+56 9 0504 0553",
+            "normalized": "905040553",
+            "firstSeenAt": "2026-09-07T18:18:03.398Z",
+            "lastSeenAt": "2026-09-07T18:18:03.398Z"
+          }
+        ],
+        "origin": {
+          "kind": "admission",
+          "sourceCollection": "portal_interesados",
+          "sourceId": "6a9effdb4dfe2a5dd505248b",
+          "capturedAt": "2026-09-07T18:18:03.398Z",
+          "channel": "portal-admision"
+        },
+        "createdAt": "2026-09-07T18:18:03.398Z",
+        "updatedAt": "2026-09-07T18:18:03.398Z"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f00024dfe2a5dd50524a1",
+        "tenantId": "adl",
+        "status": "active",
+        "displayName": "Smoke Auto 1788805040542",
+        "email": "smoke.auto.1788805040542@example.com",
+        "emailNormalized": "smoke.auto.1788805040542@example.com",
+        "phone": "+56 9 0504 0564",
+        "phoneNormalized": "905040564",
+        "emails": [
+          {
+            "value": "smoke.auto.1788805040542@example.com",
+            "normalized": "smoke.auto.1788805040542@example.com",
+            "firstSeenAt": "2026-09-07T18:18:37.391Z",
+            "lastSeenAt": "2026-09-07T18:18:37.391Z"
+          }
+        ],
+        "phones": [
+          {
+            "value": "+56 9 0504 0564",
+            "normalized": "905040564",
+            "firstSeenAt": "2026-09-07T18:18:37.391Z",
+            "lastSeenAt": "2026-09-07T18:18:37.391Z"
+          }
+        ],
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9efffd4dfe2a5dd50524a0",
+          "capturedAt": "2026-09-07T18:18:37.391Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "createdAt": "2026-09-07T18:18:37.391Z",
+        "updatedAt": "2026-09-07T18:18:37.391Z"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "evidence": "origin.sourceId=capture-messaging-004a",
+      "tenant": "adl",
+      "document": {
+        "_id": "persona-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "status": "active",
+        "displayName": "María González",
+        "firstName": "María",
+        "lastName": "González",
+        "email": "maria.messaging004a.1788837984377@example.com",
+        "emailNormalized": "maria.messaging004a.1788837984377@example.com",
+        "phone": "+56 9 8765 4321",
+        "phoneNormalized": "9876543214377",
+        "emails": [],
+        "phones": [],
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "createdAt": "2026-09-08T03:26:24.377Z",
+        "updatedAt": "2026-09-08T03:26:24.377Z"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "evidence": "origin.sourceId=capture-messaging-004a",
+      "tenant": "adl",
+      "document": {
+        "_id": "persona-capture-messaging-004a-b-1788837984377",
+        "tenantId": "adl",
+        "status": "active",
+        "displayName": "Carlos Pérez",
+        "firstName": "Carlos",
+        "lastName": "Pérez",
+        "email": "carlos.messaging004a.1788837984377@example.com",
+        "emailNormalized": "carlos.messaging004a.1788837984377@example.com",
+        "phone": "+56 9 1234 5678",
+        "phoneNormalized": "9123456784377",
+        "emails": [],
+        "phones": [],
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "createdAt": "2026-09-08T03:26:24.377Z",
+        "updatedAt": "2026-09-08T03:26:24.377Z"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effc04dfe2a5dd505247e",
+        "tenantId": "adl",
+        "personaId": "6a9effbd4dfe2a5dd505247b",
+        "typeKey": "inquiry",
+        "subjectType": "form",
+        "subjectId": "adl-smoke-info-request",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9effb84dfe2a5dd505247a",
+          "capturedAt": "2026-09-07T18:17:28.427Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "open",
+        "workflowInstanceId": "wfinst-1788805057594-af9d694b",
+        "nextAction": {
+          "summary": "Llamar para confirmar interés",
+          "kind": "other",
+          "setAt": "2026-09-07T18:17:39.953Z"
+        },
+        "source": {
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9effb84dfe2a5dd505247a"
+        },
+        "openedAt": "2026-09-07T18:17:28.427Z",
+        "updatedAt": "2026-09-07T18:17:39.953Z"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effe34dfe2a5dd505248f",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "typeKey": "conversion",
+        "subjectType": "program",
+        "subjectId": "smoke-program-capture-001",
+        "origin": {
+          "kind": "admission",
+          "sourceCollection": "portal_interesados",
+          "sourceId": "6a9effdb4dfe2a5dd505248b",
+          "capturedAt": "2026-09-07T18:18:03.398Z",
+          "channel": "portal-admision"
+        },
+        "status": "handed_off",
+        "workflowInstanceId": "wfinst-1788805092251-ab6e647c",
+        "nextAction": {
+          "summary": "Llamar para confirmar interés",
+          "kind": "other",
+          "setAt": "2026-09-07T18:18:18.203Z"
+        },
+        "source": {
+          "sourceCollection": "portal_interesados",
+          "sourceId": "6a9effdb4dfe2a5dd505248b"
+        },
+        "openedAt": "2026-09-07T18:18:03.398Z",
+        "updatedAt": "2026-09-07T18:18:03.398Z",
+        "closedAt": "2026-09-07T18:18:03.398Z",
+        "handoff": {
+          "interesadoId": "6a9effdb4dfe2a5dd505248b",
+          "delivered": true,
+          "externalId": "local-lead-6a9effdb4dfe2a5dd505248b",
+          "adapter": "local"
+        }
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f00054dfe2a5dd50524a4",
+        "tenantId": "adl",
+        "personaId": "6a9f00024dfe2a5dd50524a1",
+        "typeKey": "inquiry",
+        "subjectType": "form",
+        "subjectId": "adl-smoke-info-request",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9efffd4dfe2a5dd50524a0",
+          "capturedAt": "2026-09-07T18:18:37.391Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "open",
+        "workflowInstanceId": "wfinst-1788805126261-173d03c0",
+        "nextAction": {
+          "summary": "Llamar para confirmar interés",
+          "kind": "other",
+          "setAt": "2026-09-07T18:18:48.615Z"
+        },
+        "source": {
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9efffd4dfe2a5dd50524a0"
+        },
+        "openedAt": "2026-09-07T18:18:37.391Z",
+        "updatedAt": "2026-09-07T18:18:48.615Z"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "oportunidad-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "personaId": "persona-capture-messaging-004a-a-1788837984377",
+        "typeKey": "conversion",
+        "subjectType": "program",
+        "subjectLabel": "Diplomado en Gestión",
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "status": "active",
+        "workflowInstanceId": "wf-capture-messaging-004a-1788837984377",
+        "nextAction": {
+          "summary": "Responder consulta por WhatsApp",
+          "kind": "contact",
+          "setAt": "2026-09-08T03:26:24.377Z"
+        },
+        "source": {
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a"
+        },
+        "openedAt": "2026-09-08T03:26:24.377Z",
+        "updatedAt": "2026-09-08T03:26:24.377Z"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effc24dfe2a5dd505247f",
+        "tenantId": "adl",
+        "personaId": "6a9effbd4dfe2a5dd505247b",
+        "kind": "opportunity_opened",
+        "summary": "Oportunidad abierta (inquiry)",
+        "occurredAt": "2026-09-07T18:17:28.427Z",
+        "oportunidadId": "6a9effc04dfe2a5dd505247e",
+        "ingestKey": "experience_form_submissions:6a9effb84dfe2a5dd505247a:opportunity_opened",
+        "sourceCollection": "experience_form_submissions",
+        "sourceId": "6a9effb84dfe2a5dd505247a",
+        "payload": {
+          "typeKey": "inquiry",
+          "status": "open",
+          "workflowInstanceId": "wfinst-1788805057594-af9d694b"
+        },
+        "eventId": "evt-1788805058777-dd03317f"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effc44dfe2a5dd5052481",
+        "tenantId": "adl",
+        "personaId": "6a9effbd4dfe2a5dd505247b",
+        "kind": "next_action_set",
+        "summary": "Próxima acción: Llamar para confirmar interés",
+        "occurredAt": "2026-09-07T18:17:39.953Z",
+        "oportunidadId": "6a9effc04dfe2a5dd505247e",
+        "ingestKey": "growth_oportunidades:6a9effc04dfe2a5dd505247e:next_action:2026-09-07T18:17:39.953Z:next_action_set",
+        "sourceCollection": "growth_oportunidades",
+        "sourceId": "6a9effc04dfe2a5dd505247e:next_action:2026-09-07T18:17:39.953Z",
+        "payload": {
+          "nextAction": {
+            "summary": "Llamar para confirmar interés",
+            "kind": "other",
+            "setAt": "2026-09-07T18:17:39.953Z"
+          }
+        },
+        "actorUserId": "growth-automation",
+        "eventId": "evt-1788805060661-7891e321"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effc74dfe2a5dd5052484",
+        "tenantId": "adl",
+        "personaId": "6a9effbd4dfe2a5dd505247b",
+        "kind": "form_submitted",
+        "summary": "Solicitud de información recibida",
+        "occurredAt": "2026-09-07T18:17:28.427Z",
+        "oportunidadId": "6a9effc04dfe2a5dd505247e",
+        "ingestKey": "experience_form_submissions:6a9effb84dfe2a5dd505247a:form_submitted",
+        "sourceCollection": "experience_form_submissions",
+        "sourceId": "6a9effb84dfe2a5dd505247a",
+        "payload": {
+          "typeKey": "inquiry",
+          "subjectId": "adl-smoke-info-request",
+          "formId": "adl-smoke-info-request",
+          "destination": "information_request"
+        },
+        "eventId": "evt-1788805064414-57da56c3"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effd54dfe2a5dd5052489",
+        "tenantId": "adl",
+        "personaId": "6a9effbd4dfe2a5dd505247b",
+        "kind": "form_submitted",
+        "summary": "Solicitud de información recibida",
+        "occurredAt": "2026-09-07T18:17:49.566Z",
+        "oportunidadId": "6a9effc04dfe2a5dd505247e",
+        "ingestKey": "experience_form_submissions:6a9effcd4dfe2a5dd5052486:form_submitted",
+        "sourceCollection": "experience_form_submissions",
+        "sourceId": "6a9effcd4dfe2a5dd5052486",
+        "payload": {
+          "typeKey": "inquiry",
+          "subjectId": "adl-smoke-info-request",
+          "formId": "adl-smoke-info-request",
+          "destination": "information_request"
+        },
+        "eventId": "evt-1788805077625-6cbbd7a0"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effe44dfe2a5dd5052490",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "kind": "opportunity_opened",
+        "summary": "Oportunidad abierta (conversion)",
+        "occurredAt": "2026-09-07T18:18:03.398Z",
+        "oportunidadId": "6a9effe34dfe2a5dd505248f",
+        "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:opportunity_opened",
+        "sourceCollection": "portal_interesados",
+        "sourceId": "6a9effdb4dfe2a5dd505248b",
+        "payload": {
+          "typeKey": "conversion",
+          "status": "open",
+          "workflowInstanceId": "wfinst-1788805092251-ab6e647c"
+        },
+        "eventId": "evt-1788805093428-6c25ca42"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effe64dfe2a5dd5052492",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "kind": "next_action_set",
+        "summary": "Próxima acción: Llamar para confirmar interés",
+        "occurredAt": "2026-09-07T18:18:14.599Z",
+        "oportunidadId": "6a9effe34dfe2a5dd505248f",
+        "ingestKey": "growth_oportunidades:6a9effe34dfe2a5dd505248f:next_action:2026-09-07T18:18:14.599Z:next_action_set",
+        "sourceCollection": "growth_oportunidades",
+        "sourceId": "6a9effe34dfe2a5dd505248f:next_action:2026-09-07T18:18:14.599Z",
+        "payload": {
+          "nextAction": {
+            "summary": "Llamar para confirmar interés",
+            "kind": "other",
+            "setAt": "2026-09-07T18:18:14.599Z"
+          }
+        },
+        "actorUserId": "growth-automation",
+        "eventId": "evt-1788805095300-993c33d7"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effea4dfe2a5dd5052495",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "kind": "next_action_set",
+        "summary": "Próxima acción: Llamar para confirmar interés",
+        "occurredAt": "2026-09-07T18:18:18.203Z",
+        "oportunidadId": "6a9effe34dfe2a5dd505248f",
+        "ingestKey": "growth_oportunidades:6a9effe34dfe2a5dd505248f:next_action:2026-09-07T18:18:18.203Z:next_action_set",
+        "sourceCollection": "growth_oportunidades",
+        "sourceId": "6a9effe34dfe2a5dd505248f:next_action:2026-09-07T18:18:18.203Z",
+        "payload": {
+          "nextAction": {
+            "summary": "Llamar para confirmar interés",
+            "kind": "other",
+            "setAt": "2026-09-07T18:18:18.203Z"
+          }
+        },
+        "actorUserId": "growth-automation",
+        "eventId": "evt-1788805098905-99640fce"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9effed4dfe2a5dd5052498",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "kind": "application_received",
+        "summary": "Postulación / admisión recibida",
+        "occurredAt": "2026-09-07T18:18:03.398Z",
+        "oportunidadId": "6a9effe34dfe2a5dd505248f",
+        "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:application_received",
+        "sourceCollection": "portal_interesados",
+        "sourceId": "6a9effdb4dfe2a5dd505248b",
+        "payload": {
+          "typeKey": "conversion",
+          "subjectId": "smoke-program-capture-001",
+          "programId": "smoke-program-capture-001",
+          "handoffDelivered": true
+        },
+        "eventId": "evt-1788805102173-49f8c2ad"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9efff14dfe2a5dd505249a",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "kind": "opportunity_transitioned",
+        "summary": "Oportunidad open → active",
+        "occurredAt": "2026-09-07T18:18:03.398Z",
+        "oportunidadId": "6a9effe34dfe2a5dd505248f",
+        "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:activate:opportunity_transitioned",
+        "sourceCollection": "portal_interesados",
+        "sourceId": "6a9effdb4dfe2a5dd505248b:activate",
+        "payload": {
+          "fromState": "open",
+          "toState": "active",
+          "workflowInstanceId": "wfinst-1788805092251-ab6e647c"
+        },
+        "eventId": "evt-1788805105987-3c97d8e8"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9efff54dfe2a5dd505249c",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "kind": "opportunity_transitioned",
+        "summary": "Oportunidad active → handed_off",
+        "occurredAt": "2026-09-07T18:18:03.398Z",
+        "oportunidadId": "6a9effe34dfe2a5dd505248f",
+        "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:hand_off:opportunity_transitioned",
+        "sourceCollection": "portal_interesados",
+        "sourceId": "6a9effdb4dfe2a5dd505248b:hand_off",
+        "payload": {
+          "fromState": "active",
+          "toState": "handed_off",
+          "workflowInstanceId": "wfinst-1788805092251-ab6e647c",
+          "handoff": {
+            "interesadoId": "6a9effdb4dfe2a5dd505248b",
+            "delivered": true,
+            "externalId": "local-lead-6a9effdb4dfe2a5dd505248b",
+            "adapter": "local"
+          }
+        },
+        "eventId": "evt-1788805109816-05cf6926"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9efff74dfe2a5dd505249e",
+        "tenantId": "adl",
+        "personaId": "6a9effe04dfe2a5dd505248c",
+        "kind": "handoff",
+        "summary": "Handoff registrado",
+        "occurredAt": "2026-09-07T18:18:03.398Z",
+        "oportunidadId": "6a9effe34dfe2a5dd505248f",
+        "ingestKey": "portal_interesados:6a9effdb4dfe2a5dd505248b:hand_off:handoff",
+        "sourceCollection": "portal_interesados",
+        "sourceId": "6a9effdb4dfe2a5dd505248b:hand_off",
+        "payload": {
+          "handoff": {
+            "interesadoId": "6a9effdb4dfe2a5dd505248b",
+            "delivered": true,
+            "externalId": "local-lead-6a9effdb4dfe2a5dd505248b",
+            "adapter": "local"
+          },
+          "fromState": "active",
+          "toState": "handed_off"
+        },
+        "eventId": "evt-1788805112003-1975fdd9"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f00064dfe2a5dd50524a5",
+        "tenantId": "adl",
+        "personaId": "6a9f00024dfe2a5dd50524a1",
+        "kind": "opportunity_opened",
+        "summary": "Oportunidad abierta (inquiry)",
+        "occurredAt": "2026-09-07T18:18:37.391Z",
+        "oportunidadId": "6a9f00054dfe2a5dd50524a4",
+        "ingestKey": "experience_form_submissions:6a9efffd4dfe2a5dd50524a0:opportunity_opened",
+        "sourceCollection": "experience_form_submissions",
+        "sourceId": "6a9efffd4dfe2a5dd50524a0",
+        "payload": {
+          "typeKey": "inquiry",
+          "status": "open",
+          "workflowInstanceId": "wfinst-1788805126261-173d03c0"
+        },
+        "eventId": "evt-1788805127441-ecefdce5"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f00084dfe2a5dd50524a7",
+        "tenantId": "adl",
+        "personaId": "6a9f00024dfe2a5dd50524a1",
+        "kind": "next_action_set",
+        "summary": "Próxima acción: Llamar para confirmar interés",
+        "occurredAt": "2026-09-07T18:18:48.615Z",
+        "oportunidadId": "6a9f00054dfe2a5dd50524a4",
+        "ingestKey": "growth_oportunidades:6a9f00054dfe2a5dd50524a4:next_action:2026-09-07T18:18:48.615Z:next_action_set",
+        "sourceCollection": "growth_oportunidades",
+        "sourceId": "6a9f00054dfe2a5dd50524a4:next_action:2026-09-07T18:18:48.615Z",
+        "payload": {
+          "nextAction": {
+            "summary": "Llamar para confirmar interés",
+            "kind": "other",
+            "setAt": "2026-09-07T18:18:48.615Z"
+          }
+        },
+        "actorUserId": "growth-automation",
+        "eventId": "evt-1788805129319-ac4b2ce4"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "evidence": "personaId → persona smoke confirmada",
+      "tenant": "adl",
+      "document": {
+        "_id": "6a9f000c4dfe2a5dd50524aa",
+        "tenantId": "adl",
+        "personaId": "6a9f00024dfe2a5dd50524a1",
+        "kind": "form_submitted",
+        "summary": "Solicitud de información recibida",
+        "occurredAt": "2026-09-07T18:18:37.391Z",
+        "oportunidadId": "6a9f00054dfe2a5dd50524a4",
+        "ingestKey": "experience_form_submissions:6a9efffd4dfe2a5dd50524a0:form_submitted",
+        "sourceCollection": "experience_form_submissions",
+        "sourceId": "6a9efffd4dfe2a5dd50524a0",
+        "payload": {
+          "typeKey": "inquiry",
+          "subjectId": "adl-smoke-info-request",
+          "formId": "adl-smoke-info-request",
+          "destination": "information_request"
+        },
+        "eventId": "evt-1788805133018-88622c63"
+      }
+    },
+    {
+      "collection": "growth_conversaciones",
+      "evidence": "_id capture-messaging",
+      "tenant": "adl",
+      "document": {
+        "_id": "conv-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "personaId": "persona-capture-messaging-004a-a-1788837984377",
+        "channel": "whatsapp",
+        "status": "open",
+        "oportunidadId": "oportunidad-capture-messaging-004a-a-1788837984377",
+        "externalThreadId": "capture-004a-phone:56987654321",
+        "createdAt": "2026-09-08T02:41:24.876Z",
+        "updatedAt": "2026-09-08T03:23:24.876Z",
+        "lastMessageAt": "2026-09-08T03:23:24.876Z"
+      }
+    },
+    {
+      "collection": "growth_conversaciones",
+      "evidence": "_id capture-messaging",
+      "tenant": "adl",
+      "document": {
+        "_id": "conv-capture-messaging-004a-b-1788837984377",
+        "tenantId": "adl",
+        "personaId": "persona-capture-messaging-004a-b-1788837984377",
+        "channel": "whatsapp",
+        "status": "open",
+        "externalThreadId": "capture-004a-phone:56912345678",
+        "createdAt": "2026-09-08T03:14:24.876Z",
+        "updatedAt": "2026-09-08T03:14:24.876Z",
+        "lastMessageAt": "2026-09-08T03:14:24.876Z"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "evidence": "_id capture-messaging",
+      "tenant": "adl",
+      "document": {
+        "_id": "msg-capture-messaging-004a-a1-1788837984377",
+        "tenantId": "adl",
+        "conversationId": "conv-capture-messaging-004a-a-1788837984377",
+        "channel": "whatsapp",
+        "direction": "inbound",
+        "body": "Hola, me interesa el diplomado. ¿Cuándo empieza?",
+        "status": "received",
+        "externalMessageId": "capture-004a-in-a1-1788837984377",
+        "clientRequestId": "capture-004a-req-a1-1788837984377",
+        "occurredAt": "2026-09-08T02:41:24.876Z",
+        "createdAt": "2026-09-08T02:41:24.876Z"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "evidence": "_id capture-messaging",
+      "tenant": "adl",
+      "document": {
+        "_id": "msg-capture-messaging-004a-a2-1788837984377",
+        "tenantId": "adl",
+        "conversationId": "conv-capture-messaging-004a-a-1788837984377",
+        "channel": "whatsapp",
+        "direction": "outbound",
+        "body": "¡Hola María! Empieza el 5 de octubre. ¿Te paso el temario?",
+        "status": "sent",
+        "externalMessageId": "capture-004a-out-a2-1788837984377",
+        "clientRequestId": "capture-004a-req-a2-1788837984377",
+        "occurredAt": "2026-09-08T02:46:24.876Z",
+        "createdAt": "2026-09-08T02:46:24.876Z"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "evidence": "_id capture-messaging",
+      "tenant": "adl",
+      "document": {
+        "_id": "msg-capture-messaging-004a-a3-1788837984377",
+        "tenantId": "adl",
+        "conversationId": "conv-capture-messaging-004a-a-1788837984377",
+        "channel": "whatsapp",
+        "direction": "inbound",
+        "body": "Sí, por favor. También quiero saber si hay descuento.",
+        "status": "received",
+        "externalMessageId": "capture-004a-in-a3-1788837984377",
+        "clientRequestId": "capture-004a-req-a3-1788837984377",
+        "occurredAt": "2026-09-08T03:23:24.876Z",
+        "createdAt": "2026-09-08T03:23:24.876Z"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "evidence": "_id capture-messaging",
+      "tenant": "adl",
+      "document": {
+        "_id": "msg-capture-messaging-004a-b1-1788837984377",
+        "tenantId": "adl",
+        "conversationId": "conv-capture-messaging-004a-b-1788837984377",
+        "channel": "whatsapp",
+        "direction": "inbound",
+        "body": "Buenas, ¿tienen horarios vespertinos?",
+        "status": "received",
+        "externalMessageId": "capture-004a-in-b1-1788837984377",
+        "clientRequestId": "capture-004a-req-b1-1788837984377",
+        "occurredAt": "2026-09-08T03:14:24.876Z",
+        "createdAt": "2026-09-08T03:14:24.876Z"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "evidence": "_id capture-messaging",
+      "tenant": "adl",
+      "document": {
+        "_id": "msg-capture-messaging-004a-b2-1788837984377",
+        "tenantId": "adl",
+        "conversationId": "conv-capture-messaging-004a-b-1788837984377",
+        "channel": "whatsapp",
+        "direction": "outbound",
+        "body": "Sí, los martes y jueves de 19 a 21 h.",
+        "status": "sent",
+        "externalMessageId": "capture-004a-out-b2-1788837984377",
+        "clientRequestId": "capture-004a-req-b2-1788837984377",
+        "occurredAt": "2026-09-08T03:18:24.876Z",
+        "createdAt": "2026-09-08T03:18:24.876Z"
+      }
+    },
+    {
+      "collection": "growth_whatsapp_connections",
+      "evidence": "captureTag=capture-messaging-005",
+      "tenant": "adl",
+      "document": {
+        "_id": "6aa03af46235c0e6669ea6fc",
+        "tenantId": "adl",
+        "phoneNumberId": "capture-pn-adl-incomplete",
+        "displayPhoneNumber": "+56 9 2222 0000",
+        "verifyTokenEncrypted": "b31581bf91abbc6f97ddd645:76faf2da72ff48cb225de004a3715532:7035a7783e4d9cb82f86fbdd79286b3999ca8c70bc96b6a47ffd303e",
+        "appSecretEncrypted": "1edaf5130ec9c8cd44164698:eab588ed849588ca4e4413fed4bef3ae:d79b5026429daba1a19173fb6b172a51d931c520a5e636ffc5d312d2",
+        "enabled": true,
+        "createdAt": "2026-09-08T16:42:27.739Z",
+        "updatedAt": "2026-09-08T16:47:23.021Z",
+        "captureTag": "capture-messaging-005"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "evidence": "session id sess-capture-messaging-004-1788836703762 (script capture/smoke)",
+      "tenant": "adl",
+      "document": {
+        "_id": "sess-capture-messaging-004-1788836703762",
+        "userId": "user-1782932426409-a28f422a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:05:04.993Z",
+        "expiresAt": "2026-09-08T05:05:04.993Z",
+        "lastActivity": "2026-09-08T03:05:04.993Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "evidence": "session id sess-capture-messaging-004a-1788837779788 (script capture/smoke)",
+      "tenant": "adl",
+      "document": {
+        "_id": "sess-capture-messaging-004a-1788837779788",
+        "userId": "user-1782932426409-a28f422a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:23:01.034Z",
+        "expiresAt": "2026-09-08T05:23:01.034Z",
+        "lastActivity": "2026-09-08T03:23:01.034Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "evidence": "session id sess-capture-messaging-004a-1788837881428 (script capture/smoke)",
+      "tenant": "adl",
+      "document": {
+        "_id": "sess-capture-messaging-004a-1788837881428",
+        "userId": "user-1782932426409-a28f422a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:24:42.595Z",
+        "expiresAt": "2026-09-08T05:24:42.595Z",
+        "lastActivity": "2026-09-08T03:24:42.595Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "evidence": "session id sess-capture-messaging-004a-1788837984377 (script capture/smoke)",
+      "tenant": "adl",
+      "document": {
+        "_id": "sess-capture-messaging-004a-1788837984377",
+        "userId": "user-1782932426409-a28f422a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:26:25.590Z",
+        "expiresAt": "2026-09-08T05:26:25.590Z",
+        "lastActivity": "2026-09-08T03:26:25.590Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "evidence": "session id sess-capture-messaging-005-mtswdrdh (script capture/smoke)",
+      "tenant": "adl",
+      "document": {
+        "_id": "sess-capture-messaging-005-mtswdrdh",
+        "userId": "user-1782932426409-a28f422a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T16:42:24.977Z",
+        "expiresAt": "2026-09-08T18:42:24.978Z",
+        "lastActivity": "2026-09-08T16:42:24.977Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "evidence": "session id sess-capture-smoke-1788805040542 (script capture/smoke)",
+      "tenant": "adl",
+      "document": {
+        "_id": "sess-capture-smoke-1788805040542",
+        "userId": "user-1782932426409-a28f422a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:58.447Z",
+        "expiresAt": "2026-09-07T20:18:58.447Z",
+        "lastActivity": "2026-09-07T18:18:58.447Z"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "sched-1788805062428-e8zd",
+        "tenantId": "adl",
+        "type": "GrowthAutomationResume",
+        "entityType": "growth_automation",
+        "entityId": "gauto-1788789203786-0781114e",
+        "payload": {
+          "kind": "automation_resume",
+          "tenantId": "adl",
+          "automationId": "gauto-1788789203786-0781114e",
+          "version": 1,
+          "sourceEventId": "evt-1788805058777-dd03317f",
+          "resumeKey": "adl:gauto-1788789203786-0781114e:v1:evt-1788805058777-dd03317f:wait:2",
+          "waitStepIndex": 2,
+          "oportunidadId": "6a9effc04dfe2a5dd505247e",
+          "correlationId": "66eb93d61f7b27427d3622c3",
+          "durationMs": 172800000,
+          "causationId": "evt-1788805058777-dd03317f"
+        },
+        "scheduledFor": "2026-09-09T18:17:42.427Z",
+        "status": "scheduled",
+        "createdAt": "2026-09-07T18:17:42.428Z",
+        "updatedAt": "2026-09-07T18:17:42.428Z"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "sched-1788805097025-p33w",
+        "tenantId": "adl",
+        "type": "GrowthAutomationResume",
+        "entityType": "growth_automation",
+        "entityId": "gauto-1788789203786-0781114e",
+        "payload": {
+          "kind": "automation_resume",
+          "tenantId": "adl",
+          "automationId": "gauto-1788789203786-0781114e",
+          "version": 1,
+          "sourceEventId": "evt-1788805093428-6c25ca42",
+          "resumeKey": "adl:gauto-1788789203786-0781114e:v1:evt-1788805093428-6c25ca42:wait:2",
+          "waitStepIndex": 2,
+          "oportunidadId": "6a9effe34dfe2a5dd505248f",
+          "correlationId": "4cc6923c9d3823cff49d05d1",
+          "durationMs": 172800000,
+          "causationId": "evt-1788805093428-6c25ca42"
+        },
+        "scheduledFor": "2026-09-09T18:18:17.025Z",
+        "status": "scheduled",
+        "createdAt": "2026-09-07T18:18:17.025Z",
+        "updatedAt": "2026-09-07T18:18:17.025Z"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "tenant": "adl",
+      "document": {
+        "_id": "sched-1788805131051-mxzs",
+        "tenantId": "adl",
+        "type": "GrowthAutomationResume",
+        "entityType": "growth_automation",
+        "entityId": "gauto-1788789203786-0781114e",
+        "payload": {
+          "kind": "automation_resume",
+          "tenantId": "adl",
+          "automationId": "gauto-1788789203786-0781114e",
+          "version": 1,
+          "sourceEventId": "evt-1788805127441-ecefdce5",
+          "resumeKey": "adl:gauto-1788789203786-0781114e:v1:evt-1788805127441-ecefdce5:wait:2",
+          "waitStepIndex": 2,
+          "oportunidadId": "6a9f00054dfe2a5dd50524a4",
+          "correlationId": "78055c44243b19a647924562",
+          "durationMs": 172800000,
+          "causationId": "evt-1788805127441-ecefdce5"
+        },
+        "scheduledFor": "2026-09-09T18:18:51.051Z",
+        "status": "scheduled",
+        "createdAt": "2026-09-07T18:18:51.051Z",
+        "updatedAt": "2026-09-07T18:18:51.051Z"
+      }
+    }
+  ]
+}

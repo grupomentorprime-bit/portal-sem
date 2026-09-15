@@ -102,7 +102,7 @@ describe("OT-GROWTH-MESSAGING-004 — UI humana", () => {
 
   it("solo ofrece Ver oportunidad cuando el hilo trae vínculo real", () => {
     const ui = readSrc("src/components/admin/growth/MensajesInboxClient.tsx");
-    assert.match(ui, /thread\.oportunidadId \?/);
+    assert.match(ui, /thread\.oportunidadId && thread\.opportunity/);
     const read = readSrc("src/lib/growth/mensajes-read.ts");
     assert.match(read, /GROWTH_OPORTUNIDADES_COLLECTION/);
     assert.match(read, /oportunidadId/);

@@ -118,23 +118,26 @@ export async function getOperationalSiteConfig(): Promise<SiteConfig | null> {
   return fetchSiteConfigForRequest();
 }
 
+/**
+ * Actualiza site_config del Espacio indicado.
+ * Exige `tenantId` explícito — no hay fallback silencioso a SEM.
+ */
 export async function updateSiteConfig(
   update: SiteConfigUpdate,
-  options?: { tenantId?: string }
+  options: { tenantId: string }
 ): Promise<SiteConfig | null> {
   const db = await getDatabase();
-  const tenantId = options?.tenantId?.trim();
-  const existing = tenantId
-    ? await getSiteConfigForTenant(tenantId)
-    : await fetchLegacySingletonSiteConfig();
+  const tenantId = options.tenantId?.trim();
+  if (!tenantId) {
+    return null;
+  }
 
+  const existing = await getSiteConfigForTenant(tenantId);
   if (!existing) {
     return null;
   }
 
   const now = new Date().toISOString();
-  const effectiveTenant =
-    tenantId || existing.institution.tenant?.trim() || SEM_TENANT_ID;
   const merged = {
     ...existing,
     ...update,
@@ -142,7 +145,7 @@ export async function updateSiteConfig(
     institution: {
       ...existing.institution,
       ...update.institution,
-      tenant: effectiveTenant,
+      tenant: tenantId,
     },
     createdAt: existing.createdAt,
     updatedAt: now,
@@ -153,8 +156,8 @@ export async function updateSiteConfig(
     return null;
   }
 
-  const isSem = effectiveTenant === SEM_TENANT_ID;
-  const siteId = isSem ? SEM_SITE_ID : effectiveTenant;
+  const isSem = tenantId === SEM_TENANT_ID;
+  const siteId = isSem ? SEM_SITE_ID : tenantId;
 
   if (isSem) {
     await db.collection<SiteConfig>("cms_config").replaceOne(
@@ -170,7 +173,7 @@ export async function updateSiteConfig(
 
   try {
     await mirrorLegacyConfigToSiteConfig(db, document, {
-      tenantId: effectiveTenant,
+      tenantId,
       siteId,
     });
   } catch {

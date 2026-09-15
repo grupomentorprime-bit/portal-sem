@@ -67,6 +67,16 @@ export interface GrowthOportunidadDetailView extends GrowthOportunidadView {
   personaDisplayName: string;
 }
 
+export interface GrowthPersonaConversationView {
+  id: string;
+  channelLabel: string;
+  /** Estado útil del hilo si existe (Abierto / Cerrado / …). */
+  statusLabel?: string;
+  lastMessageAt?: string;
+  lastMessagePreview: string;
+  timeLabel: string;
+}
+
 export interface GrowthPersonaDetailView {
   id: string;
   displayName: string;
@@ -80,6 +90,7 @@ export interface GrowthPersonaDetailView {
   createdAt: string;
   updatedAt: string;
   oportunidades: GrowthOportunidadView[];
+  conversations: GrowthPersonaConversationView[];
   activities: GrowthActivityView[];
   primaryNextAction: GrowthNextActionView | null;
 }
@@ -142,22 +153,22 @@ function toNextActionView(
 
 /**
  * Elige la próxima acción más relevante entre Oportunidades.
- * Prioriza no finales; luego dueAt más cercano; luego setAt más reciente.
+ * Ignora estados finales (won/lost/handed_off/archived) aunque conserven dato legacy.
+ * Entre abiertas: dueAt más cercano; luego setAt más reciente.
  */
 export function pickPrimaryNextAction(
   oportunidades: GrowthOportunidad[]
 ): GrowthNextActionView | null {
   const withAction = oportunidades
-    .filter((o) => o.nextAction != null)
+    .filter(
+      (o) =>
+        o.nextAction != null && !isGrowthOpportunityFinalStatus(o.status)
+    )
     .map((o) => ({ oportunidad: o, nextAction: o.nextAction! }));
 
   if (withAction.length === 0) return null;
 
   withAction.sort((a, b) => {
-    const aFinal = isGrowthOpportunityFinalStatus(a.oportunidad.status) ? 1 : 0;
-    const bFinal = isGrowthOpportunityFinalStatus(b.oportunidad.status) ? 1 : 0;
-    if (aFinal !== bFinal) return aFinal - bFinal;
-
     const aDue = a.nextAction.dueAt ?? "9999";
     const bDue = b.nextAction.dueAt ?? "9999";
     if (aDue !== bDue) return aDue.localeCompare(bDue);
@@ -241,7 +252,8 @@ export function toPersonaListItemView(
 export function toPersonaDetailView(
   persona: GrowthPersona,
   oportunidades: GrowthOportunidad[],
-  activities: GrowthActivity[]
+  activities: GrowthActivity[],
+  conversations: GrowthPersonaConversationView[] = []
 ): GrowthPersonaDetailView {
   const sortedOps = [...oportunidades].sort((a, b) =>
     b.openedAt.localeCompare(a.openedAt)
@@ -267,6 +279,7 @@ export function toPersonaDetailView(
         visibleActs.filter((a) => a.oportunidadId === o._id)
       )
     ),
+    conversations,
     activities: sortedActs.map(toActivityView),
     primaryNextAction: pickPrimaryNextAction(sortedOps),
   };

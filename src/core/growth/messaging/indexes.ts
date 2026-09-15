@@ -90,6 +90,12 @@ export async function ensureGrowthMessagingIndexes(db: Db): Promise<{
       unique: true,
       sparse: true,
     },
+    // OT-GROWTH-ACTIVITY-001 — proyección de mensajes en feed global
+    {
+      collection: mensajes,
+      keys: { tenantId: 1, occurredAt: -1 },
+      name: "tenantId_occurredAt",
+    },
   ];
 
   const results: Array<{ name: string; result: EnsureMessagingIndexResult }> =

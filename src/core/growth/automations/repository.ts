@@ -48,6 +48,10 @@ export function createMongoGrowthAutomationStore(db: Db): GrowthAutomationStore 
       return automations.findOne({ tenantId, _id: automationId });
     },
 
+    async findAutomationBySeedKey(tenantId, seedKey) {
+      return automations.findOne({ tenantId, seedKey });
+    },
+
     async listAutomations(tenantId) {
       return automations
         .find({ tenantId })

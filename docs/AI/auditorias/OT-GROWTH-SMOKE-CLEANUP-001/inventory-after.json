@@ -1,0 +1,24 @@
+{
+  "ot": "OT-GROWTH-SMOKE-CLEANUP-001",
+  "mode": "inventory-after",
+  "scannedAt": "2026-09-11T21:20:04.345Z",
+  "summary": {},
+  "baselines": {
+    "experience_forms_adl": 0,
+    "experience_forms_sem": 7,
+    "growth_whatsapp_connections_adl": 0,
+    "growth_whatsapp_connections_sem": 0,
+    "growth_personas_adl": 1,
+    "growth_personas_sem": 1
+  },
+  "toDelete": [],
+  "needsReview": [],
+  "fixtureChecks": {
+    "adlSmokeForm": null,
+    "captureMessaging005Wa": 0,
+    "smokePersonas": 0,
+    "capturePersonas": 0,
+    "smokeSubs": 0,
+    "captureSessions": 0
+  }
+}

@@ -27,7 +27,6 @@ export function InviteUserWizard({
   assignableRoles = [],
   embedded = false,
 }: InviteUserWizardProps) {
-  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -38,24 +37,24 @@ export function InviteUserWizard({
 
   const selectedRole = assignableRoles.find((r) => r.id === roleId) ?? assignableRoles[0];
 
-  function validateStep1(): boolean {
+  function validate(): boolean {
     let valid = true;
     setEmailError("");
     setNameError("");
+
+    if (!displayName.trim()) {
+      setNameError("El nombre es obligatorio.");
+      valid = false;
+    } else if (!isValidFullName(displayName)) {
+      setNameError("Ingresa nombre y apellido.");
+      valid = false;
+    }
 
     if (!email.trim()) {
       setEmailError("El correo es obligatorio.");
       valid = false;
     } else if (!isValidEmail(email)) {
-      setEmailError("Ingresa un correo electrónico válido.");
-      valid = false;
-    }
-
-    if (!displayName.trim()) {
-      setNameError("El nombre completo es obligatorio.");
-      valid = false;
-    } else if (!isValidFullName(displayName)) {
-      setNameError("Ingresa nombre y apellido (mínimo dos palabras).");
+      setEmailError("Ingresa un correo válido.");
       valid = false;
     }
 
@@ -63,17 +62,19 @@ export function InviteUserWizard({
   }
 
   async function handleSend() {
+    if (!validate()) return;
+    if (!selectedRole?.code) return;
+
     setSubmitting(true);
     try {
       await onSubmit({
         email: email.trim(),
         displayName: displayName.trim(),
-        roleCode: selectedRole?.code ?? "",
+        roleCode: selectedRole.code,
       });
       setEmail("");
       setDisplayName("");
       setRoleId(assignableRoles[0]?.id ?? "");
-      setStep(1);
       setSuccess(true);
       onSuccess?.();
     } finally {
@@ -82,97 +83,71 @@ export function InviteUserWizard({
   }
 
   return (
-    <div className={cn(embedded ? "" : "rounded-xl border border-border bg-background p-5")}>
+    <div
+      className={cn(embedded ? "" : "rounded-xl border border-border bg-background p-5")}
+      data-team-invite-form
+    >
       {success ? (
         <div className="mb-4 rounded-xl border border-[var(--state-success-border)] bg-[var(--state-success-bg)] px-4 py-3 text-sm text-[var(--color-success)]">
-          Invitación enviada. La persona recibirá un correo para crear su contraseña y acceder al Espacio.
+          Invitación enviada. La persona recibirá un correo para unirse a este Espacio.
         </div>
       ) : null}
 
-      <div className="mb-6 flex items-center gap-2">
-        {[1, 2, 3, 4].map((n) => (
-          <div key={n} className="flex flex-1 items-center gap-2">
-            <span
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold",
-                step >= n ? "bg-primary text-text-inverse" : "bg-background-muted text-muted"
-              )}
-            >
-              {n}
-            </span>
-            {n < 4 ? <span className="h-px flex-1 bg-border" /> : null}
-          </div>
-        ))}
-      </div>
-
-      {step === 1 ? (
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium">Paso 1 — Datos de la persona</h3>
-            <p className="text-sm text-muted">
-              Correo institucional y nombre completo tal como aparecerá en el CMS.
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="wizard-email">Correo electrónico</Label>
-            <Input
-              id="wizard-email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setEmailError("");
-                setSuccess(false);
-              }}
-              placeholder="nombre@institucion.cl"
-              autoComplete="email"
-              required
-            />
-            {emailError ? (
-              <p className="text-sm text-[var(--color-danger)]">{emailError}</p>
-            ) : null}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="wizard-name">Nombre completo</Label>
-            <Input
-              id="wizard-name"
-              value={displayName}
-              onChange={(e) => {
-                setDisplayName(e.target.value);
-                setNameError("");
-                setSuccess(false);
-              }}
-              placeholder="María González Pérez"
-              autoComplete="name"
-              required
-            />
-            {nameError ? (
-              <p className="text-sm text-[var(--color-danger)]">{nameError}</p>
-            ) : null}
-          </div>
-          <Button
-            type="button"
-            onClick={() => {
-              if (validateStep1()) setStep(2);
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="team-invite-name">Nombre</Label>
+          <Input
+            id="team-invite-name"
+            value={displayName}
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+              setNameError("");
+              setSuccess(false);
             }}
-          >
-            Continuar
-          </Button>
+            placeholder="María González"
+            autoComplete="name"
+            required
+          />
+          {nameError ? (
+            <p className="text-sm text-[var(--color-danger)]">{nameError}</p>
+          ) : null}
         </div>
-      ) : null}
 
-      {step === 2 ? (
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium">Paso 2 — Rol</h3>
-            <p className="text-sm text-muted">Define el nivel de acceso en el CMS.</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="team-invite-email">Correo</Label>
+          <Input
+            id="team-invite-email"
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError("");
+              setSuccess(false);
+            }}
+            placeholder="nombre@institucion.cl"
+            autoComplete="email"
+            required
+          />
+          {emailError ? (
+            <p className="text-sm text-[var(--color-danger)]">{emailError}</p>
+          ) : null}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label id="team-invite-role-label">Rol</Label>
+          <div
+            className="grid gap-2 sm:grid-cols-2"
+            role="group"
+            aria-labelledby="team-invite-role-label"
+          >
             {assignableRoles.map((role) => (
               <button
                 key={role.id}
                 type="button"
-                onClick={() => setRoleId(role.id)}
+                onClick={() => {
+                  setRoleId(role.id);
+                  setSuccess(false);
+                }}
                 className={cn(
                   "rounded-xl border px-4 py-3 text-left transition",
                   roleId === role.id
@@ -184,75 +159,21 @@ export function InviteUserWizard({
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-              Atrás
-            </Button>
-            <Button type="button" onClick={() => setStep(3)}>
-              Continuar
-            </Button>
-          </div>
+          {assignableRoles.length === 0 ? (
+            <p className="text-sm text-muted">No hay roles disponibles para invitar.</p>
+          ) : null}
         </div>
-      ) : null}
 
-      {step === 3 ? (
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium">Paso 3 — Permisos</h3>
-            <p className="text-sm text-muted">
-              El rol <strong>{selectedRole?.label ?? "—"}</strong> incluye los permisos estándar del Espacio para
-              esa función.
-            </p>
-          </div>
-          <ul className="rounded-xl bg-background-muted/50 p-4 text-sm text-muted">
-            <li>· Acceso acorde al rol institucional seleccionado</li>
-            <li>· Cambios auditados en el historial de actividad</li>
-            <li>· Enlace de invitación válido por 7 días</li>
-            <li>· La persona define su propia contraseña al aceptar</li>
-            <li>· El acceso se activa al completar la invitación</li>
-          </ul>
-          <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => setStep(2)}>
-              Atrás
-            </Button>
-            <Button type="button" onClick={() => setStep(4)}>
-              Revisar
-            </Button>
-          </div>
-        </div>
-      ) : null}
+        {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
 
-      {step === 4 ? (
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium">Paso 4 — Enviar invitación</h3>
-            <p className="text-sm text-muted">Confirma los datos antes de enviar.</p>
-          </div>
-          <dl className="grid gap-3 rounded-xl border border-border p-4 text-sm">
-            <div>
-              <dt className="text-muted">Correo</dt>
-              <dd className="font-medium">{email}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Nombre</dt>
-              <dd className="font-medium">{displayName}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Rol</dt>
-              <dd className="font-medium">{selectedRole?.label ?? "—"}</dd>
-            </div>
-          </dl>
-          {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
-          <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => setStep(3)}>
-              Atrás
-            </Button>
-            <Button type="button" onClick={handleSend} disabled={submitting}>
-              {submitting ? "Enviando…" : "Enviar invitación"}
-            </Button>
-          </div>
-        </div>
-      ) : null}
+        <Button
+          type="button"
+          onClick={handleSend}
+          disabled={submitting || assignableRoles.length === 0}
+        >
+          {submitting ? "Enviando…" : "Enviar invitación"}
+        </Button>
+      </div>
     </div>
   );
 }

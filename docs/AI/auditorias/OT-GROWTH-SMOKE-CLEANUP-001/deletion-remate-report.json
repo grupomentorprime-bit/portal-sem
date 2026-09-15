@@ -1,0 +1,107 @@
+{
+  "ot": "OT-GROWTH-SMOKE-CLEANUP-001",
+  "phase": "remate",
+  "deletedAt": "2026-09-11T21:16:21.837Z",
+  "backupPath": "C:\\Users\\semip\\Proyectos\\portal-sem\\docs\\AI\\auditorias\\OT-GROWTH-SMOKE-CLEANUP-001\\backup-remate-2026-09-11T21-16-16-089Z.json",
+  "deleted": [
+    {
+      "collection": "experience_form_submissions",
+      "_id": "6a9effb84dfe2a5dd505247a",
+      "deletedCount": 1
+    },
+    {
+      "collection": "experience_form_submissions",
+      "_id": "6a9effcd4dfe2a5dd5052486",
+      "deletedCount": 1
+    },
+    {
+      "collection": "experience_form_submissions",
+      "_id": "6a9efffd4dfe2a5dd50524a0",
+      "deletedCount": 1
+    },
+    {
+      "collection": "portal_interesados",
+      "_id": "6a9effdb4dfe2a5dd505248b",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effc24dfe2a5dd5052480",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effc44dfe2a5dd5052482",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effc84dfe2a5dd5052485",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effd54dfe2a5dd505248a",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effe54dfe2a5dd5052491",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effe74dfe2a5dd5052493",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effea4dfe2a5dd5052496",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9effee4dfe2a5dd5052499",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9efff14dfe2a5dd505249b",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9efff54dfe2a5dd505249d",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9efff84dfe2a5dd505249f",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9f00074dfe2a5dd50524a6",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9f00094dfe2a5dd50524a8",
+      "deletedCount": 1
+    },
+    {
+      "collection": "core_events",
+      "_id": "6a9f000d4dfe2a5dd50524ab",
+      "deletedCount": 1
+    }
+  ],
+  "verification": {
+    "remainingForm": null,
+    "remainingSubsForSmokeForm": 0,
+    "remainingInteresadosSmoke": 0,
+    "remainingCoreEventsSmoke": 0,
+    "remainingCaptureWa": 0,
+    "remainingSmokePersonas": 0,
+    "remainingCapturePersonas": 0
+  }
+}

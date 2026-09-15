@@ -1,5 +1,6 @@
 /**
- * OT-GROWTH-AUTOMATION-002/003/005/007 — Automatizaciones (persistencia + runtime + WAIT + historial).
+ * OT-GROWTH-AUTOMATION-002/003/005/007 / E2E-FIX-001 — Automatizaciones
+ * (persistencia + runtime + WAIT + historial + seed de arranque).
  */
 
 export {
@@ -7,6 +8,10 @@ export {
   GROWTH_AUTOMATION_VERSIONS_COLLECTION,
   GROWTH_AUTOMATION_RUNS_COLLECTION,
   GROWTH_AUTOMATION_SYSTEM_ACTOR,
+  GROWTH_PLATFORM_SEED_ACTOR,
+  GROWTH_STARTUP_NEXT_ACTION_SEED_KEY,
+  GROWTH_STARTUP_NEXT_ACTION_AUTOMATION_NAME,
+  GROWTH_STARTUP_NEXT_ACTION_SUMMARY,
   GROWTH_AUTOMATION_ACTION_TYPES,
 } from "./types";
 export type {
@@ -60,6 +65,12 @@ export {
   sanitizeAutomationErrorDetail,
 } from "./history-prose";
 export { ensureGrowthAutomationIndexes } from "./indexes";
+export {
+  ensureGrowthStartupNextActionAutomation,
+  backfillGrowthStartupNextActionAutomations,
+  GROWTH_STARTUP_NEXT_ACTION_STEPS,
+} from "./startup-seed";
+export type { EnsureGrowthStartupNextActionResult } from "./startup-seed";
 
 export {
   createGrowthAutomation,

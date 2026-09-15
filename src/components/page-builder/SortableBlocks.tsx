@@ -4,7 +4,8 @@ import { useState } from "react";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { reorderBlocks } from "@/lib/cms/page-utils";
-import type { BlockDefinition, PageBlock } from "@/types/page";
+import { humanBlockLabel } from "@/lib/cms/growth-block-palette";
+import type { BlockDefinition, BlockType, PageBlock } from "@/types/page";
 
 interface SortableBlocksProps {
   blocks: PageBlock[];
@@ -24,8 +25,8 @@ export function SortableBlocks({
   const sorted = [...blocks].sort((a, b) => a.order - b.order);
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
-  const getName = (type: string) =>
-    blockLibrary.find((b) => b._id === type)?.name ?? type;
+  const getName = (type: BlockType) =>
+    humanBlockLabel(type, blockLibrary.find((b) => b._id === type)?.name ?? type);
 
   const handleDrop = (targetId: string) => {
     if (!draggedId) return;

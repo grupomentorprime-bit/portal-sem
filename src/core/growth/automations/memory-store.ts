@@ -29,6 +29,16 @@ export function createMemoryGrowthAutomationStore(): GrowthAutomationStore & {
       if (automations.has(key)) {
         throw new Error("Automation already exists");
       }
+      if (doc.seedKey) {
+        const clash = [...automations.values()].find(
+          (a) => a.tenantId === doc.tenantId && a.seedKey === doc.seedKey
+        );
+        if (clash) {
+          const err = new Error("Duplicate automation seedKey");
+          (err as { code?: number }).code = 11000;
+          throw err;
+        }
+      }
       const clone = structuredClone(doc);
       automations.set(key, clone);
       return structuredClone(clone);
@@ -39,6 +49,19 @@ export function createMemoryGrowthAutomationStore(): GrowthAutomationStore & {
       if (!automations.has(key)) {
         throw new Error("Automation not found");
       }
+      if (doc.seedKey) {
+        const clash = [...automations.values()].find(
+          (a) =>
+            a.tenantId === doc.tenantId &&
+            a.seedKey === doc.seedKey &&
+            a._id !== doc._id
+        );
+        if (clash) {
+          const err = new Error("Duplicate automation seedKey");
+          (err as { code?: number }).code = 11000;
+          throw err;
+        }
+      }
       const clone = structuredClone(doc);
       automations.set(key, clone);
       return structuredClone(clone);
@@ -46,6 +69,13 @@ export function createMemoryGrowthAutomationStore(): GrowthAutomationStore & {
 
     async findAutomationById(tenantId, automationId) {
       const doc = automations.get(autoKey(tenantId, automationId));
+      return doc ? structuredClone(doc) : null;
+    },
+
+    async findAutomationBySeedKey(tenantId, seedKey) {
+      const doc = [...automations.values()].find(
+        (a) => a.tenantId === tenantId && a.seedKey === seedKey
+      );
       return doc ? structuredClone(doc) : null;
     },
 

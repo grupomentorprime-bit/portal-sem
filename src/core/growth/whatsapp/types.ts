@@ -10,6 +10,12 @@ export const GROWTH_WHATSAPP_CHANNEL = "whatsapp" as const;
 
 export const GROWTH_WHATSAPP_SOURCE_COLLECTION = "whatsapp_cloud" as const;
 
+/**
+ * Tipo de Oportunidad comercial para inbound WhatsApp (default de plataforma).
+ * Misma clave que Formulario contact / information_request — sin hardcode por cliente.
+ */
+export const GROWTH_WHATSAPP_OPPORTUNITY_TYPE_KEY = "inquiry" as const;
+
 /** Conexión de un número/cuenta Cloud API a un Espacio. Secretos solo en servidor. */
 export interface GrowthWhatsAppConnection {
   _id: string;

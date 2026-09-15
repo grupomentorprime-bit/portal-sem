@@ -77,13 +77,14 @@ export async function POST(request: Request) {
     const normalizedEmail = normalizeEmail(email);
     const existingUser = await findUserByEmail(normalizedEmail);
     if (existingUser) {
-      const membership = await findMembership(existingUser._id, ctx.tenantId);
-      if (membership) {
+      const activeMembership = await findMembership(existingUser._id, ctx.tenantId);
+      if (activeMembership) {
         return NextResponse.json(
           { ok: false, error: "Este usuario ya tiene acceso al CMS." },
           { status: 409 }
         );
       }
+      // Suspended/archived: permitir reinvitación; accept reutilizará la membership (D3).
     }
 
     await ensureTenantRoles(ctx.tenantId);

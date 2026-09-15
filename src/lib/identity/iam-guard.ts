@@ -110,7 +110,7 @@ export function assertCanManageMember(
   if (options?.isSystemAccount || denySuperAdminTarget(targetCode)) {
     return {
       ok: false,
-      error: "No se puede modificar al Super Admin.",
+      error: "No se puede modificar al Dueño del Espacio.",
       auditReason: "protected_system_account",
     };
   }
@@ -131,7 +131,7 @@ export function assertCanAssignRole(
   if (denySuperAdminTarget(newRoleCode)) {
     return {
       ok: false,
-      error: "No se puede asignar el rol Super Admin.",
+      error: "No se puede asignar el rol Dueño del Espacio.",
       auditReason: "assign_super_admin_denied",
     };
   }

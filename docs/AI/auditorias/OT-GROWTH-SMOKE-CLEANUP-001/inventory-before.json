@@ -1,0 +1,2247 @@
+{
+  "ot": "OT-GROWTH-SMOKE-CLEANUP-001",
+  "mode": "inventory",
+  "note": "Reconstruido desde backups tras overwrite del inventory-before post-delete; conteos equivalentes al inventario original (59).",
+  "scannedAt": "2026-09-11T21:13:00.000Z",
+  "reconstructedAt": "2026-09-11T21:19:50.790Z",
+  "dbName": "SeminarioIPN",
+  "summary": {
+    "experience_forms": {
+      "total": 1,
+      "confirmed": 1,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "growth_personas": {
+      "total": 5,
+      "confirmed": 5,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "growth_oportunidades": {
+      "total": 4,
+      "confirmed": 4,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "growth_actividades": {
+      "total": 14,
+      "confirmed": 14,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "growth_conversaciones": {
+      "total": 2,
+      "confirmed": 2,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "growth_mensajes": {
+      "total": 5,
+      "confirmed": 5,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "growth_whatsapp_connections": {
+      "total": 1,
+      "confirmed": 1,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "identity_sessions": {
+      "total": 6,
+      "confirmed": 6,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "core_scheduled_events": {
+      "total": 3,
+      "confirmed": 3,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "experience_form_submissions": {
+      "total": 3,
+      "confirmed": 3,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "portal_interesados": {
+      "total": 1,
+      "confirmed": 1,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    },
+    "core_events": {
+      "total": 14,
+      "confirmed": 14,
+      "review": 0,
+      "tenants": [
+        "adl"
+      ]
+    }
+  },
+  "baselines": {
+    "experience_forms_adl": 1,
+    "experience_forms_sem": 7,
+    "growth_whatsapp_connections_adl": 1,
+    "growth_whatsapp_connections_sem": 0,
+    "growth_personas_adl": 6,
+    "growth_personas_sem": 1
+  },
+  "toDelete": [
+    {
+      "collection": "experience_forms",
+      "filter": {
+        "_id": "adl-smoke-info-request"
+      },
+      "tenant": "adl",
+      "_id": "adl-smoke-info-request",
+      "createdAt": "2026-09-07T18:17:21.959Z",
+      "updatedAt": "2026-09-07T18:17:21.959Z",
+      "evidence": "FORM_ID exacto adl-smoke-info-request (scripts/smoke-growth-capture-001.ts)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "adl-smoke-info-request",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:17:21.959Z",
+        "updatedAt": "2026-09-07T18:17:21.959Z",
+        "name": "Solicitud de información (smoke captación)"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "6a9effbd4dfe2a5dd505247b"
+      },
+      "tenant": "adl",
+      "_id": "6a9effbd4dfe2a5dd505247b",
+      "createdAt": "2026-09-07T18:17:28.427Z",
+      "updatedAt": "2026-09-07T18:17:28.427Z",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effbd4dfe2a5dd505247b",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:28.427Z",
+        "updatedAt": "2026-09-07T18:17:28.427Z",
+        "email": "smoke.form.1788805040542@example.com",
+        "emailNormalized": "smoke.form.1788805040542@example.com",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9effb84dfe2a5dd505247a",
+          "capturedAt": "2026-09-07T18:17:28.427Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "6a9effe04dfe2a5dd505248c"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe04dfe2a5dd505248c",
+      "createdAt": "2026-09-07T18:18:03.398Z",
+      "updatedAt": "2026-09-07T18:18:03.398Z",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe04dfe2a5dd505248c",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:03.398Z",
+        "updatedAt": "2026-09-07T18:18:03.398Z",
+        "email": "smoke.admit.1788805040542@example.com",
+        "emailNormalized": "smoke.admit.1788805040542@example.com",
+        "origin": {
+          "kind": "admission",
+          "sourceCollection": "portal_interesados",
+          "sourceId": "6a9effdb4dfe2a5dd505248b",
+          "capturedAt": "2026-09-07T18:18:03.398Z",
+          "channel": "portal-admision"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "6a9f00024dfe2a5dd50524a1"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00024dfe2a5dd50524a1",
+      "createdAt": "2026-09-07T18:18:37.391Z",
+      "updatedAt": "2026-09-07T18:18:37.391Z",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00024dfe2a5dd50524a1",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:37.391Z",
+        "updatedAt": "2026-09-07T18:18:37.391Z",
+        "email": "smoke.auto.1788805040542@example.com",
+        "emailNormalized": "smoke.auto.1788805040542@example.com",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9efffd4dfe2a5dd50524a0",
+          "capturedAt": "2026-09-07T18:18:37.391Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "persona-capture-messaging-004a-a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "persona-capture-messaging-004a-a-1788837984377",
+      "createdAt": "2026-09-08T03:26:24.377Z",
+      "updatedAt": "2026-09-08T03:26:24.377Z",
+      "evidence": "origin.sourceId=capture-messaging-004a",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "persona-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:26:24.377Z",
+        "updatedAt": "2026-09-08T03:26:24.377Z",
+        "email": "maria.messaging004a.1788837984377@example.com",
+        "emailNormalized": "maria.messaging004a.1788837984377@example.com",
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "persona-capture-messaging-004a-b-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "persona-capture-messaging-004a-b-1788837984377",
+      "createdAt": "2026-09-08T03:26:24.377Z",
+      "updatedAt": "2026-09-08T03:26:24.377Z",
+      "evidence": "origin.sourceId=capture-messaging-004a",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "persona-capture-messaging-004a-b-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:26:24.377Z",
+        "updatedAt": "2026-09-08T03:26:24.377Z",
+        "email": "carlos.messaging004a.1788837984377@example.com",
+        "emailNormalized": "carlos.messaging004a.1788837984377@example.com",
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "6a9effc04dfe2a5dd505247e"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc04dfe2a5dd505247e",
+      "updatedAt": "2026-09-07T18:17:39.953Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc04dfe2a5dd505247e",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-07T18:17:39.953Z",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9effb84dfe2a5dd505247a",
+          "capturedAt": "2026-09-07T18:17:28.427Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "6a9effe34dfe2a5dd505248f"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe34dfe2a5dd505248f",
+      "updatedAt": "2026-09-07T18:18:03.398Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe34dfe2a5dd505248f",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-07T18:18:03.398Z",
+        "origin": {
+          "kind": "admission",
+          "sourceCollection": "portal_interesados",
+          "sourceId": "6a9effdb4dfe2a5dd505248b",
+          "capturedAt": "2026-09-07T18:18:03.398Z",
+          "channel": "portal-admision"
+        },
+        "status": "handed_off"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "6a9f00054dfe2a5dd50524a4"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00054dfe2a5dd50524a4",
+      "updatedAt": "2026-09-07T18:18:48.615Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00054dfe2a5dd50524a4",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-07T18:18:48.615Z",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9efffd4dfe2a5dd50524a0",
+          "capturedAt": "2026-09-07T18:18:37.391Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "oportunidad-capture-messaging-004a-a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "oportunidad-capture-messaging-004a-a-1788837984377",
+      "updatedAt": "2026-09-08T03:26:24.377Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "oportunidad-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-08T03:26:24.377Z",
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effc24dfe2a5dd505247f"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc24dfe2a5dd505247f",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc24dfe2a5dd505247f",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effc44dfe2a5dd5052481"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc44dfe2a5dd5052481",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc44dfe2a5dd5052481",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effc74dfe2a5dd5052484"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc74dfe2a5dd5052484",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc74dfe2a5dd5052484",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effd54dfe2a5dd5052489"
+      },
+      "tenant": "adl",
+      "_id": "6a9effd54dfe2a5dd5052489",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effd54dfe2a5dd5052489",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effe44dfe2a5dd5052490"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe44dfe2a5dd5052490",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe44dfe2a5dd5052490",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effe64dfe2a5dd5052492"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe64dfe2a5dd5052492",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe64dfe2a5dd5052492",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effea4dfe2a5dd5052495"
+      },
+      "tenant": "adl",
+      "_id": "6a9effea4dfe2a5dd5052495",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effea4dfe2a5dd5052495",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effed4dfe2a5dd5052498"
+      },
+      "tenant": "adl",
+      "_id": "6a9effed4dfe2a5dd5052498",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effed4dfe2a5dd5052498",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9efff14dfe2a5dd505249a"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff14dfe2a5dd505249a",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff14dfe2a5dd505249a",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9efff54dfe2a5dd505249c"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff54dfe2a5dd505249c",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff54dfe2a5dd505249c",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9efff74dfe2a5dd505249e"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff74dfe2a5dd505249e",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff74dfe2a5dd505249e",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9f00064dfe2a5dd50524a5"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00064dfe2a5dd50524a5",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00064dfe2a5dd50524a5",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9f00084dfe2a5dd50524a7"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00084dfe2a5dd50524a7",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00084dfe2a5dd50524a7",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9f000c4dfe2a5dd50524aa"
+      },
+      "tenant": "adl",
+      "_id": "6a9f000c4dfe2a5dd50524aa",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f000c4dfe2a5dd50524aa",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_conversaciones",
+      "filter": {
+        "_id": "conv-capture-messaging-004a-a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "conv-capture-messaging-004a-a-1788837984377",
+      "createdAt": "2026-09-08T02:41:24.876Z",
+      "updatedAt": "2026-09-08T03:23:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "conv-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T02:41:24.876Z",
+        "updatedAt": "2026-09-08T03:23:24.876Z",
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_conversaciones",
+      "filter": {
+        "_id": "conv-capture-messaging-004a-b-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "conv-capture-messaging-004a-b-1788837984377",
+      "createdAt": "2026-09-08T03:14:24.876Z",
+      "updatedAt": "2026-09-08T03:14:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "conv-capture-messaging-004a-b-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:14:24.876Z",
+        "updatedAt": "2026-09-08T03:14:24.876Z",
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-a1-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-a1-1788837984377",
+      "createdAt": "2026-09-08T02:41:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-a1-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T02:41:24.876Z",
+        "status": "received"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-a2-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-a2-1788837984377",
+      "createdAt": "2026-09-08T02:46:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-a2-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T02:46:24.876Z",
+        "status": "sent"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-a3-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-a3-1788837984377",
+      "createdAt": "2026-09-08T03:23:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-a3-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:23:24.876Z",
+        "status": "received"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-b1-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-b1-1788837984377",
+      "createdAt": "2026-09-08T03:14:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-b1-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:14:24.876Z",
+        "status": "received"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-b2-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-b2-1788837984377",
+      "createdAt": "2026-09-08T03:18:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-b2-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:18:24.876Z",
+        "status": "sent"
+      }
+    },
+    {
+      "collection": "growth_whatsapp_connections",
+      "filter": {
+        "_id": "6aa03af46235c0e6669ea6fc"
+      },
+      "tenant": "adl",
+      "_id": "6aa03af46235c0e6669ea6fc",
+      "createdAt": "2026-09-08T16:42:27.739Z",
+      "updatedAt": "2026-09-08T16:47:23.021Z",
+      "evidence": "captureTag=capture-messaging-005",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6aa03af46235c0e6669ea6fc",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T16:42:27.739Z",
+        "updatedAt": "2026-09-08T16:47:23.021Z",
+        "captureTag": "capture-messaging-005",
+        "phoneNumberId": "capture-pn-adl-incomplete",
+        "displayPhoneNumber": "+56 9 2222 0000"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004-1788836703762"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004-1788836703762",
+      "createdAt": "2026-09-08T03:05:04.993Z",
+      "evidence": "session id sess-capture-messaging-004-1788836703762 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004-1788836703762",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:05:04.993Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004a-1788837779788"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004a-1788837779788",
+      "createdAt": "2026-09-08T03:23:01.034Z",
+      "evidence": "session id sess-capture-messaging-004a-1788837779788 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004a-1788837779788",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:23:01.034Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004a-1788837881428"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004a-1788837881428",
+      "createdAt": "2026-09-08T03:24:42.595Z",
+      "evidence": "session id sess-capture-messaging-004a-1788837881428 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004a-1788837881428",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:24:42.595Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004a-1788837984377",
+      "createdAt": "2026-09-08T03:26:25.590Z",
+      "evidence": "session id sess-capture-messaging-004a-1788837984377 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004a-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:26:25.590Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-005-mtswdrdh"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-005-mtswdrdh",
+      "createdAt": "2026-09-08T16:42:24.977Z",
+      "evidence": "session id sess-capture-messaging-005-mtswdrdh (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-005-mtswdrdh",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T16:42:24.977Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-smoke-1788805040542"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-smoke-1788805040542",
+      "createdAt": "2026-09-07T18:18:58.447Z",
+      "evidence": "session id sess-capture-smoke-1788805040542 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-smoke-1788805040542",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:58.447Z"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "filter": {
+        "_id": "sched-1788805062428-e8zd"
+      },
+      "tenant": "adl",
+      "_id": "sched-1788805062428-e8zd",
+      "createdAt": "2026-09-07T18:17:42.428Z",
+      "updatedAt": "2026-09-07T18:17:42.428Z",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sched-1788805062428-e8zd",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:42.428Z",
+        "updatedAt": "2026-09-07T18:17:42.428Z",
+        "status": "scheduled"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "filter": {
+        "_id": "sched-1788805097025-p33w"
+      },
+      "tenant": "adl",
+      "_id": "sched-1788805097025-p33w",
+      "createdAt": "2026-09-07T18:18:17.025Z",
+      "updatedAt": "2026-09-07T18:18:17.025Z",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sched-1788805097025-p33w",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:17.025Z",
+        "updatedAt": "2026-09-07T18:18:17.025Z",
+        "status": "scheduled"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "filter": {
+        "_id": "sched-1788805131051-mxzs"
+      },
+      "tenant": "adl",
+      "_id": "sched-1788805131051-mxzs",
+      "createdAt": "2026-09-07T18:18:51.051Z",
+      "updatedAt": "2026-09-07T18:18:51.051Z",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sched-1788805131051-mxzs",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:51.051Z",
+        "updatedAt": "2026-09-07T18:18:51.051Z",
+        "status": "scheduled"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "filter": {
+        "_id": "6a9effb84dfe2a5dd505247a"
+      },
+      "tenant": "adl",
+      "_id": "6a9effb84dfe2a5dd505247a",
+      "createdAt": "2026-09-07T18:17:28.427Z",
+      "evidence": "formId=adl-smoke-info-request",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effb84dfe2a5dd505247a",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:17:28.427Z",
+        "formId": "adl-smoke-info-request"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "filter": {
+        "_id": "6a9effcd4dfe2a5dd5052486"
+      },
+      "tenant": "adl",
+      "_id": "6a9effcd4dfe2a5dd5052486",
+      "createdAt": "2026-09-07T18:17:49.566Z",
+      "evidence": "formId=adl-smoke-info-request",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effcd4dfe2a5dd5052486",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:17:49.566Z",
+        "formId": "adl-smoke-info-request"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "filter": {
+        "_id": "6a9efffd4dfe2a5dd50524a0"
+      },
+      "tenant": "adl",
+      "_id": "6a9efffd4dfe2a5dd50524a0",
+      "createdAt": "2026-09-07T18:18:37.391Z",
+      "evidence": "formId=adl-smoke-info-request",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efffd4dfe2a5dd50524a0",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:18:37.391Z",
+        "formId": "adl-smoke-info-request"
+      }
+    },
+    {
+      "collection": "portal_interesados",
+      "filter": {
+        "_id": "6a9effdb4dfe2a5dd505248b"
+      },
+      "tenant": "adl",
+      "_id": "6a9effdb4dfe2a5dd505248b",
+      "createdAt": "2026-09-07T18:18:03.398Z",
+      "evidence": "programId=smoke-program-capture-001",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effdb4dfe2a5dd505248b",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:18:03.398Z",
+        "email": "smoke.admit.1788805040542@example.com",
+        "status": "interesado",
+        "programId": "smoke-program-capture-001"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effc24dfe2a5dd5052480"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc24dfe2a5dd5052480",
+      "createdAt": "2026-09-07T18:17:38.778Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc24dfe2a5dd5052480",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:38.778Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effc44dfe2a5dd5052482"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc44dfe2a5dd5052482",
+      "createdAt": "2026-09-07T18:17:40.661Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc44dfe2a5dd5052482",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:40.661Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effc84dfe2a5dd5052485"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc84dfe2a5dd5052485",
+      "createdAt": "2026-09-07T18:17:44.415Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc84dfe2a5dd5052485",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:44.415Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effd54dfe2a5dd505248a"
+      },
+      "tenant": "adl",
+      "_id": "6a9effd54dfe2a5dd505248a",
+      "createdAt": "2026-09-07T18:17:57.626Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effd54dfe2a5dd505248a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:57.626Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effe54dfe2a5dd5052491"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe54dfe2a5dd5052491",
+      "createdAt": "2026-09-07T18:18:13.429Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe54dfe2a5dd5052491",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:13.429Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effe74dfe2a5dd5052493"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe74dfe2a5dd5052493",
+      "createdAt": "2026-09-07T18:18:15.302Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe74dfe2a5dd5052493",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:15.302Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effea4dfe2a5dd5052496"
+      },
+      "tenant": "adl",
+      "_id": "6a9effea4dfe2a5dd5052496",
+      "createdAt": "2026-09-07T18:18:18.906Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effea4dfe2a5dd5052496",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:18.906Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effee4dfe2a5dd5052499"
+      },
+      "tenant": "adl",
+      "_id": "6a9effee4dfe2a5dd5052499",
+      "createdAt": "2026-09-07T18:18:22.174Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effee4dfe2a5dd5052499",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:22.174Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9efff14dfe2a5dd505249b"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff14dfe2a5dd505249b",
+      "createdAt": "2026-09-07T18:18:25.988Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff14dfe2a5dd505249b",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:25.988Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9efff54dfe2a5dd505249d"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff54dfe2a5dd505249d",
+      "createdAt": "2026-09-07T18:18:29.817Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff54dfe2a5dd505249d",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:29.817Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9efff84dfe2a5dd505249f"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff84dfe2a5dd505249f",
+      "createdAt": "2026-09-07T18:18:32.003Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff84dfe2a5dd505249f",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:32.003Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9f00074dfe2a5dd50524a6"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00074dfe2a5dd50524a6",
+      "createdAt": "2026-09-07T18:18:47.442Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00074dfe2a5dd50524a6",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:47.442Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9f00094dfe2a5dd50524a8"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00094dfe2a5dd50524a8",
+      "createdAt": "2026-09-07T18:18:49.320Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00094dfe2a5dd50524a8",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:49.320Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9f000d4dfe2a5dd50524ab"
+      },
+      "tenant": "adl",
+      "_id": "6a9f000d4dfe2a5dd50524ab",
+      "createdAt": "2026-09-07T18:18:53.019Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f000d4dfe2a5dd50524ab",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:53.019Z",
+        "status": "processed"
+      }
+    }
+  ],
+  "needsReview": [],
+  "all": [
+    {
+      "collection": "experience_forms",
+      "filter": {
+        "_id": "adl-smoke-info-request"
+      },
+      "tenant": "adl",
+      "_id": "adl-smoke-info-request",
+      "createdAt": "2026-09-07T18:17:21.959Z",
+      "updatedAt": "2026-09-07T18:17:21.959Z",
+      "evidence": "FORM_ID exacto adl-smoke-info-request (scripts/smoke-growth-capture-001.ts)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "adl-smoke-info-request",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:17:21.959Z",
+        "updatedAt": "2026-09-07T18:17:21.959Z",
+        "name": "Solicitud de información (smoke captación)"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "6a9effbd4dfe2a5dd505247b"
+      },
+      "tenant": "adl",
+      "_id": "6a9effbd4dfe2a5dd505247b",
+      "createdAt": "2026-09-07T18:17:28.427Z",
+      "updatedAt": "2026-09-07T18:17:28.427Z",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effbd4dfe2a5dd505247b",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:28.427Z",
+        "updatedAt": "2026-09-07T18:17:28.427Z",
+        "email": "smoke.form.1788805040542@example.com",
+        "emailNormalized": "smoke.form.1788805040542@example.com",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9effb84dfe2a5dd505247a",
+          "capturedAt": "2026-09-07T18:17:28.427Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "6a9effe04dfe2a5dd505248c"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe04dfe2a5dd505248c",
+      "createdAt": "2026-09-07T18:18:03.398Z",
+      "updatedAt": "2026-09-07T18:18:03.398Z",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe04dfe2a5dd505248c",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:03.398Z",
+        "updatedAt": "2026-09-07T18:18:03.398Z",
+        "email": "smoke.admit.1788805040542@example.com",
+        "emailNormalized": "smoke.admit.1788805040542@example.com",
+        "origin": {
+          "kind": "admission",
+          "sourceCollection": "portal_interesados",
+          "sourceId": "6a9effdb4dfe2a5dd505248b",
+          "capturedAt": "2026-09-07T18:18:03.398Z",
+          "channel": "portal-admision"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "6a9f00024dfe2a5dd50524a1"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00024dfe2a5dd50524a1",
+      "createdAt": "2026-09-07T18:18:37.391Z",
+      "updatedAt": "2026-09-07T18:18:37.391Z",
+      "evidence": "emailNormalized smoke.* (CAPTURE-SMOKE-001)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00024dfe2a5dd50524a1",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:37.391Z",
+        "updatedAt": "2026-09-07T18:18:37.391Z",
+        "email": "smoke.auto.1788805040542@example.com",
+        "emailNormalized": "smoke.auto.1788805040542@example.com",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9efffd4dfe2a5dd50524a0",
+          "capturedAt": "2026-09-07T18:18:37.391Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "persona-capture-messaging-004a-a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "persona-capture-messaging-004a-a-1788837984377",
+      "createdAt": "2026-09-08T03:26:24.377Z",
+      "updatedAt": "2026-09-08T03:26:24.377Z",
+      "evidence": "origin.sourceId=capture-messaging-004a",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "persona-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:26:24.377Z",
+        "updatedAt": "2026-09-08T03:26:24.377Z",
+        "email": "maria.messaging004a.1788837984377@example.com",
+        "emailNormalized": "maria.messaging004a.1788837984377@example.com",
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_personas",
+      "filter": {
+        "_id": "persona-capture-messaging-004a-b-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "persona-capture-messaging-004a-b-1788837984377",
+      "createdAt": "2026-09-08T03:26:24.377Z",
+      "updatedAt": "2026-09-08T03:26:24.377Z",
+      "evidence": "origin.sourceId=capture-messaging-004a",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "persona-capture-messaging-004a-b-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:26:24.377Z",
+        "updatedAt": "2026-09-08T03:26:24.377Z",
+        "email": "carlos.messaging004a.1788837984377@example.com",
+        "emailNormalized": "carlos.messaging004a.1788837984377@example.com",
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "6a9effc04dfe2a5dd505247e"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc04dfe2a5dd505247e",
+      "updatedAt": "2026-09-07T18:17:39.953Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc04dfe2a5dd505247e",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-07T18:17:39.953Z",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9effb84dfe2a5dd505247a",
+          "capturedAt": "2026-09-07T18:17:28.427Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "6a9effe34dfe2a5dd505248f"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe34dfe2a5dd505248f",
+      "updatedAt": "2026-09-07T18:18:03.398Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe34dfe2a5dd505248f",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-07T18:18:03.398Z",
+        "origin": {
+          "kind": "admission",
+          "sourceCollection": "portal_interesados",
+          "sourceId": "6a9effdb4dfe2a5dd505248b",
+          "capturedAt": "2026-09-07T18:18:03.398Z",
+          "channel": "portal-admision"
+        },
+        "status": "handed_off"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "6a9f00054dfe2a5dd50524a4"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00054dfe2a5dd50524a4",
+      "updatedAt": "2026-09-07T18:18:48.615Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00054dfe2a5dd50524a4",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-07T18:18:48.615Z",
+        "origin": {
+          "kind": "form",
+          "sourceCollection": "experience_form_submissions",
+          "sourceId": "6a9efffd4dfe2a5dd50524a0",
+          "capturedAt": "2026-09-07T18:18:37.391Z",
+          "channel": "information_request",
+          "formId": "adl-smoke-info-request",
+          "formDestination": "information_request"
+        },
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_oportunidades",
+      "filter": {
+        "_id": "oportunidad-capture-messaging-004a-a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "oportunidad-capture-messaging-004a-a-1788837984377",
+      "updatedAt": "2026-09-08T03:26:24.377Z",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "oportunidad-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "updatedAt": "2026-09-08T03:26:24.377Z",
+        "origin": {
+          "kind": "manual",
+          "channel": "whatsapp",
+          "sourceCollection": "capture",
+          "sourceId": "capture-messaging-004a",
+          "capturedAt": "2026-09-08T03:26:24.377Z"
+        },
+        "status": "active"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effc24dfe2a5dd505247f"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc24dfe2a5dd505247f",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc24dfe2a5dd505247f",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effc44dfe2a5dd5052481"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc44dfe2a5dd5052481",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc44dfe2a5dd5052481",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effc74dfe2a5dd5052484"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc74dfe2a5dd5052484",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc74dfe2a5dd5052484",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effd54dfe2a5dd5052489"
+      },
+      "tenant": "adl",
+      "_id": "6a9effd54dfe2a5dd5052489",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effd54dfe2a5dd5052489",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effe44dfe2a5dd5052490"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe44dfe2a5dd5052490",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe44dfe2a5dd5052490",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effe64dfe2a5dd5052492"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe64dfe2a5dd5052492",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe64dfe2a5dd5052492",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effea4dfe2a5dd5052495"
+      },
+      "tenant": "adl",
+      "_id": "6a9effea4dfe2a5dd5052495",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effea4dfe2a5dd5052495",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9effed4dfe2a5dd5052498"
+      },
+      "tenant": "adl",
+      "_id": "6a9effed4dfe2a5dd5052498",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effed4dfe2a5dd5052498",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9efff14dfe2a5dd505249a"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff14dfe2a5dd505249a",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff14dfe2a5dd505249a",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9efff54dfe2a5dd505249c"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff54dfe2a5dd505249c",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff54dfe2a5dd505249c",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9efff74dfe2a5dd505249e"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff74dfe2a5dd505249e",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff74dfe2a5dd505249e",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9f00064dfe2a5dd50524a5"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00064dfe2a5dd50524a5",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00064dfe2a5dd50524a5",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9f00084dfe2a5dd50524a7"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00084dfe2a5dd50524a7",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00084dfe2a5dd50524a7",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_actividades",
+      "filter": {
+        "_id": "6a9f000c4dfe2a5dd50524aa"
+      },
+      "tenant": "adl",
+      "_id": "6a9f000c4dfe2a5dd50524aa",
+      "evidence": "personaId → persona smoke confirmada",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f000c4dfe2a5dd50524aa",
+        "tenantId": "adl"
+      }
+    },
+    {
+      "collection": "growth_conversaciones",
+      "filter": {
+        "_id": "conv-capture-messaging-004a-a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "conv-capture-messaging-004a-a-1788837984377",
+      "createdAt": "2026-09-08T02:41:24.876Z",
+      "updatedAt": "2026-09-08T03:23:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "conv-capture-messaging-004a-a-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T02:41:24.876Z",
+        "updatedAt": "2026-09-08T03:23:24.876Z",
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_conversaciones",
+      "filter": {
+        "_id": "conv-capture-messaging-004a-b-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "conv-capture-messaging-004a-b-1788837984377",
+      "createdAt": "2026-09-08T03:14:24.876Z",
+      "updatedAt": "2026-09-08T03:14:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "conv-capture-messaging-004a-b-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:14:24.876Z",
+        "updatedAt": "2026-09-08T03:14:24.876Z",
+        "status": "open"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-a1-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-a1-1788837984377",
+      "createdAt": "2026-09-08T02:41:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-a1-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T02:41:24.876Z",
+        "status": "received"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-a2-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-a2-1788837984377",
+      "createdAt": "2026-09-08T02:46:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-a2-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T02:46:24.876Z",
+        "status": "sent"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-a3-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-a3-1788837984377",
+      "createdAt": "2026-09-08T03:23:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-a3-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:23:24.876Z",
+        "status": "received"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-b1-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-b1-1788837984377",
+      "createdAt": "2026-09-08T03:14:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-b1-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:14:24.876Z",
+        "status": "received"
+      }
+    },
+    {
+      "collection": "growth_mensajes",
+      "filter": {
+        "_id": "msg-capture-messaging-004a-b2-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "msg-capture-messaging-004a-b2-1788837984377",
+      "createdAt": "2026-09-08T03:18:24.876Z",
+      "evidence": "_id capture-messaging",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "msg-capture-messaging-004a-b2-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:18:24.876Z",
+        "status": "sent"
+      }
+    },
+    {
+      "collection": "growth_whatsapp_connections",
+      "filter": {
+        "_id": "6aa03af46235c0e6669ea6fc"
+      },
+      "tenant": "adl",
+      "_id": "6aa03af46235c0e6669ea6fc",
+      "createdAt": "2026-09-08T16:42:27.739Z",
+      "updatedAt": "2026-09-08T16:47:23.021Z",
+      "evidence": "captureTag=capture-messaging-005",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6aa03af46235c0e6669ea6fc",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T16:42:27.739Z",
+        "updatedAt": "2026-09-08T16:47:23.021Z",
+        "captureTag": "capture-messaging-005",
+        "phoneNumberId": "capture-pn-adl-incomplete",
+        "displayPhoneNumber": "+56 9 2222 0000"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004-1788836703762"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004-1788836703762",
+      "createdAt": "2026-09-08T03:05:04.993Z",
+      "evidence": "session id sess-capture-messaging-004-1788836703762 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004-1788836703762",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:05:04.993Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004a-1788837779788"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004a-1788837779788",
+      "createdAt": "2026-09-08T03:23:01.034Z",
+      "evidence": "session id sess-capture-messaging-004a-1788837779788 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004a-1788837779788",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:23:01.034Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004a-1788837881428"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004a-1788837881428",
+      "createdAt": "2026-09-08T03:24:42.595Z",
+      "evidence": "session id sess-capture-messaging-004a-1788837881428 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004a-1788837881428",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:24:42.595Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-004a-1788837984377"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-004a-1788837984377",
+      "createdAt": "2026-09-08T03:26:25.590Z",
+      "evidence": "session id sess-capture-messaging-004a-1788837984377 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-004a-1788837984377",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T03:26:25.590Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-messaging-005-mtswdrdh"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-messaging-005-mtswdrdh",
+      "createdAt": "2026-09-08T16:42:24.977Z",
+      "evidence": "session id sess-capture-messaging-005-mtswdrdh (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-messaging-005-mtswdrdh",
+        "tenantId": "adl",
+        "createdAt": "2026-09-08T16:42:24.977Z"
+      }
+    },
+    {
+      "collection": "identity_sessions",
+      "filter": {
+        "_id": "sess-capture-smoke-1788805040542"
+      },
+      "tenant": "adl",
+      "_id": "sess-capture-smoke-1788805040542",
+      "createdAt": "2026-09-07T18:18:58.447Z",
+      "evidence": "session id sess-capture-smoke-1788805040542 (script capture/smoke)",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sess-capture-smoke-1788805040542",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:58.447Z"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "filter": {
+        "_id": "sched-1788805062428-e8zd"
+      },
+      "tenant": "adl",
+      "_id": "sched-1788805062428-e8zd",
+      "createdAt": "2026-09-07T18:17:42.428Z",
+      "updatedAt": "2026-09-07T18:17:42.428Z",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sched-1788805062428-e8zd",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:42.428Z",
+        "updatedAt": "2026-09-07T18:17:42.428Z",
+        "status": "scheduled"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "filter": {
+        "_id": "sched-1788805097025-p33w"
+      },
+      "tenant": "adl",
+      "_id": "sched-1788805097025-p33w",
+      "createdAt": "2026-09-07T18:18:17.025Z",
+      "updatedAt": "2026-09-07T18:18:17.025Z",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sched-1788805097025-p33w",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:17.025Z",
+        "updatedAt": "2026-09-07T18:18:17.025Z",
+        "status": "scheduled"
+      }
+    },
+    {
+      "collection": "core_scheduled_events",
+      "filter": {
+        "_id": "sched-1788805131051-mxzs"
+      },
+      "tenant": "adl",
+      "_id": "sched-1788805131051-mxzs",
+      "createdAt": "2026-09-07T18:18:51.051Z",
+      "updatedAt": "2026-09-07T18:18:51.051Z",
+      "evidence": "payload referencia form/persona/oportunidad smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "sched-1788805131051-mxzs",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:51.051Z",
+        "updatedAt": "2026-09-07T18:18:51.051Z",
+        "status": "scheduled"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "filter": {
+        "_id": "6a9effb84dfe2a5dd505247a"
+      },
+      "tenant": "adl",
+      "_id": "6a9effb84dfe2a5dd505247a",
+      "createdAt": "2026-09-07T18:17:28.427Z",
+      "evidence": "formId=adl-smoke-info-request",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effb84dfe2a5dd505247a",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:17:28.427Z",
+        "formId": "adl-smoke-info-request"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "filter": {
+        "_id": "6a9effcd4dfe2a5dd5052486"
+      },
+      "tenant": "adl",
+      "_id": "6a9effcd4dfe2a5dd5052486",
+      "createdAt": "2026-09-07T18:17:49.566Z",
+      "evidence": "formId=adl-smoke-info-request",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effcd4dfe2a5dd5052486",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:17:49.566Z",
+        "formId": "adl-smoke-info-request"
+      }
+    },
+    {
+      "collection": "experience_form_submissions",
+      "filter": {
+        "_id": "6a9efffd4dfe2a5dd50524a0"
+      },
+      "tenant": "adl",
+      "_id": "6a9efffd4dfe2a5dd50524a0",
+      "createdAt": "2026-09-07T18:18:37.391Z",
+      "evidence": "formId=adl-smoke-info-request",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efffd4dfe2a5dd50524a0",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:18:37.391Z",
+        "formId": "adl-smoke-info-request"
+      }
+    },
+    {
+      "collection": "portal_interesados",
+      "filter": {
+        "_id": "6a9effdb4dfe2a5dd505248b"
+      },
+      "tenant": "adl",
+      "_id": "6a9effdb4dfe2a5dd505248b",
+      "createdAt": "2026-09-07T18:18:03.398Z",
+      "evidence": "programId=smoke-program-capture-001",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effdb4dfe2a5dd505248b",
+        "tenant": "adl",
+        "createdAt": "2026-09-07T18:18:03.398Z",
+        "email": "smoke.admit.1788805040542@example.com",
+        "status": "interesado",
+        "programId": "smoke-program-capture-001"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effc24dfe2a5dd5052480"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc24dfe2a5dd5052480",
+      "createdAt": "2026-09-07T18:17:38.778Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc24dfe2a5dd5052480",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:38.778Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effc44dfe2a5dd5052482"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc44dfe2a5dd5052482",
+      "createdAt": "2026-09-07T18:17:40.661Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc44dfe2a5dd5052482",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:40.661Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effc84dfe2a5dd5052485"
+      },
+      "tenant": "adl",
+      "_id": "6a9effc84dfe2a5dd5052485",
+      "createdAt": "2026-09-07T18:17:44.415Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effc84dfe2a5dd5052485",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:44.415Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effd54dfe2a5dd505248a"
+      },
+      "tenant": "adl",
+      "_id": "6a9effd54dfe2a5dd505248a",
+      "createdAt": "2026-09-07T18:17:57.626Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effd54dfe2a5dd505248a",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:17:57.626Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effe54dfe2a5dd5052491"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe54dfe2a5dd5052491",
+      "createdAt": "2026-09-07T18:18:13.429Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe54dfe2a5dd5052491",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:13.429Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effe74dfe2a5dd5052493"
+      },
+      "tenant": "adl",
+      "_id": "6a9effe74dfe2a5dd5052493",
+      "createdAt": "2026-09-07T18:18:15.302Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effe74dfe2a5dd5052493",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:15.302Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effea4dfe2a5dd5052496"
+      },
+      "tenant": "adl",
+      "_id": "6a9effea4dfe2a5dd5052496",
+      "createdAt": "2026-09-07T18:18:18.906Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effea4dfe2a5dd5052496",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:18.906Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9effee4dfe2a5dd5052499"
+      },
+      "tenant": "adl",
+      "_id": "6a9effee4dfe2a5dd5052499",
+      "createdAt": "2026-09-07T18:18:22.174Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9effee4dfe2a5dd5052499",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:22.174Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9efff14dfe2a5dd505249b"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff14dfe2a5dd505249b",
+      "createdAt": "2026-09-07T18:18:25.988Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff14dfe2a5dd505249b",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:25.988Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9efff54dfe2a5dd505249d"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff54dfe2a5dd505249d",
+      "createdAt": "2026-09-07T18:18:29.817Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff54dfe2a5dd505249d",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:29.817Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9efff84dfe2a5dd505249f"
+      },
+      "tenant": "adl",
+      "_id": "6a9efff84dfe2a5dd505249f",
+      "createdAt": "2026-09-07T18:18:32.003Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9efff84dfe2a5dd505249f",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:32.003Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9f00074dfe2a5dd50524a6"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00074dfe2a5dd50524a6",
+      "createdAt": "2026-09-07T18:18:47.442Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00074dfe2a5dd50524a6",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:47.442Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9f00094dfe2a5dd50524a8"
+      },
+      "tenant": "adl",
+      "_id": "6a9f00094dfe2a5dd50524a8",
+      "createdAt": "2026-09-07T18:18:49.320Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f00094dfe2a5dd50524a8",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:49.320Z",
+        "status": "processed"
+      }
+    },
+    {
+      "collection": "core_events",
+      "filter": {
+        "_id": "6a9f000d4dfe2a5dd50524ab"
+      },
+      "tenant": "adl",
+      "_id": "6a9f000d4dfe2a5dd50524ab",
+      "createdAt": "2026-09-07T18:18:53.019Z",
+      "evidence": "payload.personaId → persona smoke",
+      "confirmedTest": true,
+      "preview": {
+        "_id": "6a9f000d4dfe2a5dd50524ab",
+        "tenantId": "adl",
+        "createdAt": "2026-09-07T18:18:53.019Z",
+        "status": "processed"
+      }
+    }
+  ]
+}

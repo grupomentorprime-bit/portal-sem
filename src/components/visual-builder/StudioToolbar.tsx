@@ -77,7 +77,7 @@ export function StudioToolbar({
               Páginas
             </Link>
             <span className="mx-1">/</span>
-            <span className="text-foreground">Experience Studio</span>
+            <span className="text-foreground">Editar</span>
           </nav>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-lg font-semibold text-foreground">{page.title}</h1>

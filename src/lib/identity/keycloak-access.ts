@@ -8,8 +8,10 @@ import {
 } from "@/lib/identity/invitations";
 import {
   createMembership,
+  ensureActiveMembership,
   findMembership,
-  updateMembershipRoles,
+  findMembershipAnyStatus,
+  MembershipConflictError,
 } from "@/lib/identity/memberships";
 import { ensureTenantRoles, getSuperAdminRole, ensureSuperAdminMembership } from "@/lib/identity/roles";
 import {
@@ -87,6 +89,11 @@ export async function upsertUserFromKeycloak(
   return user;
 }
 
+/**
+ * D1 — Keycloak autentica; Mongo (`identity_memberships.roleIds`) es SSOT del rol por Espacio.
+ * Login NO sobrescribe roleIds de membership existente; realm roles NO elevan membresías ya creadas.
+ * Bootstrap/provision de cuentas o Espacios nuevos se preserva.
+ */
 export async function resolveKeycloakMembership(
   user: IdentityUser,
   tenantId: string,
@@ -96,26 +103,40 @@ export async function resolveKeycloakMembership(
   const realmRoles = extractRealmRoles(payload);
   const keycloakRoleIds = await resolveCmsRoleIdsFromKeycloak(tenantId, realmRoles);
 
-  const existing = await findMembership(user._id, tenantId);
-  if (existing) {
+  const existingAny = await findMembershipAnyStatus(user._id, tenantId);
+  if (existingAny) {
     if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {
       await ensureSuperAdminMembership(tenantId, user._id);
       return findMembership(user._id, tenantId);
     }
-    if (keycloakRoleIds.length > 0) {
-      const updated = await updateMembershipRoles(existing._id, keycloakRoleIds);
-      return updated ?? existing;
+
+    const invitation = await findPendingInvitationByEmail(tenantId, user.email);
+    if (invitation && existingAny.status !== "active") {
+      // Reinvitación: reactivar sobre la membership existente (D3). Rol desde invitación, no realm.
+      const { membership } = await ensureActiveMembership({
+        tenantId,
+        userId: user._id,
+        roleIds: invitation.roleIds,
+        invitedBy: invitation.invitedBy,
+      });
+      await acceptInvitation(invitation._id, user._id, invitation.tenantId);
+      return membership;
     }
-    return existing;
+
+    // Membership existente (active u otra): no pisar roleIds con realm roles.
+    if (existingAny.status === "active") {
+      return existingAny;
+    }
+    return null;
   }
 
   const invitation = await findPendingInvitationByEmail(tenantId, user.email);
   if (invitation) {
-    const roleIds = keycloakRoleIds.length > 0 ? keycloakRoleIds : invitation.roleIds;
-    const membership = await createMembership({
+    // Alta nueva: invitación manda; realm roles no sustituyen el rol invitado.
+    const { membership } = await ensureActiveMembership({
       tenantId,
       userId: user._id,
-      roleIds,
+      roleIds: invitation.roleIds,
       invitedBy: invitation.invitedBy,
     });
     await acceptInvitation(invitation._id, user._id, invitation.tenantId);
@@ -123,11 +144,19 @@ export async function resolveKeycloakMembership(
   }
 
   if (keycloakRoleIds.length > 0) {
-    return createMembership({
-      tenantId,
-      userId: user._id,
-      roleIds: keycloakRoleIds,
-    });
+    // Solo provision de primera membership (sin documento previo).
+    try {
+      return await createMembership({
+        tenantId,
+        userId: user._id,
+        roleIds: keycloakRoleIds,
+      });
+    } catch (error) {
+      if (error instanceof MembershipConflictError) {
+        return findMembership(user._id, tenantId);
+      }
+      throw error;
+    }
   }
 
   const db = await getDatabase();
@@ -138,11 +167,18 @@ export async function resolveKeycloakMembership(
   if (membershipCount === 0) {
     await ensureTenantRoles(tenantId);
     const superAdminRole = await getSuperAdminRole(tenantId);
-    return createMembership({
-      tenantId,
-      userId: user._id,
-      roleIds: superAdminRole ? [superAdminRole._id] : [],
-    });
+    try {
+      return await createMembership({
+        tenantId,
+        userId: user._id,
+        roleIds: superAdminRole ? [superAdminRole._id] : [],
+      });
+    } catch (error) {
+      if (error instanceof MembershipConflictError) {
+        return findMembership(user._id, tenantId);
+      }
+      throw error;
+    }
   }
 
   if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {

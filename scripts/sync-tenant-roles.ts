@@ -1,5 +1,6 @@
 /**
  * Sincroniza roles del portal (OT-IAM-SEM-001) y plantillas granulares permissionMap (OT-IAM-002).
+ * OT-GROWTH-IAM-SYNC-FIX-001 — misma regla evolutiva que ensureTenantRoles.
  * Uso: npx tsx --env-file=.env scripts/sync-tenant-roles.ts [tenantId]
  */
 import { MongoClient } from "mongodb";
@@ -10,6 +11,10 @@ import {
 import { LEGACY_ROLE_NAME_TO_CODE } from "../src/core/identity/roles/codes";
 import { getDefaultRolePermissionTemplate } from "../src/core/identity/permissions/role-templates";
 import { granularToLegacyPermissions } from "../src/core/identity/permissions/resolver";
+import {
+  isPlatformManagedSystemRole,
+  syncSystemRolePermissionState,
+} from "../src/core/identity/permissions/sync-system-role";
 import type { RoleCode } from "../src/core/identity/roles/codes";
 
 const uri = process.env.MONGODB_URI;
@@ -41,7 +46,7 @@ async function main() {
 
   let inserted = 0;
   let updated = 0;
-  let mapsSeeded = 0;
+  let mapsEvolved = 0;
 
   for (const template of PORTAL_TENANT_ROLES) {
     const targetId = roleIdForTenant(tenantId, template.code);
@@ -81,23 +86,27 @@ async function main() {
       continue;
     }
 
-    if (!current.system) continue;
+    // Solo `system === true` en el documento — no inferir por name/code.
+    if (!isPlatformManagedSystemRole(current)) continue;
 
     const updates: Record<string, unknown> = {};
     if (current.code !== template.code) updates.code = template.code;
     if (current.name !== template.name) updates.name = template.name;
     if (current.description !== template.description) updates.description = template.description;
 
-    const templatePerms = [...template.permissionIds].sort().join(",");
-    const rolePerms = [...(current.permissionIds ?? [])].sort().join(",");
-    if (templatePerms !== rolePerms) {
-      updates.permissionIds = permissionIds;
-    }
-
-    if (!current.permissionMap || Object.keys(current.permissionMap).length === 0) {
-      updates.permissionMap = permissionMap;
-      updates.permissionIds = permissionIds;
-      mapsSeeded += 1;
+    const synced = syncSystemRolePermissionState({
+      roleCode: template.code as RoleCode,
+      currentPermissionMap: current.permissionMap as
+        | Record<string, boolean>
+        | null
+        | undefined,
+      currentPermissionIds: current.permissionIds as string[] | null | undefined,
+      toPermissionIds: granularToLegacyPermissions,
+    });
+    if (synced.changed) {
+      updates.permissionMap = synced.permissionMap;
+      updates.permissionIds = synced.permissionIds;
+      mapsEvolved += 1;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -110,7 +119,7 @@ async function main() {
 
   await client.close();
   console.log(
-    `\n✓ Tenant ${tenantId}: ${inserted} creados, ${updated} actualizados, ${mapsSeeded} permissionMap sembrados`
+    `\n✓ Tenant ${tenantId}: ${inserted} creados, ${updated} actualizados, ${mapsEvolved} permissionMap evolucionados`
   );
 }
 

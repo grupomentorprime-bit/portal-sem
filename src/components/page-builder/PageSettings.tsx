@@ -12,14 +12,14 @@ export function PageSettings({ page, onChange }: PageSettingsProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Título de la página</Label>
+        <Label>Nombre de la página</Label>
         <Input
           value={page.title}
           onChange={(e) => onChange({ title: e.target.value })}
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Slug</Label>
+        <Label>Dirección de la página</Label>
         <Input
           value={page.slug}
           onChange={(e) => onChange({ slug: e.target.value })}

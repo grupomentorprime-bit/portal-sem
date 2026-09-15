@@ -1,6 +1,11 @@
 import type { Db } from "mongodb";
 import type { IdentityAuditEntry, IdentityUser } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
+import {
+  createMongoGrowthAutomationStore,
+  ensureGrowthAutomationIndexes,
+  ensureGrowthStartupNextActionAutomation,
+} from "@/core/growth/automations";
 import { createDefaultSiteConfig } from "@/lib/cms/defaults";
 import {
   buildPlatformSubdomainHost,
@@ -129,6 +134,26 @@ async function writePlatformSpaceAudit(
   await db.collection<IdentityAuditEntry>("identity_audit").insertOne(entry);
 }
 
+/** Seed Growth de arranque (idempotente; fail-soft). */
+async function seedGrowthStartupAutomationSafe(
+  db: Db,
+  tenantId: string
+): Promise<void> {
+  try {
+    await ensureGrowthAutomationIndexes(db);
+    await ensureGrowthStartupNextActionAutomation(
+      createMongoGrowthAutomationStore(db),
+      tenantId
+    );
+  } catch (error) {
+    console.error(
+      "[Growth] startup nextAction automation seed failed (space preserved)",
+      tenantId,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
 /**
  * Alta de Espacio desde Platform Admin.
  * Reutiliza provisionTenantFoundation — sin segundo motor ni seeds SEM.
@@ -202,6 +227,8 @@ export async function createPlatformSpace(
         config: buildNeutralConfig(tenantId, name, siteName),
         membershipEmail: null,
       });
+
+      await seedGrowthStartupAutomationSafe(db, tenantId);
 
       await writePlatformSpaceAudit(db, {
         userId: actorUserId,
@@ -293,6 +320,8 @@ export async function createPlatformSpace(
       409
     );
   }
+
+  await seedGrowthStartupAutomationSafe(db, tenantId);
 
   const created =
     result.created.tenant ||

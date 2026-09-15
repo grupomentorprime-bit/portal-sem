@@ -1,0 +1,13 @@
+{
+  "tenantId": "adl",
+  "filterWithData": "ventas",
+  "emptyKind": "filtro",
+  "categoriesTried": [
+    "all",
+    "personas",
+    "ventas",
+    "mensajes",
+    "automatizaciones"
+  ],
+  "capturedAt": "2026-09-11T22:04:46.662Z"
+}

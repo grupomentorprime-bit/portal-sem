@@ -14,6 +14,10 @@ export interface GrowthAutomationStore {
     tenantId: string,
     automationId: string
   ): Promise<GrowthAutomation | null>;
+  findAutomationBySeedKey(
+    tenantId: string,
+    seedKey: string
+  ): Promise<GrowthAutomation | null>;
   listAutomations(tenantId: string): Promise<GrowthAutomation[]>;
 
   insertVersion(doc: GrowthAutomationVersion): Promise<GrowthAutomationVersion>;

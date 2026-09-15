@@ -83,6 +83,33 @@ export function resolveAppHostsFromEnv(
 }
 
 /**
+ * Host público presente en APP_URL / NEXT_PUBLIC_APP_URL.
+ * No incluye loopback: ese origen sigue siendo portal SEM de desarrollo.
+ */
+export function isPlatformOriginHost(
+  host: string | null | undefined,
+  env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
+): boolean {
+  const normalized = normalizeHost(host);
+  if (!normalized || isLoopbackHost(normalized)) return false;
+  return resolveAppHostsFromEnv(env).includes(normalized);
+}
+
+/**
+ * Sin Espacio resuelto, un host público entra a Growth OS (no al portal institucional).
+ * Loopback sin contexto se deja al empty-state de desarrollo.
+ */
+export function shouldEnterPlatformHome(
+  host: string | null | undefined,
+  hasPortalContext: boolean
+): boolean {
+  if (hasPortalContext) return false;
+  const normalized = normalizeHost(host);
+  if (!normalized || isLoopbackHost(normalized)) return false;
+  return true;
+}
+
+/**
  * Hosts de bootstrap SEM derivados del entorno.
  * Solo loopback: un APP_URL público (p. ej. host de plataforma) no se registra
  * como Domain legacy de T001.

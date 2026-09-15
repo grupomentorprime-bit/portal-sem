@@ -37,11 +37,13 @@ export {
   buildPlatformSubdomainHost,
   extractHostsFromAppUrls,
   isLoopbackHost,
+  isPlatformOriginHost,
   normalizeHost,
   resolveAppHostsFromEnv,
   resolvePlatformBaseDomain,
   resolveRequestHost,
   resolveSemBootstrapHostsFromEnv,
+  shouldEnterPlatformHome,
 } from "./hosts";
 
 export {

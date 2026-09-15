@@ -1,3 +1,4 @@
+export { CreatePageWizard } from "./CreatePageWizard";
 export { BlockEditor } from "./BlockEditor";
 export { BlockPalette } from "./BlockPalette";
 export { BlockPreview } from "./BlockPreview";

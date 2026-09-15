@@ -1,22 +1,36 @@
 import "server-only";
 
+import { createHash, randomBytes } from "node:crypto";
 import { getAppBaseUrl } from "@/lib/app-url";
+
+/** Cliente OAuth dedicado de Growth OS (confidential + Standard flow). */
+export const GROWTH_OS_KEYCLOAK_CLIENT_ID = "growth-os-web";
+
+/** Clientes históricos — no usar como fallback silencioso en producción. */
+const FORBIDDEN_PRODUCTION_CLIENT_IDS = new Set(["admin-cli", "seminario-ipn-web"]);
 
 export interface KeycloakConfig {
   url: string;
   realm: string;
   clientId: string;
-  /** Vacío = cliente público (sin secret), como admin-cli */
+  /** Obligatorio en producción para growth-os-web (cliente confidential). */
   clientSecret: string;
   redirectUri: string;
   publicClient: boolean;
 }
 
-export function isKeycloakEnabled(): boolean {
-  const cfg = getKeycloakConfig();
-  return Boolean(cfg);
+function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === "production";
 }
 
+export function isKeycloakEnabled(): boolean {
+  return Boolean(getKeycloakConfig());
+}
+
+/**
+ * Lee configuración Keycloak desde entorno.
+ * En producción: exige URL/realm/clientId/secret y rechaza clientes legacy (sin fallback).
+ */
 export function getKeycloakConfig(): KeycloakConfig | null {
   const url = process.env.KEYCLOAK_URL?.replace(/\/$/, "");
   const realm = process.env.KEYCLOAK_REALM?.trim();
@@ -24,7 +38,27 @@ export function getKeycloakConfig(): KeycloakConfig | null {
   const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET?.trim() ?? "";
 
   if (!url || !realm || !clientId) {
+    if (isProductionRuntime()) {
+      console.error(
+        "[keycloak] configuración incompleta en producción (KEYCLOAK_URL / KEYCLOAK_REALM / KEYCLOAK_CLIENT_ID)."
+      );
+    }
     return null;
+  }
+
+  if (isProductionRuntime()) {
+    if (FORBIDDEN_PRODUCTION_CLIENT_IDS.has(clientId)) {
+      console.error(
+        `[keycloak] cliente "${clientId}" no permitido en producción. Usa ${GROWTH_OS_KEYCLOAK_CLIENT_ID}.`
+      );
+      return null;
+    }
+    if (!clientSecret) {
+      console.error(
+        "[keycloak] KEYCLOAK_CLIENT_SECRET es obligatorio en producción (cliente confidential)."
+      );
+      return null;
+    }
   }
 
   const redirectUri =
@@ -43,6 +77,16 @@ export function getKeycloakConfig(): KeycloakConfig | null {
 
 export function getKeycloakIssuer(config: KeycloakConfig): string {
   return `${config.url}/realms/${config.realm}`;
+}
+
+/**
+ * PKCE S256 — verifier aleatorio (43–128 chars URL-safe).
+ * Solo se almacena en cookie httpOnly temporal; nunca se expone al frontend como dato reutilizable.
+ */
+export function createPkcePair(): { codeVerifier: string; codeChallenge: string } {
+  const codeVerifier = randomBytes(32).toString("base64url");
+  const codeChallenge = createHash("sha256").update(codeVerifier).digest("base64url");
+  return { codeVerifier, codeChallenge };
 }
 
 function buildClientAuthHeaders(config: KeycloakConfig): HeadersInit {
@@ -97,7 +141,10 @@ async function requestKeycloakToken(
   return res;
 }
 
-export function buildKeycloakAuthorizeUrl(state: string): string {
+export function buildKeycloakAuthorizeUrl(
+  state: string,
+  codeChallenge: string
+): string {
   const config = getKeycloakConfig();
   if (!config) {
     throw new Error("Keycloak no está configurado.");
@@ -110,23 +157,31 @@ export function buildKeycloakAuthorizeUrl(state: string): string {
     response_type: "code",
     scope: "openid profile email",
     state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
   });
 
   return `${issuer}/protocol/openid-connect/auth?${params.toString()}`;
 }
 
 export async function exchangeKeycloakCode(
-  code: string
+  code: string,
+  codeVerifier: string
 ): Promise<{ accessToken: string; idToken?: string }> {
   const config = getKeycloakConfig();
   if (!config) {
     throw new Error("Keycloak no está configurado.");
   }
 
+  if (!codeVerifier) {
+    throw new Error("Falta code_verifier PKCE.");
+  }
+
   const res = await requestKeycloakToken(config, {
     grant_type: "authorization_code",
     redirect_uri: config.redirectUri,
     code,
+    code_verifier: codeVerifier,
   });
 
   if (!res.ok) {
@@ -193,14 +248,14 @@ function parseTokenError(res: Response, body: { error?: string; error_descriptio
 
   if (errorCode === "invalid_client" || normalized.includes("invalid client")) {
     throw new KeycloakAuthError(
-      "El cliente institucional no existe en el realm o la configuración no coincide. Si usas cliente público, no necesitas secret.",
+      "El cliente institucional no existe en el realm o la configuración no coincide.",
       "misconfigured"
     );
   }
 
   if (errorCode === "unauthorized_client" || normalized.includes("direct access grants")) {
     throw new KeycloakAuthError(
-      "El inicio de sesión directo no está habilitado. Activa Direct access grants en el cliente institucional.",
+      "El grant solicitado no está habilitado en el cliente institucional.",
       "misconfigured"
     );
   }
@@ -225,7 +280,11 @@ function parseTokenError(res: Response, body: { error?: string; error_descriptio
   throw new KeycloakAuthError("No se pudo iniciar sesión.", "keycloak_unavailable");
 }
 
-/** Login embebido: valida usuario/contraseña (Direct Access Grants). */
+/**
+ * ROPC (Direct Access Grants) — login embebido de Growth OS.
+ * El navegador envía correo/contraseña a /api/identity/auth/keycloak/session;
+ * este grant habla con Keycloak en el servidor. Requiere DAG ON en el cliente.
+ */
 export async function loginWithKeycloakPassword(input: {
   username: string;
   password: string;

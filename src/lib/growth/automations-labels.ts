@@ -215,6 +215,8 @@ export function automationConditionRuleLabel(
       return `viene desde ${formatOriginChannel(rule.value)}`;
     case "origin.formDestination":
       return `el destino del formulario es ${formatOriginChannel(rule.value)}`;
+    case "origin.campaign":
+      return `la campaña es «${rule.value}»`;
     case "status":
       return `el estado es «${growthOpportunityStatusLabel(rule.value)}»`;
     case "typeKey":

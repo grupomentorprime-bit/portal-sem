@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { writeAudit } from "@/lib/identity/audit";
-import { findMembershipById, updateMembershipRoles, updateMembershipStatus, deleteMembership } from "@/lib/identity/memberships";
+import {
+  findMembershipById,
+  updateMembershipRoles,
+  updateMembershipStatus,
+  deleteMembership,
+  archiveMembershipAccess,
+} from "@/lib/identity/memberships";
 import {
   ensureTenantRoles,
   findRoleByCode,
@@ -17,8 +23,16 @@ import {
   getTargetRoleCode,
   isSystemAccountUser,
 } from "@/lib/identity/iam-guard";
+import {
+  assertSpaceKeepsAdministrator,
+  isSpaceAdministratorRole,
+  LAST_SPACE_ADMIN_ERROR,
+} from "@/lib/identity/last-admin";
 import { findUserById, updateUserStatus } from "@/lib/identity/users";
-import { deleteUserSessions } from "@/lib/identity/sessions";
+import {
+  deleteUserSessions,
+  reconcileSessionsAfterSpaceAccessRemoved,
+} from "@/lib/identity/sessions";
 import { ROLE_CODES, resolveRoleCode, type RoleCode } from "@/core/identity/roles/codes";
 
 interface RouteContext {
@@ -94,7 +108,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         });
       }
       return NextResponse.json(
-        { ok: false, error: "No se puede asignar el rol Super Admin." },
+        { ok: false, error: "No se puede asignar el rol Dueño del Espacio." },
         { status: 403 }
       );
     }
@@ -113,6 +127,25 @@ export async function PATCH(request: Request, context: RouteContext) {
         });
       }
       return NextResponse.json({ ok: false, error: assignCheck.error }, { status: 403 });
+    }
+
+    // D4: no degradar el último Dueño/Administrador activo.
+    if (
+      membership.status === "active" &&
+      isSpaceAdministratorRole(targetCode) &&
+      !isSpaceAdministratorRole(newRoleCode)
+    ) {
+      const lastAdmin = await assertSpaceKeepsAdministrator({
+        tenantId: ctx.tenantId,
+        membershipId,
+        remainsActiveAdmin: false,
+      });
+      if (!lastAdmin.ok) {
+        return NextResponse.json(
+          { ok: false, error: lastAdmin.error ?? LAST_SPACE_ADMIN_ERROR },
+          { status: 409 }
+        );
+      }
     }
 
     const updated = await updateMembershipRoles(membershipId, [role._id]);
@@ -148,7 +181,15 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-const MEMBER_ACTIONS = ["suspend", "block", "archive", "restore", "remove"] as const;
+/** Acciones legacy (otras superficies). Equipo V1 usa solo `remove-access`. */
+const MEMBER_ACTIONS = [
+  "suspend",
+  "block",
+  "archive",
+  "restore",
+  "remove",
+  "remove-access",
+] as const;
 type MemberAction = (typeof MEMBER_ACTIONS)[number];
 
 export async function DELETE(request: Request, context: RouteContext) {
@@ -202,10 +243,49 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json({ ok: false, error: manageCheck.error }, { status: 403 });
     }
 
+    if (action === "remove-access") {
+      // D2 + D4: solo membership de este Espacio; sin block / sin user.status; guarda último admin.
+      if (membership.status === "active" && isSpaceAdministratorRole(targetCode)) {
+        const lastAdmin = await assertSpaceKeepsAdministrator({
+          tenantId: ctx.tenantId,
+          membershipId,
+          remainsActiveAdmin: false,
+        });
+        if (!lastAdmin.ok) {
+          return NextResponse.json(
+            { ok: false, error: lastAdmin.error ?? LAST_SPACE_ADMIN_ERROR },
+            { status: 409 }
+          );
+        }
+      }
+
+      await archiveMembershipAccess(membershipId);
+      await reconcileSessionsAfterSpaceAccessRemoved(membership.userId, membership.tenantId);
+
+      if (!ctx.compatMode) {
+        await writeAudit({
+          tenantId: ctx.tenantId,
+          userId: ctx.user._id,
+          action: "membership.remove-access",
+          entity: "membership",
+          entityId: membershipId,
+          metadata: {
+            targetUserId: membership.userId,
+            action: "remove-access",
+            tenantScoped: true,
+            userStatusUntouched: true,
+          },
+        });
+      }
+
+      return NextResponse.json({ ok: true, action: "remove-access" });
+    }
+
     if (action === "suspend") {
       await updateMembershipStatus(membershipId, "suspended");
       await deleteUserSessions(membership.userId);
     } else if (action === "block") {
+      // Legacy: cuenta global. Equipo V1 no expone ni usa esta acción.
       await updateUserStatus(membership.userId, "suspended");
       await updateMembershipStatus(membershipId, "suspended");
       await deleteUserSessions(membership.userId);

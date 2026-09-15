@@ -53,6 +53,18 @@ const GROWTH_AUTOMATIONS_FULL: PermissionId[] = [
   "growth.automations.view", "growth.automations.manage",
 ];
 
+const GROWTH_CAMPAIGNS_FULL: PermissionId[] = [
+  "growth.campaigns.view", "growth.campaigns.manage",
+];
+
+const GROWTH_ANALYTICS_FULL: PermissionId[] = [
+  "growth.analytics.view",
+];
+
+const GROWTH_PEOPLE_FULL: PermissionId[] = [
+  "growth.people.view", "growth.people.manage",
+];
+
 /** Roles oficiales del Portal Institucional + CRM + Convocatorias (OT-IAM-SEM-001) */
 export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
   {
@@ -70,6 +82,9 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       ...EVENTS_FULL,
       ...GROWTH_SALES_FULL,
       ...GROWTH_AUTOMATIONS_FULL,
+      ...GROWTH_CAMPAIGNS_FULL,
+      ...GROWTH_ANALYTICS_FULL,
+      ...GROWTH_PEOPLE_FULL,
     ],
     system: true,
   },
@@ -86,6 +101,9 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       "identity.members.manage",
       ...GROWTH_SALES_FULL,
       ...GROWTH_AUTOMATIONS_FULL,
+      ...GROWTH_CAMPAIGNS_FULL,
+      ...GROWTH_ANALYTICS_FULL,
+      ...GROWTH_PEOPLE_FULL,
     ],
     system: true,
   },
@@ -104,6 +122,9 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       "identity.audit.read",
       ...GROWTH_SALES_FULL,
       ...GROWTH_AUTOMATIONS_FULL,
+      ...GROWTH_CAMPAIGNS_FULL,
+      ...GROWTH_ANALYTICS_FULL,
+      ...GROWTH_PEOPLE_FULL,
     ],
     system: true,
   },
@@ -117,6 +138,9 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       "students.read",
       ...GROWTH_SALES_FULL,
       ...GROWTH_AUTOMATIONS_FULL,
+      ...GROWTH_CAMPAIGNS_FULL,
+      ...GROWTH_ANALYTICS_FULL,
+      ...GROWTH_PEOPLE_FULL,
     ],
     system: true,
   },

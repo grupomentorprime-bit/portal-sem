@@ -16,6 +16,10 @@ import {
 } from "@/core/identity/roles/codes";
 import { getDefaultRolePermissionTemplate } from "@/core/identity/permissions/role-templates";
 import { granularToLegacyPermissions } from "@/core/identity/permissions/resolver";
+import {
+  isPlatformManagedSystemRole,
+  syncSystemRolePermissionState,
+} from "@/core/identity/permissions/sync-system-role";
 
 export function getRoleCode(role: IdentityRole): RoleCode | null {
   if (role.code) return resolveRoleCode(role.code);
@@ -120,21 +124,26 @@ export async function ensureTenantRoles(
       continue;
     }
 
+    // Solo roles platform-managed (`system === true`). No inferir por nombre.
+    if (!isPlatformManagedSystemRole(current)) {
+      continue;
+    }
+
     const updates: Partial<IdentityRole> = {};
     if (current.code !== template.code) updates.code = template.code;
     if (current.name !== template.name) updates.name = template.name;
     if (current.description !== template.description) updates.description = template.description;
 
-    if (current.system && !current.permissionMap) {
-      const permissionMap = getDefaultRolePermissionTemplate(template.code);
-      updates.permissionMap = permissionMap;
-      updates.permissionIds = granularToLegacyPermissions(permissionMap);
-    }
-
-    const templatePerms = [...template.permissionIds].sort().join(",");
-    const rolePerms = [...current.permissionIds].sort().join(",");
-    if (current.system && templatePerms !== rolePerms && !updates.permissionIds) {
-      updates.permissionIds = [...template.permissionIds];
+    // Evolucionar claves nuevas de plantilla; preservar personalizaciones presentes.
+    const synced = syncSystemRolePermissionState({
+      roleCode: template.code,
+      currentPermissionMap: current.permissionMap,
+      currentPermissionIds: current.permissionIds,
+      toPermissionIds: granularToLegacyPermissions,
+    });
+    if (synced.changed) {
+      updates.permissionMap = synced.permissionMap;
+      updates.permissionIds = synced.permissionIds;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -220,18 +229,18 @@ export async function ensureSuperAdminMembership(
   const { markUserAsSystemAccount } = await import("@/lib/identity/users");
   await markUserAsSystemAccount(userId);
 
-  const { findMembership, updateMembershipRoles, createMembership } = await import(
+  const { findMembershipAnyStatus, ensureActiveMembership } = await import(
     "@/lib/identity/memberships"
   );
-  const existing = await findMembership(userId, tenantId);
-  if (existing) {
-    const hasSuperAdmin = existing.roleIds.some((id) => id === superAdminRole._id);
-    if (!hasSuperAdmin) {
-      await updateMembershipRoles(existing._id, [superAdminRole._id]);
-    }
+  const existing = await findMembershipAnyStatus(userId, tenantId);
+  if (
+    existing &&
+    existing.status === "active" &&
+    existing.roleIds.some((id) => id === superAdminRole._id)
+  ) {
     return;
   }
-  await createMembership({
+  await ensureActiveMembership({
     tenantId,
     userId,
     roleIds: [superAdminRole._id],

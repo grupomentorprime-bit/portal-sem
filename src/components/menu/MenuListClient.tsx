@@ -21,17 +21,18 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { countVisibleItems } from "@/lib/cms/menu-utils";
-import { DEFAULT_MENUS } from "@/lib/cms/menu-defaults";
+import { PLATFORM_DEFAULT_MENUS } from "@/lib/cms/menu-defaults";
 import type { CmsMenu } from "@/types/menu";
 
 interface MenuListClientProps {
   initialMenus: CmsMenu[];
+  /** Seeds del Espacio; SEM solo cuando el caller pasa menús SEM (isSemTenant). */
   seedMenus?: CmsMenu[];
 }
 
 export function MenuListClient({
   initialMenus,
-  seedMenus = DEFAULT_MENUS,
+  seedMenus = PLATFORM_DEFAULT_MENUS,
 }: MenuListClientProps) {
   const router = useRouter();
   const [menus, setMenus] = useState(initialMenus);
@@ -202,11 +203,11 @@ export function MenuListClient({
     <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: "Portal", href: "/admin/pages" },
+        { label: "Sitio web", href: "/admin/pages" },
         { label: "Menús" },
       ]}
-      title="Menús del portal"
-      description="Navegación principal y secundaria del sitio institucional"
+      title="Menús"
+      description="Navegación principal y secundaria de tu sitio"
       actions={
         <>
           <Link href="/admin/pages">

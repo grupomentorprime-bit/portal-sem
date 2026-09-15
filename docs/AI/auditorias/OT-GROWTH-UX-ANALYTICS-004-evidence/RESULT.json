@@ -1,0 +1,24 @@
+{
+  "tenantId": "adl",
+  "permsPatched": false,
+  "capturedAt": "2026-09-12T03:11:35.832Z",
+  "last30d": {
+    "personasNuevas": 1,
+    "oportunidades": 1,
+    "conversionRate": 0,
+    "conversionCohort": 1,
+    "campaigns": 0,
+    "messages": 0,
+    "unanswered": 0
+  },
+  "campaignsShot": "omitido-sin-campañas-en-período",
+  "previousMonth": {
+    "personasNuevas": 0,
+    "oportunidades": 0,
+    "campaigns": 0
+  },
+  "conversionNull": {
+    "preset": "previous_month",
+    "cohort": 0
+  }
+}

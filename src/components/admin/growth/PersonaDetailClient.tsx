@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { ArrowLeft, CircleDot } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import {
   EmptyState,
   Section,
   StatusBadge,
-  Timeline,
   aek,
 } from "@/components/admin/kit";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
@@ -15,8 +14,19 @@ import { Button } from "@/components/ui/button";
 import { formatRelativeTime } from "@/lib/admin/audit-labels";
 import {
   GROWTH_NO_NEXT_ACTION_LABEL,
-  GROWTH_ORIGIN_SECTION_LABEL,
   GROWTH_NEXT_ACTION_SECTION_LABEL,
+  GROWTH_PERSONAS_ACTIVITY_EMPTY_DESCRIPTION,
+  GROWTH_PERSONAS_ACTIVITY_EMPTY_TITLE,
+  GROWTH_PERSONAS_ARRIVED_PREFIX,
+  GROWTH_PERSONAS_CONVERSATIONS_EMPTY_DESCRIPTION,
+  GROWTH_PERSONAS_CONVERSATIONS_EMPTY_TITLE,
+  GROWTH_PERSONAS_CONVERSATIONS_SECTION,
+  GROWTH_PERSONAS_OPEN_ACTIVITY,
+  GROWTH_PERSONAS_OPEN_IN_MESSAGES,
+  GROWTH_PERSONAS_OPEN_IN_SALES,
+  GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_DESCRIPTION,
+  GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_TITLE,
+  GROWTH_PERSONAS_PAGE_TITLE,
   GROWTH_RELATED_HISTORY_LABEL,
   GROWTH_TIMELINE_SECTION_LABEL,
   GROWTH_VIEW_DETAIL_LABEL,
@@ -24,6 +34,7 @@ import {
 import type {
   GrowthNextActionView,
   GrowthOportunidadView,
+  GrowthPersonaConversationView,
   GrowthPersonaDetailView,
 } from "@/lib/growth/persona-view";
 import { cn } from "@/lib/utils";
@@ -31,6 +42,9 @@ import { cn } from "@/lib/utils";
 export interface PersonaDetailClientProps {
   persona: GrowthPersonaDetailView;
   focusOportunidadId?: string;
+  canOpenSales?: boolean;
+  canOpenMessages?: boolean;
+  canOpenActivity?: boolean;
 }
 
 function formatWhen(iso?: string): string | null {
@@ -45,26 +59,22 @@ function formatWhen(iso?: string): string | null {
   }
 }
 
-function personaInitial(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "P";
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+function arrivedLabel(originLabel: string): string {
+  const trimmed = originLabel.trim();
+  if (!trimmed) return "Sin origen claro";
+  if (trimmed.toLowerCase().startsWith("llegó")) return trimmed;
+  return `${GROWTH_PERSONAS_ARRIVED_PREFIX} ${trimmed}`;
 }
-
-const detailCardClass = cn(
-  aek.surface,
-  "shadow-[var(--admin-shadow-panel)]"
-);
 
 function NextActionBlock({ action }: { action: GrowthNextActionView | null }) {
   if (!action) {
     return (
-      <div className={cn(detailCardClass, "px-5 py-5")}>
+      <div
+        className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-5 py-5"
+        data-persona-next-action="empty"
+      >
         <p className={aek.label}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-        <p className="mt-2 text-sm font-medium text-muted">
-          {GROWTH_NO_NEXT_ACTION_LABEL}
-        </p>
+        <p className="mt-2 text-sm text-muted">{GROWTH_NO_NEXT_ACTION_LABEL}</p>
       </div>
     );
   }
@@ -74,12 +84,13 @@ function NextActionBlock({ action }: { action: GrowthNextActionView | null }) {
   return (
     <div
       className={cn(
-        detailCardClass,
-        "border-primary/25 bg-[color-mix(in_srgb,var(--color-primary)_4%,white)] px-5 py-5"
+        "rounded-[var(--radius-lg)] border border-primary/20",
+        "bg-[color-mix(in_srgb,var(--color-primary)_4%,white)] px-5 py-5"
       )}
+      data-persona-next-action="pending"
     >
       <p className={aek.label}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-      <p className="mt-2 text-base font-semibold tracking-tight text-foreground">
+      <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
         {action.summary}
       </p>
       <p className="mt-1.5 text-sm text-muted">
@@ -91,7 +102,7 @@ function NextActionBlock({ action }: { action: GrowthNextActionView | null }) {
         href={`?oportunidad=${encodeURIComponent(action.oportunidadId)}#oportunidad-${action.oportunidadId}`}
         className="mt-3.5 inline-flex text-xs font-semibold text-primary hover:underline"
       >
-        {GROWTH_VIEW_DETAIL_LABEL} de la Oportunidad
+        Ver oportunidad
       </Link>
     </div>
   );
@@ -105,16 +116,16 @@ function opportunityStatusTone(
   return "info";
 }
 
-function OportunidadCard({
+function OportunidadRow({
   op,
-  personaName,
   focused,
   isPrimaryAction,
+  canOpenSales,
 }: {
   op: GrowthOportunidadView;
-  personaName: string;
   focused: boolean;
   isPrimaryAction: boolean;
+  canOpenSales: boolean;
 }) {
   const showOwnNextAction = !isPrimaryAction && (focused || Boolean(op.nextAction));
 
@@ -122,9 +133,8 @@ function OportunidadCard({
     <li
       id={`oportunidad-${op.id}`}
       className={cn(
-        detailCardClass,
-        "scroll-mt-24 px-5 py-5",
-        focused && "ring-2 ring-primary/35"
+        "scroll-mt-24 border-b border-[var(--admin-border-subtle)] py-4 last:border-b-0",
+        focused && "rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-primary)_3%,white)] px-3 -mx-1"
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -133,13 +143,7 @@ function OportunidadCard({
             {op.typeLabel}
             {op.subjectLabel ? ` · ${op.subjectLabel}` : ""}
           </p>
-          {focused ? (
-            <p className="mt-1.5 text-xs text-muted">Persona: {personaName}</p>
-          ) : null}
-          <p className={cn("text-xs text-muted", focused ? "mt-1" : "mt-1.5")}>
-            {focused ? `${GROWTH_ORIGIN_SECTION_LABEL}: ` : null}
-            {op.originLabel}
-          </p>
+          <p className="mt-1 text-sm text-muted">{op.originLabel}</p>
         </div>
         <StatusBadge tone={opportunityStatusTone(op.status)} label={op.statusLabel} />
       </div>
@@ -148,7 +152,9 @@ function OportunidadCard({
         <p className="mt-3 text-sm text-muted">
           {op.nextAction ? (
             <>
-              <span className="font-medium text-foreground">{op.nextAction.summary}</span>
+              <span className="font-medium text-foreground">
+                {op.nextAction.summary}
+              </span>
               {op.nextAction.dueAt ? ` · ${formatWhen(op.nextAction.dueAt)}` : ""}
             </>
           ) : (
@@ -162,7 +168,7 @@ function OportunidadCard({
           <p className={aek.label}>{GROWTH_RELATED_HISTORY_LABEL}</p>
           {op.relatedActivities.length === 0 ? (
             <p className="mt-1.5 text-sm text-muted">
-              Todavía no hay hechos ligados a esta Oportunidad.
+              Todavía no hay hechos ligados a esta oportunidad.
             </p>
           ) : (
             <ul className="mt-2.5 space-y-2">
@@ -180,15 +186,70 @@ function OportunidadCard({
               })}
             </ul>
           )}
+          {canOpenSales ? (
+            <Link
+              href={`/admin/ventas/${encodeURIComponent(op.id)}`}
+              className="mt-3.5 inline-flex text-xs font-semibold text-primary hover:underline"
+            >
+              {GROWTH_PERSONAS_OPEN_IN_SALES}
+            </Link>
+          ) : null}
         </div>
       ) : (
-        <Link
-          href={`?oportunidad=${encodeURIComponent(op.id)}#oportunidad-${op.id}`}
-          className="mt-3.5 inline-flex text-xs font-semibold text-primary hover:underline"
-        >
-          {GROWTH_VIEW_DETAIL_LABEL}
-        </Link>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Link
+            href={`?oportunidad=${encodeURIComponent(op.id)}#oportunidad-${op.id}`}
+            className="inline-flex text-xs font-semibold text-primary hover:underline"
+          >
+            {GROWTH_VIEW_DETAIL_LABEL}
+          </Link>
+          {canOpenSales ? (
+            <Link
+              href={`/admin/ventas/${encodeURIComponent(op.id)}`}
+              className="inline-flex text-xs font-semibold text-primary hover:underline"
+            >
+              {GROWTH_PERSONAS_OPEN_IN_SALES}
+            </Link>
+          ) : null}
+        </div>
       )}
+    </li>
+  );
+}
+
+function ConversationRow({
+  conversation,
+  canOpenMessages,
+}: {
+  conversation: GrowthPersonaConversationView;
+  canOpenMessages: boolean;
+}) {
+  return (
+    <li className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--admin-border-subtle)] py-3.5 last:border-b-0">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <p className="text-sm font-semibold text-foreground">
+            {conversation.channelLabel}
+          </p>
+          {conversation.statusLabel ? (
+            <span className="text-xs text-muted">{conversation.statusLabel}</span>
+          ) : null}
+          {conversation.timeLabel ? (
+            <span className="text-xs text-muted">{conversation.timeLabel}</span>
+          ) : null}
+        </div>
+        <p className="mt-1 line-clamp-2 text-sm text-muted">
+          {conversation.lastMessagePreview || "Sin mensajes aún"}
+        </p>
+      </div>
+      {canOpenMessages ? (
+        <Link
+          href={`/admin/mensajes?c=${encodeURIComponent(conversation.id)}`}
+          className="inline-flex shrink-0 text-xs font-semibold text-primary hover:underline"
+        >
+          {GROWTH_PERSONAS_OPEN_IN_MESSAGES}
+        </Link>
+      ) : null}
     </li>
   );
 }
@@ -196,6 +257,9 @@ function OportunidadCard({
 export function PersonaDetailClient({
   persona,
   focusOportunidadId,
+  canOpenSales = false,
+  canOpenMessages = false,
+  canOpenActivity = false,
 }: PersonaDetailClientProps) {
   useEffect(() => {
     if (!focusOportunidadId) return;
@@ -203,93 +267,83 @@ export function PersonaDetailClient({
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [focusOportunidadId]);
 
-  const timelineItems = persona.activities.map((a) => ({
-    id: a.id,
-    title: a.summary,
-    description: a.kindLabel === a.summary ? undefined : a.kindLabel,
-    time: formatRelativeTime(a.occurredAt),
-  }));
+  const conversations = persona.conversations ?? [];
+  const contactLine = [persona.email, persona.phone].filter(Boolean);
 
   return (
     <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: "Personas", href: "/admin/personas" },
+        { label: GROWTH_PERSONAS_PAGE_TITLE, href: "/admin/personas" },
         { label: persona.displayName },
       ]}
       title={persona.displayName}
-      description="Quién es, qué quiere y qué ha pasado."
+      description={arrivedLabel(persona.originLabel)}
       actions={
         <Button href="/admin/personas" variant="outline" size="sm">
           <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Personas
+          {GROWTH_PERSONAS_PAGE_TITLE}
         </Button>
       }
     >
-      <div className={aek.sectionGap}>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <div className={cn(detailCardClass, "px-5 py-5")}>
-            <div className="flex items-start gap-3.5">
-              <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[color-mix(in_srgb,var(--color-primary)_10%,white)] text-sm font-bold tracking-tight text-[var(--color-primary)]"
-                aria-hidden
-              >
-                {personaInitial(persona.displayName)}
-              </span>
-              <div className="min-w-0">
-                <p className={aek.label}>Persona</p>
-                <p className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-                  {persona.displayName}
-                </p>
-              </div>
-            </div>
-            <dl className="mt-5 grid gap-4 border-t border-[var(--admin-border-subtle)] pt-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-xs text-muted">Correo</dt>
-                <dd className="mt-0.5 text-sm font-medium text-foreground">
-                  {persona.email ?? "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Teléfono</dt>
-                <dd className="mt-0.5 text-sm font-medium text-foreground">
-                  {persona.phone ?? "—"}
-                </dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-xs text-muted">{GROWTH_ORIGIN_SECTION_LABEL}</dt>
-                <dd className="mt-0.5 text-sm font-medium text-foreground">
-                  {persona.originLabel}
-                  {persona.originCapturedAt
-                    ? ` · ${formatWhen(persona.originCapturedAt) ?? ""}`
-                    : ""}
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          <NextActionBlock action={persona.primaryNextAction} />
+      <div className={aek.sectionGap} data-persona-detail>
+        <div className="space-y-1">
+          {contactLine.length > 0 ? (
+            <p className="text-sm text-muted">{contactLine.join(" · ")}</p>
+          ) : (
+            <p className="text-sm text-muted">Sin correo ni teléfono</p>
+          )}
         </div>
 
-        <Section title="Oportunidades" description="Qué quiere esta Persona.">
+        <NextActionBlock action={persona.primaryNextAction} />
+
+        <Section
+          title="Oportunidades"
+          description="Qué quiere esta persona."
+        >
           {persona.oportunidades.length === 0 ? (
             <EmptyState
-              title="Sin Oportunidades"
-              description="Todavía no hay una intención registrada para esta Persona."
-              icon={<CircleDot className="h-7 w-7" />}
-              className="bg-[var(--admin-surface)] shadow-[var(--admin-shadow-panel)]"
+              title={GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_TITLE}
+              description={GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_DESCRIPTION}
+              className="bg-[var(--admin-surface)] py-10"
             />
           ) : (
-            <ul className="space-y-3">
+            <ul className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-4 sm:px-5">
               {persona.oportunidades.map((op) => (
-                <OportunidadCard
+                <OportunidadRow
                   key={op.id}
                   op={op}
-                  personaName={persona.displayName}
                   focused={focusOportunidadId === op.id}
                   isPrimaryAction={
                     persona.primaryNextAction?.oportunidadId === op.id
                   }
+                  canOpenSales={canOpenSales}
+                />
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <Section
+          title={GROWTH_PERSONAS_CONVERSATIONS_SECTION}
+          description="Contexto reciente, sin bandeja."
+        >
+          {conversations.length === 0 ? (
+            <EmptyState
+              title={GROWTH_PERSONAS_CONVERSATIONS_EMPTY_TITLE}
+              description={GROWTH_PERSONAS_CONVERSATIONS_EMPTY_DESCRIPTION}
+              className="bg-[var(--admin-surface)] py-10"
+            />
+          ) : (
+            <ul
+              className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-4 sm:px-5"
+              data-persona-conversations
+            >
+              {conversations.map((c) => (
+                <ConversationRow
+                  key={c.id}
+                  conversation={c}
+                  canOpenMessages={canOpenMessages}
                 />
               ))}
             </ul>
@@ -300,17 +354,60 @@ export function PersonaDetailClient({
           title={GROWTH_TIMELINE_SECTION_LABEL}
           description="Hechos recientes, del más nuevo al más antiguo."
         >
-          {timelineItems.length === 0 ? (
+          {persona.activities.length === 0 ? (
             <EmptyState
-              title="Todavía no hay hechos"
-              description="Cuando haya actividad relacionada, se verá aquí."
-              className="bg-[var(--admin-surface)] shadow-[var(--admin-shadow-panel)]"
+              title={GROWTH_PERSONAS_ACTIVITY_EMPTY_TITLE}
+              description={GROWTH_PERSONAS_ACTIVITY_EMPTY_DESCRIPTION}
+              className="bg-[var(--admin-surface)] py-10"
             />
           ) : (
-            <div className={cn(detailCardClass, "px-5 py-5")}>
-              <Timeline items={timelineItems} />
-            </div>
+            <ol
+              className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-5 py-4"
+              data-persona-activity
+            >
+              {persona.activities.map((a, index) => {
+                const kindDiffers = a.kindLabel !== a.summary;
+                return (
+                  <li
+                    key={a.id}
+                    className={cn(
+                      "relative flex gap-3 pb-4 last:pb-0",
+                      index < persona.activities.length - 1 &&
+                        "after:absolute after:left-[5px] after:top-3 after:h-[calc(100%-4px)] after:w-px after:bg-[var(--admin-border-subtle)]"
+                    )}
+                  >
+                    <span
+                      className="relative z-[1] mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full border-2 border-primary/50 bg-[var(--admin-surface)]"
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span className="text-sm font-medium text-foreground">
+                          {a.summary}
+                        </span>
+                        <time className="text-xs text-muted">
+                          {formatRelativeTime(a.occurredAt)}
+                        </time>
+                      </div>
+                      {kindDiffers ? (
+                        <p className="mt-0.5 text-sm text-muted">{a.kindLabel}</p>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           )}
+          {canOpenActivity ? (
+            <div className="mt-3">
+              <Link
+                href="/admin/actividad"
+                className="inline-flex text-xs font-semibold text-primary hover:underline"
+              >
+                {GROWTH_PERSONAS_OPEN_ACTIVITY}
+              </Link>
+            </div>
+          ) : null}
         </Section>
       </div>
     </AdminModulePage>

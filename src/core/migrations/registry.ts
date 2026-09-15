@@ -18,6 +18,10 @@ import { migration017GrowthAutomationRuns } from "@/core/migrations/017-growth-a
 import { migration018GrowthMessaging } from "@/core/migrations/018-growth-messaging";
 import { migration019GrowthWhatsApp } from "@/core/migrations/019-growth-whatsapp";
 import { migration020GrowthWhatsAppOutbound } from "@/core/migrations/020-growth-whatsapp-outbound";
+import { migration021GrowthCampaigns } from "@/core/migrations/021-growth-campaigns";
+import { migration022GrowthAnalytics } from "@/core/migrations/022-growth-analytics";
+import { migration023GrowthTeamMembershipUnique } from "@/core/migrations/023-growth-team-membership-unique";
+import { migration024GrowthStartupNextAction } from "@/core/migrations/024-growth-startup-next-action";
 import type { MigrationDefinition } from "@/core/migrations/types";
 
 /** Registro ordenado de migraciones — añadir nuevas al final */
@@ -42,6 +46,10 @@ export const MIGRATIONS: MigrationDefinition[] = [
   migration018GrowthMessaging,
   migration019GrowthWhatsApp,
   migration020GrowthWhatsAppOutbound,
+  migration021GrowthCampaigns,
+  migration022GrowthAnalytics,
+  migration023GrowthTeamMembershipUnique,
+  migration024GrowthStartupNextAction,
 ];
 
 export function getMigrationById(id: string): MigrationDefinition | undefined {

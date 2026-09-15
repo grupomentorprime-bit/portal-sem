@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
 import Link from "next/link";
-import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
 
 const OAUTH_ERRORS: Record<string, string> = {
   keycloak: "No se pudo completar el inicio de sesión.",
-  oauth_state: "La sesión de autenticación expiró. Intenta de nuevo.",
+  oauth_state: "La sesión de autenticación expiró o no es válida. Intenta de nuevo.",
+  oauth_pkce: "No se pudo validar el inicio de sesión. Intenta de nuevo.",
   email: "No se pudo validar el correo de tu Cuenta.",
   no_access:
     "Tu Cuenta no tiene acceso a un Espacio. Solicita una invitación al administrador.",
@@ -43,15 +43,19 @@ export function LoginForm() {
     }
   }, [emailFromQuery]);
 
-  useEffect(() => {
+  useDeferredEffect(() => {
+    let cancelled = false;
     fetch("/api/identity/auth/providers")
       .then((res) => res.json())
       .then((data) => {
-        if (!data.ok) return;
+        if (cancelled || !data.ok) return;
         setInstitutionalOnly(data.providers?.institutionalOnly === true);
         setAuthReady(data.providers?.institutional === true);
       })
       .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -63,21 +67,27 @@ export function LoginForm() {
       const res = await fetch("/api/identity/auth/keycloak/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          next: nextParam,
+        }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        redirectTo?: string;
+      };
 
       if (!data.ok) {
         setError(data.error ?? "No se pudo iniciar sesión.");
         return;
       }
 
-      const destination = resolvePostAuthDestination({
-        hasSpace: data.hasSpace === true,
-        isPlatformOperator: data.isPlatformOperator === true,
-        next: nextParam,
-      });
-      // Navegación completa para que el navegador aplique la cookie de sesión recién emitida.
+      const destination =
+        data.redirectTo?.startsWith("/") && !data.redirectTo.startsWith("//")
+          ? data.redirectTo
+          : "/admin";
       window.location.assign(destination);
     } catch {
       setError("No se pudo conectar con el servidor.");
@@ -106,7 +116,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="email">Correo de Cuenta</Label>
+        <Label htmlFor="email">Correo</Label>
         <Input
           id="email"
           type="email"

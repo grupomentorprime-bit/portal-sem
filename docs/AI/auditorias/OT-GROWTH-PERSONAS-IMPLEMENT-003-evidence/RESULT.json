@@ -1,0 +1,30 @@
+{
+  "ot": "OT-GROWTH-PERSONAS-IMPLEMENT-003",
+  "agent": "AGENTE 2",
+  "date": "2026-09-12",
+  "verdict": "APTO",
+  "blocks": {
+    "A": "listado + filtro origen + permisos",
+    "B": "ficha + conversaciones + humanización WhatsApp",
+    "C": "crear via upsertGrowthPersona",
+    "D": "CTAs fail-safe Ventas/Mensajes/Actividad"
+  },
+  "tests": {
+    "focal": "tests/baseline/growth-personas-003.test.ts — PASS",
+    "core007": "tests/baseline/growth-personas-ui.test.ts + growth-personas.test.ts — PASS",
+    "regressions": "messaging-004, activity-001, sales-001, sales-001a, shell-002a, master — PASS"
+  },
+  "typecheck": {
+    "personas_ot_errors": 0,
+    "global_baseline_errors": [
+      "src/lib/growth/actividad-view.ts — ActivityFeedSourceProps/MessageFeedSourceProps (ajeno)",
+      "tests/baseline/growth-campaigns-003.test.ts — createdAt (ajeno)",
+      "tests/baseline/platform-host-isolation.test.ts — ObjectId (ajeno)"
+    ]
+  },
+  "notes": [
+    "Sin datos productivos inventados",
+    "Evidencia vía fixtures/memory store + source assertions",
+    "Pendiente pasada visual AGENTE 1"
+  ]
+}

@@ -69,6 +69,10 @@ export function pickEmailOrigin(input: {
   return "";
 }
 
+/**
+ * Nombre visible del From: institution del Espacio, o Growth OS si no hay config.
+ * El buzón técnico de transporte (env de proceso) no define este display name.
+ */
 export function resolveEmailIdentity(input: {
   config?: SiteConfig | null;
   tenantId?: string;

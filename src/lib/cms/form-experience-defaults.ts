@@ -3,6 +3,7 @@ import {
   FORM_LANDINGS,
   type FormLandingHighlight,
 } from "@/lib/admin/forms-center";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { formUnavailabilityCopy } from "@/lib/experience/forms/status";
 import type {
   ExperienceFormExperience,
@@ -156,13 +157,16 @@ function buildFromLanding(
     states: defaultStates(),
     banners: [],
     counter: { enabled: false, label: "Faltan", mode: "days_until" },
-    footer: {
-      enabled: true,
-      contactEmail: "contacto@sem.cl",
-      pastoralMessage: "Que el Señor guíe tu camino formativo.",
-      copyright: "© Seminario Eclesiástico Mayor. Todos los derechos reservados.",
-      socialLinks: [],
-    },
+    footer: isSemTenant(tenant)
+      ? {
+          enabled: true,
+          contactEmail: "contacto@sem.cl",
+          pastoralMessage: "Que el Señor guíe tu camino formativo.",
+          copyright:
+            "© Seminario Eclesiástico Mayor. Todos los derechos reservados.",
+          socialLinks: [],
+        }
+      : { enabled: false, socialLinks: [] },
     faq: { enabled: false, title: "Preguntas frecuentes", items: [] },
     contact: { enabled: false, title: "¿Necesitas ayuda?", body: "" },
     seo: {
@@ -194,8 +198,13 @@ export function buildDefaultFormExperience(
   formId: string,
   formName?: string
 ): ExperienceFormExperience {
-  const staticLanding = FORM_LANDINGS.find((item) => item.formId === formId);
-  const convocatoria = FORM_CONVOCATORIAS.find((item) => item.formId === formId);
+  const semPack = isSemTenant(tenant);
+  const staticLanding = semPack
+    ? FORM_LANDINGS.find((item) => item.formId === formId)
+    : undefined;
+  const convocatoria = semPack
+    ? FORM_CONVOCATORIAS.find((item) => item.formId === formId)
+    : undefined;
 
   if (convocatoria?.landing) {
     const experience = buildFromLanding(tenant, formId, convocatoria.landing);

@@ -40,6 +40,9 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["events.view", true], ["events.manage", true], ["events.replay", false],
     ["growth.sales.view", true], ["growth.sales.operate", true],
     ["growth.automations.view", true], ["growth.automations.manage", true],
+    ["growth.campaigns.view", true], ["growth.campaigns.manage", true],
+    ["growth.analytics.view", true],
+    ["growth.people.view", true], ["growth.people.manage", true],
     ["academic.students.view", true], ["academic.finance.view", false], ["academic.finance.manage", false],
   ]),
 
@@ -60,6 +63,9 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["events.view", true], ["events.manage", false], ["events.replay", false],
     ["growth.sales.view", true], ["growth.sales.operate", true],
     ["growth.automations.view", true], ["growth.automations.manage", true],
+    ["growth.campaigns.view", true], ["growth.campaigns.manage", true],
+    ["growth.analytics.view", true],
+    ["growth.people.view", true], ["growth.people.manage", true],
     ["academic.students.view", true], ["academic.finance.view", false], ["academic.finance.manage", false],
   ]),
 
@@ -70,6 +76,9 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["portal.pages.view", true],
     ["growth.sales.view", true], ["growth.sales.operate", true],
     ["growth.automations.view", true], ["growth.automations.manage", true],
+    ["growth.campaigns.view", true], ["growth.campaigns.manage", true],
+    ["growth.analytics.view", true],
+    ["growth.people.view", true], ["growth.people.manage", true],
     ["academic.students.view", true],
   ]),
 

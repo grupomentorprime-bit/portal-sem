@@ -64,6 +64,27 @@ export async function deleteUserSessions(userId: string): Promise<void> {
   await db.collection<IdentitySession>("identity_sessions").deleteMany({ userId });
 }
 
+/**
+ * Tras quitar acceso de un Espacio: reconcilia solo sesiones cuyo activeTenantId
+ * era ese Espacio. No expulsa sesiones de otros tenants (D2 / S5).
+ */
+export async function reconcileSessionsAfterSpaceAccessRemoved(
+  userId: string,
+  removedTenantId: string
+): Promise<void> {
+  const db = await getDatabase();
+  const sessions = await db
+    .collection<IdentitySession>("identity_sessions")
+    .find({ userId, tenantId: removedTenantId })
+    .toArray();
+  if (sessions.length === 0) return;
+
+  const { reconcileSessionActiveTenant } = await import("@/lib/identity/active-space");
+  for (const session of sessions) {
+    await reconcileSessionActiveTenant(session);
+  }
+}
+
 export async function setSessionCookie(sessionId: string): Promise<void> {
   const jar = await cookies();
   const h = await headers();

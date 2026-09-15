@@ -22,6 +22,7 @@ export type NavGroupId =
   | "automatizaciones"
   | "analitica"
   | "sitio-web"
+  | "institucion"
   | "equipo"
   | "ajustes"
   /** @deprecated Conservados para imports / tipos legacy */
@@ -142,10 +143,8 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         icon: "people",
         matchPrefixes: ["/admin/personas"],
         requiredAnyPermission: [
-          "cms.pages.read",
-          "experience.forms.read",
-          "experience.forms.manage",
-          "settings.team",
+          "growth.people.view",
+          "growth.people.manage",
         ],
       },
     ],
@@ -187,11 +186,11 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     items: [
       {
         id: "nav-actividad",
-        href: "/admin/settings/activity",
+        href: "/admin/actividad",
         label: "Actividad",
         icon: "activity",
-        matchPrefixes: ["/admin/settings/activity"],
-        requiredAnyPermission: ["identity.audit.read", "settings.team"],
+        matchPrefixes: ["/admin/actividad"],
+        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
       },
     ],
   },
@@ -202,9 +201,14 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     items: [
       {
         id: "nav-campanas",
-        href: null,
+        href: "/admin/campanas",
         label: "Campañas",
         icon: "campaigns",
+        matchPrefixes: ["/admin/campanas"],
+        requiredAnyPermission: [
+          "growth.campaigns.view",
+          "growth.campaigns.manage",
+        ],
       },
     ],
   },
@@ -233,9 +237,11 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     items: [
       {
         id: "nav-analitica",
-        href: null,
+        href: "/admin/analitica",
         label: "Analítica",
         icon: "analytics",
+        matchPrefixes: ["/admin/analitica"],
+        requiredAnyPermission: ["growth.analytics.view"],
       },
     ],
   },
@@ -247,10 +253,25 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
       {
         id: "portal-pages",
         href: "/admin/pages",
-        label: "Portal",
+        label: "Páginas",
         icon: "portal",
         matchPrefixes: ["/admin/pages"],
         requiredAnyPermission: ["cms.pages.read", "cms.pages.update"],
+      },
+      {
+        id: "convocatorias-config",
+        href: "/admin/portal/forms",
+        label: "Formularios",
+        icon: "admission",
+        matchPrefixes: [
+          "/admin/portal/forms",
+          "/admin/portal/convocatorias/configuracion",
+        ],
+        requiredAnyPermission: [
+          "cms.pages.read",
+          "experience.forms.read",
+          "experience.forms.manage",
+        ],
       },
       {
         id: "portal-menus",
@@ -261,21 +282,28 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         requiredAnyPermission: ["cms.menus.read"],
       },
       {
-        id: "portal-studio",
-        href: "/admin/experience-studio",
-        label: "Editor visual",
-        icon: "portal",
-        matchPrefixes: ["/admin/experience-studio"],
-        requiredAnyPermission: ["cms.pages.update", "experience.forms.manage"],
+        id: "site-domain",
+        href: "/admin/site/domain",
+        label: "Dominio",
+        icon: "site",
+        matchPrefixes: ["/admin/site/domain"],
+        requiredAnyPermission: ["settings.update", "cms.pages.read"],
       },
       {
         id: "institution-info",
         href: "/admin/config",
-        label: "Institución",
+        label: "Ajustes del sitio",
         icon: "institution",
         matchPrefixes: ["/admin/config"],
         requiredAnyPermission: ["settings.update"],
       },
+    ],
+  },
+  {
+    id: "institucion",
+    label: "Institución",
+    icon: "institution",
+    items: [
       {
         id: "institution-authorities",
         href: "/admin/content/people",
@@ -299,48 +327,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         icon: "programs",
         matchPrefixes: ["/admin/content/courses"],
         requiredAnyPermission: ["programs.manage", "cms.pages.read"],
-      },
-      {
-        id: "convocatorias-config",
-        href: "/admin/portal/forms",
-        label: "Formularios",
-        icon: "admission",
-        matchPrefixes: [
-          "/admin/portal/forms",
-          "/admin/portal/convocatorias/configuracion",
-        ],
-        requiredAnyPermission: [
-          "cms.pages.read",
-          "experience.forms.read",
-          "experience.forms.manage",
-        ],
-      },
-      {
-        id: "convocatorias-resultados",
-        href: "/admin/portal/asuntos-estudiantiles",
-        label: "Operación de formularios",
-        icon: "students",
-        matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
-        requiredAnyPermission: [
-          "student-affairs.read",
-          "student-affairs.checkin",
-          "student-affairs.manage",
-          "experience.forms.read",
-          "experience.forms.manage",
-        ],
-      },
-      {
-        id: "portal-admission",
-        href: "/admin/portal/admission",
-        label: "Centro de admisión",
-        icon: "admission",
-        matchPrefixes: ["/admin/portal/admission"],
-        requiredAnyPermission: [
-          "cms.pages.read",
-          "experience.forms.read",
-          "experience.forms.manage",
-          "students.read",
-        ],
       },
       {
         id: "communications-hub",
@@ -371,6 +357,33 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/media"],
         requiredAnyPermission: ["cms.media.read", "cms.media.upload"],
       },
+      {
+        id: "portal-admission",
+        href: "/admin/portal/admission",
+        label: "Centro de admisión",
+        icon: "admission",
+        matchPrefixes: ["/admin/portal/admission"],
+        requiredAnyPermission: [
+          "cms.pages.read",
+          "experience.forms.read",
+          "experience.forms.manage",
+          "students.read",
+        ],
+      },
+      {
+        id: "convocatorias-resultados",
+        href: "/admin/portal/asuntos-estudiantiles",
+        label: "Operación de formularios",
+        icon: "students",
+        matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
+        requiredAnyPermission: [
+          "student-affairs.read",
+          "student-affairs.checkin",
+          "student-affairs.manage",
+          "experience.forms.read",
+          "experience.forms.manage",
+        ],
+      },
     ],
   },
   {
@@ -383,7 +396,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         href: "/admin/settings/team",
         label: "Equipo",
         icon: "team",
-        matchPrefixes: ["/admin/settings/team"],
+        matchPrefixes: ["/admin/settings/team", "/admin/settings/users"],
         requiredAnyPermission: ["settings.team"],
       },
     ],
@@ -395,10 +408,11 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     items: [
       {
         id: "config-administration",
-        href: "/admin/settings/users",
-        label: "Usuarios",
+        href: "/admin/settings/team",
+        label: "Equipo",
         icon: "admin",
         matchPrefixes: [
+          "/admin/settings/team",
           "/admin/settings/users",
           "/admin/workflows",
           "/admin/events",
@@ -426,6 +440,14 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         icon: "admin",
         matchPrefixes: ["/admin/settings/security"],
         requiredAnyPermission: ["settings.team", "identity.roles.manage"],
+      },
+      {
+        id: "config-activity-audit",
+        href: "/admin/settings/activity",
+        label: "Auditoría",
+        icon: "activity",
+        matchPrefixes: ["/admin/settings/activity"],
+        requiredAnyPermission: ["identity.audit.read", "settings.team"],
       },
       {
         id: "config-channels",
@@ -587,7 +609,7 @@ export const NAV_SIDEBAR_ZONES: NavSidebarZone[] = [
   },
   {
     id: "tools",
-    groupIds: ["sitio-web", "equipo", "ajustes"],
+    groupIds: ["sitio-web", "institucion", "equipo", "ajustes"],
   },
 ];
 

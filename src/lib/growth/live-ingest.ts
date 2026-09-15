@@ -1,6 +1,7 @@
 /**
- * OT-GROWTH-CORE-005 — cableado de producción (fail-soft) tras persistir la fuente.
+ * OT-GROWTH-CORE-005 / E2E-FIX-001 — cableado de producción (fail-soft) tras persistir la fuente.
  * No reemplaza portal_interesados ni submissions; no altera el handoff académico.
+ * Asegura el playbook de arranque antes de proyectar (Captura → nextAction).
  */
 
 import "server-only";
@@ -14,15 +15,42 @@ import {
   toGrowthFormInput,
   type GrowthIngestDeps,
 } from "@/core/growth";
+import {
+  createMongoGrowthAutomationStore,
+  ensureGrowthAutomationIndexes,
+  ensureGrowthStartupNextActionAutomation,
+} from "@/core/growth/automations";
 import type { PortalInteresado } from "@/types/admission";
 import type { ExperienceFormSubmission } from "@/types/experience-forms";
 import { getDatabase } from "@/lib/mongodb";
 import { createGrowthEventBusAdapter } from "./event-bus";
 import { createMongoGrowthOpportunityWorkflow } from "./opportunity-workflow";
 
-async function openLiveIngestDeps(): Promise<GrowthIngestDeps> {
+async function ensureStartupNextActionAutomationSafe(
+  db: Awaited<ReturnType<typeof getDatabase>>,
+  tenantId: string
+): Promise<void> {
+  try {
+    await ensureGrowthAutomationIndexes(db);
+    await ensureGrowthStartupNextActionAutomation(
+      createMongoGrowthAutomationStore(db),
+      tenantId
+    );
+  } catch (error) {
+    console.error(
+      "[Growth Core] startup nextAction ensure failed (ingest continues)",
+      tenantId,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
+async function openLiveIngestDeps(
+  tenantId: string
+): Promise<GrowthIngestDeps> {
   const db = await getDatabase();
   await ensureGrowthCoreIndexes(db);
+  await ensureStartupNextActionAutomationSafe(db, tenantId);
   const [personas, oportunidades] = await Promise.all([
     openGrowthPersonaStore(db),
     openGrowthOpportunityStore(db),
@@ -41,7 +69,7 @@ export async function ingestInteresadoToGrowthSafe(
 ): Promise<void> {
   if (!interesado._id) return;
   try {
-    const deps = await openLiveIngestDeps();
+    const deps = await openLiveIngestDeps(interesado.tenant);
     await projectGrowthFromSignalSafe(
       deps,
       toGrowthAdmissionInput({
@@ -72,7 +100,16 @@ export async function ingestFormSubmissionToGrowthSafe(
 ): Promise<void> {
   if (!submission._id) return;
   try {
-    const deps = await openLiveIngestDeps();
+    const deps = await openLiveIngestDeps(submission.tenant);
+    // OT-GROWTH-CAMPAIGNS-003 — bridge fail-safe: campaña active del Espacio por formId.
+    const { resolveFormCampaignTrackingKeyForIngest } = await import(
+      "./campaigns"
+    );
+    const campaign =
+      (await resolveFormCampaignTrackingKeyForIngest(
+        submission.tenant,
+        submission.formId
+      )) ?? undefined;
     await projectGrowthFromSignalSafe(
       deps,
       toGrowthFormInput({
@@ -82,6 +119,7 @@ export async function ingestFormSubmissionToGrowthSafe(
         destination: submission.destination,
         data: submission.data ?? {},
         createdAt: submission.createdAt,
+        ...(campaign ? { campaign } : {}),
       })
     );
   } catch (error) {

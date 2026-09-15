@@ -1,0 +1,31 @@
+{
+  "ot": "OT-GROWTH-UX-PERSONAS-004",
+  "verdict": "APTO VISUAL",
+  "tenantId": "adl",
+  "personaCount": 1,
+  "permsPatched": false,
+  "capturedAt": "2026-09-12T19:20:00.000Z",
+  "filterOrigin": "whatsapp",
+  "filterHadResults": false,
+  "filterNoMatch": true,
+  "emptyKind": "filtro",
+  "detailPersonaId": "persona-capture-007a-1788587072379",
+  "conversationsVisible": false,
+  "conversationsNote": "Sin conversaciones reales en esta Persona; empty state validado",
+  "createModal": true,
+  "shots": [
+    "01-desktop-listado.png",
+    "02-desktop-filtros.png",
+    "03-desktop-ficha.png",
+    "04-desktop-conversaciones.png",
+    "05-modal-crear.png",
+    "06-estado-vacio.png",
+    "07-mobile-listado.png",
+    "08-mobile-ficha.png"
+  ],
+  "tests": {
+    "growth-ux-personas-004": "PASS",
+    "growth-personas-003": "PASS",
+    "growth-personas-ui": "PASS"
+  }
+}

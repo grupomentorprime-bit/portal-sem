@@ -1,0 +1,35 @@
+﻿ÔûÂ OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö IAM AÔÇôJ
+  Ô£ö AÔÇôD / EÔÇôI ÔÇö permisos growth.people en registry + cat├ílogo + roles (1.0795ms)
+  Ô£ö AÔÇôD / J ÔÇö pages y nav exigen growth.people.*; API manage para crear (0.9325ms)
+Ô£ö OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö IAM AÔÇôJ (2.8863ms)
+ÔûÂ OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö filtro origen KÔÇôQ
+  Ô£ö KÔÇôP ÔÇö tokens de filtro mapean a kind/channel reales (0.8847ms)
+  Ô£ö Q ÔÇö Sin origen claro excluye WhatsApp / Portal web conocidos (0.3155ms)
+Ô£ö OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö filtro origen KÔÇôQ (1.4065ms)
+ÔûÂ OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö humanizaci├│n R
+  Ô£ö R ÔÇö WhatsApp conocido no antepone Sin origen claro (0.3394ms)
+Ô£ö OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö humanizaci├│n R (0.4595ms)
+ÔûÂ OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö conversaciones / CTAs SÔÇôU
+  Ô£ö SÔÇôU ÔÇö ficha proyecta conversaciones; CTAs fail-safe por permiso (0.7502ms)
+Ô£ö OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö conversaciones / CTAs SÔÇôU (0.9242ms)
+ÔûÂ OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö crear VÔÇôAB
+  Ô£ö VÔÇôAA ÔÇö creaci├│n manual usa upsertGrowthPersona + origin manual (1.579ms)
+  Ô£ö Y ÔÇö identity_conflict sin merge ni IDs en respuesta (1.9349ms)
+  Ô£ö Z ÔÇö validaci├│n nombre / email o tel├®fono (0.2655ms)
+  Ô£ö AB ÔÇö aislamiento tenant en create/dedupe (0.4956ms)
+Ô£ö OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö crear VÔÇôAB (4.521ms)
+ÔûÂ OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö ACÔÇôAF / no alcance
+  Ô£ö AC ÔÇö detalle null indistinguible (findById tenant-scoped) (0.3308ms)
+  Ô£ö AD ÔÇö no persona.nextAction; proyecta pickPrimaryNextAction (0.9767ms)
+  Ô£ö AE ÔÇö no segundo inbox / timeline / CRM / rutas nuevas (0.6322ms)
+  Ô£ö AF ÔÇö API create usa upsertGrowthPersona; sin escritura directa (0.3561ms)
+  Ô£ö superficie archivos clave existe (0.3781ms)
+Ô£ö OT-GROWTH-PERSONAS-IMPLEMENT-003 ÔÇö ACÔÇôAF / no alcance (2.8844ms)
+Ôä╣ tests 15
+Ôä╣ suites 6
+Ôä╣ pass 15
+Ôä╣ fail 0
+Ôä╣ cancelled 0
+Ôä╣ skipped 0
+Ôä╣ todo 0
+Ôä╣ duration_ms 696.4916

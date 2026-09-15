@@ -1,5 +1,6 @@
 /**
- * Verifica la conexión con el servidor de identidad institucional.
+ * Verifica la configuración Keycloak para Growth OS (Auth Code + PKCE).
+ * No exige Direct Access Grants (ROPC) — growth-os-web lo tiene OFF.
  * Uso: npx tsx scripts/check-keycloak.ts
  */
 import { readFileSync } from "fs";
@@ -27,36 +28,17 @@ function loadEnv(): Record<string, string> {
   return env;
 }
 
-async function probe(
-  tokenUrl: string,
-  clientId: string,
-  clientSecret: string
-): Promise<{ error?: string; error_description?: string }> {
-  const body = new URLSearchParams({
-    grant_type: "password",
-    client_id: clientId,
-    username: "test@diagnostico.local",
-    password: "test",
-    scope: "openid profile email",
-  });
-  if (clientSecret) body.set("client_secret", clientSecret);
-
-  const res = await fetch(tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  return (await res.json()) as { error?: string; error_description?: string };
-}
-
 async function main(): Promise<void> {
   const env = loadEnv();
   const url = env.KEYCLOAK_URL?.replace(/\/$/, "");
   const realm = env.KEYCLOAK_REALM;
   const clientId = env.KEYCLOAK_CLIENT_ID;
   const clientSecret = env.KEYCLOAK_CLIENT_SECRET?.trim() ?? "";
+  const redirectUri =
+    env.KEYCLOAK_REDIRECT_URI?.trim() ||
+    "http://localhost:3000/api/identity/auth/keycloak/callback";
 
-  console.log("\n── Diagnóstico de autenticación institucional ──\n");
+  console.log("\n── Diagnóstico Keycloak (Auth Code + PKCE) ──\n");
 
   if (!url || !realm || !clientId) {
     console.log("✗ Faltan variables en .env:");
@@ -66,53 +48,80 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  if (clientId === "admin-cli" || clientId === "seminario-ipn-web") {
+    console.log(`✗ Cliente "${clientId}" no es el de Growth OS.`);
+    console.log("  Usa KEYCLOAK_CLIENT_ID=growth-os-web\n");
+    process.exit(1);
+  }
+
   console.log(`URL:      ${url}`);
   console.log(`Realm:    ${realm}`);
   console.log(`Client:   ${clientId}`);
   console.log(
-    `Secret:   ${clientSecret ? `${clientSecret.slice(0, 4)}…${clientSecret.slice(-4)} (${clientSecret.length} chars)` : "(vacío — cliente público)"}\n`
+    `Secret:   ${clientSecret ? `(presente, ${clientSecret.length} chars)` : "(vacío)"}`
   );
+  console.log(`Redirect: ${redirectUri}\n`);
 
-  const tokenUrl = `${url}/realms/${realm}/protocol/openid-connect/token`;
-  const json = await probe(tokenUrl, clientId, clientSecret);
+  if (!clientSecret) {
+    console.log("✗ KEYCLOAK_CLIENT_SECRET vacío — growth-os-web es confidential.\n");
+    process.exit(1);
+  }
+
+  const wellKnown = `${url}/realms/${encodeURIComponent(realm)}/.well-known/openid-configuration`;
+  const oidcRes = await fetch(wellKnown);
+  if (!oidcRes.ok) {
+    console.log(`✗ No se pudo leer OIDC discovery (${oidcRes.status}): ${wellKnown}\n`);
+    process.exit(1);
+  }
+
+  const oidc = (await oidcRes.json()) as {
+    authorization_endpoint?: string;
+    token_endpoint?: string;
+  };
+
+  if (!oidc.authorization_endpoint || !oidc.token_endpoint) {
+    console.log("✗ Discovery OIDC incompleto.\n");
+    process.exit(1);
+  }
+
+  console.log("✓ Realm OIDC reachable");
+  console.log(`  authorize: ${oidc.authorization_endpoint}`);
+  console.log(`  token:     ${oidc.token_endpoint}`);
+
+  // Probe client credentials sin ROPC: authorization_code inválido → invalid_grant
+  // (cliente existe) vs invalid_client (mal secret / client id).
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code: "diagnostic-invalid-code",
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
+    code_verifier: "diagnostic-verifier-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  });
+
+  const tokenRes = await fetch(oidc.token_endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  const json = (await tokenRes.json()) as {
+    error?: string;
+    error_description?: string;
+  };
 
   if (json.error === "invalid_client") {
-    const builtin = await probe(tokenUrl, "admin-cli", "");
-    if (builtin.error === "invalid_grant") {
-      console.log("✗ EL CLIENT ID NO EXISTE EN ESTE REALM");
-      console.log(`  "${clientId}" no está registrado en realm "${realm}".`);
-      console.log("  Keycloak sí responde (admin-cli funciona).\n");
-      console.log("  Solución:");
-      console.log("  1. En Keycloak, arriba a la izquierda confirma que el realm es:", realm);
-      console.log("  2. Clients → verifica el Client ID exacto (copia desde Settings)");
-      console.log("  3. O usa cliente público sin secret, por ejemplo:");
-      console.log("     KEYCLOAK_CLIENT_ID=admin-cli");
-      console.log("     KEYCLOAK_CLIENT_SECRET=   (vacío)\n");
-    } else {
-      console.log("✗ CLIENT ID O SECRET INCORRECTO");
-      console.log("  Si el cliente es público, deja KEYCLOAK_CLIENT_SECRET vacío.");
-      console.log("  Si es confidential, copia el secret desde Credentials.\n");
-    }
+    console.log("\n✗ CLIENT ID O SECRET INCORRECTO");
+    console.log("  Verifica Credentials del cliente en Keycloak (sin regenerar en prod).\n");
     process.exit(1);
   }
 
-  if (json.error === "unauthorized_client") {
-    console.log("✗ DIRECT ACCESS GRANTS DESACTIVADO");
-    console.log("  En el cliente, activa: Direct access grants = ON\n");
-    process.exit(1);
-  }
-
-  if (json.error === "invalid_grant") {
-    console.log("✓ Configuración del cliente CORRECTA");
-    console.log("  (Usuario de prueba no existe, pero el cliente está bien configurado)");
-    console.log("\n  Si no puedes entrar, verifica el usuario en Keycloak:");
-    console.log("  - Enabled = ON, Email verified = ON");
-    console.log("  - Contraseña con Temporary = OFF");
-    console.log("  - Mismo email/username que usas en el login\n");
+  if (json.error === "invalid_grant" || json.error === "unauthorized_client") {
+    console.log("\n✓ Cliente confidential responde (Auth Code path)");
+    console.log("  Login UI: /admin/login → /api/identity/auth/keycloak/login (+ PKCE)\n");
     process.exit(0);
   }
 
-  console.log("? Respuesta inesperada:", json);
+  console.log("\n? Respuesta inesperada:", { status: tokenRes.status, error: json.error });
   process.exit(1);
 }
 
