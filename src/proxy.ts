@@ -47,6 +47,12 @@ export function proxy(request: NextRequest) {
     );
   }
 
+  // OT-GROWTH-WHATSAPP-WEBHOOK-VERIFY-FIX-001 — GET handshake Meta / POST firmado:
+  // públicos; excluidos del gate de sesión (IDENTITY_ENFORCE no aplica aquí).
+  if (pathname.startsWith("/api/webhooks/")) {
+    return continueWithPathname(request);
+  }
+
   const isProtected =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/internal") ||

@@ -1,7 +1,11 @@
 /**
- * OT-GROWTH-MESSAGING-002 / E2E-FIX-002 — webhook WhatsApp Cloud API
- * (verificación + inbound comercial: Persona → Opp → Conversación).
+ * OT-GROWTH-MESSAGING-002 / E2E-FIX-002 / WHATSAPP-WEBHOOK-VERIFY-FIX-001 —
+ * webhook WhatsApp Cloud API (verificación + inbound comercial).
  * Público (Meta). Autenticación: verify_token (GET) / X-Hub-Signature-256 (POST).
+ *
+ * GET handshake: valida hub.* contra META_WEBHOOK_VERIFY_TOKEN sin abrir Mongo.
+ * Fallback legacy (conexiones por Espacio) solo si el token de plataforma no coincide.
+ * POST: firma/secreto Meta intacta — no se abre ni se elimina control.
  */
 
 import { NextResponse } from "next/server";
@@ -47,14 +51,33 @@ async function ensureStartupNextActionAutomationSafe(
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const connections = await openGrowthWhatsAppConnectionStore({
-      ensureIndexes: false,
-    });
-    const result = await verifyWhatsAppWebhookSubscription(connections, {
+    const query = {
       mode: url.searchParams.get("hub.mode"),
       token: url.searchParams.get("hub.verify_token"),
       challenge: url.searchParams.get("hub.challenge"),
+    };
+
+    // Camino oficial Meta: token de plataforma — sin DB / sin auth de sesión.
+    const platformResult = await verifyWhatsAppWebhookSubscription(null, query);
+    if (platformResult.ok) {
+      return new NextResponse(platformResult.challenge, {
+        status: 200,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+
+    if (
+      platformResult.reason === "invalid_mode" ||
+      platformResult.reason === "missing_token_or_challenge"
+    ) {
+      return new NextResponse(null, { status: 403 });
+    }
+
+    // Fallback legacy: verifyToken de conexiones habilitadas (requiere store).
+    const connections = await openGrowthWhatsAppConnectionStore({
+      ensureIndexes: false,
     });
+    const result = await verifyWhatsAppWebhookSubscription(connections, query);
 
     if (!result.ok) {
       return new NextResponse(null, { status: 403 });
