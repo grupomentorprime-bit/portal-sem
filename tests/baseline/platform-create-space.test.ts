@@ -77,7 +77,7 @@ async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;
   }
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 12_000 });
   await client.connect();
   try {
     await run(client.db(dbName));
@@ -157,6 +157,7 @@ describe("OT-GROWTH-PLATFORM-ADMIN-003 — contrato y frontera", () => {
 
   it("normalizeSpaceSlug valida formato", () => {
     assert.equal(normalizeSpaceSlug("Acme-Demo"), "acme-demo");
+    assert.equal(normalizeSpaceSlug("Mentor Capacitación"), "mentor-capacitacion");
     assert.equal(normalizeSpaceSlug("a"), null);
     assert.equal(normalizeSpaceSlug(""), null);
     assert.equal(normalizeSpaceSlug("---"), null);

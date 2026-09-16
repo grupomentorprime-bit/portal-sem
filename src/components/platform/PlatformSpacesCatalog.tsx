@@ -78,8 +78,11 @@ function SpaceThumb({ space }: { space: PlatformSpaceListItem }) {
 
 export function PlatformSpacesCatalog({
   spaces,
+  platformBaseDomain = null,
 }: {
   spaces: PlatformSpaceListItem[];
+  /** `PLATFORM_BASE_DOMAIN` resuelto en servidor; null en locales sin base. */
+  platformBaseDomain?: string | null;
 }) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") ?? "";
@@ -124,7 +127,7 @@ export function PlatformSpacesCatalog({
   }, [query, spaces, typeFilter]);
 
   return (
-    <PlatformCreateSpacePanel>
+    <PlatformCreateSpacePanel platformBaseDomain={platformBaseDomain}>
       {({ open: openCreate, summary }) => (
         <section
           id="espacios"

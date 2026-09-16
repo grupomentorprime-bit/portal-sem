@@ -20,10 +20,12 @@ interface GrowthWhatsAppConnectionDocument {
   tenantId: string;
   phoneNumberId: string;
   wabaId?: string;
+  businessId?: string;
   displayPhoneNumber?: string;
   verifyTokenEncrypted: string;
   appSecretEncrypted: string;
   accessTokenEncrypted?: string;
+  connectionSource?: GrowthWhatsAppConnection["connectionSource"];
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,12 +53,14 @@ function toConnection(
     updatedAt: doc.updatedAt,
   };
   if (doc.wabaId) connection.wabaId = doc.wabaId;
+  if (doc.businessId) connection.businessId = doc.businessId;
   if (doc.displayPhoneNumber) {
     connection.displayPhoneNumber = doc.displayPhoneNumber;
   }
   if (doc.accessTokenEncrypted) {
     connection.accessToken = decryptSecret(doc.accessTokenEncrypted);
   }
+  if (doc.connectionSource) connection.connectionSource = doc.connectionSource;
   return connection;
 }
 
@@ -74,11 +78,15 @@ function toDocument(
     updatedAt: connection.updatedAt,
   };
   if (connection.wabaId) doc.wabaId = connection.wabaId;
+  if (connection.businessId) doc.businessId = connection.businessId;
   if (connection.displayPhoneNumber) {
     doc.displayPhoneNumber = connection.displayPhoneNumber;
   }
   if (connection.accessToken?.trim()) {
     doc.accessTokenEncrypted = encryptSecret(connection.accessToken);
+  }
+  if (connection.connectionSource) {
+    doc.connectionSource = connection.connectionSource;
   }
   return omitUndefined(doc);
 }
@@ -121,6 +129,11 @@ export function createMongoGrowthWhatsAppConnectionStore(
         upsert: true,
       });
       return connection;
+    },
+
+    async deleteByTenantId(tenantId) {
+      const result = await col.deleteOne({ tenantId });
+      return result.deletedCount === 1;
     },
   };
 }

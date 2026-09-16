@@ -72,6 +72,10 @@ export function buildContentSecurityPolicy(env: NodeJS.ProcessEnv = process.env)
   const connectSrc = [
     "'self'",
     ...uniqueOrigins([keycloakOrigin]),
+    // Meta Embedded Signup / Facebook Login for Business (OT-GROWTH-WHATSAPP-META-001)
+    "https://graph.facebook.com",
+    "https://www.facebook.com",
+    "https://connect.facebook.net",
     ...(isDev ? ["ws:", "wss:"] : []),
   ];
   const formAction = ["'self'", ...uniqueOrigins([keycloakOrigin])];
@@ -83,9 +87,17 @@ export function buildContentSecurityPolicy(env: NodeJS.ProcessEnv = process.env)
     "https://www.google.com",
     "https://maps.google.com",
     "https://www.openstreetmap.org",
+    "https://www.facebook.com",
+    "https://web.facebook.com",
+    "https://staticxx.facebook.com",
   ];
 
-  const scriptSrc = ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])];
+  const scriptSrc = [
+    "'self'",
+    "'unsafe-inline'",
+    "https://connect.facebook.net",
+    ...(isDev ? ["'unsafe-eval'"] : []),
+  ];
 
   const directives: Array<[string, string[]]> = [
     ["default-src", ["'self'"]],

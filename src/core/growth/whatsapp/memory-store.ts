@@ -45,5 +45,9 @@ export function createMemoryGrowthWhatsAppConnectionStore(): GrowthWhatsAppConne
       connections.set(connection.tenantId, structuredClone(connection));
       return structuredClone(connection);
     },
+
+    async deleteByTenantId(tenantId) {
+      return connections.delete(tenantId);
+    },
   };
 }

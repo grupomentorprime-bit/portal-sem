@@ -5,12 +5,12 @@ const SENSITIVE_PATTERNS: RegExp[] = [
   /\b(sk_live|sk_test|re_)[A-Za-z0-9]+\b/g,
   /\bAKIA[A-Z0-9]{16}\b/g,
   /Bearer\s+[A-Za-z0-9._\-+=/]+/gi,
-  /(?:client_secret|secret_access_key|secretAccessKey|SESSION_SECRET|MONGODB_URI|RESEND_API_KEY|KEYCLOAK_CLIENT_SECRET|KEYCLOAK_ADMIN_PASSWORD|S3_SECRET_ACCESS_KEY|WHATSAPP_APP_SECRET|verify_token|app_secret|access_token)\s*[=:]\s*[^\s&]+/gi,
+  /(?:client_secret|secret_access_key|secretAccessKey|SESSION_SECRET|MONGODB_URI|RESEND_API_KEY|KEYCLOAK_CLIENT_SECRET|KEYCLOAK_ADMIN_PASSWORD|S3_SECRET_ACCESS_KEY|WHATSAPP_APP_SECRET|META_APP_SECRET|META_WEBHOOK_VERIFY_TOKEN|verify_token|app_secret|access_token)\s*[=:]\s*[^\s&]+/gi,
   /(?:password|secret|api[_-]?key|access_token|id_token|refresh_token|verifyToken|appSecret|accessToken)\s*[=:]\s*[^\s&'"\\]+/gi,
 ];
 
 const SENSITIVE_KEY =
-  /^(token|accessToken|idToken|refreshToken|clientSecret|secretAccessKey|password|apiKey|authorization|verifyToken|appSecret|verify_token|app_secret|access_token)$/i;
+  /^(token|accessToken|idToken|refreshToken|clientSecret|secretAccessKey|password|apiKey|authorization|verifyToken|appSecret|verify_token|app_secret|access_token|metaAppSecret|META_APP_SECRET|META_WEBHOOK_VERIFY_TOKEN)$/i;
 
 export function redactSensitiveText(value: string): string {
   let redacted = value;

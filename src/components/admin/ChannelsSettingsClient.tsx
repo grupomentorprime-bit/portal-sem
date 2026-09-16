@@ -14,11 +14,14 @@ import {
   GROWTH_CHANNELS_COMING_SOON,
   GROWTH_CHANNELS_COMPLETE_CONNECTION_LABEL,
   GROWTH_CHANNELS_CONNECT_LABEL,
+  GROWTH_CHANNELS_DISCONNECT_LABEL,
   GROWTH_CHANNELS_MANAGE_LABEL,
+  GROWTH_CHANNELS_META_UNAVAILABLE,
   GROWTH_CHANNELS_NUMBER_LABEL,
   GROWTH_CHANNELS_PAUSE_LABEL,
   GROWTH_CHANNELS_RECEIVES_LABEL,
   GROWTH_CHANNELS_RESUME_LABEL,
+  GROWTH_CHANNELS_TECHNICAL_FALLBACK_LABEL,
   GROWTH_CHANNELS_TEST_FAIL,
   GROWTH_CHANNELS_TEST_LABEL,
   GROWTH_CHANNELS_TEST_OK,
@@ -26,11 +29,25 @@ import {
   GROWTH_CHANNELS_VIEW_MESSAGES_LABEL,
   GROWTH_CHANNELS_WHATSAPP_LABEL,
 } from "@/lib/growth/labels";
+import { launchWhatsAppEmbeddedSignup, submitWhatsAppEmbeddedSignupComplete } from "@/lib/growth/whatsapp-embedded-signup-client";
+import {
+  CHILE_PHONE_EXAMPLE,
+  formatChilePhoneDisplay,
+  formatChilePhoneInput,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
 import { cn } from "@/lib/utils";
 
 type TestStatus = "idle" | "testing" | "success" | "error";
 type SaveStatus = "idle" | "saving" | "error";
 type ChannelStatus = WhatsAppChannelAdminView["status"];
+
+interface MetaSessionPublic {
+  ready: boolean;
+  appId: string | null;
+  esConfigId: string | null;
+  missing: string[];
+}
 
 interface ManageForm {
   phoneNumberId: string;
@@ -97,6 +114,18 @@ const FUTURE_CHANNELS = [
     accent: "bg-warning/12 text-warning",
   },
 ] as const;
+
+function formatVisiblePhone(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return formatChilePhoneInput(trimmed);
+}
+
+function toStoredVisiblePhone(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return normalizeChilePhone(trimmed) ?? formatChilePhoneDisplay(trimmed) ?? trimmed;
+}
 
 function emptyForm(): ManageForm {
   return {
@@ -234,6 +263,7 @@ export function ChannelsSettingsClient() {
   const [channel, setChannel] = useState<WhatsAppChannelAdminView | null>(null);
   const [connection, setConnection] =
     useState<GrowthWhatsAppConnectionPublic | null>(null);
+  const [meta, setMeta] = useState<MetaSessionPublic | null>(null);
   const [error, setError] = useState("");
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
   const [testMessage, setTestMessage] = useState("");
@@ -242,14 +272,19 @@ export function ChannelsSettingsClient() {
   const [manageMode, setManageMode] = useState<"connect" | "manage">("manage");
   const [form, setForm] = useState<ManageForm>(emptyForm());
   const [toggling, setToggling] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [showTechnical, setShowTechnical] = useState(false);
 
   const applyPayload = useCallback(
     (data: {
       connection?: GrowthWhatsAppConnectionPublic | null;
       channel?: WhatsAppChannelAdminView;
+      meta?: MetaSessionPublic;
     }) => {
-      setConnection(data.connection ?? null);
+      if ("connection" in data) setConnection(data.connection ?? null);
       if (data.channel) setChannel(data.channel);
+      if (data.meta) setMeta(data.meta);
     },
     []
   );
@@ -258,7 +293,7 @@ export function ChannelsSettingsClient() {
     setLoading(true);
     setForbidden(false);
     setError("");
-    const res = await fetch("/api/admin/integrations/whatsapp");
+    const res = await fetch("/api/admin/integrations/whatsapp/meta/session");
     const data = await res.json();
     if (res.status === 403 || res.status === 401) {
       setForbidden(true);
@@ -266,7 +301,21 @@ export function ChannelsSettingsClient() {
       return;
     }
     if (!data.ok) {
-      setError(data.error ?? "No se pudo cargar los canales.");
+      // Fallback a lectura legacy si el endpoint Meta falla.
+      const legacy = await fetch("/api/admin/integrations/whatsapp");
+      const legacyData = await legacy.json();
+      if (legacy.status === 403 || legacy.status === 401) {
+        setForbidden(true);
+        setLoading(false);
+        return;
+      }
+      if (!legacyData.ok) {
+        setError(data.error ?? "No se pudo cargar los canales.");
+        setLoading(false);
+        return;
+      }
+      applyPayload(legacyData);
+      setMeta({ ready: false, appId: null, esConfigId: null, missing: [] });
       setLoading(false);
       return;
     }
@@ -278,32 +327,92 @@ export function ChannelsSettingsClient() {
     void load();
   }, [load]);
 
-  function openConnect() {
-    setManageMode("connect");
+  function openTechnical(mode: "connect" | "manage") {
+    setManageMode(mode);
     setForm({
       phoneNumberId: connection?.phoneNumberId ?? "",
-      displayPhoneNumber: connection?.displayPhoneNumber ?? "",
+      displayPhoneNumber: formatVisiblePhone(
+        connection?.displayPhoneNumber ?? ""
+      ),
       verifyToken: "",
       appSecret: "",
       accessToken: "",
     });
     setSaveStatus("idle");
     setError("");
+    // En conectar, mostrar de entrada lo que falta (IDs y secretos).
+    setShowTechnical(mode === "connect");
     setManageOpen(true);
   }
 
-  function openManage() {
-    setManageMode("manage");
-    setForm({
-      phoneNumberId: connection?.phoneNumberId ?? "",
-      displayPhoneNumber: connection?.displayPhoneNumber ?? "",
-      verifyToken: "",
-      appSecret: "",
-      accessToken: "",
-    });
-    setSaveStatus("idle");
+  async function handleConnectMeta() {
     setError("");
-    setManageOpen(true);
+    setConnecting(true);
+
+    const sessionRes = await fetch(
+      "/api/admin/integrations/whatsapp/meta/session"
+    );
+    const sessionData = await sessionRes.json();
+    if (!sessionData.ok) {
+      setError(sessionData.error ?? GROWTH_CHANNELS_META_UNAVAILABLE);
+      setConnecting(false);
+      return;
+    }
+    applyPayload(sessionData);
+
+    if (!sessionData.meta?.ready || !sessionData.state) {
+      setError(GROWTH_CHANNELS_META_UNAVAILABLE);
+      setConnecting(false);
+      openTechnical("connect");
+      return;
+    }
+
+    const appId = sessionData.meta.appId as string;
+    const esConfigId = sessionData.meta.esConfigId as string;
+    const state = sessionData.state as string;
+
+    const launched = await launchWhatsAppEmbeddedSignup({ appId, esConfigId });
+    if (!launched.ok) {
+      if (launched.reason !== "cancelled") {
+        setError(launched.message);
+      }
+      setConnecting(false);
+      return;
+    }
+
+    const complete = await submitWhatsAppEmbeddedSignupComplete({
+      state,
+      code: launched.code,
+      assets: launched.assets,
+    });
+    if (!complete.ok) {
+      setError(complete.error);
+      setConnecting(false);
+      return;
+    }
+
+    applyPayload(complete.data as {
+      connection?: GrowthWhatsAppConnectionPublic | null;
+      channel?: WhatsAppChannelAdminView;
+    });
+    setConnecting(false);
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    setError("");
+    const res = await fetch(
+      "/api/admin/integrations/whatsapp/meta/disconnect",
+      { method: "POST" }
+    );
+    const data = await res.json();
+    if (!data.ok) {
+      setError(data.error ?? "No se pudo desconectar WhatsApp.");
+      setDisconnecting(false);
+      return;
+    }
+    applyPayload(data);
+    setDisconnecting(false);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -324,7 +433,9 @@ export function ChannelsSettingsClient() {
       enabled: connection?.enabled ?? true,
     };
     if (form.displayPhoneNumber.trim()) {
-      payload.displayPhoneNumber = form.displayPhoneNumber.trim();
+      payload.displayPhoneNumber = toStoredVisiblePhone(
+        form.displayPhoneNumber
+      );
     }
     if (form.verifyToken.trim()) payload.verifyToken = form.verifyToken.trim();
     if (form.appSecret.trim()) payload.appSecret = form.appSecret.trim();
@@ -402,13 +513,21 @@ export function ChannelsSettingsClient() {
   const status = channel?.status ?? "not_connected";
   const updatedLabel = formatUpdatedAt(channel?.updatedAt ?? null);
   const statusLabel = channel?.statusLabel ?? "No conectado";
+  const metaReady = Boolean(meta?.ready);
 
   const primaryAction =
     status === "not_connected" || status === "incomplete" ? (
-      <Button type="button" variant="primary" onClick={openConnect}>
-        {status === "incomplete"
-          ? GROWTH_CHANNELS_COMPLETE_CONNECTION_LABEL
-          : GROWTH_CHANNELS_CONNECT_LABEL}
+      <Button
+        type="button"
+        variant="primary"
+        onClick={() => void handleConnectMeta()}
+        disabled={connecting}
+      >
+        {connecting
+          ? "Conectando…"
+          : status === "incomplete"
+            ? GROWTH_CHANNELS_COMPLETE_CONNECTION_LABEL
+            : GROWTH_CHANNELS_CONNECT_LABEL}
       </Button>
     ) : status === "paused" ? (
       <Button
@@ -426,7 +545,16 @@ export function ChannelsSettingsClient() {
     );
 
   const secondaryItems: Array<{ key: string; node: ReactNode }> = [];
-  if (status !== "not_connected") {
+  if (status === "not_connected") {
+    secondaryItems.push({
+      key: "technical",
+      node: (
+        <SecondaryAction onClick={() => openTechnical("connect")}>
+          {GROWTH_CHANNELS_TECHNICAL_FALLBACK_LABEL}
+        </SecondaryAction>
+      ),
+    });
+  } else {
     if (status !== "connected") {
       secondaryItems.push({
         key: "messages",
@@ -440,8 +568,19 @@ export function ChannelsSettingsClient() {
     secondaryItems.push({
       key: "manage",
       node: (
-        <SecondaryAction onClick={openManage}>
+        <SecondaryAction onClick={() => openTechnical("manage")}>
           {GROWTH_CHANNELS_MANAGE_LABEL}
+        </SecondaryAction>
+      ),
+    });
+    secondaryItems.push({
+      key: "disconnect",
+      node: (
+        <SecondaryAction
+          onClick={() => void handleDisconnect()}
+          disabled={disconnecting}
+        >
+          {disconnecting ? "Desconectando…" : GROWTH_CHANNELS_DISCONNECT_LABEL}
         </SecondaryAction>
       ),
     });
@@ -494,6 +633,7 @@ export function ChannelsSettingsClient() {
         )}
         data-channel="whatsapp"
         data-status={status}
+        data-meta-ready={metaReady ? "true" : "false"}
       >
         <div
           className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-[var(--color-success)]"
@@ -523,7 +663,8 @@ export function ChannelsSettingsClient() {
               data-channel-phone
             >
               <span className="sr-only">{GROWTH_CHANNELS_NUMBER_LABEL}: </span>
-              {channel.displayPhoneNumber}
+              {formatVisiblePhone(channel.displayPhoneNumber) ||
+                channel.displayPhoneNumber}
             </p>
           ) : status !== "not_connected" ? (
             <p className="text-sm text-muted">
@@ -531,8 +672,8 @@ export function ChannelsSettingsClient() {
             </p>
           ) : (
             <p className="max-w-xl text-sm leading-relaxed text-muted">
-              Conectá WhatsApp para recibir mensajes y responder desde Mensajes
-              en este Espacio.
+              Conectá WhatsApp Business con Meta. Autorizás el negocio y el
+              número; Growth OS guarda la conexión de este Espacio.
             </p>
           )}
 
@@ -552,6 +693,12 @@ export function ChannelsSettingsClient() {
           {updatedLabel && status !== "not_connected" ? (
             <p className="text-xs text-muted">
               {GROWTH_CHANNELS_UPDATED_LABEL}: {updatedLabel}
+            </p>
+          ) : null}
+
+          {!metaReady && status === "not_connected" ? (
+            <p className="text-sm text-muted" data-meta-unavailable>
+              {GROWTH_CHANNELS_META_UNAVAILABLE}
             </p>
           ) : null}
 
@@ -655,8 +802,8 @@ export function ChannelsSettingsClient() {
         }
         description={
           manageMode === "connect"
-            ? "Completá los datos de Cloud API. Los secretos se guardan cifrados y no se vuelven a mostrar."
-            : "Actualizá el número visible o renová secretos. Dejá un campo vacío para mantener el valor actual."
+            ? "Preferí el flujo guiado con Meta. Este formulario técnico es solo compatibilidad administrativa."
+            : "Actualizá el número visible o, si hace falta, renovás secretos legacy. Dejá un campo vacío para mantener el valor actual."
         }
         size="md"
       >
@@ -670,8 +817,8 @@ export function ChannelsSettingsClient() {
                 Configuración técnica temporal
               </p>
               <p className="text-xs leading-relaxed text-muted">
-                Este formulario será reemplazado por el flujo guiado de conexión
-                con Meta. Usalo solo para mantener la conexión actual.
+                El camino principal es autorizar en Meta. Usá este formulario
+                solo si una conexión existente lo requiere.
               </p>
             </div>
           </div>
@@ -681,130 +828,150 @@ export function ChannelsSettingsClient() {
               <Label htmlFor="wa-display">Número visible</Label>
               <Input
                 id="wa-display"
+                type="tel"
+                inputMode="tel"
                 value={form.displayPhoneNumber}
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
-                    displayPhoneNumber: e.target.value,
+                    displayPhoneNumber: formatVisiblePhone(e.target.value),
                   }))
                 }
-                placeholder="+56 9 XXXX XXXX"
-                autoComplete="off"
+                onBlur={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    displayPhoneNumber: toStoredVisiblePhone(
+                      prev.displayPhoneNumber
+                    ),
+                  }))
+                }
+                placeholder={CHILE_PHONE_EXAMPLE}
+                autoComplete="tel"
               />
               <p className="text-xs text-muted">
-                Así aparece el canal en el Centro de Canales.
+                Formato Chile: {CHILE_PHONE_EXAMPLE}. Así aparece en Canales.
               </p>
             </div>
 
-            {manageMode === "connect" ? (
-              <div className="space-y-2">
-                <Label htmlFor="wa-phone-id">Identificador del número</Label>
-                <Input
-                  id="wa-phone-id"
-                  value={form.phoneNumberId}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      phoneNumberId: e.target.value,
-                    }))
-                  }
-                  required
-                  autoComplete="off"
-                />
-                <p className="text-xs text-muted">
-                  Lo entrega Meta al configurar Cloud API. No aparece en la
-                  ficha del canal.
-                </p>
-              </div>
+            <button
+              type="button"
+              className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
+              onClick={() => setShowTechnical((v) => !v)}
+            >
+              {showTechnical
+                ? "Ocultar identificadores y secretos"
+                : "Mostrar identificadores y secretos"}
+            </button>
+
+            {showTechnical ? (
+              <>
+                {manageMode === "connect" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="wa-phone-id">Identificador del número</Label>
+                    <Input
+                      id="wa-phone-id"
+                      value={form.phoneNumberId}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          phoneNumberId: e.target.value,
+                        }))
+                      }
+                      required
+                      autoComplete="off"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="space-y-4 rounded-[var(--radius-md)] border border-[var(--admin-border-subtle)] bg-background px-4 py-4">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Credenciales
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {manageMode === "manage"
+                        ? "Solo completá lo que quieras renovar."
+                        : "Necesarias para la vía técnica legacy."}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="wa-verify">
+                      Token de verificación
+                      {manageMode === "manage" ? " (opcional)" : ""}
+                    </Label>
+                    <Input
+                      id="wa-verify"
+                      type="password"
+                      value={form.verifyToken}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          verifyToken: e.target.value,
+                        }))
+                      }
+                      required={manageMode === "connect"}
+                      autoComplete="new-password"
+                      placeholder={
+                        manageMode === "manage" && connection?.hasVerifyToken
+                          ? "Dejar vacío para mantener el actual"
+                          : undefined
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="wa-secret">
+                      Secreto de la aplicación
+                      {manageMode === "manage" ? " (opcional)" : ""}
+                    </Label>
+                    <Input
+                      id="wa-secret"
+                      type="password"
+                      value={form.appSecret}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          appSecret: e.target.value,
+                        }))
+                      }
+                      required={manageMode === "connect"}
+                      autoComplete="new-password"
+                      placeholder={
+                        manageMode === "manage" && connection?.hasAppSecret
+                          ? "Dejar vacío para mantener el actual"
+                          : undefined
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="wa-access">
+                      Token de acceso
+                      {manageMode === "manage" ? " (opcional)" : ""}
+                    </Label>
+                    <Input
+                      id="wa-access"
+                      type="password"
+                      value={form.accessToken}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          accessToken: e.target.value,
+                        }))
+                      }
+                      required={manageMode === "connect"}
+                      autoComplete="new-password"
+                      placeholder={
+                        manageMode === "manage" && connection?.hasAccessToken
+                          ? "Dejar vacío para mantener el actual"
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
+              </>
             ) : null}
-
-            <div className="space-y-4 rounded-[var(--radius-md)] border border-[var(--admin-border-subtle)] bg-background px-4 py-4">
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Credenciales
-                </p>
-                <p className="mt-0.5 text-xs text-muted">
-                  {manageMode === "manage"
-                    ? "Solo completá lo que quieras renovar."
-                    : "Necesarias para verificar y enviar mensajes."}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="wa-verify">
-                  Token de verificación
-                  {manageMode === "manage" ? " (opcional)" : ""}
-                </Label>
-                <Input
-                  id="wa-verify"
-                  type="password"
-                  value={form.verifyToken}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      verifyToken: e.target.value,
-                    }))
-                  }
-                  required={manageMode === "connect"}
-                  autoComplete="new-password"
-                  placeholder={
-                    manageMode === "manage" && connection?.hasVerifyToken
-                      ? "Dejar vacío para mantener el actual"
-                      : undefined
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="wa-secret">
-                  Secreto de la aplicación
-                  {manageMode === "manage" ? " (opcional)" : ""}
-                </Label>
-                <Input
-                  id="wa-secret"
-                  type="password"
-                  value={form.appSecret}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      appSecret: e.target.value,
-                    }))
-                  }
-                  required={manageMode === "connect"}
-                  autoComplete="new-password"
-                  placeholder={
-                    manageMode === "manage" && connection?.hasAppSecret
-                      ? "Dejar vacío para mantener el actual"
-                      : undefined
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="wa-access">
-                  Token de acceso
-                  {manageMode === "manage" ? " (opcional)" : ""}
-                </Label>
-                <Input
-                  id="wa-access"
-                  type="password"
-                  value={form.accessToken}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      accessToken: e.target.value,
-                    }))
-                  }
-                  required={manageMode === "connect"}
-                  autoComplete="new-password"
-                  placeholder={
-                    manageMode === "manage" && connection?.hasAccessToken
-                      ? "Dejar vacío para mantener el actual"
-                      : undefined
-                  }
-                />
-              </div>
-            </div>
           </div>
 
           {error && saveStatus === "error" ? (

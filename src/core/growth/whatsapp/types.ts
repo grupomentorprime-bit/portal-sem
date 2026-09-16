@@ -1,5 +1,6 @@
 /**
- * OT-GROWTH-MESSAGING-002 — conexión WhatsApp Cloud API por Espacio.
+ * OT-GROWTH-MESSAGING-002 / OT-GROWTH-WHATSAPP-META-001 —
+ * conexión WhatsApp Cloud API por Espacio.
  * Secretos fuera del documento del Espacio (growth_space_config / tenants / site_config).
  */
 
@@ -16,6 +17,15 @@ export const GROWTH_WHATSAPP_SOURCE_COLLECTION = "whatsapp_cloud" as const;
  */
 export const GROWTH_WHATSAPP_OPPORTUNITY_TYPE_KEY = "inquiry" as const;
 
+/** Origen de la conexión: flujo oficial Meta vs formulario técnico temporal. */
+export const GROWTH_WHATSAPP_CONNECTION_SOURCE_LEGACY = "legacy_manual" as const;
+export const GROWTH_WHATSAPP_CONNECTION_SOURCE_EMBEDDED =
+  "embedded_signup" as const;
+
+export type GrowthWhatsAppConnectionSource =
+  | typeof GROWTH_WHATSAPP_CONNECTION_SOURCE_LEGACY
+  | typeof GROWTH_WHATSAPP_CONNECTION_SOURCE_EMBEDDED;
+
 /** Conexión de un número/cuenta Cloud API a un Espacio. Secretos solo en servidor. */
 export interface GrowthWhatsAppConnection {
   _id: string;
@@ -24,15 +34,19 @@ export interface GrowthWhatsAppConnection {
   phoneNumberId: string;
   /** WhatsApp Business Account ID (entry.id). */
   wabaId?: string;
+  /** Business Portfolio ID del cliente (Embedded Signup). */
+  businessId?: string;
   /** Número visible (no es secreto). */
   displayPhoneNumber?: string;
   verifyToken: string;
   appSecret: string;
   /**
    * Token de acceso Cloud API (envío). Obligatorio para responder;
-   * el webhook inbound solo usa appSecret / verifyToken.
+   * el webhook inbound usa secret de plataforma (ES) o appSecret por conexión (legacy).
    */
   accessToken?: string;
+  /** Cómo se conectó el canal. Ausente = legacy_manual. */
+  connectionSource?: GrowthWhatsAppConnectionSource;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -43,8 +57,10 @@ export interface GrowthWhatsAppConnectionPublic {
   tenantId: string;
   phoneNumberId: string;
   wabaId?: string;
+  businessId?: string;
   displayPhoneNumber?: string;
   enabled: boolean;
+  connectionSource: GrowthWhatsAppConnectionSource;
   hasVerifyToken: boolean;
   hasAppSecret: boolean;
   hasAccessToken: boolean;
@@ -59,10 +75,13 @@ export function toPublicWhatsAppConnection(
     tenantId: connection.tenantId,
     phoneNumberId: connection.phoneNumberId,
     ...(connection.wabaId ? { wabaId: connection.wabaId } : {}),
+    ...(connection.businessId ? { businessId: connection.businessId } : {}),
     ...(connection.displayPhoneNumber
       ? { displayPhoneNumber: connection.displayPhoneNumber }
       : {}),
     enabled: connection.enabled,
+    connectionSource:
+      connection.connectionSource ?? GROWTH_WHATSAPP_CONNECTION_SOURCE_LEGACY,
     hasVerifyToken: Boolean(connection.verifyToken?.trim()),
     hasAppSecret: Boolean(connection.appSecret?.trim()),
     hasAccessToken: Boolean(connection.accessToken?.trim()),

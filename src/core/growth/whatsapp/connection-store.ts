@@ -22,4 +22,7 @@ export interface GrowthWhatsAppConnectionStore {
   upsert(
     connection: GrowthWhatsAppConnection
   ): Promise<GrowthWhatsAppConnection>;
+
+  /** Desconectar Espacio (Embedded Signup / admin). Opcional en stores antiguos. */
+  deleteByTenantId?(tenantId: string): Promise<boolean>;
 }

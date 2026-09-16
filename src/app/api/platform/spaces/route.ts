@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         slug: typeof body.slug === "string" ? body.slug : "",
         type: typeof body.type === "string" ? body.type : "",
         host: typeof body.host === "string" ? body.host : "",
-        siteName: typeof body.siteName === "string" ? body.siteName : "",
+        siteName: typeof body.siteName === "string" ? body.siteName : null,
         ownerEmail:
           typeof body.ownerEmail === "string" ? body.ownerEmail : null,
       },

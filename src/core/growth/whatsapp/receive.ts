@@ -19,6 +19,7 @@ import { upsertGrowthPersona } from "../upsert-persona";
 import type { GrowthPersonaStore } from "../store";
 import type { GrowthWhatsAppConnectionStore } from "./connection-store";
 import { verifyWhatsAppHubSignature } from "./crypto";
+import { getMetaAppSecret } from "./meta-platform";
 import {
   collectWhatsAppPhoneNumberIds,
   extractWhatsAppInboundMessages,
@@ -51,6 +52,8 @@ export interface ReceiveWhatsAppCloudWebhookDeps {
    * (p. ej. ensure del playbook H1). Errores no deben tumbar el inbound.
    */
   onTenantResolved?: (tenantId: string) => Promise<void>;
+  /** Override de tests / inyección: App Secret de plataforma Meta. */
+  platformAppSecret?: string | null;
 }
 
 export type ReceiveWhatsAppCloudWebhookResult =
@@ -97,7 +100,8 @@ async function authenticatePayload(
   store: GrowthWhatsAppConnectionStore,
   rawBody: string,
   signatureHeader: string | null | undefined,
-  payload: unknown
+  payload: unknown,
+  options?: { platformAppSecret?: string | null }
 ): Promise<
   | { ok: true }
   | { ok: false; reason: "invalid_signature" | "unknown_phone_number" }
@@ -108,18 +112,29 @@ async function authenticatePayload(
   }
 
   const secrets: string[] = [];
+  const platformSecret =
+    options?.platformAppSecret !== undefined
+      ? options.platformAppSecret?.trim() || null
+      : getMetaAppSecret();
+  if (platformSecret) secrets.push(platformSecret);
+
   let resolved = 0;
   for (const phoneNumberId of phoneNumberIds) {
     const connection = await resolveUniqueConnection(store, phoneNumberId);
     if (!connection) continue;
     resolved += 1;
-    if (!secrets.includes(connection.appSecret)) {
-      secrets.push(connection.appSecret);
+    const connectionSecret = connection.appSecret?.trim();
+    if (connectionSecret && !secrets.includes(connectionSecret)) {
+      secrets.push(connectionSecret);
     }
   }
 
   if (resolved === 0) {
     return { ok: false, reason: "unknown_phone_number" };
+  }
+
+  if (secrets.length === 0) {
+    return { ok: false, reason: "invalid_signature" };
   }
 
   const signed = secrets.some((secret) =>
@@ -271,7 +286,8 @@ export async function receiveWhatsAppCloudWebhook(
     deps.connections,
     rawBody,
     input.signatureHeader,
-    payload
+    payload,
+    { platformAppSecret: deps.platformAppSecret }
   );
   if (!auth.ok) {
     return { ok: false, httpStatus: 403, reason: auth.reason };

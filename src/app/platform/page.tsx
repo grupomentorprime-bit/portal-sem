@@ -16,6 +16,7 @@ import {
 } from "@/lib/platform/space-labels";
 import { PlatformSpacesCatalog } from "@/components/platform/PlatformSpacesCatalog";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+import { resolvePlatformBaseDomain } from "@/core/tenant/hosts";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +69,7 @@ export default async function PlatformHomePage() {
     loadSessionContext(),
   ]);
   const metrics = summarizePlatformMetrics(spaces);
+  const platformBaseDomain = resolvePlatformBaseDomain();
   const displayName =
     session?.user.displayName?.trim() || session?.user.email || "operador";
   const firstName = firstNameFromDisplayName(displayName) || displayName;
@@ -269,7 +271,10 @@ export default async function PlatformHomePage() {
 
       <div className="mt-5">
         <Suspense fallback={null}>
-          <PlatformSpacesCatalog spaces={spaces} />
+          <PlatformSpacesCatalog
+            spaces={spaces}
+            platformBaseDomain={platformBaseDomain}
+          />
         </Suspense>
       </div>
     </div>

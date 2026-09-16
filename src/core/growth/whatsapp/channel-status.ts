@@ -1,8 +1,12 @@
 /**
- * OT-GROWTH-MESSAGING-005 — estado humano del canal WhatsApp (sin IDs/secretos).
+ * OT-GROWTH-MESSAGING-005 / OT-GROWTH-WHATSAPP-META-001 —
+ * estado humano del canal WhatsApp (sin IDs/secretos).
  */
 
-import type { GrowthWhatsAppConnectionPublic } from "./types";
+import {
+  GROWTH_WHATSAPP_CONNECTION_SOURCE_EMBEDDED,
+  type GrowthWhatsAppConnectionPublic,
+} from "./types";
 
 export type WhatsAppChannelStatus =
   | "not_connected"
@@ -30,16 +34,23 @@ export interface WhatsAppChannelAdminView {
   updatedAt: string | null;
   /** Hay conexión persistida (para Administrar / Pausar). */
   configured: boolean;
+  /** Conectado vía Embedded Signup (flujo guiado). */
+  viaEmbeddedSignup: boolean;
+}
+
+function isEmbeddedSignup(
+  connection: GrowthWhatsAppConnectionPublic
+): boolean {
+  return connection.connectionSource === GROWTH_WHATSAPP_CONNECTION_SOURCE_EMBEDDED;
 }
 
 function hasReceiveBasics(
   connection: GrowthWhatsAppConnectionPublic
 ): boolean {
-  return Boolean(
-    connection.phoneNumberId?.trim() &&
-      connection.hasVerifyToken &&
-      connection.hasAppSecret
-  );
+  if (!connection.phoneNumberId?.trim()) return false;
+  // Embedded Signup: firma/verify viven en la Meta App de plataforma.
+  if (isEmbeddedSignup(connection)) return true;
+  return connection.hasVerifyToken && connection.hasAppSecret;
 }
 
 function isFullyConfigured(
@@ -73,5 +84,6 @@ export function toWhatsAppChannelAdminView(
     canReplyFromMensajes: enabled && replyOk,
     updatedAt: connection?.updatedAt ?? null,
     configured: Boolean(connection),
+    viaEmbeddedSignup: connection ? isEmbeddedSignup(connection) : false,
   };
 }

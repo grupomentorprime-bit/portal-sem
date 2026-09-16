@@ -253,7 +253,7 @@ describe("OT-GROWTH-MESSAGING-005 — UI humana", () => {
 
     assert.equal(GROWTH_CHANNELS_PAGE_TITLE, "Canales");
     assert.equal(GROWTH_CHANNELS_WHATSAPP_LABEL, "WhatsApp");
-    assert.equal(GROWTH_CHANNELS_CONNECT_LABEL, "Conectar");
+    assert.equal(GROWTH_CHANNELS_CONNECT_LABEL, "Conectar WhatsApp");
     assert.equal(
       GROWTH_CHANNELS_COMPLETE_CONNECTION_LABEL,
       "Completar conexión"

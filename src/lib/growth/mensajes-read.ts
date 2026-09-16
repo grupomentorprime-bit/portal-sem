@@ -14,9 +14,8 @@ import {
   type GrowthMessage,
 } from "@/core/growth/messaging";
 import {
-  GROWTH_OPORTUNIDADES_COLLECTION,
   GROWTH_PERSONAS_COLLECTION,
-  type GrowthOportunidad,
+  createMongoGrowthOpportunityStore,
   type GrowthPersona,
 } from "@/core/growth";
 import { getDatabase } from "@/lib/mongodb";
@@ -181,6 +180,7 @@ export async function getGrowthMensajesThread(
     .findOne({ tenantId, _id: conversationId });
   if (!conversation) return null;
 
+  const oportunidades = createMongoGrowthOpportunityStore(db);
   const [persona, messages, oportunidad] = await Promise.all([
     db
       .collection<GrowthPersona>(GROWTH_PERSONAS_COLLECTION)
@@ -191,10 +191,9 @@ export async function getGrowthMensajesThread(
       .sort({ occurredAt: 1 })
       .limit(500)
       .toArray(),
+    // Mismo resolver tenant-scoped que Ventas/Personas; no inventa opp ni salta Espacio.
     conversation.oportunidadId
-      ? db
-          .collection<GrowthOportunidad>(GROWTH_OPORTUNIDADES_COLLECTION)
-          .findOne({ tenantId, _id: conversation.oportunidadId })
+      ? oportunidades.findById(tenantId, conversation.oportunidadId)
       : Promise.resolve(null),
   ]);
 

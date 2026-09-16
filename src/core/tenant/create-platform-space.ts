@@ -21,13 +21,15 @@ import {
   labelTenantStatus,
   labelTenantType,
 } from "@/lib/platform/space-labels";
+import { isSpaceCreationType } from "@/lib/platform/space-organization-types";
 
 export interface CreatePlatformSpaceInput {
   name: string;
   slug: string;
   type: TenantType;
   host: string;
-  siteName: string;
+  /** Si viene vacío, se usa el nombre del Espacio. */
+  siteName?: string | null;
   /** Correo de una cuenta existente. Opcional; no se asigna el operador automáticamente. */
   ownerEmail?: string | null;
 }
@@ -69,11 +71,11 @@ export class CreatePlatformSpaceError extends Error {
   }
 }
 
-const ALLOWED_TYPES = new Set<TenantType>(["institution", "academy"]);
-
-/** Slug canónico: minúsculas, a-z0-9 y guiones; sin extremos. */
+/** Slug canónico: minúsculas, a-z0-9 y guiones; sin acentos ni extremos. */
 export function normalizeSpaceSlug(raw: string): string | null {
   const slug = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
@@ -165,10 +167,10 @@ export async function createPlatformSpace(
   actorUserId: string
 ): Promise<CreatePlatformSpaceSummary> {
   const name = input.name?.trim() ?? "";
-  const siteName = input.siteName?.trim() ?? "";
   const slug = normalizeSpaceSlug(input.slug ?? "");
   const type = (input.type?.trim() || "") as TenantType;
-  const host = normalizeHost(input.host);
+  // Sitio toma el nombre del Espacio si no viene informado (UX horizontal).
+  const siteName = input.siteName?.trim() || name;
   const ownerEmailRaw = input.ownerEmail?.trim().toLowerCase() || "";
 
   if (!name) {
@@ -183,22 +185,23 @@ export async function createPlatformSpace(
       "El slug debe tener 2–64 caracteres (a-z, 0-9 y guiones)."
     );
   }
-  if (!ALLOWED_TYPES.has(type)) {
+  if (!isSpaceCreationType(type)) {
     throw new CreatePlatformSpaceError(
       "invalid_type",
-      "El tipo debe ser Institución o Academia."
+      "Elige un tipo de organización válido."
     );
   }
+
+  // Host informado o, en producción, `{slug}.{PLATFORM_BASE_DOMAIN}`.
+  const host =
+    normalizeHost(input.host) ??
+    buildPlatformSubdomainHost(slug) ??
+    normalizeHost(`${slug}.localhost:3000`);
+
   if (!host) {
     throw new CreatePlatformSpaceError(
       "invalid_host",
       "El dominio o subdominio inicial no es válido."
-    );
-  }
-  if (!siteName) {
-    throw new CreatePlatformSpaceError(
-      "invalid_site_name",
-      "El nombre del Sitio es obligatorio."
     );
   }
 

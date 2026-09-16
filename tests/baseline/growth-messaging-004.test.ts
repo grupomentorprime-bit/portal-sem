@@ -104,7 +104,8 @@ describe("OT-GROWTH-MESSAGING-004 — UI humana", () => {
     const ui = readSrc("src/components/admin/growth/MensajesInboxClient.tsx");
     assert.match(ui, /thread\.oportunidadId && thread\.opportunity/);
     const read = readSrc("src/lib/growth/mensajes-read.ts");
-    assert.match(read, /GROWTH_OPORTUNIDADES_COLLECTION/);
+    assert.match(read, /createMongoGrowthOpportunityStore/);
+    assert.match(read, /oportunidades\.findById\(tenantId, conversation\.oportunidadId\)/);
     assert.match(read, /oportunidadId/);
   });
 });

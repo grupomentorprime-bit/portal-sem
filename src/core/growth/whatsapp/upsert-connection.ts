@@ -1,21 +1,28 @@
 /**
- * OT-GROWTH-MESSAGING-002 — persistir conexión (secretos fuera del documento del Espacio).
+ * OT-GROWTH-MESSAGING-002 / OT-GROWTH-WHATSAPP-META-001 —
+ * persistir conexión (secretos fuera del documento del Espacio).
  * Un phone_number_id solo puede pertenecer a un Espacio.
  */
 
 import { ObjectId } from "mongodb";
 import type { GrowthWhatsAppConnectionStore } from "./connection-store";
-import type { GrowthWhatsAppConnection } from "./types";
+import {
+  GROWTH_WHATSAPP_CONNECTION_SOURCE_LEGACY,
+  type GrowthWhatsAppConnection,
+  type GrowthWhatsAppConnectionSource,
+} from "./types";
 
 export interface UpsertGrowthWhatsAppConnectionInput {
   tenantId: string;
   phoneNumberId: string;
   wabaId?: string;
+  businessId?: string;
   displayPhoneNumber?: string;
   verifyToken?: string;
   appSecret?: string;
   /** Token Cloud API para envío (MESSAGING-003). Opcional si ya existe. */
   accessToken?: string;
+  connectionSource?: GrowthWhatsAppConnectionSource;
   enabled?: boolean;
   now?: string;
 }
@@ -54,6 +61,11 @@ export async function upsertGrowthWhatsAppConnection(
   const accessToken =
     input.accessToken?.trim() || existing?.accessToken || undefined;
 
+  const connectionSource =
+    input.connectionSource ??
+    existing?.connectionSource ??
+    GROWTH_WHATSAPP_CONNECTION_SOURCE_LEGACY;
+
   const connection: GrowthWhatsAppConnection = {
     _id: existing?._id ?? new ObjectId().toString(),
     tenantId,
@@ -61,15 +73,18 @@ export async function upsertGrowthWhatsAppConnection(
     verifyToken,
     appSecret,
     enabled: input.enabled ?? existing?.enabled ?? true,
+    connectionSource,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
   if (accessToken) connection.accessToken = accessToken;
 
   const wabaId = input.wabaId?.trim() || existing?.wabaId;
+  const businessId = input.businessId?.trim() || existing?.businessId;
   const displayPhoneNumber =
     input.displayPhoneNumber?.trim() || existing?.displayPhoneNumber;
   if (wabaId) connection.wabaId = wabaId;
+  if (businessId) connection.businessId = businessId;
   if (displayPhoneNumber) connection.displayPhoneNumber = displayPhoneNumber;
 
   const saved = await store.upsert(connection);

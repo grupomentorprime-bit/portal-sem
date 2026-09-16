@@ -67,7 +67,8 @@ describe("OT-GROWTH-E2E-FIX-003 — superficie", () => {
 
     const read = readSrc("src/lib/growth/mensajes-read.ts");
     assert.match(read, /toMensajesThreadOpportunityView/);
-    assert.match(read, /findOne\(\{\s*tenantId,\s*_id: conversation\.oportunidadId\s*\}\)/);
+    assert.match(read, /createMongoGrowthOpportunityStore/);
+    assert.match(read, /oportunidades\.findById\(tenantId, conversation\.oportunidadId\)/);
     assert.doesNotMatch(read, /openGrowthOpportunity|sales-ops|setGrowthNextAction/);
 
     const ui = readSrc("src/components/admin/growth/MensajesInboxClient.tsx");
@@ -136,7 +137,7 @@ describe("OT-GROWTH-E2E-FIX-003 — proyección A/C/D/F", () => {
     assert.equal(mensajes.nextActionLabel, opp.nextAction!.summary);
   });
 
-  it("F — opp final muestra estado real y nextAction ausente humano", () => {
+  it("F — opp final muestra estado real (Ganada/Perdida/Traspasada) y nextAction humano", () => {
     const won = toMensajesThreadOpportunityView(
       sampleOpp({ status: "won", nextAction: null })
     );
@@ -148,6 +149,13 @@ describe("OT-GROWTH-E2E-FIX-003 — proyección A/C/D/F", () => {
     );
     assert.equal(lost.statusLabel, "Perdida");
     assert.equal(lost.nextActionLabel, GROWTH_NO_NEXT_ACTION_LABEL);
+
+    const handed = toMensajesThreadOpportunityView(
+      sampleOpp({ status: "handed_off", nextAction: null })
+    );
+    assert.equal(handed.statusLabel, growthOpportunityStatusLabel("handed_off"));
+    assert.equal(handed.statusLabel, "Traspasada");
+    assert.equal(handed.nextActionLabel, GROWTH_NO_NEXT_ACTION_LABEL);
   });
 
   it("lenguaje humano — sin typeKeys ni estados técnicos en etiquetas", () => {
@@ -163,8 +171,8 @@ describe("OT-GROWTH-E2E-FIX-003 — proyección A/C/D/F", () => {
   });
 });
 
-describe("OT-GROWTH-E2E-FIX-003 — UI B/E/H", () => {
-  it("B — Ver oportunidad apunta a la ficha existente de Ventas", () => {
+describe("OT-GROWTH-E2E-FIX-003 — UI B/E/G/J", () => {
+  it("B/D — Ver oportunidad apunta a la ficha existente de Ventas", () => {
     const ui = readSrc("src/components/admin/growth/MensajesInboxClient.tsx");
     assert.match(
       ui,
@@ -182,12 +190,21 @@ describe("OT-GROWTH-E2E-FIX-003 — UI B/E/H", () => {
     const read = readSrc("src/lib/growth/mensajes-read.ts");
     assert.match(
       read,
-      /conversation\.oportunidadId\s*\?\s*[\s\S]*findOne[\s\S]*:\s*Promise\.resolve\(null\)/
+      /conversation\.oportunidadId\s*\?\s*[\s\S]*findById[\s\S]*:\s*Promise\.resolve\(null\)/
     );
     assert.doesNotMatch(read, /openGrowthOpportunity/);
   });
 
-  it("H — layout mobile conserva stack (contexto + CTA full width)", () => {
+  it("G — sin nextAction usa etiqueta humana SSOT (no null vacío)", () => {
+    const view = toMensajesThreadOpportunityView(
+      sampleOpp({ nextAction: null })
+    );
+    assert.equal(view.nextActionLabel, GROWTH_NO_NEXT_ACTION_LABEL);
+    assert.doesNotMatch(view.nextActionLabel, /\bnull\b|undefined/i);
+    assert.ok(view.nextActionLabel.trim().length > 0);
+  });
+
+  it("J — layout mobile conserva stack (contexto + CTA full width)", () => {
     const ui = readSrc("src/components/admin/growth/MensajesInboxClient.tsx");
     assert.match(ui, /flex-col gap-3 sm:flex-row/);
     assert.match(ui, /w-full shrink-0 sm:w-auto/);
@@ -196,18 +213,40 @@ describe("OT-GROWTH-E2E-FIX-003 — UI B/E/H", () => {
   });
 });
 
-describe("OT-GROWTH-E2E-FIX-003 — tenant G", () => {
-  it("G — resolución de Oportunidad siempre con tenantId del Espacio", () => {
+describe("OT-GROWTH-E2E-FIX-003 — tenant H/I", () => {
+  it("H — resolución de Oportunidad siempre con tenantId del Espacio", () => {
     const read = readSrc("src/lib/growth/mensajes-read.ts");
+    assert.match(read, /createMongoGrowthOpportunityStore\(db\)/);
     assert.match(
       read,
-      /findOne\(\{\s*tenantId,\s*_id: conversation\.oportunidadId\s*\}\)/
+      /oportunidades\.findById\(tenantId, conversation\.oportunidadId\)/
     );
     assert.match(
       read,
       /findOne\(\{\s*tenantId,\s*_id: conversationId\s*\}\)/
     );
     // No hay lookup cross-tenant por id suelto.
-    assert.doesNotMatch(read, /findOne\(\{\s*_id: conversation\.oportunidadId\s*\}\)/);
+    assert.doesNotMatch(
+      read,
+      /findById\(\s*conversation\.oportunidadId\s*\)/
+    );
+    assert.doesNotMatch(
+      read,
+      /findOne\(\{\s*_id: conversation\.oportunidadId\s*\}\)/
+    );
+  });
+
+  it("H/I — opp de otro Espacio no expone contexto (SEM↔ADL aislados por findById)", () => {
+    const read = readSrc("src/lib/growth/mensajes-read.ts");
+    // Sin documento resoluble en el Espacio: no se setea oportunidadId ni opportunity.
+    assert.match(
+      read,
+      /\.\.\.\(oportunidad\?\._id\s*\?\s*\{[\s\S]*oportunidadId:[\s\S]*opportunity:[\s\S]*\}[\s\S]*:\s*\{\}\)/
+    );
+    const repo = readSrc("src/core/growth/opportunity-repository.ts");
+    assert.match(
+      repo,
+      /findOne\(\{\s*tenantId,\s*_id: oportunidadId\s*\}\)/
+    );
   });
 });

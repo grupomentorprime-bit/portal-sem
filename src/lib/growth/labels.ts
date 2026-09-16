@@ -252,9 +252,10 @@ export const GROWTH_CHANNELS_PAGE_DESCRIPTION =
   "Conecta los medios que usa tu organización para hablar con las personas.";
 export const GROWTH_CHANNELS_WHATSAPP_LABEL = "WhatsApp";
 export const GROWTH_CHANNELS_VIEW_MESSAGES_LABEL = "Ver mensajes";
-export const GROWTH_CHANNELS_CONNECT_LABEL = "Conectar";
+export const GROWTH_CHANNELS_CONNECT_LABEL = "Conectar WhatsApp";
 export const GROWTH_CHANNELS_COMPLETE_CONNECTION_LABEL = "Completar conexión";
 export const GROWTH_CHANNELS_MANAGE_LABEL = "Administrar";
+export const GROWTH_CHANNELS_DISCONNECT_LABEL = "Desconectar";
 export const GROWTH_CHANNELS_TEST_LABEL = "Probar conexión";
 export const GROWTH_CHANNELS_PAUSE_LABEL = "Pausar";
 export const GROWTH_CHANNELS_RESUME_LABEL = "Reanudar";
@@ -266,6 +267,11 @@ export const GROWTH_CHANNELS_TEST_FAIL =
   "No pudimos conectar. Revisa la configuración.";
 export const GROWTH_CHANNELS_COMING_SOON = "Disponible más adelante";
 export const GROWTH_CHANNELS_UPDATED_LABEL = "Última actualización";
+export const GROWTH_CHANNELS_CONNECTED_LABEL = "Conectado";
+export const GROWTH_CHANNELS_META_UNAVAILABLE =
+  "La conexión guiada con Meta aún no está disponible en esta instalación.";
+export const GROWTH_CHANNELS_TECHNICAL_FALLBACK_LABEL =
+  "Configuración técnica (admin)";
 
 /** OT-GROWTH-UX-ANALYTICS-004 — copy humano Analítica V1. */
 export const GROWTH_ANALITICA_PAGE_TITLE = "Analítica";

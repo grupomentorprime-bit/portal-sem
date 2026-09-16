@@ -2,7 +2,23 @@ import type { PortalStatus } from "@/types/cms";
 
 export type TenantStatus = "active" | "inactive" | "suspended";
 export type SiteStatus = PortalStatus;
-export type TenantType = "institution" | "academy" | "platform" | string;
+/**
+ * Clasificación del Espacio (UX / catálogo).
+ * Categorías base nuevas: business | education | social | community | independent | other.
+ * Legacy: institution | academy | platform.
+ * No limita capacidades de Growth OS.
+ */
+export type TenantType =
+  | "business"
+  | "education"
+  | "social"
+  | "community"
+  | "independent"
+  | "other"
+  | "institution"
+  | "academy"
+  | "platform"
+  | string;
 
 export interface TenantDocument {
   _id: string;

@@ -34,6 +34,19 @@ export function labelSiteStatus(status: SiteStatus | string): string {
 
 export function labelTenantType(type: TenantType | string): string {
   switch (type) {
+    case "business":
+      return "Empresa";
+    case "education":
+      return "Educación";
+    case "social":
+      return "Organización social";
+    case "community":
+      return "Comunidad o iglesia";
+    case "independent":
+      return "Profesional independiente";
+    case "other":
+      return "Otro";
+    // Legacy (Espacios previos a OT-GROWTH-UX-SPACE-CREATION-001)
     case "institution":
       return "Institución";
     case "academy":

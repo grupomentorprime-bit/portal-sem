@@ -1,0 +1,13 @@
+{
+  "ot": "OT-GROWTH-UX-SPACE-CREATION-001",
+  "baseUrl": "http://localhost:3000",
+  "captures": [
+    "01-desktop-crear-espacio.png",
+    "02-desktop-avanzadas.png",
+    "03-mobile-crear-espacio.png"
+  ],
+  "samples": {
+    "education": "Mentor Capacitación → mentor-capacitacion",
+    "business": "Panadería Central → panaderia-central"
+  }
+}
