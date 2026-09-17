@@ -32,6 +32,10 @@ import {
   GROWTH_CHANNELS_DISCONNECT_LABEL,
   GROWTH_CHANNELS_MANAGE_LABEL,
 } from "../../src/lib/growth/labels";
+import {
+  buildWhatsAppEmbeddedSignupLoginOptions,
+  describeWhatsAppEmbeddedSignupOAuthParams,
+} from "../../src/lib/growth/whatsapp-embedded-signup-client";
 
 function readSrc(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
@@ -189,18 +193,34 @@ describe("OT-GROWTH-WHATSAPP-META-001 — plataforma Meta", () => {
   });
 
   it("ready solo con las cuatro variables de plataforma", () => {
-    setEnv("META_APP_ID", "app-public");
+    setEnv("META_APP_ID", "885668187811415");
     setEnv("META_APP_SECRET", "secret-platform");
-    setEnv("META_ES_CONFIG_ID", "es-config");
+    setEnv("META_ES_CONFIG_ID", "1399738671588159");
     setEnv("META_WEBHOOK_VERIFY_TOKEN", "verify-platform");
     const cfg = readMetaPlatformConfig(process.env);
     assert.ok(cfg);
-    assert.equal(cfg?.appId, "app-public");
+    assert.equal(cfg?.appId, "885668187811415");
     const pub = getMetaPlatformPublicConfig(process.env);
     assert.equal(pub.ready, true);
-    assert.equal(pub.appId, "app-public");
-    assert.equal(pub.esConfigId, "es-config");
+    assert.equal(pub.appId, "885668187811415");
+    assert.equal(pub.esConfigId, "1399738671588159");
     assert.doesNotMatch(JSON.stringify(pub), /secret-platform|verify-platform/);
+  });
+
+  it("tolera comillas envolventes y rechaza config_id no numérico", () => {
+    setEnv("META_APP_ID", '"885668187811415"');
+    setEnv("META_APP_SECRET", "'secret-platform'");
+    setEnv("META_ES_CONFIG_ID", '"1399738671588159"');
+    setEnv("META_WEBHOOK_VERIFY_TOKEN", '"verify-platform"');
+    const pub = getMetaPlatformPublicConfig(process.env);
+    assert.equal(pub.ready, true);
+    assert.equal(pub.appId, "885668187811415");
+    assert.equal(pub.esConfigId, "1399738671588159");
+
+    setEnv("META_ES_CONFIG_ID", "configurado");
+    const bad = getMetaPlatformPublicConfig(process.env);
+    assert.equal(bad.ready, false);
+    assert.ok(bad.missing.includes("META_ES_CONFIG_ID"));
   });
 });
 
@@ -538,5 +558,58 @@ describe("OT-GROWTH-WHATSAPP-META-001 — CSP Meta", () => {
     assert.match(env, /META_ES_CONFIG_ID=/);
     assert.match(env, /META_WEBHOOK_VERIFY_TOKEN=/);
     assert.doesNotMatch(env, /META_APP_SECRET=\S+/);
+  });
+});
+
+describe("OT-GROWTH-WHATSAPP-EMBEDDED-SIGNUP-OAUTH-FIX-001 — inicio OAuth", () => {
+  it("FB.login usa config_id + code y nunca scope=openid", () => {
+    const client = readSrc("src/lib/growth/whatsapp-embedded-signup-client.ts");
+    assert.match(client, /buildWhatsAppEmbeddedSignupLoginOptions/);
+    assert.match(client, /describeWhatsAppEmbeddedSignupOAuthParams/);
+    assert.match(client, /response_type:\s*"code"/);
+    assert.match(client, /override_default_response_type:\s*true/);
+    assert.match(client, /config_id:/);
+    assert.match(client, /v26\.0/);
+    assert.doesNotMatch(client, /scope:\s*["']openid/);
+    assert.doesNotMatch(client, /scope:\s*["']whatsapp/);
+    assert.match(
+      client,
+      /Nunca scope=openid|no incluir scope ni openid|No usa scope/
+    );
+
+    const options = buildWhatsAppEmbeddedSignupLoginOptions("1399738671588159");
+    assert.ok(options);
+    assert.equal(options?.config_id, "1399738671588159");
+    assert.equal(options?.response_type, "code");
+    assert.equal(options?.override_default_response_type, true);
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(options, "scope"),
+      false
+    );
+
+    const oauth = describeWhatsAppEmbeddedSignupOAuthParams({
+      appId: "885668187811415",
+      esConfigId: "1399738671588159",
+    });
+    assert.ok(oauth);
+    assert.equal(oauth?.client_id, "885668187811415");
+    assert.equal(oauth?.config_id, "1399738671588159");
+    assert.equal(oauth?.response_type, "code");
+    assert.equal(oauth?.scope, null);
+
+    assert.equal(buildWhatsAppEmbeddedSignupLoginOptions("openid"), null);
+    assert.equal(
+      describeWhatsAppEmbeddedSignupOAuthParams({
+        appId: "885668187811415",
+        esConfigId: "",
+      }),
+      null
+    );
+  });
+
+  it("ChannelsSettingsClient valida App ID / Config ID antes de lanzar", () => {
+    const client = readSrc("src/components/admin/ChannelsSettingsClient.tsx");
+    assert.match(client, /\\d\{5,\}/);
+    assert.match(client, /launchWhatsAppEmbeddedSignup/);
   });
 });

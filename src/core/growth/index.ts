@@ -224,6 +224,7 @@ export {
   getMetaAppSecret,
   getMetaPlatformPublicConfig,
   getMetaWebhookVerifyToken,
+  isMetaPublicId,
   parseWhatsAppRecipientFromThreadId,
   readMetaPlatformConfig,
   receiveWhatsAppCloudWebhook,

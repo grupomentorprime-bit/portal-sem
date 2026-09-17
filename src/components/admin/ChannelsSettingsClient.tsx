@@ -367,9 +367,23 @@ export function ChannelsSettingsClient() {
       return;
     }
 
-    const appId = sessionData.meta.appId as string;
-    const esConfigId = sessionData.meta.esConfigId as string;
+    const appId =
+      typeof sessionData.meta.appId === "string"
+        ? sessionData.meta.appId.trim()
+        : "";
+    const esConfigId =
+      typeof sessionData.meta.esConfigId === "string"
+        ? sessionData.meta.esConfigId.trim()
+        : "";
     const state = sessionData.state as string;
+
+    // Guardia: sin config_id numérico FB.login cae a scope=openid (error Meta).
+    if (!/^\d{5,}$/.test(appId) || !/^\d{5,}$/.test(esConfigId)) {
+      setError(GROWTH_CHANNELS_META_UNAVAILABLE);
+      setConnecting(false);
+      openTechnical("connect");
+      return;
+    }
 
     const launched = await launchWhatsAppEmbeddedSignup({ appId, esConfigId });
     if (!launched.ok) {

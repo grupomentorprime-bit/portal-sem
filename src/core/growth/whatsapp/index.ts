@@ -104,6 +104,7 @@ export {
   getMetaAppSecret,
   getMetaPlatformPublicConfig,
   getMetaWebhookVerifyToken,
+  isMetaPublicId,
   readMetaPlatformConfig,
 } from "./meta-platform";
 export type {
