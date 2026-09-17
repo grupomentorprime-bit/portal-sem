@@ -119,6 +119,16 @@ Validación manual post-deploy (no ejecutada aquí): Conectar WhatsApp → diál
 
 **No deploy / push** sin autorización.
 
+### Post-deploy check (2026-09-17)
+
+Con `1249a5d` desplegado, producción seguía abriendo `response_type=token&scope=openid` sin `config_id`.
+
+**Causa adicional:** `ChannelsSettingsClient` hacía `await fetch(session)` + `await loadFacebookSdk` **antes** de `FB.login`. Sin user-gesture, el JS SDK de Meta cae al diálogo OIDC por defecto (token/openid) e ignora el Embedded Signup aunque las opciones lleven `config_id`.
+
+No era bundle viejo ni `NEXT_PUBLIC_*` (los IDs públicos vienen del session API en runtime). El HTML admin es `no-store`; los chunks `/_next/static` son immutable por hash.
+
+**Fix mínimo extra:** precargar el SDK al tener `meta.ready` y llamar `launchWhatsAppEmbeddedSignupReady` de forma síncrona en el click (sin await previo).
+
 ---
 
 ## 7. Veredicto

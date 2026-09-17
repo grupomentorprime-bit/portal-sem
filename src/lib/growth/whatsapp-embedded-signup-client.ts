@@ -113,6 +113,33 @@ export function describeWhatsAppEmbeddedSignupOAuthParams(input: {
   };
 }
 
+/**
+ * Query string efectiva del diálogo Embedded Signup (sin secretos).
+ * Sirve para tests/post-deploy: debe incluir config_id + response_type=code
+ * y no debe contener scope=openid.
+ */
+export function buildWhatsAppEmbeddedSignupDialogQuery(input: {
+  appId: string;
+  esConfigId: string;
+}): string | null {
+  const oauth = describeWhatsAppEmbeddedSignupOAuthParams(input);
+  if (!oauth) return null;
+  const params = new URLSearchParams({
+    client_id: oauth.client_id,
+    config_id: oauth.config_id,
+    response_type: oauth.response_type,
+    override_default_response_type: "true",
+  });
+  return params.toString();
+}
+
+/** True si el SDK ya está init con este App ID (FB.login puede ser síncrono). */
+export function isFacebookSdkReady(appId: string): boolean {
+  if (typeof window === "undefined") return false;
+  const trimmed = appId.trim();
+  return Boolean(window.FB && initializedAppId === trimmed && isMetaPublicId(trimmed));
+}
+
 export function loadFacebookSdk(appId: string): Promise<void> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("SDK solo en navegador."));
@@ -248,38 +275,33 @@ function parseEmbeddedSignupMessage(
  * Lanza FB.login Embedded Signup v4 (config_id + response_type=code).
  * Captura session info (phone_number_id / waba_id) vía postMessage.
  * No usa scope (openid u otros): los permisos viven en la Configuration de Meta.
+ *
+ * IMPORTANTE (post-deploy OAUTH-FIX-001): FB.login debe ejecutarse en el mismo
+ * turno síncrono del click. Si se await-ea fetch/SDK antes, el SDK pierde el
+ * user-gesture y cae al OAuth OIDC por defecto (response_type=token&scope=openid)
+ * sin config_id. Precargar el SDK y usar launchWhatsAppEmbeddedSignupReady.
  */
-export async function launchWhatsAppEmbeddedSignup(input: {
+export function launchWhatsAppEmbeddedSignupReady(input: {
   appId: string;
   esConfigId: string;
 }): Promise<WhatsAppEmbeddedSignupLaunchResult> {
   const loginOptions = buildWhatsAppEmbeddedSignupLoginOptions(input.esConfigId);
   const oauth = describeWhatsAppEmbeddedSignupOAuthParams(input);
   if (!loginOptions || !oauth) {
-    return {
+    return Promise.resolve({
       ok: false,
       reason: "invalid_config",
       message:
         "Falta la configuración de Embedded Signup (App ID / Config ID).",
-    };
+    });
   }
 
-  try {
-    await loadFacebookSdk(oauth.client_id);
-  } catch {
-    return {
+  if (!isFacebookSdkReady(oauth.client_id) || !window.FB) {
+    return Promise.resolve({
       ok: false,
       reason: "sdk_error",
-      message: "No se pudo iniciar el autorizador de Meta.",
-    };
-  }
-
-  if (!window.FB) {
-    return {
-      ok: false,
-      reason: "sdk_error",
-      message: "El SDK de Meta no está disponible.",
-    };
+      message: "El autorizador de Meta aún no está listo. Volvé a intentarlo.",
+    });
   }
 
   let assets: WhatsAppEmbeddedSignupAssets | null = null;
@@ -297,45 +319,59 @@ export async function launchWhatsAppEmbeddedSignup(input: {
 
   window.addEventListener("message", onMessage);
 
-  try {
-    const loginResult = await new Promise<{
-      code?: string;
-      cancelled: boolean;
-    }>((resolve) => {
-      window.FB!.login((response) => {
-        const code = response.authResponse?.code?.trim();
-        if (code) {
-          resolve({ code, cancelled: false });
+  // FB.login aquí — síncrono respecto al caller (sin await previo en esta fn).
+  return new Promise<WhatsAppEmbeddedSignupLaunchResult>((resolve) => {
+    window.FB!.login((response) => {
+      const code = response.authResponse?.code?.trim();
+      window.setTimeout(() => {
+        window.removeEventListener("message", onMessage);
+        if (!code) {
+          resolve({
+            ok: false,
+            reason: "cancelled",
+            message: "Conexión cancelada.",
+          });
           return;
         }
-        resolve({ cancelled: true });
-      }, loginOptions);
-    });
+        if (!assets) {
+          resolve({
+            ok: false,
+            reason: "missing_assets",
+            message:
+              "Meta no devolvió el número de WhatsApp. Volvé a intentarlo.",
+          });
+          return;
+        }
+        resolve({ ok: true, code, assets });
+      }, 250);
+    }, loginOptions);
+  });
+}
 
-    // Dar tiempo a postMessage de session info tras el cierre del diálogo.
-    await new Promise((r) => setTimeout(r, 250));
-
-    if (loginResult.cancelled || !loginResult.code) {
-      return {
-        ok: false,
-        reason: "cancelled",
-        message: "Conexión cancelada.",
-      };
-    }
-
-    if (!assets) {
-      return {
-        ok: false,
-        reason: "missing_assets",
-        message:
-          "Meta no devolvió el número de WhatsApp. Volvé a intentarlo.",
-      };
-    }
-
-    return { ok: true, code: loginResult.code, assets };
-  } finally {
-    window.removeEventListener("message", onMessage);
+/** Precarga SDK y luego lanza (solo para tests / caminos no-click). */
+export async function launchWhatsAppEmbeddedSignup(input: {
+  appId: string;
+  esConfigId: string;
+}): Promise<WhatsAppEmbeddedSignupLaunchResult> {
+  const oauth = describeWhatsAppEmbeddedSignupOAuthParams(input);
+  if (!oauth) {
+    return {
+      ok: false,
+      reason: "invalid_config",
+      message:
+        "Falta la configuración de Embedded Signup (App ID / Config ID).",
+    };
   }
+  try {
+    await loadFacebookSdk(oauth.client_id);
+  } catch {
+    return {
+      ok: false,
+      reason: "sdk_error",
+      message: "No se pudo iniciar el autorizador de Meta.",
+    };
+  }
+  return launchWhatsAppEmbeddedSignupReady(input);
 }
 
 /** Envía el code + assets al servidor (secretos nunca viajan de vuelta). */

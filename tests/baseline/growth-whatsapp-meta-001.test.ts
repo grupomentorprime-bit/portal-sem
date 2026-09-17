@@ -33,6 +33,7 @@ import {
   GROWTH_CHANNELS_MANAGE_LABEL,
 } from "../../src/lib/growth/labels";
 import {
+  buildWhatsAppEmbeddedSignupDialogQuery,
   buildWhatsAppEmbeddedSignupLoginOptions,
   describeWhatsAppEmbeddedSignupOAuthParams,
 } from "../../src/lib/growth/whatsapp-embedded-signup-client";
@@ -566,6 +567,8 @@ describe("OT-GROWTH-WHATSAPP-EMBEDDED-SIGNUP-OAUTH-FIX-001 — inicio OAuth", ()
     const client = readSrc("src/lib/growth/whatsapp-embedded-signup-client.ts");
     assert.match(client, /buildWhatsAppEmbeddedSignupLoginOptions/);
     assert.match(client, /describeWhatsAppEmbeddedSignupOAuthParams/);
+    assert.match(client, /buildWhatsAppEmbeddedSignupDialogQuery/);
+    assert.match(client, /launchWhatsAppEmbeddedSignupReady/);
     assert.match(client, /response_type:\s*"code"/);
     assert.match(client, /override_default_response_type:\s*true/);
     assert.match(client, /config_id:/);
@@ -607,9 +610,30 @@ describe("OT-GROWTH-WHATSAPP-EMBEDDED-SIGNUP-OAUTH-FIX-001 — inicio OAuth", ()
     );
   });
 
-  it("ChannelsSettingsClient valida App ID / Config ID antes de lanzar", () => {
+  it("dialog query efectiva incluye config_id=code y excluye openid", () => {
+    const query = buildWhatsAppEmbeddedSignupDialogQuery({
+      appId: "885668187811415",
+      esConfigId: "1399738671588159",
+    });
+    assert.ok(query);
+    assert.match(query!, /config_id=1399738671588159/);
+    assert.match(query!, /response_type=code/);
+    assert.match(query!, /client_id=885668187811415/);
+    assert.match(query!, /override_default_response_type=true/);
+    assert.doesNotMatch(query!, /scope=/);
+    assert.doesNotMatch(query!, /openid/);
+    assert.doesNotMatch(query!, /response_type=token/);
+  });
+
+  it("ChannelsSettingsClient valida App ID / Config ID y lanza FB.login sync", () => {
     const client = readSrc("src/components/admin/ChannelsSettingsClient.tsx");
     assert.match(client, /\\d\{5,\}/);
-    assert.match(client, /launchWhatsAppEmbeddedSignup/);
+    assert.match(client, /launchWhatsAppEmbeddedSignupReady/);
+    assert.match(client, /isFacebookSdkReady/);
+    assert.match(client, /loadFacebookSdk/);
+    assert.doesNotMatch(
+      client,
+      /await\s+fetch\([\s\S]{0,200}launchWhatsAppEmbeddedSignupReady/
+    );
   });
 });

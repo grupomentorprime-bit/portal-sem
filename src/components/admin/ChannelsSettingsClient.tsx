@@ -29,7 +29,12 @@ import {
   GROWTH_CHANNELS_VIEW_MESSAGES_LABEL,
   GROWTH_CHANNELS_WHATSAPP_LABEL,
 } from "@/lib/growth/labels";
-import { launchWhatsAppEmbeddedSignup, submitWhatsAppEmbeddedSignupComplete } from "@/lib/growth/whatsapp-embedded-signup-client";
+import {
+  isFacebookSdkReady,
+  launchWhatsAppEmbeddedSignupReady,
+  loadFacebookSdk,
+  submitWhatsAppEmbeddedSignupComplete,
+} from "@/lib/growth/whatsapp-embedded-signup-client";
 import {
   CHILE_PHONE_EXAMPLE,
   formatChilePhoneDisplay,
@@ -264,6 +269,7 @@ export function ChannelsSettingsClient() {
   const [connection, setConnection] =
     useState<GrowthWhatsAppConnectionPublic | null>(null);
   const [meta, setMeta] = useState<MetaSessionPublic | null>(null);
+  const [connectState, setConnectState] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
   const [testMessage, setTestMessage] = useState("");
@@ -281,10 +287,18 @@ export function ChannelsSettingsClient() {
       connection?: GrowthWhatsAppConnectionPublic | null;
       channel?: WhatsAppChannelAdminView;
       meta?: MetaSessionPublic;
+      state?: string | null;
     }) => {
       if ("connection" in data) setConnection(data.connection ?? null);
       if (data.channel) setChannel(data.channel);
       if (data.meta) setMeta(data.meta);
+      if ("state" in data) {
+        setConnectState(
+          typeof data.state === "string" && data.state.trim()
+            ? data.state
+            : null
+        );
+      }
     },
     []
   );
@@ -316,6 +330,7 @@ export function ChannelsSettingsClient() {
       }
       applyPayload(legacyData);
       setMeta({ ready: false, appId: null, esConfigId: null, missing: [] });
+      setConnectState(null);
       setLoading(false);
       return;
     }
@@ -326,6 +341,16 @@ export function ChannelsSettingsClient() {
   useDeferredEffect(() => {
     void load();
   }, [load]);
+
+  // Precargar FB SDK cuando la sesión Meta está lista — FB.login debe ser
+  // síncrono en el click (sin await previo) o Meta cae a scope=openid.
+  useDeferredEffect(() => {
+    const appId = meta?.appId?.trim() ?? "";
+    if (!meta?.ready || !/^\d{5,}$/.test(appId)) return;
+    void loadFacebookSdk(appId).catch(() => {
+      /* el click reintentará / pedirá segundo click */
+    });
+  }, [meta?.ready, meta?.appId]);
 
   function openTechnical(mode: "connect" | "manage") {
     setManageMode(mode);
@@ -345,71 +370,102 @@ export function ChannelsSettingsClient() {
     setManageOpen(true);
   }
 
-  async function handleConnectMeta() {
+  function handleConnectMeta() {
     setError("");
-    setConnecting(true);
 
-    const sessionRes = await fetch(
-      "/api/admin/integrations/whatsapp/meta/session"
-    );
-    const sessionData = await sessionRes.json();
-    if (!sessionData.ok) {
-      setError(sessionData.error ?? GROWTH_CHANNELS_META_UNAVAILABLE);
-      setConnecting(false);
-      return;
-    }
-    applyPayload(sessionData);
-
-    if (!sessionData.meta?.ready || !sessionData.state) {
-      setError(GROWTH_CHANNELS_META_UNAVAILABLE);
-      setConnecting(false);
-      openTechnical("connect");
-      return;
-    }
-
-    const appId =
-      typeof sessionData.meta.appId === "string"
-        ? sessionData.meta.appId.trim()
-        : "";
-    const esConfigId =
-      typeof sessionData.meta.esConfigId === "string"
-        ? sessionData.meta.esConfigId.trim()
-        : "";
-    const state = sessionData.state as string;
-
+    const appId = meta?.appId?.trim() ?? "";
+    const esConfigId = meta?.esConfigId?.trim() ?? "";
     // Guardia: sin config_id numérico FB.login cae a scope=openid (error Meta).
-    if (!/^\d{5,}$/.test(appId) || !/^\d{5,}$/.test(esConfigId)) {
-      setError(GROWTH_CHANNELS_META_UNAVAILABLE);
-      setConnecting(false);
-      openTechnical("connect");
+    if (
+      !meta?.ready ||
+      !connectState ||
+      !/^\d{5,}$/.test(appId) ||
+      !/^\d{5,}$/.test(esConfigId)
+    ) {
+      setConnecting(true);
+      void (async () => {
+        const sessionRes = await fetch(
+          "/api/admin/integrations/whatsapp/meta/session"
+        );
+        const sessionData = await sessionRes.json();
+        if (!sessionData.ok) {
+          setError(sessionData.error ?? GROWTH_CHANNELS_META_UNAVAILABLE);
+          setConnecting(false);
+          return;
+        }
+        applyPayload(sessionData);
+        const nextAppId =
+          typeof sessionData.meta?.appId === "string"
+            ? sessionData.meta.appId.trim()
+            : "";
+        if (sessionData.meta?.ready && /^\d{5,}$/.test(nextAppId)) {
+          try {
+            await loadFacebookSdk(nextAppId);
+          } catch {
+            /* ignore — pedimos segundo click */
+          }
+          setError(
+            "Autorizador de Meta listo. Pulsá Conectar WhatsApp otra vez."
+          );
+          setConnecting(false);
+          return;
+        }
+        setError(GROWTH_CHANNELS_META_UNAVAILABLE);
+        setConnecting(false);
+        openTechnical("connect");
+      })();
       return;
     }
 
-    const launched = await launchWhatsAppEmbeddedSignup({ appId, esConfigId });
-    if (!launched.ok) {
-      if (launched.reason !== "cancelled") {
-        setError(launched.message);
+    if (!isFacebookSdkReady(appId)) {
+      setConnecting(true);
+      void loadFacebookSdk(appId)
+        .then(() => {
+          setError(
+            "Autorizador de Meta listo. Pulsá Conectar WhatsApp otra vez."
+          );
+          setConnecting(false);
+        })
+        .catch(() => {
+          setError("No se pudo iniciar el autorizador de Meta.");
+          setConnecting(false);
+        });
+      return;
+    }
+
+    // FB.login síncrono en el click — no await previo (evita fallback openid).
+    setConnecting(true);
+    const state = connectState;
+    void launchWhatsAppEmbeddedSignupReady({ appId, esConfigId }).then(
+      async (launched) => {
+        if (!launched.ok) {
+          if (launched.reason !== "cancelled") {
+            setError(launched.message);
+          }
+          setConnecting(false);
+          return;
+        }
+
+        const complete = await submitWhatsAppEmbeddedSignupComplete({
+          state,
+          code: launched.code,
+          assets: launched.assets,
+        });
+        if (!complete.ok) {
+          setError(complete.error);
+          setConnecting(false);
+          return;
+        }
+
+        applyPayload(
+          complete.data as {
+            connection?: GrowthWhatsAppConnectionPublic | null;
+            channel?: WhatsAppChannelAdminView;
+          }
+        );
+        setConnecting(false);
       }
-      setConnecting(false);
-      return;
-    }
-
-    const complete = await submitWhatsAppEmbeddedSignupComplete({
-      state,
-      code: launched.code,
-      assets: launched.assets,
-    });
-    if (!complete.ok) {
-      setError(complete.error);
-      setConnecting(false);
-      return;
-    }
-
-    applyPayload(complete.data as {
-      connection?: GrowthWhatsAppConnectionPublic | null;
-      channel?: WhatsAppChannelAdminView;
-    });
-    setConnecting(false);
+    );
   }
 
   async function handleDisconnect() {
