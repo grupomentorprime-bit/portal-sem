@@ -197,6 +197,23 @@ describe("OT-GROWTH-MESSAGING-002 — parseo Cloud API", () => {
     const statuses = extractWhatsAppInboundMessages(statusOnlyPayload("pn-a"));
     assert.equal(statuses.length, 0);
   });
+
+  it("tolera phone_number_id numérico en JSON", () => {
+    const payload = cloudTextPayload({
+      phoneNumberId: "pn-a",
+      from: "56911112222",
+      messageId: "wamid.num-1",
+      body: "hola",
+    });
+    const entry = (payload.entry as unknown[])[0] as Record<string, unknown>;
+    const change = (entry.changes as unknown[])[0] as Record<string, unknown>;
+    const value = change.value as Record<string, unknown>;
+    const metadata = value.metadata as Record<string, unknown>;
+    metadata.phone_number_id = 106540352242922;
+    const messages = extractWhatsAppInboundMessages(payload);
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].phoneNumberId, "106540352242922");
+  });
 });
 
 describe("OT-GROWTH-MESSAGING-002 — inbound", () => {
@@ -488,6 +505,38 @@ describe("OT-GROWTH-MESSAGING-002 — inbound", () => {
     assert.equal(messaging.messages.size, 0);
     assert.equal(personas.personas.size, 0);
     assert.equal(bus.events.length, 0);
+  });
+
+  it("firma de plataforma válida con phone_number_id sin conexión → 200 ignored (no 403)", async () => {
+    const connections = createMemoryGrowthWhatsAppConnectionStore();
+    const personas = createMemoryGrowthPersonaStore();
+    const messaging = createMemoryGrowthMessagingStore();
+    const payload = cloudTextPayload({
+      phoneNumberId: "pn-unmapped",
+      from: "56911112222",
+      messageId: "wamid.unmapped-1",
+      body: "no debe persistir",
+    });
+    const rawBody = JSON.stringify(payload);
+    const result = await receiveWhatsAppCloudWebhook(
+      {
+        connections,
+        personas,
+        messaging,
+        platformAppSecret: "platform-secret",
+      },
+      {
+        rawBody,
+        signatureHeader: signWhatsAppHubBody(rawBody, "platform-secret"),
+      }
+    );
+    assert.equal(result.ok, true);
+    if (!result.ok) throw new Error("expected soft-ack");
+    assert.equal(result.httpStatus, 200);
+    assert.equal(result.processed.length, 0);
+    assert.equal(result.ignored, 1);
+    assert.equal(messaging.messages.size, 0);
+    assert.equal(personas.personas.size, 0);
   });
 
   it("statuses no crean mensaje; la vista pública no expone secretos", async () => {

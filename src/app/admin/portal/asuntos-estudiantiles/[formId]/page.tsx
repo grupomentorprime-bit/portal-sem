@@ -2,8 +2,8 @@ import {
   StudentAffairsFormNotFoundClient,
   StudentAffairsFormPageClient,
 } from "@/components/admin/student-affairs/StudentAffairsFormPageClient";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
-import { getTenantContext } from "@/core/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +13,13 @@ interface PageProps {
 
 export default async function StudentAffairsFormPage({ params }: PageProps) {
   const { formId } = await params;
-  const ctx = await getTenantContext();
-  if (!ctx) {
+  const config = await getOperationalSiteConfig();
+  const tenantId = config?.institution.tenant?.trim() ?? "";
+  if (!config || !tenantId) {
     return <p className="p-6 text-sm text-muted">Portal no configurado.</p>;
   }
 
-  const form = await getExperienceFormById(ctx.tenantId, formId);
+  const form = await getExperienceFormById(tenantId, formId);
   if (!form) {
     return <StudentAffairsFormNotFoundClient />;
   }
@@ -27,7 +28,7 @@ export default async function StudentAffairsFormPage({ params }: PageProps) {
     <StudentAffairsFormPageClient
       formId={form._id}
       formName={form.name}
-      institutionName={ctx.config.institution.name}
+      institutionName={config.institution.name}
     />
   );
 }

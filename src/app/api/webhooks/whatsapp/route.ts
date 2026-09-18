@@ -126,9 +126,21 @@ export async function POST(request: Request) {
     );
 
     if (!result.ok) {
+      console.error(
+        "[Growth WhatsApp] inbound rejected",
+        result.reason,
+        result.httpStatus
+      );
       return NextResponse.json(
         { ok: false },
         { status: result.httpStatus }
+      );
+    }
+
+    if (result.processed.length === 0 && result.ignored > 0) {
+      console.error(
+        "[Growth WhatsApp] inbound signed but nothing persisted",
+        `ignored=${result.ignored}`
       );
     }
 

@@ -1,21 +1,22 @@
 import { FormsCenterClient } from "@/components/admin/forms/FormsCenterClient";
+import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { listExperienceForms } from "@/lib/experience/forms/repository";
-import { getTenantContext } from "@/core/tenant";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConvocatoriasConfigPage() {
-  const ctx = await getTenantContext();
-  if (!ctx) {
+  const config = await getOperationalSiteConfig();
+  const tenantId = config?.institution.tenant?.trim() ?? "";
+  if (!tenantId) {
     return <p className="p-6 text-sm text-muted">Portal no configurado.</p>;
   }
 
-  const forms = await listExperienceForms(ctx.tenantId);
+  const forms = await listExperienceForms(tenantId);
 
   return (
     <FormsCenterClient
       initialForms={forms}
-      tenantId={ctx.tenantId}
+      tenantId={tenantId}
       scope="convocatorias"
     />
   );

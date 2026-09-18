@@ -103,7 +103,7 @@ async function authenticatePayload(
   payload: unknown,
   options?: { platformAppSecret?: string | null }
 ): Promise<
-  | { ok: true }
+  | { ok: true; resolvedConnections: number; phoneNumberIds: string[] }
   | { ok: false; reason: "invalid_signature" | "unknown_phone_number" }
 > {
   const phoneNumberIds = collectWhatsAppPhoneNumberIds(payload);
@@ -129,11 +129,12 @@ async function authenticatePayload(
     }
   }
 
-  if (resolved === 0) {
-    return { ok: false, reason: "unknown_phone_number" };
-  }
-
+  // Sin ningún secreto (plataforma ni conexiones) no hay forma de autenticar.
   if (secrets.length === 0) {
+    // Número desconocido y sin App Secret de plataforma → no se puede firmar.
+    if (resolved === 0) {
+      return { ok: false, reason: "unknown_phone_number" };
+    }
     return { ok: false, reason: "invalid_signature" };
   }
 
@@ -143,7 +144,18 @@ async function authenticatePayload(
   if (!signed) {
     return { ok: false, reason: "invalid_signature" };
   }
-  return { ok: true };
+
+  // Firma válida de plataforma: ACK aunque el phone_number_id aún no esté
+  // mapeado a un Espacio. El loop de mensajes lo ignora (ignored++).
+  // Antes: 403 unknown_phone_number cortaba el POST de Meta sin persistir.
+  if (resolved === 0 && platformSecret) {
+    console.error(
+      "[Growth WhatsApp] signed inbound without enabled connection",
+      phoneNumberIds.join(",")
+    );
+  }
+
+  return { ok: true, resolvedConnections: resolved, phoneNumberIds };
 }
 
 async function resolvePersonaForInbound(

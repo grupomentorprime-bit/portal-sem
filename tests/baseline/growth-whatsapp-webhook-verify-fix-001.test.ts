@@ -18,7 +18,7 @@ import {
   upsertGrowthWhatsAppConnection,
   verifyWhatsAppWebhookSubscription,
 } from "../../src/core/growth";
-import { getMetaWebhookVerifyToken } from "../../src/core/growth/whatsapp/meta-platform";
+import { getMetaAppSecret, getMetaWebhookVerifyToken } from "../../src/core/growth/whatsapp/meta-platform";
 import { proxy } from "../../src/proxy";
 
 function readSrc(rel: string): string {
@@ -111,6 +111,13 @@ describe("OT-GROWTH-WHATSAPP-WEBHOOK-VERIFY-FIX-001 — handshake GET", () => {
     assert.equal(getMetaWebhookVerifyToken(), "quoted-token");
     setEnv("META_WEBHOOK_VERIFY_TOKEN", "plain-token");
     assert.equal(getMetaWebhookVerifyToken(), "plain-token");
+  });
+
+  it("lee META_APP_SECRET y tolera comillas envolventes", () => {
+    setEnv("META_APP_SECRET", "'quoted-secret'");
+    assert.equal(getMetaAppSecret(), "quoted-secret");
+    setEnv("META_APP_SECRET", "plain-secret");
+    assert.equal(getMetaAppSecret(), "plain-secret");
   });
 });
 

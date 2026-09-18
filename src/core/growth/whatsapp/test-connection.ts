@@ -5,6 +5,8 @@
 import type { GrowthWhatsAppConnectionStore } from "./connection-store";
 import type { WhatsAppCloudApiPort } from "./cloud-api";
 import { createHttpWhatsAppCloudApi } from "./cloud-api";
+import { getMetaAppSecret } from "./meta-platform";
+import { GROWTH_WHATSAPP_CONNECTION_SOURCE_EMBEDDED } from "./types";
 
 export type TestGrowthWhatsAppConnectionResult =
   | { ok: true }
@@ -26,11 +28,16 @@ export async function testGrowthWhatsAppConnection(
 
   const phoneNumberId = connection.phoneNumberId?.trim();
   const accessToken = connection.accessToken?.trim();
+  const platformBacked =
+    connection.connectionSource === GROWTH_WHATSAPP_CONNECTION_SOURCE_EMBEDDED ||
+    Boolean(getMetaAppSecret());
+  const hasLegacySecrets = Boolean(
+    connection.verifyToken?.trim() && connection.appSecret?.trim()
+  );
   if (
     !phoneNumberId ||
     !accessToken ||
-    !connection.verifyToken?.trim() ||
-    !connection.appSecret?.trim()
+    (!platformBacked && !hasLegacySecrets)
   ) {
     return { ok: false, reason: "incomplete" };
   }
