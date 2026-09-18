@@ -205,7 +205,7 @@ export function FormsCenterClient({
         return;
       }
       await refresh();
-      router.push(`/admin/portal/forms/${formId}?tab=campos`);
+      router.push(`/admin/portal/forms/${formId}?tab=formulario`);
     } catch {
       setError("Error de red al restaurar el formulario.");
     } finally {
@@ -342,10 +342,12 @@ export function FormsCenterClient({
             <ActionMenuItem href={`${formDetailHref}${convocatoria ? "?tab=participantes" : ""}`}>
               {convocatoria ? "Editar participantes" : "Ver detalle"}
             </ActionMenuItem>
-            <ActionMenuItem href={`${formDetailHref}?tab=experiencia`}>
-              Editar presentación
+            <ActionMenuItem href={`${formDetailHref}?tab=formulario`}>
+              Editar formulario
             </ActionMenuItem>
-            <ActionMenuItem href={`${formDetailHref}?tab=campos`}>Editar preguntas</ActionMenuItem>
+            <ActionMenuItem href={`${formDetailHref}?tab=experiencia`}>
+              Más opciones · Presentación
+            </ActionMenuItem>
             <ActionMenuItem onClick={() => handleToggle(form, "active")}>Desactivar</ActionMenuItem>
             <ActionMenuItem onClick={() => handleToggle(form, "visible")}>
               {form.visible ? "Ocultar del portal" : "Publicar en portal"}
@@ -365,7 +367,7 @@ export function FormsCenterClient({
 
     return (
       <ColumnActions>
-        <Link href={`${formDetailHref}${convocatoria ? "?tab=participantes" : "?tab=campos"}`}>
+        <Link href={`${formDetailHref}${convocatoria ? "?tab=participantes" : "?tab=formulario"}`}>
           <Button type="button" variant="primary" size="sm">
             {convocatoria ? "Configurar" : "Gestionar"}
           </Button>
@@ -502,7 +504,7 @@ export function FormsCenterClient({
           {
             id: "new",
             title: "Nuevo formulario",
-            description: "Crear desde cero",
+            description: "Plantilla, IA o desde cero",
             onClick: () => setCreateOpen(true),
             icon: <Plus className="h-5 w-5" />,
           },

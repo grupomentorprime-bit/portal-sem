@@ -6,9 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ClipboardList,
   ExternalLink,
+  Eye,
   FileText,
   HelpCircle,
   Layout,
+  MoreHorizontal,
   Palette,
   Search,
   Settings,
@@ -21,6 +23,7 @@ import { AdminModuleCenter } from "@/components/admin/AdminModuleCenter";
 import { ConvocatoriaRosterPanel } from "@/components/admin/forms/ConvocatoriaRosterPanel";
 import { ExperienceFormFieldsEditor } from "@/components/admin/forms/ExperienceFormFieldsEditor";
 import { FormExperienceEditor } from "@/components/admin/forms/FormExperienceEditor";
+import { FormSimpleVisualEditor } from "@/components/admin/forms/FormSimpleVisualEditor";
 import { FormSubmissionsPanel } from "@/components/admin/forms/FormSubmissionsPanel";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -28,28 +31,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { publicFormUrl, isExperienceFormArchived, type FormConvocatoria, isExperienceFormPrivate, isPrivateExperienceForm, PRIVATE_EXPERIENCE_FORM_LABEL } from "@/lib/admin/forms-center";
+import {
+  publicFormUrl,
+  isExperienceFormArchived,
+  type FormConvocatoria,
+  isExperienceFormPrivate,
+  isPrivateExperienceForm,
+  PRIVATE_EXPERIENCE_FORM_LABEL,
+} from "@/lib/admin/forms-center";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
 
-type TabId =
-  | "respuestas"
-  | "participantes"
-  | "campos"
-  | "experiencia"
+type PrimaryTabId = "formulario" | "respuestas" | "participantes" | "mas";
+
+type MoreSectionId =
+  | "presentacion"
   | "seo"
   | "apariencia"
-  | "configuracion";
+  | "configuracion"
+  | "preguntas-avanzado";
 
-const TAB_HELP: Record<TabId, string> = {
+const PRIMARY_HELP: Record<PrimaryTabId, string> = {
+  formulario: "Así se verá para quien responde. Ajusta título, texto y preguntas.",
   respuestas: "Quién respondió y qué contestó.",
   participantes: "Lista de alumnos convocados (Excel o uno a uno).",
-  campos: "Las preguntas que verá quien complete el formulario.",
-  experiencia:
-    "Cómo se ve al abrirlo. Para una página completa usa Sitio web → Páginas.",
-  seo: "Cómo aparece al buscarlo o compartirlo.",
-  apariencia: "Colores y estilo.",
-  configuracion: "Nombre, mensajes y publicación.",
+  mas: "Presentación, apariencia y ajustes poco frecuentes. Para una página completa usa Sitio web → Páginas.",
 };
+
+const MORE_SECTIONS: Array<{ id: MoreSectionId; label: string; icon: typeof Layout }> = [
+  { id: "presentacion", label: "Presentación", icon: Layout },
+  { id: "seo", label: "Cómo se comparte", icon: Search },
+  { id: "apariencia", label: "Apariencia", icon: Palette },
+  { id: "configuracion", label: "Configuración", icon: Settings },
+  { id: "preguntas-avanzado", label: "Lista de preguntas", icon: FileText },
+];
 
 interface FormDetailClientProps {
   form: ExperienceFormDefinition;
@@ -57,66 +71,131 @@ interface FormDetailClientProps {
   tenantId: string;
 }
 
+function resolvePrimaryTab(
+  raw: string | null,
+  hasConvocatoria: boolean
+): PrimaryTabId {
+  if (raw === "respuestas" && !hasConvocatoria) return "respuestas";
+  if (raw === "participantes" && hasConvocatoria) return "participantes";
+  if (
+    raw === "mas" ||
+    raw === "experiencia" ||
+    raw === "seo" ||
+    raw === "apariencia" ||
+    raw === "configuracion" ||
+    raw === "preguntas-avanzado"
+  ) {
+    return "mas";
+  }
+  // formulario | editor | campos (legacy) → editor visual principal
+  if (raw === "formulario" || raw === "editor" || raw === "campos") return "formulario";
+  // Default: editor for normal forms; participantes for convocatoria operations.
+  return hasConvocatoria ? "participantes" : "formulario";
+}
+
+function resolveMoreSection(raw: string | null): MoreSectionId {
+  if (raw === "experiencia" || raw === "presentacion") return "presentacion";
+  if (raw === "seo") return "seo";
+  if (raw === "apariencia") return "apariencia";
+  if (raw === "configuracion") return "configuracion";
+  if (raw === "preguntas-avanzado") return "preguntas-avanzado";
+  return "presentacion";
+}
+
 export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: FormDetailClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab");
-  const resolvedInitialTab: TabId =
-    initialTab === "campos" ||
-    initialTab === "configuracion" ||
-    initialTab === "participantes" ||
-    initialTab === "experiencia" ||
-    initialTab === "seo" ||
-    initialTab === "apariencia"
-      ? initialTab
-      : convocatoria
-        ? "participantes"
-        : "respuestas";
-
-  const [tab, setTab] = useState<TabId>(resolvedInitialTab);
+  const initialTabParam = searchParams.get("tab");
+  const [tab, setTab] = useState<PrimaryTabId>(() =>
+    resolvePrimaryTab(initialTabParam, Boolean(convocatoria))
+  );
+  const [moreSection, setMoreSection] = useState<MoreSectionId>(() =>
+    resolveMoreSection(initialTabParam)
+  );
   const [form, setForm] = useState(initialForm);
   const { confirm, dialog } = useConfirmDialog();
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [purging, setPurging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [publishedMsg, setPublishedMsg] = useState(false);
   const isArchived = isExperienceFormArchived(form);
+
+  const persistForm = async (
+    next: ExperienceFormDefinition,
+    options?: { asPublish?: boolean }
+  ): Promise<ExperienceFormDefinition | null> => {
+    setError(null);
+    setSaved(false);
+    setPublishedMsg(false);
+
+    const res = await fetch(`/api/experience/forms/${next._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: next.name,
+        description: next.description,
+        successMessage: next.successMessage,
+        errorMessage: next.errorMessage,
+        destination: next.destination,
+        postSubmit: next.postSubmit,
+        active: next.active,
+        visible: next.visible,
+        fields: next.fields,
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      setError(data.error ?? "No se pudo guardar.");
+      return null;
+    }
+    setForm(data.form);
+    if (options?.asPublish) {
+      setPublishedMsg(true);
+    } else {
+      setSaved(true);
+    }
+    router.refresh();
+    return data.form as ExperienceFormDefinition;
+  };
 
   const handleSave = async () => {
     setSaving(true);
-    setError(null);
-    setSaved(false);
-
     try {
-      const res = await fetch(`/api/experience/forms/${form._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          successMessage: form.successMessage,
-          errorMessage: form.errorMessage,
-          destination: form.destination,
-          postSubmit: form.postSubmit,
-          active: form.active,
-          visible: form.visible,
-          fields: form.fields,
-        }),
-      });
-      const data = await res.json();
-      if (!data.ok) {
-        setError(data.error ?? "No se pudo guardar.");
-        return;
-      }
-      setForm(data.form);
-      setSaved(true);
-      router.refresh();
+      await persistForm(form);
     } catch {
       setError("No se pudo guardar. Revisa tu conexión.");
     } finally {
       setSaving(false);
     }
+  };
+
+  /**
+   * Publicar = una sola intención: aceptar respuestas y (si no es privado) mostrar en portal.
+   * active y visible siguen existiendo por separado en «Más opciones» para casos especiales
+   * (cerrar envíos sin ocultar, o enlace privado sin listado).
+   */
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      const isPrivate = isPrivateExperienceForm(form);
+      const next: ExperienceFormDefinition = {
+        ...form,
+        active: true,
+        visible: isPrivate ? form.visible : true,
+      };
+      await persistForm(next, { asPublish: true });
+    } catch {
+      setError("No se pudo publicar. Revisa tu conexión.");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handlePreview = () => {
+    window.open(publicFormUrl(form._id), "_blank", "noopener,noreferrer");
   };
 
   const handleArchive = async () => {
@@ -203,6 +282,12 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
 
   const isPrivate = isPrivateExperienceForm(form);
   const isDirectLinkLive = form.active && !isArchived && (form.visible || isPrivate);
+  const isPublished = form.active && (isPrivate || form.visible);
+
+  const openMore = (section: MoreSectionId) => {
+    setMoreSection(section);
+    setTab("mas");
+  };
 
   return (
     <AdminModulePage
@@ -225,7 +310,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
       description={
         convocatoria
           ? "Participantes, preguntas y publicación de la convocatoria."
-          : (form.description ?? "Respuestas, preguntas y publicación.")
+          : (form.description ?? "Edita las preguntas y publícalo cuando esté listo.")
       }
       actions={
         <div className="flex flex-wrap gap-2">
@@ -246,10 +331,19 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
               <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
             </Link>
           ) : null}
-          {tab !== "respuestas" && !isArchived ? (
-            <Button variant="primary" onClick={handleSave} loading={saving}>
-              Guardar cambios
-            </Button>
+          {!isArchived ? (
+            <>
+              <Button variant="outline" type="button" onClick={handlePreview}>
+                <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
+                Vista previa
+              </Button>
+              <Button variant="secondary" onClick={handleSave} loading={saving}>
+                Guardar
+              </Button>
+              <Button variant="primary" onClick={handlePublish} loading={publishing}>
+                {isPublished ? "Actualizar publicación" : "Publicar"}
+              </Button>
+            </>
           ) : null}
           {isArchived ? (
             <>
@@ -288,13 +382,21 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
             <p className="admin-form-detail__eyebrow">Formulario</p>
             <div className="admin-form-detail__badges">
               <StatusBadge
-                tone={form.active ? "active" : "inactive"}
-                label={form.active ? "Abierto" : "Cerrado"}
+                tone={isPublished ? "active" : "draft"}
+                label={isPublished ? "Publicado" : "Borrador"}
               />
               <StatusBadge
-                tone={isPrivate ? "neutral" : form.visible ? "active" : "draft"}
-                label={isPrivate ? PRIVATE_EXPERIENCE_FORM_LABEL : form.visible ? "En el portal" : "No publicado"}
+                tone={form.active ? "active" : "inactive"}
+                label={form.active ? "Acepta respuestas" : "Sin respuestas"}
               />
+              {isPrivate ? (
+                <StatusBadge tone="neutral" label={PRIVATE_EXPERIENCE_FORM_LABEL} />
+              ) : (
+                <StatusBadge
+                  tone={form.visible ? "active" : "draft"}
+                  label={form.visible ? "En el portal" : "Fuera del listado"}
+                />
+              )}
               {isArchived ? <StatusBadge tone="inactive" label="Archivado" /> : null}
               <span className="admin-form-detail__meta">
                 <FileText className="h-3.5 w-3.5" aria-hidden="true" />
@@ -303,12 +405,12 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
               </span>
             </div>
           </div>
-          {!isArchived && !form.active && (
+          {!isArchived && !isPublished ? (
             <p className="admin-form-detail__hint">
-              Para abrirlo: en <strong>Configuración</strong> activa &quot;Acepta respuestas&quot;
-              {isPrivate ? ", comparte el enlace" : ", publícalo en el portal"} y guarda.
+              Cuando esté listo, pulsa <strong>Publicar</strong> para empezar a recibir respuestas
+              {isPrivate ? " por el enlace." : " y mostrarlo en el portal."}
             </p>
-          )}
+          ) : null}
           {isPrivate ? (
             <p className="admin-form-detail__hint">
               Solo se abre con el enlace directo. No aparece en el menú ni en el listado público.
@@ -317,6 +419,13 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
         </div>
 
         <nav className="admin-form-detail__tabs" aria-label="Secciones del formulario">
+          <TabButton
+            active={tab === "formulario"}
+            icon={FileText}
+            onClick={() => setTab("formulario")}
+          >
+            Formulario
+          </TabButton>
           {!convocatoria ? (
             <TabButton
               active={tab === "respuestas"}
@@ -335,48 +444,28 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
               Participantes
             </TabButton>
           ) : null}
-          <TabButton
-            active={tab === "campos"}
-            icon={FileText}
-            onClick={() => setTab("campos")}
-          >
-            Preguntas
-          </TabButton>
-          <TabButton
-            active={tab === "experiencia"}
-            icon={Layout}
-            onClick={() => setTab("experiencia")}
-          >
-            Presentación
-          </TabButton>
-          <TabButton active={tab === "seo"} icon={Search} onClick={() => setTab("seo")}>
-            SEO
-          </TabButton>
-          <TabButton
-            active={tab === "apariencia"}
-            icon={Palette}
-            onClick={() => setTab("apariencia")}
-          >
-            Apariencia
-          </TabButton>
-          <TabButton
-            active={tab === "configuracion"}
-            icon={Settings}
-            onClick={() => setTab("configuracion")}
-          >
-            Configuración
+          <TabButton active={tab === "mas"} icon={MoreHorizontal} onClick={() => setTab("mas")}>
+            Más opciones
           </TabButton>
         </nav>
 
         <p className="admin-form-detail__tab-help">
           <HelpCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {TAB_HELP[tab]}
+          {PRIMARY_HELP[tab]}
         </p>
 
-        {error ? <p className="admin-form-detail__alert admin-form-detail__alert--error">{error}</p> : null}
+        {error ? (
+          <p className="admin-form-detail__alert admin-form-detail__alert--error">{error}</p>
+        ) : null}
         {saved ? (
           <p className="admin-form-detail__alert admin-form-detail__alert--success">
             Listo, guardamos los cambios.
+          </p>
+        ) : null}
+        {publishedMsg ? (
+          <p className="admin-form-detail__alert admin-form-detail__alert--success">
+            Publicado. Ya puede recibir respuestas
+            {isPrivate ? "." : " y aparece en el portal."}
           </p>
         ) : null}
         {isArchived ? (
@@ -384,6 +473,17 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
             Este formulario está archivado. Restáuralo para volver a usarlo o elimínalo
             definitivamente.
           </p>
+        ) : null}
+
+        {tab === "formulario" ? (
+          <FormSimpleVisualEditor
+            name={form.name}
+            description={form.description}
+            fields={form.fields}
+            onNameChange={(name) => setForm({ ...form, name })}
+            onDescriptionChange={(description) => setForm({ ...form, description })}
+            onFieldsChange={(fields) => setForm({ ...form, fields })}
+          />
         ) : null}
 
         {tab === "respuestas" && !convocatoria ? (
@@ -394,113 +494,142 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           <ConvocatoriaRosterPanel convocatoriaSlug={convocatoria.slug} />
         ) : null}
 
-        {tab === "campos" ? (
-          <ExperienceFormFieldsEditor
-            fields={form.fields}
-            onChange={(fields) => setForm({ ...form, fields })}
-          />
-        ) : null}
+        {tab === "mas" ? (
+          <div className="admin-form-detail__more">
+            <nav className="admin-form-detail__more-nav" aria-label="Más opciones">
+              {MORE_SECTIONS.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => openMore(section.id)}
+                    className={`admin-form-detail__more-item${
+                      moreSection === section.id ? " admin-form-detail__more-item--active" : ""
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {section.label}
+                  </button>
+                );
+              })}
+            </nav>
 
-        {tab === "experiencia" ? (
-          <FormExperienceEditor
-            formId={form._id}
-            formName={form.name}
-            tenantId={tenantId}
-            mode="experience"
-            isConvocatoria={Boolean(convocatoria)}
-          />
-        ) : null}
-
-        {tab === "seo" ? (
-          <FormExperienceEditor
-            formId={form._id}
-            formName={form.name}
-            tenantId={tenantId}
-            mode="seo"
-          />
-        ) : null}
-
-        {tab === "apariencia" ? (
-          <FormExperienceEditor
-            formId={form._id}
-            formName={form.name}
-            tenantId={tenantId}
-            mode="appearance"
-          />
-        ) : null}
-
-        {tab === "configuracion" ? (
-          <div className="admin-form-detail__config">
-            <section className="admin-form-detail__section">
-              <h3 className="admin-form-detail__section-title">Publicación</h3>
-              <div className="space-y-3">
-                <Switch
-                  checked={form.active}
-                  onChange={(active) => setForm({ ...form, active })}
-                  label="Acepta respuestas"
-                  description="Si está apagado, nadie puede enviar aunque tenga el enlace."
+            <div className="admin-form-detail__more-body">
+              {moreSection === "presentacion" ? (
+                <FormExperienceEditor
+                  formId={form._id}
+                  formName={form.name}
+                  tenantId={tenantId}
+                  mode="experience"
+                  isConvocatoria={Boolean(convocatoria)}
                 />
-                <Switch
-                  checked={form.visible}
-                  onChange={(visible) => setForm({ ...form, visible })}
-                  label="Mostrar en el portal"
-                  description={
-                    isPrivate
-                      ? "Este formulario es privado: solo se abre con el enlace."
-                      : "Si está apagado, no aparece en el listado público."
-                  }
-                  disabled={isPrivate}
+              ) : null}
+
+              {moreSection === "seo" ? (
+                <FormExperienceEditor
+                  formId={form._id}
+                  formName={form.name}
+                  tenantId={tenantId}
+                  mode="seo"
                 />
-              </div>
-            </section>
+              ) : null}
 
-            <section className="admin-form-detail__section">
-              <h3 className="admin-form-detail__section-title">Datos del formulario</h3>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nombre</Label>
-                  <Input
-                    id="name"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Descripción</Label>
-                  <Textarea
-                    id="description"
-                    rows={2}
-                    value={form.description ?? ""}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Opcional"
-                  />
-                </div>
-              </div>
-            </section>
+              {moreSection === "apariencia" ? (
+                <FormExperienceEditor
+                  formId={form._id}
+                  formName={form.name}
+                  tenantId={tenantId}
+                  mode="appearance"
+                />
+              ) : null}
 
-            <section className="admin-form-detail__section">
-              <h3 className="admin-form-detail__section-title">Mensajes al enviar</h3>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="success">Si todo sale bien</Label>
-                  <Textarea
-                    id="success"
-                    rows={2}
-                    value={form.successMessage}
-                    onChange={(e) => setForm({ ...form, successMessage: e.target.value })}
-                  />
+              {moreSection === "preguntas-avanzado" ? (
+                <ExperienceFormFieldsEditor
+                  fields={form.fields}
+                  onChange={(fields) => setForm({ ...form, fields })}
+                />
+              ) : null}
+
+              {moreSection === "configuracion" ? (
+                <div className="admin-form-detail__config">
+                  <section className="admin-form-detail__section">
+                    <h3 className="admin-form-detail__section-title">Publicación</h3>
+                    <p className="admin-form-detail__section-desc">
+                      En el día a día usa el botón Publicar arriba. Estos interruptores sirven para
+                      casos especiales (cerrar envíos sin ocultar el formulario, o al revés).
+                    </p>
+                    <div className="space-y-3">
+                      <Switch
+                        checked={form.active}
+                        onChange={(active) => setForm({ ...form, active })}
+                        label="Acepta respuestas"
+                        description="Si está apagado, nadie puede enviar aunque tenga el enlace."
+                      />
+                      <Switch
+                        checked={form.visible}
+                        onChange={(visible) => setForm({ ...form, visible })}
+                        label="Mostrar en el portal"
+                        description={
+                          isPrivate
+                            ? "Este formulario es privado: solo se abre con el enlace."
+                            : "Si está apagado, no aparece en el listado público."
+                        }
+                        disabled={isPrivate}
+                      />
+                    </div>
+                  </section>
+
+                  <section className="admin-form-detail__section">
+                    <h3 className="admin-form-detail__section-title">Datos del formulario</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="name">Nombre</Label>
+                        <Input
+                          id="name"
+                          value={form.name}
+                          onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="description">Descripción</Label>
+                        <Textarea
+                          id="description"
+                          rows={2}
+                          value={form.description ?? ""}
+                          onChange={(e) => setForm({ ...form, description: e.target.value })}
+                          placeholder="Opcional"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="admin-form-detail__section">
+                    <h3 className="admin-form-detail__section-title">Mensajes al enviar</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="success">Si todo sale bien</Label>
+                        <Textarea
+                          id="success"
+                          rows={2}
+                          value={form.successMessage}
+                          onChange={(e) => setForm({ ...form, successMessage: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="error">Si algo falla</Label>
+                        <Textarea
+                          id="error"
+                          rows={2}
+                          value={form.errorMessage}
+                          onChange={(e) => setForm({ ...form, errorMessage: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </section>
                 </div>
-                <div>
-                  <Label htmlFor="error">Si algo falla</Label>
-                  <Textarea
-                    id="error"
-                    rows={2}
-                    value={form.errorMessage}
-                    onChange={(e) => setForm({ ...form, errorMessage: e.target.value })}
-                  />
-                </div>
-              </div>
-            </section>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </AdminModuleCenter>

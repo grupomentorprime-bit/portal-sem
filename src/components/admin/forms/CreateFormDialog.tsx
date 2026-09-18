@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Pencil, Sparkles, Zap } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
-import { EXPERIENCE_FORM_DESTINATIONS } from "@/types/experience-forms";
+import {
+  BLANK_FORM_FIELDS,
+  FORM_QUICK_TEMPLATES,
+  getFormQuickTemplate,
+  type FormQuickTemplateId,
+} from "@/lib/admin/form-quick-templates";
+import type { ExperienceFormDestination, ExperienceFormField } from "@/types/experience-forms";
 
 function slugify(value: string): string {
   return value
@@ -20,16 +26,7 @@ function slugify(value: string): string {
     .slice(0, 64);
 }
 
-/** Etiquetas humanas; los valores internos no cambian. */
-const DESTINATION_LABELS: Record<(typeof EXPERIENCE_FORM_DESTINATIONS)[number], string> = {
-  information_request: "Pedir información",
-  contact: "Recibir contactos",
-  event_registration: "Inscribir a un evento",
-  attendance_confirmation: "Confirmar asistencia",
-  absence_justification: "Justificar inasistencia",
-  subscription: "Suscribirse",
-  testimonial_submission: "Recibir testimonio",
-};
+type EntryMode = "choose" | "ai" | "template" | "blank";
 
 interface CreateFormDialogProps {
   open: boolean;
@@ -39,23 +36,24 @@ interface CreateFormDialogProps {
 
 export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogProps) {
   const router = useRouter();
+  const [step, setStep] = useState<EntryMode>("choose");
   const [name, setName] = useState("");
   const [formId, setFormId] = useState("");
   const [idTouched, setIdTouched] = useState(false);
   const [description, setDescription] = useState("");
-  const [destination, setDestination] =
-    useState<(typeof EXPERIENCE_FORM_DESTINATIONS)[number]>("information_request");
+  const [aiPrompt, setAiPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const resolvedId = formId.trim() || slugify(name);
 
   const reset = () => {
+    setStep("choose");
     setName("");
     setFormId("");
     setIdTouched(false);
     setDescription("");
-    setDestination("information_request");
+    setAiPrompt("");
     setError(null);
   };
 
@@ -64,12 +62,19 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
     onClose();
   };
 
-  const handleCreate = async () => {
-    if (!name.trim()) {
+  const createForm = async (payload: {
+    name: string;
+    description?: string;
+    destination: ExperienceFormDestination;
+    fields: ExperienceFormField[];
+    idHint?: string;
+  }) => {
+    const id = (payload.idHint?.trim() || slugify(payload.name)).slice(0, 64);
+    if (!payload.name.trim()) {
       setError("Escribe un nombre para el formulario.");
       return;
     }
-    if (!resolvedId) {
+    if (!id) {
       setError("Escribe un nombre para poder crear el formulario.");
       return;
     }
@@ -82,32 +87,17 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          _id: resolvedId,
+          _id: id,
           tenant: "",
-          name: name.trim(),
-          description: description.trim() || undefined,
-          destination,
+          name: payload.name.trim(),
+          description: payload.description?.trim() || undefined,
+          destination: payload.destination,
           successMessage: "¡Gracias! Hemos recibido tu respuesta.",
           errorMessage: "No fue posible enviar el formulario. Intenta nuevamente.",
           postSubmit: { type: "message" },
           active: false,
           visible: false,
-          fields: [
-            {
-              id: "fullName",
-              type: "text",
-              name: "fullName",
-              label: "Nombre completo",
-              validation: { required: true },
-            },
-            {
-              id: "email",
-              type: "email",
-              name: "email",
-              label: "Correo electrónico",
-              validation: { required: true },
-            },
-          ],
+          fields: payload.fields,
         }),
       });
       const data = await res.json();
@@ -117,7 +107,7 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
       }
       onCreated?.();
       handleClose();
-      router.push(`/admin/portal/forms/${data.form._id}`);
+      router.push(`/admin/portal/forms/${data.form._id}?tab=formulario`);
     } catch {
       setError("No pudimos crear el formulario. Revisa tu conexión e inténtalo de nuevo.");
     } finally {
@@ -125,86 +115,238 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
     }
   };
 
+  const handleCreateFromTemplate = async (templateId: FormQuickTemplateId) => {
+    const template = getFormQuickTemplate(templateId);
+    await createForm({
+      name: template.defaultName,
+      description: template.defaultDescription,
+      destination: template.destination,
+      fields: template.fields,
+      idHint: slugify(template.defaultName),
+    });
+  };
+
+  const handleCreateBlank = async () => {
+    await createForm({
+      name: name.trim() || "Nuevo formulario",
+      description: description.trim() || undefined,
+      destination: "information_request",
+      fields: BLANK_FORM_FIELDS,
+      idHint: resolvedId,
+    });
+  };
+
+  const handleCreateFromAi = async () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt) {
+      setError("Cuéntanos qué necesitas, aunque sea en una frase.");
+      return;
+    }
+    const template = getFormQuickTemplate("information");
+    await createForm({
+      name: "Formulario con IA",
+      description: prompt,
+      destination: template.destination,
+      fields: template.fields,
+      idHint: slugify(`ia-${prompt}`).slice(0, 48) || "formulario-ia",
+    });
+  };
+
+  const title =
+    step === "choose"
+      ? "Nuevo formulario"
+      : step === "ai"
+        ? "Crear con IA"
+        : step === "template"
+          ? "Usar una plantilla"
+          : "Crear desde cero";
+
+  const descriptionText =
+    step === "choose"
+      ? "¿Qué quieres crear?"
+      : step === "ai"
+        ? "Describe lo que necesitas. Growth OS preparará el formulario."
+        : step === "template"
+          ? "Empieza con un formulario listo para editar."
+          : "Para quien quiera controlar todo desde el inicio.";
+
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      title="Nuevo formulario"
-      description="Empieza con un borrador. Luego agregas las preguntas y lo publicas."
-      size="lg"
-    >
+    <Modal open={open} onClose={handleClose} title={title} description={descriptionText} size="lg">
       <div className="space-y-4">
         {error ? <p className="text-sm font-medium text-primary">{error}</p> : null}
 
-        <div>
-          <Label htmlFor="new-form-name">Nombre</Label>
-          <Input
-            id="new-form-name"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (!idTouched) setFormId(slugify(e.target.value));
-            }}
-            placeholder="Ej. Encuesta de satisfacción"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="new-form-desc">Descripción</Label>
-          <Textarea
-            id="new-form-desc"
-            rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Opcional"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="new-form-destination">¿Para qué usarás este formulario?</Label>
-          <Select
-            id="new-form-destination"
-            value={destination}
-            onChange={(e) =>
-              setDestination(e.target.value as (typeof EXPERIENCE_FORM_DESTINATIONS)[number])
-            }
-            options={EXPERIENCE_FORM_DESTINATIONS.map((d) => ({
-              value: d,
-              label: DESTINATION_LABELS[d],
-            }))}
-          />
-        </div>
-
-        <details className="rounded-lg border border-border px-3 py-2">
-          <summary className="cursor-pointer text-sm font-medium text-muted">
-            Opciones avanzadas
-          </summary>
-          <div className="mt-3 space-y-2 pb-1">
-            <Label htmlFor="new-form-id">Dirección del enlace</Label>
-            <Input
-              id="new-form-id"
-              value={formId}
-              onChange={(e) => {
-                setIdTouched(true);
-                setFormId(slugify(e.target.value));
+        {step === "choose" ? (
+          <div className="grid gap-3 sm:grid-cols-1">
+            <EntryCard
+              icon={<Sparkles className="h-5 w-5" aria-hidden="true" />}
+              title="Crear con IA"
+              subtitle="Describe lo que necesitas y Growth OS prepara el formulario."
+              onClick={() => {
+                setError(null);
+                setStep("ai");
               }}
-              placeholder="se-genera-del-nombre"
             />
-            <p className="text-xs text-muted">
-              Se crea sola desde el nombre. Solo cámbiala si lo necesitas.
-            </p>
+            <EntryCard
+              icon={<Zap className="h-5 w-5" aria-hidden="true" />}
+              title="Usar una plantilla"
+              subtitle="Empieza con un formulario listo para editar."
+              onClick={() => {
+                setError(null);
+                setStep("template");
+              }}
+            />
+            <EntryCard
+              icon={<Pencil className="h-5 w-5" aria-hidden="true" />}
+              title="Crear desde cero"
+              subtitle="Para quien quiera controlar todo."
+              onClick={() => {
+                setError(null);
+                setStep("blank");
+              }}
+            />
           </div>
-        </details>
+        ) : null}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" type="button" onClick={handleClose}>
-            Cancelar
-          </Button>
-          <Button variant="primary" type="button" onClick={handleCreate} loading={loading}>
-            Crear formulario
-          </Button>
-        </div>
+        {step === "ai" ? (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-dashed border-border bg-background-muted/60 px-3 py-2 text-sm text-muted">
+              La IA aún está en preparación. Por ahora abriremos el editor con preguntas útiles
+              listas para ajustar.
+            </div>
+            <div>
+              <Label htmlFor="ai-form-prompt">¿Qué necesitas?</Label>
+              <Textarea
+                id="ai-form-prompt"
+                rows={4}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Ej. Necesito un formulario para personas interesadas en cursos de maquinaria."
+              />
+            </div>
+            <div className="flex justify-between gap-2 pt-1">
+              <Button variant="outline" type="button" onClick={() => setStep("choose")}>
+                Volver
+              </Button>
+              <Button variant="primary" type="button" onClick={handleCreateFromAi} loading={loading}>
+                Continuar al editor
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {step === "template" ? (
+          <div className="space-y-4">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {FORM_QUICK_TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => void handleCreateFromTemplate(template.id)}
+                  className="rounded-xl border border-border bg-background px-4 py-3 text-left transition hover:border-primary/40 hover:bg-background-muted disabled:opacity-60"
+                >
+                  <span className="block text-sm font-semibold text-foreground">{template.label}</span>
+                  <span className="mt-1 block text-xs text-muted">{template.description}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-start">
+              <Button variant="outline" type="button" onClick={() => setStep("choose")} disabled={loading}>
+                Volver
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {step === "blank" ? (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-form-name">Nombre</Label>
+              <Input
+                id="new-form-name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (!idTouched) setFormId(slugify(e.target.value));
+                }}
+                placeholder="Ej. Encuesta de satisfacción"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-form-desc">Descripción</Label>
+              <Textarea
+                id="new-form-desc"
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Opcional · se muestra arriba de las preguntas"
+              />
+            </div>
+            <details className="rounded-lg border border-border px-3 py-2">
+              <summary className="cursor-pointer text-sm font-medium text-muted">Más opciones</summary>
+              <div className="mt-3 space-y-2 pb-1">
+                <Label htmlFor="new-form-id">Dirección del enlace</Label>
+                <Input
+                  id="new-form-id"
+                  value={formId}
+                  onChange={(e) => {
+                    setIdTouched(true);
+                    setFormId(slugify(e.target.value));
+                  }}
+                  placeholder="se-genera-del-nombre"
+                />
+                <p className="text-xs text-muted">
+                  Se crea sola desde el nombre. Solo cámbiala si lo necesitas.
+                </p>
+              </div>
+            </details>
+            <div className="flex justify-between gap-2 pt-1">
+              <Button variant="outline" type="button" onClick={() => setStep("choose")}>
+                Volver
+              </Button>
+              <Button variant="primary" type="button" onClick={handleCreateBlank} loading={loading}>
+                Crear formulario
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {step === "choose" ? (
+          <div className="flex justify-end pt-1">
+            <Button variant="outline" type="button" onClick={handleClose}>
+              Cancelar
+            </Button>
+          </div>
+        ) : null}
       </div>
     </Modal>
+  );
+}
+
+function EntryCard({
+  icon,
+  title,
+  subtitle,
+  onClick,
+}: {
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-3 rounded-xl border border-border bg-background px-4 py-3.5 text-left transition hover:border-primary/40 hover:bg-background-muted"
+    >
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background-muted text-primary">
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-foreground">{title}</span>
+        <span className="mt-0.5 block text-sm text-muted">{subtitle}</span>
+      </span>
+    </button>
   );
 }
