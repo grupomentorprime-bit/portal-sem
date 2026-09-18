@@ -75,6 +75,20 @@ type EditorSection =
 
 type PreviewViewport = "desktop" | "tablet" | "mobile";
 
+const TEMPLATE_LABELS: Record<FormExperienceTemplateId, string> = {
+  convocatoria: "Convocatoria",
+  encuesta: "Encuesta",
+  inscripcion: "Inscripción",
+  registro: "Registro",
+  postulacion: "Postulación",
+};
+
+const VIEWPORT_LABELS: Record<PreviewViewport, string> = {
+  desktop: "Escritorio",
+  tablet: "Tableta",
+  mobile: "Móvil",
+};
+
 const INFO_ICON_OPTIONS: FormExperienceInfoIcon[] = [
   "calendar",
   "map-pin",
@@ -252,11 +266,11 @@ export function FormExperienceEditor({
     sortedBanners.find((banner) => banner.id === selectedBannerId) ?? sortedBanners[0];
 
   if (loading) {
-    return <p className="text-sm text-muted">Cargando experiencia del formulario…</p>;
+    return <p className="text-sm text-muted">Cargando presentación…</p>;
   }
 
   if (!experience) {
-    return <p className="text-sm text-[var(--color-danger)]">{error ?? "Experiencia no disponible."}</p>;
+    return <p className="text-sm text-[var(--color-danger)]">{error ?? "No se pudo cargar la presentación."}</p>;
   }
 
   if (mode === "seo") {
@@ -333,10 +347,10 @@ export function FormExperienceEditor({
                 e.target.value = "";
               }}
             >
-              <option value="">Aplicar plantilla…</option>
+              <option value="">Usar plantilla…</option>
               {FORM_EXPERIENCE_TEMPLATE_IDS.map((id) => (
                 <option key={id} value={id}>
-                  {id.charAt(0).toUpperCase() + id.slice(1)}
+                  {TEMPLATE_LABELS[id]}
                 </option>
               ))}
             </select>
@@ -389,7 +403,7 @@ export function FormExperienceEditor({
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden />
-                {viewport}
+                {VIEWPORT_LABELS[viewport]}
               </button>
             ))}
           </div>
@@ -413,14 +427,14 @@ export function FormExperienceEditor({
         {(
           [
             ["blocks", "Bloques"],
-            ["hero", "Hero"],
+            ["hero", "Portada"],
             ["cards", "Tarjetas"],
-            ["editorial", "Editorial"],
+            ["editorial", "Texto destacado"],
             ["form", "Formulario"],
             ["states", "Estados"],
-            ["banners", "Banners"],
+            ["banners", "Avisos"],
             ["counter", "Contador"],
-            ["footer", "Footer"],
+            ["footer", "Pie"],
             ["share", "Compartir"],
           ] as const
         ).map(([id, label]) => (
@@ -460,14 +474,14 @@ export function FormExperienceEditor({
           <Switch
             checked={experience.hero.enabled}
             onChange={(enabled) => update({ hero: { ...experience.hero, enabled } })}
-            label="Mostrar hero"
+            label="Mostrar portada"
           />
           <Switch
             checked={experience.hero.showBreadcrumb}
             onChange={(showBreadcrumb) => update({ hero: { ...experience.hero, showBreadcrumb } })}
-            label="Mostrar breadcrumb"
+            label="Mostrar ruta"
           />
-          <Field label="Eyebrow">
+          <Field label="Texto pequeño arriba">
             <Input
               value={experience.hero.eyebrow}
               onChange={(e) => update({ hero: { ...experience.hero, eyebrow: e.target.value } })}
@@ -517,7 +531,7 @@ export function FormExperienceEditor({
               />
             </Field>
           </div>
-          <Field label="Overlay (%)">
+          <Field label="Oscurecer imagen (%)">
             <Input
               type="number"
               min={0}
@@ -528,11 +542,11 @@ export function FormExperienceEditor({
               }
             />
           </Field>
-          <Field label="Color del hero">
+          <Field label="Color de la portada">
             <Input
               value={experience.hero.heroColor ?? ""}
               onChange={(e) => update({ hero: { ...experience.hero, heroColor: e.target.value } })}
-              placeholder="Color primario institucional"
+              placeholder="Color de tu marca"
             />
           </Field>
           <div className="md:col-span-2">
@@ -680,7 +694,7 @@ export function FormExperienceEditor({
           <Switch
             checked={experience.editorial.enabled}
             onChange={(enabled) => update({ editorial: { ...experience.editorial, enabled } })}
-            label="Mostrar bloque editorial"
+            label="Mostrar texto destacado"
           />
           <Field label="Título">
             <Input
@@ -706,20 +720,20 @@ export function FormExperienceEditor({
         <div className="grid gap-4 md:grid-cols-2">
           {(
             [
-              ["overline", "Overline"],
+              ["overline", "Texto pequeño arriba"],
               ["title", "Título del formulario"],
-              ["description", "Subtítulo / descripción"],
-              ["helpText", "Texto de ayuda"],
+              ["description", "Descripción"],
+              ["helpText", "Ayuda"],
               ["beforeSubmitText", "Texto antes del botón"],
-              ["afterSubmitText", "Texto después del envío"],
-              ["submitLabel", "Etiqueta del botón"],
-              ["searchPlaceholder", "Placeholder de búsqueda"],
-              ["fieldPlaceholder", "Placeholder de campos"],
-              ["successMessage", "Mensaje de éxito (experiencia)"],
-              ["errorMessage", "Mensaje de error (experiencia)"],
+              ["afterSubmitText", "Texto después de enviar"],
+              ["submitLabel", "Texto del botón"],
+              ["searchPlaceholder", "Ejemplo en la búsqueda"],
+              ["fieldPlaceholder", "Ejemplo en los campos"],
+              ["successMessage", "Mensaje si todo sale bien"],
+              ["errorMessage", "Mensaje si algo falla"],
               ["attendanceYesMessage", "Mensaje al elegir «Sí, asistiré»"],
               ["attendanceNoMessage", "Mensaje al elegir «No podré asistir»"],
-              ["attendanceYesSuccessMessage", "Mensaje de éxito al confirmar asistencia"],
+              ["attendanceYesSuccessMessage", "Mensaje al confirmar asistencia"],
             ] as const
           ).map(([key, label]) => (
             <Field key={key} label={label}>
@@ -744,16 +758,15 @@ export function FormExperienceEditor({
           {isConvocatoria ? (
             <div className="md:col-span-2 space-y-4 rounded-lg border border-border bg-muted/10 p-4">
               <div>
-                <p className="font-medium text-foreground">Correo de confirmación</p>
+                <p className="font-medium text-foreground">Botón del correo de confirmación</p>
                 <p className="text-sm text-muted">
-                  Configura el botón que aparece al final del correo automático (p. ej. «Ver detalles de la
-                  convocatoria»). Si no subes un documento, el botón llevará a la página pública del
+                  Documento o enlace que abre el botón del correo. Si no subes nada, lleva a la página del
                   formulario.
                 </p>
               </div>
               <Field
-                label="Etiqueta del botón"
-                hint="Opcional. Por defecto: «Ver detalles de la convocatoria» (asistencia) o «Revisar convocatoria» (no asistencia)."
+                label="Texto del botón"
+                hint="Opcional. Por defecto: «Ver detalles de la convocatoria» o «Revisar convocatoria»."
               >
                 <Input
                   value={experience.formShell.confirmationEmailCtaLabel ?? ""}
@@ -770,7 +783,7 @@ export function FormExperienceEditor({
               </Field>
               <MediaField
                 label="Documento del botón"
-                description="Sube un PDF u otro archivo desde la biblioteca de medios. El botón del correo abrirá este documento. Para reemplazarlo, haz clic en «Cambiar documento» y elige otro archivo."
+                description="PDF u otro archivo. Para cambiarlo, elige otro desde la biblioteca."
                 tenant={tenantId}
                 folder="Documentos"
                 changeLabel="Cambiar documento"
@@ -910,7 +923,7 @@ export function FormExperienceEditor({
                       }
                     />
                   </Field>
-                  <Field label="CTA">
+                  <Field label="Texto del botón">
                     <Input
                       value={state.ctaLabel ?? ""}
                       onChange={(e) =>
@@ -923,7 +936,7 @@ export function FormExperienceEditor({
                       }
                     />
                   </Field>
-                  <Field label="Enlace CTA">
+                  <Field label="Enlace del botón">
                     <Input
                       value={state.ctaHref ?? ""}
                       onChange={(e) =>
@@ -1185,7 +1198,7 @@ export function FormExperienceEditor({
             </Field>
           </div>
           <div className="md:col-span-2">
-            <Field label="Copyright">
+            <Field label="Créditos / pie legal">
               <Input
                 value={experience.footer.copyright ?? ""}
                 onChange={(e) =>
@@ -1199,34 +1212,34 @@ export function FormExperienceEditor({
 
       {section === "share" ? (
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Texto para WhatsApp">
+          <Field label="WhatsApp">
             <Textarea
               rows={2}
               value={experience.share.whatsappText ?? ""}
               onChange={(e) => update({ share: { ...experience.share, whatsappText: e.target.value } })}
             />
           </Field>
-          <Field label="Texto para Facebook">
+          <Field label="Facebook">
             <Textarea
               rows={2}
               value={experience.share.facebookText ?? ""}
               onChange={(e) => update({ share: { ...experience.share, facebookText: e.target.value } })}
             />
           </Field>
-          <Field label="Asunto de correo">
+          <Field label="Asunto del correo">
             <Input
               value={experience.share.emailSubject ?? ""}
               onChange={(e) => update({ share: { ...experience.share, emailSubject: e.target.value } })}
             />
           </Field>
-          <Field label="Cuerpo de correo">
+          <Field label="Cuerpo del correo">
             <Textarea
               rows={2}
               value={experience.share.emailBody ?? ""}
               onChange={(e) => update({ share: { ...experience.share, emailBody: e.target.value } })}
             />
           </Field>
-          <Field label="Etiqueta copiar enlace">
+          <Field label="Texto del botón «copiar enlace»">
             <Input
               value={experience.share.copyLinkLabel ?? ""}
               onChange={(e) => update({ share: { ...experience.share, copyLinkLabel: e.target.value } })}

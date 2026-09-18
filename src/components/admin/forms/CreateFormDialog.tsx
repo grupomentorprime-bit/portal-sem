@@ -20,14 +20,15 @@ function slugify(value: string): string {
     .slice(0, 64);
 }
 
+/** Etiquetas humanas; los valores internos no cambian. */
 const DESTINATION_LABELS: Record<(typeof EXPERIENCE_FORM_DESTINATIONS)[number], string> = {
-  contact: "Contacto",
-  information_request: "Solicitud de información",
-  attendance_confirmation: "Confirmación de asistencia",
-  absence_justification: "Justificación de inasistencia",
-  event_registration: "Inscripción a evento",
-  subscription: "Suscripción",
-  testimonial_submission: "Testimonio de alumno",
+  information_request: "Pedir información",
+  contact: "Recibir contactos",
+  event_registration: "Inscribir a un evento",
+  attendance_confirmation: "Confirmar asistencia",
+  absence_justification: "Justificar inasistencia",
+  subscription: "Suscribirse",
+  testimonial_submission: "Recibir testimonio",
 };
 
 interface CreateFormDialogProps {
@@ -65,11 +66,11 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      setError("El nombre es obligatorio.");
+      setError("Escribe un nombre para el formulario.");
       return;
     }
     if (!resolvedId) {
-      setError("El identificador (ID) es obligatorio.");
+      setError("Escribe un nombre para poder crear el formulario.");
       return;
     }
 
@@ -118,7 +119,7 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
       handleClose();
       router.push(`/admin/portal/forms/${data.form._id}`);
     } catch {
-      setError("Error de red al crear el formulario.");
+      setError("No pudimos crear el formulario. Revisa tu conexión e inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
       open={open}
       onClose={handleClose}
       title="Nuevo formulario"
-      description="Crea un formulario en borrador. Podrás editar campos, activarlo y publicarlo después."
+      description="Empieza con un borrador. Luego agregas las preguntas y lo publicas."
       size="lg"
     >
       <div className="space-y-4">
@@ -149,33 +150,18 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
         </div>
 
         <div>
-          <Label htmlFor="new-form-id">Identificador (URL)</Label>
-          <Input
-            id="new-form-id"
-            value={formId}
-            onChange={(e) => {
-              setIdTouched(true);
-              setFormId(slugify(e.target.value));
-            }}
-            placeholder="encuesta-satisfaccion"
-          />
-          <p className="mt-1 text-xs text-muted">
-            URL pública: /formularios/{resolvedId || "…"}
-          </p>
-        </div>
-
-        <div>
           <Label htmlFor="new-form-desc">Descripción</Label>
           <Textarea
             id="new-form-desc"
             rows={2}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            placeholder="Opcional"
           />
         </div>
 
         <div>
-          <Label htmlFor="new-form-destination">Tipo / destino</Label>
+          <Label htmlFor="new-form-destination">¿Para qué usarás este formulario?</Label>
           <Select
             id="new-form-destination"
             value={destination}
@@ -188,6 +174,27 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
             }))}
           />
         </div>
+
+        <details className="rounded-lg border border-border px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium text-muted">
+            Opciones avanzadas
+          </summary>
+          <div className="mt-3 space-y-2 pb-1">
+            <Label htmlFor="new-form-id">Dirección del enlace</Label>
+            <Input
+              id="new-form-id"
+              value={formId}
+              onChange={(e) => {
+                setIdTouched(true);
+                setFormId(slugify(e.target.value));
+              }}
+              placeholder="se-genera-del-nombre"
+            />
+            <p className="text-xs text-muted">
+              Se crea sola desde el nombre. Solo cámbiala si lo necesitas.
+            </p>
+          </div>
+        </details>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" type="button" onClick={handleClose}>

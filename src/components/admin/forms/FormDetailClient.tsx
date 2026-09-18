@@ -41,15 +41,14 @@ type TabId =
   | "configuracion";
 
 const TAB_HELP: Record<TabId, string> = {
-  respuestas: "Revisa quién respondió, teléfono, generación y gestiona inasistencias.",
-  participantes:
-    "Sube el Excel institucional con Rut, Nombre, Apellidos y Generación. El alumno completa el resto.",
-  campos: "Define las preguntas: tipo, etiqueta y si son obligatorias.",
+  respuestas: "Quién respondió y qué contestó.",
+  participantes: "Lista de alumnos convocados (Excel o uno a uno).",
+  campos: "Las preguntas que verá quien complete el formulario.",
   experiencia:
-    "Ajusta cómo se ve el enlace público del formulario (hero, textos y bloques). No reemplaza las páginas del sitio: para una landing de captación usa Sitio web → Páginas.",
-  seo: "Título, descripción y textos para compartir en redes.",
-  apariencia: "Colores, tipografía y estilo visual del formulario público.",
-  configuracion: "Nombre, mensajes y si el formulario acepta envíos.",
+    "Cómo se ve al abrirlo. Para una página completa usa Sitio web → Páginas.",
+  seo: "Cómo aparece al buscarlo o compartirlo.",
+  apariencia: "Colores y estilo.",
+  configuracion: "Nombre, mensajes y publicación.",
 };
 
 interface FormDetailClientProps {
@@ -107,14 +106,14 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
       });
       const data = await res.json();
       if (!data.ok) {
-        setError(data.error ?? "Error al guardar.");
+        setError(data.error ?? "No se pudo guardar.");
         return;
       }
       setForm(data.form);
       setSaved(true);
       router.refresh();
     } catch {
-      setError("Error de red.");
+      setError("No se pudo guardar. Revisa tu conexión.");
     } finally {
       setSaving(false);
     }
@@ -225,8 +224,8 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
       title={form.name}
       description={
         convocatoria
-          ? "Configura participantes, campos, presentación y publicación de la convocatoria."
-          : (form.description ?? "Gestiona respuestas, campos y publicación.")
+          ? "Participantes, preguntas y publicación de la convocatoria."
+          : (form.description ?? "Respuestas, preguntas y publicación.")
       }
       actions={
         <div className="flex flex-wrap gap-2">
@@ -286,11 +285,11 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
       <AdminModuleCenter className="admin-form-detail">
         <div className="admin-form-detail__summary">
           <div className="admin-form-detail__summary-main">
-            <p className="admin-form-detail__eyebrow">Formulario · {form._id}</p>
+            <p className="admin-form-detail__eyebrow">Formulario</p>
             <div className="admin-form-detail__badges">
               <StatusBadge
                 tone={form.active ? "active" : "inactive"}
-                label={form.active ? "Acepta envíos" : "Cerrado"}
+                label={form.active ? "Abierto" : "Cerrado"}
               />
               <StatusBadge
                 tone={isPrivate ? "neutral" : form.visible ? "active" : "draft"}
@@ -299,21 +298,20 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
               {isArchived ? <StatusBadge tone="inactive" label="Archivado" /> : null}
               <span className="admin-form-detail__meta">
                 <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                {form.fields.length} campos
+                {form.fields.length}{" "}
+                {form.fields.length === 1 ? "pregunta" : "preguntas"}
               </span>
             </div>
           </div>
           {!isArchived && !form.active && (
             <p className="admin-form-detail__hint">
-              Para abrir el formulario: en la pestaña <strong>Configuración</strong> activa
-              &quot;Acepta envíos&quot;
-              {isPrivate ? " → comparte el enlace directo" : " → publica en portal"} → guarda.
+              Para abrirlo: en <strong>Configuración</strong> activa &quot;Acepta respuestas&quot;
+              {isPrivate ? ", comparte el enlace" : ", publícalo en el portal"} y guarda.
             </p>
           )}
           {isPrivate ? (
             <p className="admin-form-detail__hint">
-              Enlace directo: <code className="text-xs">{publicFormUrl(form._id)}</code> — no aparece en
-              Home, menú ni /formularios. Uso interno (WhatsApp, correo).
+              Solo se abre con el enlace directo. No aparece en el menú ni en el listado público.
             </p>
           ) : null}
         </div>
@@ -342,7 +340,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
             icon={FileText}
             onClick={() => setTab("campos")}
           >
-            Campos
+            Preguntas
           </TabButton>
           <TabButton
             active={tab === "experiencia"}
@@ -378,7 +376,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
         {error ? <p className="admin-form-detail__alert admin-form-detail__alert--error">{error}</p> : null}
         {saved ? (
           <p className="admin-form-detail__alert admin-form-detail__alert--success">
-            Guardado correctamente.
+            Listo, guardamos los cambios.
           </p>
         ) : null}
         {isArchived ? (
@@ -435,24 +433,21 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           <div className="admin-form-detail__config">
             <section className="admin-form-detail__section">
               <h3 className="admin-form-detail__section-title">Publicación</h3>
-              <p className="admin-form-detail__section-desc">
-                Controla si el formulario está abierto y visible para las personas del portal.
-              </p>
               <div className="space-y-3">
                 <Switch
                   checked={form.active}
                   onChange={(active) => setForm({ ...form, active })}
-                  label="Acepta envíos"
-                  description="Si está apagado, nadie puede enviar respuestas aunque tenga el enlace."
+                  label="Acepta respuestas"
+                  description="Si está apagado, nadie puede enviar aunque tenga el enlace."
                 />
                 <Switch
                   checked={form.visible}
                   onChange={(visible) => setForm({ ...form, visible })}
-                  label="Publicado en el portal"
+                  label="Mostrar en el portal"
                   description={
                     isPrivate
-                      ? "Los formularios privados no aparecen en /formularios ni en el menú público."
-                      : "Si está apagado, no aparece en /formularios ni en listados públicos."
+                      ? "Este formulario es privado: solo se abre con el enlace."
+                      : "Si está apagado, no aparece en el listado público."
                   }
                   disabled={isPrivate}
                 />
@@ -460,16 +455,15 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
             </section>
 
             <section className="admin-form-detail__section">
-              <h3 className="admin-form-detail__section-title">Información del formulario</h3>
+              <h3 className="admin-form-detail__section-title">Datos del formulario</h3>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Nombre interno</Label>
+                  <Label htmlFor="name">Nombre</Label>
                   <Input
                     id="name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
-                  <p className="mt-1 text-xs text-muted">Solo visible en el panel de administración.</p>
                 </div>
                 <div>
                   <Label htmlFor="description">Descripción</Label>
@@ -478,6 +472,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
                     rows={2}
                     value={form.description ?? ""}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Opcional"
                   />
                 </div>
               </div>
@@ -485,12 +480,9 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
 
             <section className="admin-form-detail__section">
               <h3 className="admin-form-detail__section-title">Mensajes al enviar</h3>
-              <p className="admin-form-detail__section-desc">
-                Texto que ve la persona después de completar el formulario o si ocurre un error.
-              </p>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="success">Mensaje de éxito</Label>
+                  <Label htmlFor="success">Si todo sale bien</Label>
                   <Textarea
                     id="success"
                     rows={2}
@@ -499,7 +491,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="error">Mensaje de error</Label>
+                  <Label htmlFor="error">Si algo falla</Label>
                   <Textarea
                     id="error"
                     rows={2}

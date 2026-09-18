@@ -39,7 +39,7 @@ export function FormExperienceSeoPanel({
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="admin-form-detail__section space-y-4">
-        <h3 className="admin-form-detail__section-title">SEO</h3>
+        <h3 className="admin-form-detail__section-title">Al buscar o compartir</h3>
         <Field label="Título">
           <Input
             value={seo.title ?? ""}
@@ -53,7 +53,7 @@ export function FormExperienceSeoPanel({
             onChange={(e) => onChangeSeo({ ...seo, description: e.target.value })}
           />
         </Field>
-        <Field label="Keywords (separadas por coma)">
+        <Field label="Palabras clave">
           <Input
             value={seo.keywords.join(", ")}
             onChange={(e) =>
@@ -65,10 +65,11 @@ export function FormExperienceSeoPanel({
                   .filter(Boolean),
               })
             }
+            placeholder="Ej. inscripción, evento"
           />
         </Field>
         <MediaField
-          label="Imagen Open Graph"
+          label="Imagen al compartir"
           tenant={tenantId}
           folder="Hero"
           value={seo.openGraphImageId ?? ""}
@@ -80,35 +81,35 @@ export function FormExperienceSeoPanel({
       </section>
 
       <section className="admin-form-detail__section space-y-4">
-        <h3 className="admin-form-detail__section-title">Compartir</h3>
-        <Field label="Texto WhatsApp">
+        <h3 className="admin-form-detail__section-title">Textos para compartir</h3>
+        <Field label="WhatsApp">
           <Textarea
             rows={2}
             value={share.whatsappText ?? ""}
             onChange={(e) => onChangeShare({ ...share, whatsappText: e.target.value })}
           />
         </Field>
-        <Field label="Texto Facebook">
+        <Field label="Facebook">
           <Textarea
             rows={2}
             value={share.facebookText ?? ""}
             onChange={(e) => onChangeShare({ ...share, facebookText: e.target.value })}
           />
         </Field>
-        <Field label="Asunto correo">
+        <Field label="Asunto del correo">
           <Input
             value={share.emailSubject ?? ""}
             onChange={(e) => onChangeShare({ ...share, emailSubject: e.target.value })}
           />
         </Field>
-        <Field label="Cuerpo correo">
+        <Field label="Cuerpo del correo">
           <Textarea
             rows={3}
             value={share.emailBody ?? ""}
             onChange={(e) => onChangeShare({ ...share, emailBody: e.target.value })}
           />
         </Field>
-        <Field label="Etiqueta copiar enlace">
+        <Field label="Texto del botón «copiar enlace»">
           <Input
             value={share.copyLinkLabel ?? ""}
             onChange={(e) => onChangeShare({ ...share, copyLinkLabel: e.target.value })}

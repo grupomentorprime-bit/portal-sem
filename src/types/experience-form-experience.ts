@@ -248,10 +248,10 @@ export interface ExperienceFormExperience {
 }
 
 export const FORM_EXPERIENCE_BLOCK_LABELS: Record<FormExperienceBlockType, string> = {
-  hero: "Hero",
+  hero: "Portada",
   info_cards: "Información",
-  editorial: "Bloque editorial",
-  banners: "Banners",
+  editorial: "Texto destacado",
+  banners: "Avisos",
   counter: "Contador",
   form: "Formulario",
   faq: "Preguntas frecuentes",

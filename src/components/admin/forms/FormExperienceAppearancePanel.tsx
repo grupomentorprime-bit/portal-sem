@@ -25,12 +25,22 @@ function Field({
   );
 }
 
+const THEME_LABELS: Record<FormLandingTheme, string> = {
+  convocatoria: "Convocatoria",
+  attendance: "Asistencia",
+  absence: "Inasistencia",
+  information: "Información",
+  application: "Postulación",
+  testimonial: "Testimonio",
+};
+
 const THEMES: FormLandingTheme[] = [
   "convocatoria",
   "attendance",
   "absence",
   "information",
   "application",
+  "testimonial",
 ];
 
 export function FormExperienceAppearancePanel({
@@ -39,7 +49,7 @@ export function FormExperienceAppearancePanel({
 }: FormExperienceAppearancePanelProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Field label="Tema visual">
+      <Field label="Estilo">
         <select
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           value={appearance.theme}
@@ -49,7 +59,7 @@ export function FormExperienceAppearancePanel({
         >
           {THEMES.map((theme) => (
             <option key={theme} value={theme}>
-              {theme}
+              {THEME_LABELS[theme]}
             </option>
           ))}
         </select>
@@ -65,10 +75,10 @@ export function FormExperienceAppearancePanel({
             })
           }
         >
-          <option value="hero">Hero</option>
-          <option value="minimal">Minimal</option>
+          <option value="hero">Con portada</option>
+          <option value="minimal">Simple</option>
           <option value="institutional">Institucional</option>
-          <option value="landing">Landing</option>
+          <option value="landing">Página completa</option>
           <option value="event">Evento</option>
         </select>
       </Field>
@@ -76,10 +86,10 @@ export function FormExperienceAppearancePanel({
         <Input
           value={appearance.primaryColor ?? ""}
           onChange={(e) => onChange({ ...appearance, primaryColor: e.target.value })}
-          placeholder="Color primario institucional"
+          placeholder="Ej. el color de tu marca"
         />
       </Field>
-      <Field label="Overlay (%)">
+      <Field label="Oscurecer imagen de fondo (%)">
         <Input
           type="number"
           min={0}
@@ -90,7 +100,7 @@ export function FormExperienceAppearancePanel({
           }
         />
       </Field>
-      <Field label="Bordes">
+      <Field label="Esquinas">
         <select
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           value={appearance.borderRadius}
@@ -101,12 +111,12 @@ export function FormExperienceAppearancePanel({
             })
           }
         >
-          <option value="soft">Suaves</option>
-          <option value="default">Estándar</option>
-          <option value="sharp">Rectos</option>
+          <option value="soft">Redondeadas</option>
+          <option value="default">Normales</option>
+          <option value="sharp">Rectas</option>
         </select>
       </Field>
-      <Field label="Sombras">
+      <Field label="Sombra">
         <select
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           value={appearance.shadow}
@@ -119,10 +129,10 @@ export function FormExperienceAppearancePanel({
         >
           <option value="none">Sin sombra</option>
           <option value="soft">Suave</option>
-          <option value="elevated">Elevada</option>
+          <option value="elevated">Marcada</option>
         </select>
       </Field>
-      <Field label="Ancho">
+      <Field label="Ancho del contenido">
         <select
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           value={appearance.contentWidth}
@@ -134,11 +144,11 @@ export function FormExperienceAppearancePanel({
           }
         >
           <option value="narrow">Estrecho</option>
-          <option value="default">Estándar</option>
+          <option value="default">Normal</option>
           <option value="wide">Amplio</option>
         </select>
       </Field>
-      <Field label="Espaciado">
+      <Field label="Espacio entre bloques">
         <select
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           value={appearance.spacing}
@@ -149,9 +159,9 @@ export function FormExperienceAppearancePanel({
             })
           }
         >
-          <option value="compact">Compacto</option>
-          <option value="default">Estándar</option>
-          <option value="airy">Amplio</option>
+          <option value="compact">Junto</option>
+          <option value="default">Normal</option>
+          <option value="airy">Holgado</option>
         </select>
       </Field>
     </div>

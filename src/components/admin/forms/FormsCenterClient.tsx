@@ -343,9 +343,9 @@ export function FormsCenterClient({
               {convocatoria ? "Editar participantes" : "Ver detalle"}
             </ActionMenuItem>
             <ActionMenuItem href={`${formDetailHref}?tab=experiencia`}>
-              Editar experiencia
+              Editar presentación
             </ActionMenuItem>
-            <ActionMenuItem href={`${formDetailHref}?tab=campos`}>Editar campos</ActionMenuItem>
+            <ActionMenuItem href={`${formDetailHref}?tab=campos`}>Editar preguntas</ActionMenuItem>
             <ActionMenuItem onClick={() => handleToggle(form, "active")}>Desactivar</ActionMenuItem>
             <ActionMenuItem onClick={() => handleToggle(form, "visible")}>
               {form.visible ? "Ocultar del portal" : "Publicar en portal"}
@@ -479,7 +479,7 @@ export function FormsCenterClient({
         { label: "Formularios" },
       ]}
       title="Formularios"
-      description="Crea formularios de captación. Para una landing completa, usa Páginas e inserta el formulario."
+      description="Crea formularios y publica las preguntas que necesitas. Para una página completa, usa Páginas."
     >
       {error ? (
         <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
@@ -502,21 +502,21 @@ export function FormsCenterClient({
           {
             id: "new",
             title: "Nuevo formulario",
-            description: "Crear formulario personalizado",
+            description: "Crear desde cero",
             onClick: () => setCreateOpen(true),
             icon: <Plus className="h-5 w-5" />,
           },
           {
             id: "portal",
             title: "Ver portal",
-            description: "Abrir sitio público",
+            description: "Abrir el sitio",
             href: "/",
             icon: <ExternalLink className="h-5 w-5" />,
           },
           {
             id: "seed",
-            title: "Sincronizar",
-            description: "Formularios base del portal",
+            title: "Traer formularios base",
+            description: "Si faltan los del portal",
             onClick: handleSeed,
             icon: <RefreshCw className="h-5 w-5" />,
           },
@@ -594,13 +594,13 @@ export function FormsCenterClient({
         }
         emptyTitle={
           filter === "archived"
-            ? "Sin formularios archivados"
-            : "Sin formularios"
+            ? "No hay formularios archivados"
+            : "Aún no hay formularios"
         }
         emptyDescription={
           filter === "archived"
-            ? "Los formularios archivados aparecerán aquí."
-            : "Crea uno nuevo o sincroniza los formularios base."
+            ? "Cuando archives uno, aparecerá aquí."
+            : "Crea uno nuevo o trae los formularios base."
         }
         rowActions={(row) => {
           if (row.kind === "orphan") {
