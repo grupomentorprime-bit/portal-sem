@@ -14,6 +14,7 @@ import { PortalMobileNav } from "./PortalMobileNav";
 export interface NavLinkItem {
   label: string;
   href: string;
+  children?: NavLinkItem[];
 }
 
 interface PortalHeaderProps {
@@ -41,6 +42,60 @@ function isActiveNav(pathname: string, href: string): boolean {
 
 function stripTrailingArrow(label: string): string {
   return label.replace(/\s*(?:→|->)\s*$/u, "").trimEnd();
+}
+
+function DesktopNavItem({
+  link,
+  pathname,
+}: {
+  link: NavLinkItem;
+  pathname: string;
+}) {
+  const handleHomeLink = useHomeLinkHandler();
+  const children = (link.children ?? []).filter((child) => child.href && child.href !== "#");
+  const active =
+    isActiveNav(pathname, link.href) || children.some((child) => isActiveNav(pathname, child.href));
+
+  if (children.length === 0) {
+    return (
+      <Link
+        href={link.href}
+        className={cn("portal-nav-link", active && "portal-nav-link--active", focusRing)}
+        onClick={(event) => handleHomeLink(event, link.href)}
+      >
+        {link.label}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="portal-nav-dropdown">
+      <Link
+        href={link.href}
+        className={cn("portal-nav-link", active && "portal-nav-link--active", focusRing)}
+        aria-haspopup="true"
+        onClick={(event) => handleHomeLink(event, link.href)}
+      >
+        {link.label}
+      </Link>
+      <ul className="portal-nav-dropdown__menu">
+        {children.map((child) => (
+          <li key={`${child.href}-${child.label}`}>
+            <Link
+              href={child.href}
+              className={cn(
+                "portal-nav-dropdown__link",
+                isActiveNav(pathname, child.href) && "portal-nav-dropdown__link--active",
+                focusRing
+              )}
+            >
+              {child.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export function PortalHeader({
@@ -126,30 +181,10 @@ export function PortalHeader({
               aria-label="Navegación principal"
             >
               {homeLink ? (
-                <Link
-                  href={homeLink.href}
-                  className={cn(
-                    "portal-nav-link",
-                    isActiveNav(pathname, homeLink.href) && "portal-nav-link--active",
-                    focusRing
-                  )}
-                  onClick={(event) => handleHomeLink(event, homeLink.href)}
-                >
-                  {homeLink.label}
-                </Link>
+                <DesktopNavItem link={homeLink} pathname={pathname} />
               ) : null}
               {navLinks.map((link) => (
-                <Link
-                  key={`${link.href}-${link.label}`}
-                  href={link.href}
-                  className={cn(
-                    "portal-nav-link",
-                    isActiveNav(pathname, link.href) && "portal-nav-link--active",
-                    focusRing
-                  )}
-                >
-                  {link.label}
-                </Link>
+                <DesktopNavItem key={`${link.href}-${link.label}`} link={link} pathname={pathname} />
               ))}
             </nav>
 

@@ -1,12 +1,51 @@
 "use client";
 
 import Link from "next/link";
+import type { MouseEvent } from "react";
 import { X } from "lucide-react";
 import { iconSizes } from "@/design";
 import { focusRing } from "@/components/ui/shared";
 import { isHomeHref, useHomeLinkHandler } from "@/lib/navigation/home";
 import { cn } from "@/lib/utils";
 import type { NavLinkItem } from "./PortalHeader";
+
+function MobileNavTree({
+  links,
+  depth,
+  onClose,
+  onHome,
+}: {
+  links: NavLinkItem[];
+  depth: number;
+  onClose: () => void;
+  onHome: (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
+}) {
+  return (
+    <ul className={depth === 0 ? "space-y-1" : "mt-1 space-y-1"}>
+      {links.map((link) => {
+        const children = (link.children ?? []).filter((child) => child.href && child.href !== "#");
+        return (
+          <li key={`${link.href}-${link.label}`}>
+            <Link
+              href={link.href}
+              className="block rounded-[var(--radius-md)] py-3 text-body font-medium text-foreground hover:bg-background-soft"
+              style={{ paddingLeft: `${0.75 + depth * 0.75}rem`, paddingRight: "0.75rem" }}
+              onClick={(event) => {
+                if (isHomeHref(link.href)) onHome(event, link.href);
+                onClose();
+              }}
+            >
+              {link.label}
+            </Link>
+            {children.length > 0 ? (
+              <MobileNavTree links={children} depth={depth + 1} onClose={onClose} onHome={onHome} />
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 interface PortalMobileNavProps {
   open: boolean;
@@ -56,24 +95,7 @@ export function PortalMobileNav({
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-4 py-4" aria-label="Menú móvil">
-          <ul className="space-y-1">
-            {links.map((link) => (
-              <li key={`${link.href}-${link.label}`}>
-                <Link
-                  href={link.href}
-                  className="block rounded-[var(--radius-md)] px-3 py-3 text-body font-medium text-foreground hover:bg-background-soft"
-                  onClick={(event) => {
-                    if (isHomeHref(link.href)) {
-                      handleHomeLink(event, link.href);
-                    }
-                    onClose();
-                  }}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <MobileNavTree links={links} depth={0} onClose={onClose} onHome={handleHomeLink} />
         </nav>
         {(loginHref || applyHref || campusHref) ? (
           <div className="space-y-2 border-t border-border p-4">

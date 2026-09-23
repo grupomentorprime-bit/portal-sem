@@ -89,6 +89,18 @@ export function filterLinksByFeatures<T extends { href: string }>(
   return links.filter((link) => isPathEnabled(features, link.href));
 }
 
+export function filterNavTree<T extends { href: string; children?: T[] }>(
+  links: T[],
+  features: FeatureFlags
+): T[] {
+  return links
+    .filter((link) => isPathEnabled(features, link.href))
+    .map((link) => ({
+      ...link,
+      children: link.children ? filterNavTree(link.children, features) : link.children,
+    }));
+}
+
 export function isAdminSectionEnabled(
   features: FeatureFlags,
   href: string

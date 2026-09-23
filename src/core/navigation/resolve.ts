@@ -1,8 +1,23 @@
 import { buildMenuTree, resolveMenuItemHref } from "@/lib/cms/menu-utils";
-import { filterLinksByFeatures } from "@/lib/portal/feature-flags";
+import { filterLinksByFeatures, filterNavTree } from "@/lib/portal/feature-flags";
 import type { FeatureFlags } from "@/types/cms";
-import type { MenuItem } from "@/types/menu";
+import type { MenuItem, MenuTreeNode } from "@/types/menu";
 import type { FooterColumn, NavLink, ResolvedNavigation } from "./types";
+
+function mapNode(node: MenuTreeNode): NavLink {
+  return {
+    label: node.title,
+    href: resolveMenuItemHref(node),
+    target: node.target,
+    highlighted: node.highlighted,
+    children: node.children.map(mapNode),
+  };
+}
+
+function mapMenuTree(items: MenuItem[], features?: FeatureFlags): NavLink[] {
+  const links = buildMenuTree(items).map(mapNode);
+  return features ? filterNavTree(links, features) : links;
+}
 
 function mapItemsToLinks(items: MenuItem[], features?: FeatureFlags): NavLink[] {
   const seen = new Set<string>();
@@ -66,13 +81,13 @@ export function resolveNavigation(
   const filter = (links: NavLink[]) =>
     features ? filterLinksByFeatures(links, features) : links;
 
-  const header = filter(mapItemsToLinks(menus.header ?? []));
+  const header = mapMenuTree(menus.header ?? [], features);
   const mobileSource = menus.mobile?.length ? menus.mobile : menus.header ?? [];
 
   return {
     header,
     footer: mapFooterColumns(menus.footer ?? [], features),
-    mobile: filter(mapItemsToLinks(mobileSource)),
+    mobile: mapMenuTree(mobileSource, features),
     legal: filter(mapItemsToLinks(menus.legal ?? [])),
     quickLinks: filter(mapItemsToLinks(menus.quickLinks ?? [])),
   };

@@ -6,8 +6,8 @@ import {
   publicSemContact,
   SEM_ISOTIPO_ON_DARK_SRC,
   SEM_ISOTIPO_SRC,
-  SEM_PUBLIC_NAV,
 } from "@/lib/portal/sem-identity-v7";
+import { resolvePublicHeader, resolvePublicMobile, resolveSemCampaignHref } from "@/lib/portal/public-nav";
 import { fetchPrograms } from "@/lib/portal/content";
 import { FooterPremiumShell } from "@/components/portal/experience/footer-premium/FooterPremiumShell";
 import { PortalHeader } from "@/components/portal/layout";
@@ -33,7 +33,7 @@ export async function PortalShell({ children }: PortalShellProps) {
     return <main>{children}</main>;
   }
 
-  const { config, navLinks, navigation, logos, tenant } = ctx;
+  const { config, navigation, logos, tenant } = ctx;
   const { institution, contact, seo } = config;
 
   const [featuredPrograms] = await Promise.all([
@@ -41,7 +41,8 @@ export async function PortalShell({ children }: PortalShellProps) {
   ]);
 
   const semTenant = isSemTenant(tenant);
-  const headerLinks = semTenant ? [...SEM_PUBLIC_NAV] : navLinks;
+  const headerLinks = resolvePublicHeader(navigation.header, tenant);
+  const mobileLinks = resolvePublicMobile(navigation.mobile, navigation.header, tenant);
   const loginLink = findQuickLink(navigation.quickLinks, (l) => l.includes("ingresar"));
 
   const applyLink = isFeatureEnabled(config.features, "applications")
@@ -58,16 +59,26 @@ export async function PortalShell({ children }: PortalShellProps) {
       <ExperienceActionProvider>
       <PortalHeader
         links={headerLinks}
-        mobileLinks={headerLinks}
+        mobileLinks={mobileLinks}
         logoPrimary={semTenant ? SEM_ISOTIPO_SRC : logos.primary}
         logoSecondary={semTenant ? undefined : logos.secondary}
         institutionName={institution.name}
         institutionShortName={institution.shortName}
         organization={institution.organization}
-        loginHref={loginLink?.href ?? "/ingresar"}
+        loginHref={loginLink?.href ?? "/login"}
         loginLabel={loginLink?.label ?? "Ingresar"}
-        applyHref={applyLink?.href ?? (semTenant ? "/admision" : undefined)}
-        applyLabel={semTenant ? "Postular" : applyLink?.label}
+        applyHref={
+          semTenant
+            ? resolveSemCampaignHref(applyLink?.href)
+            : applyLink?.href
+        }
+        applyLabel={
+          semTenant
+            ? applyLink?.href && resolveSemCampaignHref(applyLink.href) === applyLink.href
+              ? applyLink.label
+              : "Admisión 2027"
+            : applyLink?.label
+        }
         campusHref={campusHref}
         campusLabel="Campus"
         variant="premium"

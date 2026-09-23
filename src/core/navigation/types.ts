@@ -3,6 +3,7 @@ export interface NavLink {
   href: string;
   target?: "_self" | "_blank";
   highlighted?: boolean;
+  children?: NavLink[];
 }
 
 export interface FooterColumn {
