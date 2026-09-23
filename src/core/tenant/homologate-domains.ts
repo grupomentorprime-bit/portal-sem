@@ -11,7 +11,10 @@ import {
   buildDefaultSpaceHost,
   isBarePlatformOriginHost,
   isDevLoopbackSpaceHost,
+  isLoopbackHost,
   isPlatformSubdomainHost,
+  normalizeHost,
+  resolveAppHostsFromEnv,
 } from "@/core/tenant/hosts";
 import { findDomainsBySiteId } from "@/core/tenant/repositories";
 import type { DomainDocument, SiteDocument } from "@/core/tenant/types";
@@ -41,6 +44,22 @@ function nowIso(): string {
 
 function domainsCol(db: Db) {
   return db.collection<DomainDocument>(DOMAINS_COLLECTION);
+}
+
+/** `{slug}.{host de APP_URL}`: el subdominio automático anterior, no un dominio propio. */
+function isLegacyAppSubdomain(
+  slug: string,
+  host: string,
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>
+): boolean {
+  const normalized = normalizeHost(host);
+  if (!normalized) return false;
+  const hostname = normalized.split(":")[0] ?? normalized;
+  return resolveAppHostsFromEnv(env).some((appHost) => {
+    if (isLoopbackHost(appHost)) return false;
+    const apex = appHost.split(":")[0];
+    return Boolean(apex && hostname === `${slug}.${apex}`);
+  });
 }
 
 /**
@@ -117,13 +136,17 @@ export async function homologateSitePlatformDomain(
   remaining = await findDomainsBySiteId(db, siteId);
   let primary = remaining.find((domain) => domain.isPrimary) ?? null;
 
-  // El subdominio público del wildcard sustituye a `{slug}.localhost` como
-  // dirección principal. Un dominio propio ya primario se conserva.
+  // El subdominio público sustituye a `{slug}.localhost` y al automático
+  // anterior `{slug}.{APP_URL}`. Un dominio propio ya primario se conserva.
   const publicDefault =
     defaultHost && !isDevLoopbackSpaceHost(defaultHost)
       ? remaining.find((domain) => domain.host === defaultHost) ?? null
       : null;
-  if (publicDefault && primary && isDevLoopbackSpaceHost(primary.host)) {
+  const primaryIsAutomatic =
+    primary != null &&
+    (isDevLoopbackSpaceHost(primary.host) ||
+      isLegacyAppSubdomain(slug, primary.host, env));
+  if (publicDefault && primary && primaryIsAutomatic && primary.host !== publicDefault.host) {
     const promoted = await setPrimaryDomain(db, {
       host: publicDefault.host,
       siteId,

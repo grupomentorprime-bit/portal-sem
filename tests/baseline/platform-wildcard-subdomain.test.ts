@@ -309,6 +309,7 @@ describe("wildcard de Espacios — alta y resolución", () => {
       await ensureDomainIndexes(db);
       const stamp = Date.now().toString(36);
       const devTenant = `wild-dev-${stamp}`;
+      const legacyTenant = `wild-legacy-${stamp}`;
       const customTenant = `wild-custom-${stamp}`;
       const env = {
         SPACE_BASE_DOMAIN: SPACE_BASE,
@@ -391,6 +392,15 @@ describe("wildcard de Espacios — alta y resolución", () => {
         assert.equal(primary?.host, `${devTenant}.${SPACE_BASE}`);
         assert.equal(primary?.kind, "platform_subdomain");
 
+        const legacyHost = `${legacyTenant}.${PLATFORM_HOST}`;
+        await seed(legacyTenant, legacyHost, "legacy");
+        const promoted = await homologateSitePlatformDomain(
+          db,
+          { siteId: legacyTenant, tenantId: legacyTenant, slug: legacyTenant },
+          env
+        );
+        assert.equal(promoted.primaryHost, `${legacyTenant}.${SPACE_BASE}`);
+
         const customHost = `www-${stamp}.cliente.test`;
         await seed(customTenant, customHost, "custom");
         const kept = await homologateSitePlatformDomain(
@@ -406,6 +416,7 @@ describe("wildcard de Espacios — alta y resolución", () => {
         assert.equal(alias?.isPrimary, false);
       } finally {
         await cleanup(db, devTenant);
+        await cleanup(db, legacyTenant);
         await cleanup(db, customTenant);
       }
     });
