@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { resolveKeycloakRedirectUri } from "@/core/identity/auth/public-origin";
 
 /** Cliente OAuth dedicado de Growth OS (confidential + Standard flow). */
 export const GROWTH_OS_KEYCLOAK_CLIENT_ID = "growth-os-web";
@@ -61,9 +62,7 @@ export function getKeycloakConfig(): KeycloakConfig | null {
     }
   }
 
-  const redirectUri =
-    process.env.KEYCLOAK_REDIRECT_URI?.trim() ||
-    `${getAppBaseUrl()}/api/identity/auth/keycloak/callback`;
+  const redirectUri = resolveKeycloakRedirectUri(getAppBaseUrl());
 
   return {
     url,

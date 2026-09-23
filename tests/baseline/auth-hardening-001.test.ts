@@ -56,8 +56,11 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — PKCE S256 + state", () => {
     assert.match(cb, /state !== savedState/);
     assert.match(cb, /oauth_pkce/);
     assert.match(cb, /exchangeKeycloakCode\(code,\s*codeVerifier\)/);
-    assert.match(cb, /jar\.delete\(STATE_COOKIE\)/);
-    assert.match(cb, /jar\.delete\(PKCE_COOKIE\)/);
+    assert.match(cb, /readRequestCookie\(cookieHeader,\s*STATE_COOKIE\)/);
+    assert.match(cb, /response\.cookies\.set\(STATE_COOKIE/);
+    assert.match(cb, /response\.cookies\.set\(PKCE_COOKIE/);
+    assert.match(cb, /publicRedirectUrl\(request,/);
+    assert.doesNotMatch(cb, /new URL\([^,]+,\s*request\.url\)/);
   });
 
   it("keycloak.ts emite code_challenge_method=S256 y manda code_verifier al token", () => {

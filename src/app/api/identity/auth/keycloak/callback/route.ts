@@ -23,33 +23,50 @@ import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
 import {
   NEXT_COOKIE,
   PKCE_COOKIE,
+  readRequestCookie,
   STATE_COOKIE,
 } from "@/core/identity/auth/oauth-cookies";
+import { publicRedirectUrl } from "@/core/identity/auth/public-origin";
+
+function redirectTo(request: Request, path: string): NextResponse {
+  const response = NextResponse.redirect(publicRedirectUrl(request, path));
+  const secure = response.headers.get("location")?.startsWith("https://") ?? false;
+  const clear = {
+    httpOnly: true,
+    secure,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 0,
+  };
+  response.cookies.set(STATE_COOKIE, "", clear);
+  response.cookies.set(PKCE_COOKIE, "", clear);
+  response.cookies.set(NEXT_COOKIE, "", clear);
+  return response;
+}
 
 export async function GET(request: Request) {
   if (!isKeycloakEnabled()) {
-    return NextResponse.redirect(new URL("/admin/login?error=keycloak", request.url));
+    return redirectTo(request, "/admin/login?error=keycloak");
   }
 
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
+  const cookieHeader = request.headers.get("cookie");
   const jar = await cookies();
-  const savedState = jar.get(STATE_COOKIE)?.value;
-  const codeVerifier = jar.get(PKCE_COOKIE)?.value;
-  const nextPath = jar.get(NEXT_COOKIE)?.value || "/admin";
-
-  // Consumir cookies de un solo uso antes de validar / intercambiar.
-  jar.delete(STATE_COOKIE);
-  jar.delete(PKCE_COOKIE);
-  jar.delete(NEXT_COOKIE);
+  const savedState =
+    readRequestCookie(cookieHeader, STATE_COOKIE) ?? jar.get(STATE_COOKIE)?.value ?? null;
+  const codeVerifier =
+    readRequestCookie(cookieHeader, PKCE_COOKIE) ?? jar.get(PKCE_COOKIE)?.value ?? null;
+  const nextPath =
+    readRequestCookie(cookieHeader, NEXT_COOKIE) ?? jar.get(NEXT_COOKIE)?.value ?? "/admin";
 
   if (!code || !state || !savedState || state !== savedState) {
-    return NextResponse.redirect(new URL("/admin/login?error=oauth_state", request.url));
+    return redirectTo(request, "/admin/login?error=oauth_state");
   }
 
   if (!codeVerifier) {
-    return NextResponse.redirect(new URL("/admin/login?error=oauth_pkce", request.url));
+    return redirectTo(request, "/admin/login?error=oauth_pkce");
   }
 
   try {
@@ -87,12 +104,12 @@ export async function GET(request: Request) {
       isPlatformOperator: hasPlatformOperatorCapability(user),
       next: nextPath,
     });
-    return NextResponse.redirect(new URL(destination, request.url));
+    return redirectTo(request, destination);
   } catch (error) {
     if (error instanceof KeycloakAccessError) {
-      return NextResponse.redirect(new URL(`/admin/login?error=${error.code}`, request.url));
+      return redirectTo(request, `/admin/login?error=${error.code}`);
     }
     logServerError("keycloak-callback", error);
-    return NextResponse.redirect(new URL("/admin/login?error=keycloak", request.url));
+    return redirectTo(request, "/admin/login?error=keycloak");
   }
 }

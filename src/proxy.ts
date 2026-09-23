@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/core/identity/auth/config";
 import { applyPrivateNoStoreHeader } from "@/core/security/http-headers";
 import { isPlatformOriginHost, resolveRequestHost } from "@/core/tenant/hosts";
+import { publicRedirectUrl } from "@/core/identity/auth/public-origin";
 
 function withPrivateCacheControl(response: NextResponse, pathname: string) {
   applyPrivateNoStoreHeader(response.headers, pathname);
@@ -42,7 +43,7 @@ export function proxy(request: NextRequest) {
 
   if (isPlatformOriginHost(host) && !isPlatformProductPath(pathname)) {
     return withPrivateCacheControl(
-      NextResponse.redirect(new URL("/admin", request.url)),
+      NextResponse.redirect(publicRedirectUrl(request, "/admin")),
       pathname
     );
   }
@@ -68,7 +69,7 @@ export function proxy(request: NextRequest) {
 
   const sessionId = request.cookies.get(SESSION_COOKIE)?.value;
   if (!sessionId) {
-    const loginUrl = new URL("/admin/login", request.url);
+    const loginUrl = publicRedirectUrl(request, "/admin/login");
     loginUrl.searchParams.set("next", pathname);
     return withPrivateCacheControl(NextResponse.redirect(loginUrl), pathname);
   }

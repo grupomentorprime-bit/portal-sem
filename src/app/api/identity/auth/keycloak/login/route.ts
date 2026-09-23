@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { generateToken } from "@/core/identity/auth/crypto";
-import { isSecureCookieFromHeaders } from "@/core/identity/auth/config";
 import {
   buildKeycloakAuthorizeUrl,
   createPkcePair,
@@ -12,6 +10,7 @@ import {
   PKCE_COOKIE,
   STATE_COOKIE,
 } from "@/core/identity/auth/oauth-cookies";
+import { resolvePublicAppOrigin } from "@/core/identity/auth/public-origin";
 
 export async function GET(request: Request) {
   if (!isKeycloakEnabled()) {
@@ -25,9 +24,8 @@ export async function GET(request: Request) {
   const nextPath = url.searchParams.get("next")?.trim() || "/admin";
   const state = generateToken(16);
   const { codeVerifier, codeChallenge } = createPkcePair();
-  const jar = await cookies();
 
-  const secure = isSecureCookieFromHeaders(request.headers);
+  const secure = resolvePublicAppOrigin(request).startsWith("https://");
   const cookieBase = {
     httpOnly: true,
     secure,
@@ -36,10 +34,14 @@ export async function GET(request: Request) {
     maxAge: 60 * 10,
   };
 
-  jar.set(STATE_COOKIE, state, cookieBase);
-  jar.set(PKCE_COOKIE, codeVerifier, cookieBase);
-  jar.set(NEXT_COOKIE, nextPath.startsWith("/") ? nextPath : "/admin", cookieBase);
-
   const authorizeUrl = buildKeycloakAuthorizeUrl(state, codeChallenge);
-  return NextResponse.redirect(authorizeUrl);
+  const response = NextResponse.redirect(authorizeUrl);
+  response.cookies.set(STATE_COOKIE, state, cookieBase);
+  response.cookies.set(PKCE_COOKIE, codeVerifier, cookieBase);
+  response.cookies.set(
+    NEXT_COOKIE,
+    nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/admin",
+    cookieBase
+  );
+  return response;
 }
