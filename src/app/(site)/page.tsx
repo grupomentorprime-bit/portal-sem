@@ -2,6 +2,7 @@ import { PlatformPublicLanding } from "@/components/platform/PlatformPublicLandi
 import { PortalHome } from "@/components/portal/PortalHome";
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { loadHomePage } from "@/core/portal";
 import { getPortalContext } from "@/lib/portal/site";
 import type { Metadata } from "next";
@@ -50,6 +51,14 @@ export async function generateMetadata(): Promise<Metadata> {
       title: PLATFORM_DISPLAY_NAME,
       description:
         "Growth OS es la plataforma donde cada organización opera su sitio, sus personas y su comunicación, en su propia dirección.",
+    };
+  }
+
+  if (isSemTenant(ctx.tenant)) {
+    return {
+      title: "Tu llamado merece preparación",
+      description:
+        "Formación bíblica para un servicio real. Seminario Eclesiástico Mayor de IPN Chile — Iglesia Pentecostal Nazareth.",
     };
   }
 

@@ -1,0 +1,602 @@
+/**
+ * Home institucional SEM. Editorial, permanente, sin campaña en el pliegue.
+ */
+
+.sem-home {
+  --sem-home-ink: var(--color-foreground);
+  --sem-home-navy: var(--color-primary);
+  --sem-home-line: color-mix(in srgb, var(--sem-home-ink) 12%, transparent);
+  color: var(--sem-home-ink);
+  background: var(--color-surface);
+}
+
+.sem-home__wrap {
+  width: min(1120px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+.sem-home__eyebrow,
+.sem-home__kicker {
+  margin: 0 0 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--sem-home-ink) 58%, var(--color-secondary));
+}
+
+.sem-home__kicker--on-dark,
+.sem-home__hero .sem-home__eyebrow {
+  color: color-mix(in srgb, var(--text-inverse) 72%, var(--color-accent));
+}
+
+.sem-home__hero {
+  background: var(--sem-home-navy);
+  color: var(--text-inverse);
+}
+
+.sem-home__hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-block: clamp(4.5rem, 11vw, 8.5rem) clamp(4.75rem, 12vw, 9rem);
+}
+
+.sem-home__mark {
+  width: 3.25rem;
+  height: auto;
+  margin-bottom: 1.75rem;
+}
+
+.sem-home__title {
+  max-width: 11ch;
+  margin: 0;
+  font-size: clamp(3.1rem, 7.4vw, 6.25rem);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+}
+
+.sem-home__title span {
+  color: var(--color-accent);
+}
+
+.sem-home__lead {
+  max-width: 28rem;
+  margin: 1.75rem 0 0;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text-inverse) 88%, transparent);
+}
+
+.sem-home__belong {
+  margin: 1.15rem 0 0;
+  max-width: 34rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text-inverse) 68%, transparent);
+}
+
+.sem-home__quiet-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 1.75rem;
+  padding-bottom: 0.2rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--sem-home-ink);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-secondary) 70%, transparent);
+}
+
+.sem-home__quiet-link::after {
+  content: "→";
+  margin-left: 0.45rem;
+  font-weight: 500;
+}
+
+.sem-home__quiet-link--on-dark {
+  color: var(--text-inverse);
+  border-bottom-color: color-mix(in srgb, var(--color-accent) 80%, transparent);
+}
+
+.sem-home__quiet-link:hover {
+  color: var(--color-secondary);
+}
+
+.sem-home__quiet-link--on-dark:hover {
+  color: var(--color-accent);
+}
+
+.sem-home__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.75rem;
+}
+
+.sem-home__hero-actions .sem-home__quiet-link {
+  margin-top: 1.75rem;
+}
+
+.sem-home__band {
+  padding-block: clamp(4.25rem, 8vw, 6.75rem);
+}
+
+.sem-home__band--muted {
+  background: var(--color-background);
+}
+
+.sem-home__present {
+  max-width: 46rem;
+}
+
+.sem-home__statement,
+.sem-home__service h2,
+.sem-home__affiliation h2,
+.sem-home__program h2,
+.sem-home__section-head h2,
+.sem-home__admit h2 {
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+.sem-home__statement {
+  max-width: 16ch;
+  font-size: clamp(2.15rem, 4.6vw, 3.6rem);
+}
+
+.sem-home__statement-sub {
+  margin: 1.25rem 0 0;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--sem-home-ink) 72%, var(--color-secondary));
+}
+
+.sem-home__section-head {
+  max-width: 40rem;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.sem-home__section-head h2 {
+  font-size: clamp(2rem, 3.6vw, 2.85rem);
+}
+
+.sem-home__section-lead,
+.sem-home__program p,
+.sem-home__line p,
+.sem-home__study p,
+.sem-home__affiliation p {
+  margin: 0.85rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--sem-home-ink) 74%, transparent);
+}
+
+.sem-home__lines {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.sem-home__line {
+  padding: 1.75rem 0 0.25rem;
+  border-top: 1px solid var(--sem-home-line);
+}
+
+.sem-home__index {
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-secondary);
+}
+
+.sem-home__line h3 {
+  margin: 0;
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.sem-home__program {
+  margin-top: clamp(2.5rem, 5vw, 3.75rem);
+  padding: clamp(1.75rem, 3vw, 2.5rem);
+  background: var(--color-surface);
+  border: 1px solid var(--sem-home-line);
+  border-left: 3px solid var(--sem-home-navy);
+}
+
+.sem-home__program h2 {
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.sem-home__study {
+  display: grid;
+  gap: 0;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.sem-home__study li {
+  padding: 1.35rem 0;
+  border-top: 1px solid var(--sem-home-line);
+}
+
+.sem-home__study h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.sem-home__service {
+  background: var(--sem-home-navy);
+  color: var(--text-inverse);
+  padding-block: clamp(4.5rem, 9vw, 7rem);
+}
+
+.sem-home__service h2 {
+  max-width: 14ch;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+}
+
+.sem-home__affiliation {
+  max-width: 40rem;
+}
+
+.sem-home__affiliation h2 {
+  font-size: clamp(2rem, 4vw, 3.15rem);
+}
+
+.sem-home__affiliation h2 span {
+  color: var(--sem-home-navy);
+}
+
+.sem-home__admit {
+  background: var(--color-background);
+  border-top: 1px solid var(--sem-home-line);
+}
+
+.sem-home__admit-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding-block: 2.25rem 2.75rem;
+}
+
+.sem-home__admit h2 {
+  font-size: clamp(1.45rem, 2.4vw, 1.85rem);
+}
+
+.sem-home__admit-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.5rem;
+}
+
+.sem-home__admit-links .sem-home__quiet-link {
+  margin-top: 0;
+}
+
+.sem-home__admit-go {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sem-home-navy);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--sem-home-navy) 35%, transparent);
+  border-radius: 999px;
+}
+
+.sem-home__admit-go:hover {
+  background: color-mix(in srgb, var(--sem-home-navy) 6%, transparent);
+}
+
+body:has(.sem-home) .footer-premium__cta {
+  display: none;
+}
+
+@media (min-width: 800px) {
+  .sem-home__wrap {
+    width: min(1120px, calc(100% - 6rem));
+  }
+
+  .sem-home__lines {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+  }
+
+  .sem-home__study {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 3rem;
+  }
+
+  .sem-home__study li:nth-child(1),
+  .sem-home__study li:nth-child(2) {
+    border-top: 1px solid var(--sem-home-line);
+  }
+
+  .sem-home__admit-inner {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 799px) {
+  .sem-home__title {
+    max-width: 12ch;
+    font-size: clamp(2.7rem, 12vw, 3.6rem);
+  }
+
+  .sem-home__hero-inner {
+    padding-block: 3.25rem 3.75rem;
+  }
+}
+
+/**
+ * /el-sem. Misma voz que la Home. No oculta el CTA del pie:
+ * esta página no repite la convocatoria.
+ */
+.sem-institution {
+  --sem-home-ink: var(--color-foreground);
+  --sem-home-navy: var(--color-primary);
+  --sem-home-line: color-mix(in srgb, var(--sem-home-ink) 12%, transparent);
+  color: var(--sem-home-ink);
+  background: var(--color-surface);
+}
+
+.sem-institution__hero .sem-home__eyebrow {
+  color: color-mix(in srgb, var(--text-inverse) 72%, var(--color-accent));
+}
+
+.sem-institution__hero {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}
+
+.sem-institution__hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(3.25rem, 8vw, 5.5rem);
+}
+
+.sem-institution__crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1.75rem;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--text-inverse) 68%, transparent);
+}
+
+.sem-institution__crumb a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+
+.sem-institution__crumb a:hover {
+  color: var(--color-accent);
+}
+
+.sem-institution__mark {
+  width: 2.75rem;
+  height: auto;
+  margin-bottom: 1.35rem;
+}
+
+.sem-institution__title {
+  max-width: 16ch;
+  margin: 0;
+  font-size: clamp(2.35rem, 5.4vw, 4.35rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.sem-institution__lead {
+  max-width: 28rem;
+  margin: 1.5rem 0 0;
+  font-size: clamp(1.12rem, 2vw, 1.4rem);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text-inverse) 88%, transparent);
+}
+
+.sem-institution__line {
+  margin: 0.7rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text-inverse) 68%, transparent);
+}
+
+.sem-institution__belong {
+  max-width: 40rem;
+}
+
+.sem-institution__belong h2 {
+  margin: 0;
+  max-width: 22ch;
+  font-size: clamp(1.85rem, 3.8vw, 2.85rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+.sem-institution__index {
+  max-width: 46rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--sem-home-line);
+}
+
+.sem-institution__index a {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 1.25rem 0;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--sem-home-line);
+}
+
+.sem-institution__index a:hover .sem-institution__index-title,
+.sem-institution__index a:focus-visible .sem-institution__index-title {
+  color: var(--color-secondary);
+}
+
+.sem-institution__index a:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 3px;
+}
+
+.sem-institution__index-no {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-secondary);
+}
+
+.sem-institution__index-title {
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.sem-institution__index-title::after {
+  content: "→";
+  margin-left: 0.45rem;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.sem-institution__copy {
+  margin: 0.85rem 0 0;
+  max-width: 36rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--sem-home-ink) 74%, transparent);
+}
+
+.sem-institution__cohort-kicker {
+  margin-top: 2.25rem;
+}
+
+.sem-institution__cohorts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.sem-institution__cohorts li {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.sem-institution__cohorts li:not(:last-child)::after {
+  content: "·";
+  margin-inline: 0.55rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--sem-home-ink) 38%, transparent);
+}
+
+.sem-institution__cohorts a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-secondary) 70%, transparent);
+}
+
+.sem-institution__cohorts a:hover {
+  color: var(--color-secondary);
+}
+
+.sem-institution__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.75rem;
+}
+
+.sem-institution__links .sem-home__quiet-link {
+  margin-top: 0;
+}
+
+.sem-malla__areas {
+  max-width: 40rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--sem-home-line);
+}
+
+.sem-malla__area {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  column-gap: 0.35rem;
+  padding: 1.55rem 0 1.7rem;
+  border-bottom: 1px solid var(--sem-home-line);
+}
+
+.sem-malla__no {
+  padding-top: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-secondary);
+}
+
+.sem-malla__area h3 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.4vw, 1.9rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.sem-malla__area p {
+  grid-column: 2;
+  margin: 0.5rem 0 0;
+  max-width: 34rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--sem-home-ink) 74%, transparent);
+}
+
+.sem-malla__secondary {
+  margin: 2.5rem 0 0;
+}
+
+.sem-malla__secondary .sem-home__quiet-link {
+  margin-top: 0;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--sem-home-ink) 62%, transparent);
+}
+
+@media (min-width: 800px) {
+  .sem-institution__index {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 3rem;
+  }
+}
+

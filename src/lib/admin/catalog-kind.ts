@@ -2,16 +2,21 @@ import type { ContentDocument } from "@/types/content";
 
 export type AcademicCatalogKind = "programs" | "courses";
 
-function programCatalogText(
-  program: Pick<ContentDocument, "title" | "category" | "certification" | "categories">
-): string {
+type CatalogText = {
+  title?: string;
+  category?: string;
+  certification?: string;
+  categories?: string[];
+};
+
+function programCatalogText(program: CatalogText): string {
   return [program.title, program.category, program.certification, ...(program.categories ?? [])]
     .filter(Boolean)
     .join(" ");
 }
 
 /** Cursos cortos — misma heurística que el catálogo público (`matchValue: "curso"`). */
-export function isCourseOffering(program: ContentDocument): boolean {
+export function isCourseOffering(program: CatalogText): boolean {
   return /curso/i.test(programCatalogText(program));
 }
 
