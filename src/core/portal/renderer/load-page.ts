@@ -1,11 +1,12 @@
 import "server-only";
 
 import { blocksFromTemplate, DEFAULT_TEMPLATES } from "@/lib/cms/page-defaults";
-import { applyPortal001HomeMigration } from "@/lib/cms/home-portal-001";
-import { applySemPublicHome, semEditorialPage } from "@/lib/portal/sem-identity-v7";
+import { isSemTenant } from "@/core/tenant/is-sem";
+import { semEditorialPage } from "@/lib/portal/sem-identity-v7";
 import { getPublishedPageBySlug } from "@/lib/cms/pages";
 import type { PortalPageModel, PortalRenderContext } from "@/types/portal";
 import { getRenderableBlocks } from "@/core/portal/visibility";
+import { composeStoredPublicHome } from "@/core/portal/renderer/public-home";
 
 export async function loadPublishedPage(
   slug: string,
@@ -14,6 +15,7 @@ export async function loadPublishedPage(
 ): Promise<PortalPageModel | null> {
   const normalized = slug.startsWith("/") ? slug : `/${slug}`;
   const page = await getPublishedPageBySlug(normalized, tenantId);
+  if (page && page.tenant !== tenantId) return null;
 
   if (page?.blocks?.length) {
     return {
@@ -39,8 +41,10 @@ export async function loadPublishedPage(
     };
   }
 
-  if (fallbackTemplateId) {
-    const template = DEFAULT_TEMPLATES.find((t) => t._id === fallbackTemplateId);
+  const templateId =
+    fallbackTemplateId === "home" && !isSemTenant(tenantId) ? undefined : fallbackTemplateId;
+  if (templateId) {
+    const template = DEFAULT_TEMPLATES.find((t) => t._id === templateId);
     if (template) {
       return {
         slug: normalized,
@@ -63,14 +67,17 @@ export function preparePageBlocks(
 }
 
 export async function loadHomePage(tenantId: string): Promise<PortalPageModel> {
-  const page = await loadPublishedPage("/", tenantId, "home");
-  const base =
-    page ?? {
-      slug: "/",
-      title: "Inicio",
-      blocks: [],
-      seo: {},
-      tenantId,
+  const published = await getPublishedPageBySlug("/", tenantId);
+  if (published?.blocks?.length && published.tenant === tenantId) {
+    return {
+      slug: published.slug,
+      title: published.title,
+      blocks: published.blocks,
+      seo: published.seo,
+      tenantId: published.tenant,
     };
-  return applySemPublicHome(applyPortal001HomeMigration(base));
+  }
+
+  const page = await loadPublishedPage("/", tenantId);
+  return composeStoredPublicHome(tenantId, page);
 }

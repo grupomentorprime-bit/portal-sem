@@ -34,7 +34,7 @@ export default async function FormulariosIndexPage() {
   if (!ctx) notFound();
 
   const forms = await listPublicExperienceForms(ctx.tenant);
-  const supersededFormIds = getSupersededFormIds();
+  const supersededFormIds = getSupersededFormIds(ctx.tenant);
   const publishedForms = forms.filter((form) => !supersededFormIds.has(form._id));
   const experiences = await Promise.all(
     publishedForms.map(async (form) => ({

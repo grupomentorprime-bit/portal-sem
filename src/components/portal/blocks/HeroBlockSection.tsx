@@ -147,6 +147,7 @@ export async function HeroBlockSection({ block, tenant, ctx, allBlocks }: HeroBl
   >(block);
 
   const variant = asString(settings.variant, "default");
+  const foreignPremium = variant === "sem_premium" && !isSemTenant(tenant);
 
   const { heroPortal } = config;
 
@@ -168,7 +169,7 @@ export async function HeroBlockSection({ block, tenant, ctx, allBlocks }: HeroBl
 
   const configuredHeroImage = heroFromBlock ?? (logos.hasHero ? logos.hero : undefined);
 
-  if (variant === "sem_premium") {
+  if (variant === "sem_premium" && isSemTenant(tenant)) {
     const resolved = blockToResolvedSlide(settings, configuredHeroImage);
     resolveConvocatoriaHeroLinks([resolved]);
     const view = mapResolvedSlideToPremiumView(resolved);
@@ -182,28 +183,42 @@ export async function HeroBlockSection({ block, tenant, ctx, allBlocks }: HeroBl
   const statsBlock = findBlock(allBlocks, "stats");
   const stats = extractStats(statsBlock);
 
-  const heroImageAlt = asString(
-    settings.heroImageAlt ?? settings.imageAlt,
-    asString(settings.institutionName, institution.name)
-  );
+  const heroImageAlt = foreignPremium
+    ? institution.name
+    : asString(
+        settings.heroImageAlt ?? settings.imageAlt,
+        asString(settings.institutionName, institution.name)
+      );
 
-  const benefitItems = parseHeroBenefits(settings.badge);
+  const benefitItems = foreignPremium ? [] : parseHeroBenefits(settings.badge);
   const statBenefits = stats.map((s) => s.label).filter(Boolean).slice(0, 4);
   const heroBenefits = benefitItems.length > 0 ? benefitItems : statBenefits;
 
   return (
     <>
       <PortalHero
-        title={asString(settings.institutionName, institution.name)}
-        subtitle={asString(settings.motto, seo.description)}
-        description={asString(settings.description) || undefined}
+        title={
+          foreignPremium
+            ? institution.name
+            : asString(settings.institutionName, institution.name)
+        }
+        subtitle={foreignPremium ? seo.description : asString(settings.motto, seo.description)}
+        description={foreignPremium ? undefined : asString(settings.description) || undefined}
         heroImage={configuredHeroImage}
         heroImageAlt={heroImageAlt}
         overlayOpacity={typeof settings.overlayOpacity === "number" ? settings.overlayOpacity : 75}
-        primaryLabel={asString(settings.primaryLabel, applyQuickLink?.label)}
-        primaryHref={asString(settings.primaryHref, applyQuickLink?.href)}
-        secondaryLabel={asString(settings.secondaryLabel, settings.ctaLabel)}
-        secondaryHref={asString(settings.secondaryHref, settings.ctaHref)}
+        primaryLabel={
+          foreignPremium ? undefined : asString(settings.primaryLabel, applyQuickLink?.label)
+        }
+        primaryHref={
+          foreignPremium ? undefined : asString(settings.primaryHref, applyQuickLink?.href)
+        }
+        secondaryLabel={
+          foreignPremium ? undefined : asString(settings.secondaryLabel, settings.ctaLabel)
+        }
+        secondaryHref={
+          foreignPremium ? undefined : asString(settings.secondaryHref, settings.ctaHref)
+        }
       />
       {heroBenefits.length > 0 ? <PortalHeroBenefits items={heroBenefits} /> : null}
     </>

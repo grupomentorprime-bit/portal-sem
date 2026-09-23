@@ -259,8 +259,9 @@ export function publicConvocatoriaUrl(slug: string): string {
 }
 
 /** IDs de formularios plantilla sustituidos por una convocatoria activa publicada. */
-export function getSupersededFormIds(): Set<string> {
-  const active = getActiveConvocatoria();
+export function getSupersededFormIds(tenantId?: string): Set<string> {
+  if (tenantId !== undefined && !isSemTenant(tenantId)) return new Set();
+  const active = getActiveConvocatoria(tenantId);
   if (!active) return new Set();
   return new Set(["attendance-confirmation"]);
 }

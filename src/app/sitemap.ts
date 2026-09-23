@@ -53,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!ctx) return entries;
 
     const forms = await listPublicExperienceForms(ctx.tenant);
-    const superseded = getSupersededFormIds();
+    const superseded = getSupersededFormIds(ctx.tenant);
 
     for (const form of forms) {
       if (superseded.has(form._id) || isExperienceFormPrivate(form)) continue;

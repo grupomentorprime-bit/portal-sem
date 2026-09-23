@@ -116,14 +116,13 @@ function formUnavailabilityDescription(
 
 export default async function FormularioPublicPage({ params }: FormularioPageProps) {
   const { id } = await params;
-
-  if (getSupersededFormIds().has(id)) {
-    const convocatoria = getActiveConvocatoria();
-    if (convocatoria) permanentRedirect(publicFormUrl(convocatoria.formId));
-  }
-
   const ctx = await getActivePortal();
   if (!ctx) notFound();
+
+  if (getSupersededFormIds(ctx.tenant).has(id)) {
+    const convocatoria = getActiveConvocatoria(ctx.tenant);
+    if (convocatoria) permanentRedirect(publicFormUrl(convocatoria.formId));
+  }
 
   const storedForm = await getExperienceFormById(ctx.tenant, id);
   const experience = withholdUnvalidatedFormContact(
@@ -177,7 +176,7 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
     );
   }
 
-  const convocatoria = getConvocatoriaByFormId(id);
+  const convocatoria = getConvocatoriaByFormId(id, ctx.tenant);
   const shell = experience.formShell;
 
   return (
