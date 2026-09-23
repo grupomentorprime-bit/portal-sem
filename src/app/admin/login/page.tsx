@@ -1,10 +1,10 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
-import { LoginForm } from "@/components/identity/LoginForm";
+import { redirect } from "next/navigation";
+import { LoginForm, loginErrorMessage } from "@/components/identity/LoginForm";
 import { ProductAuthFrame } from "@/components/product";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding";
-import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { isKeycloakEnabled } from "@/core/identity/auth/keycloak";
+import { loadSessionContext } from "@/lib/identity/sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,32 +15,36 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminLoginPage() {
-  const institutionalOnly = isKeycloakOnlyAuth();
-  const authReady = isKeycloakEnabled();
+function safeNext(value: string | undefined): string | null {
+  const next = value?.trim() ?? "";
+  if (!next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
+  const session = await loadSessionContext();
+  if (session) redirect("/admin");
+
+  const params = await searchParams;
+  const next = safeNext(params.next);
+  const loginHref = next
+    ? `/api/identity/auth/keycloak/login?next=${encodeURIComponent(next)}`
+    : "/api/identity/auth/keycloak/login";
 
   return (
     <ProductAuthFrame
       title="Ingresar"
-      description={
-        <>
-          <p>
-            {institutionalOnly
-              ? "Usa tu correo y contraseña para entrar a tu Espacio en Growth OS."
-              : `Ingresa a tu Espacio en ${PLATFORM_DISPLAY_NAME}.`}
-          </p>
-          {institutionalOnly && !authReady ? (
-            <p className="mt-2 text-xs text-[var(--color-danger)]">
-              El servicio de autenticación no está disponible. Contacta al
-              administrador del Espacio.
-            </p>
-          ) : null}
-        </>
-      }
+      description={<p>Entra a tu Espacio en {PLATFORM_DISPLAY_NAME}.</p>}
     >
-      <Suspense fallback={<p className="text-sm text-muted">Cargando…</p>}>
-        <LoginForm />
-      </Suspense>
+      <LoginForm
+        loginHref={loginHref}
+        authReady={isKeycloakEnabled()}
+        errorMessage={loginErrorMessage(params.error)}
+      />
     </ProductAuthFrame>
   );
 }

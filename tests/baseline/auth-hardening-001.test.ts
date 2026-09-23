@@ -16,14 +16,18 @@ function readSrc(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
 }
 
-describe("OT-GROWTH-AUTH-HARDENING-001 — login UI embebido (servidor → Keycloak)", () => {
-  it("LoginForm envía correo/contraseña a /keycloak/session y no redirige al IdP", () => {
+describe("OT-GROWTH-AUTH-HARDENING-001 — login UI Auth Code + PKCE", () => {
+  it("LoginForm redirige a /keycloak/login y no envía correo ni contraseña", () => {
     const form = readSrc("src/components/identity/LoginForm.tsx");
-    assert.match(form, /\/api\/identity\/auth\/keycloak\/session/);
-    assert.match(form, /type=\"email\"/);
-    assert.match(form, /type=\{showPassword \? \"text\" : \"password\"\}/);
-    assert.doesNotMatch(form, /\/api\/identity\/auth\/keycloak\/login/);
-    assert.doesNotMatch(form, /Continuar con acceso institucional/);
+    const page = readSrc("src/app/admin/login/page.tsx");
+    assert.match(page, /\/api\/identity\/auth\/keycloak\/login/);
+    assert.match(form, /Ingresar a Growth OS/);
+    assert.match(form, /href=\{loginHref\}/);
+    assert.doesNotMatch(form, /\/api\/identity\/auth\/keycloak\/session/);
+    assert.doesNotMatch(form, /type=\"email\"/);
+    assert.doesNotMatch(form, /type=\"password\"/);
+    assert.doesNotMatch(form, /grant/);
+    assert.doesNotMatch(page, /grant/);
   });
 
   it("endpoint de sesión valida credenciales con Keycloak en el servidor", () => {
@@ -34,10 +38,13 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — login UI embebido (servidor → Keycl
     assert.doesNotMatch(session, /status:\s*410/);
   });
 
-  it("login page pide correo y contraseña en Growth OS", () => {
+  it("login page entra a /admin si hay sesión y no pide contraseña", () => {
     const page = readSrc("src/app/admin/login/page.tsx");
-    assert.match(page, /correo y contraseña/);
-    assert.doesNotMatch(page, /acceso institucional/);
+    assert.match(page, /loadSessionContext/);
+    assert.match(page, /redirect\("\/admin"\)/);
+    assert.match(page, /\/api\/identity\/auth\/keycloak\/login/);
+    assert.doesNotMatch(page, /correo y contraseña/);
+    assert.doesNotMatch(page, /keycloak\/session/);
   });
 });
 
