@@ -31,7 +31,7 @@ export function PlatformCreateSpacePanel({
     open: () => void;
     summary: ReactNode;
   }) => ReactNode;
-  /** Base pública de subdominios (`PLATFORM_BASE_DOMAIN`). Null → localhost en dev. */
+  /** Base pública de subdominios (`SPACE_BASE_DOMAIN`). Null → localhost en dev. */
   platformBaseDomain?: string | null;
 }) {
   const router = useRouter();

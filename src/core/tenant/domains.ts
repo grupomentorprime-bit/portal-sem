@@ -1,6 +1,6 @@
 import type { Db } from "mongodb";
 import { DOMAINS_COLLECTION } from "@/core/tenant/constants";
-import { normalizeHost } from "@/core/tenant/hosts";
+import { isReservedPlatformHost, normalizeHost } from "@/core/tenant/hosts";
 import {
   findDomainByHost,
   findDomainsBySiteId,
@@ -90,8 +90,8 @@ export async function assertHostAvailableForSite(
     }
 > {
   const host = normalizeHost(rawHost);
-  if (!host) {
-    return { ok: false, reason: "invalid_host", host: null };
+  if (!host || isReservedPlatformHost(host)) {
+    return { ok: false, reason: "invalid_host", host };
   }
 
   const existing = await findDomainByHost(db, host);

@@ -10,6 +10,7 @@ import {
 import {
   buildDefaultSpaceHost,
   isBarePlatformOriginHost,
+  isDevLoopbackSpaceHost,
   isPlatformSubdomainHost,
 } from "@/core/tenant/hosts";
 import { findDomainsBySiteId } from "@/core/tenant/repositories";
@@ -114,7 +115,24 @@ export async function homologateSitePlatformDomain(
   }
 
   remaining = await findDomainsBySiteId(db, siteId);
-  const primary = remaining.find((domain) => domain.isPrimary) ?? null;
+  let primary = remaining.find((domain) => domain.isPrimary) ?? null;
+
+  // El subdominio público del wildcard sustituye a `{slug}.localhost` como
+  // dirección principal. Un dominio propio ya primario se conserva.
+  const publicDefault =
+    defaultHost && !isDevLoopbackSpaceHost(defaultHost)
+      ? remaining.find((domain) => domain.host === defaultHost) ?? null
+      : null;
+  if (publicDefault && primary && isDevLoopbackSpaceHost(primary.host)) {
+    const promoted = await setPrimaryDomain(db, {
+      host: publicDefault.host,
+      siteId,
+    });
+    if (promoted.ok) {
+      result.primaryHost = promoted.domain.host;
+      return result;
+    }
+  }
 
   if (!primary && remaining.length > 0) {
     const platform =

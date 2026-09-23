@@ -10,7 +10,8 @@ import { createDefaultSiteConfig } from "@/lib/cms/defaults";
 import {
   buildDefaultSpaceHost,
   classifySpaceDomainKind,
-  isBarePlatformOriginHost,
+  isReservedPlatformHost,
+  isReservedSpaceSlug,
   normalizeHost,
 } from "@/core/tenant/hosts";
 import {
@@ -98,7 +99,7 @@ function resolveProvisionHosts(
   const defaultHost = buildDefaultSpaceHost(slug);
   const requested = normalizeHost(rawHost);
 
-  if (requested && isBarePlatformOriginHost(requested)) {
+  if (requested && isReservedPlatformHost(requested)) {
     throw new CreatePlatformSpaceError(
       "invalid_host",
       "Ese host es el origen de la plataforma. Usa el subdominio del Espacio o un dominio propio."
@@ -216,6 +217,12 @@ export async function createPlatformSpace(
     throw new CreatePlatformSpaceError(
       "invalid_slug",
       "El slug debe tener 2–64 caracteres (a-z, 0-9 y guiones)."
+    );
+  }
+  if (isReservedSpaceSlug(slug)) {
+    throw new CreatePlatformSpaceError(
+      "invalid_slug",
+      "Ese identificador está reservado para la infraestructura."
     );
   }
   if (!isSpaceCreationType(type)) {

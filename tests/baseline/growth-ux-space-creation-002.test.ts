@@ -121,7 +121,7 @@ describe("OT-GROWTH-UX-SPACE-CREATION-002 — contrato funcional", () => {
     const propose = readSrc("src/lib/platform/propose-space-host.ts");
     assert.match(panel, /proposeInitialSpaceHost/);
     assert.match(panel, /platformBaseDomain/);
-    assert.match(propose, /PLATFORM_BASE_DOMAIN/);
+    assert.match(propose, /SPACE_BASE_DOMAIN/);
     assert.doesNotMatch(propose, /mentorprime|seminarioipn|growthos\.mentor/i);
     assert.doesNotMatch(panel, /mentorprime|seminarioipn/i);
   });

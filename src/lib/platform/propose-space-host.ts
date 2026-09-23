@@ -2,7 +2,8 @@ import { buildDefaultSpaceHost } from "@/core/tenant/hosts";
 
 /**
  * Dirección web inicial al crear un Espacio.
- * `{id}.{PLATFORM_BASE_DOMAIN}` o, sin base, `{id}.localhost:{puerto}`.
+ * `{id}.{SPACE_BASE_DOMAIN}`. Sin esa base, `{id}.localhost:{puerto}`.
+ * No usa APP_URL.
  * No hardcodea dominios de producto ni clientes.
  */
 export function proposeInitialSpaceHost(
