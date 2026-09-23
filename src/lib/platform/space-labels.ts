@@ -3,7 +3,7 @@ import {
   PLATFORM_ROLE_CODES,
   type PlatformRoleCode,
 } from "@/core/identity/platform/codes";
-import type { SiteStatus, TenantStatus, TenantType } from "@/core/tenant/types";
+import type { DomainKind, SiteStatus, TenantStatus, TenantType } from "@/core/tenant/types";
 
 /** Etiquetas visibles en Platform Admin (Growth OS). */
 export function labelTenantStatus(status: TenantStatus | string): string {
@@ -14,6 +14,8 @@ export function labelTenantStatus(status: TenantStatus | string): string {
       return "Inactivo";
     case "suspended":
       return "Suspendido";
+    case "archived":
+      return "Archivado";
     default:
       return status;
   }
@@ -106,4 +108,17 @@ export function timeOfDayGreeting(date = new Date()): string {
   if (hour < 12) return "Buenos días";
   if (hour < 19) return "Buenas tardes";
   return "Buenas noches";
+}
+
+export function labelDomainKind(kind: DomainKind | string): string {
+  switch (kind) {
+    case "platform_subdomain":
+      return "Subdominio";
+    case "custom":
+      return "Dominio propio";
+    case "legacy":
+      return "Histórico";
+    default:
+      return kind;
+  }
 }

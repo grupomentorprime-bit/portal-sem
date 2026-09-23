@@ -1,4 +1,6 @@
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { extractFaqItems } from "@/lib/portal/blocks";
+import { publicSemContact, SEM_SOCIAL_PUBLISHED } from "@/lib/portal/sem-identity-v7";
 import type { SiteConfig } from "@/types/cms";
 import type { PageBlock } from "@/types/page";
 import type { PortalPageModel, PortalSeoPayload } from "@/types/portal";
@@ -8,19 +10,23 @@ export function consolidatePageSeo(
   config: SiteConfig,
   visibleBlocks: PageBlock[]
 ): PortalSeoPayload {
-  const { institution, seo, contact, branding } = config;
+  const { institution, seo, branding } = config;
+  const contact = publicSemContact(config.contact, page.tenantId || institution.tenant);
 
   const title = page.seo.title ?? page.title ?? seo.title;
   const description = page.seo.description ?? seo.description;
 
-  const sameAs = [
-    config.social.facebook,
-    config.social.instagram,
-    config.social.youtube,
-    config.social.linkedin,
-    config.social.tiktok,
-    config.social.spotify,
-  ].filter(Boolean);
+  const publishSocial = !isSemTenant(page.tenantId || institution.tenant) || SEM_SOCIAL_PUBLISHED;
+  const sameAs = publishSocial
+    ? [
+        config.social.facebook,
+        config.social.instagram,
+        config.social.youtube,
+        config.social.linkedin,
+        config.social.tiktok,
+        config.social.spotify,
+      ].filter(Boolean)
+    : [];
 
   const organization: Record<string, unknown> = {
     "@context": "https://schema.org",

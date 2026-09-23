@@ -1,6 +1,6 @@
 import { PortalContainer } from "@/components/portal/layout";
 import type { AdmissionClosingConfig } from "@/types/admission-closing";
-import { sortClosingBlocks } from "@/lib/portal/admission-closing-utils";
+import { presentPublicClosing, sortClosingBlocks } from "@/lib/portal/admission-closing-utils";
 import { ClosingBackgroundOverlay, buildClosingBackgroundStyle } from "./closing/ClosingBackground";
 import { ClosingBenefits } from "./closing/ClosingBenefits";
 import { ClosingContact } from "./closing/ClosingContact";
@@ -25,9 +25,10 @@ function findBlock<T extends AdmissionClosingConfig["blocks"][number]["type"]>(
 }
 
 export async function AdmissionClosing({ tenant, closing }: AdmissionClosingProps) {
-  if (!closing.enabled) return null;
+  const visibleClosing = presentPublicClosing(closing, tenant);
+  if (!visibleClosing.enabled) return null;
 
-  const blocks = sortClosingBlocks(closing.blocks).filter((block) => block.enabled);
+  const blocks = sortClosingBlocks(visibleClosing.blocks).filter((block) => block.enabled);
   if (blocks.length === 0) return null;
 
   const messageBlock = findBlock(blocks, "message");

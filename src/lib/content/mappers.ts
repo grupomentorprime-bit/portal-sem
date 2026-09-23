@@ -41,7 +41,9 @@ export function mapToProgramItem(doc: ContentDocument): ProgramItem {
     description: doc.summary || doc.content?.slice(0, 160) || "",
     duration: doc.duration ?? "",
     icon: doc.icon ?? "BookOpen",
-    href: doc.href || slugHref("/programas", doc.slug),
+    href: doc.slug
+      ? slugHref("/programas", doc.slug)
+      : doc.href || "/programas",
     image: doc.image || undefined,
     category: doc.category || doc.categories?.[0] || undefined,
     categories: doc.categories?.length ? doc.categories : undefined,

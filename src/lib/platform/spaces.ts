@@ -43,6 +43,7 @@ export interface PlatformSpaceListItem {
   type: TenantType;
   typeLabel: string;
   primaryDomain: string | null;
+  primaryDomainKind: DomainKind | null;
   primarySite: {
     siteId: string;
     name: string;
@@ -225,6 +226,7 @@ async function buildListItem(tenant: TenantDocument): Promise<PlatformSpaceListI
     type: tenant.type,
     typeLabel: labelTenantType(tenant.type),
     primaryDomain: primaryDomain?.host ?? null,
+    primaryDomainKind: primaryDomain?.kind ?? null,
     primarySite: site
       ? {
           siteId: site.siteId,
@@ -270,6 +272,10 @@ export async function getPlatformSpaceDetail(
     .filter((domain) => domain.tenantId === tenant.tenantId)
     .sort((a, b) => {
       if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+      const rank = (kind: DomainKind) =>
+        kind === "platform_subdomain" ? 0 : kind === "custom" ? 1 : 2;
+      const byKind = rank(a.kind) - rank(b.kind);
+      if (byKind !== 0) return byKind;
       return a.host.localeCompare(b.host);
     })
     .map((domain) => ({

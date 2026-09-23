@@ -8,6 +8,7 @@ import {
   rewriteLegacyPlatformProductName,
 } from "@/core/branding/display";
 import { isSemTenant } from "@/core/tenant/is-sem";
+import { SEM_SOCIAL_PUBLISHED } from "@/lib/portal/sem-identity-v7";
 import type { ExperienceAction } from "@/types/experience-action";
 import type {
   PortalFooterBrandView,
@@ -69,60 +70,46 @@ export interface FooterLegalContent {
 
 /** Copy CTA / sello institucional — dato T001, no default de plataforma. */
 export const SEM_FOOTER_CTA: FooterCtaContent = {
-  eyebrow: "Formación ministerial",
-  title: "¿Has sentido el llamado a servir a Dios?",
-  description:
-    "Da el siguiente paso en tu formación bíblica y ministerial junto a una comunidad comprometida con la excelencia académica y el servicio cristiano.",
-  primaryLabel: "Iniciar Postulación",
+  eyebrow: "Formación bíblica",
+  title: "Más que aprender, servir mejor.",
+  description: "Una formación bíblica para una vida de servicio.",
+  primaryLabel: "Conoce Admisión",
   primaryAction: { type: "url", href: "/admision" },
-  secondaryLabel: "Hablar con un asesor",
-  secondaryAction: { type: "url", href: "/contacto" },
+  secondaryLabel: "Cómo se estudia",
+  secondaryAction: { type: "url", href: "/como-se-estudia" },
 };
 
 export const SEM_FOOTER_INSTITUTION: FooterInstitutionContent = {
-  tagline: "Equipando a los santos para la obra del ministerio.",
-  sealLine1: "RESPALDO",
-  sealLine2: "INSTITUCIONAL",
-  sealLine3: "IGLESIA PENTECOSTAL NAZARETH",
+  tagline: "Formación bíblica para un servicio real.",
+  sealLine1: "Somos parte de",
+  sealLine2: "IPN Chile",
+  sealLine3: "Iglesia Pentecostal Nazareth",
 };
 
 export const SEM_FOOTER_COLUMNS: FooterContentColumn[] = [
   {
-    id: "admission",
-    title: "Admisión",
+    id: "sem",
+    title: "El SEM",
     links: [
-      { id: "how-to-apply", label: "Cómo postular", href: "/admision" },
-      { id: "requirements", label: "Requisitos", href: "/admision#requisitos" },
-      { id: "fees", label: "Aranceles", href: "/admision#aranceles" },
-      { id: "faq", label: "Preguntas frecuentes", href: "/admision#faq" },
+      { id: "about", label: "Qué es el SEM", href: "/institucion" },
+      { id: "study", label: "Cómo se estudia", href: "/como-se-estudia" },
+      { id: "curriculum", label: "Malla curricular", href: "/malla" },
     ],
   },
   {
-    id: "resources",
-    title: "Recursos",
+    id: "access",
+    title: "Accesos",
     links: [
-      { id: "library", label: "Biblioteca", href: "/biblioteca" },
-      { id: "news", label: "Noticias", href: "/noticias" },
-      { id: "calendar", label: "Calendario Académico", href: "/agenda-academica" },
-      { id: "regulations", label: "Reglamento", href: "/institucion#reglamento" },
-      { id: "privacy", label: "Política de Privacidad", href: "/privacidad" },
-    ],
-  },
-  {
-    id: "institution",
-    title: "Institución",
-    links: [
-      { id: "team", label: "Equipo Académico", href: "/equipo" },
-      { id: "history", label: "Nuestra Historia", href: "/institucion" },
-      { id: "contact", label: "Contacto", href: "/contacto" },
+      { id: "admission", label: "Admisión", href: "/admision" },
+      { id: "programs", label: "Programas", href: "/programas" },
     ],
   },
 ];
 
 export const SEM_FOOTER_CONTACT: FooterContactContent = {
-  email: "contacto@seminarioipn.cl",
-  website: "https://www.seminarioipn.cl",
-  websiteLabel: "www.seminarioipn.cl",
+  email: "",
+  website: "",
+  websiteLabel: "",
 };
 
 export const SEM_FOOTER_SOCIAL_DEFAULTS = {
@@ -270,12 +257,17 @@ export function resolveFooterContent(
     cta: useSem ? SEM_FOOTER_CTA : PLATFORM_FOOTER_CTA,
     institution: {
       ...institutionBase,
-      tagline: brand.tagline?.trim() || (useSem ? institutionBase.tagline : ""),
+      tagline: useSem
+        ? institutionBase.tagline
+        : brand.tagline?.trim() || institutionBase.tagline,
     },
     brand,
     navigation: navSections,
     contact: contactContent,
-    social: mergeSocialItems(social, options.whatsapp),
+    social:
+      useSem && !SEM_SOCIAL_PUBLISHED
+        ? []
+        : mergeSocialItems(social, options.whatsapp),
     legal: {
       copyrightSuffix: copyrightSuffix ?? legalBase.copyrightSuffix,
       credits: rewriteLegacyPlatformProductName(credits ?? legalBase.credits),

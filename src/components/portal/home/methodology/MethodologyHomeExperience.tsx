@@ -1,7 +1,19 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { BlockIcon } from "@/components/portal/BlockIcon";
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
 import type { FeatureItem } from "@/lib/portal/blocks";
 import { cn } from "@/lib/utils";
+
+const WEEK_DAYS = [
+  { id: "lun", label: "Lun", live: true },
+  { id: "mar", label: "Mar", live: false },
+  { id: "mie", label: "Mié", live: false },
+  { id: "jue", label: "Jue", live: false },
+  { id: "vie", label: "Vie", live: false },
+  { id: "sab", label: "Sáb", live: false },
+  { id: "dom", label: "Dom", live: false },
+] as const;
 
 interface MethodologyHomeExperienceProps {
   overline?: string;
@@ -11,6 +23,10 @@ interface MethodologyHomeExperienceProps {
   items: FeatureItem[];
   /** Badge del último paso (p. ej. certificación). Vacío = no mostrar. */
   destinationBadge?: string;
+  buttonLabel?: string;
+  buttonHref?: string;
+  /** Semana formativa: lunes en vivo y el resto en estudio. */
+  layout?: "track" | "week";
   id?: string;
 }
 
@@ -21,8 +37,58 @@ export function MethodologyHomeExperience({
   description,
   items,
   destinationBadge,
+  buttonLabel,
+  buttonHref,
+  layout = "track",
   id = "metodologia",
 }: MethodologyHomeExperienceProps) {
+  if (layout === "week") {
+    if (!title?.trim()) return null;
+    const ctaLabel = buttonLabel?.trim();
+    const ctaHref = buttonHref?.trim();
+
+    return (
+      <PortalSection id={id} padding="none" className="methodology-home-section">
+        <PortalContainer>
+          <div className="methodology-week animate-slide-up" role="region" aria-labelledby="methodology-home-heading">
+            <header className="methodology-week__intro">
+              {overline ? <p className="methodology-week__eyebrow">{overline}</p> : null}
+              <h2 id="methodology-home-heading" className="methodology-week__title">
+                {title}
+              </h2>
+            </header>
+
+            <div className="methodology-week__board" aria-label="Ritmo de la semana">
+              <article className="methodology-week__monday">
+                <p className="methodology-week__day-name">Lunes</p>
+                <p className="methodology-week__monday-label">Clase en vivo</p>
+              </article>
+              <article className="methodology-week__rest">
+                <ol className="methodology-week__days">
+                  {WEEK_DAYS.filter((day) => !day.live).map((day) => (
+                    <li key={day.id} className="methodology-week__day">
+                      <span>{day.label}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="methodology-week__rest-label">
+                  Estudio, materiales y actividades
+                </p>
+              </article>
+            </div>
+
+            {ctaLabel && ctaHref ? (
+              <Link href={ctaHref} className="methodology-week__link">
+                {ctaLabel}
+                <ArrowRight size={16} strokeWidth={2} aria-hidden />
+              </Link>
+            ) : null}
+          </div>
+        </PortalContainer>
+      </PortalSection>
+    );
+  }
+
   if (!title?.trim() && items.length === 0) return null;
 
   const destinationIndex = items.length - 1;

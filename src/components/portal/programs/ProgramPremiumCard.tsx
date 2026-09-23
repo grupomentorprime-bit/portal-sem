@@ -11,6 +11,7 @@ import { ProgramCardMedia } from "./ProgramCardMedia";
 import { ProgramCTA } from "./ProgramCTA";
 import { ProgramMetaGrid } from "./ProgramMetaGrid";
 import {
+  publicProgramSummary,
   resolveProgramBadges,
   resolveProgramCtaLabel,
   resolveProgramImage,
@@ -23,6 +24,8 @@ interface ProgramPremiumCardProps {
   ctaLabel?: string;
   priorityImage?: boolean;
   className?: string;
+  /** Home SEM: sin certificación, duración, destinatarios ni estados sin validar. */
+  publishedOffer?: boolean;
 }
 
 export function ProgramPremiumCard({
@@ -31,10 +34,14 @@ export function ProgramPremiumCard({
   ctaLabel = "Conocer programa",
   priorityImage = false,
   className,
+  publishedOffer = false,
 }: ProgramPremiumCardProps) {
-  const comingSoon = program.status === "coming_soon";
-  const badges = resolveProgramBadges(program);
-  const imageBadge = resolveProgramImageBadge(program);
+  const comingSoon = program.status === "coming_soon" && !publishedOffer;
+  const badges = publishedOffer ? [] : resolveProgramBadges(program);
+  const imageBadge = publishedOffer ? null : resolveProgramImageBadge(program);
+  const summary = publishedOffer
+    ? publicProgramSummary(program.title, program.description)
+    : program.description;
   const label = resolveProgramCtaLabel(program, ctaLabel);
   const imageSrc = resolveProgramImage(program, programIndex);
   const titleId = `program-premium-${program.id}-title`;
@@ -74,17 +81,19 @@ export function ProgramPremiumCard({
           {program.title}
         </h3>
 
-        {program.description ? (
-          <p className="program-premium-card__description">{program.description}</p>
+        {summary ? (
+          <p className="program-premium-card__description">{summary}</p>
         ) : null}
 
-        <ProgramMetaGrid
-          modality={program.modality}
-          duration={program.duration}
-          certification={program.certification}
-          startDate={program.startDate}
-          className="program-premium-card__meta"
-        />
+        {publishedOffer ? null : (
+          <ProgramMetaGrid
+            modality={program.modality}
+            duration={program.duration}
+            certification={program.certification}
+            startDate={program.startDate}
+            className="program-premium-card__meta"
+          />
+        )}
 
         <div className="program-premium-card__footer">
           <ProgramCTA label={label} className="program-premium-card__cta" />

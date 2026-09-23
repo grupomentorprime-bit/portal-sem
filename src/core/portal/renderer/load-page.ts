@@ -2,6 +2,7 @@ import "server-only";
 
 import { blocksFromTemplate, DEFAULT_TEMPLATES } from "@/lib/cms/page-defaults";
 import { applyPortal001HomeMigration } from "@/lib/cms/home-portal-001";
+import { applySemPublicHome, semEditorialPage } from "@/lib/portal/sem-identity-v7";
 import { getPublishedPageBySlug } from "@/lib/cms/pages";
 import type { PortalPageModel, PortalRenderContext } from "@/types/portal";
 import { getRenderableBlocks } from "@/core/portal/visibility";
@@ -13,6 +14,20 @@ export async function loadPublishedPage(
 ): Promise<PortalPageModel | null> {
   const normalized = slug.startsWith("/") ? slug : `/${slug}`;
   const page = await getPublishedPageBySlug(normalized, tenantId);
+
+  if (page?.blocks?.length) {
+    return {
+      slug: page.slug,
+      title: page.title,
+      blocks: page.blocks,
+      seo: page.seo,
+      tenantId: page.tenant,
+    };
+  }
+
+  // El CMS publicado es el origen. El editorial de código solo cubre páginas aún vacías.
+  const editorial = semEditorialPage(normalized, tenantId);
+  if (editorial) return editorial;
 
   if (page) {
     return {
@@ -57,5 +72,5 @@ export async function loadHomePage(tenantId: string): Promise<PortalPageModel> {
       seo: {},
       tenantId,
     };
-  return applyPortal001HomeMigration(base);
+  return applySemPublicHome(applyPortal001HomeMigration(base));
 }

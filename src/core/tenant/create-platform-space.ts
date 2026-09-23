@@ -8,14 +8,19 @@ import {
 } from "@/core/growth/automations";
 import { createDefaultSiteConfig } from "@/lib/cms/defaults";
 import {
-  buildPlatformSubdomainHost,
+  buildDefaultSpaceHost,
+  classifySpaceDomainKind,
+  isBarePlatformOriginHost,
   normalizeHost,
 } from "@/core/tenant/hosts";
 import {
   findDomainByHost,
   findTenantBySlug,
 } from "@/core/tenant/repositories";
-import { provisionTenantFoundation } from "@/core/tenant/provision";
+import {
+  provisionTenantFoundation,
+  type TenantProvisionHost,
+} from "@/core/tenant/provision";
 import type { TenantType } from "@/core/tenant/types";
 import {
   labelTenantStatus,
@@ -86,10 +91,38 @@ export function normalizeSpaceSlug(raw: string): string | null {
   return slug;
 }
 
-function resolveDomainKind(slug: string, host: string) {
-  const platform = buildPlatformSubdomainHost(slug);
-  if (platform && host === platform) return "platform_subdomain" as const;
-  return "custom" as const;
+function resolveProvisionHosts(
+  slug: string,
+  rawHost: string
+): TenantProvisionHost[] {
+  const defaultHost = buildDefaultSpaceHost(slug);
+  const requested = normalizeHost(rawHost);
+
+  if (requested && isBarePlatformOriginHost(requested)) {
+    throw new CreatePlatformSpaceError(
+      "invalid_host",
+      "Ese host es el origen de la plataforma. Usa el subdominio del Espacio o un dominio propio."
+    );
+  }
+
+  const hosts: TenantProvisionHost[] = [];
+  if (defaultHost) {
+    hosts.push({
+      host: defaultHost,
+      kind: "platform_subdomain",
+      isPrimary: !requested || requested === defaultHost,
+    });
+  }
+
+  if (requested && requested !== defaultHost) {
+    hosts.push({
+      host: requested,
+      kind: classifySpaceDomainKind(slug, requested),
+      isPrimary: true,
+    });
+  }
+
+  return hosts;
 }
 
 function buildNeutralConfig(tenantId: string, name: string, siteName: string) {
@@ -192,11 +225,9 @@ export async function createPlatformSpace(
     );
   }
 
-  // Host informado o, en producción, `{slug}.{PLATFORM_BASE_DOMAIN}`.
-  const host =
-    normalizeHost(input.host) ??
-    buildPlatformSubdomainHost(slug) ??
-    normalizeHost(`${slug}.localhost:3000`);
+  // Subdominio de plataforma siempre; dominio informado si es distinto.
+  const hosts = resolveProvisionHosts(slug, input.host);
+  const host = hosts.find((entry) => entry.isPrimary)?.host ?? hosts[0]?.host;
 
   if (!host) {
     throw new CreatePlatformSpaceError(
@@ -226,7 +257,7 @@ export async function createPlatformSpace(
         siteId,
         siteCode: siteId,
         siteName,
-        hosts: [{ host, kind: resolveDomainKind(slug, host), isPrimary: true }],
+        hosts,
         config: buildNeutralConfig(tenantId, name, siteName),
         membershipEmail: null,
       });
@@ -249,7 +280,7 @@ export async function createPlatformSpace(
         tenantId,
         name: existingTenant.name?.trim() || name,
         siteName,
-        primaryDomain: result.hosts[0] ?? host,
+        primaryDomain: host,
         status: existingTenant.status,
         statusLabel: labelTenantStatus(existingTenant.status),
         type: existingTenant.type,
@@ -266,13 +297,15 @@ export async function createPlatformSpace(
     );
   }
 
-  const takenHost = await findDomainByHost(db, host);
-  if (takenHost && takenHost.tenantId !== tenantId) {
-    throw new CreatePlatformSpaceError(
-      "host_taken",
-      "Ese dominio o subdominio ya está asignado a otro Espacio.",
-      409
-    );
+  for (const entry of hosts) {
+    const takenHost = await findDomainByHost(db, entry.host);
+    if (takenHost && takenHost.tenantId !== tenantId) {
+      throw new CreatePlatformSpaceError(
+        "host_taken",
+        "Ese dominio o subdominio ya está asignado a otro Espacio.",
+        409
+      );
+    }
   }
 
   let membershipEmail: string | null = null;
@@ -296,7 +329,6 @@ export async function createPlatformSpace(
   }
 
   const config = buildNeutralConfig(tenantId, name, siteName);
-  const kind = resolveDomainKind(slug, host);
 
   const result = await provisionTenantFoundation(db, {
     tenantId,
@@ -307,7 +339,7 @@ export async function createPlatformSpace(
     siteId,
     siteCode: siteId,
     siteName,
-    hosts: [{ host, kind, isPrimary: true }],
+    hosts,
     config,
     seedMenus: true,
     seedHomePage: true,
@@ -352,7 +384,7 @@ export async function createPlatformSpace(
     tenantId,
     name,
     siteName,
-    primaryDomain: result.hosts[0] ?? host,
+    primaryDomain: host,
     status: "active",
     statusLabel: labelTenantStatus("active"),
     type,

@@ -2,7 +2,7 @@ import type { Db } from "mongodb";
 import { normalizeSiteConfig } from "@/lib/cms/normalize";
 import { SITE_CONFIG_ID, type PortalStatus, type SiteConfig } from "@/types/cms";
 import { SEM_SITE_ID, SEM_TENANT_ID } from "@/core/tenant/constants";
-import { isLoopbackHost, normalizeHost } from "@/core/tenant/hosts";
+import { isLoopbackHost, isSemDevHost, normalizeHost } from "@/core/tenant/hosts";
 import {
   findDomainByHost,
   findSiteById,
@@ -60,7 +60,7 @@ export function isSemEligibleHost(
   _env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
 ): boolean {
   void _env;
-  return isLoopbackHost(host);
+  return isSemDevHost(host);
 }
 
 function derivePortalStatus(
@@ -68,7 +68,11 @@ function derivePortalStatus(
   site: SiteDocument,
   config: SiteConfig
 ): PortalStatus {
-  if (tenant.status === "inactive" || tenant.status === "suspended") {
+  if (
+    tenant.status === "inactive" ||
+    tenant.status === "suspended" ||
+    tenant.status === "archived"
+  ) {
     return tenant.status === "suspended" ? "maintenance" : "inactive";
   }
   if (site.status === "inactive" || site.status === "maintenance") {
@@ -320,6 +324,11 @@ export async function resolvePublicTenantByHost(
     return { ok: false, reason: "missing_host", host: null };
   }
 
+  // El loopback pelado es la portada de plataforma, aunque quede un Domain legacy.
+  if (isLoopbackHost(host)) {
+    return { ok: false, reason: "unknown_host", host };
+  }
+
   const db = await resolveDb(options?.db);
   const domain = await findDomainByHost(db, host);
 
@@ -335,7 +344,7 @@ export async function resolvePublicTenantByHost(
     });
   }
 
-  // TEMP compat SEM: solo loopback sin fila en domains (nunca host de APP_URL público).
+  // TEMP compat SEM: solo el subdominio de desarrollo, sin fila en domains.
   if (isSemEligibleHost(host, options?.env)) {
     return finishResolution({
       db,

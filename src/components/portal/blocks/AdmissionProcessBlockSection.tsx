@@ -1,4 +1,6 @@
 import { AdmissionProcessSection } from "@/components/portal/conversion/AdmissionProcessSection";
+import { SemAdmissionDates } from "@/components/portal/home/admission/SemAdmissionDates";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { parseExperienceAction, isValidExperienceAction } from "@/core/experience/actions";
 import { asBoolean, asString } from "@/lib/cms/block-utils";
 import { blockSettings, extractProcessSteps } from "@/lib/portal/blocks";
@@ -8,6 +10,7 @@ import type { PageBlock } from "@/types/page";
 
 interface AdmissionProcessBlockSectionProps {
   block: PageBlock;
+  tenant?: string;
 }
 
 function extractButtons(block: PageBlock): PortalCtaButton[] {
@@ -44,7 +47,10 @@ function extractButtons(block: PageBlock): PortalCtaButton[] {
   return buttons;
 }
 
-export function AdmissionProcessBlockSection({ block }: AdmissionProcessBlockSectionProps) {
+export function AdmissionProcessBlockSection({
+  block,
+  tenant,
+}: AdmissionProcessBlockSectionProps) {
   const settings = blockSettings<{
     overline?: string;
     title?: string;
@@ -54,14 +60,17 @@ export function AdmissionProcessBlockSection({ block }: AdmissionProcessBlockSec
   }>(block);
 
   return (
-    <AdmissionProcessSection
-      overline={settings.overline}
-      title={settings.title}
-      description={settings.description}
-      items={extractProcessSteps(block)}
-      layout={settings.layout}
-      variant={settings.variant}
-      buttons={extractButtons(block)}
-    />
+    <>
+      {isSemTenant(tenant) ? <SemAdmissionDates /> : null}
+      <AdmissionProcessSection
+        overline={settings.overline}
+        title={settings.title}
+        description={settings.description}
+        items={extractProcessSteps(block)}
+        layout={settings.layout}
+        variant={settings.variant}
+        buttons={extractButtons(block)}
+      />
+    </>
   );
 }

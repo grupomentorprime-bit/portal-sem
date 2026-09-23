@@ -17,13 +17,15 @@ export default async function SiteLayout({
 }) {
   const headerList = await headers();
   const host = resolveRequestHost(headerList);
+  const pathname = headerList.get("x-pathname") ?? "";
   const ctx = await getPortalContext();
 
   if (shouldEnterPlatformHome(host, Boolean(ctx))) {
-    redirect("/admin");
+    if (pathname !== "/" && pathname !== "") {
+      redirect("/");
+    }
+    return children;
   }
-
-  const pathname = headerList.get("x-pathname") ?? "";
   const formFocused =
     headerList.get("x-form-focused") === "1" || isFocusedFormPath(pathname);
 

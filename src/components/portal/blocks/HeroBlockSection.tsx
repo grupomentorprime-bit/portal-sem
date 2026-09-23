@@ -16,6 +16,7 @@ import { resolveMediaRef } from "@/core/media";
 import { asString } from "@/lib/cms/block-utils";
 import { createPremiumSeedSlide } from "@/lib/cms/hero-portal-defaults";
 import { isSlideVisibleForDisplay } from "@/lib/cms/hero-slide-display";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import type { PortalContext } from "@/lib/portal/site";
 import type { HeroFeature, HeroGenerationCard, SemPremiumHeroSettings } from "@/types/hero";
 import type { ResolvedHeroSlide } from "@/types/hero-portal";
@@ -57,7 +58,7 @@ function parseFeatures(raw: unknown): HeroFeature[] {
   return defaults.map((feature, index) => ({
     icon: asString(parsed[index]?.icon, feature.icon),
     title: asString(parsed[index]?.title, feature.title),
-    description: feature.description,
+    description: asString(parsed[index]?.description, feature.description),
   }));
 }
 
@@ -150,7 +151,14 @@ export async function HeroBlockSection({ block, tenant, ctx, allBlocks }: HeroBl
   const { heroPortal } = config;
 
   if (heroPortal?.enabled && heroPortal.slides.some((s) => isSlideVisibleForDisplay(s))) {
-    return <HeroPortalSection tenant={tenant} heroPortal={heroPortal} brandMarkSrc={logos.primary} />;
+    return (
+      <HeroPortalSection
+        tenant={tenant}
+        heroPortal={heroPortal}
+        brandMarkSrc={logos.primary}
+        useApprovedMessage={isSemTenant(tenant)}
+      />
+    );
   }
 
   const heroFromBlock = await resolveMediaRef(tenant, {

@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  ArrowRight,
   Building2,
-  ChevronDown,
-  ChevronRight,
-  LayoutDashboard,
+  CircleHelp,
+  Home,
   LogOut,
   Search,
   Sparkles,
 } from "lucide-react";
 import { useCallback, useState, type FormEvent, type ReactNode } from "react";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+import { PLATFORM_OPERATOR_NAME } from "@/core/legal/platform";
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { PlatformNeutralTheme } from "@/components/product";
@@ -94,8 +95,8 @@ export function PlatformShell({
   return (
     <PlatformNeutralTheme className="min-h-screen bg-[var(--color-background-default)] text-foreground">
       <div className="flex min-h-screen">
-        <aside className="sticky top-0 z-30 hidden h-screen w-[248px] shrink-0 flex-col border-r border-[var(--color-border-default)] bg-white lg:flex">
-          <div className="px-4 pb-5 pt-5">
+        <aside className="sticky top-0 z-30 hidden h-screen w-[220px] shrink-0 flex-col border-r border-[var(--color-border-default)] bg-white lg:flex">
+          <div className="px-3.5 pb-4 pt-4">
             <Link
               href={PLATFORM_ADMIN_HOME}
               className="inline-flex min-w-0 items-center gap-2.5 transition hover:opacity-90"
@@ -106,7 +107,7 @@ export function PlatformShell({
                   {PLATFORM_DISPLAY_NAME}
                 </span>
                 <span className="mt-0.5 block text-[11px] leading-snug text-[var(--gray-500)]">
-                  Administración de plataforma
+                  Operada por {PLATFORM_OPERATOR_NAME}
                 </span>
               </span>
             </Link>
@@ -119,7 +120,7 @@ export function PlatformShell({
             <SidebarLink
               href={PLATFORM_ADMIN_HOME}
               active={onHome}
-              icon={<LayoutDashboard className="h-4 w-4" aria-hidden />}
+              icon={<Home className="h-4 w-4" aria-hidden />}
             >
               Resumen
             </SidebarLink>
@@ -132,31 +133,29 @@ export function PlatformShell({
             </SidebarLink>
           </nav>
 
-          <div className="mt-auto space-y-2 px-3 pb-4 pt-3">
-            <div className="rounded-[14px] border border-[var(--color-border-default)] bg-[linear-gradient(165deg,var(--gray-100)_0%,var(--gray-50)_48%,white_100%)] px-3.5 py-3 shadow-[0_8px_20px_-16px_rgba(14,79,144,0.35)]">
-              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--growth-os-light)_24%,white)] text-[var(--growth-os-light)]">
-                <Sparkles className="h-3.5 w-3.5" aria-hidden />
-              </div>
-              <p className="text-[13px] font-semibold text-[var(--gray-900)]">
+          <div className="mt-auto px-2.5 pb-3 pt-2">
+            <div className="overflow-hidden rounded-2xl bg-[linear-gradient(165deg,#08315f_0%,var(--growth-os-primary)_100%)] px-3.5 py-3.5">
+              <p className="text-[13px] font-semibold text-white">
                 {PLATFORM_DISPLAY_NAME}
               </p>
-              <p className="mt-1 text-[12px] leading-snug text-[var(--gray-500)]">
-                Potenciando organizaciones que generan impacto.
+              <p className="mt-1 text-[12px] leading-snug text-white/75">
+                Multiplica impacto sin diluir la identidad de cada organización.
               </p>
               <Link
                 href="/admin"
-                className="mt-2.5 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--growth-os-primary)] transition hover:opacity-80"
+                aria-label="Ir al Espacio"
+                className="mt-3 inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-1 text-[12px] font-semibold text-white transition hover:bg-white/10"
               >
-                Ir al Espacio
-                <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                Ver más
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </Link>
             </div>
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-[var(--color-border-default)] bg-white/95 backdrop-blur">
-            <div className="flex h-[56px] items-center gap-3 px-4 sm:px-5 lg:px-6">
+          <header className="sticky top-0 z-20 border-b border-[var(--color-border-default)] bg-white/90 backdrop-blur">
+            <div className="flex h-12 items-center gap-3 px-4 sm:px-5 lg:px-5">
               <div className="min-w-0 lg:hidden">
                 <Link
                   href={PLATFORM_ADMIN_HOME}
@@ -168,7 +167,7 @@ export function PlatformShell({
                       {PLATFORM_DISPLAY_NAME}
                     </span>
                     <span className="block truncate text-[11px] text-[var(--gray-500)]">
-                      Administración de plataforma
+                      Operada por {PLATFORM_OPERATOR_NAME}
                     </span>
                   </span>
                 </Link>
@@ -176,24 +175,26 @@ export function PlatformShell({
 
               <form
                 onSubmit={onSearchSubmit}
-                className="relative hidden min-w-0 flex-1 md:block"
+                className="hidden min-w-0 flex-1 md:block"
                 role="search"
               >
-                <Search
-                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--gray-500)]"
-                  aria-hidden
-                />
-                <input
-                  type="search"
-                  value={globalQuery}
-                  onChange={(e) => setGlobalQuery(e.target.value)}
-                  placeholder="Buscar espacios, dominios, personas…"
-                  className="h-10 w-full max-w-[760px] rounded-[12px] border border-[var(--color-border-default)] bg-[var(--color-background-default)] pl-10 pr-14 text-[13px] text-[var(--gray-800)] outline-none transition placeholder:text-[var(--gray-500)] focus:border-[var(--growth-os-secondary)] focus:bg-white focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--growth-os-secondary)_18%,transparent)]"
-                  aria-label="Buscar en la plataforma"
-                />
-                <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-[var(--color-border-default)] bg-white px-1.5 py-0.5 text-[10px] font-medium text-[var(--gray-500)] sm:inline-block">
-                  ⌘ K
-                </kbd>
+                <div className="relative w-full">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--gray-500)]"
+                    aria-hidden
+                  />
+                  <input
+                    type="search"
+                    value={globalQuery}
+                    onChange={(e) => setGlobalQuery(e.target.value)}
+                    placeholder="Buscar espacios, dominios, personas…"
+                    className="h-8 w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-background-default)] pl-9 pr-12 text-[13px] text-[var(--gray-800)] outline-none transition placeholder:text-[var(--gray-500)] focus:border-[var(--growth-os-secondary)] focus:bg-white focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--growth-os-secondary)_18%,transparent)]"
+                    aria-label="Buscar en la plataforma"
+                  />
+                  <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-md border border-[var(--color-border-default)] bg-white px-1.5 py-0.5 text-[10px] font-medium text-[var(--gray-500)] lg:inline-block">
+                    ⌘ K
+                  </kbd>
+                </div>
               </form>
 
               <nav
@@ -217,43 +218,54 @@ export function PlatformShell({
                 </Link>
               </nav>
 
-              <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <Link
+                  href="/admin/settings/help"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-border-default)] bg-white text-[var(--gray-500)] transition hover:text-[var(--gray-900)]"
+                  aria-label="Centro de ayuda"
+                >
+                  <CircleHelp className="h-4 w-4" aria-hidden />
+                </Link>
+              <div className="flex shrink-0 items-center rounded-full border border-[var(--color-border-default)] bg-white py-0.5 pl-0.5 pr-0.5">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-[12px] py-0.5 pl-0.5 pr-2 transition hover:bg-[var(--color-background-default)]"
+                  className="inline-flex items-center gap-2 rounded-full py-0.5 pl-0.5 pr-2"
                   aria-label="Cuenta"
                 >
                   <AdminUserAvatar name={userName} size="sm" />
                   <span className="hidden min-w-0 text-left sm:block">
-                    <span className="block max-w-[11rem] truncate text-[13px] font-semibold tracking-tight text-[var(--gray-900)] lg:max-w-[18rem]">
+                    <span className="block max-w-[9rem] truncate text-[13px] font-semibold leading-tight tracking-tight text-[var(--gray-900)] lg:max-w-[14rem]">
                       {userName}
                     </span>
-                    <span className="block truncate text-[12px] text-[var(--gray-500)]">
+                    <span className="block truncate text-[11px] leading-tight text-[var(--gray-500)]">
                       {roleLabel}
                     </span>
                   </span>
-                  <ChevronDown
-                    className="hidden h-3.5 w-3.5 text-[var(--gray-500)] sm:block"
-                    aria-hidden
-                  />
                 </button>
+                <span
+                  className="mx-0.5 hidden h-5 w-px bg-[var(--color-border-default)] sm:block"
+                  aria-hidden
+                />
                 <LogoutControl />
+              </div>
               </div>
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-none flex-1 px-4 py-5 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
+          <main className="mx-auto w-full max-w-none flex-1 px-4 py-4 sm:px-5 lg:px-5">
             {children}
           </main>
 
           <footer className="mt-auto border-t border-[var(--color-border-default)] bg-white">
-            <div className="mx-auto flex w-full max-w-none flex-col gap-1 px-4 py-2.5 text-[12px] text-[var(--gray-500)] sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
+            <div className="mx-auto flex w-full max-w-none flex-col gap-1 px-4 py-2 text-[12px] text-[var(--gray-500)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <p>
-                {PLATFORM_DISPLAY_NAME}{" "}
-                <span className="text-[var(--gray-400)]">|</span> Simple por
-                fuera. Potente por dentro.
+                {PLATFORM_DISPLAY_NAME}
+                <span className="mx-1.5 text-[var(--gray-400)]">·</span>
+                Operada por {PLATFORM_OPERATOR_NAME}
               </p>
-              <p className="sm:text-right">Administración de plataforma</p>
+              <p className="sm:text-right">
+                Cada organización en su propia dirección
+              </p>
             </div>
           </footer>
         </div>
@@ -277,26 +289,13 @@ function SidebarLink({
     <Link
       href={href}
       className={cn(
-        "relative inline-flex items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-[13px] font-medium transition",
+        "inline-flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition",
         active
-          ? "bg-[var(--gray-100)] text-[var(--growth-os-primary)]"
-          : "text-[var(--gray-800)] hover:bg-[var(--color-background-default)] hover:text-[var(--gray-900)]"
+          ? "bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,white)] text-[var(--growth-os-primary)]"
+          : "text-[var(--gray-600)] hover:bg-[var(--color-background-default)] hover:text-[var(--gray-900)]"
       )}
     >
-      {active ? (
-        <span
-          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--growth-os-primary)]"
-          aria-hidden
-        />
-      ) : null}
-      <span
-        className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-[9px]",
-          active
-            ? "bg-white text-[var(--growth-os-primary)] shadow-[0_1px_2px_rgba(14,79,144,0.08)]"
-            : "text-[var(--gray-500)]"
-        )}
-      >
+      <span className={cn(active ? "text-[var(--growth-os-primary)]" : "text-[var(--gray-500)]")}>
         {icon}
       </span>
       {children}
@@ -308,7 +307,7 @@ function LogoutControl() {
   return (
     <button
       type="button"
-      className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] text-[var(--gray-500)] transition hover:bg-[var(--color-background-default)] hover:text-[var(--gray-900)]"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--gray-500)] transition hover:bg-[var(--color-background-default)] hover:text-[var(--gray-900)]"
       aria-label="Salir"
       onClick={async () => {
         await fetch("/api/identity/logout", { method: "POST" });

@@ -4,6 +4,7 @@ import { PortalBreadcrumb, PortalContainer, PortalSection } from "@/components/p
 import { PortalPageHeader } from "@/components/portal/PortalSectionHeader";
 import { PortalCmsPage, buildPortalPageMetadata } from "@/components/portal/PortalCmsPage";
 import { getPublishedPageBySlug } from "@/lib/cms/pages";
+import { publicSemContact } from "@/lib/portal/sem-identity-v7";
 import { getActivePortal } from "@/lib/portal/site";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -27,7 +28,8 @@ export default async function ContactoPage() {
     );
   }
 
-  const { contact, institution } = ctx.config;
+  const institution = ctx.config.institution;
+  const contact = publicSemContact(ctx.config.contact, ctx.tenant);
 
   return (
     <>

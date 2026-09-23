@@ -1,3 +1,5 @@
+import { SEM_SITE_ID } from "@/core/tenant/constants";
+
 /**
  * Normaliza un host de request/URL: lowercase, conserva puerto, sin path/query.
  * Ej.: "LocalHost:3000/" → "localhost:3000"; "https://seminarioipn.cl" → "seminarioipn.cl"
@@ -83,41 +85,89 @@ export function resolveAppHostsFromEnv(
 }
 
 /**
- * Host público presente en APP_URL / NEXT_PUBLIC_APP_URL.
- * No incluye loopback: ese origen sigue siendo portal SEM de desarrollo.
+ * Host de desarrollo del Espacio SEM: `{siteId}.localhost`, con o sin puerto.
+ * El loopback pelado (`localhost`) es la plataforma, no este Espacio.
+ */
+export function isSemDevHost(host: string | null | undefined): boolean {
+  const normalized = normalizeHost(host);
+  if (!normalized) return false;
+  return hostnameOf(normalized) === `${SEM_SITE_ID}.localhost`;
+}
+
+/**
+ * Origen de la plataforma: host público de APP_URL, o loopback pelado en local.
+ * `seminario-ipn.localhost` y `adl.localhost` no entran: son Espacios.
  */
 export function isPlatformOriginHost(
   host: string | null | undefined,
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
 ): boolean {
   const normalized = normalizeHost(host);
-  if (!normalized || isLoopbackHost(normalized)) return false;
+  if (!normalized || isSemDevHost(normalized)) return false;
+  if (isLoopbackHost(normalized)) return true;
   return resolveAppHostsFromEnv(env).includes(normalized);
 }
 
 /**
- * Sin Espacio resuelto, un host público entra a Growth OS (no al portal institucional).
- * Loopback sin contexto se deja al empty-state de desarrollo.
+ * Sin Espacio resuelto, el request entra a la portada de Growth OS.
+ * Incluye el loopback pelado y cualquier host público que no sea un Espacio.
  */
 export function shouldEnterPlatformHome(
   host: string | null | undefined,
   hasPortalContext: boolean
 ): boolean {
   if (hasPortalContext) return false;
+  return normalizeHost(host) != null;
+}
+
+/**
+ * Origen público de un host de Espacio.
+ * Loopback y `*.localhost` van por http; el resto, https.
+ */
+export function publicOriginFromHost(host: string | null | undefined): string | null {
   const normalized = normalizeHost(host);
-  if (!normalized || isLoopbackHost(normalized)) return false;
-  return true;
+  if (!normalized) return null;
+  const hostname = hostnameOf(normalized);
+  const insecure = isLoopbackHost(normalized) || hostname.endsWith(".localhost");
+  return `${insecure ? "http" : "https"}://${normalized}`;
+}
+
+/** Une el origen del Espacio con la ruta pública de una página. */
+export function publicUrlForPath(origin: string, path: string): string {
+  const base = origin.replace(/\/$/, "");
+  const raw = path.trim();
+  const hashIndex = raw.indexOf("#");
+  const pathname = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
+  const hash = hashIndex >= 0 ? raw.slice(hashIndex) : "";
+  if (!pathname || pathname === "/" || pathname === "home") {
+    return `${base}/${hash}`;
+  }
+  const normalized = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  return `${base}${normalized}${hash}`;
 }
 
 /**
  * Hosts de bootstrap SEM derivados del entorno.
- * Solo loopback: un APP_URL público (p. ej. host de plataforma) no se registra
- * como Domain legacy de T001.
+ * Un APP_URL de loopback se traduce al subdominio del Espacio
+ * (`seminario-ipn.localhost:{puerto}`). El origen pelado no se registra como Domain.
+ * Un APP_URL público no se registra como Domain legacy de T001.
  */
 export function resolveSemBootstrapHostsFromEnv(
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
 ): string[] {
-  return resolveAppHostsFromEnv(env).filter((h) => isLoopbackHost(h));
+  const hosts = new Set<string>();
+
+  for (const host of resolveAppHostsFromEnv(env)) {
+    if (!isLoopbackHost(host)) continue;
+    const port = host.split(":").pop() ?? "";
+    hosts.add(
+      /^\d+$/.test(port)
+        ? `${SEM_SITE_ID}.localhost:${port}`
+        : `${SEM_SITE_ID}.localhost`
+    );
+  }
+
+  return [...hosts];
 }
 
 /**
@@ -136,22 +186,30 @@ export function resolvePlatformBaseDomain(
   return host.split(":")[0] || null;
 }
 
+/** Slug de host: minúsculas, a-z0-9 y guiones. */
+export function normalizePlatformHostSlug(raw: string): string | null {
+  const slug = raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || null;
+}
+
+export type SpaceHostOptions = {
+  baseDomain?: string | null;
+  env?: NodeJS.ProcessEnv | Record<string, string | undefined>;
+};
+
 /**
  * Construye `{siteSlug}.{PLATFORM_BASE_DOMAIN}` normalizado.
  * No crea DNS ni registro en `domains` — solo el host canónico.
  */
 export function buildPlatformSubdomainHost(
   siteSlug: string,
-  options?: {
-    baseDomain?: string | null;
-    env?: NodeJS.ProcessEnv | Record<string, string | undefined>;
-  }
+  options?: SpaceHostOptions
 ): string | null {
-  const slug = siteSlug
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const slug = normalizePlatformHostSlug(siteSlug);
   if (!slug) return null;
 
   const base =
@@ -161,4 +219,86 @@ export function buildPlatformSubdomainHost(
 
   if (!base) return null;
   return `${slug}.${base}`;
+}
+
+/**
+ * Sufijo local de subdominio (`localhost` + puerto de APP_URL).
+ * El origen pelado (`localhost:3000`) es la plataforma, no un Espacio.
+ */
+export function resolveDevLoopbackSuffix(
+  env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
+): string {
+  for (const host of resolveAppHostsFromEnv(env)) {
+    if (!isLoopbackHost(host)) continue;
+    const port = host.split(":").pop() ?? "";
+    return /^\d+$/.test(port) ? `localhost:${port}` : "localhost";
+  }
+  return "localhost:3000";
+}
+
+/**
+ * Dirección por defecto de un Espacio, homologada para todos:
+ * `{slug}.{PLATFORM_BASE_DOMAIN}` o, en local, `{slug}.localhost:{puerto}`.
+ */
+export function buildDefaultSpaceHost(
+  siteSlug: string,
+  options?: SpaceHostOptions
+): string | null {
+  const fromBase = buildPlatformSubdomainHost(siteSlug, options);
+  if (fromBase) return fromBase;
+
+  const slug = normalizePlatformHostSlug(siteSlug);
+  if (!slug) return null;
+  return `${slug}.${resolveDevLoopbackSuffix(options?.env ?? process.env)}`;
+}
+
+/**
+ * ¿El host es el subdominio de plataforma de este slug?
+ * Incluye `{slug}.{base}` y `{slug}.localhost` (cualquier puerto).
+ */
+export function isPlatformSubdomainHost(
+  siteSlug: string,
+  host: string | null | undefined,
+  options?: SpaceHostOptions
+): boolean {
+  const normalized = normalizeHost(host);
+  if (!normalized) return false;
+
+  const expected = buildDefaultSpaceHost(siteSlug, options);
+  if (expected && normalized === expected) return true;
+
+  const slug = normalizePlatformHostSlug(siteSlug);
+  if (!slug) return false;
+
+  const hostname = hostnameOf(normalized);
+  if (hostname === `${slug}.localhost`) return true;
+
+  const base =
+    (options?.baseDomain != null
+      ? normalizeHost(options.baseDomain)?.split(":")[0] ?? null
+      : null) ?? resolvePlatformBaseDomain(options?.env ?? process.env);
+  return Boolean(base && hostname === `${slug}.${base}`);
+}
+
+/**
+ * El loopback pelado (`localhost`, `127.0.0.1`) es origen de plataforma,
+ * nunca dominio de un Espacio. `{slug}.localhost` sí es de un Espacio.
+ */
+export function isBarePlatformOriginHost(
+  host: string | null | undefined
+): boolean {
+  const normalized = normalizeHost(host);
+  if (!normalized) return false;
+  return isLoopbackHost(normalized);
+}
+
+/** Clasificación de alta: subdominio de plataforma o dominio propio. */
+export function classifySpaceDomainKind(
+  siteSlug: string,
+  host: string,
+  options?: SpaceHostOptions
+): "platform_subdomain" | "custom" {
+  return isPlatformSubdomainHost(siteSlug, host, options)
+    ? "platform_subdomain"
+    : "custom";
 }

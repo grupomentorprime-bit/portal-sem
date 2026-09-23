@@ -4,7 +4,9 @@ import {
   PortalFeatureGrid,
   extractFeatureGridItems,
 } from "@/components/portal/experience/feature-grid";
+import { SemHomeFormation } from "@/components/portal/home/formation/SemHomeFormation";
 import { WhyStudyPremiumExperience } from "@/components/portal/home/why-study";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import type { PortalFeatureGridSettings } from "@/types/feature-grid";
 import { blockSettings } from "@/lib/portal/blocks";
 import {
@@ -39,6 +41,10 @@ export function FeatureGridBlockSection({
     pageSlug,
     tenant
   );
+
+  if (isHomePageSlug(pageSlug ?? "") && isSemTenant(tenant)) {
+    return <SemHomeFormation settings={settings} features={features} id={id} />;
+  }
 
   if (isHomePageSlug(pageSlug ?? "")) {
     return (

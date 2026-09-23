@@ -29,6 +29,7 @@ export interface ProgramsPremiumSectionProps {
   helpCta?: ProgramsHelpCtaConfig;
   className?: string;
   layout?: "home" | "page";
+  publishedOffer?: boolean;
 }
 
 export function ProgramsPremiumSection({
@@ -44,6 +45,7 @@ export function ProgramsPremiumSection({
   helpCta = DEFAULT_PROGRAMS_HELP_CTA,
   className,
   layout = "home",
+  publishedOffer = false,
 }: ProgramsPremiumSectionProps) {
   const [activeFilterId, setActiveFilterId] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,6 +53,17 @@ export function ProgramsPremiumSection({
   const activeFilter = useMemo(
     () => filters.find((f) => f.id === activeFilterId) ?? filters[0],
     [filters, activeFilterId]
+  );
+
+  const offeredFilters = useMemo(
+    () =>
+      filters.filter(
+        (filter) => filter.id === "all" || programs.some((program) => filter.match(program))
+      ),
+    [filters, programs]
+  );
+  const filtersNarrow = offeredFilters.some(
+    (filter) => filter.id !== "all" && programs.some((program) => !filter.match(program))
   );
 
   const filteredPrograms = useMemo(() => {
@@ -102,16 +115,24 @@ export function ProgramsPremiumSection({
           ) : null}
         </div>
 
-        <ProgramFilters
-          filters={filters}
-          activeFilterId={activeFilterId}
-          onFilterChange={handleFilterChange}
-          className="programs-premium__header-filters"
-        />
+        {filtersNarrow && !publishedOffer ? (
+          <ProgramFilters
+            filters={offeredFilters}
+            activeFilterId={activeFilterId}
+            onFilterChange={handleFilterChange}
+            className="programs-premium__header-filters"
+          />
+        ) : null}
       </header>
 
       {paginatedPrograms.length > 0 ? (
-        <ul className="programs-premium__grid" role="list">
+        <ul
+          className={cn(
+            "programs-premium__grid",
+            paginatedPrograms.length === 4 && "programs-premium__grid--count-4"
+          )}
+          role="list"
+        >
           {paginatedPrograms.map((program, index) => (
             <li key={program.id} className="programs-premium__grid-item">
               <ProgramPremiumCard
@@ -119,6 +140,7 @@ export function ProgramsPremiumSection({
                 programIndex={programs.indexOf(program)}
                 ctaLabel={cardCtaLabel}
                 priorityImage={layout === "home" && index === 0}
+                publishedOffer={publishedOffer}
               />
             </li>
           ))}

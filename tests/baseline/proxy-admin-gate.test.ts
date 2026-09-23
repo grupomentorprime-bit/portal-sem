@@ -33,15 +33,30 @@ describe("OT-GROWTH-TEST-001 — gate admin sin sesión", () => {
     assert.equal(res.status, 200);
   });
 
-  it("no exige sesión en rutas públicas del portal", () => {
+  it("no exige sesión en rutas públicas del portal del Espacio", () => {
+    const tenantOrigin = "http://seminario-ipn.localhost:3000";
     for (const path of ["/", "/programas", "/admision", "/formularios", "/contacto"]) {
-      const res = proxy(makeRequest(path));
+      const res = proxy(makeRequest(path, undefined, tenantOrigin));
       assert.equal(res.status, 200, path);
     }
   });
 
-  it("marca focused en /formularios/[id] sin redirigir a login", () => {
-    const res = proxy(makeRequest("/formularios/convocatoria-talca-aurora-jul-2026"));
+  it("localhost muestra la portada y no las rutas del Espacio", () => {
+    const home = proxy(makeRequest("/"));
+    assert.equal(home.status, 200);
+    const programas = proxy(makeRequest("/programas"));
+    assert.equal(programas.status, 307);
+    assert.equal(new URL(programas.headers.get("location")!).pathname, "/");
+  });
+
+  it("marca focused en /formularios/[id] del Espacio sin redirigir a login", () => {
+    const res = proxy(
+      makeRequest(
+        "/formularios/convocatoria-talca-aurora-jul-2026",
+        undefined,
+        "http://seminario-ipn.localhost:3000"
+      )
+    );
     assert.equal(res.status, 200);
   });
 });
@@ -64,11 +79,13 @@ describe("Host de plataforma — entrada Growth OS", () => {
     }
   }
 
-  it("redirige / del origen de plataforma a /admin", () => {
+  it("el origen de plataforma sirve la portada y aparta las rutas de Espacio", () => {
     withPlatformEnv(() => {
-      const res = proxy(makeRequest("/", undefined, platformOrigin));
-      assert.equal(res.status, 307);
-      assert.equal(new URL(res.headers.get("location")!).pathname, "/admin");
+      const home = proxy(makeRequest("/", undefined, platformOrigin));
+      assert.equal(home.status, 200);
+      const programas = proxy(makeRequest("/programas", undefined, platformOrigin));
+      assert.equal(programas.status, 307);
+      assert.equal(new URL(programas.headers.get("location")!).pathname, "/");
     });
   });
 

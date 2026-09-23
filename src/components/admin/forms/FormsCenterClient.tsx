@@ -20,6 +20,10 @@ import {
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { CreateFormDialog } from "@/components/admin/forms/CreateFormDialog";
+import {
+  spacePublicHref,
+  useSpacePublicOrigin,
+} from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui/button";
 import {
   listFormConvocatorias,
@@ -80,6 +84,7 @@ export function FormsCenterClient({
   tenantId,
   scope = "all",
 }: FormsCenterClientProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const isConvocatoriasScope = scope === "convocatorias";
   const router = useRouter();
   const [forms, setForms] = useState(initialForms);
@@ -512,7 +517,7 @@ export function FormsCenterClient({
             id: "portal",
             title: "Ver portal",
             description: "Abrir el sitio",
-            href: "/",
+            href: spacePublicHref(publicOrigin, "/"),
             icon: <ExternalLink className="h-5 w-5" />,
           },
           {

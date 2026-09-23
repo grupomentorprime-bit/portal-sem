@@ -199,7 +199,7 @@ export function PlatformCreateSpacePanel({
               proposeHost("mentor-capacitacion") ||
               "mentor-capacitacion.localhost:3000"
             }
-            helper="Dominio o subdominio con el que se abrirá el Sitio."
+            helper="Subdominio de Growth OS mientras el Espacio no tenga un dominio propio."
             required
             autoComplete="off"
           />

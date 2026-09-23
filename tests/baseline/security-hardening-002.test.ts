@@ -20,11 +20,15 @@ function readSrc(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
 }
 
-function makeRequest(path: string, cookie?: string): NextRequest {
+function makeRequest(
+  path: string,
+  cookie?: string,
+  origin = "http://localhost:3000"
+): NextRequest {
   const headers = new Headers();
   if (cookie) headers.set("cookie", cookie);
-  headers.set("host", "localhost:3000");
-  return new NextRequest(new URL(path, "http://localhost:3000"), { headers });
+  headers.set("host", new URL(origin).host);
+  return new NextRequest(new URL(path, origin), { headers });
 }
 
 describe("OT-GROWTH-SECURITY-HARDENING-002 — config", () => {
@@ -115,7 +119,9 @@ describe("OT-GROWTH-SECURITY-HARDENING-002 — no-store selectivo", () => {
     );
     assert.equal(platform.headers.get("cache-control"), PRIVATE_CACHE_CONTROL);
 
-    const publicSite = proxy(makeRequest("/programas"));
+    const publicSite = proxy(
+      makeRequest("/programas", undefined, "http://seminario-ipn.localhost:3000")
+    );
     assert.equal(publicSite.headers.get("cache-control"), null);
   });
 });

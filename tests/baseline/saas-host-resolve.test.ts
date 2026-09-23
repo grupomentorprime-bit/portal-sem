@@ -83,12 +83,18 @@ describe("OT-GROWTH-SAAS-002 — normalización de host", () => {
     );
   });
 
-  it("loopback es elegible SEM; host público de APP_URL no", () => {
+  it("el subdominio de desarrollo SEM es elegible; el loopback pelado no", () => {
+    assert.equal(
+      isSemEligibleHost("seminario-ipn.localhost:3001", {
+        APP_URL: "https://growthos.mentorprime.cl",
+      }),
+      true
+    );
     assert.equal(
       isSemEligibleHost("localhost:3001", {
         APP_URL: "https://growthos.mentorprime.cl",
       }),
-      true
+      false
     );
     assert.equal(
       isSemEligibleHost("growthos.mentorprime.cl", {
@@ -205,22 +211,36 @@ describe("OT-GROWTH-SAAS-002 — resolución Host → Tenant", () => {
         assert.equal(compat.reason, "unknown_host");
       }
 
-      // Loopback sin domain → compat legacy SEM (dev)
-      const loopback = await resolvePublicTenantByHost("127.0.0.1:3999", {
+      // Loopback pelado es plataforma, aunque exista un Domain legacy.
+      const loopHost = "localhost:3999";
+      await ensureSemTenantFoundation(db, { hosts: [loopHost] });
+      const loopback = await resolvePublicTenantByHost(loopHost, {
         db,
         env: {
           APP_URL: "https://growthos.mentorprime.cl",
         },
       });
-      assert.equal(loopback.ok, true);
-      if (loopback.ok) {
-        assert.equal(loopback.tenantId, SEM_TENANT_ID);
-        assert.equal(loopback.source, "sem-app-url-compat");
+      assert.equal(loopback.ok, false);
+      if (!loopback.ok) {
+        assert.equal(loopback.reason, "unknown_host");
+      }
+
+      const semDev = await resolvePublicTenantByHost(
+        "seminario-ipn.localhost:3999",
+        { db }
+      );
+      assert.equal(semDev.ok, true);
+      if (semDev.ok) {
+        assert.equal(semDev.tenantId, SEM_TENANT_ID);
+        assert.equal(semDev.source, "sem-app-url-compat");
       }
     } finally {
       await db
         .collection<DomainDocument>(DOMAINS_COLLECTION)
         .deleteOne({ _id: testHost });
+      await db
+        .collection<DomainDocument>(DOMAINS_COLLECTION)
+        .deleteOne({ _id: "localhost:3999" });
       await client.close();
     }
   });

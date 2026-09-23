@@ -1,8 +1,8 @@
-import { buildPlatformSubdomainHost } from "@/core/tenant/hosts";
+import { buildDefaultSpaceHost } from "@/core/tenant/hosts";
 
 /**
  * Dirección web inicial al crear un Espacio.
- * Con PLATFORM_BASE_DOMAIN → `{id}.{base}`; sin base → `{id}.localhost:3000` (dev).
+ * `{id}.{PLATFORM_BASE_DOMAIN}` o, sin base, `{id}.localhost:{puerto}`.
  * No hardcodea dominios de producto ni clientes.
  */
 export function proposeInitialSpaceHost(
@@ -12,13 +12,9 @@ export function proposeInitialSpaceHost(
   const id = spaceId.trim().toLowerCase();
   if (!id) return "";
 
-  const base = platformBaseDomain?.trim() || null;
-  if (base) {
-    return (
-      buildPlatformSubdomainHost(id, { baseDomain: base }) ??
-      `${id}.${base.toLowerCase()}`
-    );
-  }
-
-  return `${id}.localhost:3000`;
+  return (
+    buildDefaultSpaceHost(id, {
+      baseDomain: platformBaseDomain?.trim() || null,
+    }) ?? ""
+  );
 }

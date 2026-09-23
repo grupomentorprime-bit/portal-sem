@@ -3,6 +3,7 @@ import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import { isSemTenant } from "@/core/tenant/is-sem";
 import { DEFAULT_ADMISSION_CLOSING } from "@/lib/portal/admission-closing-defaults";
 import { EMPTY_ADMISSION_CLOSING } from "@/lib/portal/empty-admission";
+import { isWithheldSemPublicHref, SEM_CONTACT_PUBLISHED } from "@/lib/portal/sem-identity-v7";
 
 function rewriteClosingBlock(block: AdmissionClosingBlock): AdmissionClosingBlock {
   if (block.type !== "copyright" || !block.data.developerText) return block;
@@ -80,6 +81,55 @@ export function mergeClosingConfig(
     ...base,
     ...saved,
     blocks: sortClosingBlocks([...saved.blocks, ...missingDefaults].map(rewriteClosingBlock)),
+  };
+}
+
+/** Presentación pública: no publica contacto inconsistente ni enlaces de semilla. */
+export function presentPublicClosing(
+  closing: AdmissionClosingConfig,
+  tenantId: string
+): AdmissionClosingConfig {
+  if (!isSemTenant(tenantId)) return closing;
+
+  return {
+    ...closing,
+    blocks: closing.blocks.map((block) => {
+      if (block.type === "contact" && !SEM_CONTACT_PUBLISHED) {
+        return {
+          ...block,
+          data: {
+            ...block.data,
+            email: "",
+            phone: "",
+            whatsapp: "",
+            address: "",
+            mapEmbedUrl: "",
+          },
+        };
+      }
+      if (block.type === "actions") {
+        return {
+          ...block,
+          data: {
+            ...block.data,
+            items: block.data.items.filter((item) => !isWithheldSemPublicHref(item.href)),
+          },
+        };
+      }
+      if (block.type === "footer") {
+        return {
+          ...block,
+          data: {
+            ...block.data,
+            columns: block.data.columns.map((column) => ({
+              ...column,
+              items: column.items.filter((item) => !isWithheldSemPublicHref(item.url)),
+            })),
+          },
+        };
+      }
+      return block;
+    }),
   };
 }
 

@@ -31,7 +31,7 @@ export const DEFAULT_ADMISSION_CLOSING_BLOCKS: AdmissionClosingBlock[] = [
     order: 1,
     data: {
       eyebrow: "FORMACIÓN MINISTERIAL",
-      title: "Tu llamado merece una formación seria.",
+      title: "Más que aprender, servir mejor.",
       subtitle: "La formación ministerial comienza con una decisión.",
       description:
         "Da el siguiente paso en tu preparación bíblica y pastoral junto a una institución con respaldo de IPN Chile, modalidad 100% online y acompañamiento docente.",

@@ -28,6 +28,8 @@ interface PortalHeaderProps {
   loginLabel?: string;
   applyHref?: string;
   applyLabel?: string;
+  campusHref?: string;
+  campusLabel?: string;
   variant?: "default" | "premium";
   searchHref?: string;
 }
@@ -53,8 +55,10 @@ export function PortalHeader({
   loginLabel = "Ingresar",
   applyHref,
   applyLabel = "Postular ahora",
+  campusHref,
+  campusLabel = "Campus",
   variant = "default",
-  searchHref = "/buscar",
+  searchHref,
 }: PortalHeaderProps) {
   const pathname = usePathname();
   const handleHomeLink = useHomeLinkHandler();
@@ -150,23 +154,36 @@ export function PortalHeader({
             </nav>
 
             <div className="portal-header-premium__actions hidden lg:flex">
-              <Link
-                href={searchHref}
-                className={cn("portal-header-premium__search", focusRing)}
-                aria-label="Buscar en el sitio"
-              >
-                <Search size={18} strokeWidth={2} />
-              </Link>
-              {loginHref ? (
-                <Link href={loginHref} className={cn("portal-btn-login portal-btn-login--hero", focusRing)}>
-                  <LogIn size={16} strokeWidth={2} aria-hidden />
-                  {loginLabel}
+              {searchHref ? (
+                <Link
+                  href={searchHref}
+                  className={cn("portal-header-premium__search", focusRing)}
+                  aria-label="Buscar en el sitio"
+                >
+                  <Search size={18} strokeWidth={2} />
+                </Link>
+              ) : null}
+              {campusHref ? (
+                <Link
+                  href={campusHref}
+                  className={cn("portal-btn-campus", focusRing)}
+                  {...(campusHref.startsWith("http")
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                >
+                  {campusLabel}
                 </Link>
               ) : null}
               {applyHref ? (
                 <Link href={applyHref} className={cn("portal-btn-apply portal-btn-apply--header", focusRing)} data-cursor-magnet>
                   {stripTrailingArrow(applyLabel)}
                   <ArrowRight size={16} strokeWidth={2.5} aria-hidden />
+                </Link>
+              ) : null}
+              {loginHref ? (
+                <Link href={loginHref} className={cn("portal-btn-login portal-btn-login--quiet", focusRing)}>
+                  <LogIn size={15} strokeWidth={2} aria-hidden />
+                  {loginLabel}
                 </Link>
               ) : null}
             </div>
@@ -192,6 +209,8 @@ export function PortalHeader({
         loginLabel={loginLabel}
         applyHref={applyHref}
         applyLabel={applyLabel}
+        campusHref={campusHref}
+        campusLabel={campusLabel}
       />
     </>
   );

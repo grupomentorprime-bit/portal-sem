@@ -1,0 +1,362 @@
+/**
+ * Apertura editorial SEM — dirección del moodboard.
+ * Vectorial, simple, elaborado, liviano. El hero no se toca.
+ */
+
+.portal-home-experience [data-block="text"]:has(.sem-narrative) {
+  padding-block: 0;
+  background: var(--color-surface);
+}
+
+.sem-narrative {
+  --sem-ink: var(--sem-primary);
+  --sem-sign: var(--sem-accent);
+  --sem-leaf: var(--sem-success);
+  color: var(--sem-ink);
+  background: var(--color-surface);
+}
+
+.sem-narrative__inner {
+  width: min(1180px, calc(100% - clamp(2rem, 6vw, 6rem)));
+  margin-inline: auto;
+}
+
+.sem-narrative__kicker {
+  margin: 0 0 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--sem-ink) 55%, var(--sem-sign));
+}
+
+.sem-narrative__mark {
+  color: var(--sem-sign);
+}
+
+.sem-narrative__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  margin-top: 1.75rem;
+  padding-bottom: 0.15rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--sem-ink);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--sem-sign) 85%, transparent);
+}
+
+.sem-narrative__link:hover {
+  color: color-mix(in srgb, var(--sem-ink) 75%, var(--sem-sign));
+}
+
+.sem-narrative__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* —— Manifiesto —— */
+
+.sem-manifesto {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(5.5rem, 11vw, 8.75rem) clamp(4.5rem, 8vw, 7rem);
+}
+
+.sem-manifesto__inner {
+  position: relative;
+  display: grid;
+  align-items: end;
+}
+
+.sem-manifesto__copy {
+  position: relative;
+  z-index: 1;
+  max-width: min(100%, 920px);
+}
+
+.sem-manifesto__title {
+  margin: 0;
+  font-size: clamp(2.55rem, 5.6vw, 5.35rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.042em;
+  text-wrap: balance;
+}
+
+.sem-manifesto__lead {
+  max-width: 34rem;
+  margin: clamp(1.75rem, 3vw, 2.5rem) 0 0;
+  font-size: clamp(1.05rem, 1.35vw, 1.2rem);
+  font-weight: 400;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--sem-ink) 78%, var(--gray-600));
+}
+
+.sem-manifesto__curve {
+  position: absolute;
+  top: 8%;
+  right: -4%;
+  width: min(34vw, 380px);
+  height: auto;
+  color: var(--sem-sign);
+  pointer-events: none;
+}
+
+.sem-manifesto__curve path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+}
+
+.sem-manifesto__curve path:last-child {
+  opacity: 0.45;
+}
+
+/* —— Palabra / Formación / Servicio —— */
+
+.sem-axis {
+  position: relative;
+  padding-block: clamp(1rem, 2vw, 1.5rem) clamp(4.75rem, 9vw, 7.5rem);
+}
+
+.sem-axis .sem-narrative__inner {
+  position: relative;
+}
+
+.sem-axis__list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.25rem, 4.5vw, 3.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sem-axis__item {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  column-gap: clamp(0.85rem, 2vw, 1.5rem);
+  align-items: start;
+}
+
+.sem-axis__index {
+  padding-top: 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--sem-sign);
+}
+
+.sem-axis__title {
+  margin: 0;
+  font-size: clamp(2.15rem, 4vw, 3.6rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.sem-axis__text {
+  max-width: 28rem;
+  margin: 0.35rem 0 0;
+  font-size: clamp(1rem, 1.2vw, 1.08rem);
+  font-weight: 400;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--sem-ink) 74%, var(--gray-600));
+}
+
+.sem-axis__item:nth-child(3) .sem-axis__index {
+  color: var(--sem-leaf);
+}
+
+.sem-axis__thread {
+  display: none;
+}
+
+/* —— Formando para servir a la Iglesia —— */
+
+.sem-church {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(4.5rem, 9vw, 7.5rem) clamp(5rem, 10vw, 8.5rem);
+  background:
+    radial-gradient(
+      ellipse 48% 70% at 92% 42%,
+      color-mix(in srgb, var(--sem-sign) 18%, white),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 22% 28% at 98% 92%,
+      color-mix(in srgb, var(--sem-leaf) 28%, white),
+      transparent 70%
+    ),
+    var(--color-surface);
+}
+
+.sem-church__grid {
+  display: grid;
+  gap: clamp(2.25rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.sem-church__title {
+  margin: 0;
+  max-width: 11em;
+  font-size: clamp(2.6rem, 5vw, 4.6rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.sem-church__lead {
+  max-width: 34rem;
+  margin: clamp(1.25rem, 2vw, 1.75rem) 0 0;
+  font-size: clamp(1.05rem, 1.3vw, 1.16rem);
+  font-weight: 400;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--sem-ink) 78%, var(--gray-600));
+}
+
+.sem-church__affiliation {
+  margin: 1.35rem 0 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--sem-ink) 62%, var(--sem-sign));
+}
+
+.sem-church__figure {
+  margin: 0;
+}
+
+.sem-church__frame {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 1.6rem 0.35rem 1.6rem 0.35rem;
+  background:
+    linear-gradient(
+      165deg,
+      var(--gray-50) 0%,
+      var(--gray-100) 46%,
+      color-mix(in srgb, var(--color-surface) 92%, var(--sem-leaf)) 100%
+    );
+}
+
+.sem-church__frame img {
+  object-fit: cover;
+  object-position: 58% 36%;
+  filter: saturate(0.7) contrast(0.94) brightness(1.14);
+}
+
+.sem-church__frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface) 34%, transparent) 0%,
+      transparent 32%
+    ),
+    linear-gradient(
+      205deg,
+      color-mix(in srgb, var(--sem-ink) 5%, transparent) 0%,
+      color-mix(in srgb, var(--sem-sign) 20%, transparent) 100%
+    );
+  pointer-events: none;
+}
+
+.sem-church__accent {
+  position: absolute;
+  z-index: 1;
+  left: 8%;
+  bottom: 7%;
+  width: 38%;
+  height: auto;
+  color: var(--sem-leaf);
+  pointer-events: none;
+}
+
+.sem-church__accent path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.sem-church__figure figcaption {
+  margin: 0.85rem 0 0;
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--sem-ink) 58%, var(--gray-500));
+}
+
+@media (min-width: 900px) {
+  .sem-axis__item:nth-child(2) .sem-axis__body {
+    transform: translateX(clamp(2rem, 6vw, 5.5rem));
+  }
+
+  .sem-axis__item:nth-child(3) .sem-axis__body {
+    transform: translateX(clamp(4rem, 12vw, 11rem));
+  }
+
+  .sem-axis__thread {
+    display: block;
+    position: absolute;
+    top: 0.4rem;
+    left: 0.15rem;
+    width: 4.5rem;
+    height: calc(100% - 0.5rem);
+    color: color-mix(in srgb, var(--sem-sign) 70%, white);
+    pointer-events: none;
+  }
+
+  .sem-axis__thread path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.15;
+    stroke-linecap: round;
+  }
+
+  .sem-church__grid {
+    grid-template-columns: minmax(0, 1.12fr) minmax(260px, 0.78fr);
+  }
+
+  .sem-church__frame {
+    max-height: 34rem;
+  }
+}
+
+@media (max-width: 899px) {
+  .sem-manifesto__curve {
+    width: 42vw;
+    top: auto;
+    bottom: -8%;
+    opacity: 0.55;
+  }
+
+  .sem-church__frame {
+    aspect-ratio: 5 / 4;
+    max-height: 22rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .sem-manifesto__title,
+  .sem-church__title {
+    font-size: clamp(2.15rem, 11vw, 2.85rem);
+  }
+}

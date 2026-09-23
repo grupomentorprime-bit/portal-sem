@@ -4,6 +4,7 @@ import {
   PortalFeatureGrid,
   extractFeatureGridItems,
 } from "@/components/portal/experience/feature-grid";
+import { SemAffiliationBand } from "@/components/portal/home/affiliation/SemAffiliationBand";
 import { blockSettings } from "@/lib/portal/blocks";
 import type { PortalFeatureGridSettings } from "@/types/feature-grid";
 import type { PageBlock } from "@/types/page";
@@ -25,6 +26,17 @@ export function PresentationBlockSection({ block }: PresentationBlockSectionProp
     emptyTitle?: string;
     emptyDescription?: string;
   }>(block);
+
+  const title = settings.title?.trim() ?? "";
+  if (/IPN Chile/i.test(title)) {
+    return (
+      <SemAffiliationBand
+        title={title}
+        subtitle={settings.subtitle?.trim()}
+        description={settings.description?.trim()}
+      />
+    );
+  }
 
   const gridSettings: PortalFeatureGridSettings = {
     overline: settings.overline,

@@ -1087,7 +1087,7 @@
   background:
     linear-gradient(
       165deg,
-      color-mix(in srgb, var(--sem-light, #f8fafc) 70%, white) 0%,
+      color-mix(in srgb, var(--sem-light, var(--gray-50)) 70%, white) 0%,
       white 42%,
       white 100%
     );
@@ -1150,7 +1150,7 @@
   padding: 0.75rem;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
-  background: color-mix(in srgb, white 88%, var(--sem-light, #f8fafc));
+  background: color-mix(in srgb, white 88%, var(--sem-light, var(--gray-50)));
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;

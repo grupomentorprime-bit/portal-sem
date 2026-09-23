@@ -172,7 +172,8 @@ describe("OT-GROWTH-UX-SPACE-CREATION-002 — provisión Mongo", () => {
 
       const moduleFingerprints: string[] = [];
 
-      for (const org of SPACE_ORGANIZATION_TYPES) {
+      try {
+        for (const org of SPACE_ORGANIZATION_TYPES) {
         const slug = `ot-ux2-${org.value}-${stamp}`;
         createdSlugs.push(slug);
         const host = `${slug}.localhost:3000`;
@@ -316,9 +317,10 @@ describe("OT-GROWTH-UX-SPACE-CREATION-002 — provisión Mongo", () => {
         assert.equal(adlAfter?.updatedAt, adlBefore.updatedAt);
         assert.equal(adlAfter?.type, adlBefore.type);
       }
-
-      for (const slug of createdSlugs) {
-        await cleanupSpace(db, slug);
+      } finally {
+        for (const slug of createdSlugs) {
+          await cleanupSpace(db, slug);
+        }
       }
     });
   });

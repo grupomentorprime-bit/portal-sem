@@ -31,8 +31,12 @@ import { AllianceBlockSection } from "@/components/portal/blocks/AllianceBlockSe
 import { CtaBlockSection } from "@/components/portal/blocks/CtaBlockSection";
 import { CtaPremiumBlockSection } from "@/components/portal/blocks/CtaPremiumBlockSection";
 import { GenericContentBlockSection } from "@/components/portal/blocks/GenericContentBlockSection";
+import { SemHomeNarrative } from "@/components/portal/home/narrative/SemHomeNarrative";
+import { resolveHeroSlides } from "@/core/hero/resolve";
+import { resolveMediaRef } from "@/core/media";
 import { publishBlockRendered, publishCtaViewed } from "@/core/portal";
 import { blockSettings } from "@/lib/portal/blocks";
+import { publicSemContact } from "@/lib/portal/sem-identity-v7";
 import { asString } from "@/lib/cms/block-utils";
 import type { PortalContext } from "@/lib/portal/site";
 import type { PageBlock } from "@/types/page";
@@ -60,6 +64,8 @@ export async function PortalBlockSection({
     blockId: block.id,
     blockType: block.type,
   });
+
+  const contact = publicSemContact(ctx.config.contact, tenant);
 
   switch (block.type) {
     case "hero":
@@ -103,7 +109,7 @@ export async function PortalBlockSection({
     case "resources":
       return <ResourcesBlockSection block={block} />;
     case "admission_process":
-      return <AdmissionProcessBlockSection block={block} />;
+      return <AdmissionProcessBlockSection block={block} tenant={tenant} />;
     case "timeline":
       return <TimelineBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "scholarships":
@@ -111,12 +117,12 @@ export async function PortalBlockSection({
     case "faq":
       return <FaqBlockSection block={block} tenant={tenant} pageSlug={pageSlug} />;
     case "quick_contact":
-      return <QuickContactBlockSection block={block} contact={ctx.config.contact} social={ctx.config.social} />;
+      return <QuickContactBlockSection block={block} contact={contact} social={ctx.config.social} />;
     case "contact_hub":
       return (
         <ContactHubBlockSection
           block={block}
-          contact={ctx.config.contact}
+          contact={contact}
           social={ctx.config.social}
         />
       );
@@ -160,7 +166,42 @@ export async function PortalBlockSection({
       });
       return <CtaPremiumBlockSection block={block} tenant={tenant} navigation={ctx.navigation} pageSlug={pageSlug} />;
     }
-    case "text":
+    case "text": {
+      if (asString(block.settings.variant) === "sem_narrative") {
+        const hero = allBlocks.find((item) => item.type === "hero");
+        const heroSettings = (hero?.settings ?? {}) as {
+          heroMediaId?: string;
+          heroImage?: string;
+          imageAlt?: string;
+          heroImageAlt?: string;
+        };
+        const portalSlides = ctx.config.heroPortal
+          ? await resolveHeroSlides(tenant, ctx.config.heroPortal)
+          : [];
+        const slidePhoto = portalSlides.find((slide) => slide.imagenDesktopUrl)?.imagenDesktopUrl;
+        const blockPhoto = await resolveMediaRef(
+          tenant,
+          {
+            mediaId: heroSettings.heroMediaId,
+            legacyUrl: heroSettings.heroImage,
+          },
+          "w1920"
+        );
+        const photo = slidePhoto || blockPhoto || (ctx.logos.hasHero ? ctx.logos.hero : null);
+        return (
+          <SemHomeNarrative
+            imageSrc={photo || undefined}
+            imageAlt={asString(
+              heroSettings.imageAlt ?? heroSettings.heroImageAlt,
+              "Formación bíblica del Seminario Eclesiástico Mayor"
+            )}
+          />
+        );
+      }
+      return (
+        <GenericContentBlockSection block={block} tenant={tenant} contact={contact} />
+      );
+    }
     case "contact":
     case "video":
     case "divider":
@@ -170,7 +211,7 @@ export async function PortalBlockSection({
         <GenericContentBlockSection
           block={block}
           tenant={tenant}
-          contact={ctx.config.contact}
+          contact={contact}
         />
       );
     default:

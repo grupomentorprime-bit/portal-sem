@@ -69,7 +69,17 @@ export function SummaryCard({
     </Card>
   );
 
-  if (href) return <Link href={href}>{body}</Link>;
+  if (href) {
+    const external = /^https?:\/\//i.test(href);
+    return (
+      <Link
+        href={href}
+        {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      >
+        {body}
+      </Link>
+    );
+  }
   if (onClick) {
     return (
       <button type="button" className="block w-full text-left" onClick={onClick}>

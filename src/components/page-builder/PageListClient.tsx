@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ExternalLink, Eye, Layers, Menu, Plus } from "lucide-react";
@@ -21,6 +20,10 @@ import { useToast } from "@/components/admin/kit/states/Toast";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { CreatePageWizard } from "@/components/page-builder/CreatePageWizard";
+import {
+  spacePublicHref,
+  useSpacePublicOrigin,
+} from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui";
 import { objectiveLabelForTemplate, pageIdFromTitle } from "@/lib/cms/page-objectives";
 import type { CmsPage } from "@/types/page";
@@ -38,6 +41,7 @@ function hasCaptureForm(page: CmsPage): boolean {
 }
 
 export function PageListClient({ pages, tenant }: PageListClientProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const router = useRouter();
   const { push } = useToast();
   const [loading, setLoading] = useState(false);
@@ -162,12 +166,12 @@ export function PageListClient({ pages, tenant }: PageListClientProps) {
       description="Crea y publica las páginas de tu sitio. Un solo editor para todas."
       actions={
         <>
-          <Link href="/" target="_blank">
+          <a href={spacePublicHref(publicOrigin, "/")} target="_blank" rel="noopener noreferrer">
             <Button type="button" variant="outline">
               Ver sitio
               <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
-          </Link>
+          </a>
           <Button type="button" disabled={loading} onClick={() => setWizardOpen(true)}>
             <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             Crear página
@@ -295,14 +299,15 @@ export function PageListClient({ pages, tenant }: PageListClientProps) {
                 </Button>
               ) : null}
               {page.status === "published" ? (
-                <Link
-                  href={page.slug}
+                <a
+                  href={spacePublicHref(publicOrigin, page.slug)}
                   className="px-2 text-xs text-secondary underline"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <Eye className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
                   Ver
-                </Link>
+                </a>
               ) : null}
             </ColumnActions>
           )}

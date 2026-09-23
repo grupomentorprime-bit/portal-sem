@@ -1,6 +1,6 @@
 import type { PortalStatus } from "@/types/cms";
 
-export type TenantStatus = "active" | "inactive" | "suspended";
+export type TenantStatus = "active" | "inactive" | "suspended" | "archived";
 export type SiteStatus = PortalStatus;
 /**
  * Clasificación del Espacio (UX / catálogo).
@@ -55,7 +55,7 @@ export interface SiteDocument {
 export type DomainKind =
   /** Dominio propio del cliente (custom domain). */
   | "custom"
-  /** Subdominio de plataforma: `{slug}.{PLATFORM_BASE_DOMAIN}`. */
+  /** Subdominio de plataforma: `{slug}.{PLATFORM_BASE_DOMAIN}` o `{slug}.localhost[:puerto]` en local. */
   | "platform_subdomain"
   /** Hosts migrados / bootstrap legacy (p. ej. SEM en transición). */
   | "legacy";

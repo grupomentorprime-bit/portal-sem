@@ -1,5 +1,13 @@
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { isFeatureEnabled } from "@/lib/portal/feature-flags";
 import { getPortalContext } from "@/lib/portal/site";
+import {
+  officialCampusHref,
+  publicSemContact,
+  SEM_ISOTIPO_ON_DARK_SRC,
+  SEM_ISOTIPO_SRC,
+  SEM_PUBLIC_NAV,
+} from "@/lib/portal/sem-identity-v7";
 import { fetchPrograms } from "@/lib/portal/content";
 import { FooterPremiumShell } from "@/components/portal/experience/footer-premium/FooterPremiumShell";
 import { PortalHeader } from "@/components/portal/layout";
@@ -32,28 +40,36 @@ export async function PortalShell({ children }: PortalShellProps) {
     fetchPrograms(tenant, { featured: true, limit: 6 }),
   ]);
 
+  const semTenant = isSemTenant(tenant);
+  const headerLinks = semTenant ? [...SEM_PUBLIC_NAV] : navLinks;
   const loginLink = findQuickLink(navigation.quickLinks, (l) => l.includes("ingresar"));
 
   const applyLink = isFeatureEnabled(config.features, "applications")
     ? navigation.quickLinks.find((l) => l.highlighted) ??
       findQuickLink(navigation.quickLinks, (l) => l.includes("postul"))
     : undefined;
+  const campusHref = semTenant
+    ? officialCampusHref(config.topBar?.virtualCampusHref)
+    : undefined;
+  const publicContact = publicSemContact(contact, tenant);
 
   return (
     <PortalExperienceProvider cursor={config.portalExperience?.cursor ?? DEFAULT_PORTAL_CURSOR}>
       <ExperienceActionProvider>
       <PortalHeader
-        links={navLinks}
-        mobileLinks={navigation.mobile.length ? navigation.mobile : navLinks}
-        logoPrimary={logos.primary}
-        logoSecondary={logos.secondary}
+        links={headerLinks}
+        mobileLinks={headerLinks}
+        logoPrimary={semTenant ? SEM_ISOTIPO_SRC : logos.primary}
+        logoSecondary={semTenant ? undefined : logos.secondary}
         institutionName={institution.name}
         institutionShortName={institution.shortName}
         organization={institution.organization}
         loginHref={loginLink?.href ?? "/ingresar"}
         loginLabel={loginLink?.label ?? "Ingresar"}
-        applyHref={applyLink?.href}
-        applyLabel={applyLink?.label}
+        applyHref={applyLink?.href ?? (semTenant ? "/admision" : undefined)}
+        applyLabel={semTenant ? "Postular" : applyLink?.label}
+        campusHref={campusHref}
+        campusLabel="Campus"
         variant="premium"
       />
       <main
@@ -66,10 +82,13 @@ export async function PortalShell({ children }: PortalShellProps) {
         tenantId={tenant}
         institution={institution}
         seo={seo}
-        contact={contact}
+        contact={publicContact}
         social={config.social}
         portalCopy={config.portalCopy}
-        logos={{ primary: logos.primary, secondary: logos.secondary }}
+        logos={{
+          primary: semTenant ? SEM_ISOTIPO_ON_DARK_SRC : logos.primary,
+          secondary: semTenant ? undefined : logos.secondary,
+        }}
         footerColumns={navigation.footer}
         legalLinks={navigation.legal}
         programs={featuredPrograms}

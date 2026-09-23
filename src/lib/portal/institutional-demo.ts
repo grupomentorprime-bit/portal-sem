@@ -47,7 +47,7 @@ export const DEMO_ACADEMIC_PROGRAMS: ProgramItem[] = [
     category: "Generación 2023",
     certification: "Pastores y pastoras",
     icon: "BookOpen",
-    href: "/programas/diploma-teologia-biblica-pastoral-g2023",
+    href: "/programas/diploma-en-teologia-biblica-pastoral-g-2023",
     image: IMG.program1,
     featured: true,
     badge: "Más elegido",
@@ -70,7 +70,7 @@ export const DEMO_ACADEMIC_PROGRAMS: ProgramItem[] = [
     category: "Generación 2024",
     certification: "Pastores y Líderes",
     icon: "Users",
-    href: "/programas/diploma-teologia-biblica-pastores-g2024",
+    href: "/programas/diploma-en-teologia-biblica-g-2024",
     image: IMG.program2,
     featured: true,
     badge: "Generación 2024",
@@ -93,7 +93,7 @@ export const DEMO_ACADEMIC_PROGRAMS: ProgramItem[] = [
     category: "Generación 2025",
     certification: "Hermanos(as) y Líderes",
     icon: "GraduationCap",
-    href: "/programas/diploma-teologia-biblica-hermanos-g2025",
+    href: "/programas/diploma-en-teologia-biblica-g-2025",
     image: IMG.program3,
     featured: true,
     badge: "Generación 2025",
@@ -116,7 +116,7 @@ export const DEMO_ACADEMIC_PROGRAMS: ProgramItem[] = [
     category: "Generación 2026",
     certification: "Hermanos(as) y Líderes",
     icon: "Monitor",
-    href: "/programas/diploma-teologia-biblica-hermanos-g2026",
+    href: "/programas/diploma-en-teologia-biblica-hnos-y-lideres-g-2026",
     image: IMG.program4,
     featured: true,
     badge: "Generación 2026",
@@ -353,7 +353,7 @@ export const DEMO_SEMINARIOS: SeminarioCard[] = [
     metaLine: "8 semanas · Online · Certificado SEM",
     imageUrl: IMG.program1,
     ctaLabel: "Postular",
-    ctaHref: "/programas/hermeneutica-biblica",
+    ctaHref: "/programas",
   },
   {
     id: "sem-historia",
@@ -361,7 +361,7 @@ export const DEMO_SEMINARIOS: SeminarioCard[] = [
     metaLine: "10 semanas · Online · Certificado SEM",
     imageUrl: IMG.program2,
     ctaLabel: "Postular",
-    ctaHref: "/programas/historia-iglesia",
+    ctaHref: "/programas",
   },
   {
     id: "sem-homiletica",
@@ -369,7 +369,7 @@ export const DEMO_SEMINARIOS: SeminarioCard[] = [
     metaLine: "6 semanas · Online · Certificado SEM",
     imageUrl: IMG.program3,
     ctaLabel: "Postular",
-    ctaHref: "/programas/homiletica-practica",
+    ctaHref: "/programas",
   },
   {
     id: "sem-pastoral",
@@ -377,7 +377,7 @@ export const DEMO_SEMINARIOS: SeminarioCard[] = [
     metaLine: "8 semanas · Online · Certificado SEM",
     imageUrl: IMG.program4,
     ctaLabel: "Postular",
-    ctaHref: "/programas/cuidado-pastoral",
+    ctaHref: "/programas",
   },
   {
     id: "sem-liturgia",
@@ -385,7 +385,7 @@ export const DEMO_SEMINARIOS: SeminarioCard[] = [
     metaLine: "6 semanas · Online · Certificado SEM",
     imageUrl: IMG.program1,
     ctaLabel: "Postular",
-    ctaHref: "/programas/liturgia-sacramentos",
+    ctaHref: "/programas",
   },
 ];
 
@@ -493,9 +493,9 @@ export function mergeHomeAcademicOfferSettings(
 
   return {
     ...settings,
-    overline: DEMO_ACADEMIC_OFFER_SETTINGS.overline,
-    title: DEMO_ACADEMIC_OFFER_SETTINGS.title,
-    description: DEMO_ACADEMIC_OFFER_SETTINGS.description,
+    overline: settings.overline?.trim() || DEMO_ACADEMIC_OFFER_SETTINGS.overline,
+    title: settings.title?.trim() || DEMO_ACADEMIC_OFFER_SETTINGS.title,
+    description: settings.description?.trim() || DEMO_ACADEMIC_OFFER_SETTINGS.description,
     showButton: settings.showButton ?? DEMO_ACADEMIC_OFFER_SETTINGS.showButton,
     buttonHref: settings.buttonHref?.trim() || DEMO_ACADEMIC_OFFER_SETTINGS.buttonHref,
     buttonLabel: DEMO_ACADEMIC_OFFER_SETTINGS.buttonLabel,
@@ -526,9 +526,9 @@ export function mergeHomeFeatureGridSettings(
 
   return {
     ...settings,
-    overline: DEMO_FEATURE_GRID_SETTINGS.overline,
-    title: DEMO_FEATURE_GRID_SETTINGS.title,
-    description: DEMO_FEATURE_GRID_SETTINGS.description,
+    overline: settings.overline?.trim() || DEMO_FEATURE_GRID_SETTINGS.overline,
+    title: settings.title?.trim() || DEMO_FEATURE_GRID_SETTINGS.title,
+    description: settings.description?.trim() || DEMO_FEATURE_GRID_SETTINGS.description,
   };
 }
 
@@ -541,11 +541,10 @@ export function withHomeDemoPeople(
   tenantId?: string
 ): PersonItem[] {
   const isHome = Boolean(pageSlug && isHomePageSlug(pageSlug));
-  let result = people;
   if (shouldUseHomeDemoContent(pageSlug, tenantId) && people.length === 0) {
-    result = DEMO_FACULTY;
+    return [];
   }
-  return isHome ? result.slice(0, HOME_FACULTY_TEASER_COUNT) : result;
+  return isHome ? people.slice(0, HOME_FACULTY_TEASER_COUNT) : people;
 }
 
 export function withHomeDemoNews(
@@ -553,6 +552,7 @@ export function withHomeDemoNews(
   pageSlug?: string,
   tenantId?: string
 ): NewsItem[] {
+  if (pageSlug && isHomePageSlug(pageSlug)) return items;
   if (!shouldUseHomeDemoContent(pageSlug, tenantId) || items.length > 0) return items;
   return DEMO_NEWS;
 }

@@ -105,8 +105,11 @@ export function LoginForm() {
             : "Cargando opciones de acceso…"}
         </p>
         <p className="text-center text-xs text-muted">
-          <Link href="/" className="underline">
-            Volver al Sitio público
+          <Link
+            href="/"
+            className="font-medium text-[var(--growth-os-primary)] underline-offset-2 hover:underline"
+          >
+            Volver a Growth OS
           </Link>
         </p>
       </div>
@@ -160,9 +163,12 @@ export function LoginForm() {
         Ingresar
       </Button>
 
-      <p className="text-center text-xs text-muted">
-        <Link href="/" className="underline">
-          Volver al Sitio público
+      <p className="pt-1 text-center text-xs text-muted">
+        <Link
+          href="/"
+          className="font-medium text-[var(--growth-os-primary)] underline-offset-2 hover:underline"
+        >
+          Volver a Growth OS
         </Link>
       </p>
     </form>

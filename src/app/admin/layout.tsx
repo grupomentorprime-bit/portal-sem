@@ -1,3 +1,4 @@
+import { SpacePublicOriginProvider } from "@/components/admin/SpacePublicOrigin";
 import { AdminShell } from "@/components/identity/AdminShell";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
@@ -9,6 +10,7 @@ import {
 import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
 import { buildAdminTenantBranding } from "@/lib/admin/tenant-branding";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
+import { resolvePublicOriginForTenant } from "@/lib/portal/public-origin";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
@@ -101,6 +103,10 @@ export default async function AdminLayout({
     redirect(STUDENT_AFFAIRS_HOME_PATH);
   }
 
+  const publicOrigin = hasSpace
+    ? await resolvePublicOriginForTenant(tenantId).catch(() => null)
+    : null;
+
   const navBadges =
     shellV2 && hasSpace
       ? await resolveAdminNavBadges({
@@ -121,30 +127,32 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminShell
-      user={
-        session
-          ? {
-              displayName: session.user.displayName,
-              email: session.user.email,
-              roleLabel,
-              institutionName:
-                activeSpace?.name?.trim() ||
-                config?.institution.name?.trim() ||
-                branding.institutionName,
-              activeTenantId: session.session.tenantId || null,
-              spaces: spaces.map((s) => ({ tenantId: s.tenantId, name: s.name })),
-            }
-          : null
-      }
-      compatMode={compatMode}
-      permissions={permissions}
-      roleCodes={roleCodes}
-      shellV2={shellV2}
-      branding={branding}
-      navBadges={navBadges}
-    >
-      {children}
-    </AdminShell>
+    <SpacePublicOriginProvider origin={publicOrigin}>
+      <AdminShell
+        user={
+          session
+            ? {
+                displayName: session.user.displayName,
+                email: session.user.email,
+                roleLabel,
+                institutionName:
+                  activeSpace?.name?.trim() ||
+                  config?.institution.name?.trim() ||
+                  branding.institutionName,
+                activeTenantId: session.session.tenantId || null,
+                spaces: spaces.map((s) => ({ tenantId: s.tenantId, name: s.name })),
+              }
+            : null
+        }
+        compatMode={compatMode}
+        permissions={permissions}
+        roleCodes={roleCodes}
+        shellV2={shellV2}
+        branding={branding}
+        navBadges={navBadges}
+      >
+        {children}
+      </AdminShell>
+    </SpacePublicOriginProvider>
   );
 }

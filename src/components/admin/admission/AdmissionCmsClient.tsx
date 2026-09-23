@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ExternalLink, Eye, EyeOff, GraduationCap, Layers, Monitor, Smartphone, Tablet } from "lucide-react";
 import { AdminModuleLayout } from "@/components/admin/AdminModuleLayout";
@@ -10,6 +9,10 @@ import {
   AdminModuleStats,
 } from "@/components/admin/AdminModuleCenter";
 import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+import {
+  spacePublicHref,
+  useSpacePublicOrigin,
+} from "@/components/admin/SpacePublicOrigin";
 import { Badge } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -48,6 +51,7 @@ const PREVIEW_HEIGHT: Record<PreviewDevice, string> = {
 };
 
 export function AdmissionCmsClient({ initialConfig, tenant }: AdmissionCmsClientProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const [config, setConfig] = useState(initialConfig);
   const [baseline, setBaseline] = useState(initialConfig);
   const [activeSection, setActiveSection] = useState<AdmissionSectionId>("hero");
@@ -68,6 +72,8 @@ export function AdmissionCmsClient({ initialConfig, tenant }: AdmissionCmsClient
     () => getAdmissionPreviewUrl(config, activeSection),
     [config, activeSection]
   );
+  const publicPreviewUrl = spacePublicHref(publicOrigin, previewUrl);
+  const publicAdmissionUrl = spacePublicHref(publicOrigin, "/admision");
 
   useEffect(() => {
     if (saveStatus !== "saved") return;
@@ -168,24 +174,24 @@ export function AdmissionCmsClient({ initialConfig, tenant }: AdmissionCmsClient
             )}
           </Button>
 
-          <Link
-            href={previewUrl}
+          <a
+            href={publicPreviewUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex h-8 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border bg-background px-3 text-xs font-medium text-foreground transition hover:bg-background-muted"
           >
             <ExternalLink className="h-4 w-4" aria-hidden />
             Ver sección
-          </Link>
+          </a>
 
-          <Link
-            href="/admision"
+          <a
+            href={publicAdmissionUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex h-8 items-center justify-center rounded-[var(--radius-md)] border border-border bg-background px-3 text-xs font-medium text-foreground transition hover:bg-background-muted"
           >
             Ver portal
-          </Link>
+          </a>
 
           <Button
             type="button"
@@ -368,9 +374,9 @@ export function AdmissionCmsClient({ initialConfig, tenant }: AdmissionCmsClient
 
               <p className="mt-3 text-xs text-muted">
                 El preview navega a{" "}
-                <Link href={previewUrl} className="font-medium text-primary underline" target="_blank">
-                  {previewUrl}
-                </Link>
+                <a href={publicPreviewUrl} className="font-medium text-primary underline" target="_blank" rel="noreferrer">
+                  {publicPreviewUrl}
+                </a>
               </p>
             </div>
           </aside>

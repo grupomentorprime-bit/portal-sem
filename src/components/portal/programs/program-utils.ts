@@ -143,6 +143,26 @@ export function formatProgramTitleLines(title: string): [string, string] | null 
   return null;
 }
 
+const UNRELATED_SUMMARY_TERMS = [
+  "filosóf",
+  "filosof",
+  "sacerdotal",
+  "vida consagrada",
+  "diaconal",
+];
+
+/** Oculta resúmenes genéricos que no corresponden al título del programa. */
+export function publicProgramSummary(title: string, description?: string): string | undefined {
+  const text = description?.trim();
+  if (!text) return undefined;
+  const titleLower = title.toLowerCase();
+  const unrelated = UNRELATED_SUMMARY_TERMS.some(
+    (term) => text.toLowerCase().includes(term) && !titleLower.includes(term)
+  );
+  if (unrelated) return undefined;
+  return text;
+}
+
 export function resolveModalityDisplay(modality?: string): string {
   const trimmed = modality?.trim();
   if (!trimmed) return "";

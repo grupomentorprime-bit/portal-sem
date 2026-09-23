@@ -220,11 +220,21 @@
 }
 
 .portal-footer-premium--v2 .footer-premium__brand-icon {
-  width: 2.625rem;
-  height: auto;
+  width: auto;
+  height: 4.5rem;
+  max-width: 4.5rem;
   flex-shrink: 0;
   object-fit: contain;
   background: transparent;
+}
+
+.portal-footer-premium--v2 .footer-premium__affiliation,
+.portal-footer-premium--v2 .footer-premium__contact-pending {
+  margin: 0.75rem 0 0;
+  max-width: 28rem;
+  color: color-mix(in srgb, var(--text-inverse) 72%, transparent);
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 .portal-footer-premium--v2 .footer-premium__institution-name {
@@ -408,8 +418,9 @@
 
 .portal-footer-premium--v2 .footer-premium__credits {
   margin: 0;
-  font-size: 0.6875rem;
-  color: color-mix(in srgb, var(--text-inverse) 34%, transparent);
+  font-size: 0.625rem;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--text-inverse) 22%, transparent);
 }
 
 .portal-footer-premium--v2 .footer-premium__admin-link {

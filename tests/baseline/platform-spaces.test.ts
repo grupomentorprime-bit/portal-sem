@@ -155,7 +155,8 @@ describe("OT-GROWTH-PLATFORM-ADMIN-002 — frontera y APIs", () => {
       assert.doesNotMatch(src, /\bTenant\b/);
       assert.doesNotMatch(src, /super_admin/);
     }
-    assert.match(catalog, /Dominio principal/);
+    assert.match(catalog, /Subdominio/);
+    assert.match(catalog, /Dominio propio/);
     assert.match(catalog, /Ver espacio/);
     assert.match(detail, /Dueño del Espacio/);
     assert.match(page, /Growth OS|PLATFORM_DISPLAY_NAME/);

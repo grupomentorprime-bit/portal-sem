@@ -22,6 +22,7 @@ import { migration021GrowthCampaigns } from "@/core/migrations/021-growth-campai
 import { migration022GrowthAnalytics } from "@/core/migrations/022-growth-analytics";
 import { migration023GrowthTeamMembershipUnique } from "@/core/migrations/023-growth-team-membership-unique";
 import { migration024GrowthStartupNextAction } from "@/core/migrations/024-growth-startup-next-action";
+import { migration025PlatformDefaultDomains } from "@/core/migrations/025-platform-default-domains";
 import type { MigrationDefinition } from "@/core/migrations/types";
 
 /** Registro ordenado de migraciones — añadir nuevas al final */
@@ -50,6 +51,7 @@ export const MIGRATIONS: MigrationDefinition[] = [
   migration022GrowthAnalytics,
   migration023GrowthTeamMembershipUnique,
   migration024GrowthStartupNextAction,
+  migration025PlatformDefaultDomains,
 ];
 
 export function getMigrationById(id: string): MigrationDefinition | undefined {

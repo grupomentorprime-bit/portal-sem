@@ -8,8 +8,12 @@ import {
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { StatusBadge, type StatusBadgeTone } from "@/components/admin/kit";
 import { PlatformEnterSpacePanel } from "@/components/platform/PlatformEnterSpacePanel";
+import { PlatformDeleteSpacePanel } from "@/components/platform/PlatformDeleteSpacePanel";
+import { PlatformSpaceActionsMenu } from "@/components/platform/PlatformSpaceActionsMenu";
+import { SpaceTypeFallbackMark } from "@/components/platform/SpaceTypeFallbackMark";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { PlatformSpaceDetail } from "@/lib/platform/spaces";
+import { labelDomainKind } from "@/lib/platform/space-labels";
 
 function Section({
   title,
@@ -49,6 +53,8 @@ function tenantStatusTone(
       return "error";
     case "inactive":
       return "inactive";
+    case "archived":
+      return "neutral";
     default:
       return "neutral";
   }
@@ -65,15 +71,12 @@ function SpaceMark({ space }: { space: PlatformSpaceDetail }) {
       />
     );
   }
-  const initial = space.name.trim().charAt(0).toUpperCase() || "E";
   return (
-    <span
-      className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[var(--gray-100)] to-[color-mix(in_srgb,var(--growth-os-secondary)_18%,white)] text-[20px] font-bold text-[var(--growth-os-primary)]"
-      aria-hidden
-    >
-      <span className="absolute -right-2 -top-3 h-10 w-10 rounded-full bg-[var(--growth-os-secondary)]/15" />
-      <span className="relative">{initial}</span>
-    </span>
+    <SpaceTypeFallbackMark
+      type={space.type}
+      typeLabel={space.typeLabel}
+      size="sm"
+    />
   );
 }
 
@@ -148,12 +151,17 @@ export function PlatformSpaceDetailView({
             </div>
           </div>
 
-          <div className="shrink-0 sm:pt-0.5">
+          <div className="flex shrink-0 items-start gap-2 sm:pt-0.5">
             <PlatformEnterSpacePanel
               tenantId={space.tenantId}
               spaceName={space.name}
               hasAccess={operatorHasAccess}
               compact
+            />
+            <PlatformSpaceActionsMenu
+              tenantId={space.tenantId}
+              spaceName={space.name}
+              status={space.status}
             />
           </div>
         </div>
@@ -175,8 +183,16 @@ export function PlatformSpaceDetailView({
               <Globe2 className="h-4 w-4" aria-hidden />
             </span>
             <div>
-              <p className="text-[11px] text-[var(--gray-500)]">Dominio</p>
-              <p className="break-all text-[13px] font-semibold text-[var(--gray-900)]">
+              <p className="text-[11px] text-[var(--gray-500)]">
+                {space.domains.find((domain) => domain.isPrimary)?.kind ===
+                "custom"
+                  ? "Dominio propio"
+                  : "Subdominio"}
+              </p>
+              <p
+                className="break-all text-[13px] font-semibold text-[var(--gray-900)]"
+                title={primaryDomain ?? undefined}
+              >
                 {primaryDomain ?? "—"}
               </p>
             </div>
@@ -202,6 +218,11 @@ export function PlatformSpaceDetailView({
           hasAccess={operatorHasAccess}
         />
       ) : null}
+
+      <PlatformDeleteSpacePanel
+        tenantId={space.tenantId}
+        spaceName={space.name}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Section title="Sitio y dominios">
@@ -238,6 +259,9 @@ export function PlatformSpaceDetailView({
                         principal
                       </span>
                     ) : null}
+                    <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[11px] font-medium text-[var(--gray-500)]">
+                      {labelDomainKind(domain.kind)}
+                    </span>
                   </li>
                 ))}
               </ul>

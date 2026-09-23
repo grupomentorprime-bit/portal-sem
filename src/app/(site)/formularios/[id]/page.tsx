@@ -10,7 +10,10 @@ import {
   publicFormUrl,
 } from "@/lib/admin/forms-center";
 import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experience";
+import { isSemTenant } from "@/core/tenant/is-sem";
+import { SEM_CONTACT_PUBLISHED } from "@/lib/portal/sem-identity-v7";
 import { getActivePortal } from "@/lib/portal/site";
+import type { ExperienceFormExperience } from "@/types/experience-form-experience";
 import {
   getDirectAccessibleExperienceForm,
   getExperienceFormById,
@@ -75,6 +78,27 @@ export async function generateMetadata({ params }: FormularioPageProps): Promise
   };
 }
 
+function withholdUnvalidatedFormContact(
+  experience: ExperienceFormExperience,
+  tenantId: string
+): ExperienceFormExperience {
+  if (!isSemTenant(tenantId) || SEM_CONTACT_PUBLISHED) return experience;
+  return {
+    ...experience,
+    footer: {
+      ...experience.footer,
+      contactEmail: "",
+      contactPhone: "",
+      whatsapp: "",
+    },
+    contact: {
+      ...experience.contact,
+      email: "",
+      phone: "",
+    },
+  };
+}
+
 function formUnavailabilityDescription(
   reason: NonNullable<ReturnType<typeof getExperienceFormUnavailabilityReason>>
 ): string {
@@ -102,7 +126,10 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
   if (!ctx) notFound();
 
   const storedForm = await getExperienceFormById(ctx.tenant, id);
-  const experience = await getFormExperience(ctx.tenant, id, storedForm?.name);
+  const experience = withholdUnvalidatedFormContact(
+    await getFormExperience(ctx.tenant, id, storedForm?.name),
+    ctx.tenant
+  );
   const landing = toFormLandingConfig(experience);
   const unavailability = getExperienceFormUnavailabilityReason(storedForm);
   const isPrivate = Boolean(storedForm && isExperienceFormPrivate(storedForm));

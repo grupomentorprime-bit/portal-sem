@@ -87,7 +87,7 @@ export const HOME_PROGRAMS: ProgramItem[] = [
       "Formación bíblica y pastoral exclusiva para pastores y pastoras.",
     duration: "3 años",
     icon: BookOpen,
-    href: "/programas/diploma-teologia-biblica-pastoral-g2023",
+    href: "/programas/diploma-en-teologia-biblica-pastoral-g-2023",
   },
   {
     id: "diploma-teologia-biblica-pastores-g2024",
@@ -96,7 +96,7 @@ export const HOME_PROGRAMS: ProgramItem[] = [
       "Formación bíblica integral para pastores y líderes comprometidos con el servicio cristiano.",
     duration: "4 años",
     icon: Users,
-    href: "/programas/diploma-teologia-biblica-pastores-g2024",
+    href: "/programas/diploma-en-teologia-biblica-g-2024",
   },
   {
     id: "diploma-teologia-biblica-hermanos-g2025",
@@ -105,7 +105,7 @@ export const HOME_PROGRAMS: ProgramItem[] = [
       "Formación bíblica de cuatro años orientada a hermanos(as) y líderes.",
     duration: "4 años",
     icon: GraduationCap,
-    href: "/programas/diploma-teologia-biblica-hermanos-g2025",
+    href: "/programas/diploma-en-teologia-biblica-g-2025",
   },
   {
     id: "diploma-teologia-biblica-hermanos-g2026",
@@ -114,7 +114,7 @@ export const HOME_PROGRAMS: ProgramItem[] = [
       "Programa académico de ingreso para hermanos(as) y líderes en modalidad online.",
     duration: "4 años",
     icon: Monitor,
-    href: "/programas/diploma-teologia-biblica-hermanos-g2026",
+    href: "/programas/diploma-en-teologia-biblica-hnos-y-lideres-g-2026",
   },
 ];
 

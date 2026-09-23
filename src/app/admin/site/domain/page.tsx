@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getDatabase } from "@/lib/mongodb";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
-import { findDomainsByTenantId } from "@/core/tenant";
+import { findDomainsByTenantId, publicOriginFromHost } from "@/core/tenant";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 
@@ -46,7 +46,7 @@ export default async function SiteDomainPage() {
           {primary?.host ? (
             <p className="mt-2">
               <a
-                href={`https://${primary.host}`}
+                href={publicOriginFromHost(primary.host) ?? `https://${primary.host}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-sm text-secondary underline"

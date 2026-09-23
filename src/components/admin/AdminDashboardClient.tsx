@@ -23,6 +23,10 @@ import {
   Timeline,
   type QuickActionItem,
 } from "@/components/admin/kit";
+import {
+  spacePublicHref,
+  useSpacePublicOrigin,
+} from "@/components/admin/SpacePublicOrigin";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { formatAuditMessage, formatRelativeTime } from "@/lib/admin/audit-labels";
 import type { AuditTimelineEntry } from "@/components/admin/AuditTimeline";
@@ -60,6 +64,7 @@ export function AdminDashboardClient({
   auditPreview,
   compatMode = false,
 }: AdminDashboardClientProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const portalActive = portalStatus === "active" || portalStatus === "published";
   const cmsSecure = !compatMode;
   const firstName = displayName.split(" ")[0];
@@ -159,7 +164,7 @@ export function AdminDashboardClient({
       title="Inicio"
       description={`Panel operativo · ${institutionName}`}
       actions={
-        <Button variant="outline" size="sm" href="/">
+        <Button variant="outline" size="sm" href={spacePublicHref(publicOrigin, "/")}>
           <ExternalLink className="mr-2 h-4 w-4" />
           Ver portal público
         </Button>

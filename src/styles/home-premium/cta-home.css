@@ -4,16 +4,16 @@
  */
 
 .portal-home-experience [data-block="cta_premium"] {
-  padding-block: clamp(7rem, 12vw, 11rem);
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 100%, color-mix(in srgb, var(--text-inverse) 6%, transparent), transparent 55%),
-    radial-gradient(ellipse 60% 50% at 90% 0%, color-mix(in srgb, var(--sem-accent) 18%, transparent), transparent 50%),
+  padding-block: clamp(4.25rem, 7vw, 6.5rem);
+  background-color: var(--sem-primary);
+  background-image:
     linear-gradient(
       145deg,
-      var(--sem-primary) 0%,
-      color-mix(in srgb, var(--sem-primary) 78%, var(--sem-secondary)) 45%,
-      color-mix(in srgb, var(--sem-primary) 70%, var(--sem-secondary)) 100%
-    );
+      color-mix(in srgb, var(--sem-primary) 92%, black) 0%,
+      color-mix(in srgb, var(--sem-primary) 78%, var(--sem-secondary)) 100%
+    ),
+    url("/editorial/textures/fine-grain.svg");
+  background-size: cover, 240px;
   color: var(--text-inverse);
 }
 
@@ -37,11 +37,11 @@
 }
 
 .portal-home-experience [data-block="cta_premium"] .portal-cta-premium__inner {
-  padding: clamp(3rem, 7vw, 5rem) clamp(2rem, 5vw, 4rem);
+  padding: clamp(1.75rem, 3.5vw, 2.75rem) clamp(1.5rem, 4vw, 3rem);
 }
 
 .portal-home-experience [data-block="cta_premium"] .portal-cta-premium__title {
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-size: clamp(1.85rem, 3.6vw, 2.75rem);
   line-height: 1.08;
   letter-spacing: -0.03em;
   color: var(--text-inverse);

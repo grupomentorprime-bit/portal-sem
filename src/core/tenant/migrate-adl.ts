@@ -19,7 +19,10 @@ import type { SiteConfigDocument } from "@/core/tenant/types";
 import { normalizeSiteConfig } from "@/lib/cms/normalize";
 import { SITE_CONFIG_ID } from "@/types/cms";
 import {
+  buildDefaultSpaceHost,
   buildPlatformSubdomainHost,
+  classifySpaceDomainKind,
+  isBarePlatformOriginHost,
   normalizeHost,
   resolveAppHostsFromEnv,
 } from "@/core/tenant/hosts";
@@ -55,17 +58,19 @@ export async function resolveAdlDevHosts(
   const platform = buildPlatformSubdomainHost(ADL_TENANT_ID, { env });
   const candidates = uniqueHosts([
     explicit || ADL_DEV_HOST_DEFAULT,
+    buildDefaultSpaceHost(ADL_TENANT_ID, { env }),
     platform,
     ADL_DEV_HOST_DEFAULT,
   ]);
 
   const hosts: TenantProvisionHost[] = [];
   for (const host of candidates) {
+    if (isBarePlatformOriginHost(host)) continue;
     if (platformAppHosts.has(host)) continue;
     const taken = await findDomainByHost(db, host);
     if (taken && taken.tenantId !== ADL_TENANT_ID) continue;
     const kind =
-      platform && host === platform ? "platform_subdomain" : "custom";
+      classifySpaceDomainKind(ADL_TENANT_ID, host, { env });
     hosts.push({
       host,
       kind,

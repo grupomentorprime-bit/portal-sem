@@ -1,5 +1,7 @@
+import { PlatformPublicLanding } from "@/components/platform/PlatformPublicLanding";
 import { PortalHome } from "@/components/portal/PortalHome";
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { loadHomePage } from "@/core/portal";
 import { getPortalContext } from "@/lib/portal/site";
 import type { Metadata } from "next";
@@ -9,13 +11,7 @@ export default async function HomePage() {
   const ctx = await getPortalContext();
 
   if (!ctx) {
-    return (
-      <PortalSection padding="lg">
-        <PortalContainer size="sm" className="text-center">
-          <p className="text-body text-muted">Configuración institucional no disponible.</p>
-        </PortalContainer>
-      </PortalSection>
-    );
+    return <PlatformPublicLanding />;
   }
 
   const { institution } = ctx.config;
@@ -49,7 +45,13 @@ export default async function HomePage() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const ctx = await getPortalContext();
-  if (!ctx) return { title: "Portal Institucional" };
+  if (!ctx) {
+    return {
+      title: PLATFORM_DISPLAY_NAME,
+      description:
+        "Growth OS es la plataforma donde cada organización opera su sitio, sus personas y su comunicación, en su propia dirección.",
+    };
+  }
 
   const page = await loadHomePage(ctx.tenant);
   const renderCtx = buildRenderContext({ tenantId: ctx.tenant, config: ctx.config });

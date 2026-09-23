@@ -25,7 +25,11 @@ import {
   setPrimaryDomain,
 } from "../../src/core/tenant/domains";
 import {
+  buildDefaultSpaceHost,
   buildPlatformSubdomainHost,
+  classifySpaceDomainKind,
+  isBarePlatformOriginHost,
+  isPlatformSubdomainHost,
   normalizeHost,
   resolvePlatformBaseDomain,
 } from "../../src/core/tenant/hosts";
@@ -194,6 +198,32 @@ describe("OT-GROWTH-SAAS-008 — helpers de plataforma", () => {
         env: {},
       }),
       null
+    );
+    assert.equal(
+      buildDefaultSpaceHost("fundacion-mueve", {
+        env: { APP_URL: "http://localhost:3000" },
+      }),
+      "fundacion-mueve.localhost:3000"
+    );
+    assert.equal(
+      buildDefaultSpaceHost("acme", {
+        env: { PLATFORM_BASE_DOMAIN: "portales.example.com" },
+      }),
+      "acme.portales.example.com"
+    );
+    assert.equal(isBarePlatformOriginHost("localhost:3000"), true);
+    assert.equal(isBarePlatformOriginHost("adl.localhost:3000"), false);
+    assert.equal(
+      isPlatformSubdomainHost("adl", "adl.localhost:3000", { env: {} }),
+      true
+    );
+    assert.equal(
+      classifySpaceDomainKind("adl", "adl.localhost:3000", { env: {} }),
+      "platform_subdomain"
+    );
+    assert.equal(
+      classifySpaceDomainKind("adl", "academia-adl.cl", { env: {} }),
+      "custom"
     );
   });
 });

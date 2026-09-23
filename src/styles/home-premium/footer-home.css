@@ -23,3 +23,414 @@ body:has(.portal-home-experience) .portal-footer-premium--v2 .footer-premium__ta
     gap: clamp(1.5rem, 2.5vw, 2.25rem);
   }
 }
+/**
+ * Pasada visual Home SEM. Ritmo compacto, sin datos sin validar.
+ */
+
+.portal-home-experience [data-block="modality"].portal-home-x__section {
+  padding-block: clamp(2.5rem, 5vw, 4rem);
+}
+
+.portal-home-experience [data-block="feature_grid"].portal-home-x__section {
+  padding-block: clamp(2rem, 4vw, 3.25rem);
+}
+
+.portal-home-experience [data-block="presentation"].portal-home-x__section {
+  padding-block: 0;
+  background: var(--sem-primary);
+  color: var(--text-inverse);
+}
+
+.portal-home-experience [data-block="admission_process"].portal-home-x__section {
+  padding-block: clamp(2.25rem, 4vw, 3.25rem);
+}
+
+/* â”€â”€ CÃ³mo se estudia: semana â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.methodology-week {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+.methodology-week__eyebrow,
+.sem-formation__eyebrow,
+.sem-affiliation__kicker,
+.sem-admission-dates__kicker {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sem-secondary);
+}
+
+.methodology-week__title {
+  margin: 0.5rem 0 0;
+  max-width: 18ch;
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--sem-primary);
+}
+
+.methodology-week__board {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .methodology-week__board {
+    grid-template-columns: minmax(9rem, 0.7fr) minmax(0, 2.4fr);
+    align-items: stretch;
+  }
+}
+
+.methodology-week__monday,
+.methodology-week__rest {
+  border-radius: 1rem;
+}
+
+.methodology-week__monday {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  min-height: 7.5rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--sem-primary);
+  color: var(--text-inverse);
+}
+
+.methodology-week__day-name {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sem-accent);
+}
+
+.methodology-week__monday-label {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.methodology-week__rest {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 1.1rem;
+  background: color-mix(in srgb, var(--sem-primary) 6%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--sem-primary) 12%, transparent);
+}
+
+.methodology-week__days {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.methodology-week__day {
+  display: grid;
+  place-items: center;
+  min-height: 2.5rem;
+  border-radius: 0.65rem;
+  background: var(--color-surface);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sem-primary);
+}
+
+.methodology-week__rest-label {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--sem-primary);
+}
+
+.methodology-week__link,
+.sem-formation__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: fit-content;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sem-primary);
+  text-decoration: none;
+}
+
+.methodology-week__link:hover,
+.sem-formation__link:hover {
+  color: var(--sem-secondary);
+}
+
+/* â”€â”€ Malla + experiencia â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.sem-formation {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.sem-formation__title {
+  margin: 0.45rem 0 0;
+  max-width: 22ch;
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--sem-primary);
+}
+
+.sem-formation__areas {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .sem-formation__areas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.sem-formation__area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-height: 100%;
+  padding: 1.1rem 1.15rem 1.2rem;
+  border-radius: 1rem;
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--sem-primary) 10%, transparent);
+}
+
+.sem-formation__area-icon {
+  display: inline-flex;
+  color: var(--sem-accent);
+}
+
+.sem-formation__area-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--sem-primary);
+}
+
+.sem-formation__area-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--sem-primary) 72%, var(--foreground));
+}
+
+.sem-formation__link {
+  margin-top: 1rem;
+}
+
+.sem-formation__week {
+  padding: clamp(1.15rem, 2vw, 1.5rem) clamp(1.15rem, 2vw, 1.6rem);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--sem-primary) 5%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--sem-primary) 10%, transparent);
+}
+
+.sem-formation__week-title {
+  margin: 0.4rem 0 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--sem-primary);
+}
+
+.sem-formation__rhythm {
+  display: grid;
+  gap: 0.85rem 1.5rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .sem-formation__rhythm {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.sem-formation__rhythm h3 {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sem-accent);
+}
+
+.sem-formation__rhythm p {
+  margin: 0.3rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--sem-primary);
+}
+
+/* â”€â”€ Banda IPN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.sem-affiliation__inner {
+  width: min(1120px, calc(100% - 2rem));
+  margin-inline: auto;
+  padding-block: clamp(1.6rem, 3vw, 2.35rem);
+}
+
+.sem-affiliation__kicker {
+  color: color-mix(in srgb, var(--text-inverse) 72%, transparent);
+}
+
+.sem-affiliation__title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--text-inverse);
+}
+
+.sem-affiliation__mark {
+  color: var(--color-warning);
+}
+
+.sem-affiliation__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  font-weight: 600;
+  color: color-mix(in srgb, var(--text-inverse) 88%, transparent);
+}
+
+.sem-affiliation__text {
+  margin: 0.75rem 0 0;
+  max-width: 42rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text-inverse) 88%, transparent);
+}
+
+/* â”€â”€ AdmisiÃ³n: fechas 2027 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.sem-admission-dates {
+  margin-bottom: 1.25rem;
+}
+
+.sem-admission-dates__kicker {
+  text-align: center;
+}
+
+.sem-admission-dates__layout {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+@media (min-width: 900px) {
+  .sem-admission-dates__layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+}
+
+.sem-admission-dates__lead,
+.sem-admission-dates__support li {
+  border-radius: 1rem;
+}
+
+.sem-admission-dates__lead {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 1.15rem 1.25rem;
+  background: var(--sem-primary);
+  color: var(--text-inverse);
+}
+
+.sem-admission-dates__lead span,
+.sem-admission-dates__support span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sem-admission-dates__lead span {
+  color: var(--sem-accent);
+}
+
+.sem-admission-dates__lead strong {
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.sem-admission-dates__support {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sem-admission-dates__support li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--sem-primary) 10%, transparent);
+}
+
+.sem-admission-dates__support span {
+  color: color-mix(in srgb, var(--sem-primary) 68%, var(--foreground));
+}
+
+.sem-admission-dates__support strong {
+  font-size: 1.05rem;
+  color: var(--sem-primary);
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__item {
+  padding: 0.9rem 0.85rem;
+}
+
+.portal-home-experience [data-block="admission_process"] .portal-timeline__description {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.portal-home-experience [data-block="admission_process"] .admission-process__footer {
+  margin-top: 1.25rem;
+}
+
+.portal-home-experience [data-block="cta_premium"] .portal-cta-premium__shell {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+

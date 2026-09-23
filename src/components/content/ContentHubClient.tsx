@@ -18,6 +18,10 @@ import {
 } from "@/lib/admin/institutional";
 import { isAdminSectionEnabled } from "@/lib/portal/feature-flags";
 import type { FeatureFlags } from "@/types/cms";
+import {
+  spacePublicHref,
+  useSpacePublicOrigin,
+} from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -56,6 +60,7 @@ function EditorialCard({
 }
 
 export function ContentHubClient({ tenant, features, initialCounts }: ContentHubClientProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const [counts, setCounts] = useState(initialCounts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,12 +141,12 @@ export function ContentHubClient({ tenant, features, initialCounts }: ContentHub
       description="Gestiona programas, noticias, personas y recursos del Espacio"
       actions={
         <>
-          <Link href="/" target="_blank">
+          <a href={spacePublicHref(publicOrigin, "/")} target="_blank" rel="noopener noreferrer">
             <Button type="button" variant="outline">
               Ver portal público
               <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
-          </Link>
+          </a>
           <Link href="/admin/media">
             <Button type="button" variant="outline">
               Biblioteca de medios

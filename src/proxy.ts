@@ -42,8 +42,11 @@ export function proxy(request: NextRequest) {
   const host = resolveRequestHost(request.headers);
 
   if (isPlatformOriginHost(host) && !isPlatformProductPath(pathname)) {
+    if (pathname === "/") {
+      return continueWithPathname(request);
+    }
     return withPrivateCacheControl(
-      NextResponse.redirect(publicRedirectUrl(request, "/admin")),
+      NextResponse.redirect(publicRedirectUrl(request, "/")),
       pathname
     );
   }

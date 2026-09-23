@@ -3,24 +3,23 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowRight,
-  Building2,
-  Globe2,
-  Plus,
-  Search,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Plus, Search } from "lucide-react";
 import {
   EmptyState,
   StatusBadge,
   type StatusBadgeTone,
 } from "@/components/admin/kit";
 import { PlatformCreateSpacePanel } from "@/components/platform/PlatformCreateSpacePanel";
+import { PlatformSpaceActionsMenu } from "@/components/platform/PlatformSpaceActionsMenu";
+import { SpaceTypeFallbackMark } from "@/components/platform/SpaceTypeFallbackMark";
 import { subscribePlatformSpacesSearch } from "@/components/platform/PlatformShell";
 import { Button } from "@/components/ui";
+import { spaceTypeVisual } from "@/lib/platform/space-type-visual";
 import type { PlatformSpaceListItem } from "@/lib/platform/spaces";
 import { cn } from "@/lib/utils";
+
+const SPACE_ROW_GRID =
+  "lg:grid lg:grid-cols-[minmax(14rem,1.45fr)_minmax(7rem,0.85fr)_minmax(10rem,1.15fr)_4rem_6.75rem_auto] lg:items-center lg:gap-x-4";
 
 function statusTone(status: PlatformSpaceListItem["status"]): StatusBadgeTone {
   switch (status) {
@@ -30,12 +29,14 @@ function statusTone(status: PlatformSpaceListItem["status"]): StatusBadgeTone {
       return "error";
     case "inactive":
       return "inactive";
+    case "archived":
+      return "neutral";
     default:
       return "neutral";
   }
 }
 
-/** Thumb de fila: logo/cover reales o fallback. */
+/** Thumb de fila: logo/cover reales o ícono del tipo de organización. */
 function SpaceThumb({ space }: { space: PlatformSpaceListItem }) {
   if (space.coverUrl) {
     return (
@@ -43,14 +44,14 @@ function SpaceThumb({ space }: { space: PlatformSpaceListItem }) {
       <img
         src={space.coverUrl}
         alt=""
-        className="h-[88px] w-[100px] shrink-0 rounded-[14px] object-cover"
+        className="h-9 w-9 shrink-0 rounded-[10px] object-cover"
       />
     );
   }
 
   if (space.logoUrl) {
     return (
-      <span className="flex h-[88px] w-[100px] shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-background-default)] p-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-background-default)] p-1">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={space.logoUrl}
@@ -61,18 +62,12 @@ function SpaceThumb({ space }: { space: PlatformSpaceListItem }) {
     );
   }
 
-  const initial = space.name.trim().charAt(0).toUpperCase() || "E";
   return (
-    <span
-      className="relative flex h-[88px] w-[100px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-[var(--gray-100)] via-white to-[color-mix(in_srgb,var(--growth-os-secondary)_16%,white)]"
-      aria-hidden
-    >
-      <span className="absolute -right-4 -top-5 h-16 w-16 rounded-full bg-[var(--growth-os-secondary)]/18" />
-      <span className="absolute -bottom-5 left-2 h-14 w-14 rounded-[14px] bg-[var(--growth-os-primary)]/10" />
-      <span className="relative flex h-12 w-12 items-center justify-center rounded-[12px] bg-white text-[18px] font-bold tracking-tight text-[var(--growth-os-primary)] shadow-[0_6px_14px_-10px_rgba(14,79,144,0.45)]">
-        {initial}
-      </span>
-    </span>
+    <SpaceTypeFallbackMark
+      type={space.type}
+      typeLabel={space.typeLabel}
+      size="row"
+    />
   );
 }
 
@@ -131,21 +126,23 @@ export function PlatformSpacesCatalog({
       {({ open: openCreate, summary }) => (
         <section
           id="espacios"
-          className="scroll-mt-24 overflow-hidden rounded-[16px] border border-[var(--color-border-default)] bg-white shadow-[0_12px_28px_-24px_rgba(14,79,144,0.35)]"
+          className="scroll-mt-20 overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-white shadow-[0_10px_28px_-24px_rgba(14,79,144,0.45)]"
         >
-          <div className="flex flex-col gap-2.5 px-4 pb-3.5 pt-4 sm:px-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-col gap-3 border-b border-[var(--color-border-default)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="min-w-0">
-              <h2 className="text-[1.3rem] font-bold tracking-[-0.03em] text-[var(--gray-900)] sm:text-[1.4rem]">
+              <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-[var(--gray-900)]">
                 Espacios
               </h2>
-              <p className="mt-0.5 text-[13px] text-[var(--gray-500)]">
-                Organizaciones que usan Growth OS.
+              <p className="text-[12px] text-[var(--gray-500)]">
+                {query.trim() || typeFilter !== "all"
+                  ? `${filtered.length} de ${spaces.length}`
+                  : `${spaces.length} organizaciones`}
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <label className="relative block min-w-[12rem] flex-1 sm:w-52">
+              <label className="relative block min-w-[12rem] flex-1 sm:w-48">
                 <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--gray-500)]"
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--gray-500)]"
                   aria-hidden
                 />
                 <input
@@ -153,7 +150,7 @@ export function PlatformSpacesCatalog({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Buscar espacios…"
-                  className="h-9 w-full rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-background-default)] pl-9 pr-3 text-[13px] text-[var(--gray-900)] outline-none transition focus:border-[var(--growth-os-secondary)] focus:bg-white focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--growth-os-secondary)_16%,transparent)]"
+                  className="h-9 w-full rounded-lg border border-[var(--color-border-default)] bg-white pl-8 pr-3 text-[13px] text-[var(--gray-900)] outline-none transition focus:border-[var(--growth-os-secondary)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--growth-os-secondary)_16%,transparent)]"
                 />
               </label>
               {typeOptions.length > 1 ? (
@@ -166,7 +163,7 @@ export function PlatformSpacesCatalog({
                   id="platform-space-type-filter"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="h-9 rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-background-default)] px-2.5 text-[13px] text-[var(--gray-900)] outline-none transition focus:border-[var(--growth-os-secondary)] focus:bg-white"
+                  className="h-9 rounded-lg border border-[var(--color-border-default)] bg-white px-2.5 text-[13px] text-[var(--gray-900)] outline-none transition focus:border-[var(--growth-os-secondary)]"
                 >
                   <option value="all">Todos los tipos</option>
                   {typeOptions.map((label) => (
@@ -179,7 +176,7 @@ export function PlatformSpacesCatalog({
               <Button
                 type="button"
                 onClick={openCreate}
-                className="h-9 shrink-0 rounded-[10px] bg-[var(--growth-os-primary)] px-3.5 text-[13px] hover:opacity-95"
+                className="h-9 shrink-0 rounded-lg bg-[var(--growth-os-primary)] px-3.5 text-[13px] hover:opacity-95"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden />
                 Crear Espacio
@@ -208,118 +205,159 @@ export function PlatformSpacesCatalog({
               />
             </div>
           ) : (
-            <div className="divide-y divide-[var(--color-border-default)] border-t border-[var(--color-border-default)]">
-              {filtered.map((space) => (
-                <div
-                  key={space.tenantId}
-                  className="flex min-h-[108px] flex-col gap-3 px-4 py-3 sm:px-5 lg:min-h-[110px] lg:flex-row lg:items-center lg:gap-4"
-                >
-                  <SpaceThumb space={space} />
-
-                  <div className="min-w-0 flex-[1.05]">
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                      <h3 className="text-[15px] font-bold tracking-[-0.02em] text-[var(--gray-900)] sm:text-[16px]">
-                        {space.name}
-                      </h3>
-                      <span className="text-[12px] font-medium text-[var(--gray-500)]">
-                        {space.typeLabel}
-                      </span>
-                    </div>
-                    {space.tagline ? (
-                      <p className="mt-1 line-clamp-1 max-w-xl text-[13px] leading-snug text-[var(--gray-700)]">
-                        {space.tagline}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <dl className="grid min-w-0 flex-[1.25] gap-2.5 sm:grid-cols-3 sm:gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[var(--gray-100)] text-[var(--growth-os-primary)]">
-                        <Building2 className="h-3.5 w-3.5" aria-hidden />
-                      </span>
-                      <div className="min-w-0">
-                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-[var(--gray-500)]">
-                          Sitio
-                        </dt>
-                        <dd className="truncate text-[13px] font-medium text-[var(--gray-900)]">
-                          {space.primarySite?.name ?? "—"}
-                        </dd>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[var(--gray-100)] text-[var(--growth-os-primary)]">
-                        <Globe2 className="h-3.5 w-3.5" aria-hidden />
-                      </span>
-                      <div className="min-w-0">
-                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-[var(--gray-500)]">
-                          Dominio principal
-                        </dt>
-                        <dd className="truncate text-[13px] font-medium text-[var(--gray-900)]">
-                          {space.primaryDomain ?? "—"}
-                        </dd>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[var(--gray-100)] text-[var(--growth-os-primary)]">
-                        <Users className="h-3.5 w-3.5" aria-hidden />
-                      </span>
-                      <div className="min-w-0">
-                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-[var(--gray-500)]">
-                          Miembros
-                        </dt>
-                        <dd className="text-[13px] font-medium tabular-nums text-[var(--gray-900)]">
-                          {space.memberCount}
-                        </dd>
-                      </div>
-                    </div>
-                  </dl>
-
-                  <div className="flex shrink-0 items-center gap-2 lg:pl-1">
-                    <StatusBadge
-                      tone={statusTone(space.status)}
-                      label={space.statusLabel}
-                    />
-                    <Link
-                      href={`/platform/spaces/${encodeURIComponent(space.tenantId)}`}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[var(--color-border-default)] bg-white px-3 text-[13px] font-semibold text-[var(--growth-os-primary)] transition hover:border-[color-mix(in_srgb,var(--growth-os-secondary)_45%,var(--border))] hover:bg-[var(--gray-100)]"
+            <div>
+              <div
+                className={cn(
+                  "hidden border-b border-[var(--color-border-default)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--gray-400)] sm:px-5 lg:grid",
+                  SPACE_ROW_GRID
+                )}
+              >
+                <span>Organización</span>
+                <span>Sitio</span>
+                <span>Subdominio</span>
+                <span>Miembros</span>
+                <span>Estado</span>
+                <span>Acciones</span>
+              </div>
+              <div className="divide-y divide-[var(--color-border-default)]">
+                {filtered.map((space) => {
+                  const typeVisual = spaceTypeVisual(space.type);
+                  return (
+                    <div
+                      key={space.tenantId}
+                      className={cn(
+                        "flex flex-col gap-2.5 px-4 py-3 transition hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_3%,white)] sm:px-5 lg:py-2.5",
+                        SPACE_ROW_GRID
+                      )}
                     >
-                      Ver espacio
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <SpaceThumb space={space} />
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <h3 className="truncate text-[14px] font-semibold tracking-[-0.02em] text-[var(--gray-900)]">
+                              {space.name}
+                            </h3>
+                            <span
+                              className={cn(
+                                "hidden shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] sm:inline",
+                                typeVisual.badgeBg,
+                                typeVisual.iconFg
+                              )}
+                            >
+                              {space.typeLabel}
+                            </span>
+                          </div>
+                          {space.tagline ? (
+                            <p className="mt-0.5 truncate text-[12px] text-[var(--gray-500)]">
+                              {space.tagline}
+                            </p>
+                          ) : (
+                            <p className="mt-0.5 truncate text-[12px] text-[var(--gray-500)] sm:hidden">
+                              {space.typeLabel}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <dl className="grid min-w-0 grid-cols-3 gap-3 lg:contents">
+                        <div className="min-w-0">
+                          <dt className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--gray-400)] lg:sr-only">
+                            Sitio
+                          </dt>
+                          <dd className="truncate text-[13px] text-[var(--gray-800)]">
+                            {space.primarySite?.name ?? "—"}
+                          </dd>
+                        </div>
+                        <div className="min-w-0">
+                          <dt
+                            className={cn(
+                              "text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--gray-400)]",
+                              space.primaryDomainKind === "custom"
+                                ? ""
+                                : "lg:sr-only"
+                            )}
+                          >
+                            {space.primaryDomainKind === "custom"
+                              ? "Dominio propio"
+                              : "Subdominio"}
+                          </dt>
+                          <dd
+                            className="truncate text-[13px] text-[var(--gray-700)]"
+                            title={space.primaryDomain ?? undefined}
+                          >
+                            {space.primaryDomain ?? "—"}
+                          </dd>
+                        </div>
+                        <div className="min-w-0">
+                          <dt className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--gray-400)] lg:sr-only">
+                            Miembros
+                          </dt>
+                          <dd className="text-[13px] font-medium tabular-nums text-[var(--gray-800)]">
+                            {space.memberCount}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--gray-400)] lg:sr-only">
+                          Estado
+                        </p>
+                        <StatusBadge
+                          tone={statusTone(space.status)}
+                          className="gap-1.5 px-2 py-0.5 text-[11px]"
+                        >
+                          <span
+                            className="h-1.5 w-1.5 rounded-full bg-current"
+                            aria-hidden
+                          />
+                          {space.statusLabel}
+                        </StatusBadge>
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <p className="sr-only">Acciones</p>
+                        <Link
+                          href={`/platform/spaces/${encodeURIComponent(space.tenantId)}`}
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--color-border-default)] bg-white px-2.5 text-[12px] font-semibold text-[var(--growth-os-primary)] transition hover:border-[color-mix(in_srgb,var(--growth-os-secondary)_45%,var(--border))] hover:bg-[var(--gray-100)]"
+                        >
+                          Ver espacio
+                          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                        </Link>
+                        <PlatformSpaceActionsMenu
+                          tenantId={space.tenantId}
+                          spaceName={space.name}
+                          status={space.status}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          <div className="border-t border-[var(--color-border-default)] px-4 py-3 sm:px-5">
-            <div
-              className={cn(
-                "flex flex-col items-start justify-between gap-2.5 rounded-[12px] border border-dashed border-[color-mix(in_srgb,var(--growth-os-secondary)_45%,var(--color-border-default))] bg-[color-mix(in_srgb,var(--growth-os-secondary)_8%,white)] px-3.5 py-3 sm:flex-row sm:items-center sm:px-4"
-              )}
+          <div className="border-t border-[var(--color-border-default)]">
+            <button
+              type="button"
+              onClick={openCreate}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_3.5%,white)]"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--growth-os-secondary)_18%,white)] text-[var(--growth-os-primary)]">
-                  <Plus className="h-3.5 w-3.5" aria-hidden />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-dashed border-[color-mix(in_srgb,var(--growth-os-secondary)_55%,var(--color-border-default))] text-[var(--growth-os-primary)]">
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[13px] font-medium text-[var(--gray-900)]">
+                  Agregar organización
                 </span>
-                <div>
-                  <p className="text-[13px] font-semibold text-[var(--gray-900)] sm:text-[14px]">
-                    ¿Quieres agregar una nueva organización?
-                  </p>
-                  <p className="mt-0.5 max-w-xl text-[12px] text-[var(--gray-500)] sm:text-[13px]">
-                    Crea un nuevo Espacio y actívalo en pocos pasos.
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                onClick={openCreate}
-                className="h-8 shrink-0 rounded-[9px] bg-[var(--growth-os-primary)] px-3 text-[12px] hover:opacity-95"
-              >
-                Crear Espacio
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-              </Button>
-            </div>
+                <span className="block truncate text-[12px] text-[var(--gray-500)]">
+                  Crea un Espacio y actívalo en pocos pasos.
+                </span>
+              </span>
+              <ArrowRight
+                className="ml-auto h-3.5 w-3.5 shrink-0 text-[var(--gray-400)]"
+                aria-hidden
+              />
+            </button>
           </div>
         </section>
       )}

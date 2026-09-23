@@ -14,7 +14,12 @@ import {
 } from "@/core/tenant/constants";
 import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import { applySemSiteIdentity, SEM_SITE_IDENTITY } from "@/core/tenant/sem-site-identity";
-import { resolveSemBootstrapHostsFromEnv } from "@/core/tenant/hosts";
+import { homologateSitePlatformDomain } from "@/core/tenant/homologate-domains";
+import {
+  classifySpaceDomainKind,
+  isBarePlatformOriginHost,
+  resolveSemBootstrapHostsFromEnv,
+} from "@/core/tenant/hosts";
 import type {
   DomainDocument,
   SiteConfigDocument,
@@ -87,7 +92,7 @@ export function buildSemTenantDocument(
     code: SEM_TENANT_CODE,
     name,
     slug: SEM_TENANT_ID,
-    status: mapPortalStatusToTenant(config?.institution.status),
+    status: existing?.status ?? mapPortalStatusToTenant(config?.institution.status),
     type: existing?.type ?? "institution",
     defaultSiteId: SEM_SITE_ID,
     organization: organization || undefined,
@@ -203,9 +208,10 @@ export async function ensureSemTenantFoundation(
   }
 ): Promise<SemFoundationResult> {
   const at = nowIso();
-  const hosts = options?.hosts?.length
+  const requested = options?.hosts?.length
     ? options.hosts.map((h) => h.trim().toLowerCase()).filter(Boolean)
     : resolveSemBootstrapHostsFromEnv(options?.env ?? process.env);
+  const hosts = requested.filter((host) => !isBarePlatformOriginHost(host));
 
   await ensureIndexes(db);
 
@@ -248,12 +254,24 @@ export async function ensureSemTenantFoundation(
       ? Boolean(existingDomain.isPrimary)
       : !existingPrimary && i === 0;
     const domainDoc = buildDomainDocument(host, isPrimary, existingDomain, at);
+    if (classifySpaceDomainKind(SEM_SITE_ID, host, { env: options?.env }) === "platform_subdomain") {
+      domainDoc.kind = "platform_subdomain";
+    }
     const write = await domainCol.replaceOne({ _id: host }, domainDoc, {
       upsert: true,
     });
     if (write.upsertedCount > 0) domainsCreated += 1;
     else if (write.modifiedCount > 0) domainsUpdated += 1;
   }
+
+  const homologated = await homologateSitePlatformDomain(
+    db,
+    { siteId: SEM_SITE_ID, tenantId: SEM_TENANT_ID, slug: SEM_SITE_ID },
+    options?.env ?? process.env
+  );
+  if (homologated.created) domainsCreated += 1;
+  domainsUpdated += homologated.relabeled.length + homologated.removed.length;
+
 
   let siteConfigCreated = false;
   let siteConfigUpdated = false;

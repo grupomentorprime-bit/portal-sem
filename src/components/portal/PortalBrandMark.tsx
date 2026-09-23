@@ -4,10 +4,11 @@ import Image from "next/image";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-function splitInstitutionName(name: string): [string, string] {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length <= 2) return [name, ""];
-  return [parts.slice(0, -1).join(" "), parts.at(-1) ?? ""];
+function institutionLines(name: string): string[] {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 3) return parts;
+  if (parts.length <= 2) return parts.length ? [name.trim()] : [];
+  return [parts.slice(0, -1).join(" "), parts.at(-1) ?? ""].filter(Boolean);
 }
 
 interface PortalBrandMarkProps {
@@ -72,9 +73,10 @@ export function PortalBrandMark({
     );
   }
 
-  const [institutionLine1, institutionLine2] = splitInstitutionName(institutionName);
+  const lines = institutionLines(institutionName);
   const shortLabel = institutionShortName.trim();
   const isCompact = layout === "default";
+  const isSvg = primarySrc.toLowerCase().endsWith(".svg");
 
   return (
     <div
@@ -85,25 +87,36 @@ export function PortalBrandMark({
       )}
     >
       {showPrimaryImage ? (
-        <Image
-          src={primarySrc}
-          alt={institutionName || "Logo institucional"}
-          width={48}
-          height={54}
-          className="portal-brand-mark__premium-logo shrink-0 object-contain"
-          onError={() => setPrimaryError(true)}
-          priority
-        />
+        isSvg ? (
+          <img
+            src={primarySrc}
+            alt=""
+            className="portal-brand-mark__premium-logo shrink-0 object-contain"
+          />
+        ) : (
+          <Image
+            src={primarySrc}
+            alt={institutionName || "Logo institucional"}
+            width={48}
+            height={54}
+            className="portal-brand-mark__premium-logo shrink-0 object-contain"
+            onError={() => setPrimaryError(true)}
+            priority
+          />
+        )
       ) : null}
       {shortLabel ? (
         <span className="portal-brand-mark__premium-sem">{shortLabel}</span>
       ) : null}
-      {institutionName ? (
+      {lines.length ? (
         <>
           <span className="portal-brand-mark__premium-divider" aria-hidden />
           <span className="portal-brand-mark__premium-institution">
-            <span className="block">{institutionLine1}</span>
-            {institutionLine2 ? <span className="block">{institutionLine2}</span> : null}
+            {lines.map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            ))}
           </span>
         </>
       ) : null}

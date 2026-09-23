@@ -13,6 +13,7 @@ export {
   ADL_TENANT_CODE,
   ADL_TENANT_ID,
   DOMAINS_COLLECTION,
+  SEM_DEV_HOST_DEFAULT,
   SEM_SITE_CODE,
   SEM_SITE_ID,
   SEM_TENANT_CODE,
@@ -34,12 +35,21 @@ export type {
 } from "./types";
 
 export {
+  buildDefaultSpaceHost,
   buildPlatformSubdomainHost,
+  classifySpaceDomainKind,
   extractHostsFromAppUrls,
+  isBarePlatformOriginHost,
   isLoopbackHost,
   isPlatformOriginHost,
+  isPlatformSubdomainHost,
+  isSemDevHost,
   normalizeHost,
+  normalizePlatformHostSlug,
+  publicOriginFromHost,
+  publicUrlForPath,
   resolveAppHostsFromEnv,
+  resolveDevLoopbackSuffix,
   resolvePlatformBaseDomain,
   resolveRequestHost,
   resolveSemBootstrapHostsFromEnv,
@@ -138,6 +148,31 @@ export {
   type CreatePlatformSpaceInput,
   type CreatePlatformSpaceSummary,
 } from "./create-platform-space";
+
+export {
+  deletePlatformSpace,
+  DeletePlatformSpaceError,
+  isProtectedPlatformSpace,
+  type DeletePlatformSpaceErrorCode,
+  type DeletePlatformSpaceResult,
+} from "./delete-platform-space";
+
+export {
+  isSpaceControlStatus,
+  setPlatformSpaceStatus,
+  SetPlatformSpaceStatusError,
+  SPACE_CONTROL_STATUSES,
+  type SetPlatformSpaceStatusErrorCode,
+  type SetPlatformSpaceStatusResult,
+  type SpaceControlStatus,
+} from "./space-status";
+
+export {
+  homologateAllPlatformDomains,
+  homologateSitePlatformDomain,
+  type HomologateAllDomainsResult,
+  type HomologateSiteDomainsResult,
+} from "./homologate-domains";
 
 export { mirrorLegacyConfigToSiteConfig } from "./site-config-mirror";
 

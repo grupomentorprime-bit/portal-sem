@@ -817,7 +817,7 @@ export const SEED_HOME_BLOCK_DATA = {
         icon: "GraduationCap",
         title: "Introducción a la Teología Pastoral",
         description: "Sesión gratuita para conocer nuestro enfoque formativo.",
-        href: "/programas/diploma-teologia-biblica-pastoral-g2023",
+        href: "/programas/diploma-en-teologia-biblica-pastoral-g-2023",
         ctaLabel: "Ver clase",
       },
       {

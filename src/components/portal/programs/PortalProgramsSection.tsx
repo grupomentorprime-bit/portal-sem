@@ -7,6 +7,7 @@ import {
   DEFAULT_PROGRAMS_HOME_PREMIUM,
 } from "@/lib/portal/program-premium-config";
 import { emptyStateFromSettings } from "@/lib/portal/blocks";
+import { publicProgramSummary } from "@/components/portal/programs/program-utils";
 import type { ProgramItem } from "@/types/content";
 
 export interface PortalProgramsSectionSettings extends Record<string, unknown> {
@@ -32,6 +33,7 @@ export interface PortalProgramsSectionSettings extends Record<string, unknown> {
   emptyActionHref?: string;
   errorTitle?: string;
   errorDescription?: string;
+  cardMode?: "full" | "published";
 }
 
 interface PortalProgramsSectionProps {
@@ -57,6 +59,19 @@ export function PortalProgramsSection({
     DEFAULT_PROGRAMS_HOME_PREMIUM.showPagination
   );
   const showHelpCta = asBoolean(settings.showHelpCta, DEFAULT_PROGRAMS_HOME_PREMIUM.showHelpCta);
+  const publishedOffer = settings.cardMode === "published";
+  const visiblePrograms = publishedOffer
+    ? programs.map((program) => ({
+        ...program,
+        description: publicProgramSummary(program.title, program.description) ?? "",
+        duration: "",
+        certification: "",
+        modality: "",
+        startDate: undefined,
+        badge: "",
+        status: "active" as ProgramItem["status"],
+      }))
+    : programs;
 
   const helpCta = {
     title: asString(settings.helpTitle, DEFAULT_PROGRAMS_HELP_CTA.title),
@@ -87,9 +102,9 @@ export function PortalProgramsSection({
                 description={errorDescription || undefined}
               />
             ) : null
-          ) : programs.length > 0 ? (
+          ) : visiblePrograms.length > 0 ? (
             <ProgramsPremiumSection
-              programs={programs}
+              programs={visiblePrograms}
               overline={overline || undefined}
               title={title || undefined}
               description={description || undefined}
@@ -97,8 +112,20 @@ export function PortalProgramsSection({
               pageSize={pageSize}
               showPagination={showPagination}
               showHelpCta={showHelpCta}
-              helpCta={helpCta}
+              helpCta={
+                showHelpCta
+                  ? helpCta
+                  : {
+                      title: "",
+                      description: "",
+                      primaryLabel: "",
+                      primaryHref: "/",
+                      secondaryLabel: "",
+                      secondaryHref: "/",
+                    }
+              }
               layout="home"
+              publishedOffer={publishedOffer}
             />
           ) : empty.emptyTitle ? (
             <PortalEmptyState

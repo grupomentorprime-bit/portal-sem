@@ -169,7 +169,7 @@ export function FormSimpleVisualEditor({
     const index = fields.findIndex((f) => f.id === selected.id);
     const target = index + direction;
     if (index < 0 || target < 0 || target >= fields.length) return;
-    onFieldsChange(reorderBuilderItems(fields, index, target));
+    onFieldsChange(reorderBuilderItems(fields, fields[index].id, fields[target].id));
   };
 
   const showExample =

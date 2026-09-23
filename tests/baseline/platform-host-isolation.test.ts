@@ -14,6 +14,9 @@ import {
 import {
   isLoopbackHost,
   isPlatformOriginHost,
+  isSemDevHost,
+  publicOriginFromHost,
+  publicUrlForPath,
   resolveAppHostsFromEnv,
   resolveSemBootstrapHostsFromEnv,
   shouldEnterPlatformHome,
@@ -102,34 +105,52 @@ describe("OT-GROWTH-PLATFORM-HOST-ISOLATION-001 — reglas unitarias", () => {
     );
   });
 
-  it("bootstrap SEM desde env solo conserva loopback", () => {
+  it("bootstrap SEM traduce el loopback al subdominio del Espacio", () => {
     assert.deepEqual(
       resolveSemBootstrapHostsFromEnv({
         APP_URL: "http://localhost:3000",
         NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       }),
-      ["localhost:3000"]
+      ["seminario-ipn.localhost:3000"]
     );
     assert.deepEqual(
       resolveSemBootstrapHostsFromEnv({
         APP_URL: PLATFORM_URL,
         NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       }),
-      ["localhost:3000"]
+      ["seminario-ipn.localhost:3000"]
     );
+    assert.equal(isSemDevHost("seminario-ipn.localhost:3000"), true);
+    assert.equal(isSemDevHost("localhost:3000"), false);
   });
 
-  it("isPlatformOriginHost solo coincide con APP_URL público", () => {
+  it("isPlatformOriginHost incluye loopback pelado y el APP_URL público", () => {
     const env = { APP_URL: PLATFORM_URL, NEXT_PUBLIC_APP_URL: PLATFORM_URL };
     assert.equal(isPlatformOriginHost(PLATFORM_HOST, env), true);
-    assert.equal(isPlatformOriginHost("localhost:3000", env), false);
+    assert.equal(isPlatformOriginHost("localhost:3000", env), true);
+    assert.equal(isPlatformOriginHost("seminario-ipn.localhost:3000", env), false);
     assert.equal(isPlatformOriginHost("seminarioipn.cl", env), false);
   });
 
-  it("shouldEnterPlatformHome: host público sin Espacio entra a Growth OS", () => {
+  it("publicOriginFromHost apunta el Espacio, no el loopback de la plataforma", () => {
+    assert.equal(publicOriginFromHost("seminario-ipn.localhost:3000"), "http://seminario-ipn.localhost:3000");
+    assert.equal(publicOriginFromHost("localhost:3000"), "http://localhost:3000");
+    assert.equal(publicOriginFromHost("seminarioipn.cl"), "https://seminarioipn.cl");
+    assert.equal(
+      publicUrlForPath("http://seminario-ipn.localhost:3000", "/"),
+      "http://seminario-ipn.localhost:3000/"
+    );
+    assert.equal(
+      publicUrlForPath("http://seminario-ipn.localhost:3000", "/admision#hero"),
+      "http://seminario-ipn.localhost:3000/admision#hero"
+    );
+  });
+
+  it("shouldEnterPlatformHome: sin Espacio entra a la portada de Growth OS", () => {
     assert.equal(shouldEnterPlatformHome(PLATFORM_HOST, false), true);
     assert.equal(shouldEnterPlatformHome(PLATFORM_HOST, true), false);
-    assert.equal(shouldEnterPlatformHome("localhost:3000", false), false);
+    assert.equal(shouldEnterPlatformHome("localhost:3000", false), true);
+    assert.equal(shouldEnterPlatformHome("localhost:3000", true), false);
     assert.equal(shouldEnterPlatformHome("seminarioipn.cl", true), false);
     assert.equal(shouldEnterPlatformHome("seminarioipn.cl", false), true);
   });

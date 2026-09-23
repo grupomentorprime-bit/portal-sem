@@ -26,22 +26,11 @@ function item(
 
 const MAIN_ITEMS: MenuItem[] = computeItemLevels([
   item({ id: "home", title: "Inicio", slug: "/", icon: "house", order: 1 }),
-  item({ id: "institution", title: "El Seminario", slug: "/institucion", icon: "building", order: 2 }),
-  item({ id: "programs", title: "Programas", slug: "/programas", icon: "book", order: 3 }),
-  item({ id: "team", title: "Equipo", slug: "/equipo", icon: "users", order: 4 }),
-  item({
-    id: "ipn",
-    title: "IPN Chile",
-    slug: "https://ipnchile.cl",
-    type: "external",
-    url: "https://ipnchile.cl",
-    target: "_blank",
-    icon: "globe",
-    order: 5,
-  }),
-  item({ id: "resources", title: "Recursos", slug: "/biblioteca", icon: "book-open", order: 6 }),
-  item({ id: "news", title: "Noticias", slug: "/noticias", icon: "newspaper", order: 7 }),
-  item({ id: "contact", title: "Contacto", slug: "/contacto", icon: "mail", order: 8 }),
+  item({ id: "institution", title: "El SEM", slug: "/institucion", icon: "building", order: 2 }),
+  item({ id: "study", title: "Cómo se estudia", slug: "/como-se-estudia", icon: "calendar", order: 3 }),
+  item({ id: "curriculum", title: "Malla/Formación", slug: "/malla", icon: "book", order: 4 }),
+  item({ id: "admission", title: "Admisión", slug: "/admision", icon: "send", order: 5 }),
+  item({ id: "news", title: "Actualidad", slug: "/noticias", icon: "newspaper", order: 6 }),
 ]);
 
 const FOOTER_ITEMS: MenuItem[] = computeItemLevels([
@@ -105,13 +94,10 @@ const FOOTER_ITEMS: MenuItem[] = computeItemLevels([
     parent: "admission-group",
   }),
   item({
-    id: "campus-footer",
-    title: "Aula virtual",
-    slug: "https://campus.aprendehoy.cl",
-    type: "external",
-    url: "https://campus.aprendehoy.cl",
-    target: "_blank",
-    icon: "monitor",
+    id: "ipn-footer",
+    title: "IPN Chile",
+    slug: "/institucion",
+    icon: "building",
     order: 5,
     parent: "admission-group",
   }),
@@ -140,13 +126,10 @@ const QUICK_LINK_ITEMS: MenuItem[] = computeItemLevels([
     highlighted: true,
   }),
   item({
-    id: "campus",
-    title: "Aula virtual",
-    slug: "https://campus.aprendehoy.cl",
-    type: "external",
-    url: "https://campus.aprendehoy.cl",
-    target: "_blank",
-    icon: "monitor",
+    id: "study-quick",
+    title: "Cómo se estudia",
+    slug: "/como-se-estudia",
+    icon: "calendar",
     order: 3,
   }),
 ]);

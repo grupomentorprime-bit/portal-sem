@@ -16,6 +16,8 @@ interface PortalMobileNavProps {
   loginLabel?: string;
   applyHref?: string;
   applyLabel?: string;
+  campusHref?: string;
+  campusLabel?: string;
 }
 
 export function PortalMobileNav({
@@ -26,6 +28,8 @@ export function PortalMobileNav({
   loginLabel = "Ingresar",
   applyHref,
   applyLabel = "Postular ahora",
+  campusHref,
+  campusLabel = "Campus",
 }: PortalMobileNavProps) {
   const handleHomeLink = useHomeLinkHandler();
 
@@ -71,15 +75,15 @@ export function PortalMobileNav({
             ))}
           </ul>
         </nav>
-        {(loginHref || applyHref) ? (
+        {(loginHref || applyHref || campusHref) ? (
           <div className="space-y-2 border-t border-border p-4">
-            {loginHref ? (
+            {campusHref ? (
               <Link
-                href={loginHref}
-                className={cn("portal-btn-login w-full justify-center", focusRing)}
+                href={campusHref}
+                className={cn("portal-btn-campus w-full", focusRing)}
                 onClick={onClose}
               >
-                {loginLabel}
+                {campusLabel}
               </Link>
             ) : null}
             {applyHref ? (
@@ -89,6 +93,15 @@ export function PortalMobileNav({
                 onClick={onClose}
               >
                 {applyLabel}
+              </Link>
+            ) : null}
+            {loginHref ? (
+              <Link
+                href={loginHref}
+                className={cn("portal-btn-login portal-btn-login--quiet w-full justify-center", focusRing)}
+                onClick={onClose}
+              >
+                {loginLabel}
               </Link>
             ) : null}
           </div>

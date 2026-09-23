@@ -12,6 +12,10 @@ import {
   Undo2,
   Upload,
 } from "lucide-react";
+import {
+  spacePublicHref,
+  useSpacePublicOrigin,
+} from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui/button";
 import type { PreviewDevice } from "@/components/page-builder/PreviewDevice";
 import type { CmsPage } from "@/types/page";
@@ -57,12 +61,11 @@ export function StudioToolbar({
   onToggleHistory,
   historyOpen,
 }: StudioToolbarProps) {
-  const siteHref =
-    page.slug === "/" || page.slug === "home" || !page.slug
-      ? "/"
-      : page.slug.startsWith("/")
-        ? page.slug
-        : `/${page.slug}`;
+  const publicOrigin = useSpacePublicOrigin();
+  const siteHref = spacePublicHref(
+    publicOrigin,
+    page.slug === "home" || !page.slug ? "/" : page.slug
+  );
 
   return (
     <header className="experience-studio__toolbar sticky top-0 z-20 border-b border-border bg-background px-4 py-3">

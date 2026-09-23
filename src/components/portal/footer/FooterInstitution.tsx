@@ -25,13 +25,21 @@ export function FooterInstitution({
       <div className="footer-premium__brand">
         <div className="footer-premium__brand-mark">
           {logoSrc ? (
-            <Image
-              src={logoSrc}
-              alt={institutionName || "Logo institucional"}
-              width={48}
-              height={54}
-              className="footer-premium__brand-icon"
-            />
+            logoSrc.toLowerCase().endsWith(".svg") ? (
+              <img
+                src={logoSrc}
+                alt=""
+                className="footer-premium__brand-icon"
+              />
+            ) : (
+              <Image
+                src={logoSrc}
+                alt={institutionName || "Logo institucional"}
+                width={48}
+                height={54}
+                className="footer-premium__brand-icon"
+              />
+            )
           ) : null}
           {institutionName ? (
             <p className="footer-premium__institution-name">{institutionName}</p>
@@ -39,6 +47,12 @@ export function FooterInstitution({
         </div>
         {institution.tagline ? (
           <p className="footer-premium__tagline">{institution.tagline}</p>
+        ) : null}
+        {institution.sealLine2 ? (
+          <p className="footer-premium__affiliation">
+            {institution.sealLine1} {institution.sealLine2}
+            {institution.sealLine3 ? ` — ${institution.sealLine3}` : ""}.
+          </p>
         ) : null}
         <FooterSocial items={social} className="footer-premium__social--institution" />
       </div>

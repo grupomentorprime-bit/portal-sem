@@ -7,6 +7,8 @@ export type PlatformAuditAction =
   | "platform.role.revoke"
   | "platform.access.denied"
   | "platform.space.create"
+  | "platform.space.delete"
+  | "platform.space.status"
   | "platform.space.access.grant";
 
 export function isPlatformAuditEntry(

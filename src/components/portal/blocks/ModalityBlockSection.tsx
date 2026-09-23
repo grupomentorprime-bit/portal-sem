@@ -37,9 +37,10 @@ export async function ModalityBlockSection({
   });
 
   const items = extractModalityItems(block);
-  const destinationBadge =
-    settings.destinationBadge?.trim() ||
-    (isSemTenant(tenant) ? "IPN Chile" : "");
+  const semHome = isSemTenant(tenant) && isHomePageSlug(pageSlug ?? "");
+  const destinationBadge = semHome
+    ? ""
+    : settings.destinationBadge?.trim() || (isSemTenant(tenant) ? "IPN Chile" : "");
 
   if (isHomePageSlug(pageSlug ?? "")) {
     return (
@@ -50,6 +51,9 @@ export async function ModalityBlockSection({
         description={settings.description}
         items={items}
         destinationBadge={destinationBadge}
+        buttonLabel={settings.buttonLabel}
+        buttonHref={settings.buttonHref}
+        layout={semHome ? "week" : "track"}
       />
     );
   }

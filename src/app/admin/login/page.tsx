@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 /** Superficie de plataforma: no hereda SEO/CMS del Espacio resuelto por Host. */
 export const metadata: Metadata = {
-  title: PLATFORM_DISPLAY_NAME,
+  title: `Ingresar | ${PLATFORM_DISPLAY_NAME}`,
   description: `Acceso a ${PLATFORM_DISPLAY_NAME}`,
   robots: { index: false, follow: false },
 };
@@ -21,12 +21,12 @@ export default async function AdminLoginPage() {
 
   return (
     <ProductAuthFrame
-      title="Acceso"
+      title="Ingresar"
       description={
         <>
           <p>
             {institutionalOnly
-              ? "Ingresa con tu correo y contraseña para entrar a tu Espacio."
+              ? "Usa tu correo y contraseña para entrar a tu Espacio en Growth OS."
               : `Ingresa a tu Espacio en ${PLATFORM_DISPLAY_NAME}.`}
           </p>
           {institutionalOnly && !authReady ? (
@@ -37,7 +37,6 @@ export default async function AdminLoginPage() {
           ) : null}
         </>
       }
-      className="text-left sm:text-center"
     >
       <Suspense fallback={<p className="text-sm text-muted">Cargando…</p>}>
         <LoginForm />

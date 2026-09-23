@@ -14,6 +14,7 @@ import {
   ADL_TENANT_CODE,
   ADL_TENANT_ID,
   DOMAINS_COLLECTION,
+  SEM_DEV_HOST_DEFAULT,
   SEM_SITE_CODE,
   SEM_SITE_ID,
   SEM_TENANT_CODE,
@@ -60,7 +61,6 @@ import { shouldUseHomeDemoContent } from "../../src/lib/portal/institutional-dem
 import { loadEnvLocal } from "../../src/core/migrations/env";
 import type { PortalFooterPremiumViewModel } from "../../src/types/footer-premium";
 import type {
-  DomainDocument,
   SiteConfigDocument,
   TenantDocument,
 } from "../../src/core/tenant/types";
@@ -365,11 +365,7 @@ describe("OT-GROWTH-SAAS-009 — coexistencia Mongo T001 + T002", () => {
         assert.equal(isHostResolutionPortalActive(adl), true);
       }
 
-      const semDomain = await db.collection<DomainDocument>(DOMAINS_COLLECTION).findOne({
-        tenantId: SEM_TENANT_ID,
-      });
-      const semHost = semDomain?.host ?? "localhost:3000";
-      const sem = await resolvePublicTenantByHost(semHost, { db });
+      const sem = await resolvePublicTenantByHost(SEM_DEV_HOST_DEFAULT, { db });
       assert.equal(sem.ok, true);
       if (sem.ok) {
         assert.equal(sem.tenantId, SEM_TENANT_ID);
@@ -468,7 +464,10 @@ describe("OT-GROWTH-SAAS-009 — coexistencia Mongo T001 + T002", () => {
           assert.equal(inactive.tenantActive, false);
           assert.equal(isHostResolutionPortalActive(inactive), false);
         }
-        const semStill = await resolvePublicTenantByHost("localhost:3000", { db });
+        const semStill = await resolvePublicTenantByHost(
+          "seminario-ipn.localhost:3000",
+          { db }
+        );
         assert.equal(semStill.ok, true);
         if (semStill.ok) {
           assert.equal(semStill.tenantId, SEM_TENANT_ID);

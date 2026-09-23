@@ -1,5 +1,7 @@
 import { getTenantContext } from "@/core/tenant";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import { buildBrandThemeStyle } from "@/core/branding";
+import { semSiteBrandColors } from "@/design/tokens/colors";
 import { getSiteMetadata } from "@/lib/cms/metadata";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
@@ -11,7 +13,7 @@ export const dynamic = "force-dynamic";
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,9 +26,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const ctx = await getTenantContext();
-  const themeStyle = buildBrandThemeStyle(ctx?.config.branding) as
-    | CSSProperties
-    | undefined;
+  const semTheme = isSemTenant(ctx?.tenantId)
+    ? {
+        "--brand-primary": semSiteBrandColors.primary,
+        "--brand-secondary": semSiteBrandColors.secondary,
+        "--color-accent": semSiteBrandColors.accent,
+        "--sem-accent": semSiteBrandColors.accent,
+        "--sem-success": semSiteBrandColors.success,
+      }
+    : undefined;
+  const themeStyle = {
+    ...buildBrandThemeStyle(ctx?.config.branding),
+    ...semTheme,
+  } as CSSProperties;
 
   return (
     <html
