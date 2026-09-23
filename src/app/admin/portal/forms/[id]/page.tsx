@@ -1,5 +1,6 @@
 import { FormDetailClient } from "@/components/admin/forms/FormDetailClient";
 import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
+import { getSessionActiveTenantId } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
 import { notFound } from "next/navigation";
@@ -12,8 +13,12 @@ interface FormDetailPageProps {
 
 export default async function AdminFormDetailPage({ params }: FormDetailPageProps) {
   const { id } = await params;
-  const config = await getOperationalSiteConfig();
-  const tenantId = config?.institution.tenant?.trim() ?? "";
+  const [sessionTenantId, config] = await Promise.all([
+    getSessionActiveTenantId(),
+    getOperationalSiteConfig(),
+  ]);
+  const tenantId =
+    sessionTenantId?.trim() || config?.institution.tenant?.trim() || "";
   if (!tenantId) {
     return <p className="p-6 text-sm text-muted">Portal no configurado.</p>;
   }

@@ -2,6 +2,7 @@ import {
   StudentAffairsFormNotFoundClient,
   StudentAffairsFormPageClient,
 } from "@/components/admin/student-affairs/StudentAffairsFormPageClient";
+import { getSessionActiveTenantId } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
 
@@ -13,9 +14,13 @@ interface PageProps {
 
 export default async function StudentAffairsFormPage({ params }: PageProps) {
   const { formId } = await params;
-  const config = await getOperationalSiteConfig();
-  const tenantId = config?.institution.tenant?.trim() ?? "";
-  if (!config || !tenantId) {
+  const [sessionTenantId, config] = await Promise.all([
+    getSessionActiveTenantId(),
+    getOperationalSiteConfig(),
+  ]);
+  const tenantId =
+    sessionTenantId?.trim() || config?.institution.tenant?.trim() || "";
+  if (!tenantId) {
     return <p className="p-6 text-sm text-muted">Portal no configurado.</p>;
   }
 
@@ -28,7 +33,7 @@ export default async function StudentAffairsFormPage({ params }: PageProps) {
     <StudentAffairsFormPageClient
       formId={form._id}
       formName={form.name}
-      institutionName={config.institution.name}
+      institutionName={config?.institution.name?.trim() || ""}
     />
   );
 }

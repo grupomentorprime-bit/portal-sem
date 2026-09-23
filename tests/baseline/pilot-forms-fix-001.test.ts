@@ -1,6 +1,6 @@
 /**
- * OT-GROWTH-PILOT-FORMS-FIX-001 — admin Formularios usa el mismo SSOT
- * operacional que Páginas (sesión → site_config), no Host público.
+ * OT-GROWTH-PILOT-FORMS-FIX-001 / OT-GROWTH-PILOT-FORMS-REGRESSION-001 —
+ * admin Formularios resuelve Espacio por sesión (SSOT operacional), no Host público.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -27,6 +27,13 @@ describe("OT-GROWTH-PILOT-FORMS-FIX-001 — admin forms SSOT operacional", () =>
     for (const file of ADMIN_FORM_PAGES) {
       const src = readSrc(file);
       assert.match(src, /getOperationalSiteConfig/, file);
+    }
+  });
+
+  it("Formularios priorizan Espacio de sesión (getSessionActiveTenantId)", () => {
+    for (const file of ADMIN_FORM_PAGES) {
+      const src = readSrc(file);
+      assert.match(src, /getSessionActiveTenantId/, file);
       assert.doesNotMatch(src, /getTenantContext/, file);
     }
   });
