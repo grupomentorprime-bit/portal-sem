@@ -32,7 +32,8 @@ const caveat = Caveat({
   variable: "--font-caveat",
 });
 
-const themeScript = `(function(){try{var t=localStorage.getItem("cumple-theme");var dark=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var root=document.currentScript&&document.currentScript.parentElement;if(root&&dark)root.setAttribute("data-theme","dark")}catch(e){}})();`;
+/** Por defecto siempre día; noche solo si el visitante la eligió antes. */
+const themeScript = `(function(){try{var t=localStorage.getItem("cumple-theme");var root=document.currentScript&&document.currentScript.parentElement;if(root)root.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){}})();`;
 
 const rail = ["bg-cviolet", "bg-caccent", "bg-ccyan"];
 
