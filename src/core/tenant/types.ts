@@ -91,6 +91,7 @@ export interface SiteConfigDocument {
   contact: unknown;
   social: unknown;
   features: unknown;
+  sitePublished?: boolean;
   portalCopy?: unknown;
   topBar?: unknown;
   portalExperience?: unknown;

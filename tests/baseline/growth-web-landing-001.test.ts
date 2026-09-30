@@ -23,15 +23,15 @@ function readSrc(rel: string): string {
 }
 
 describe("OT-GROWTH-WEB-LANDING-IMPLEMENT-001 — Sitio web V1", () => {
-  it("nav Sitio web: Páginas · Formularios · Menús · Dominio · Ajustes del sitio", () => {
+  it("nav Sitio web: Formularios · Dominio · Ajustes del sitio", () => {
     const nav = readSrc("src/lib/admin/nav-domains.ts");
     const sitioStart = nav.indexOf('id: "sitio-web"');
     const sitioEnd = nav.indexOf('id: "institucion"', sitioStart);
     const sitio = nav.slice(sitioStart, sitioEnd);
 
-    assert.match(sitio, /label: "Páginas"/);
+    assert.doesNotMatch(sitio, /label: "Páginas"/);
     assert.match(sitio, /label: "Formularios"/);
-    assert.match(sitio, /label: "Menús"/);
+    assert.doesNotMatch(sitio, /label: "Menús"/);
     assert.match(sitio, /label: "Dominio"/);
     assert.match(sitio, /label: "Ajustes del sitio"/);
     assert.match(sitio, /href: "\/admin\/site\/domain"/);
@@ -43,21 +43,17 @@ describe("OT-GROWTH-WEB-LANDING-IMPLEMENT-001 — Sitio web V1", () => {
     assert.doesNotMatch(sitio, /label: "Cursos"/);
   });
 
-  it("capacidades reubicadas en Institución (sin borrar rutas)", () => {
+  it("Institución conserva admisión y operación, sin el editor de la web vieja", () => {
     const nav = readSrc("src/lib/admin/nav-domains.ts");
     assert.match(nav, /id: "institucion"/);
     for (const href of [
-      "/admin/content/programs",
-      "/admin/content/courses",
-      "/admin/content/people",
-      "/admin/content",
-      "/admin/media",
       "/admin/portal/admission",
       "/admin/portal/asuntos-estudiantiles",
-      "/admin/experience-studio",
     ]) {
       assert.match(nav, new RegExp(href.replace(/\//g, "\\/")));
     }
+    assert.doesNotMatch(nav, /id: "communications-hub"/);
+    assert.doesNotMatch(nav, /id: "portal-pages"/);
   });
 
   it("wizard por objetivo siembra bloques y usa plantillas tipadas", () => {
@@ -108,14 +104,16 @@ describe("OT-GROWTH-WEB-LANDING-IMPLEMENT-001 — Sitio web V1", () => {
   it("FormExperience no se presenta como constructor de páginas", () => {
     const detail = readSrc("src/components/admin/forms/FormDetailClient.tsx");
     assert.match(detail, /Presentación/);
-    assert.match(detail, /Sitio web → Páginas/);
+    assert.doesNotMatch(detail, /Sitio web → Páginas/);
     assert.doesNotMatch(detail, />Experiencia</);
   });
 
-  it("superficie Dominio existe (solo lectura hosts)", () => {
+  it("superficie Dominio muestra hosts y la configuración del dominio del cliente", () => {
     const page = readSrc("src/app/admin/site/domain/page.tsx");
     assert.match(page, /findDomainsByTenantId/);
     assert.match(page, /Dirección principal/);
-    assert.doesNotMatch(page, /Cloudflare|DNS record|changeDomainHost/);
+    assert.match(page, /PlatformSpaceDomainPanel/);
+    assert.match(page, /\/api\/admin\/site\/domain/);
+    assert.doesNotMatch(page, /Cloudflare|changeDomainHost/);
   });
 });

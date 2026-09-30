@@ -58,13 +58,6 @@ export function isNavPlaceholder(item: AdminNavItem): boolean {
 /** Enlaces complementarios — breadcrumbs y rutas auxiliares (sin cambios IAM). */
 export const ADMIN_SIDEBAR_SUPPLEMENTAL: AdminNavItem[] = [
   {
-    href: "/admin/menus",
-    label: "Menús",
-    icon: "portal",
-    matchPrefixes: ["/admin/menus"],
-    requiredAnyPermission: ["cms.menus.read"],
-  },
-  {
     href: "/admin/experience-studio",
     label: "Experience Studio",
     icon: "portal",
@@ -251,14 +244,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     icon: "site",
     items: [
       {
-        id: "portal-pages",
-        href: "/admin/pages",
-        label: "Páginas",
-        icon: "portal",
-        matchPrefixes: ["/admin/pages"],
-        requiredAnyPermission: ["cms.pages.read", "cms.pages.update"],
-      },
-      {
         id: "convocatorias-config",
         href: "/admin/portal/forms",
         label: "Formularios",
@@ -272,14 +257,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "experience.forms.read",
           "experience.forms.manage",
         ],
-      },
-      {
-        id: "portal-menus",
-        href: "/admin/menus",
-        label: "Menús",
-        icon: "portal",
-        matchPrefixes: ["/admin/menus"],
-        requiredAnyPermission: ["cms.menus.read"],
       },
       {
         id: "site-domain",
@@ -305,57 +282,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     icon: "institution",
     items: [
       {
-        id: "institution-authorities",
-        href: "/admin/content/people",
-        label: "Autoridades",
-        icon: "people",
-        matchPrefixes: ["/admin/content/people", "/admin/content/team"],
-        requiredAnyPermission: ["cms.pages.read", "cms.pages.update", "programs.manage"],
-      },
-      {
-        id: "academic-programs",
-        href: "/admin/content/programs",
-        label: "Programas",
-        icon: "programs",
-        matchPrefixes: ["/admin/content/programs"],
-        requiredAnyPermission: ["programs.manage", "cms.pages.read"],
-      },
-      {
-        id: "academic-courses",
-        href: "/admin/content/courses",
-        label: "Cursos",
-        icon: "programs",
-        matchPrefixes: ["/admin/content/courses"],
-        requiredAnyPermission: ["programs.manage", "cms.pages.read"],
-      },
-      {
-        id: "communications-hub",
-        href: "/admin/content",
-        label: "Comunicaciones",
-        icon: "communications",
-        matchPrefixes: [
-          "/admin/content",
-          "/admin/content/news",
-          "/admin/content/events",
-          "/admin/content/library",
-          "/admin/content/institutional_notices",
-          "/admin/content/academic_agenda",
-        ],
-        requiredAnyPermission: [
-          "cms.pages.read",
-          "cms.pages.update",
-          "news.publish",
-          "content.events.manage",
-          "programs.manage",
-        ],
-      },
-      {
-        id: "communications-media",
-        href: "/admin/media",
-        label: "Medios",
-        icon: "media",
-        matchPrefixes: ["/admin/media"],
-        requiredAnyPermission: ["cms.media.read", "cms.media.upload"],
+        id: "institution-branding",
+        href: "/admin/config?section=branding",
+        label: "Identidad visual",
+        icon: "institution",
+        matchPrefixes: ["/admin/config"],
+        requiredAnyPermission: ["settings.update"],
       },
       {
         id: "portal-admission",
@@ -542,7 +474,9 @@ export function isSidebarItemActive(
   if (isNavPlaceholder(item)) return false;
 
   if (item.id === "institution-info") {
-    return isConfigNavPath(pathname);
+    if (!isConfigNavPath(pathname)) return false;
+    const current = parseConfigSection(searchParams?.get("section") ?? null);
+    return current !== "branding";
   }
 
   const configSection = getNavItemConfigSection(item);

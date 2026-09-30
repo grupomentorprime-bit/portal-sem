@@ -24,6 +24,7 @@
     "backfill:growth": "node --require ./scripts/_stub-server-only.cjs ./node_modules/tsx/dist/cli.mjs --env-file=.env scripts/backfill-growth-core.ts",
     "sync:tenant-roles": "npx tsx scripts/sync-tenant-roles.ts",
     "setup:keycloak": "npx tsx scripts/setup-keycloak-client.ts",
+    "align:keycloak-identity": "npx tsx scripts/align-keycloak-identity.ts",
     "check:keycloak": "npx tsx scripts/check-keycloak.ts"
   },
   "dependencies": {

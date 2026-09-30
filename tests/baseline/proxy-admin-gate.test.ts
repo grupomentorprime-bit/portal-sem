@@ -16,16 +16,23 @@ function makeRequest(
 }
 
 describe("OT-GROWTH-TEST-001 — gate admin sin sesión", () => {
-  it("redirige /admin a /admin/login cuando no hay cookie de sesión", () => {
+  it("redirige /admin a /login cuando no hay cookie de sesión", () => {
     const res = proxy(makeRequest("/admin"));
     assert.equal(res.status, 307);
-    assert.equal(new URL(res.headers.get("location")!).pathname, "/admin/login");
+    assert.equal(new URL(res.headers.get("location")!).pathname, "/login");
     assert.equal(new URL(res.headers.get("location")!).searchParams.get("next"), "/admin");
   });
 
-  it("permite /admin/login sin cookie", () => {
-    const res = proxy(makeRequest("/admin/login"));
-    assert.equal(res.status, 200);
+  it("permite /login sin cookie y redirige /admin/login hacia /login", () => {
+    const login = proxy(makeRequest("/login"));
+    assert.equal(login.status, 200);
+
+    const legacy = proxy(makeRequest("/admin/login?error=oauth_state&next=/admin/mensajes"));
+    assert.equal(legacy.status, 307);
+    const location = new URL(legacy.headers.get("location")!);
+    assert.equal(location.pathname, "/login");
+    assert.equal(location.searchParams.get("error"), "oauth_state");
+    assert.equal(location.searchParams.get("next"), "/admin/mensajes");
   });
 
   it("permite /admin con cookie ah_session presente", () => {
@@ -89,12 +96,18 @@ describe("Host de plataforma — entrada Growth OS", () => {
     });
   });
 
-  it("no intercepta /legal ni /admin/login en el origen de plataforma", () => {
+  it("el subdominio de un Espacio sirve su sitio y formularios; el apex no", () => {
     withPlatformEnv(() => {
-      const legal = proxy(makeRequest("/legal/privacidad", undefined, platformOrigin));
-      assert.equal(legal.status, 200);
-      const login = proxy(makeRequest("/admin/login", undefined, platformOrigin));
-      assert.equal(login.status, 200);
+      const spaceOrigin = "https://mentor-prime-capacitacion.mentorprime.cl";
+      for (const path of ["/", "/formularios/solicita-informacion"]) {
+        const res = proxy(makeRequest(path, undefined, spaceOrigin));
+        assert.equal(res.status, 200, path);
+      }
+      const apexForm = proxy(
+        makeRequest("/formularios/solicita-informacion", undefined, platformOrigin)
+      );
+      assert.equal(apexForm.status, 307);
+      assert.equal(new URL(apexForm.headers.get("location")!).pathname, "/");
     });
   });
 });

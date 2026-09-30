@@ -1,19 +1,14 @@
 import Link from "next/link";
-import {
-  Building2,
-  Globe2,
-  Link2,
-  Users,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { StatusBadge, type StatusBadgeTone } from "@/components/admin/kit";
 import { PlatformEnterSpacePanel } from "@/components/platform/PlatformEnterSpacePanel";
-import { PlatformDeleteSpacePanel } from "@/components/platform/PlatformDeleteSpacePanel";
+import { PlatformSpaceDomainPanel } from "@/components/platform/PlatformSpaceDomainPanel";
+import { customDomainCnameTarget } from "@/core/tenant/custom-domain-records";
 import { PlatformSpaceActionsMenu } from "@/components/platform/PlatformSpaceActionsMenu";
 import { SpaceTypeFallbackMark } from "@/components/platform/SpaceTypeFallbackMark";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import type { PlatformSpaceDetail } from "@/lib/platform/spaces";
-import { labelDomainKind } from "@/lib/platform/space-labels";
+import type { PlatformSpaceDetail, PlatformSpaceMember } from "@/lib/platform/spaces";
 
 function Section({
   title,
@@ -23,15 +18,21 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="rounded-[16px] border-[var(--color-border-default)] bg-white p-0 shadow-[0_12px_28px_-22px_rgba(14,79,144,0.35)]">
-      <CardHeader className="mb-0 border-b border-[var(--color-border-default)] px-5 py-4">
-        <CardTitle className="text-[15px] font-semibold tracking-tight text-[var(--gray-900)]">
+    <Card className="rounded-[10px] border-[var(--color-border-default)] bg-white p-0 shadow-none">
+      <CardHeader className="mb-0 border-b border-[var(--color-border-default)] px-4 py-2.5">
+        <CardTitle className="text-[13px] font-semibold text-[var(--gray-800)]">
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-5 py-4">{children}</CardContent>
+      <CardContent className="px-4 py-3">{children}</CardContent>
     </Card>
   );
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const letters = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "");
+  return letters.join("") || "·";
 }
 
 function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -67,7 +68,7 @@ function SpaceMark({ space }: { space: PlatformSpaceDetail }) {
       <img
         src={space.logoUrl}
         alt=""
-        className="h-14 w-14 rounded-[14px] object-contain bg-[var(--color-background-default)] p-1.5"
+        className="h-9 w-9 rounded-[10px] object-contain bg-[var(--color-background-default)] p-1"
       />
     );
   }
@@ -75,7 +76,7 @@ function SpaceMark({ space }: { space: PlatformSpaceDetail }) {
     <SpaceTypeFallbackMark
       type={space.type}
       typeLabel={space.typeLabel}
-      size="sm"
+      size="row"
     />
   );
 }
@@ -87,129 +88,72 @@ export function PlatformSpaceDetailView({
   space: PlatformSpaceDetail;
   operatorHasAccess: boolean;
 }) {
-  const primaryDomain =
-    space.domains.find((domain) => domain.isPrimary)?.host ??
-    space.domains[0]?.host ??
+  const memberLabel =
+    space.memberCount === 1 ? "1 miembro" : `${space.memberCount} miembros`;
+  const subdomainHosts = space.domains
+    .filter((domain) => domain.kind === "platform_subdomain")
+    .map((domain) => ({ host: domain.host, isPrimary: domain.isPrimary }));
+  const custom =
+    space.domains.find((domain) => domain.kind === "custom" && domain.isPrimary) ??
+    space.domains.find((domain) => domain.kind === "custom") ??
     null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <Link
         href={`${PLATFORM_ADMIN_HOME}#espacios`}
-        className="inline-flex text-[13px] font-medium text-[var(--gray-500)] transition hover:text-[var(--gray-900)]"
+        className="inline-flex items-center gap-0.5 text-[13px] text-[var(--gray-500)] transition hover:text-[var(--gray-900)]"
       >
-        ← Espacios
+        <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+        Espacios
       </Link>
 
-      <section className="overflow-hidden rounded-[18px] border border-[var(--color-border-default)] bg-white shadow-[0_18px_40px_-28px_rgba(14,79,144,0.35)]">
-        <div
-          className="relative h-[72px] overflow-hidden bg-gradient-to-r from-[var(--growth-os-primary)] to-[var(--growth-os-secondary)] sm:h-20"
-          aria-hidden
-        >
-          {space.coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={space.coverUrl}
-              alt=""
-              className="h-full w-full object-cover opacity-55"
-            />
-          ) : (
-            <>
-              <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15 blur-xl" />
-              <div className="absolute bottom-0 left-8 h-16 w-16 rounded-full bg-white/10 blur-lg" />
-            </>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:py-6">
-          <div className="flex min-w-0 items-start gap-3.5">
-            <SpaceMark space={space} />
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                <h1 className="text-[1.55rem] font-bold tracking-[-0.03em] text-[var(--gray-900)] sm:text-[1.75rem]">
-                  {space.name}
-                </h1>
-                <span className="text-[var(--gray-400)]" aria-hidden>
-                  ·
-                </span>
-                <span className="text-[13px] font-medium text-[var(--gray-700)]">
-                  {space.typeLabel}
-                </span>
-                <span className="text-[var(--gray-400)]" aria-hidden>
-                  ·
-                </span>
-                <StatusBadge
-                  tone={tenantStatusTone(space.status)}
-                  label={space.statusLabel}
-                />
-              </div>
-              {space.tagline ? (
-                <p className="max-w-2xl text-[13px] leading-relaxed text-[var(--gray-500)] sm:text-[14px]">
-                  {space.tagline}
-                </p>
-              ) : null}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <SpaceMark space={space} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-[18px] font-semibold tracking-[-0.02em] text-[var(--gray-900)]">
+                {space.name}
+              </h1>
+              <StatusBadge
+                tone={tenantStatusTone(space.status)}
+                label={space.statusLabel}
+              />
             </div>
-          </div>
-
-          <div className="flex shrink-0 items-start gap-2 sm:pt-0.5">
-            <PlatformEnterSpacePanel
-              tenantId={space.tenantId}
-              spaceName={space.name}
-              hasAccess={operatorHasAccess}
-              compact
-            />
-            <PlatformSpaceActionsMenu
-              tenantId={space.tenantId}
-              spaceName={space.name}
-              status={space.status}
-            />
+            <p className="mt-0.5 truncate text-[13px] text-[var(--gray-500)]">
+              {space.typeLabel}
+              <span className="mx-1.5 text-[var(--gray-300)]" aria-hidden>
+                ·
+              </span>
+              {space.site?.name ?? "Sin Sitio"}
+              <span className="mx-1.5 text-[var(--gray-300)]" aria-hidden>
+                ·
+              </span>
+              {memberLabel}
+            </p>
+            {space.tagline ? (
+              <p className="mt-0.5 truncate text-[13px] text-[var(--gray-500)]">
+                {space.tagline}
+              </p>
+            ) : null}
           </div>
         </div>
 
-        <div className="grid gap-4 border-t border-[var(--color-border-default)] px-5 py-4 sm:grid-cols-3 sm:px-6">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--gray-100)] text-[var(--growth-os-primary)]">
-              <Building2 className="h-4 w-4" aria-hidden />
-            </span>
-            <div>
-              <p className="text-[11px] text-[var(--gray-500)]">Sitio</p>
-              <p className="text-[13px] font-semibold text-[var(--gray-900)]">
-                {space.site?.name ?? "—"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--gray-100)] text-[var(--growth-os-primary)]">
-              <Globe2 className="h-4 w-4" aria-hidden />
-            </span>
-            <div>
-              <p className="text-[11px] text-[var(--gray-500)]">
-                {space.domains.find((domain) => domain.isPrimary)?.kind ===
-                "custom"
-                  ? "Dominio propio"
-                  : "Subdominio"}
-              </p>
-              <p
-                className="break-all text-[13px] font-semibold text-[var(--gray-900)]"
-                title={primaryDomain ?? undefined}
-              >
-                {primaryDomain ?? "—"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--gray-100)] text-[var(--growth-os-primary)]">
-              <Users className="h-4 w-4" aria-hidden />
-            </span>
-            <div>
-              <p className="text-[11px] text-[var(--gray-500)]">Miembros</p>
-              <p className="text-[13px] font-semibold tabular-nums text-[var(--gray-900)]">
-                {space.memberCount}
-              </p>
-            </div>
-          </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <PlatformEnterSpacePanel
+            tenantId={space.tenantId}
+            spaceName={space.name}
+            hasAccess={operatorHasAccess}
+            compact
+          />
+          <PlatformSpaceActionsMenu
+            tenantId={space.tenantId}
+            spaceName={space.name}
+            status={space.status}
+          />
         </div>
-      </section>
+      </header>
 
       {!operatorHasAccess ? (
         <PlatformEnterSpacePanel
@@ -219,102 +163,35 @@ export function PlatformSpaceDetailView({
         />
       ) : null}
 
-      <PlatformDeleteSpacePanel
-        tenantId={space.tenantId}
-        spaceName={space.name}
-      />
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Section title="Sitio y dominios">
-          <dl className="space-y-2.5">
-            <MetaRow
-              label="Sitio"
-              value={
-                space.site
-                  ? `${space.site.name} · ${space.site.statusLabel}`
-                  : null
-              }
-            />
-            <MetaRow label="Tipo" value={space.typeLabel} />
-          </dl>
-          <div className="mt-3.5 border-t border-[var(--color-border-default)] pt-3.5">
-            {space.domains.length === 0 ? (
-              <p className="text-[13px] text-[var(--gray-500)]">
-                Sin dominios registrados.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {space.domains.map((domain) => (
-                  <li
-                    key={domain.host}
-                    className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--gray-900)]"
-                  >
-                    <Link2
-                      className="h-3.5 w-3.5 text-[var(--gray-500)]"
-                      aria-hidden
-                    />
-                    <span>{domain.host}</span>
-                    {domain.isPrimary ? (
-                      <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[11px] font-medium text-[var(--growth-os-primary)]">
-                        principal
-                      </span>
-                    ) : null}
-                    <span className="rounded-full bg-[var(--gray-100)] px-2 py-0.5 text-[11px] font-medium text-[var(--gray-500)]">
-                      {labelDomainKind(domain.kind)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(16rem,0.72fr)]">
+        <Section title="Dominios">
+          <PlatformSpaceDomainPanel
+            tenantId={space.tenantId}
+            subdomain={subdomainHosts[0]?.host ?? null}
+            subdomainHosts={subdomainHosts}
+            customDomain={custom?.host ?? null}
+            customIsPrimary={Boolean(custom?.isPrimary)}
+            cnameTarget={customDomainCnameTarget()}
+            layout="both"
+          />
         </Section>
 
         <Section title="Personas con acceso">
-          {space.principalMembers.length === 0 ? (
-            <p className="text-[13px] text-[var(--gray-500)]">
-              Sin personas principales.
-            </p>
-          ) : (
-            <ul className="divide-y divide-[var(--color-border-default)]">
-              {space.principalMembers.map((member) => (
-                <li
-                  key={`${member.userId}-${member.roleCode ?? "role"}`}
-                  className="flex flex-wrap items-baseline justify-between gap-2 py-2.5 first:pt-0 last:pb-0"
-                >
-                  <div>
-                    <p className="text-[13px] font-medium text-[var(--gray-900)]">
-                      {member.displayName}
-                    </p>
-                    <p className="text-[12px] text-[var(--gray-500)]">
-                      {member.email}
-                    </p>
-                  </div>
-                  <p className="text-[12px] text-[var(--gray-500)]">
-                    {member.roleLabel}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-[12px] text-[var(--gray-500)]">
-            Total de miembros: {space.memberCount}
-          </p>
-          {space.owner ? (
-            <p className="mt-1.5 text-[12px] text-[var(--gray-500)]">
-              Dueño del Espacio: {space.owner.displayName}
-            </p>
-          ) : (
-            <p className="mt-1.5 text-[12px] text-[var(--gray-500)]">
-              Sin Dueño del Espacio asignado.
-            </p>
-          )}
+          <PeoplePanel
+            members={space.principalMembers}
+            memberCount={space.memberCount}
+            ownerName={space.owner?.displayName ?? null}
+          />
         </Section>
       </div>
 
       {(space.identity || space.tenantId) && (
-        <details className="rounded-[16px] border border-[var(--color-border-default)] bg-white px-5 py-3.5 shadow-[0_8px_20px_-18px_rgba(14,79,144,0.25)]">
-          <summary className="cursor-pointer text-[13px] font-medium text-[var(--gray-500)] transition hover:text-[var(--gray-900)]">
-            Detalles adicionales
+        <details className="group rounded-[10px] border border-[var(--color-border-default)] bg-white px-4 py-2.5">
+          <summary className="cursor-pointer list-none text-[13px] text-[var(--gray-600)] transition hover:text-[var(--gray-900)] [&::-webkit-details-marker]:hidden">
+            <span className="inline-flex items-center gap-2">
+              <ChevronRight className="h-3.5 w-3.5 text-[var(--gray-400)] transition group-open:rotate-90" />
+              Más datos
+            </span>
           </summary>
           <dl className="mt-3.5 space-y-2.5 border-t border-[var(--color-border-default)] pt-3.5">
             {space.identity ? (
@@ -343,6 +220,65 @@ export function PlatformSpaceDetailView({
             />
           </dl>
         </details>
+      )}
+    </div>
+  );
+}
+
+function PeoplePanel({
+  members,
+  memberCount,
+  ownerName,
+}: {
+  members: PlatformSpaceMember[];
+  memberCount: number;
+  ownerName: string | null;
+}) {
+  return (
+    <div className="space-y-3">
+      <dl className="space-y-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-[13px] text-[var(--gray-500)]">Miembros</dt>
+          <dd className="text-[13px] font-medium tabular-nums text-[var(--gray-900)]">
+            {memberCount}
+          </dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-[13px] text-[var(--gray-500)]">Dueño del Espacio</dt>
+          <dd className="text-right text-[13px] font-medium text-[var(--gray-900)]">
+            {ownerName ?? "Sin asignar"}
+          </dd>
+        </div>
+      </dl>
+
+      {members.length === 0 ? (
+        <p className="border-t border-[var(--color-border-default)] pt-3 text-[13px] text-[var(--gray-500)]">
+          Todavía no hay un contacto principal.
+        </p>
+      ) : (
+        <ul className="divide-y divide-[var(--color-border-default)] border-t border-[var(--color-border-default)] pt-3">
+          {members.map((member) => (
+            <li
+              key={`${member.userId}-${member.roleCode ?? "role"}`}
+              className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,white)] text-[11px] font-semibold text-[var(--growth-os-primary)]">
+                {initials(member.displayName)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium text-[var(--gray-900)]">
+                  {member.displayName}
+                </p>
+                <p className="truncate text-[12px] text-[var(--gray-500)]">
+                  {member.email}
+                </p>
+              </div>
+              <p className="shrink-0 text-[12px] text-[var(--gray-500)]">
+                {member.roleLabel}
+              </p>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

@@ -24,6 +24,9 @@ export function PageSettings({ page, onChange }: PageSettingsProps) {
           value={page.slug}
           onChange={(e) => onChange({ slug: e.target.value })}
         />
+        <p className="text-caption text-muted">
+          Puede incluir secciones, por ejemplo /el-sem/quienes-somos. Las rutas de plataforma no se pueden usar.
+        </p>
       </div>
       <div className="space-y-1.5">
         <Label>Descripción</Label>

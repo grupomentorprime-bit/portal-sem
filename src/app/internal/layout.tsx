@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function InternalLayout({ children }: { children: React.ReactNode }) {
   const session = await loadSessionContext();
   if (!session) {
-    redirect("/admin/login?next=/internal/design-system");
+    redirect("/login?next=/internal/design-system");
   }
 
   return children;

@@ -24,7 +24,7 @@ export default async function AdminAutomatizacionDetailPage({
   const { id } = await params;
   if (!session || !tenantId || !session.membership) {
     redirect(
-      `/admin/login?next=/admin/automatizaciones/${encodeURIComponent(id)}`
+      `/login?next=/admin/automatizaciones/${encodeURIComponent(id)}`
     );
   }
 

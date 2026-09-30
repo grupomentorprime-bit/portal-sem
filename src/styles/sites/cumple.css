@@ -1,0 +1,248 @@
+/* Tokens de Mentor Prime Cumple. Aísla el sitio de la marca Growth OS en body. */
+.cumple-site {
+  --c-ink: #07122e;
+  --c-paper: #f3f6ff;
+  --c-sand: #e7edff;
+  --c-line: #d7e0f5;
+  --c-muted: #5c6b8a;
+  --c-card: #ffffff;
+  --c-gauge: #e6eef8;
+  --brand-primary: #3d6bff;
+  --brand-secondary: #6d4dff;
+  --brand-background: #f3f6ff;
+  --brand-text: #07122e;
+  --sem-primary: #3d6bff;
+  --sem-secondary: #6d4dff;
+  --sem-accent: #6d4dff;
+  --color-primary: #3d6bff;
+  --color-accent: #3d6bff;
+  --background: #f3f6ff;
+  --text: #07122e;
+  --text-muted: #5c6b8a;
+  --foreground: #07122e;
+  --muted: #5c6b8a;
+  color: var(--c-ink);
+  background: var(--c-paper);
+  font-family: var(--font-manrope), sans-serif;
+  color-scheme: light;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.cumple-site[data-theme="dark"] {
+  --c-ink: #e8eefc;
+  --c-paper: #07122e;
+  --c-sand: #162044;
+  --c-line: #2a3a62;
+  --c-muted: #9aabc8;
+  --c-card: #101a38;
+  --c-gauge: #243056;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-cink: var(--c-ink);
+  --color-cpaper: var(--c-paper);
+  --color-csand: var(--c-sand);
+  --color-cline: var(--c-line);
+  --color-cmuted: var(--c-muted);
+  --color-ccard: var(--c-card);
+  --color-caccent: #3d6bff;
+  --color-cviolet: #6d4dff;
+  --color-ccyan: #2ec8ff;
+  --font-cdisplay: var(--font-montserrat), "Montserrat", sans-serif;
+  --font-chand: var(--font-caveat), "Caveat", cursive;
+}
+
+@custom-variant cdark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+.cumple-site {
+  scroll-behavior: smooth;
+}
+
+/* La regla global de h1–p va fuera de capa y pisa las utilidades.
+   Montserrat tiene que ganar dentro del sitio, como en la web pública. */
+.cumple-site .font-cdisplay {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+}
+
+.cumple-site .font-chand {
+  font-family: var(--font-caveat), "Caveat", cursive;
+}
+
+.cumple-site ::selection {
+  background: #3d6bff;
+  color: #fff;
+}
+
+.cumple-site .glow-btn {
+  background: linear-gradient(100deg, #6246ff 0%, #3d6bff 58%, #2ec8ff 130%);
+  box-shadow: 0 14px 34px -16px rgba(61, 107, 255, 0.95);
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cumple-site .glow-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 18px 36px -14px rgba(61, 107, 255, 0.95);
+}
+
+.cumple-site .grad-text {
+  background: linear-gradient(100deg, #6246ff 0%, #3d6bff 46%, #12b4e8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cumple-site .orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(36px);
+  pointer-events: none;
+}
+
+.cumple-site .orb-a {
+  top: -4rem;
+  left: -3rem;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(109, 77, 255, 0.38);
+  animation: cumple-float-a 10s ease-in-out infinite;
+}
+
+.cumple-site .orb-b {
+  top: 12%;
+  right: -2rem;
+  width: 16rem;
+  height: 16rem;
+  background: rgba(46, 200, 255, 0.38);
+  animation: cumple-float-b 12s ease-in-out infinite;
+}
+
+.cumple-site .orb-c {
+  bottom: 6%;
+  left: 38%;
+  width: 14rem;
+  height: 14rem;
+  background: rgba(61, 107, 255, 0.28);
+  animation: cumple-float-a 14s ease-in-out infinite reverse;
+}
+
+.cumple-site .float-card {
+  animation: cumple-float-card 7s ease-in-out infinite;
+}
+
+.cumple-site .pulse-dot {
+  animation: cumple-pulse-dot 2.2s ease-out infinite;
+}
+
+.cumple-site .rise {
+  animation: cumple-rise 0.8s ease both;
+}
+
+.cumple-site .gauge-value {
+  animation: cumple-gauge-draw 1.35s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+.cumple-site .mark-list li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.cumple-site .mark-list li::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.45rem;
+  border-radius: 999px;
+  flex: none;
+}
+
+.cumple-site .mark-bad li::before {
+  background: #f87171;
+}
+
+.cumple-site .mark-good li::before {
+  background: #4ade80;
+  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.16);
+}
+
+@keyframes cumple-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cumple-float-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(24px, -22px, 0) scale(1.08);
+  }
+}
+
+@keyframes cumple-float-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-18px, 20px, 0);
+  }
+}
+
+@keyframes cumple-float-card {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes cumple-pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(61, 107, 255, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(61, 107, 255, 0);
+  }
+}
+
+@keyframes cumple-gauge-draw {
+  from {
+    stroke-dasharray: 0 100;
+  }
+  to {
+    stroke-dasharray: 78 100;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cumple-site {
+    scroll-behavior: auto;
+  }
+
+  .cumple-site .rise,
+  .cumple-site .orb-a,
+  .cumple-site .orb-b,
+  .cumple-site .orb-c,
+  .cumple-site .float-card,
+  .cumple-site .pulse-dot,
+  .cumple-site .gauge-value {
+    animation: none;
+  }
+
+  .cumple-site .glow-btn:hover {
+    transform: none;
+  }
+}

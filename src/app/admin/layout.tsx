@@ -36,8 +36,8 @@ export default async function AdminLayout({
 
   if (!session && !isLoginRoute) {
     const loginUrl = pathname
-      ? `/admin/login?next=${encodeURIComponent(pathname)}`
-      : "/admin/login";
+      ? `/login?next=${encodeURIComponent(pathname)}`
+      : "/login";
     redirect(loginUrl);
   }
 

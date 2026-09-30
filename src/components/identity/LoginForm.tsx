@@ -1,33 +1,27 @@
+"use client";
+
 import Link from "next/link";
-
-const OAUTH_ERRORS: Record<string, string> = {
-  keycloak: "No se pudo completar el inicio de sesión. Intenta de nuevo.",
-  oauth_state: "La sesión de autenticación expiró o no es válida. Intenta de nuevo.",
-  oauth_pkce: "No se pudo validar el inicio de sesión. Intenta de nuevo.",
-  email: "No se pudo validar el correo de tu Cuenta.",
-  no_access:
-    "Tu Cuenta no tiene acceso a un Espacio. Solicita una invitación al administrador.",
-  tenant: "El Espacio no está configurado.",
-};
-
-export function loginErrorMessage(code: string | undefined): string | null {
-  if (!code) return null;
-  return OAUTH_ERRORS[code] ?? "No se pudo completar el inicio de sesión. Intenta de nuevo.";
-}
+import { useState } from "react";
+import { Button, Input } from "@/components/ui";
 
 /**
- * Entrada única: navegación completa a Auth Code + PKCE.
- * No envía correo ni contraseña.
+ * Login embebido: usuario y contraseña se validan en el servidor.
+ * El navegador no sale a la pantalla de Keycloak.
  */
 export function LoginForm({
-  loginHref,
+  next,
   errorMessage,
   authReady,
 }: {
-  loginHref: string;
+  next?: string | null;
   errorMessage?: string | null;
   authReady: boolean;
 }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(errorMessage ?? "");
+  const [loading, setLoading] = useState(false);
+
   if (!authReady) {
     return (
       <div className="space-y-4 text-center">
@@ -46,16 +40,67 @@ export function LoginForm({
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {errorMessage ? <p className="text-sm text-[var(--color-danger)]">{errorMessage}</p> : null}
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/identity/auth/keycloak/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: username.trim(),
+          password,
+          next: next || undefined,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        redirectTo?: string;
+      };
+      if (!data.ok) {
+        setError(data.error ?? "No se pudo iniciar sesión.");
+        return;
+      }
+      const destination =
+        data.redirectTo && data.redirectTo.startsWith("/") && !data.redirectTo.startsWith("//")
+          ? data.redirectTo
+          : "/admin";
+      window.location.assign(destination);
+    } catch {
+      setError("No se pudo conectar con el servidor.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-      <a
-        href={loginHref}
-        className="inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-md)] bg-primary px-4 text-sm font-medium text-text-inverse transition-colors hover:bg-secondary"
-      >
-        Ingresar a Growth OS
-      </a>
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
+
+      <Input
+        label="Usuario"
+        name="username"
+        type="text"
+        autoComplete="username"
+        value={username}
+        onChange={(event) => setUsername(event.target.value)}
+        required
+      />
+      <Input
+        label="Contraseña"
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        required
+      />
+
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? "Ingresando…" : "Ingresar"}
+      </Button>
 
       <p className="pt-1 text-center text-xs text-muted">
         <Link
@@ -65,6 +110,6 @@ export function LoginForm({
           Volver a Growth OS
         </Link>
       </p>
-    </div>
+    </form>
   );
 }

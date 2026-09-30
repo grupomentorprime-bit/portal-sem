@@ -37,7 +37,7 @@ export default async function AdminActividadPage({ searchParams }: PageProps) {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/actividad");
+    redirect("/login?next=/admin/actividad");
   }
 
   const { resolvePermissionsForMembership } = await import(

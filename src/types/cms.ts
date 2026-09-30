@@ -20,6 +20,12 @@ export interface Institution {
   status: PortalStatus;
 }
 
+/** Fotografía del hero del inicio, elegida en la biblioteca. */
+export interface HomeHeroPhotoRef {
+  mediaId: string;
+  published: boolean;
+}
+
 export interface Branding {
   /** @deprecated Usar logoMediaId — URL derivada por Asset Engine */
   logo: string;
@@ -33,6 +39,11 @@ export interface Branding {
   /** @deprecated Usar heroMediaId */
   heroImage: string;
   heroMediaId?: string;
+  /**
+   * Fotografías del hero del inicio, en orden de rotación.
+   * Cada una apunta a la biblioteca por mediaId. Solo las publicadas se muestran.
+   */
+  homeHeroPhotos: HomeHeroPhotoRef[];
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
@@ -155,6 +166,8 @@ export interface SiteConfig {
   contact: ContactInfo;
   social: SocialLinks;
   features: FeatureFlags;
+  /** false o ausente: el dominio muestra «Este sitio está por comenzar». */
+  sitePublished: boolean;
   portalCopy: PortalCopy;
   topBar: PortalTopBarConfig;
   portalExperience: PortalExperienceConfig;

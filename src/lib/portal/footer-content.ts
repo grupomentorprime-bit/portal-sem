@@ -8,7 +8,11 @@ import {
   rewriteLegacyPlatformProductName,
 } from "@/core/branding/display";
 import { isSemTenant } from "@/core/tenant/is-sem";
-import { SEM_SOCIAL_PUBLISHED } from "@/lib/portal/sem-identity-v7";
+import {
+  SEM_CONTACT_PENDING,
+  SEM_CONTACT_PUBLISHED,
+  SEM_SOCIAL_PUBLISHED,
+} from "@/lib/portal/sem-identity-v7";
 import type { ExperienceAction } from "@/types/experience-action";
 import type {
   PortalFooterBrandView,
@@ -59,6 +63,7 @@ export interface FooterContactResolved {
   email: string;
   website: string;
   websiteHref: string;
+  pendingNote?: string;
 }
 
 export interface FooterLegalContent {
@@ -75,8 +80,8 @@ export const SEM_FOOTER_CTA: FooterCtaContent = {
   description: "Una formación bíblica para una vida de servicio.",
   primaryLabel: "Conoce Admisión",
   primaryAction: { type: "url", href: "/admision" },
-  secondaryLabel: "Cómo se estudia",
-  secondaryAction: { type: "url", href: "/como-se-estudia" },
+  secondaryLabel: "Cómo estudiamos",
+  secondaryAction: { type: "url", href: "/como-estudiamos" },
 };
 
 export const SEM_FOOTER_INSTITUTION: FooterInstitutionContent = {
@@ -86,22 +91,23 @@ export const SEM_FOOTER_INSTITUTION: FooterInstitutionContent = {
   sealLine3: "Iglesia Pentecostal Nazareth",
 };
 
+/** Columnas de respaldo. Si el menú footer del CMS trae enlaces, esas columnas no se usan. */
 export const SEM_FOOTER_COLUMNS: FooterContentColumn[] = [
   {
     id: "sem",
     title: "El SEM",
     links: [
-      { id: "about", label: "Qué es el SEM", href: "/institucion" },
-      { id: "study", label: "Cómo se estudia", href: "/como-se-estudia" },
-      { id: "curriculum", label: "Malla curricular", href: "/malla" },
+      { id: "about", label: "Quiénes somos", href: "/el-sem/quienes-somos" },
+      { id: "study", label: "Cómo estudiamos", href: "/como-estudiamos" },
+      { id: "curriculum", label: "Malla", href: "/formacion/malla" },
     ],
   },
   {
     id: "access",
-    title: "Accesos",
+    title: "Admisión",
     links: [
       { id: "admission", label: "Admisión", href: "/admision" },
-      { id: "programs", label: "Programas", href: "/programas" },
+      { id: "campaign", label: "Admisión 2027", href: "/admision/2027" },
     ],
   },
 ];
@@ -242,14 +248,30 @@ export function resolveFooterContent(
   } = viewModel;
 
   const useSem = isSemTenant(options.tenantId);
-  const navSections = useSem
-    ? mapContentColumns(SEM_FOOTER_COLUMNS)
-    : navigation.filter((section) => section.links.length > 0);
+  const cmsNav = navigation.filter((section) => section.links.length > 0);
+  let navSections =
+    cmsNav.length > 0 ? cmsNav : useSem ? mapContentColumns(SEM_FOOTER_COLUMNS) : [];
+
+  if (useSem && !SEM_CONTACT_PUBLISHED) {
+    navSections = navSections
+      .map((section) => ({
+        ...section,
+        links: section.links.filter((link) => {
+          if (link.action.type !== "url") return true;
+          const path = link.action.href.split(/[?#]/)[0]?.replace(/\/$/, "") || "/";
+          return path !== "/contacto" && !path.startsWith("/contacto/");
+        }),
+      }))
+      .filter((section) => section.links.length > 0);
+  }
 
   const contactFallback: FooterContactContent = useSem
     ? SEM_FOOTER_CONTACT
     : { email: "", website: "", websiteLabel: "" };
   const contactContent = buildContactContent(contact, contactFallback);
+  if (useSem && !SEM_CONTACT_PUBLISHED && !contactContent.email && !contactContent.website) {
+    contactContent.pendingNote = SEM_CONTACT_PENDING;
+  }
   const legalBase = useSem ? SEM_FOOTER_LEGAL : PLATFORM_FOOTER_LEGAL;
   const institutionBase = useSem ? SEM_FOOTER_INSTITUTION : PLATFORM_FOOTER_INSTITUTION;
 

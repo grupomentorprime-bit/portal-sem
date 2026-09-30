@@ -1,4 +1,3 @@
-import { SEM_CONTACT_PENDING } from "@/lib/portal/sem-identity-v7";
 import { Globe, Mail } from "lucide-react";
 import { FooterSectionHeading } from "@/components/portal/layout/footer/FooterSectionHeading";
 import { FooterExperienceLink } from "@/components/portal/experience/footer-premium/FooterExperienceLink";
@@ -19,7 +18,9 @@ export function FooterContactColumn({ contact, className }: FooterContactColumnP
     return (
       <div className={cn("footer-premium__column footer-premium__column--contact", className)}>
         <FooterSectionHeading title={contact.title || "Contacto"} />
-        <p className="footer-premium__contact-pending">{SEM_CONTACT_PENDING}</p>
+        {contact.pendingNote ? (
+          <p className="footer-premium__contact-pending">{contact.pendingNote}</p>
+        ) : null}
       </div>
     );
   }

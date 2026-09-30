@@ -178,7 +178,7 @@ describe("OT-GROWTH-PROD-003 — SEM conserva pack; ADL no hereda nombres SEM", 
 
     assert.equal(
       SEM_FOOTER_INSTITUTION.sealLine3,
-      "IGLESIA PENTECOSTAL NAZARETH"
+      "Iglesia Pentecostal Nazareth"
     );
     assert.doesNotMatch(SEM_FOOTER_LEGAL.credits, /Learning OS/);
     assert.match(SEM_FOOTER_LEGAL.credits, /Growth OS/);

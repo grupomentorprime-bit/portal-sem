@@ -25,7 +25,7 @@ export default async function AdminPersonasPage({ searchParams }: PageProps) {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/personas");
+    redirect("/login?next=/admin/personas");
   }
 
   const { resolvePermissionsForMembership } = await import(

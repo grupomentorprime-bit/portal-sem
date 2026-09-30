@@ -59,7 +59,7 @@ Mientras existan consumidores del contrato anterior:
 - Admin CMS (`requireActiveTenant`) usa la sesión; portal público sigue resolviendo por host.
 - 0 membresías → `/admin/sin-espacio` (nunca cascarón vacío).
 - **Operador de Growth OS** (`platform_owner` / `platform_operator` en `identity_users`): independiente del Espacio activo. No se infiere de `super_admin`. Superficie `/platform` (catálogo, ficha, crear y entrar a Espacios vía membresía + switch). Ver [OT-GROWTH-PROD-005](../validation/OT-GROWTH-PROD-005/README.md) y [OT-GROWTH-PLATFORM-ADMIN-004](../validation/OT-GROWTH-PLATFORM-ADMIN-004/README.md).
-- Keycloak: 1 realm de plataforma; membresías en Mongo (sin realm por tenant).
+- Keycloak: un realm de plataforma Growth OS. El id técnico sigue siendo `seminario-ipn` (no renombrar: usuarios, sesiones y callbacks). El Display Name es Growth OS. `growth-os-web` y `growth-os-dev` usan esa identidad; `seminario-ipn-web` conserva la marca SEM con el tema de login `sem`. Membresías en Mongo (sin realm por Espacio). SEM, ADL, Mentor Prime Capacitación y Fundación Mueve son Espacios equivalentes.
 
 Ver [OT-GROWTH-SAAS-005](../validation/OT-GROWTH-SAAS-005/README.md).
 

@@ -3,7 +3,9 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ColorPicker } from "@/components/config/ColorPicker";
 import { HeroPortalPanel } from "@/components/config/HeroPortalPanel";
+import { HomeHeroPhotosField } from "@/components/config/HomeHeroPhotosField";
 import { LogoUploader, FaviconUploader } from "@/components/config/ImageUploader";
+import { isSemTenant } from "@/core/tenant/is-sem";
 import type { Branding } from "@/types/cms";
 import type { HeroPortalConfig } from "@/types/hero-portal";
 
@@ -28,6 +30,22 @@ export function BrandingPanel({
 
   return (
     <div className="space-y-6">
+      {isSemTenant(tenant) ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Fotografías del inicio</CardTitle>
+            <CardDescription>
+              Imágenes del hero, tomadas de la biblioteca por su identificador.
+            </CardDescription>
+          </CardHeader>
+          <HomeHeroPhotosField
+            value={value.homeHeroPhotos ?? []}
+            onChange={(homeHeroPhotos) => onChange({ ...value, homeHeroPhotos })}
+            tenant={tenant}
+          />
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Identidad visual</CardTitle>

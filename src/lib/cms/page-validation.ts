@@ -6,6 +6,7 @@ import type {
   CmsPageUpdate,
 } from "@/types/page";
 import { BLOCK_TYPES, PAGE_STATUSES, PAGE_TEMPLATES } from "@/types/page";
+import { isDisallowedCmsSlug } from "@/core/portal/public-cms-path";
 import { normalizeSlug } from "@/lib/cms/page-utils";
 import { DEFAULT_SETTINGS } from "@/lib/cms/page-defaults";
 import { QUERY_BLOCK_TYPES, blockTypeToDefaultQuery } from "@/lib/content/block-query-defaults";
@@ -98,6 +99,11 @@ function validateCommon(
       errors.push({ field: "slug", message: "El slug es obligatorio." });
     } else if (normalizeSlug(data.slug) !== data.slug && data.slug !== "/") {
       errors.push({ field: "slug", message: "El slug debe comenzar con /." });
+    } else if (isDisallowedCmsSlug(data.slug)) {
+      errors.push({
+        field: "slug",
+        message: "Esa dirección está reservada por la plataforma.",
+      });
     }
   }
 

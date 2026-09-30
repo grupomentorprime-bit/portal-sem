@@ -12,7 +12,12 @@ interface PortalHomeProps {
 /** Home pública. En SEM, la composición institucional. En otros Espacios, el Portal Engine. */
 export async function PortalHome({ ctx }: PortalHomeProps) {
   if (isSemTenant(ctx.tenant)) {
-    return <SemInstitutionalHome />;
+    return (
+      <SemInstitutionalHome
+        tenantId={ctx.tenant}
+        heroPhotos={ctx.config.branding.homeHeroPhotos}
+      />
+    );
   }
 
   const page = await loadHomePage(ctx.tenant);

@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function SinEspacioPage() {
   const session = await loadSessionContext();
   if (!session) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   if (session.membership && session.session.tenantId?.trim()) {

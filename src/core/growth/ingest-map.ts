@@ -3,6 +3,7 @@
  * Un solo camino; live ingest y backfill reutilizan estas formas.
  */
 
+import { campaignForTheologicalAdmissionProgram } from "@/lib/portal/admission-campaign-interest";
 import type {
   GrowthAdmissionIngestInput,
   GrowthFormIngestInput,
@@ -19,6 +20,7 @@ export interface GrowthInteresadoSourceRow {
   programId: string;
   programLabel?: string;
   source?: string;
+  campaign?: string;
   createdAt?: string;
   handoff?: {
     delivered: boolean;
@@ -42,6 +44,7 @@ export interface GrowthSubmissionSourceRow {
 export function toGrowthAdmissionInput(
   row: GrowthInteresadoSourceRow
 ): GrowthAdmissionIngestInput {
+  const campaign = row.campaign ?? campaignForTheologicalAdmissionProgram(row.programId);
   return {
     kind: "admission",
     tenantId: row.tenant,
@@ -52,6 +55,7 @@ export function toGrowthAdmissionInput(
     phone: row.phone,
     programId: row.programId,
     ...(row.programLabel ? { programLabel: row.programLabel } : {}),
+    ...(campaign ? { campaign } : {}),
     ...(row.source ? { channel: row.source } : {}),
     ...(row.createdAt ? { capturedAt: row.createdAt } : {}),
     ...(row.handoff

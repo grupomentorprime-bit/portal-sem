@@ -45,13 +45,10 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
     requiredAnyPermission: ["settings.update"],
   },
   {
-    href: "/admin/pages",
-    label: "Portal",
+    href: "/admin/portal/forms",
+    label: "Formularios",
     icon: "portal",
     matchPrefixes: [
-      "/admin/pages",
-      "/admin/menus",
-      "/admin/experience-studio",
       "/admin/portal/forms",
     ],
     requiredAnyPermission: [
@@ -61,13 +58,6 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
       "experience.forms.read",
       "experience.forms.manage",
     ],
-  },
-  {
-    href: "/admin/content/programs",
-    label: "Programas y cursos",
-    icon: "programs",
-    matchPrefixes: ["/admin/content/programs"],
-    requiredAnyPermission: ["programs.manage", "cms.pages.read"],
   },
   {
     href: "/admin/portal/admission",

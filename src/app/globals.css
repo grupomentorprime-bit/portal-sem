@@ -26,6 +26,9 @@
 @import "../styles/admin-forms-center.css";
 @import "../styles/experience-studio.css";
 @import "../styles/home-premium/index.css";
+@import "../styles/home-premium/institutional-home.css";
+@import "../styles/sites/cumple.css";
+@import "../styles/sites/coming-soon.css";
 
 
 @theme inline {
@@ -292,6 +295,8 @@ label {
 
 .portal-header-premium {
   height: var(--portal-header-height);
+  overflow: visible;
+  z-index: var(--z-sticky);
   background: color-mix(in srgb, var(--background) 88%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -312,6 +317,12 @@ label {
   background: var(--background);
   border-color: var(--border);
   box-shadow: var(--shadow-sm);
+}
+
+.portal-header-premium__inner,
+.portal-header-premium__grid,
+.portal-header-premium__nav {
+  overflow: visible;
 }
 
 .portal-header-premium__inner {
@@ -807,13 +818,19 @@ body:has(.hero-premium) main {
 
 .portal-nav-dropdown {
   position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.portal-nav-dropdown--open {
+  z-index: var(--z-dropdown);
 }
 
 .portal-nav-dropdown__menu {
   position: absolute;
-  top: calc(100% + 0.35rem);
+  top: 100%;
   left: 0;
-  z-index: 30;
+  z-index: var(--z-dropdown);
   display: none;
   min-width: 16rem;
   margin: 0;
@@ -825,8 +842,17 @@ body:has(.hero-premium) main {
   box-shadow: var(--shadow-md);
 }
 
-.portal-nav-dropdown:hover > .portal-nav-dropdown__menu,
-.portal-nav-dropdown:focus-within > .portal-nav-dropdown__menu {
+.portal-nav-dropdown__menu::before {
+  content: "";
+  position: absolute;
+  top: -0.75rem;
+  right: 0;
+  left: 0;
+  height: 0.75rem;
+}
+
+.portal-nav-dropdown--open:not(.portal-nav-dropdown--dismissed) > .portal-nav-dropdown__menu,
+.portal-nav-dropdown:focus-within:not(.portal-nav-dropdown--dismissed) > .portal-nav-dropdown__menu {
   display: block;
 }
 

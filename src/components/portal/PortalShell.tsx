@@ -30,7 +30,7 @@ export async function PortalShell({ children }: PortalShellProps) {
   const ctx = await getPortalContext();
 
   if (!ctx) {
-    return <main>{children}</main>;
+    return <main suppressHydrationWarning>{children}</main>;
   }
 
   const { config, navigation, logos, tenant } = ctx;
@@ -86,6 +86,7 @@ export async function PortalShell({ children }: PortalShellProps) {
       <main
         className="flex-1 pt-[var(--portal-header-offset,90px)]"
         style={{ "--portal-header-offset": "90px" } as React.CSSProperties}
+        suppressHydrationWarning
       >
         {children}
       </main>

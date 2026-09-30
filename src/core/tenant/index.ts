@@ -173,6 +173,15 @@ export {
 } from "./space-status";
 
 export {
+  customDomainDnsTarget,
+  interpretCustomDomainInput,
+  setSpaceCustomDomain,
+  SetSpaceCustomDomainError,
+  type SetSpaceCustomDomainErrorCode,
+  type SetSpaceCustomDomainResult,
+} from "./space-custom-domain";
+
+export {
   homologateAllPlatformDomains,
   homologateSitePlatformDomain,
   type HomologateAllDomainsResult,

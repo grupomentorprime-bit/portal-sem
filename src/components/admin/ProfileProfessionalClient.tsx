@@ -83,7 +83,7 @@ export function ProfileProfessionalClient() {
     return (
       <div className="rounded-xl border border-border bg-background p-6 text-center">
         <p className="text-sm text-muted">Inicia sesión para ver tu ficha profesional.</p>
-        <Link href="/admin/login" className="mt-3 inline-block text-sm font-medium text-primary underline">
+        <Link href="/login" className="mt-3 inline-block text-sm font-medium text-primary underline">
           Ir a ingresar
         </Link>
       </div>

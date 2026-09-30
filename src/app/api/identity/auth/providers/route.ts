@@ -10,8 +10,8 @@ export async function GET() {
     ok: true,
     providers: {
       local: isEmailAuthEnabled(),
-      institutional: keycloak,
-      institutionalOnly: keycloakOnly,
+      keycloak,
+      keycloakOnly,
     },
   });
 }

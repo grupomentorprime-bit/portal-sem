@@ -4,11 +4,21 @@ import { createHash, randomBytes } from "node:crypto";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { resolveKeycloakRedirectUri } from "@/core/identity/auth/public-origin";
 
-/** Cliente OAuth dedicado de Growth OS (confidential + Standard flow). */
+/** Cliente OAuth de Growth OS en producción (confidential + Standard flow). */
 export const GROWTH_OS_KEYCLOAK_CLIENT_ID = "growth-os-web";
 
-/** Clientes históricos — no usar como fallback silencioso en producción. */
-const FORBIDDEN_PRODUCTION_CLIENT_IDS = new Set(["admin-cli", "seminario-ipn-web"]);
+/** Cliente OAuth de Growth OS en localhost. No reutiliza seminario-ipn-web ni el de producción. */
+export const GROWTH_OS_DEV_KEYCLOAK_CLIENT_ID = "growth-os-dev";
+
+/** Clientes ajenos al acceso de plataforma — rechazados en cualquier entorno. */
+const BLOCKED_GROWTH_OS_CLIENT_IDS = new Set(["admin-cli", "seminario-ipn-web"]);
+
+/** En producción solo se acepta growth-os-web. El cliente de localhost queda fuera. */
+const FORBIDDEN_PRODUCTION_CLIENT_IDS = new Set([
+  "admin-cli",
+  "seminario-ipn-web",
+  GROWTH_OS_DEV_KEYCLOAK_CLIENT_ID,
+]);
 
 export interface KeycloakConfig {
   url: string;
@@ -30,7 +40,8 @@ export function isKeycloakEnabled(): boolean {
 
 /**
  * Lee configuración Keycloak desde entorno.
- * En producción: exige URL/realm/clientId/secret y rechaza clientes legacy (sin fallback).
+ * Rechaza seminario-ipn-web (Espacio SEM) y admin-cli en cualquier entorno.
+ * En producción exige growth-os-web + secret y rechaza el cliente de localhost.
  */
 export function getKeycloakConfig(): KeycloakConfig | null {
   const url = process.env.KEYCLOAK_URL?.replace(/\/$/, "");
@@ -47,8 +58,15 @@ export function getKeycloakConfig(): KeycloakConfig | null {
     return null;
   }
 
+  if (BLOCKED_GROWTH_OS_CLIENT_IDS.has(clientId)) {
+    console.error(
+      `[keycloak] cliente "${clientId}" no es de Growth OS. Local: ${GROWTH_OS_DEV_KEYCLOAK_CLIENT_ID}. Producción: ${GROWTH_OS_KEYCLOAK_CLIENT_ID}.`
+    );
+    return null;
+  }
+
   if (isProductionRuntime()) {
-    if (FORBIDDEN_PRODUCTION_CLIENT_IDS.has(clientId)) {
+    if (FORBIDDEN_PRODUCTION_CLIENT_IDS.has(clientId) || clientId !== GROWTH_OS_KEYCLOAK_CLIENT_ID) {
       console.error(
         `[keycloak] cliente "${clientId}" no permitido en producción. Usa ${GROWTH_OS_KEYCLOAK_CLIENT_ID}.`
       );
@@ -186,7 +204,7 @@ export async function exchangeKeycloakCode(
   if (!res.ok) {
     await res.text();
     console.error("[keycloak] token exchange failed", res.status);
-    throw new Error("No se pudo completar el inicio de sesión institucional.");
+    throw new Error("No se pudo completar el inicio de sesión.");
   }
 
   const json = (await res.json()) as { access_token: string; id_token?: string };
@@ -217,7 +235,7 @@ export async function fetchKeycloakUserInfo(accessToken: string): Promise<Keyclo
   if (!res.ok) {
     await res.text();
     console.error("[keycloak] userinfo failed", res.status);
-    throw new Error("No se pudo validar el perfil institucional.");
+    throw new Error("No se pudo validar el perfil.");
   }
 
   return (await res.json()) as KeycloakUserInfo;
@@ -247,14 +265,14 @@ function parseTokenError(res: Response, body: { error?: string; error_descriptio
 
   if (errorCode === "invalid_client" || normalized.includes("invalid client")) {
     throw new KeycloakAuthError(
-      "El cliente institucional no existe en el realm o la configuración no coincide.",
+      "El cliente de Growth OS no existe en el realm o la configuración no coincide.",
       "misconfigured"
     );
   }
 
   if (errorCode === "unauthorized_client" || normalized.includes("direct access grants")) {
     throw new KeycloakAuthError(
-      "El grant solicitado no está habilitado en el cliente institucional.",
+      "El grant solicitado no está habilitado en el cliente de Growth OS.",
       "misconfigured"
     );
   }
@@ -270,7 +288,7 @@ function parseTokenError(res: Response, body: { error?: string; error_descriptio
 
   if (errorCode === "invalid_grant") {
     throw new KeycloakAuthError(
-      "No se pudo validar las credenciales institucionales.",
+      "No se pudo validar las credenciales.",
       "invalid_credentials"
     );
   }

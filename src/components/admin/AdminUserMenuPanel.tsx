@@ -53,7 +53,7 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
   async function handleLogout() {
     setOpen(false);
     await fetch("/api/identity/logout", { method: "POST" });
-    router.push("/admin/login");
+    router.push("/login");
     router.refresh();
   }
 
@@ -81,7 +81,7 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
 
   if (!user) {
     return (
-      <Link href="/admin/login" className="text-sm font-medium text-primary hover:underline">
+      <Link href="/login" className="text-sm font-medium text-primary hover:underline">
         Ingresar
       </Link>
     );

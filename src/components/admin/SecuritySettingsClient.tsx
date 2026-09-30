@@ -53,7 +53,7 @@ export function SecuritySettingsClient() {
   if (!authenticated) {
     return (
       <p className="text-sm text-muted">
-        <Link href="/admin/login" className="underline">
+        <Link href="/login" className="underline">
           Inicia sesión
         </Link>{" "}
         para administrar tu seguridad.

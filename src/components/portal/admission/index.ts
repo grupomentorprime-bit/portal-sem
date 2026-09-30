@@ -16,7 +16,7 @@ export { AdmissionFAQ } from "./AdmissionFAQ";
 export { AdmissionFees } from "./AdmissionFees";
 export { AdmissionScholarships } from "./AdmissionScholarships";
 export { AdmissionForm } from "./AdmissionForm";
-export type { AdmissionProgramOption } from "./AdmissionForm";
+export type { AdmissionLockedInterest, AdmissionProgramOption } from "./AdmissionForm";
 export { AdmissionSuccess } from "./AdmissionSuccess";
 export { AdmissionClosing } from "./AdmissionClosing";
 export { AdmissionPageChrome } from "./AdmissionPageChrome";

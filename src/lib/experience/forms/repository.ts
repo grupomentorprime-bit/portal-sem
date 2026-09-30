@@ -26,7 +26,7 @@ function tenantFilter(tenant: string) {
   return { tenant };
 }
 
-function revalidateExperienceFormsCache(formId?: string): void {
+export function revalidateExperienceFormsCache(formId?: string): void {
   revalidateTag(CACHE_TAG, "max");
   if (formId) {
     revalidateTag(`experience-form-${formId}`, "max");
@@ -132,7 +132,10 @@ export const getPublicExperienceFormCached = (tenant: string, id: string) =>
     { tags: [CACHE_TAG, `experience-form-${resolveFormId(id)}`], revalidate: 60 }
   );
 
-export async function createExperienceForm(data: ExperienceFormCreate): Promise<ExperienceFormDefinition> {
+export async function createExperienceForm(
+  data: ExperienceFormCreate,
+  options?: { revalidate?: boolean }
+): Promise<ExperienceFormDefinition> {
   const db = await getDatabase();
   const now = new Date().toISOString();
   const document: ExperienceFormDefinition = {
@@ -142,14 +145,17 @@ export async function createExperienceForm(data: ExperienceFormCreate): Promise<
     updatedAt: now,
   };
   await db.collection<ExperienceFormDefinition>(COLLECTION).insertOne(document);
-  revalidateExperienceFormsCache(document._id);
+  if (options?.revalidate !== false) {
+    revalidateExperienceFormsCache(document._id);
+  }
   return document;
 }
 
 export async function updateExperienceForm(
   tenant: string,
   id: string,
-  update: ExperienceFormUpdate
+  update: ExperienceFormUpdate,
+  options?: { revalidate?: boolean }
 ): Promise<ExperienceFormDefinition | null> {
   const db = await getDatabase();
   const now = new Date().toISOString();
@@ -158,7 +164,9 @@ export async function updateExperienceForm(
     { $set: { ...update, updatedAt: now } },
     { returnDocument: "after" }
   );
-  revalidateExperienceFormsCache(id);
+  if (options?.revalidate !== false) {
+    revalidateExperienceFormsCache(id);
+  }
   return result ?? null;
 }
 

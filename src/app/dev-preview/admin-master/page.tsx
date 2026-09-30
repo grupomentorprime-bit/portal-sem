@@ -34,7 +34,7 @@ export default async function AdminMasterPreviewPage({ searchParams }: PageProps
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId) {
-    redirect("/admin/login?next=/dev-preview/admin-master");
+    redirect("/login?next=/dev-preview/admin-master");
   }
 
   const empty = (await searchParams).empty === "1";

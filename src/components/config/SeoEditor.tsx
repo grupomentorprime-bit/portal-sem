@@ -27,20 +27,28 @@ export function SeoEditor({ value, onChange }: SeoEditorProps) {
 
       <div className="space-y-4">
         <div>
-          <Label className="mb-2 block">Título SEO</Label>
+          <Label className="mb-2 block" htmlFor="seo-title">
+            Título SEO <span className="text-[var(--color-danger)]">*</span>
+          </Label>
           <Input
+            id="seo-title"
             value={value.title}
             onChange={(e) => update("title", e.target.value)}
             placeholder="Título del sitio"
+            required
           />
         </div>
 
         <div>
-          <Label className="mb-2 block">Descripción</Label>
+          <Label className="mb-2 block" htmlFor="seo-description">
+            Descripción <span className="text-[var(--color-danger)]">*</span>
+          </Label>
           <Textarea
+            id="seo-description"
             value={value.description}
             onChange={(e) => update("description", e.target.value)}
-            placeholder="Descripción del sitio"
+            placeholder="Breve descripción del sitio (aparece en buscadores)"
+            required
           />
         </div>
 

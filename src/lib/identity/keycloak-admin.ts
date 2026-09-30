@@ -117,7 +117,7 @@ async function findKeycloakUserId(
   if (!res.ok) {
     await res.text();
     console.error("[keycloak-admin] user lookup failed", res.status);
-    throw new Error("No se pudo consultar el usuario institucional.");
+    throw new Error("No se pudo consultar el usuario.");
   }
 
   const users = (await res.json()) as Array<{ id: string }>;
@@ -158,7 +158,7 @@ async function createKeycloakUserShell(
   if (!res.ok) {
     await res.text();
     console.error("[keycloak-admin] user create failed", res.status);
-    throw new Error("No se pudo crear el usuario institucional.");
+    throw new Error("No se pudo crear el usuario.");
   }
 
   const location = res.headers.get("Location");
@@ -200,7 +200,7 @@ async function setKeycloakUserPassword(
   if (!res.ok) {
     await res.text();
     console.error("[keycloak-admin] password reset failed", res.status);
-    throw new Error("No se pudo establecer la contraseña institucional.");
+    throw new Error("No se pudo establecer la contraseña.");
   }
 }
 
@@ -234,7 +234,7 @@ export async function provisionKeycloakUserForInvite(
   if (!config) {
     return {
       ok: false,
-      error: "El aprovisionamiento institucional no está configurado.",
+      error: "El aprovisionamiento de identidad no está configurado.",
       code: "not_configured",
     };
   }
@@ -254,7 +254,7 @@ export async function provisionKeycloakUserForInvite(
     logServerError("keycloak-admin", error);
     return {
       ok: false,
-      error: "No se pudo aprovisionar el usuario institucional.",
+      error: "No se pudo aprovisionar el usuario.",
       code: "keycloak_error",
     };
   }
@@ -269,7 +269,7 @@ export async function setKeycloakPasswordForInvite(input: {
   if (!config) {
     return {
       ok: false,
-      error: "El aprovisionamiento institucional no está configurado.",
+      error: "El aprovisionamiento de identidad no está configurado.",
       code: "not_configured",
     };
   }
@@ -292,7 +292,7 @@ export async function setKeycloakPasswordForInvite(input: {
     logServerError("keycloak-admin", error);
     return {
       ok: false,
-      error: "No se pudo completar el acceso institucional.",
+      error: "No se pudo completar el acceso.",
       code: "keycloak_error",
     };
   }

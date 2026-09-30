@@ -69,7 +69,10 @@
 .sem-manifesto {
   position: relative;
   overflow: hidden;
-  padding-block: clamp(5.5rem, 11vw, 8.75rem) clamp(4.5rem, 8vw, 7rem);
+  display: flex;
+  align-items: center;
+  min-height: calc(100dvh - 4rem);
+  padding-block: clamp(4.5rem, 8vw, 6.5rem);
 }
 
 .sem-manifesto__inner {
@@ -104,12 +107,14 @@
 
 .sem-manifesto__curve {
   position: absolute;
-  top: 8%;
-  right: -4%;
-  width: min(34vw, 380px);
+  top: 50%;
+  right: 0;
+  width: min(22vw, 260px);
   height: auto;
   color: var(--sem-sign);
   pointer-events: none;
+  transform: translateY(-50%);
+  opacity: 0.9;
 }
 
 .sem-manifesto__curve path {
@@ -119,15 +124,14 @@
   stroke-linecap: round;
 }
 
-.sem-manifesto__curve path:last-child {
-  opacity: 0.45;
-}
-
 /* —— Palabra / Formación / Servicio —— */
 
 .sem-axis {
   position: relative;
-  padding-block: clamp(1rem, 2vw, 1.5rem) clamp(4.75rem, 9vw, 7.5rem);
+  display: flex;
+  align-items: center;
+  min-height: calc(100dvh - 4rem);
+  padding-block: clamp(4.5rem, 8vw, 6.5rem);
 }
 
 .sem-axis .sem-narrative__inner {
@@ -139,7 +143,7 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: clamp(2.25rem, 4.5vw, 3.5rem);
+  gap: clamp(2.75rem, 5.5vh, 4.25rem);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -170,7 +174,7 @@
 
 .sem-axis__text {
   max-width: 28rem;
-  margin: 0.35rem 0 0;
+  margin: 0.7rem 0 0;
   font-size: clamp(1rem, 1.2vw, 1.08rem);
   font-weight: 400;
   line-height: 1.5;
@@ -341,11 +345,27 @@
 }
 
 @media (max-width: 899px) {
+  .sem-manifesto,
+  .sem-axis {
+    display: block;
+    min-height: 0;
+  }
+
+  .sem-manifesto {
+    padding-block: clamp(4.5rem, 14vw, 6rem) clamp(3.5rem, 10vw, 5rem);
+  }
+
+  .sem-axis {
+    padding-block: clamp(1.5rem, 5vw, 2.5rem) clamp(4rem, 12vw, 5.5rem);
+  }
+
   .sem-manifesto__curve {
-    width: 42vw;
+    width: 34vw;
     top: auto;
-    bottom: -8%;
-    opacity: 0.55;
+    right: -6%;
+    bottom: 6%;
+    opacity: 0.45;
+    transform: none;
   }
 
   .sem-church__frame {

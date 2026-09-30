@@ -31,15 +31,51 @@
 }
 
 .sem-home__hero {
-  background: var(--sem-home-navy);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse 42% 72% at 84% 46%,
+      color-mix(in srgb, var(--color-accent) 16%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--sem-home-navy);
   color: var(--text-inverse);
 }
 
 .sem-home__hero-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding-block: clamp(4.5rem, 11vw, 8.5rem) clamp(4.75rem, 12vw, 9rem);
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(3.15rem, 6vw, 5.35rem);
+}
+
+.sem-home__hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 40rem;
+}
+
+.sem-home__hero-mark {
+  position: absolute;
+  z-index: 0;
+  right: -6%;
+  bottom: -18%;
+  width: min(15rem, 58vw);
+  aspect-ratio: 827 / 1024;
+  background: color-mix(in srgb, var(--color-accent) 84%, white);
+  opacity: 0.72;
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--color-accent) 28%, transparent));
+  pointer-events: none;
+  user-select: none;
+  -webkit-mask-image: url("/images/logo-sem-isotype-line.png");
+  mask-image: url("/images/logo-sem-isotype-line.png");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  mask-mode: luminance;
 }
 
 .sem-home__mark {
@@ -123,12 +159,24 @@
   padding-block: clamp(4.25rem, 8vw, 6.75rem);
 }
 
+.sem-home > .sem-home__band {
+  padding-block: clamp(2.15rem, 3.6vw, 3.25rem);
+}
+
 .sem-home__band--muted {
   background: var(--color-background);
 }
 
 .sem-home__present {
   max-width: 46rem;
+}
+
+.sem-home__present-aside {
+  margin-top: 1.15rem;
+}
+
+.sem-home__present-aside .sem-home__statement-sub {
+  margin-top: 0;
 }
 
 .sem-home__statement,
@@ -160,6 +208,10 @@
   margin-bottom: clamp(2rem, 4vw, 3rem);
 }
 
+.sem-home .sem-home__section-head {
+  margin-bottom: clamp(1.25rem, 2.4vw, 1.85rem);
+}
+
 .sem-home__section-head h2 {
   font-size: clamp(2rem, 3.6vw, 2.85rem);
 }
@@ -180,9 +232,19 @@
   gap: 1.25rem;
 }
 
+.sem-home .sem-home__lines {
+  gap: 0;
+}
+
 .sem-home__line {
   padding: 1.75rem 0 0.25rem;
   border-top: 1px solid var(--sem-home-line);
+}
+
+.sem-home .sem-home__line {
+  padding: 1.55rem 0 1.35rem;
+  border-top: 2px solid var(--sem-home-navy);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 42%, transparent);
 }
 
 .sem-home__index {
@@ -193,11 +255,26 @@
   color: var(--color-secondary);
 }
 
+.sem-home .sem-home__index {
+  margin-bottom: 0.65rem;
+  color: color-mix(in srgb, var(--color-accent) 58%, var(--sem-home-navy));
+}
+
 .sem-home__line h3 {
   margin: 0;
   font-size: clamp(1.55rem, 2.4vw, 2rem);
   font-weight: 500;
   letter-spacing: -0.03em;
+}
+
+.sem-home .sem-home__line h3 {
+  font-size: clamp(1.9rem, 3.1vw, 2.7rem);
+}
+
+.sem-home .sem-home__line .sem-home__quiet-link,
+.sem-home .sem-home__program .sem-home__quiet-link,
+.sem-home .sem-home__present .sem-home__quiet-link {
+  margin-top: 1.05rem;
 }
 
 .sem-home__program {
@@ -206,6 +283,18 @@
   background: var(--color-surface);
   border: 1px solid var(--sem-home-line);
   border-left: 3px solid var(--sem-home-navy);
+}
+
+.sem-home .sem-home__program {
+  margin-top: clamp(1.65rem, 3vw, 2.35rem);
+  padding: clamp(1.35rem, 2.4vw, 1.75rem) 0 0;
+  background: none;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-accent) 55%, var(--sem-home-navy));
+}
+
+.sem-home .sem-home__program-copy p {
+  max-width: 36rem;
 }
 
 .sem-home__program h2 {
@@ -220,9 +309,52 @@
   list-style: none;
 }
 
+.sem-home .sem-home__study {
+  gap: 0;
+  margin-bottom: 0.15rem;
+}
+
 .sem-home__study li {
   padding: 1.35rem 0;
   border-top: 1px solid var(--sem-home-line);
+}
+
+.sem-home .sem-home__study li {
+  position: relative;
+  padding: 0 0 1.2rem 1.65rem;
+  border-top: 0;
+}
+
+.sem-home .sem-home__study li::before {
+  content: "";
+  position: absolute;
+  left: 0.28rem;
+  top: 0.55rem;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-accent) 62%, var(--sem-home-navy));
+}
+
+.sem-home .sem-home__study li::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.38rem;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: var(--sem-home-navy);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.sem-home .sem-home__study li:last-child::before {
+  bottom: auto;
+  height: 0;
+}
+
+.sem-home .sem-home__study li.is-frame::after {
+  background: var(--color-accent);
+  box-shadow: none;
 }
 
 .sem-home__study h3 {
@@ -232,10 +364,23 @@
   letter-spacing: -0.02em;
 }
 
+.sem-home .sem-home__study li:nth-child(2) h3,
+.sem-home .sem-home__study li:nth-child(4) h3 {
+  font-size: clamp(1.28rem, 2vw, 1.55rem);
+}
+
+.sem-home .sem-home__study + .sem-home__quiet-link {
+  margin-top: 0.85rem;
+}
+
 .sem-home__service {
   background: var(--sem-home-navy);
   color: var(--text-inverse);
   padding-block: clamp(4.5rem, 9vw, 7rem);
+}
+
+.sem-home > .sem-home__service {
+  padding-block: clamp(2.85rem, 5vw, 4.15rem);
 }
 
 .sem-home__service h2 {
@@ -266,6 +411,10 @@
   align-items: flex-start;
   gap: 1.25rem;
   padding-block: 2.25rem 2.75rem;
+}
+
+.sem-home .sem-home__admit-inner {
+  padding-block: 1.65rem 1.85rem;
 }
 
 .sem-home__admit h2 {
@@ -314,9 +463,92 @@ body:has(.sem-home) .footer-premium__cta {
     gap: 2.5rem;
   }
 
+  .sem-home .sem-home__lines {
+    gap: 0 3.25rem;
+  }
+
+  .sem-home .sem-home__present {
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.72fr);
+    column-gap: clamp(2rem, 4vw, 4.25rem);
+    align-items: start;
+  }
+
+  .sem-home__present-aside {
+    margin-top: 2.15rem;
+    padding-left: clamp(1.25rem, 2vw, 1.85rem);
+    border-left: 1px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+  }
+
+  .sem-home__hero-copy {
+    max-width: min(40rem, 62%);
+  }
+
+  .sem-home__hero-mark {
+    top: 46%;
+    right: -0.35rem;
+    bottom: auto;
+    width: min(24.5rem, 36%);
+    transform: translateY(-50%);
+    opacity: 0.91;
+  }
+
   .sem-home__study {
     grid-template-columns: 1fr 1fr;
     column-gap: 3rem;
+  }
+
+  .sem-home .sem-home__study {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 1.75rem;
+    row-gap: 0.35rem;
+  }
+
+  .sem-home .sem-home__study li.is-frame {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.85rem;
+    padding: 0 0 0.85rem 0;
+  }
+
+  .sem-home .sem-home__study li.is-frame::before,
+  .sem-home .sem-home__study li.is-frame::after {
+    content: none;
+  }
+
+  .sem-home .sem-home__study li.is-frame p {
+    margin-top: 0;
+  }
+
+  .sem-home .sem-home__study li:not(.is-frame) {
+    padding: 1.45rem 1.25rem 0 0;
+  }
+
+  .sem-home .sem-home__study li:not(.is-frame)::before {
+    top: 0.28rem;
+    right: -1.75rem;
+    bottom: auto;
+    left: 0;
+    width: auto;
+    height: 1px;
+  }
+
+  .sem-home .sem-home__study li:not(.is-frame)::after {
+    top: 0;
+  }
+
+  .sem-home .sem-home__study li:last-child::before {
+    right: auto;
+    width: 0;
+    height: 0;
+  }
+
+  .sem-home .sem-home__study li:last-child::after {
+    background: color-mix(in srgb, var(--color-accent) 72%, var(--sem-home-navy));
+    box-shadow: none;
   }
 
   .sem-home__study li:nth-child(1),
@@ -324,10 +556,27 @@ body:has(.sem-home) .footer-premium__cta {
     border-top: 1px solid var(--sem-home-line);
   }
 
+  .sem-home .sem-home__study li {
+    border-top: 0;
+  }
+
   .sem-home__admit-inner {
     flex-direction: row;
     align-items: flex-end;
     justify-content: space-between;
+  }
+}
+
+@media (min-width: 800px) {
+  .sem-home .sem-home__program {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(16rem, 0.88fr);
+    column-gap: clamp(2rem, 4vw, 4rem);
+    align-items: start;
+  }
+
+  .sem-home .sem-home__program-copy {
+    padding-top: 1.85rem;
   }
 }
 
@@ -338,7 +587,24 @@ body:has(.sem-home) .footer-premium__cta {
   }
 
   .sem-home__hero-inner {
-    padding-block: 3.25rem 3.75rem;
+    padding-block: 2.65rem 3rem;
+  }
+
+  .sem-home__hero-copy {
+    max-width: 100%;
+  }
+
+  .sem-home__hero-mark {
+    display: none;
+  }
+
+  .sem-home .sem-home__study li.is-frame {
+    padding: 0 0 0.85rem;
+  }
+
+  .sem-home .sem-home__study li.is-frame::before,
+  .sem-home .sem-home__study li.is-frame::after {
+    content: none;
   }
 }
 

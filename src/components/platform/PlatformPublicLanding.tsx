@@ -70,7 +70,7 @@ export function PlatformPublicLanding() {
                   Legales
                 </Link>
                 <Button
-                  href="/ingresar"
+                  href="/login"
                   size="md"
                   className="!bg-white !text-[var(--growth-os-primary)] hover:!bg-white/92 hover:!text-[var(--growth-os-primary)]"
                 >
@@ -97,7 +97,7 @@ export function PlatformPublicLanding() {
 
               <div className="mt-9 flex flex-wrap items-center gap-3 animate-[fade-in_0.55s_ease-out_0.28s_both]">
                 <Button
-                  href="/ingresar"
+                  href="/login"
                   size="lg"
                   className="min-w-[11.5rem] !bg-white !text-[var(--growth-os-primary)] hover:!bg-white/93 hover:!text-[var(--growth-os-primary)] active:!bg-white"
                 >
@@ -179,7 +179,7 @@ export function PlatformPublicLanding() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Button href="/ingresar" variant="primary" size="lg">
+              <Button href="/login" variant="primary" size="lg">
                 Ingresar
               </Button>
               <Button

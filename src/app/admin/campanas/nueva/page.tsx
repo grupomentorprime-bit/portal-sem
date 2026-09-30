@@ -11,7 +11,7 @@ export default async function AdminCampanasNuevaPage() {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/campanas/nueva");
+    redirect("/login?next=/admin/campanas/nueva");
   }
 
   const { resolvePermissionsForMembership } = await import(

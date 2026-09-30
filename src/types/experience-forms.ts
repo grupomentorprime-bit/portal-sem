@@ -91,6 +91,8 @@ export interface ExperienceFormDefinition {
   private?: boolean;
   /** Marcado al archivar; distingue borradores nuevos de formularios retirados. */
   archived?: boolean;
+  /** Declarado en src/sites. El panel no es la fuente de los campos. */
+  managedBy?: "coded-site";
   createdAt: string;
   updatedAt: string;
 }

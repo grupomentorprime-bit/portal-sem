@@ -20,12 +20,32 @@ const AXIS = [
   },
 ] as const;
 
+interface NarrativeAxisItem {
+  index?: string;
+  title?: string;
+  text?: string;
+}
+
 interface SemHomeNarrativeProps {
   imageSrc?: string;
   imageAlt?: string;
+  /** Campos del bloque CMS. Si vienen vacíos, se usa el copy de respaldo. */
+  settings?: Record<string, unknown>;
 }
 
-export function SemHomeNarrative({ imageSrc, imageAlt }: SemHomeNarrativeProps) {
+function narrativeText(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+export function SemHomeNarrative({ imageSrc, imageAlt, settings }: SemHomeNarrativeProps) {
+  const axisFromCms = Array.isArray(settings?.axisItems)
+    ? settings.axisItems.filter(
+        (item): item is NarrativeAxisItem =>
+          Boolean(item) && typeof item === "object" && typeof (item as NarrativeAxisItem).title === "string"
+      )
+    : [];
+  const axis = axisFromCms.length > 0 ? axisFromCms : AXIS;
+  const churchLinkHref = narrativeText(settings?.churchLinkHref, "/el-sem");
   const photoProps = imageSrc ? nextImagePropsForSrc(imageSrc) : undefined;
 
   return (
@@ -33,22 +53,29 @@ export function SemHomeNarrative({ imageSrc, imageAlt }: SemHomeNarrativeProps) 
       <section className="sem-manifesto" aria-labelledby="sem-manifesto-title">
         <div className="sem-narrative__inner sem-manifesto__inner">
           <div className="sem-manifesto__copy">
-            <p className="sem-narrative__kicker">Manifiesto</p>
+            <p className="sem-narrative__kicker">{narrativeText(settings?.manifestoKicker, "Manifiesto")}</p>
             <h2 id="sem-manifesto-title" className="sem-manifesto__title">
-              Formamos en la <span className="sem-narrative__mark">Palabra</span>
-              <br />
-              a quienes la Iglesia
-              <br />
-              envía a servir.
+              {typeof settings?.manifestoTitle === "string" && settings.manifestoTitle.trim() ? (
+                settings.manifestoTitle
+              ) : (
+                <>
+                  Formamos en la <span className="sem-narrative__mark">Palabra</span>
+                  <br />
+                  a quienes la Iglesia
+                  <br />
+                  envía a servir.
+                </>
+              )}
             </h2>
             <p className="sem-manifesto__lead">
-              El llamado no se queda en el deseo de aprender. Se prepara en la Escritura, se
-              ordena en la formación y vuelve a la congregación como servicio.
+              {narrativeText(
+                settings?.manifestoLead,
+                "El llamado no se queda en el deseo de aprender. Se prepara en la Escritura, se ordena en la formación y vuelve a la congregación como servicio."
+              )}
             </p>
           </div>
-          <svg className="sem-manifesto__curve" viewBox="0 0 360 520" aria-hidden="true">
-            <path d="M250 24C150 90 118 168 176 248C234 328 132 392 78 496" />
-            <path d="M286 72C214 128 198 188 236 236" />
+          <svg className="sem-manifesto__curve" viewBox="0 0 280 560" aria-hidden="true">
+            <path d="M196 16C72 78 48 196 132 286C214 374 86 446 64 544" />
           </svg>
         </div>
       </section>
@@ -59,9 +86,9 @@ export function SemHomeNarrative({ imageSrc, imageAlt }: SemHomeNarrativeProps) 
             Palabra, formación y servicio
           </h2>
             <ol className="sem-axis__list">
-            {AXIS.map((item) => (
-              <li key={item.index} className="sem-axis__item">
-                <span className="sem-axis__index">{item.index}</span>
+            {axis.map((item, position) => (
+              <li key={item.index || item.title || position} className="sem-axis__item">
+                <span className="sem-axis__index">{item.index || String(position + 1).padStart(2, "0")}</span>
                 <div className="sem-axis__body">
                   <h3 className="sem-axis__title">{item.title}</h3>
                   <p className="sem-axis__text">{item.text}</p>
@@ -78,21 +105,29 @@ export function SemHomeNarrative({ imageSrc, imageAlt }: SemHomeNarrativeProps) 
       <section className="sem-church" aria-labelledby="sem-church-title">
         <div className="sem-narrative__inner sem-church__grid">
           <div className="sem-church__copy">
-            <p className="sem-narrative__kicker">La Iglesia</p>
+            <p className="sem-narrative__kicker">{narrativeText(settings?.churchKicker, "La Iglesia")}</p>
             <h2 id="sem-church-title" className="sem-church__title">
-              Formando para servir
-              <br />
-              a la Iglesia.
+              {typeof settings?.churchTitle === "string" && settings.churchTitle.trim() ? (
+                settings.churchTitle
+              ) : (
+                <>
+                  Formando para servir
+                  <br />
+                  a la Iglesia.
+                </>
+              )}
             </h2>
             <p className="sem-church__lead">
-              Cada clase y cada semana de estudio tienen un destino: la congregación. Allí el
-              llamado se reconoce, la Palabra se comparte y el servicio toma cuerpo.
+              {narrativeText(
+                settings?.churchLead,
+                "Cada clase y cada semana de estudio tienen un destino: la congregación. Allí el llamado se reconoce, la Palabra se comparte y el servicio toma cuerpo."
+              )}
             </p>
             <p className="sem-church__affiliation">
-              IPN Chile — Iglesia Pentecostal Nazareth
+              {narrativeText(settings?.churchAffiliation, "IPN Chile — Iglesia Pentecostal Nazareth")}
             </p>
-            <Link href="/institucion" className="sem-narrative__link">
-              El SEM
+            <Link href={churchLinkHref} className="sem-narrative__link">
+              {narrativeText(settings?.churchLinkLabel, "El SEM")}
               <span aria-hidden="true">→</span>
             </Link>
           </div>

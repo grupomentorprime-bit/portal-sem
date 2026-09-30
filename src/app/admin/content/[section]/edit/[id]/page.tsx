@@ -5,6 +5,7 @@ import { ContentEditorClient } from "@/components/content/ContentEditorClient";
 import { getCategoryItem, getContentItem } from "@/lib/content/content-write";
 import { CONTENT_SECTIONS, getSectionBySlug } from "@/lib/content/content-sections";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
+import { isRetiredContentSection } from "@/lib/admin/retired-site-admin";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ interface PageProps {
 
 export default async function ContentEditPage({ params }: PageProps) {
   const { section, id } = await params;
+  if (isRetiredContentSection(section)) notFound();
   const meta = getSectionBySlug(section);
   if (!meta) notFound();
 

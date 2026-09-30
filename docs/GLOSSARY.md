@@ -44,10 +44,16 @@ Vocabulario vigente para docs de entrada, chrome de plataforma y conversación d
 
 | Nombre | Código | Rol |
 | --- | --- | --- |
-| **SEM** (Seminario Eclesiástico Mayor) | T001 · `seminario-ipn` | Primer cliente; pack de datos SEM/IPN |
-| **ADL** (Academia ADL) | T002 · `adl` | Segundo cliente; Espacio limpio, sin heredar branding SEM |
+| **SEM** (Seminario Eclesiástico Mayor) | T001 · `seminario-ipn` | Espacio; pack de datos SEM/IPN |
+| **ADL** (Academia ADL) | T002 · `adl` | Espacio; sin heredar branding SEM |
+| **Mentor Prime Capacitación** | — | Espacio equivalente a SEM y ADL |
+| **Fundación Mueve** | — | Espacio equivalente a SEM y ADL |
 
-Prohibido tratar SEM o ADL como nombre del producto o como lógica de plataforma (`if (tenant === "adl")` como identidad de producto).
+SEM, ADL, Mentor Prime Capacitación y Fundación Mueve son Espacios equivalentes. Ninguno es la plataforma.
+
+Prohibido tratar un Espacio como nombre del producto o como lógica de plataforma (`if (tenant === "adl")` como identidad de producto).
+
+El realm Keycloak `seminario-ipn` es el id técnico de la plataforma, no un realm del Espacio SEM. Su Display Name es **Growth OS**. El cliente `seminario-ipn-web` conserva la marca SEM; `growth-os-web` y `growth-os-dev` muestran Growth OS.
 
 ---
 

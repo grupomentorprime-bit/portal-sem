@@ -44,7 +44,10 @@ export function AdminModuleLayout({
 
         <div className={cn("flex flex-col gap-6 py-6", sidebar ? "lg:flex-row" : undefined)}>
           {sidebar ? <aside className="lg:w-64 lg:shrink-0">{sidebar}</aside> : null}
-          <main className="min-w-0 flex-1">{children}</main>
+          {/* Proton Pass escribe data-protonpass-form en este main antes de hidratar. */}
+          <main className="min-w-0 flex-1" suppressHydrationWarning>
+            {children}
+          </main>
         </div>
       </div>
     </div>

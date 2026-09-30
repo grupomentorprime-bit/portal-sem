@@ -221,7 +221,7 @@ export function GrowthOsAdminMasterShell({
                   aria-label="Salir"
                   onClick={async () => {
                     await fetch("/api/identity/logout", { method: "POST" });
-                    window.location.assign("/admin/login");
+                    window.location.assign("/login");
                   }}
                 >
                   <LogOut className="h-4 w-4" aria-hidden />
@@ -230,7 +230,10 @@ export function GrowthOsAdminMasterShell({
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-[90rem] flex-1 px-4 py-5 sm:px-5 lg:px-6 lg:py-6">
+          <main
+            className="mx-auto w-full max-w-[90rem] flex-1 px-4 py-5 sm:px-5 lg:px-6 lg:py-6"
+            suppressHydrationWarning
+          >
             {children}
           </main>
         </div>

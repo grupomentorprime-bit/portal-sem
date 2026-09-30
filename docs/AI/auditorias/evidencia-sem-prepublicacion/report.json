@@ -1,0 +1,365 @@
+{
+  "sem": [
+    {
+      "route": "/",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/",
+      "title": "Tu llamado merece preparación",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/institucion",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/institucion",
+      "title": "El SEM",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/como-se-estudia",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/como-se-estudia",
+      "title": "Cómo se estudia",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/malla",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/malla",
+      "title": "Malla y formación",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/programas",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/programas",
+      "title": "Programas formativos | SEM",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/admision",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/admision",
+      "title": "Admisión | Seminario Eclesiástico Mayor",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": true,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": true
+      }
+    },
+    {
+      "route": "/ingresar",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/admin/login",
+      "title": "Ingresar | Growth OS",
+      "nav": [],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/noticias",
+      "status": 404,
+      "finalUrl": "http://seminario-ipn.localhost:3000/noticias",
+      "title": "404: This page could not be found.",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/eventos",
+      "status": 404,
+      "finalUrl": "http://seminario-ipn.localhost:3000/eventos",
+      "title": "404: This page could not be found.",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/contacto",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/contacto",
+      "title": "Contacto | SEM",
+      "nav": [
+        "Inicio",
+        "El SEM",
+        "Cómo se estudia",
+        "Malla/Formación",
+        "Admisión"
+      ],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/admin",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/admin/login?next=%2Fadmin",
+      "title": "Ingresar | Growth OS",
+      "nav": [],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/admin/login",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/admin/login",
+      "title": "Ingresar | Growth OS",
+      "nav": [],
+      "leaked": {
+        "actualidad": false,
+        "noticiasHref": false,
+        "eventosHref": false,
+        "mailto": false,
+        "tel": false,
+        "whatsapp": false,
+        "campusCta": 0,
+        "equipoHref": false,
+        "phoneLike": false,
+        "wisboo": false,
+        "aprendeHoy": false
+      }
+    },
+    {
+      "route": "/programas/diploma-en-teologia-biblica-g-2025",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/programas/diploma-en-teologia-biblica-g-2025",
+      "title": "Diploma en Teologia Biblica Pastoral"
+    },
+    {
+      "route": "/programas/diploma-en-teologia-biblica-pastoral-g-2023",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/programas/diploma-en-teologia-biblica-pastoral-g-2023",
+      "title": "Diploma en Teologia Biblica Pastoral/ G-2023"
+    },
+    {
+      "route": "/programas/diploma-en-teologia-biblica-g-2024",
+      "status": 200,
+      "finalUrl": "http://seminario-ipn.localhost:3000/programas/diploma-en-teologia-biblica-g-2024",
+      "title": "Diploma en Teologia Biblica / G-2024"
+    }
+  ],
+  "adl": {
+    "status": 200,
+    "title": "Academia ADL",
+    "hasSemCopy": true,
+    "hasSemPrimary": false,
+    "hasAdlName": true,
+    "brandPrimary": ""
+  },
+  "links": [
+    {
+      "pathname": "/biblioteca",
+      "status": 404
+    }
+  ],
+  "notes": [],
+  "internalLinkCount": 15,
+  "brokenInternalLinks": [
+    {
+      "pathname": "/biblioteca",
+      "status": 404
+    }
+  ],
+  "mobileNavSample": [
+    "Inicio",
+    "El SEM",
+    "Cómo se estudia",
+    "Malla/Formación",
+    "Admisión",
+    "Postular",
+    "Ingresar",
+    "Inicio",
+    "El SEM",
+    "Cómo se estudia",
+    "Malla/Formación",
+    "Admisión",
+    "Postular",
+    "Ingresar",
+    "Postular",
+    "Cómo se estudia",
+    "Cómo se estudia",
+    "Cómo se estudia",
+    "Admisión"
+  ],
+  "semBrandPrimary": "",
+  "programSlugs": [
+    "/programas/diploma-en-teologia-biblica-g-2025",
+    "/programas/diploma-en-teologia-biblica-pastoral-g-2023",
+    "/programas/diploma-en-teologia-biblica-g-2024"
+  ]
+}

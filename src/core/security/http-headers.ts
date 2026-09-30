@@ -15,6 +15,7 @@ export const SECURITY_HEADER_NAMES = {
 
 /** Prefijos privados: páginas shell + APIs de identidad / Espacio / plataforma / Growth. */
 const PRIVATE_NO_STORE_PREFIXES = [
+  "/login",
   "/admin",
   "/platform",
   "/internal",

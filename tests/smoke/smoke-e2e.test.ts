@@ -65,37 +65,49 @@ describe("OT-GROWTH-TEST-002 — portal público + CMS render", () => {
   });
 });
 
-describe("OT-GROWTH-TEST-002 — admin anónimo + login institucional (inicio)", () => {
+describe("OT-GROWTH-TEST-002 — admin anónimo + login Growth OS (inicio)", () => {
   before(ensureBase);
 
-  it("/admin sin sesión redirige a /admin/login", async (t) => {
+  it("/admin sin sesión redirige a /login", async (t) => {
     if (skipIfOffline(t)) return;
     const res = await smokeFetch("/admin");
     assert.equal(res.status, 307);
-    const loc = res.headers.get("location") ?? "";
-    assert.match(loc, /\/admin\/login/);
-    assert.match(loc, /next=/);
+    const loc = new URL(res.headers.get("location") ?? "", "http://localhost");
+    assert.equal(loc.pathname, "/login");
+    assert.equal(loc.searchParams.get("next"), "/admin");
   });
 
-  it("/admin/login responde 200 con shell de acceso", async (t) => {
+  it("/login responde 200 con Ingresar a Growth OS", async (t) => {
     if (skipIfOffline(t)) return;
-    const res = await smokeFetch("/admin/login");
+    const res = await smokeFetch("/login");
     assert.equal(res.status, 200);
-    assert.match(res.text, /Growth OS/i);
-    assert.match(res.text, /Acceso/i);
+    assert.match(res.text, /Ingresar/);
+    assert.match(res.text, /Usuario/);
+    assert.match(res.text, /Contraseña/);
+    assert.match(res.text, /type="password"/);
+    assert.doesNotMatch(res.text, /\/api\/identity\/auth\/keycloak\/login/);
     assert.doesNotMatch(res.text, /CMS del SEM/i);
     assert.doesNotMatch(res.text, /Portal SEM/i);
   });
 
-  it("providers públicos reportan Keycloak institucional", async (t) => {
+  it("/admin/login redirige a /login", async (t) => {
+    if (skipIfOffline(t)) return;
+    const res = await smokeFetch("/admin/login?next=/admin");
+    assert.equal(res.status, 307);
+    const loc = new URL(res.headers.get("location") ?? "", "http://localhost");
+    assert.equal(loc.pathname, "/login");
+    assert.equal(loc.searchParams.get("next"), "/admin");
+  });
+
+  it("providers públicos reportan Keycloak de Growth OS", async (t) => {
     if (skipIfOffline(t)) return;
     const res = await smokeFetch("/api/identity/auth/providers");
     assert.equal(res.status, 200);
     const body = asRecord(res.json);
     assert.equal(body?.ok, true);
     const providers = asRecord(body?.providers);
-    assert.equal(providers?.institutional, true);
-    assert.equal(providers?.institutionalOnly, true);
+    assert.equal(providers?.keycloak, true);
+    assert.equal(providers?.keycloakOnly, true);
     assert.equal(providers?.local, false);
   });
 

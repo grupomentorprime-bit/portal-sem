@@ -252,7 +252,7 @@ export function PlatformShell({
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-none flex-1 px-4 py-4 sm:px-5 lg:px-5">
+          <main className="mx-auto w-full max-w-none flex-1 px-4 py-4 sm:px-5 lg:px-5" suppressHydrationWarning>
             {children}
           </main>
 
@@ -311,7 +311,7 @@ function LogoutControl() {
       aria-label="Salir"
       onClick={async () => {
         await fetch("/api/identity/logout", { method: "POST" });
-        window.location.assign("/admin/login");
+        window.location.assign("/login");
       }}
     >
       <LogOut className="h-4 w-4" aria-hidden />

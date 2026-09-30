@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight, LogIn, Menu, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { iconSizes } from "@/design";
 import { cn } from "@/lib/utils";
 import { focusRing } from "@/components/ui/shared";
@@ -44,6 +44,10 @@ function stripTrailingArrow(label: string): string {
   return label.replace(/\s*(?:→|->)\s*$/u, "").trimEnd();
 }
 
+function isModifiedClick(event: React.MouseEvent<HTMLAnchorElement>): boolean {
+  return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+}
+
 function DesktopNavItem({
   link,
   pathname,
@@ -52,9 +56,60 @@ function DesktopNavItem({
   pathname: string;
 }) {
   const handleHomeLink = useHomeLinkHandler();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const closingByKeyRef = useRef(false);
+  const openRef = useRef(false);
+  const pointerEnteredAtRef = useRef(0);
+  const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  const showMenu = () => {
+    openRef.current = true;
+    setDismissed(false);
+    setOpen(true);
+  };
+
+  const hideMenu = (dismiss: boolean) => {
+    openRef.current = false;
+    setOpen(false);
+    setDismissed(dismiss);
+  };
   const children = (link.children ?? []).filter((child) => child.href && child.href !== "#");
   const active =
     isActiveNav(pathname, link.href) || children.some((child) => isActiveNav(pathname, child.href));
+
+  useEffect(() => {
+    openRef.current = false;
+    setOpen(false);
+    setDismissed(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open && !dismissed) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || rootRef.current?.contains(target)) return;
+      hideMenu(false);
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const trigger = rootRef.current?.querySelector<HTMLElement>("[data-nav-trigger]");
+      const focusMoves = document.activeElement !== trigger;
+      closingByKeyRef.current = focusMoves;
+      hideMenu(true);
+      if (focusMoves) trigger?.focus();
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, dismissed]);
 
   if (children.length === 0) {
     return (
@@ -68,17 +123,67 @@ function DesktopNavItem({
     );
   }
 
+  const closeIfFocusLeft = (next: EventTarget | null) => {
+    if (next instanceof Node && rootRef.current?.contains(next)) return;
+    if (rootRef.current?.contains(document.activeElement)) return;
+    hideMenu(false);
+  };
+
   return (
-    <div className="portal-nav-dropdown">
+    <div
+      ref={rootRef}
+      className={cn(
+        "portal-nav-dropdown",
+        open && "portal-nav-dropdown--open",
+        dismissed && "portal-nav-dropdown--dismissed"
+      )}
+      onMouseEnter={() => {
+        if (!openRef.current) pointerEnteredAtRef.current = performance.now();
+        showMenu();
+      }}
+      onMouseLeave={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Node && rootRef.current?.contains(next)) return;
+        if (rootRef.current?.contains(document.activeElement)) return;
+        pointerEnteredAtRef.current = 0;
+        hideMenu(false);
+      }}
+      onFocus={() => {
+        if (closingByKeyRef.current) {
+          closingByKeyRef.current = false;
+          return;
+        }
+        showMenu();
+      }}
+      onBlur={(event) => {
+        closeIfFocusLeft(event.relatedTarget);
+      }}
+    >
       <Link
         href={link.href}
+        data-nav-trigger=""
         className={cn("portal-nav-link", active && "portal-nav-link--active", focusRing)}
         aria-haspopup="true"
-        onClick={(event) => handleHomeLink(event, link.href)}
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={(event) => {
+          if (isModifiedClick(event)) {
+            handleHomeLink(event, link.href);
+            return;
+          }
+          event.preventDefault();
+          const openingClick = performance.now() - pointerEnteredAtRef.current < 500;
+          pointerEnteredAtRef.current = 0;
+          if (openingClick || !openRef.current) {
+            showMenu();
+            return;
+          }
+          hideMenu(true);
+        }}
       >
         {link.label}
       </Link>
-      <ul className="portal-nav-dropdown__menu">
+      <ul id={menuId} className="portal-nav-dropdown__menu">
         {children.map((child) => (
           <li key={`${child.href}-${child.label}`}>
             <Link

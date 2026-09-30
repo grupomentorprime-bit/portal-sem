@@ -17,16 +17,16 @@ function readSrc(rel: string): string {
 }
 
 describe("OT-GROWTH-AUTH-HARDENING-001 — login UI Auth Code + PKCE", () => {
-  it("LoginForm redirige a /keycloak/login y no envía correo ni contraseña", () => {
+  it("LoginForm pide usuario y contraseña y los valida en el servidor", () => {
     const form = readSrc("src/components/identity/LoginForm.tsx");
-    const page = readSrc("src/app/admin/login/page.tsx");
-    assert.match(page, /\/api\/identity\/auth\/keycloak\/login/);
-    assert.match(form, /Ingresar a Growth OS/);
-    assert.match(form, /href=\{loginHref\}/);
-    assert.doesNotMatch(form, /\/api\/identity\/auth\/keycloak\/session/);
-    assert.doesNotMatch(form, /type=\"email\"/);
-    assert.doesNotMatch(form, /type=\"password\"/);
-    assert.doesNotMatch(form, /grant/);
+    const page = readSrc("src/app/login/page.tsx");
+    assert.match(form, /Usuario/);
+    assert.match(form, /Contraseña/);
+    assert.match(form, /type="password"/);
+    assert.match(form, /\/api\/identity\/auth\/keycloak\/session/);
+    assert.doesNotMatch(form, /href=\{loginHref\}/);
+    assert.doesNotMatch(form, /\/api\/identity\/auth\/keycloak\/login/);
+    assert.doesNotMatch(page, /\/api\/identity\/auth\/keycloak\/login/);
     assert.doesNotMatch(page, /grant/);
   });
 
@@ -38,13 +38,18 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — login UI Auth Code + PKCE", () => {
     assert.doesNotMatch(session, /status:\s*410/);
   });
 
-  it("login page entra a /admin si hay sesión y no pide contraseña", () => {
-    const page = readSrc("src/app/admin/login/page.tsx");
+  it("login page redirige la sesión con el destino post-auth", () => {
+    const page = readSrc("src/app/login/page.tsx");
+    const legacy = readSrc("src/app/admin/login/page.tsx");
     assert.match(page, /loadSessionContext/);
-    assert.match(page, /redirect\("\/admin"\)/);
-    assert.match(page, /\/api\/identity\/auth\/keycloak\/login/);
-    assert.doesNotMatch(page, /correo y contraseña/);
-    assert.doesNotMatch(page, /keycloak\/session/);
+    assert.match(page, /resolvePostAuthDestination/);
+    assert.match(page, /hasPlatformOperatorCapability/);
+    assert.doesNotMatch(page, /redirect\("\/admin"\)/);
+    assert.match(page, /LoginForm/);
+    assert.doesNotMatch(page, /\/api\/identity\/auth\/keycloak\/login/);
+    assert.match(legacy, /toGrowthLoginPath/);
+    assert.doesNotMatch(legacy, /LoginForm/);
+    assert.doesNotMatch(legacy, /type=\"password\"/);
   });
 });
 
@@ -91,24 +96,59 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — PKCE S256 + state", () => {
   });
 });
 
+describe("OT-GROWTH-AUTH-HARDENING-001 — cookie de sesión en localhost", () => {
+  it("https://localhost no marca Secure si el navegador no llegó por https", async () => {
+    const { isSecureCookieFromHeaders } = await import("../../src/core/identity/auth/config");
+    const prev = {
+      APP_URL: process.env.APP_URL,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      SESSION_COOKIE_SECURE: process.env.SESSION_COOKIE_SECURE,
+    };
+    delete process.env.SESSION_COOKIE_SECURE;
+    try {
+      process.env.APP_URL = "https://localhost:3000";
+      process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+      assert.equal(isSecureCookieFromHeaders(new Headers()), false);
+      assert.equal(
+        isSecureCookieFromHeaders(new Headers({ "x-forwarded-proto": "https" })),
+        true
+      );
+
+      process.env.APP_URL = "https://growthos.mentorprime.cl";
+      assert.equal(isSecureCookieFromHeaders(new Headers()), true);
+    } finally {
+      for (const [key, value] of Object.entries(prev)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+});
+
 describe("OT-GROWTH-AUTH-HARDENING-001 — cliente growth-os-web", () => {
-  it("defaults y docs apuntan a growth-os-web; sin fallback silencioso a legacy en prod", () => {
+  it("local usa growth-os-dev y producción sigue en growth-os-web", () => {
     const keycloak = readSrc("src/core/identity/auth/keycloak.ts");
     assert.match(keycloak, /GROWTH_OS_KEYCLOAK_CLIENT_ID\s*=\s*"growth-os-web"/);
+    assert.match(keycloak, /GROWTH_OS_DEV_KEYCLOAK_CLIENT_ID\s*=\s*"growth-os-dev"/);
     assert.match(keycloak, /admin-cli/);
     assert.match(keycloak, /seminario-ipn-web/);
+    assert.match(keycloak, /BLOCKED_GROWTH_OS_CLIENT_IDS/);
     assert.match(keycloak, /FORBIDDEN_PRODUCTION_CLIENT_IDS/);
     assert.match(keycloak, /KEYCLOAK_CLIENT_SECRET es obligatorio en producción/);
 
     const envExample = readSrc(".env.example");
+    assert.match(envExample, /KEYCLOAK_CLIENT_ID=growth-os-dev/);
     assert.match(envExample, /KEYCLOAK_CLIENT_ID=growth-os-web/);
     assert.doesNotMatch(envExample, /KEYCLOAK_CLIENT_ID=admin-cli/);
+    assert.doesNotMatch(envExample, /KEYCLOAK_CLIENT_ID=seminario-ipn-web/);
 
     const setup = readSrc("scripts/setup-keycloak-client.ts");
+    assert.match(setup, /DEV_CLIENT_ID = "growth-os-dev"/);
     assert.match(setup, /growth-os-web/);
-    assert.match(setup, /directAccessGrantsEnabled:\s*false/);
+    assert.match(setup, /seminario-ipn-web/);
+    assert.match(setup, /directAccessGrantsEnabled:\s*true/);
     assert.match(setup, /no se actualiza ni se regenera el secret/);
-    assert.doesNotMatch(setup, /seminario-ipn-web/);
+    assert.match(setup, /seminario-ipn-web y admin-cli no se tocan/);
   });
 
   it("getKeycloakConfig rechaza admin-cli / seminario-ipn-web en producción", async () => {
@@ -133,6 +173,9 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — cliente growth-os-web", () => {
       process.env.KEYCLOAK_CLIENT_ID = "seminario-ipn-web";
       assert.equal(getKeycloakConfig(), null);
 
+      process.env.KEYCLOAK_CLIENT_ID = "growth-os-dev";
+      assert.equal(getKeycloakConfig(), null);
+
       process.env.KEYCLOAK_CLIENT_ID = "growth-os-web";
       const cfg = getKeycloakConfig();
       assert.ok(cfg);
@@ -141,6 +184,16 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — cliente growth-os-web", () => {
 
       delete process.env.KEYCLOAK_CLIENT_SECRET;
       assert.equal(getKeycloakConfig(), null);
+      process.env.KEYCLOAK_CLIENT_SECRET = "secret-test-value";
+
+      process.env.NODE_ENV = "development";
+      process.env.KEYCLOAK_CLIENT_ID = "seminario-ipn-web";
+      assert.equal(getKeycloakConfig(), null);
+
+      process.env.KEYCLOAK_CLIENT_ID = "growth-os-dev";
+      const devCfg = getKeycloakConfig();
+      assert.ok(devCfg);
+      assert.equal(devCfg!.clientId, "growth-os-dev");
     } finally {
       process.env.NODE_ENV = prev.NODE_ENV;
       for (const key of [
@@ -164,7 +217,8 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — ROPC residual / invitaciones", () => 
     assert.match(accept, /Authorization Code \+ PKCE/);
 
     const inviteForm = readSrc("src/components/identity/AcceptInviteForm.tsx");
-    assert.match(inviteForm, /\/admin\/login/);
+    assert.match(inviteForm, /\/login/);
+    assert.doesNotMatch(inviteForm, /\/admin\/login/);
   });
 
   it("loginWithKeycloakPassword es el login embebido (servidor → IdP)", () => {

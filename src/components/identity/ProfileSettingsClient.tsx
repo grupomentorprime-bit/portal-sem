@@ -118,7 +118,7 @@ export function ProfileSettingsClient() {
           </CardDescription>
         </CardHeader>
         <div className="px-6 pb-6">
-          <Link href="/admin/login" className="text-sm font-medium text-secondary underline">
+          <Link href="/login" className="text-sm font-medium text-secondary underline">
             Ir a ingresar
           </Link>
           {compatMode ? (

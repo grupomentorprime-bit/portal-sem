@@ -19,7 +19,7 @@ export function AdminUserMenu({ user, compatMode }: AdminUserMenuProps) {
 
   async function handleLogout() {
     await fetch("/api/identity/logout", { method: "POST" });
-    router.push("/admin/login");
+    router.push("/login");
     router.refresh();
   }
 
@@ -29,7 +29,7 @@ export function AdminUserMenu({ user, compatMode }: AdminUserMenuProps) {
         {compatMode ? (
           <span className="hidden text-xs text-muted sm:inline">Sin sesión</span>
         ) : null}
-        <Link href="/admin/login" className="text-sm font-medium text-secondary underline">
+        <Link href="/login" className="text-sm font-medium text-secondary underline">
           Ingresar
         </Link>
       </div>

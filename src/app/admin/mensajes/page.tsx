@@ -20,7 +20,7 @@ export default async function AdminMensajesPage({ searchParams }: PageProps) {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/mensajes");
+    redirect("/login?next=/admin/mensajes");
   }
 
   const { resolvePermissionsForMembership } = await import(

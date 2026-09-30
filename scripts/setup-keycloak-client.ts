@@ -1,9 +1,13 @@
 /**
- * Provisiona un cliente OAuth de desarrollo en Keycloak (confidential + Standard flow).
+ * Provisiona el cliente OAuth de desarrollo de Growth OS (localhost).
  *
- * Growth OS de producción ya usa `growth-os-web` creado manualmente:
- *  - Client authentication ON · Standard flow ON · Direct access grants OFF
- *  - NO ejecutar este script contra ese cliente (no recrea ni regenera secret).
+ * Crea solo `growth-os-dev`:
+ *  - Client authentication ON · Standard flow ON · Direct access grants ON · PKCE S256
+ *  - Redirect único: http://localhost:3000/api/identity/auth/keycloak/callback
+ *
+ * No modifica clientes protegidos:
+ *  - growth-os-web (producción): no se actualiza ni se regenera el secret
+ *  - seminario-ipn-web (Espacio SEM) y admin-cli
  *
  * Requiere: KEYCLOAK_ADMIN y KEYCLOAK_ADMIN_PASSWORD
  * Uso: npx tsx scripts/setup-keycloak-client.ts
@@ -12,8 +16,11 @@ import { readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
 const ENV_PATH = resolve(process.cwd(), ".env");
-const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID?.trim() || "growth-os-web";
+const DEV_CLIENT_ID = "growth-os-dev";
 const PROTECTED_PROD_CLIENT = "growth-os-web";
+const PROTECTED_CLIENTS = new Set([PROTECTED_PROD_CLIENT, "seminario-ipn-web", "admin-cli"]);
+const LOCAL_ORIGIN = "http://localhost:3000";
+const LOCAL_REDIRECT = `${LOCAL_ORIGIN}/api/identity/auth/keycloak/callback`;
 
 function loadEnv(): Record<string, string> {
   const raw = readFileSync(ENV_PATH, "utf8");
@@ -40,8 +47,18 @@ function upsertEnvValue(key: string, value: string): void {
   const raw = readFileSync(ENV_PATH, "utf8");
   const line = `${key}=${value}`;
   const re = new RegExp(`^${key}=.*$`, "m");
-  const next = re.test(raw) ? raw.replace(re, line) : `${raw.trimEnd()}\n${line}\n`;
+  const next = re.test(raw) ? raw.replace(re, () => line) : `${raw.trimEnd()}\n${line}\n`;
   writeFileSync(ENV_PATH, next, "utf8");
+}
+
+function assertDevClient(clientId: string): void {
+  if (clientId !== DEV_CLIENT_ID || PROTECTED_CLIENTS.has(clientId)) {
+    console.error(`✗ Este script solo provisiona ${DEV_CLIENT_ID}.`);
+    console.error(
+      `  ${PROTECTED_PROD_CLIENT} no se actualiza ni se regenera el secret. seminario-ipn-web y admin-cli no se tocan.`
+    );
+    process.exit(1);
+  }
 }
 
 async function getAdminToken(
@@ -71,12 +88,12 @@ async function getAdminToken(
   return json.access_token;
 }
 
-async function findClientUuid(
+async function findClient(
   baseUrl: string,
   realm: string,
   token: string,
   clientId: string
-): Promise<string | null> {
+): Promise<{ id: string; clientId: string } | null> {
   const res = await fetch(
     `${baseUrl}/admin/realms/${encodeURIComponent(realm)}/clients?clientId=${encodeURIComponent(clientId)}`,
     { headers: { Authorization: `Bearer ${token}` } }
@@ -87,52 +104,52 @@ async function findClientUuid(
   }
 
   const list = (await res.json()) as Array<{ id: string; clientId: string }>;
-  return list[0]?.id ?? null;
+  return list[0] ?? null;
 }
 
-async function createDevClient(
-  baseUrl: string,
-  realm: string,
-  token: string,
-  redirectUri: string
-): Promise<string> {
-  const webOrigin = new URL(redirectUri).origin;
-
-  const payload = {
-    clientId: CLIENT_ID,
+function devClientPayload() {
+  return {
+    clientId: DEV_CLIENT_ID,
     name: "Growth OS",
+    description: "Cliente de desarrollo de Growth OS (localhost)",
     enabled: true,
     publicClient: false,
     clientAuthenticatorType: "client-secret",
-    directAccessGrantsEnabled: false,
+    directAccessGrantsEnabled: true,
     standardFlowEnabled: true,
+    implicitFlowEnabled: false,
     serviceAccountsEnabled: false,
-    redirectUris: [redirectUri],
-    webOrigins: [webOrigin],
+    frontchannelLogout: true,
+    rootUrl: LOCAL_ORIGIN,
+    baseUrl: LOCAL_ORIGIN,
+    redirectUris: [LOCAL_REDIRECT],
+    webOrigins: [LOCAL_ORIGIN],
     protocol: "openid-connect",
     attributes: {
       "pkce.code.challenge.method": "S256",
-      "post.logout.redirect.uris": webOrigin + "/*",
+      "post.logout.redirect.uris": `${LOCAL_ORIGIN}/*`,
     },
   };
+}
 
+async function createDevClient(baseUrl: string, realm: string, token: string): Promise<string> {
   const res = await fetch(`${baseUrl}/admin/realms/${encodeURIComponent(realm)}/clients`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(devClientPayload()),
   });
 
   if (!res.status.toString().startsWith("2")) {
     throw new Error(`Error creando cliente: ${await res.text()}`);
   }
 
-  const uuid = await findClientUuid(baseUrl, realm, token, CLIENT_ID);
-  if (!uuid) throw new Error("Cliente creado pero no se pudo obtener su UUID.");
-  console.log(`✓ Cliente creado: ${CLIENT_ID}`);
-  return uuid;
+  const created = await findClient(baseUrl, realm, token, DEV_CLIENT_ID);
+  if (!created) throw new Error("Cliente creado pero no se pudo obtener su UUID.");
+  console.log(`✓ Cliente creado: ${DEV_CLIENT_ID}`);
+  return created.id;
 }
 
 async function getClientSecret(
@@ -155,17 +172,46 @@ async function getClientSecret(
   return json.value;
 }
 
+async function enableDirectAccessGrant(
+  baseUrl: string,
+  realm: string,
+  token: string,
+  clientUuid: string
+): Promise<void> {
+  const url = `${baseUrl}/admin/realms/${encodeURIComponent(realm)}/clients/${clientUuid}`;
+  const current = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!current.ok) {
+    throw new Error(`Error leyendo cliente: ${await current.text()}`);
+  }
+  const client = (await current.json()) as { directAccessGrantsEnabled?: boolean };
+  if (client.directAccessGrantsEnabled) {
+    console.log("✓ Direct access grants ya está activo.");
+    return;
+  }
+  const updated = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...client, directAccessGrantsEnabled: true }),
+  });
+  if (!updated.ok) {
+    throw new Error(`Error activando direct access grants: ${await updated.text()}`);
+  }
+  console.log("✓ Direct access grants activado para el login embebido.");
+}
+
 async function main(): Promise<void> {
+  assertDevClient(DEV_CLIENT_ID);
+
   const env = loadEnv();
   const baseUrl = env.KEYCLOAK_URL?.replace(/\/$/, "");
   const realm = env.KEYCLOAK_REALM;
   const adminUser = process.env.KEYCLOAK_ADMIN?.trim() || env.KEYCLOAK_ADMIN;
   const adminPassword = process.env.KEYCLOAK_ADMIN_PASSWORD?.trim() || env.KEYCLOAK_ADMIN_PASSWORD;
-  const redirectUri =
-    env.KEYCLOAK_REDIRECT_URI?.trim() ||
-    `${env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000"}/api/identity/auth/keycloak/callback`;
 
-  console.log("\n── Configuración cliente Keycloak (Auth Code + PKCE) ──\n");
+  console.log("\n── Cliente Keycloak de desarrollo Growth OS ──\n");
 
   if (!baseUrl || !realm) {
     console.error("✗ Faltan KEYCLOAK_URL o KEYCLOAK_REALM en .env");
@@ -178,48 +224,38 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const configuredClient = env.KEYCLOAK_CLIENT_ID?.trim();
+  if (configuredClient && PROTECTED_CLIENTS.has(configuredClient)) {
+    console.log(
+      `· .env apunta a "${configuredClient}" (protegido). Se cambia a ${DEV_CLIENT_ID} sin modificar ese cliente.`
+    );
+  }
+
   console.log(`URL:     ${baseUrl}`);
   console.log(`Realm:   ${realm}`);
-  console.log(`Client:  ${CLIENT_ID}`);
-  console.log(`Redirect:${redirectUri}\n`);
+  console.log(`Client:  ${DEV_CLIENT_ID}`);
+  console.log(`Redirect:${LOCAL_REDIRECT}\n`);
 
   const token = await getAdminToken(baseUrl, adminUser, adminPassword);
   console.log("✓ Autenticado como admin de Keycloak");
 
-  const existingUuid = await findClientUuid(baseUrl, realm, token, CLIENT_ID);
+  const existing = await findClient(baseUrl, realm, token, DEV_CLIENT_ID);
+  const clientUuid = existing?.id ?? (await createDevClient(baseUrl, realm, token));
 
-  if (existingUuid && CLIENT_ID === PROTECTED_PROD_CLIENT) {
-    console.log(
-      `✓ Cliente ${PROTECTED_PROD_CLIENT} ya existe — no se actualiza ni se regenera el secret (OT-GROWTH-AUTH-HARDENING-001).`
-    );
-    console.log("  Configura KEYCLOAK_CLIENT_SECRET manualmente desde el panel de Keycloak si falta en .env.");
-    upsertEnvValue("KEYCLOAK_CLIENT_ID", CLIENT_ID);
-    upsertEnvValue("KEYCLOAK_REDIRECT_URI", redirectUri);
-    if (!env.KEYCLOAK_CLIENT_SECRET?.trim()) {
-      console.log("\n⚠ KEYCLOAK_CLIENT_SECRET vacío en .env — pégalo desde Credentials sin regenerarlo.\n");
-      process.exit(1);
-    }
-    console.log("\nListo. Reinicia npm run dev y verifica /api/identity/auth/keycloak/login\n");
-    return;
+  if (existing) {
+    console.log(`✓ ${DEV_CLIENT_ID} ya existe — no se regenera el secret.`);
   }
 
-  if (existingUuid) {
-    console.error(
-      `✗ El cliente "${CLIENT_ID}" ya existe. Este script no actualiza clientes existentes para evitar regenerar secretos.`
-    );
-    console.error("  Usa KEYCLOAK_CLIENT_ID distinto para un cliente de desarrollo, o configura el secret a mano.\n");
-    process.exit(1);
-  }
+  await enableDirectAccessGrant(baseUrl, realm, token, clientUuid);
 
-  const clientUuid = await createDevClient(baseUrl, realm, token, redirectUri);
   const secret = await getClientSecret(baseUrl, realm, token, clientUuid);
 
-  upsertEnvValue("KEYCLOAK_CLIENT_ID", CLIENT_ID);
+  upsertEnvValue("KEYCLOAK_CLIENT_ID", DEV_CLIENT_ID);
   upsertEnvValue("KEYCLOAK_CLIENT_SECRET", secret);
-  upsertEnvValue("KEYCLOAK_REDIRECT_URI", redirectUri);
+  upsertEnvValue("KEYCLOAK_REDIRECT_URI", LOCAL_REDIRECT);
 
   console.log(`✓ Secret guardado en .env (${secret.slice(0, 4)}…${secret.slice(-4)})`);
-  console.log("\nReinicia npm run dev y abre /admin/login (Auth Code + PKCE).\n");
+  console.log("\nReinicia npm run dev y abre /login.\n");
 }
 
 main().catch((err) => {

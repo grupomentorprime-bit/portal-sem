@@ -49,8 +49,14 @@ async function main(): Promise<void> {
   }
 
   if (clientId === "admin-cli" || clientId === "seminario-ipn-web") {
-    console.log(`✗ Cliente "${clientId}" no es el de Growth OS.`);
-    console.log("  Usa KEYCLOAK_CLIENT_ID=growth-os-web\n");
+    console.log(`✗ Cliente "${clientId}" no es de Growth OS.`);
+    console.log("  Local: KEYCLOAK_CLIENT_ID=growth-os-dev");
+    console.log("  Producción: KEYCLOAK_CLIENT_ID=growth-os-web\n");
+    process.exit(1);
+  }
+
+  if (clientId !== "growth-os-dev" && clientId !== "growth-os-web") {
+    console.log(`✗ Cliente "${clientId}" no es growth-os-dev (local) ni growth-os-web (producción).\n`);
     process.exit(1);
   }
 
@@ -63,7 +69,7 @@ async function main(): Promise<void> {
   console.log(`Redirect: ${redirectUri}\n`);
 
   if (!clientSecret) {
-    console.log("✗ KEYCLOAK_CLIENT_SECRET vacío — growth-os-web es confidential.\n");
+    console.log("✗ KEYCLOAK_CLIENT_SECRET vacío — el cliente de Growth OS es confidential.\n");
     process.exit(1);
   }
 
@@ -88,6 +94,12 @@ async function main(): Promise<void> {
   console.log(`  authorize: ${oidc.authorization_endpoint}`);
   console.log(`  token:     ${oidc.token_endpoint}`);
 
+  // El runtime usa KEYCLOAK_URL, no el host interno que a veces publica discovery.
+  const tokenUrl = `${url}/realms/${encodeURIComponent(realm)}/protocol/openid-connect/token`;
+  if (tokenUrl !== oidc.token_endpoint) {
+    console.log(`  probe:     ${tokenUrl}`);
+  }
+
   // Probe client credentials sin ROPC: authorization_code inválido → invalid_grant
   // (cliente existe) vs invalid_client (mal secret / client id).
   const body = new URLSearchParams({
@@ -99,7 +111,7 @@ async function main(): Promise<void> {
     code_verifier: "diagnostic-verifier-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   });
 
-  const tokenRes = await fetch(oidc.token_endpoint, {
+  const tokenRes = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -117,7 +129,7 @@ async function main(): Promise<void> {
 
   if (json.error === "invalid_grant" || json.error === "unauthorized_client") {
     console.log("\n✓ Cliente confidential responde (Auth Code path)");
-    console.log("  Login UI: /admin/login → /api/identity/auth/keycloak/login (+ PKCE)\n");
+    console.log("  Login UI: /login → /api/identity/auth/keycloak/login (+ PKCE)\n");
     process.exit(0);
   }
 

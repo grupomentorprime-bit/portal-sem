@@ -146,6 +146,8 @@ describe("wildcard de Espacios — dirección pública", () => {
       null
     );
     assert.equal(isReservedSpaceSlug("vps1"), true);
+    assert.equal(isReservedSpaceSlug("dokploy"), true);
+    assert.equal(isReservedSpaceSlug("deploy"), true);
     assert.equal(isReservedSpaceSlug("backend-keycloak"), true);
     assert.equal(isReservedSpaceSlug("mentor-prime-capacitacion"), false);
     assert.equal(

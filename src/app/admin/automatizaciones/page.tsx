@@ -10,7 +10,7 @@ export default async function AdminAutomatizacionesPage() {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/automatizaciones");
+    redirect("/login?next=/admin/automatizaciones");
   }
 
   const { resolvePermissionsForMembership } = await import(

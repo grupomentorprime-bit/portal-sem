@@ -66,7 +66,7 @@ describe("OAuth — origen público del callback", () => {
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
     try {
       const origin = resolvePublicAppOrigin(
-        requestTo("https://localhost:3000/admin/login?error=oauth_state", {
+        requestTo("https://localhost:3000/login?error=oauth_state", {
           host: "localhost:3000",
         })
       );
@@ -75,11 +75,11 @@ describe("OAuth — origen público del callback", () => {
         requestTo("https://localhost:3000/api/identity/auth/keycloak/callback", {
           host: "localhost:3000",
         }),
-        "/admin/login?error=oauth_state"
+        "/login?error=oauth_state"
       );
       assert.equal(
         location.href,
-        "https://growthos.mentorprime.cl/admin/login?error=oauth_state"
+        "https://growthos.mentorprime.cl/login?error=oauth_state"
       );
     } finally {
       restore();
@@ -136,7 +136,7 @@ describe("OAuth — origen público del callback", () => {
       assert.equal(res.status, 307);
       const location = new URL(res.headers.get("location")!);
       assert.equal(location.origin, "https://growthos.mentorprime.cl");
-      assert.equal(location.pathname, "/admin/login");
+      assert.equal(location.pathname, "/login");
       assert.equal(location.searchParams.get("next"), "/admin");
     } finally {
       restore();

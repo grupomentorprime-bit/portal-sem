@@ -14,7 +14,7 @@ export default async function ChannelsSettingsPage() {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/settings/channels");
+    redirect("/login?next=/admin/settings/channels");
   }
 
   const { resolvePermissionsForMembership } = await import(

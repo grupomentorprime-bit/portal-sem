@@ -55,7 +55,7 @@ export function AcceptInviteForm({
 
       if (data.redirectLogin) {
         // Auth Code + PKCE: el login redirige a Keycloak (sin ROPC).
-        window.location.assign("/admin/login");
+        window.location.assign("/login");
         return;
       }
 
@@ -124,7 +124,7 @@ export function AcceptInviteForm({
       </Button>
 
       <p className="text-center text-xs text-muted">
-        <Link href="/admin/login" className="underline">
+        <Link href="/login" className="underline">
           Ir al inicio de sesión
         </Link>
       </p>

@@ -57,7 +57,9 @@ export async function SiteShell({ children }: SiteShellProps) {
         logoSem={config?.branding.logo || undefined}
         logoIpn={undefined}
       />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1" suppressHydrationWarning>
+        {children}
+      </main>
       <InstitutionalFooter
         institutionName={config?.institution.name || "Institución"}
         organization={config?.institution.organization}

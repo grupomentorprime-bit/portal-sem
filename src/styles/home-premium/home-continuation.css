@@ -1,0 +1,473 @@
+/**
+ * Tramo inferior del home. Misma dirección que la apertura:
+ * azul profundo dominante, cian como acento, sin naranja.
+ */
+
+.sem-continue {
+  --hc-navy: var(--color-primary);
+  --hc-blue: var(--color-secondary);
+  --hc-cyan: var(--color-accent);
+  --hc-ink: var(--color-foreground);
+  --hc-muted: var(--color-muted);
+  --hc-soft: color-mix(in srgb, var(--hc-cyan) 8%, white);
+  --hc-line: color-mix(in srgb, var(--hc-navy) 10%, transparent);
+  --hc-shadow: 0 18px 45px color-mix(in srgb, var(--hc-navy) 12%, transparent);
+  color: var(--hc-ink);
+  background: #fff;
+}
+
+.sem-continue__wrap {
+  width: min(1180px, 92vw);
+  margin-inline: auto;
+}
+
+.sem-continue__kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0 0 1.15rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hc-blue);
+}
+
+.sem-continue__kicker::before {
+  content: "";
+  width: 1.75rem;
+  height: 2px;
+  background: var(--hc-cyan);
+  flex: 0 0 auto;
+}
+
+.sem-continue h2,
+.sem-continue h3,
+.sem-continue p {
+  margin-top: 0;
+}
+
+.sem-continue h2 {
+  margin-bottom: 1rem;
+  font-size: clamp(2.35rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.sem-continue__accent {
+  color: var(--hc-cyan);
+}
+
+.sem-continue__lead {
+  max-width: 36rem;
+  margin-bottom: 0;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--hc-muted);
+}
+
+.sem-continue__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  padding: 0 1.35rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.sem-continue__btn:hover {
+  transform: translateY(-2px);
+}
+
+.sem-continue__btn:focus-visible,
+.sem-continue__chip:focus-visible {
+  outline: 2px solid var(--hc-cyan);
+  outline-offset: 3px;
+}
+
+.sem-continue__btn--primary {
+  color: var(--hc-navy);
+  background: linear-gradient(135deg, var(--hc-cyan), color-mix(in srgb, var(--hc-cyan) 72%, white));
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--hc-cyan) 28%, transparent);
+}
+
+.sem-continue__btn--light {
+  color: var(--hc-navy);
+  background: #fff;
+}
+
+.sem-continue__btn--outline {
+  color: var(--hc-navy);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--hc-navy) 22%, transparent);
+}
+
+.sem-continue__section {
+  padding: 5.4rem 0;
+}
+
+.sem-continue__program {
+  background: #fff;
+}
+
+.sem-continue__program-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 0.75fr;
+  gap: 3.1rem;
+  align-items: center;
+  overflow: hidden;
+  padding: 3rem;
+  border-radius: 1.85rem;
+  color: #fff;
+  background: var(--hc-navy);
+}
+
+.sem-continue__program-card::after {
+  content: "";
+  position: absolute;
+  right: -5.5rem;
+  bottom: -8.5rem;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--hc-cyan) 28%, transparent);
+  box-shadow: inset 0 0 0 3.75rem color-mix(in srgb, var(--hc-cyan) 4%, transparent);
+  pointer-events: none;
+}
+
+.sem-continue__program-card .sem-continue__kicker,
+.sem-continue__ipn .sem-continue__kicker {
+  color: color-mix(in srgb, var(--hc-cyan) 78%, white);
+}
+
+.sem-continue__program-card .sem-continue__kicker::before,
+.sem-continue__ipn .sem-continue__kicker::before {
+  background: color-mix(in srgb, var(--hc-cyan) 78%, white);
+}
+
+.sem-continue__program-card h2 {
+  max-width: 12ch;
+  margin-bottom: 0.75rem;
+}
+
+.sem-continue__program-card p {
+  max-width: 34rem;
+  margin: 0;
+  line-height: 1.6;
+  color: color-mix(in srgb, white 74%, transparent);
+}
+
+.sem-continue__program-card .sem-continue__btn {
+  margin-top: 1.5rem;
+}
+
+.sem-continue__cohorts {
+  position: relative;
+  z-index: 1;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+  border-radius: 1.35rem;
+  background: color-mix(in srgb, white 7%, transparent);
+}
+
+.sem-continue__cohorts p {
+  margin: 0 0 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--hc-cyan) 78%, white);
+}
+
+.sem-continue__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sem-continue__chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--hc-navy);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+a.sem-continue__chip:hover {
+  color: var(--hc-blue);
+}
+
+.sem-continue__how {
+  background: linear-gradient(180deg, #fff, var(--hc-soft));
+}
+
+.sem-continue__how-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 3.1rem;
+  align-items: center;
+}
+
+.sem-continue__steps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+  margin: 1.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sem-continue__step {
+  padding: 1.25rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--hc-navy) 5%, transparent);
+}
+
+.sem-continue__step h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.sem-continue__step p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--hc-muted);
+}
+
+.sem-continue__how .sem-continue__btn {
+  margin-top: 1.5rem;
+}
+
+.sem-continue__how-photo {
+  position: relative;
+  min-height: 31rem;
+  overflow: hidden;
+  border-radius: 2.1rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--hc-navy) 5%, transparent), color-mix(in srgb, var(--hc-navy) 22%, transparent)),
+    var(--hc-photo) center / cover no-repeat;
+}
+
+.sem-continue__badge {
+  position: absolute;
+  left: 1.35rem;
+  bottom: 1.35rem;
+  max-width: 16rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1.1rem;
+  color: #fff;
+  background: color-mix(in srgb, var(--hc-navy) 84%, transparent);
+}
+
+.sem-continue__badge strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.sem-continue__badge span {
+  display: block;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, white 68%, transparent);
+}
+
+.sem-continue__community {
+  background: #fff;
+}
+
+.sem-continue__community-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.sem-continue__community-head h2 {
+  max-width: 14ch;
+  margin-bottom: 0;
+}
+
+.sem-continue__gallery {
+  display: grid;
+  grid-template-columns: 1.1fr 0.8fr 0.8fr;
+  grid-template-rows: 230px 180px;
+  gap: 0.9rem;
+}
+
+.sem-continue__gal {
+  border-radius: 1.6rem;
+  background: var(--hc-photo) center / cover no-repeat;
+}
+
+.sem-continue__gal--main {
+  grid-row: 1 / span 2;
+}
+
+.sem-continue__ipn {
+  padding: 4.85rem 0;
+  color: #fff;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--hc-navy) 98%, transparent), color-mix(in srgb, var(--hc-navy) 84%, transparent)),
+    var(--hc-photo) center / cover no-repeat;
+}
+
+.sem-continue__ipn-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 3.1rem;
+  align-items: center;
+}
+
+.sem-continue__ipn h2 {
+  margin-bottom: 0.85rem;
+}
+
+.sem-continue__ipn p {
+  max-width: 32rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, white 74%, transparent);
+}
+
+.sem-continue__ipn-mark {
+  margin: 0;
+  font-size: clamp(5rem, 10vw, 10rem);
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  text-align: right;
+  color: color-mix(in srgb, white 10%, transparent);
+}
+
+.sem-continue__admit {
+  padding: 4rem 0 4.5rem;
+  background: linear-gradient(135deg, var(--hc-soft), color-mix(in srgb, var(--hc-cyan) 12%, white));
+}
+
+.sem-continue__admit-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: center;
+  padding: 2.1rem 2.5rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 1.75rem;
+  background: #fff;
+  box-shadow: 0 14px 35px color-mix(in srgb, var(--hc-navy) 6%, transparent);
+}
+
+.sem-continue__admit-card h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.4rem);
+}
+
+body:has(.sem-home) .portal-footer-premium--v2.footer-premium {
+  background:
+    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 26%),
+    color-mix(in srgb, var(--color-primary) 86%, black);
+}
+
+body:has(.sem-home) .portal-footer-premium--v2 .footer-premium__main::after,
+body:has(.sem-home) .portal-footer-premium--v2.footer-premium::before {
+  content: none;
+}
+
+@media (max-width: 1000px) {
+  .sem-continue__program-card,
+  .sem-continue__how-grid,
+  .sem-continue__ipn-grid,
+  .sem-continue__admit-card {
+    grid-template-columns: 1fr;
+  }
+
+  .sem-continue__program-card {
+    padding: 2.1rem;
+  }
+
+  .sem-continue__gallery {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 240px 180px 180px;
+  }
+
+  .sem-continue__gal--main {
+    grid-row: auto;
+    grid-column: 1 / span 2;
+  }
+
+  .sem-continue__ipn-mark {
+    text-align: left;
+  }
+
+  .sem-continue__how-photo {
+    min-height: 22rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .sem-continue__section,
+  .sem-continue__ipn {
+    padding-block: 4rem;
+  }
+
+  .sem-continue__community-head {
+    display: block;
+  }
+
+  .sem-continue__community-head .sem-continue__btn {
+    margin-top: 1.25rem;
+  }
+
+  .sem-continue__steps,
+  .sem-continue__gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .sem-continue__gallery {
+    grid-template-rows: none;
+  }
+
+  .sem-continue__gal {
+    min-height: 11rem;
+  }
+
+  .sem-continue__gal--main {
+    grid-column: auto;
+    min-height: 14rem;
+  }
+
+  .sem-continue__admit-card {
+    padding: 1.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sem-continue__btn {
+    transition: none;
+  }
+
+  .sem-continue__btn:hover {
+    transform: none;
+  }
+}

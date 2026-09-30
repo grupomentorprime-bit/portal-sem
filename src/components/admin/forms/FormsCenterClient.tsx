@@ -482,11 +482,11 @@ export function FormsCenterClient({
     <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: "Sitio web", href: "/admin/pages" },
+        { label: "Sitio web", href: "/admin/config" },
         { label: "Formularios" },
       ]}
       title="Formularios"
-      description="Crea formularios y publica las preguntas que necesitas. Para una página completa, usa Páginas."
+      description="Crea formularios y publica las preguntas que necesitas."
     >
       {error ? (
         <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">

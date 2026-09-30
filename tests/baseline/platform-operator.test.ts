@@ -241,7 +241,7 @@ describe("OT-GROWTH-PROD-005 — superficie y guard", () => {
   it("proxy exige sesión en /platform y no en el portal público", () => {
     const denied = proxy(makeRequest(PLATFORM_ADMIN_HOME));
     assert.equal(denied.status, 307);
-    assert.equal(new URL(denied.headers.get("location")!).pathname, "/admin/login");
+    assert.equal(new URL(denied.headers.get("location")!).pathname, "/login");
     assert.equal(
       new URL(denied.headers.get("location")!).searchParams.get("next"),
       PLATFORM_ADMIN_HOME

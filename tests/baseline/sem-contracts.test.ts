@@ -112,6 +112,7 @@ describe("OT-GROWTH-TEST-001 — contratos SEM a preservar", () => {
       "src/app/(site)/formularios/[id]/page.tsx",
       "src/app/(site)/formularios/convocatorias/[slug]/page.tsx",
       "src/app/(site)/asistencia/justificar/[submissionId]/page.tsx",
+      "src/app/login/page.tsx",
       "src/app/admin/login/page.tsx",
       "src/app/admin/pages/page.tsx",
       "src/app/api/admission/apply/route.ts",

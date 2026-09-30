@@ -47,7 +47,7 @@ export default async function PlatformLayout({
 }) {
   const session = await loadSessionContext();
   if (!session) {
-    redirect(`/admin/login?next=${encodeURIComponent(PLATFORM_ADMIN_HOME)}`);
+    redirect(`/login?next=${encodeURIComponent(PLATFORM_ADMIN_HOME)}`);
   }
 
   if (!hasPlatformOperatorCapability(session.user)) {

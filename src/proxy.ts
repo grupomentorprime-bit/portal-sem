@@ -4,6 +4,7 @@ import { SESSION_COOKIE } from "@/core/identity/auth/config";
 import { applyPrivateNoStoreHeader } from "@/core/security/http-headers";
 import { isPlatformOriginHost, resolveRequestHost } from "@/core/tenant/hosts";
 import { publicRedirectUrl } from "@/core/identity/auth/public-origin";
+import { toGrowthLoginPath } from "@/lib/identity/login-route";
 
 function withPrivateCacheControl(response: NextResponse, pathname: string) {
   applyPrivateNoStoreHeader(response.headers, pathname);
@@ -32,6 +33,8 @@ function isPlatformProductPath(pathname: string): boolean {
     pathname.startsWith("/api") ||
     pathname.startsWith("/invite") ||
     pathname.startsWith("/ingresar") ||
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml"
   );
@@ -67,12 +70,19 @@ export function proxy(request: NextRequest) {
   }
 
   if (pathname === "/admin/login") {
-    return continueWithPathname(request);
+    const loginUrl = publicRedirectUrl(
+      request,
+      toGrowthLoginPath({
+        next: request.nextUrl.searchParams.get("next"),
+        error: request.nextUrl.searchParams.get("error"),
+      })
+    );
+    return withPrivateCacheControl(NextResponse.redirect(loginUrl), pathname);
   }
 
   const sessionId = request.cookies.get(SESSION_COOKIE)?.value;
   if (!sessionId) {
-    const loginUrl = publicRedirectUrl(request, "/admin/login");
+    const loginUrl = publicRedirectUrl(request, "/login");
     loginUrl.searchParams.set("next", pathname);
     return withPrivateCacheControl(NextResponse.redirect(loginUrl), pathname);
   }

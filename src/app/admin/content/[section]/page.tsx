@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { isRetiredContentSection } from "@/lib/admin/retired-site-admin";
 import { ContentListClient } from "@/components/content/ContentListClient";
 import { PeopleListClient } from "@/components/content/PeopleListClient";
 import { enrichContentDocumentsMedia } from "@/core/media";
@@ -7,6 +8,7 @@ import { executeContentQuery } from "@/lib/content/query";
 import { CONTENT_SECTIONS, getSectionBySlug } from "@/lib/content/content-sections";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import type { ContentDocument } from "@/types/content";
+import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,7 @@ interface PageProps {
 
 export default async function AdminContentSectionPage({ params }: PageProps) {
   const { section } = await params;
+  if (isRetiredContentSection(section)) notFound();
   const meta = getSectionBySlug(section);
   if (!meta) {
     return (

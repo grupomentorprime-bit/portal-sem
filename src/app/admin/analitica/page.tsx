@@ -26,7 +26,7 @@ export default async function AdminAnaliticaPage({ searchParams }: PageProps) {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/analitica");
+    redirect("/login?next=/admin/analitica");
   }
 
   const { resolvePermissionsForMembership } = await import(

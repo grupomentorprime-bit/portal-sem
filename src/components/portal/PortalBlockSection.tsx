@@ -190,6 +190,7 @@ export async function PortalBlockSection({
         const photo = slidePhoto || blockPhoto || (ctx.logos.hasHero ? ctx.logos.hero : null);
         return (
           <SemHomeNarrative
+            settings={block.settings}
             imageSrc={photo || undefined}
             imageAlt={asString(
               heroSettings.imageAlt ?? heroSettings.heroImageAlt,

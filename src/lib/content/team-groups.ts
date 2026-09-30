@@ -2,12 +2,18 @@
  * Grupos de equipo institucional — admin y portal público.
  */
 
-export const TEAM_GROUP_IDS = ["team_leadership", "team_teaching", "team_technical"] as const;
+export const TEAM_GROUP_IDS = [
+  "team_directivos",
+  "team_academic",
+  "team_leadership",
+  "team_teaching",
+  "team_technical",
+] as const;
 export type TeamGroupId = (typeof TEAM_GROUP_IDS)[number];
 
 export interface TeamGroupDefinition {
   id: TeamGroupId;
-  slug: "leadership" | "teaching" | "technical";
+  slug: "directivos" | "equipo-academico" | "leadership" | "teaching" | "technical";
   label: string;
   description: string;
   /** Aparece en el teaser de la home (bloque people) */
@@ -15,6 +21,20 @@ export interface TeamGroupDefinition {
 }
 
 export const TEAM_GROUPS: TeamGroupDefinition[] = [
+  {
+    id: "team_directivos",
+    slug: "directivos",
+    label: "Directivos",
+    description: "Autoridades del seminario. No incluye al equipo académico.",
+    homeTeaser: false,
+  },
+  {
+    id: "team_academic",
+    slug: "equipo-academico",
+    label: "Equipo académico",
+    description: "Claustro y formadores. No incluye a los directivos.",
+    homeTeaser: false,
+  },
   {
     id: "team_leadership",
     slug: "leadership",

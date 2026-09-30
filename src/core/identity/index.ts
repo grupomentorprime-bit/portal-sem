@@ -15,6 +15,7 @@ export {
   buildKeycloakAuthorizeUrl,
   createPkcePair,
   GROWTH_OS_KEYCLOAK_CLIENT_ID,
+  GROWTH_OS_DEV_KEYCLOAK_CLIENT_ID,
 } from "./auth/keycloak";
 export { loginWithEmail, registerWithEmail, logoutCurrentSession } from "./auth/login";
 export {

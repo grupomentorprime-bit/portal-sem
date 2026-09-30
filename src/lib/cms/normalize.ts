@@ -1,5 +1,6 @@
 import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
 import { createDefaultSiteConfig } from "@/lib/cms/defaults";
+import { normalizeHomeHeroPhotos } from "@/lib/cms/home-hero-photos";
 import { normalizeHeroPortal } from "@/lib/cms/hero-portal-normalize";
 import { normalizeSiteConfigModules } from "@/lib/cms/normalize-modules";
 import { SITE_CONFIG_SCHEMA_VERSION } from "@/lib/cms/schema-versions";
@@ -65,7 +66,11 @@ export function normalizeSiteConfig(raw: RawSiteConfig | null): SiteConfig | nul
   const defaults = createDefaultSiteConfig();
   const now = new Date().toISOString();
   const modules = normalizeSiteConfigModules(raw.modules);
-  const branding = { ...defaults.branding, ...raw.branding };
+  const branding = {
+    ...defaults.branding,
+    ...raw.branding,
+    homeHeroPhotos: normalizeHomeHeroPhotos(raw.branding?.homeHeroPhotos),
+  };
 
   return {
     _id: SITE_CONFIG_ID,
@@ -92,6 +97,7 @@ export function normalizeSiteConfig(raw: RawSiteConfig | null): SiteConfig | nul
     contact: normalizeContact(raw, defaults.contact),
     social: { ...defaults.social, ...raw.social },
     features: normalizeFeatures(raw.features, defaults.features),
+    sitePublished: raw.sitePublished === true,
     portalCopy: (() => {
       const portalCopy = { ...defaults.portalCopy, ...raw.portalCopy };
       return {

@@ -35,10 +35,44 @@ function toUpdate(config: SiteConfig): SiteConfigUpdate {
     contact: config.contact,
     social: config.social,
     features: config.features,
+    sitePublished: config.sitePublished === true,
     portalCopy: config.portalCopy,
     topBar: config.topBar,
     portalExperience: config.portalExperience,
   };
+}
+
+/** Completa título/descripción SEO vacíos con datos de la institución. */
+function withSeoFallbacks(config: SiteConfig): SiteConfig {
+  const name = config.institution.name.trim();
+  const tagline = config.institution.tagline.trim();
+  const title = config.seo.title.trim() || name;
+  const description =
+    config.seo.description.trim() || tagline || (name ? `Sitio oficial de ${name}.` : "");
+
+  if (title === config.seo.title && description === config.seo.description) {
+    return config;
+  }
+
+  return {
+    ...config,
+    seo: {
+      ...config.seo,
+      title,
+      description,
+    },
+  };
+}
+
+function sectionForConfigField(field: string): ConfigSectionId | null {
+  if (field.startsWith("seo.")) return "seo";
+  if (field.startsWith("branding.") || field.startsWith("heroPortal.")) return "branding";
+  if (field.startsWith("contact.") || field.startsWith("topBar.")) return "contact";
+  if (field.startsWith("social.")) return "social";
+  if (field.startsWith("features.")) return "features";
+  if (field.startsWith("portalExperience.")) return "experience";
+  if (field.startsWith("institution.")) return "general";
+  return null;
 }
 
 export function ConfigurationHub({ initialConfig, hideSectionNav = false }: ConfigurationHubProps) {
@@ -80,20 +114,32 @@ export function ConfigurationHub({ initialConfig, hideSectionNav = false }: Conf
     setSaveStatus("saving");
     setErrorMessage(null);
 
+    const prepared = withSeoFallbacks(config);
+    if (prepared !== config) {
+      setConfig(prepared);
+    }
+
     try {
       const response = await fetch("/api/cms/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toUpdate(config)),
+        body: JSON.stringify(toUpdate(prepared)),
       });
 
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
+        const errors = (data.errors ?? []) as Array<{ field?: string; message: string }>;
         const message =
-          data.errors?.map((e: { message: string }) => e.message).join(" ") ||
+          errors.map((e) => e.message).join(" ") ||
           data.error ||
           "No se pudo guardar la configuración.";
+        const jumpTo = errors
+          .map((e) => (e.field ? sectionForConfigField(e.field) : null))
+          .find((section): section is ConfigSectionId => section != null);
+        if (jumpTo && jumpTo !== activeSection) {
+          handleSectionChange(jumpTo);
+        }
         setErrorMessage(message);
         setSaveStatus("error");
         return;
@@ -106,7 +152,7 @@ export function ConfigurationHub({ initialConfig, hideSectionNav = false }: Conf
       setErrorMessage("Error de red al guardar la configuración.");
       setSaveStatus("error");
     }
-  }, [config]);
+  }, [activeSection, config, handleSectionChange]);
 
   const updateInstitution = (institution: SiteConfig["institution"]) => {
     setConfig((prev) => ({ ...prev, institution }));
@@ -121,6 +167,11 @@ export function ConfigurationHub({ initialConfig, hideSectionNav = false }: Conf
       saveStatus={saveStatus}
       isDirty={isDirty}
       onSave={handleSave}
+      sitePublished={config.sitePublished === true}
+      onSitePublishedChange={(sitePublished) => {
+        setConfig((prev) => ({ ...prev, sitePublished }));
+        setSaveStatus("idle");
+      }}
     >
       {errorMessage ? (
         <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">

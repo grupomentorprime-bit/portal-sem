@@ -79,15 +79,13 @@ describe("eliminar Espacio — contrato", () => {
     assert.match(route, /deletePlatformSpace/);
     assert.match(route, /requirePlatformOperator/);
 
-    const panel = readSrc("src/components/platform/PlatformDeleteSpacePanel.tsx");
-    assert.match(panel, /Eliminar Espacio/);
-    assert.match(panel, /confirmSlug/);
-    assert.match(panel, /method:\s*"DELETE"/);
-
     const detail = readSrc("src/components/platform/PlatformSpaceDetailView.tsx");
-    assert.match(detail, /PlatformDeleteSpacePanel/);
+    assert.doesNotMatch(detail, /PlatformDeleteSpacePanel/);
     const catalog = readSrc("src/components/platform/PlatformSpacesCatalog.tsx");
     const menu = readSrc("src/components/platform/PlatformSpaceActionsMenu.tsx");
+    assert.match(menu, /Eliminar Espacio/);
+    assert.match(menu, /confirmSlug/);
+    assert.match(menu, /method:\s*"DELETE"/);
     assert.match(catalog, /PlatformSpaceActionsMenu/);
     assert.match(menu, /Activar/);
     assert.match(menu, /Desactivar/);

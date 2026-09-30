@@ -1,5 +1,6 @@
 /**
- * Identidad pública SEM (v7) — solo T001.
+ * Identidad pública SEM (v7) — solo T001, y solo como respaldo.
+ * Si el CMS del tenant tiene página, menú o pie publicados, esos documentos mandan.
  * No escribe en base de datos y no altera otros Espacios.
  */
 import { isSemTenant } from "@/core/tenant/is-sem";
@@ -10,14 +11,6 @@ import type { PortalPageModel } from "@/types/portal";
 
 export const SEM_ISOTIPO_SRC = "/images/logo-sem-isotipo.svg";
 export const SEM_ISOTIPO_ON_DARK_SRC = "/images/logo-sem-isotipo-light.svg";
-
-export const SEM_PUBLIC_NAV = [
-  { label: "Inicio", href: "/" },
-  { label: "El SEM", href: "/institucion" },
-  { label: "Cómo se estudia", href: "/como-se-estudia" },
-  { label: "Malla/Formación", href: "/malla" },
-  { label: "Admisión", href: "/admision" },
-] as const;
 
 /** Noticias y eventos siguen publicados como rutas, pero no se enlazan mientras sean semilla. */
 const SEM_SEED_NEWS_PREFIXES = ["/noticias", "/eventos"] as const;
@@ -91,10 +84,10 @@ export const SEM_HERO_COPY = {
   title: "Tu llamado merece\npreparación.",
   highlight: "preparación.",
   description: "Formación bíblica para un servicio real.",
-  primaryText: "Postular",
-  primaryUrl: "/admision",
-  secondaryText: "Cómo se estudia",
-  secondaryUrl: "/como-se-estudia",
+  primaryText: "Admisión 2027",
+  primaryUrl: "/admision/2027",
+  secondaryText: "Cómo estudiamos",
+  secondaryUrl: "/como-estudiamos",
 } as const;
 
 function block(type: BlockType, order: number, settings: Record<string, unknown>): PageBlock {
@@ -211,8 +204,8 @@ function heroSettings(existing: Record<string, unknown> | undefined): Record<str
     title: "Tu llamado merece\npreparación.",
     highlight: "preparación.",
     description: "Formación bíblica para un servicio real.",
-    primaryCta: { label: "Postular", href: "/admision" },
-    secondaryCta: { label: "Cómo se estudia", href: "/como-se-estudia" },
+    primaryCta: { label: "Admisión 2027", href: "/admision/2027" },
+    secondaryCta: { label: "Cómo estudiamos", href: "/como-estudiamos" },
     generationCard: { enabled: false },
     features: [
       { icon: "monitor", title: "100% online", description: "Formación completamente en línea" },
@@ -250,8 +243,8 @@ export function applySemPublicHome(page: PortalPageModel): PortalPageModel {
       subtitle: "",
       description: "",
       destinationBadge: "",
-      buttonLabel: "Ver cómo se estudia",
-      buttonHref: "/como-se-estudia",
+      buttonLabel: "Ver cómo estudiamos",
+      buttonHref: "/como-estudiamos",
       items: STUDY_ITEMS,
     }),
     block("feature_grid", 3, {
@@ -259,7 +252,7 @@ export function applySemPublicHome(page: PortalPageModel): PortalPageModel {
       title: "4 años · 8 semestres · 3 áreas formativas",
       description: "",
       buttonLabel: "Ver malla",
-      buttonHref: "/malla",
+      buttonHref: "/formacion/malla",
       features: MALLA_AREAS,
     }),
     {
@@ -305,7 +298,7 @@ export function applySemPublicHome(page: PortalPageModel): PortalPageModel {
           {
             id: "adm-postular",
             label: "Postular",
-            action: { type: "url", href: "/admision" },
+            action: { type: "url", href: "/admision/2027" },
             variant: "primary",
             visible: true,
           },
@@ -365,8 +358,8 @@ function editorial(slug: string, title: string, blocks: PageBlock[]): PortalPage
 export function semEditorialPage(slug: string, tenantId: string): PortalPageModel | null {
   if (!isSemTenant(tenantId)) return null;
 
-  if (slug === "/como-se-estudia") {
-    return editorial(slug, "Cómo se estudia", [
+  if (slug === "/como-se-estudia" || slug === "/como-estudiamos") {
+    return editorial(slug, slug === "/como-estudiamos" ? "Cómo estudiamos" : "Cómo se estudia", [
       block("modality", 0, {
         overline: "Modalidad",
         title: "Nos encontramos el lunes. Seguimos creciendo toda la semana.",
@@ -382,7 +375,7 @@ export function semEditorialPage(slug: string, tenantId: string): PortalPageMode
           {
             id: "study-apply",
             label: "Postular",
-            action: { type: "url", href: "/admision" },
+            action: { type: "url", href: "/admision/2027" },
             variant: "primary",
             visible: true,
           },
@@ -391,24 +384,24 @@ export function semEditorialPage(slug: string, tenantId: string): PortalPageMode
     ]);
   }
 
-  if (slug === "/malla") {
-    return editorial(slug, "Malla y formación", [
+  if (slug === "/malla" || slug === "/formacion/malla") {
+    return editorial(slug, "Malla", [
       block("text", 0, {
-        overline: "Malla curricular",
-        title: "Una formación integral y progresiva.",
-        body: "La propuesta se organiza en cuatro años y ocho semestres, en tres áreas formativas. Esta página no publica un listado de asignaturas: ese detalle queda pendiente de validación institucional.",
+        overline: "Plan de estudios",
+        title: "4 años · 8 semestres · 3 áreas formativas",
+        body: "La formación es progresiva a lo largo de los ocho semestres, en tres áreas formativas.",
       }),
       block("feature_grid", 1, {
-        overline: "Áreas",
-        title: "4 años. 8 semestres. Un mismo propósito.",
-        description: "Tres áreas formativas, sin inventar el detalle de cada asignatura.",
+        overline: "Áreas formativas",
+        title: "Tres áreas formativas",
+        description: "Estudios Bíblicos, Formación Ministerial y Área Teológica y General.",
         features: MALLA_AREAS,
       }),
     ]);
   }
 
   // Fallback temporal: si el CMS publica bloques, loadPublishedPage los usa antes que esto.
-  if (slug === "/institucion") {
+  if (slug === "/institucion" || slug === "/el-sem") {
     return editorial(slug, "El SEM", [
       block("presentation", 0, {
         overline: "El SEM",
@@ -422,8 +415,8 @@ export function semEditorialPage(slug: string, tenantId: string): PortalPageMode
         title: "Nos encontramos el lunes. Seguimos creciendo toda la semana.",
         description: "100% online, con clases en vivo cada lunes y estudio durante la semana.",
         items: STUDY_ITEMS,
-        buttonLabel: "Cómo se estudia",
-        buttonHref: "/como-se-estudia",
+        buttonLabel: "Cómo estudiamos",
+        buttonHref: "/como-estudiamos",
       }),
     ]);
   }

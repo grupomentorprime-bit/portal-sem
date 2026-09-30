@@ -1,4 +1,4 @@
-# Identity & Access Management — AprendeHoy Learning OS
+# Identity & Access Management — Growth OS
 
 | Atributo | Valor |
 | --- | --- |
@@ -13,7 +13,7 @@
 2. Los permisos se evalúan por **membresía**, no por tenant activo en abstracto.
 3. La autorización usa **políticas** (`can`, `authorize`, `authorizeOrThrow`).
 4. Toda acción relevante genera **auditoría**.
-5. El Core es agnóstico de instituciones concretas.
+5. El Core es agnóstico de instituciones concretas. Growth OS es la plataforma. SEM, ADL, Mentor Prime Capacitación y Fundación Mueve son Espacios equivalentes.
 
 ## Arquitectura
 
@@ -106,6 +106,18 @@ SESSION_SECRET=generar-secreto-largo-aleatorio
 - `/admin` — administración del **Espacio** activo
 - `/platform` — Platform Admin (operadores de Growth OS; catálogo, ficha, crear y entrar a Espacios)
 - `/admin/settings/team` — Miembros, invitaciones, auditoría del Espacio
+
+## Keycloak
+
+Un solo realm de plataforma. El id técnico sigue siendo `seminario-ipn`. No renombrarlo: usuarios, sesiones y callbacks de producción dependen de ese id. El Display Name y la identidad visual general son **Growth OS**.
+
+| Superficie | Identidad |
+| --- | --- |
+| Realm (`seminario-ipn`) | Display Name **Growth OS**. No es el Espacio SEM. |
+| `growth-os-web`, `growth-os-dev` | Branding Growth OS (tema `growth-os` cuando está montado en el servidor) |
+| `seminario-ipn-web` | Branding SEM solo en ese cliente (tema `sem`) |
+
+Los temas viven en `infra/keycloak/themes/`. `npx tsx scripts/align-keycloak-identity.ts` escribe el Display Name y asigna temas solo si ya están instalados en Keycloak. No regenera secrets ni cambia redirect URIs.
 
 ## Integración CMS
 

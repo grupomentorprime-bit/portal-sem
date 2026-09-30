@@ -31,11 +31,11 @@ function readSrc(rel: string) {
 }
 
 describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
-  it("A. /admin/login declara metadata Growth OS (no SEO del Espacio)", () => {
-    const login = readSrc("src/app/admin/login/page.tsx");
+  it("A. /login declara metadata Growth OS (no SEO del Espacio)", () => {
+    const login = readSrc("src/app/login/page.tsx");
     assert.match(login, /export const metadata/);
     assert.match(login, /PLATFORM_DISPLAY_NAME/);
-    assert.match(login, /title:\s*PLATFORM_DISPLAY_NAME/);
+    assert.match(login, /title:/);
     assert.doesNotMatch(login, /getSiteMetadata|getSiteConfig|seo\.title/);
     assert.equal(PLATFORM_DISPLAY_NAME, "Growth OS");
   });

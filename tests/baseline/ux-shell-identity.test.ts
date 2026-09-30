@@ -32,7 +32,7 @@ describe("OT-GROWTH-UX-SHELL-002 — identidad y shell", () => {
     const brand = readSrc("src/styles/tokens/brand.css");
     const colors = readSrc("src/styles/tokens/colors.css");
     const platformShell = readSrc("src/components/platform/PlatformShell.tsx");
-    const login = readSrc("src/app/admin/login/page.tsx");
+    const login = readSrc("src/app/login/page.tsx");
     const noSpace = readSrc("src/app/admin/sin-espacio/page.tsx");
     const platformLayout = readSrc("src/app/platform/layout.tsx");
 

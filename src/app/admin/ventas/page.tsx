@@ -19,7 +19,7 @@ export default async function AdminVentasPage({ searchParams }: PageProps) {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/ventas");
+    redirect("/login?next=/admin/ventas");
   }
 
   const { resolvePermissionsForMembership } = await import(

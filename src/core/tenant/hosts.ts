@@ -217,6 +217,9 @@ export function resolvePlatformBaseDomain(
  */
 const INFRASTRUCTURE_SPACE_SLUGS = [
   "growthos",
+  "dominios",
+  "dokploy",
+  "deploy",
   "vps1",
   "backend-keycloak",
   "www",
@@ -248,7 +251,7 @@ export function isReservedSpaceSlug(
 /**
  * Host que no puede pertenecer a un Espacio: loopback pelado, origen
  * canónico de la app, el apex del wildcard, o un slug de infraestructura
- * (`growthos`, `vps1`, `backend-keycloak`, …) bajo esa base.
+ * (`growthos`, `dokploy`, `deploy`, `vps1`, `backend-keycloak`, …) bajo esa base.
  */
 export function isReservedPlatformHost(
   host: string | null | undefined,

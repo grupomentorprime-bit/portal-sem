@@ -17,7 +17,9 @@ export async function FormFocusedShell({ children }: FormFocusedShellProps) {
   if (!ctx) {
     return (
       <div className="form-focused-shell">
-        <main className="form-focused-shell__main">{children}</main>
+        <main className="form-focused-shell__main" suppressHydrationWarning>
+          {children}
+        </main>
         <footer className="form-focused-shell__legal" aria-label="Aviso legal">
           <p>© {year} {PLATFORM_DISPLAY_NAME}. Todos los derechos reservados.</p>
         </footer>
@@ -45,7 +47,9 @@ export async function FormFocusedShell({ children }: FormFocusedShellProps) {
               />
             </div>
           </header>
-          <main className="form-focused-shell__main">{children}</main>
+          <main className="form-focused-shell__main" suppressHydrationWarning>
+            {children}
+          </main>
           <footer className="form-focused-shell__legal" aria-label="Aviso legal">
             <p>
               © {year} {institution.name}. {copyrightSuffix}

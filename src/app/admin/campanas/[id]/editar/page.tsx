@@ -16,7 +16,7 @@ export default async function AdminCampanaEditarPage({ params }: PageProps) {
   const session = await loadSessionContext();
   const tenantId = session?.session.tenantId?.trim();
   if (!session || !tenantId || !session.membership) {
-    redirect("/admin/login?next=/admin/campanas");
+    redirect("/login?next=/admin/campanas");
   }
 
   const { resolvePermissionsForMembership } = await import(

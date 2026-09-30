@@ -24,7 +24,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
             El enlace expiró o ya fue utilizado. Solicita una nueva invitación al administrador.
           </p>
           <a
-            href={`${getAppBaseUrl()}/admin/login`}
+            href={`${getAppBaseUrl()}/login`}
             className="mt-6 inline-block text-sm font-medium text-primary underline"
           >
             Ir al inicio de sesión

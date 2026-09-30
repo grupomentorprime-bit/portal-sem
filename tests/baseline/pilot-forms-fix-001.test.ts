@@ -19,11 +19,7 @@ const ADMIN_FORM_PAGES = [
 ] as const;
 
 describe("OT-GROWTH-PILOT-FORMS-FIX-001 — admin forms SSOT operacional", () => {
-  it("Páginas y Formularios comparten getOperationalSiteConfig", () => {
-    const pages = readSrc("src/app/admin/pages/page.tsx");
-    assert.match(pages, /getOperationalSiteConfig/);
-    assert.doesNotMatch(pages, /getTenantContext/);
-
+  it("Formularios resuelven el Espacio con getOperationalSiteConfig", () => {
     for (const file of ADMIN_FORM_PAGES) {
       const src = readSrc(file);
       assert.match(src, /getOperationalSiteConfig/, file);

@@ -40,14 +40,30 @@ function readSecureCookieOverride(): boolean | null {
   return null;
 }
 
+function appUrlHostname(appUrl: string): string | null {
+  try {
+    return new URL(appUrl).hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isLoopbackHostname(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
 function secureCookieFromAppUrl(): boolean | null {
   const appUrl =
     process.env.APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     "";
-  if (appUrl.startsWith("https://")) return true;
   if (appUrl.startsWith("http://")) return false;
-  return null;
+  if (!appUrl.startsWith("https://")) return null;
+  // https://localhost describe el bind interno, no el protocolo del navegador en dev.
+  // Un proxy real manda x-forwarded-proto y esa señal se evalúa antes.
+  const host = appUrlHostname(appUrl);
+  if (host && isLoopbackHostname(host)) return false;
+  return true;
 }
 
 function secureCookieFromProto(proto: string | null): boolean | null {

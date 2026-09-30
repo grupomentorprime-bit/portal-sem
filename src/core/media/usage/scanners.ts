@@ -47,6 +47,15 @@ export async function scanBranding(
     { field: "heroMediaId", mediaId: branding.heroMediaId, legacyUrl: branding.heroImage, label: "Configuración — Hero" },
   ];
 
+  for (const [index, photo] of branding.homeHeroPhotos?.entries() ?? []) {
+    pushRef(results, tenant, photo.mediaId, undefined, {
+      module: "cms_config",
+      entityId: "site",
+      field: `branding.homeHeroPhotos[${index}].mediaId`,
+      label: `Inicio — Fotografía ${index + 1} del hero`,
+    });
+  }
+
   for (const item of fields) {
     pushRef(results, tenant, item.mediaId, item.legacyUrl, {
       module: "cms_config",

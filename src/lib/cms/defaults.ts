@@ -38,6 +38,7 @@ export function createDefaultSiteConfig(): SiteConfig {
       faviconMediaId: "",
       heroImage: "",
       heroMediaId: "",
+      homeHeroPhotos: [],
       primaryColor: colorDefaults.primary,
       secondaryColor: colorDefaults.secondary,
       backgroundColor: colorDefaults.background,
@@ -78,6 +79,7 @@ export function createDefaultSiteConfig(): SiteConfig {
       applications: false,
       onlinePayments: false,
     },
+    sitePublished: false,
     portalCopy: {
       footerProgramsTitle: "Oferta Académica",
       footerResourcesTitle: "Recursos",

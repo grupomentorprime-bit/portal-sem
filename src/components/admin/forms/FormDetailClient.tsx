@@ -54,7 +54,7 @@ const PRIMARY_HELP: Record<PrimaryTabId, string> = {
   formulario: "Así se verá para quien responde. Ajusta título, texto y preguntas.",
   respuestas: "Quién respondió y qué contestó.",
   participantes: "Lista de alumnos convocados (Excel o uno a uno).",
-  mas: "Presentación, apariencia y ajustes poco frecuentes. Para una página completa usa Sitio web → Páginas.",
+  mas: "Presentación, apariencia y ajustes poco frecuentes.",
 };
 
 const MORE_SECTIONS: Array<{ id: MoreSectionId; label: string; icon: typeof Layout }> = [

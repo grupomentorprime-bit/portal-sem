@@ -57,6 +57,7 @@ export interface GrowthAdmissionIngestInput {
   programId: string;
   programLabel?: string;
   channel?: string;
+  campaign?: string;
   capturedAt?: string;
   handoff?: {
     delivered: boolean;
@@ -379,9 +380,7 @@ export async function projectGrowthFromSignal(
     ...(channel ? { channel } : {}),
     ...(formId ? { formId } : {}),
     ...(formDestination ? { formDestination } : {}),
-    ...(input.kind === "form" && input.campaign
-      ? { campaign: input.campaign }
-      : {}),
+    ...(input.campaign ? { campaign: input.campaign } : {}),
     ...(input.kind === "form" && input.referrer
       ? { referrer: input.referrer }
       : {}),

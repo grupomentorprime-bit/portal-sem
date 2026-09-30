@@ -46,7 +46,7 @@ function redirectTo(request: Request, path: string): NextResponse {
 
 export async function GET(request: Request) {
   if (!isKeycloakEnabled()) {
-    return redirectTo(request, "/admin/login?error=keycloak");
+    return redirectTo(request, "/login?error=keycloak");
   }
 
   const url = new URL(request.url);
@@ -62,11 +62,11 @@ export async function GET(request: Request) {
     readRequestCookie(cookieHeader, NEXT_COOKIE) ?? jar.get(NEXT_COOKIE)?.value ?? "/admin";
 
   if (!code || !state || !savedState || state !== savedState) {
-    return redirectTo(request, "/admin/login?error=oauth_state");
+    return redirectTo(request, "/login?error=oauth_state");
   }
 
   if (!codeVerifier) {
-    return redirectTo(request, "/admin/login?error=oauth_pkce");
+    return redirectTo(request, "/login?error=oauth_pkce");
   }
 
   try {
@@ -107,9 +107,9 @@ export async function GET(request: Request) {
     return redirectTo(request, destination);
   } catch (error) {
     if (error instanceof KeycloakAccessError) {
-      return redirectTo(request, `/admin/login?error=${error.code}`);
+      return redirectTo(request, `/login?error=${error.code}`);
     }
     logServerError("keycloak-callback", error);
-    return redirectTo(request, "/admin/login?error=keycloak");
+    return redirectTo(request, "/login?error=keycloak");
   }
 }

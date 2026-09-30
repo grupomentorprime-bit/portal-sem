@@ -127,6 +127,7 @@ export function buildProvisionedSiteConfigDocument(
     contact: config.contact,
     social: config.social,
     features: config.features,
+    sitePublished: config.sitePublished === true,
     portalCopy: config.portalCopy,
     topBar: config.topBar,
     portalExperience: config.portalExperience,

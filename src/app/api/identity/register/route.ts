@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     if (!isEmailAuthEnabled()) {
       return NextResponse.json(
-        { ok: false, error: "El registro local está deshabilitado. Usa tu cuenta institucional." },
+        { ok: false, error: "El registro local está deshabilitado. Usa tu cuenta de Growth OS." },
         { status: 403 }
       );
     }

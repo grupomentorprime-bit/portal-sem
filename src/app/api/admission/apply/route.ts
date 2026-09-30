@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
 import { createInteresadoFromApplication } from "@/core/admission";
 import { getActiveTenantId } from "@/core/identity";
+import {
+  SEM_ADMISSION_2027_CAMPAIGN,
+  resolveSemAdmission2027Interest,
+} from "@/lib/portal/admission-campaign-interest";
 import { fetchPrograms } from "@/lib/portal/content";
 import { publicInternalError } from "@/core/security/public-error";
+
+function campaignFromRequest(request: Request, campaign: unknown): string | undefined {
+  if (typeof campaign === "string" && campaign.trim()) return campaign.trim();
+  const referer = request.headers.get("referer");
+  if (!referer) return undefined;
+  try {
+    const path = new URL(referer).pathname.replace(/\/$/, "") || "/";
+    return path === "/admision/2027" ? SEM_ADMISSION_2027_CAMPAIGN : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -20,11 +36,18 @@ export async function POST(request: Request) {
       city?: string;
       programId?: string;
       message?: string;
+      campaign?: string;
     };
 
     const programs = await fetchPrograms(tenant);
-    const program = programs.find((p) => p.id === body.programId?.trim());
-    const programLabel = program?.title;
+    const requestedId = body.programId?.trim() ?? "";
+    const program = programs.find((item) => item.id === requestedId);
+    const campaignInterest = resolveSemAdmission2027Interest({
+      tenantId: tenant,
+      campaign: campaignFromRequest(request, body.campaign),
+    });
+    const programId = campaignInterest?.programId ?? requestedId;
+    const programLabel = campaignInterest?.programLabel ?? program?.title;
 
     const result = await createInteresadoFromApplication(
       tenant,
@@ -35,7 +58,7 @@ export async function POST(request: Request) {
         phone: body.phone ?? "",
         church: body.church ?? "",
         city: body.city ?? "",
-        programId: body.programId ?? "",
+        programId,
         message: body.message,
       },
       programLabel

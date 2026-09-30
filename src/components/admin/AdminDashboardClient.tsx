@@ -2,13 +2,9 @@
 
 import Link from "next/link";
 import {
-  BookOpen,
   ClipboardList,
   ExternalLink,
-  FileText,
   Globe,
-  Image,
-  Newspaper,
   Settings,
   Shield,
   Users,
@@ -85,14 +81,6 @@ export function AdminDashboardClient({
       priority: "primary",
     },
     {
-      id: "programs",
-      title: "Programas y cursos",
-      description: "Oferta académica",
-      href: "/admin/content/programs",
-      icon: <BookOpen className="h-4 w-4" />,
-      priority: "primary",
-    },
-    {
       id: "student-affairs",
       title: "Operación de formularios",
       description: "Respuestas, asistencia, check-in y seguimiento",
@@ -111,33 +99,9 @@ export function AdminDashboardClient({
       icon: <ClipboardList className="h-4 w-4" />,
       priority: "secondary",
     },
-    {
-      id: "media",
-      title: "Biblioteca",
-      description: "Imágenes y documentos",
-      href: "/admin/media",
-      icon: <Image className="h-4 w-4" aria-hidden="true" />,
-      priority: "secondary",
-    },
-    {
-      id: "news",
-      title: "Publicar noticia",
-      description: "Comunicado institucional",
-      href: "/admin/content/news",
-      icon: <Newspaper className="h-4 w-4" />,
-      priority: "secondary",
-    },
   ];
 
   const otherQuickActions: QuickActionItem[] = [
-    {
-      id: "pages",
-      title: "Páginas del portal",
-      description: "Estructura del sitio",
-      href: "/admin/pages",
-      icon: <FileText className="h-4 w-4" />,
-      priority: "default",
-    },
     {
       id: "users",
       title: "Usuarios",

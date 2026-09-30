@@ -1,4 +1,5 @@
 import type { SiteConfigUpdate } from "@/types/cms";
+import { homeHeroPhotoErrors } from "@/lib/cms/home-hero-photos";
 import { getDisplaySlides, slideHasPublishableContent } from "@/lib/cms/hero-slide-display";
 import { HERO_SLIDE_MAX } from "@/types/hero-portal";
 
@@ -119,6 +120,8 @@ export function validateSiteConfigUpdate(
       });
     }
   }
+
+  errors.push(...homeHeroPhotoErrors(config.branding.homeHeroPhotos));
 
   const heroPortal = config.heroPortal;
   if (heroPortal?.enabled) {

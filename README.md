@@ -88,8 +88,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000) (host SEM / T001 según `APP_URL`).  
-Espacio ADL (T002) en desarrollo: host configurado en `ADL_DEV_HOST` (p. ej. `adl.localhost:3000`).
+Abrir [http://localhost:3000](http://localhost:3000): origen de plataforma (Growth OS), no un Espacio.  
+Espacio SEM en desarrollo: `seminario-ipn.localhost:3000`.  
+Espacio ADL (T002): host configurado en `ADL_DEV_HOST` (p. ej. `adl.localhost:3000`).
 
 ---
 
@@ -108,10 +109,12 @@ Variables mínimas: ver [.env.example](./.env.example).
 
 | Cliente | Código | Rol |
 | --- | --- | --- |
-| Seminario Eclesiástico Mayor | T001 (`seminario-ipn`) | Primer cliente; pack editorial SEM/IPN |
-| Academia ADL | T002 (`adl`) | Segundo cliente; sin heredar branding SEM |
+| Seminario Eclesiástico Mayor | T001 (`seminario-ipn`) | Espacio; pack editorial SEM/IPN |
+| Academia ADL | T002 (`adl`) | Espacio; sin heredar branding SEM |
+| Mentor Prime Capacitación | — | Espacio equivalente a SEM y ADL |
+| Fundación Mueve | — | Espacio equivalente a SEM y ADL |
 
-El pack SEM es **dato del Espacio**, no la identidad de Growth OS.
+El pack SEM es **dato del Espacio**, no la identidad de Growth OS. El realm Keycloak conserva el id técnico `seminario-ipn`; su nombre visible es Growth OS.
 
 ---
 

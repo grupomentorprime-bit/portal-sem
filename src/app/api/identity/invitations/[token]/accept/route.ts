@@ -43,7 +43,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
 /**
  * Tras provisionar password en Keycloak, NO usa ROPC (DAG OFF en growth-os-web).
- * Deja membresía lista y pide Auth Code + PKCE vía /admin/login.
+ * Deja membresía lista y pide Auth Code + PKCE vía /login.
  */
 async function handleKeycloakAccept(
   invitation: NonNullable<Awaited<ReturnType<typeof findInvitationByToken>>>,

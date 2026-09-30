@@ -81,6 +81,7 @@ describe("OT-GROWTH-SECURITY-HARDENING-002 — no-store selectivo", () => {
   it("marca privadas login/admin/platform/APIs de identidad y Growth", () => {
     for (const path of [
       "/admin",
+      "/login",
       "/admin/login",
       "/admin/mensajes",
       "/platform",

@@ -16,11 +16,19 @@ export interface AdmissionProgramOption {
   label: string;
 }
 
+export interface AdmissionLockedInterest {
+  line: string;
+  programId: string;
+  programLabel: string;
+  campaign: string;
+}
+
 interface AdmissionFormProps {
   title: string;
   description?: string;
   fields: CmsFormField[];
   programs: AdmissionProgramOption[];
+  lockedInterest?: AdmissionLockedInterest;
   layout?: CmsSectionLayout;
   anchor?: string;
   submitLabel?: string;
@@ -34,6 +42,7 @@ export function AdmissionForm({
   description,
   fields,
   programs,
+  lockedInterest,
   layout,
   anchor,
   submitLabel = "Enviar postulación",
@@ -44,8 +53,11 @@ export function AdmissionForm({
   const router = useRouter();
   const initialValues = useMemo(
     () =>
-      Object.fromEntries(fields.map((f) => [f.name, ""])) as Record<string, string>,
-    [fields]
+      ({
+        ...Object.fromEntries(fields.map((f) => [f.name, ""])),
+        ...(lockedInterest ? { programId: lockedInterest.programId } : {}),
+      }) as Record<string, string>,
+    [fields, lockedInterest]
   );
   const [values, setValues] = useState<Record<string, string>>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -76,7 +88,15 @@ export function AdmissionForm({
       const res = await fetch("/api/admission/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(
+          lockedInterest
+            ? {
+                ...values,
+                programId: lockedInterest.programId,
+                campaign: lockedInterest.campaign,
+              }
+            : values
+        ),
       });
       const payload = (await res.json()) as {
         ok: boolean;
@@ -109,6 +129,15 @@ export function AdmissionForm({
       placeholder: field.placeholder,
       helper: field.helper,
     };
+
+    if (field.type === "select" && field.name === "programId" && lockedInterest) {
+      return (
+        <div key={field.id} className="sm:col-span-2">
+          <p className="text-caption text-muted">{lockedInterest.line}</p>
+          <p className="text-body font-medium text-foreground">{lockedInterest.programLabel}</p>
+        </div>
+      );
+    }
 
     if (field.type === "select" && field.name === "programId") {
       return (
