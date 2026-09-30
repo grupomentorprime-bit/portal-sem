@@ -252,23 +252,60 @@ export const confian = [
   "SERVICIOS INTEGRADOS",
 ] as const;
 
-export const preguntas = [
+export type PreguntaLink = { label: string; href: string };
+
+export type Pregunta = {
+  q: string;
+  a: string;
+  /** Enlaces internos opcionales que acompañan la respuesta en la página de preguntas frecuentes. */
+  links?: readonly PreguntaLink[];
+};
+
+export const preguntas: Pregunta[] = [
   {
     q: "¿Qué hace Mentor Prime Cumple?",
     a: "Identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su cumplimiento. Reúne consultoría, plataforma y acompañamiento. No promete ausencia de sanciones.",
+    links: [{ label: "Cómo funciona", href: "/como-funciona" }],
   },
   {
     q: "¿Qué normativas cubre?",
     a: "Ley Karin, seguridad y salud en el trabajo (DS 44), laboral y RR.HH., protección de datos, inclusión laboral y contratistas. El alcance se ajusta a la operación de cada empresa.",
+    links: [
+      { label: "Ley Karin", href: "/materias/ley-karin" },
+      { label: "Seguridad y Salud en el Trabajo", href: "/materias/seguridad-salud-trabajo" },
+      { label: "Protección de datos", href: "/materias/proteccion-datos" },
+    ],
   },
   {
     q: "¿Sirve si la organización es pequeña?",
     a: "Sí. Parte por lo esencial, sin exigir un área legal completa. Después puede sumar la implementación y un control permanente.",
+    links: [{ label: "Evaluar mi empresa", href: "/evaluar" }],
   },
   {
     q: "¿Qué ocurre cuando la norma cambia?",
     a: "Se actualizan la obligación, la tarea y la evidencia. El control no queda pegado a una versión anterior de la ley.",
   },
+  {
+    q: "¿Cuánto demora el diagnóstico?",
+    a: "El plazo depende del tamaño de la organización, de la cantidad de centros de trabajo y de la documentación disponible. Tras la solicitud, el equipo revisa el caso y confirma los tiempos antes de comenzar.",
+    links: [{ label: "Solicitar el diagnóstico", href: "/evaluar" }],
+  },
+  {
+    q: "¿Mentor Prime Cumple reemplaza a un abogado o a un prevencionista?",
+    a: "No. La información del sitio es orientativa y no sustituye asesoría legal formal. Mentor Prime Cumple ordena obligaciones, responsables y evidencia para que el trabajo de esos profesionales quede respaldado y se mantenga al día.",
+  },
+  {
+    q: "¿Garantiza que no habrá multas ni sanciones?",
+    a: "No. Ninguna herramienta puede garantizar ese resultado, porque las decisiones de fiscalización corresponden a la autoridad. Lo que sí entrega es un estado claro de las obligaciones y la evidencia de las medidas adoptadas.",
+    links: [{ label: "Cómo funciona", href: "/como-funciona" }],
+  },
+  {
+    q: "¿Qué ocurre después del diagnóstico?",
+    a: "La organización recibe un plan priorizado. Puede implementarlo con acompañamiento del equipo o por cuenta propia, y mantener el control en la plataforma con alertas, responsables y evidencias.",
+    links: [
+      { label: "Cómo funciona", href: "/como-funciona" },
+      { label: "Laboral y RR.HH.", href: "/materias/laboral-rrhh" },
+    ],
+  },
 ];
-
 export const normas = ["Ley Karin", "DS 44", "Dirección del Trabajo", "Protocolos", "Matriz de riesgos", "Jornada laboral"];
