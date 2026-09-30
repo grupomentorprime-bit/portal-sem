@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import {
+  BookOpen,
   ClipboardList,
   ExternalLink,
   Globe,
+  Newspaper,
   Settings,
   Shield,
   Users,
