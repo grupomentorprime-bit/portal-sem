@@ -1,9 +1,7 @@
 ﻿import { EvalForm } from "@/components/sites/cumple/eval-form";
 import { FaqList } from "@/components/sites/cumple/faq-list";
 import { Icon } from "@/components/sites/cumple/icons";
-import { Logo } from "@/components/sites/cumple/logo";
-import { SiteHeader } from "@/components/sites/cumple/site-header";
-import { AsesorChat } from "@/components/sites/cumple/asesor-chat";
+import { CumpleShell } from "@/components/sites/cumple/CumpleShell";
 import {
   beneficios,
   confian,
@@ -13,27 +11,10 @@ import {
   problemas,
   soluciones,
   stats,
-  tagline,
   tesis,
   valorHero,
 } from "@/sites/cumple/content";
 import type { CodedPageViewProps } from "@/sites/page-views";
-import { Montserrat, Caveat } from "next/font/google";
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["300", "700"],
-  variable: "--font-montserrat",
-});
-
-const caveat = Caveat({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-caveat",
-});
-
-/** Por defecto siempre día; noche solo si el visitante la eligió antes. */
-const themeScript = `(function(){try{var t=localStorage.getItem("cumple-theme");var root=document.currentScript&&document.currentScript.parentElement;if(root)root.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){}})();`;
 
 const rail = ["bg-cviolet", "bg-caccent", "bg-ccyan"];
 
@@ -141,13 +122,7 @@ function DashboardMockup() {
 
 export function CumpleHome({ contact }: CodedPageViewProps) {
   return (
-    <div
-      className={`cumple-site min-h-screen ${montserrat.variable} ${caveat.variable}`}
-      data-theme="light"
-      suppressHydrationWarning
-    >
-      <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      <SiteHeader />
+    <CumpleShell contact={contact}>
       <main>
         <section className="relative overflow-x-hidden bg-[#071a45] text-white">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(640px_420px_at_72%_40%,rgba(61,107,255,0.42),transparent_68%)]" />
@@ -448,86 +423,6 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
           </div>
         </section>
       </main>
-
-      <footer id="nosotros" className="scroll-mt-32 border-t border-cline bg-[#071a45] pb-24 text-white sm:pb-0">
-        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 md:grid-cols-[1.2fr_0.9fr_0.9fr]">
-          <div>
-            <Logo />
-            <p className="mt-6 max-w-md text-sm leading-7 text-white/70">{tagline}</p>
-            <a href="#evaluar" className="glow-btn mt-6 inline-flex rounded-full px-5 py-3 text-sm font-bold text-white">
-              Evaluar mi empresa →
-            </a>
-          </div>
-          <nav className="grid content-start gap-6 sm:grid-cols-2" aria-label="Pie">
-            <div>
-              <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.16em] text-ccyan">Soluciones</p>
-              <ul className="mt-3 space-y-2 text-sm text-white/70">
-                {soluciones.map((item) => (
-                  <li key={item.href}>
-                    <a href={item.href} className="hover:text-white">
-                      {item.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.16em] text-ccyan">Recursos</p>
-              <ul className="mt-3 space-y-2 text-sm text-white/70">
-                <li>
-                  <a href="#como" className="hover:text-white">
-                    Cómo funciona
-                  </a>
-                </li>
-                <li>
-                  <a href="#faq" className="hover:text-white">
-                    Preguntas frecuentes
-                  </a>
-                </li>
-                <li>
-                  <a href="#nosotros" className="hover:text-white">
-                    Nosotros
-                  </a>
-                </li>
-                <li>
-                  <a href="#evaluar" className="hover:text-white">
-                    Contacto
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </nav>
-          <div className="text-sm text-white/70">
-            <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.16em] text-ccyan">Contacto</p>
-            {contact.phone ? <p className="mt-3">{contact.phone}</p> : null}
-            {contact.email ? (
-              <p className="mt-2">
-                <a href={`mailto:${contact.email}`} className="hover:text-white">
-                  {contact.email}
-                </a>
-              </p>
-            ) : null}
-            {(contact.city || contact.country) && (
-              <p className="mt-2">
-                {[contact.city, contact.country].filter(Boolean).join(", ")}
-              </p>
-            )}
-            {!contact.phone && !contact.email && !contact.city ? (
-              <p className="mt-3">Santiago, Chile</p>
-            ) : null}
-          </div>
-        </div>
-        <div className="border-t border-white/10">
-          <p className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-6 py-4 text-xs text-white/55">
-            <span>
-              Mentor Prime Cumple es una empresa del <span className="font-semibold text-white/80">Grupo Mentor Prime</span>.
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>© 2025</span>
-          </p>
-        </div>
-      </footer>
-      <AsesorChat />
-    </div>
+    </CumpleShell>
   );
 }

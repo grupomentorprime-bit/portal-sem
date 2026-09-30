@@ -1,4 +1,4 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { getMateria, materias } from "../../src/sites/cumple/pages/materias";
@@ -71,3 +71,25 @@ describe("Materias Cumple", () => {
   });
 });
 
+describe("Plantilla de materias Cumple", () => {
+  it("registra vistas de las seis materias", () => {
+    const views = readFileSync("src/sites/production-views.tsx", "utf8");
+    assert.match(views, /\/materias\/ley-karin/);
+    assert.match(views, /\/materias\/contratistas-terceros/);
+    const materiaPage = readFileSync("src/components/sites/cumple/MateriaPage.tsx", "utf8");
+    assert.match(materiaPage, /Fuentes oficiales|SourcesBlock/);
+    assert.match(materiaPage, /\/evaluar/);
+    assert.match(materiaPage, /disclaimer/);
+  });
+
+  it("la home usa el shell compartido y el pie lee el contacto", () => {
+    const home = readFileSync("src/components/sites/cumple/CumpleHome.tsx", "utf8");
+    const shell = readFileSync("src/components/sites/cumple/CumpleShell.tsx", "utf8");
+    const footer = readFileSync("src/components/sites/cumple/CumpleFooter.tsx", "utf8");
+    assert.match(home, /CumpleShell/);
+    assert.match(shell, /CumpleFooter/);
+    assert.match(shell, /AsesorChat/);
+    assert.match(footer, /contact\.email/);
+    assert.match(footer, /\/materias\/ley-karin/);
+  });
+});
