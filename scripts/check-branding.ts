@@ -72,12 +72,20 @@ const CSS_INFRASTRUCTURE = new Set([
   "src/styles/tokens/admin-branding.css",
 ]);
 
-/** Rutas bajo src/ exceptuadas: colores técnicamente inevitables (emails HTML, SVG, confetti, error API) */
+/**
+ * Rutas bajo src/ exceptuadas:
+ * - emails HTML, SVG, confetti, error API (colores técnicamente inevitables)
+ * - sitios públicos en código (`src/sites` + UI/CSS del espacio): identidad propia,
+ *   no la paleta Master Growth OS (ver docs/design/BRANDING-SYSTEM.md)
+ */
 const EXEMPT_PREFIXES = [
   "src/lib/notifications/",
   "src/components/portal/experience/forms/AttendanceTeacherIcon.tsx",
   "src/lib/experience/forms/celebration.ts",
   "src/app/api/cms/media/stream/route.ts",
+  "src/components/sites/",
+  "src/styles/sites/",
+  "src/sites/",
 ];
 
 function isExemptFile(file: string): boolean {
@@ -150,7 +158,15 @@ function scanFile(filePath: string): Violation[] {
     HEX_RE.lastIndex = 0;
     while ((match = HEX_RE.exec(lineText))) {
       const color = normHex(`#${match[1]}`);
-      if (color === "#000" || color === "#000000") continue;
+      // Neutros absolutos: no son marca; #fff aparece en CSS de superficies.
+      if (
+        color === "#000" ||
+        color === "#000000" ||
+        color === "#fff" ||
+        color === "#ffffff"
+      ) {
+        continue;
+      }
 
       if (FORBIDDEN_HEX.has(color)) {
         violations.push({ file, line, color, kind: "forbidden" });
@@ -195,6 +211,8 @@ function scanFile(filePath: string): Violation[] {
       ) {
         continue;
       }
+      // Neutros absolutos en CSS (`color: #fff`, `background: #ffffff`).
+      if (/#(?:fff|ffffff|000|000000)\b/i.test(snippet)) continue;
       violations.push({ file, line, color: snippet.slice(0, 60), kind: "inline" });
     }
 
