@@ -17,7 +17,20 @@ describe("sitio Mentor Prime Cumple", () => {
     assert.equal(cumpleSite.tenantId, "cumple");
     assert.deepEqual(
       cumpleSite.pages.map((page) => page.path),
-      ["/"]
+      [
+        "/",
+        "/materias/ley-karin",
+        "/materias/seguridad-salud-trabajo",
+        "/materias/laboral-rrhh",
+        "/materias/proteccion-datos",
+        "/materias/inclusion-laboral",
+        "/materias/contratistas-terceros",
+        "/como-funciona",
+        "/preguntas-frecuentes",
+        "/evaluar",
+        "/nosotros",
+        "/contacto",
+      ]
     );
     const form = cumpleSite.forms[0];
     assert.equal(form?._id, CUMPLE_FORM_ID);
