@@ -1,9 +1,48 @@
+import type { ReactNode } from "react";
 import { SourcesBlock } from "@/components/sites/cumple/SourcesBlock";
 import { cumpleSite } from "@/sites/cumple/site";
-import type { MateriaContent, MateriaSection } from "@/sites/cumple/pages/types";
+import type { MateriaCitation, MateriaContent, MateriaSection } from "@/sites/cumple/pages/types";
 
 function relatedLabel(path: string): string {
   return cumpleSite.pages.find((page) => page.path === path)?.navLabel ?? path;
+}
+
+const CITATION_LINK_CLASS =
+  "font-semibold text-cink underline decoration-cviolet underline-offset-4 hover:text-cviolet";
+
+/** Enlaza inline la primera aparición de cada `anchor` en los párrafos de la sección. */
+function renderParagraphs(section: MateriaSection): ReactNode[] {
+  const pending = [...(section.citations ?? [])];
+  return section.paragraphs.map((paragraph) => {
+    const nodes: ReactNode[] = [];
+    let rest = paragraph;
+    for (;;) {
+      let next: { index: number; citation: MateriaCitation } | undefined;
+      for (const citation of pending) {
+        const index = rest.indexOf(citation.anchor);
+        if (index !== -1 && (!next || index < next.index)) next = { index, citation };
+      }
+      if (!next) break;
+      const { index, citation } = next;
+      pending.splice(pending.indexOf(citation), 1);
+      if (index > 0) nodes.push(rest.slice(0, index));
+      nodes.push(
+        <a
+          key={`${citation.url}-${nodes.length}`}
+          href={citation.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={citation.label}
+          className={CITATION_LINK_CLASS}
+        >
+          {citation.anchor}
+        </a>,
+      );
+      rest = rest.slice(index + citation.anchor.length);
+    }
+    if (rest) nodes.push(rest);
+    return <p key={paragraph}>{nodes}</p>;
+  });
 }
 
 function Section({ id, section, tinted }: { id: string; section: MateriaSection; tinted?: boolean }) {
@@ -15,27 +54,8 @@ function Section({ id, section, tinted }: { id: string; section: MateriaSection;
             {section.heading}
           </h2>
           <div className="mt-5 space-y-4 text-base leading-7 text-cmuted">
-            {section.paragraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
+            {renderParagraphs(section)}
           </div>
-          {section.citations && section.citations.length > 0 ? (
-            <ul className="mt-6 space-y-2 border-l-4 border-cviolet pl-4 text-sm leading-6 text-cmuted">
-              {section.citations.map((citation) => (
-                <li key={citation.url}>
-                  Fuente:{" "}
-                  <a
-                    href={citation.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-cink underline underline-offset-4 hover:text-cviolet"
-                  >
-                    {citation.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : null}
         </div>
       </div>
     </section>

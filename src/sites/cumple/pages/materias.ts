@@ -53,7 +53,13 @@ export const materias: readonly MateriaContent[] = [
         "Según la ficha de Ley Chile de la Biblioteca del Congreso Nacional, la Ley 21.643 fue publicada el 15 de enero de 2024 y rige desde el 1 de agosto de 2024. La ley modifica el Código del Trabajo en materia de prevención, investigación y sanción del acoso laboral, el acoso sexual y la violencia en el trabajo.",
         "En términos prácticos, el marco exige a la organización contar con un protocolo de prevención, un procedimiento de investigación y medidas de resguardo. El detalle de artículos y de sanciones debe revisarse directamente en el texto oficial.",
       ],
-      citations: [{ label: BCN.leyKarin.nombre, url: BCN.leyKarin.url }],
+      citations: [
+        {
+          label: BCN.leyKarin.nombre,
+          url: BCN.leyKarin.url,
+          anchor: "la ficha de Ley Chile de la Biblioteca del Congreso Nacional",
+        },
+      ],
     },
     implica: {
       heading: "Qué implica para la empresa",
@@ -70,7 +76,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     sources: [BCN.leyKarin],
-    relatedPaths: ["/materias/seguridad-salud-trabajo", "/como-funciona", "/evaluar"],
+    relatedPaths: ["/materias/seguridad-salud-trabajo", "/como-funciona", "/preguntas-frecuentes", "/evaluar"],
   },
   {
     slug: "seguridad-salud-trabajo",
@@ -87,8 +93,12 @@ export const materias: readonly MateriaContent[] = [
         "El artículo 7 incluye además los riesgos psicosociales entre los factores que la entidad empleadora debe considerar al confeccionar la matriz. La vigencia del decreto se encuentra en su artículo primero transitorio y debe leerse en el texto oficial.",
       ],
       citations: [
-        { label: BCN.decreto44.nombre, url: BCN.decreto44.url },
-        { label: BCN.ley16744.nombre, url: BCN.ley16744.url },
+        {
+          label: BCN.decreto44.nombre,
+          url: BCN.decreto44.url,
+          anchor: "el Decreto 44 del Ministerio del Trabajo y Previsión Social",
+        },
+        { label: BCN.ley16744.nombre, url: BCN.ley16744.url, anchor: "La Ley 16.744" },
       ],
     },
     implica: {
@@ -106,7 +116,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     sources: [BCN.decreto44, BCN.ley16744],
-    relatedPaths: ["/materias/ley-karin", "/materias/contratistas-terceros", "/evaluar"],
+    relatedPaths: ["/materias/ley-karin", "/materias/contratistas-terceros", "/como-funciona", "/preguntas-frecuentes", "/evaluar"],
   },
   {
     slug: "laboral-rrhh",
@@ -121,7 +131,13 @@ export const materias: readonly MateriaContent[] = [
         "El texto refundido del Código del Trabajo, en Ley Chile, establece en su artículo 153 que las empresas que ocupen normalmente diez o más trabajadores permanentes deben confeccionar un reglamento interno de orden, higiene y seguridad.",
         "En materia de jornada, la nota marginal del artículo 22 atribuye su modificación a la Ley 21.561, publicada en el Diario Oficial el 26 de abril de 2023. Ese artículo señala que la jornada ordinaria no excederá de cuarenta horas semanales, y las reglas de aplicación gradual se encuentran en la propia Ley 21.561.",
       ],
-      citations: [{ label: BCN.codigoTrabajo.nombre, url: BCN.codigoTrabajo.url }],
+      citations: [
+        {
+          label: BCN.codigoTrabajo.nombre,
+          url: BCN.codigoTrabajo.url,
+          anchor: "texto refundido del Código del Trabajo, en Ley Chile",
+        },
+      ],
     },
     implica: {
       heading: "Qué implica para la empresa",
@@ -138,7 +154,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     sources: [BCN.codigoTrabajo],
-    relatedPaths: ["/materias/ley-karin", "/materias/inclusion-laboral", "/como-funciona"],
+    relatedPaths: ["/materias/ley-karin", "/materias/inclusion-laboral", "/como-funciona", "/preguntas-frecuentes", "/evaluar"],
   },
   {
     slug: "proteccion-datos",
@@ -153,7 +169,13 @@ export const materias: readonly MateriaContent[] = [
         "La Ley 19.628 regula la protección de la vida privada y el tratamiento de datos personales, según su texto en Ley Chile de la Biblioteca del Congreso Nacional.",
         "Toda organización que recoge, almacena o usa datos de personas, por ejemplo de sus trabajadores, postulantes o clientes, realiza tratamiento de datos personales y debe revisar qué le exige esa ley. El alcance exacto debe leerse en el texto oficial; la ficha consultada no describe una ley posterior ni una fecha de reemplazo.",
       ],
-      citations: [{ label: BCN.ley19628.nombre, url: BCN.ley19628.url }],
+      citations: [
+        {
+          label: BCN.ley19628.nombre,
+          url: BCN.ley19628.url,
+          anchor: "su texto en Ley Chile de la Biblioteca del Congreso Nacional",
+        },
+      ],
     },
     implica: {
       heading: "Qué implica para la empresa",
@@ -170,7 +192,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     sources: [BCN.ley19628],
-    relatedPaths: ["/materias/laboral-rrhh", "/preguntas-frecuentes", "/evaluar"],
+    relatedPaths: ["/materias/laboral-rrhh", "/como-funciona", "/preguntas-frecuentes", "/evaluar"],
   },
   {
     slug: "inclusion-laboral",
@@ -185,7 +207,7 @@ export const materias: readonly MateriaContent[] = [
         "El artículo 157 bis, incorporado por la Ley 21.015, dispone que las empresas de 100 o más trabajadores deberán contratar o mantener contratados al menos el 1% de personas con discapacidad o asignatarias de una pensión de invalidez, en relación con el total de sus trabajadores.",
         "El texto oficial se encuentra en Ley Chile. El detalle del cálculo anual y de las sanciones debe consultarse allí, ya que la ficha consultada no los describe.",
       ],
-      citations: [{ label: BCN.ley21015.nombre, url: BCN.ley21015.url }],
+      citations: [{ label: BCN.ley21015.nombre, url: BCN.ley21015.url, anchor: "Ley Chile" }],
     },
     implica: {
       heading: "Qué implica para la empresa",
@@ -202,7 +224,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     sources: [BCN.ley21015, BCN.codigoTrabajo],
-    relatedPaths: ["/materias/laboral-rrhh", "/como-funciona", "/evaluar"],
+    relatedPaths: ["/materias/laboral-rrhh", "/como-funciona", "/preguntas-frecuentes", "/evaluar"],
   },
   {
     slug: "contratistas-terceros",
@@ -218,8 +240,8 @@ export const materias: readonly MateriaContent[] = [
         "Esto significa que la protección no se limita al personal propio: alcanza también a quienes trabajan para contratistas y subcontratistas dentro de la faena de la empresa principal.",
       ],
       citations: [
-        { label: BCN.ley20123.nombre, url: BCN.ley20123.url },
-        { label: BCN.ley16744.nombre, url: BCN.ley16744.url },
+        { label: BCN.ley20123.nombre, url: BCN.ley20123.url, anchor: "La Ley 20.123" },
+        { label: BCN.ley16744.nombre, url: BCN.ley16744.url, anchor: "artículo 66 bis de la Ley 16.744" },
       ],
     },
     implica: {
@@ -237,7 +259,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     sources: [BCN.ley20123, BCN.ley16744],
-    relatedPaths: ["/materias/seguridad-salud-trabajo", "/materias/laboral-rrhh", "/evaluar"],
+    relatedPaths: ["/materias/seguridad-salud-trabajo", "/materias/laboral-rrhh", "/como-funciona", "/preguntas-frecuentes", "/evaluar"],
   },
 ];
 
