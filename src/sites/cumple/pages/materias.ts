@@ -37,7 +37,7 @@ const DISCLAIMER =
   "Esta página ofrece información orientativa con base en fuentes oficiales. No sustituye asesoría legal formal ni determina el estado de cumplimiento de una organización concreta.";
 
 const CUMPLE_METODO =
-  "El método de Mentor Prime Cumple sigue cuatro etapas: diagnóstico, plan, implementación y control.";
+  "El método de Mentor Cumple sigue cuatro etapas: diagnóstico, plan, implementación y control.";
 
 export const materias: readonly MateriaContent[] = [
   {
@@ -46,7 +46,7 @@ export const materias: readonly MateriaContent[] = [
     eyebrow: "Materia · Cumplimiento",
     titleName: "Ley Karin",
     normRef: "Ley 21.643",
-    lead: "La Ley 21.643 (Ley Karin) obliga a prevenir, investigar y resguardar frente al acoso laboral, el acoso sexual y la violencia en el trabajo. Mentor Prime Cumple ayuda a la organización a ordenar esas obligaciones y demostrarlas.",
+    lead: "La Ley 21.643 (Ley Karin) obliga a prevenir, investigar y resguardar frente al acoso laboral, el acoso sexual y la violencia en el trabajo. Mentor Cumple ayuda a la organización a ordenar esas obligaciones y demostrarlas.",
     disclaimer: DISCLAIMER,
     exige: {
       heading: "Qué exige el marco a la organización",
@@ -70,7 +70,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     cumple: {
-      heading: "Cómo lo ordena Mentor Prime Cumple",
+      heading: "Cómo lo ordena Mentor Cumple",
       paragraphs: [
         CUMPLE_METODO,
         "El diagnóstico identifica brechas frente a lo que la norma describe. El plan prioriza acciones y responsables. La implementación activa el protocolo, el procedimiento de investigación y los registros. El control permanente mantiene plazos, responsables y evidencia a disposición de la organización.",
@@ -85,7 +85,7 @@ export const materias: readonly MateriaContent[] = [
     eyebrow: "Materia · Cumplimiento",
     titleName: "Seguridad y salud en el trabajo",
     normRef: "Ley 16.744 · Decreto 44",
-    lead: "La Ley 16.744 y el Decreto 44 ordenan la gestión de los riesgos laborales, incluidos los psicosociales. Mentor Prime Cumple ayuda a transformar esas exigencias en una matriz, un programa y un control permanentes.",
+    lead: "La Ley 16.744 y el Decreto 44 ordenan la gestión de los riesgos laborales, incluidos los psicosociales. Mentor Cumple ayuda a transformar esas exigencias en una matriz, un programa y un control permanentes.",
     disclaimer: DISCLAIMER,
     exige: {
       heading: "Qué exige el marco a la organización",
@@ -111,7 +111,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     cumple: {
-      heading: "Cómo lo ordena Mentor Prime Cumple",
+      heading: "Cómo lo ordena Mentor Cumple",
       paragraphs: [
         CUMPLE_METODO,
         "El diagnóstico revisa la matriz y el programa existentes. El plan ordena las brechas por prioridad. La implementación asigna medidas, plazos y responsables, y deja los registros. El control mantiene el programa vigente y la evidencia ordenada para la organización.",
@@ -126,7 +126,7 @@ export const materias: readonly MateriaContent[] = [
     eyebrow: "Materia · Cumplimiento",
     titleName: "Laboral y RR.HH.",
     normRef: "Código del Trabajo",
-    lead: "El Código del Trabajo fija obligaciones como el reglamento interno y los límites de jornada. Mentor Prime Cumple ayuda a mantenerlas ordenadas, con responsables y evidencia.",
+    lead: "El Código del Trabajo fija obligaciones como el reglamento interno y los límites de jornada. Mentor Cumple ayuda a mantenerlas ordenadas, con responsables y evidencia.",
     disclaimer: DISCLAIMER,
     exige: {
       heading: "Qué exige el marco a la organización",
@@ -150,7 +150,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     cumple: {
-      heading: "Cómo lo ordena Mentor Prime Cumple",
+      heading: "Cómo lo ordena Mentor Cumple",
       paragraphs: [
         CUMPLE_METODO,
         "El diagnóstico contrasta el reglamento interno y la organización de la jornada con el texto oficial. El plan define qué corregir primero. La implementación actualiza documentos y prácticas. El control mantiene responsables y evidencia para revisiones periódicas.",
@@ -165,7 +165,7 @@ export const materias: readonly MateriaContent[] = [
     eyebrow: "Materia · Cumplimiento",
     titleName: "Protección de datos",
     normRef: "Ley 19.628",
-    lead: "La Ley 19.628 regula la protección de la vida privada y el tratamiento de datos personales. Mentor Prime Cumple ayuda a ordenar ese tratamiento dentro de la organización.",
+    lead: "La Ley 19.628 regula la protección de la vida privada y el tratamiento de datos personales. Mentor Cumple ayuda a ordenar ese tratamiento dentro de la organización.",
     disclaimer: DISCLAIMER,
     exige: {
       heading: "Qué exige el marco a la organización",
@@ -189,7 +189,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     cumple: {
-      heading: "Cómo lo ordena Mentor Prime Cumple",
+      heading: "Cómo lo ordena Mentor Cumple",
       paragraphs: [
         CUMPLE_METODO,
         "El diagnóstico identifica qué datos se tratan y dónde. El plan prioriza ajustes de procesos y documentos. La implementación deja reglas y registros operativos. El control mantiene responsables y evidencia de cómo se aplica el tratamiento.",
@@ -204,7 +204,7 @@ export const materias: readonly MateriaContent[] = [
     eyebrow: "Materia · Cumplimiento",
     titleName: "Inclusión laboral",
     normRef: "Ley 21.015",
-    lead: "La Ley 21.015 incorporó al Código del Trabajo la obligación de contratar personas con discapacidad en empresas de cierto tamaño. Mentor Prime Cumple ayuda a verificar la situación de la organización y a mantener la evidencia.",
+    lead: "La Ley 21.015 incorporó al Código del Trabajo la obligación de contratar personas con discapacidad en empresas de cierto tamaño. Mentor Cumple ayuda a verificar la situación de la organización y a mantener la evidencia.",
     disclaimer: DISCLAIMER,
     exige: {
       heading: "Qué exige el marco a la organización",
@@ -222,7 +222,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     cumple: {
-      heading: "Cómo lo ordena Mentor Prime Cumple",
+      heading: "Cómo lo ordena Mentor Cumple",
       paragraphs: [
         CUMPLE_METODO,
         "El diagnóstico revisa la dotación frente a la regla del artículo 157 bis. El plan define acciones si existe una brecha. La implementación las ejecuta y documenta. El control mantiene actualizada la información de la organización.",
@@ -237,7 +237,7 @@ export const materias: readonly MateriaContent[] = [
     eyebrow: "Materia · Cumplimiento",
     titleName: "Contratistas y terceros",
     normRef: "Ley 20.123",
-    lead: "La Ley 20.123 regula el trabajo en régimen de subcontratación. Mentor Prime Cumple ayuda a ordenar el control de contratistas y la evidencia que la empresa principal necesita.",
+    lead: "La Ley 20.123 regula el trabajo en régimen de subcontratación. Mentor Cumple ayuda a ordenar el control de contratistas y la evidencia que la empresa principal necesita.",
     disclaimer: DISCLAIMER,
     exige: {
       heading: "Qué exige el marco a la organización",
@@ -258,7 +258,7 @@ export const materias: readonly MateriaContent[] = [
       ],
     },
     cumple: {
-      heading: "Cómo lo ordena Mentor Prime Cumple",
+      heading: "Cómo lo ordena Mentor Cumple",
       paragraphs: [
         CUMPLE_METODO,
         "El diagnóstico identifica contratistas, faenas y medidas vigentes. El plan prioriza los controles. La implementación define responsables y registros de coordinación. El control mantiene la evidencia a disposición de la empresa principal.",

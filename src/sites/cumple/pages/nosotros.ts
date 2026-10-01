@@ -1,12 +1,12 @@
 export const nosotrosPage = {
   eyebrow: "Nosotros",
-  h1: "Quiénes somos: Mentor Prime Cumple",
-  lead: "Mentor Prime Cumple ayuda a las organizaciones a entender sus obligaciones, implementarlas y mantenerlas bajo control, con evidencia disponible cuando se necesite.",
+  h1: "Quiénes somos: Mentor Cumple",
+  lead: "Mentor Cumple ayuda a las organizaciones a entender sus obligaciones, implementarlas y mantenerlas bajo control, con evidencia disponible cuando se necesite.",
   sections: [
     {
-      heading: "Quién es Mentor Prime Cumple",
+      heading: "Quién es Mentor Cumple",
       paragraphs: [
-        "Mentor Prime Cumple es una empresa del Grupo Mentor Prime dedicada al cumplimiento empresarial. Su trabajo consiste en traducir la normativa aplicable en tareas concretas, responsables definidos y evidencia ordenada.",
+        "Mentor Cumple es una empresa del Grupo Mentor Prime dedicada al cumplimiento empresarial. Su trabajo consiste en traducir la normativa aplicable en tareas concretas, responsables definidos y evidencia ordenada.",
         "Su foco está en materias que hoy exigen más a las organizaciones: Ley Karin, seguridad y salud en el trabajo, obligaciones laborales y de recursos humanos, protección de datos, inclusión laboral y control de contratistas.",
       ],
     },
@@ -25,9 +25,9 @@ export const nosotrosPage = {
       ],
     },
     {
-      heading: "Lo que Mentor Prime Cumple no promete",
+      heading: "Lo que Mentor Cumple no promete",
       paragraphs: [
-        "Mentor Prime Cumple no sustituye la asesoría legal formal ni asegura resultados frente a una fiscalización, porque esa decisión corresponde a la autoridad. Su compromiso es entregar claridad sobre el estado de la organización y respaldo sobre las medidas adoptadas.",
+        "Mentor Cumple no sustituye la asesoría legal formal ni asegura resultados frente a una fiscalización, porque esa decisión corresponde a la autoridad. Su compromiso es entregar claridad sobre el estado de la organización y respaldo sobre las medidas adoptadas.",
       ],
     },
   ],

@@ -73,7 +73,7 @@ export function CumpleFooter({ contact }: Pick<CodedPageViewProps, "contact">) {
       <div className="border-t border-white/10">
         <p className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-6 py-4 text-xs text-white/55">
           <span>
-            Mentor Prime Cumple es una empresa del <span className="font-semibold text-white/80">Grupo Mentor Prime</span>.
+            Mentor Cumple es una empresa del <span className="font-semibold text-white/80">Grupo Mentor Prime</span>.
           </span>
           <span aria-hidden="true">·</span>
           <span>© 2026</span>

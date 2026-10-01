@@ -109,7 +109,7 @@ export const fichas: Ficha[] = [
   },
   {
     keys: ["mentor prime", "mentorprime", "que hacen", "diagnostico"],
-    titulo: "Qué hace Mentor Prime Cumple",
+    titulo: "Qué hace Mentor Cumple",
     texto:
       "Reúne consultoría, gestión y tecnología: qué obligaciones aplican, quién responde, cuándo vence y dónde está la evidencia. El alcance inicial considera laboral y RR.HH., Ley Karin, DS 44 y seguridad y salud en el trabajo, riesgos psicosociales, inclusión, protección de datos, emergencias y contratistas. No promete ausencia de sanciones ni de fiscalizaciones. El paso siguiente es solicitar el diagnóstico.",
   },

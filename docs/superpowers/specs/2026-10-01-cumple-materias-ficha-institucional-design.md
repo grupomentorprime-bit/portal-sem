@@ -9,7 +9,7 @@ Las páginas `/materias/...` dejan de verse como landing comercial y pasan a lee
 - H1 visible = nombre de la materia (“Ley Karin”, “Seguridad y salud en el trabajo”, …).
 - Referencia normativa corta bajo el H1 cuando exista (p. ej. “Ley 21.643”).
 - Eyebrow transversal: `Materia · Cumplimiento` (el tema va en el H1, no solo en el eyebrow).
-- Cumple como oferta aparece en la sección “Cómo lo ordena Mentor Prime Cumple” y en un CTA final sobrio; no domina el héroe.
+- Cumple como oferta aparece en la sección “Cómo lo ordena Mentor Cumple” y en un CTA final sobrio; no domina el héroe.
 - Sin fotos stock, sin logos de gobierno, sin colores/bloques que imiten a la DT.
 - SEO: `title` y `description` del registro del sitio pueden seguir orientados a búsqueda; el H1 en página es el nombre de la materia.
 
@@ -25,7 +25,7 @@ Orden fijo:
 
 1. Qué exige el marco
 2. Qué implica para la empresa (fondo `csand` permitido)
-3. Cómo lo ordena Mentor Prime Cumple
+3. Cómo lo ordena Mentor Cumple
 4. Disclaimer orientativo
 5. Fuentes oficiales
 6. Relacionado

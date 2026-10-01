@@ -21,7 +21,7 @@ const detalle: Record<string, string[]> = {
 
 export const comoFunciona = {
   eyebrow: "Método",
-  h1: "Cómo funciona Mentor Prime Cumple",
+  h1: "Cómo funciona Mentor Cumple",
   lead: "Cuatro pasos para pasar de la incertidumbre a un cumplimiento ordenado, documentado y vigente: diagnóstico, plan de acción, implementación y control permanente.",
   steps: pasos.map((paso) => ({
     step: paso.step,

@@ -14,7 +14,7 @@ export const whatsappNumber = "";
 export const tagline = "Cumplimiento empresarial bajo control.";
 
 export const tesis =
-  "Mentor Prime Cumple le entrega una visión clara del estado de su empresa y le ayuda a implementar y mantener todo bajo control.";
+  "Mentor Cumple le entrega una visión clara del estado de su empresa y le ayuda a implementar y mantener todo bajo control.";
 
 export const soluciones: CardItem[] = [
   {
@@ -277,7 +277,7 @@ export type Pregunta = {
 
 export const preguntas: Pregunta[] = [
   {
-    q: "¿Qué hace Mentor Prime Cumple?",
+    q: "¿Qué hace Mentor Cumple?",
     a: "Identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su cumplimiento. Reúne consultoría, plataforma y acompañamiento. No promete ausencia de sanciones.",
     links: [{ label: "Cómo funciona", href: "/como-funciona" }],
   },
@@ -305,8 +305,8 @@ export const preguntas: Pregunta[] = [
     links: [{ label: "Solicitar el diagnóstico", href: "/evaluar" }],
   },
   {
-    q: "¿Mentor Prime Cumple reemplaza a un abogado o a un prevencionista?",
-    a: "No. La información del sitio es orientativa y no sustituye asesoría legal formal. Mentor Prime Cumple ordena obligaciones, responsables y evidencia para que el trabajo de esos profesionales quede respaldado y se mantenga al día.",
+    q: "¿Mentor Cumple reemplaza a un abogado o a un prevencionista?",
+    a: "No. La información del sitio es orientativa y no sustituye asesoría legal formal. Mentor Cumple ordena obligaciones, responsables y evidencia para que el trabajo de esos profesionales quede respaldado y se mantenga al día.",
   },
   {
     q: "¿Garantiza que no habrá multas ni sanciones?",

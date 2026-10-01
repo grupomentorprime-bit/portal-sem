@@ -1,7 +1,7 @@
 export const evaluarPage = {
   eyebrow: "Diagnóstico preliminar",
   h1: "Evalúe el estado de cumplimiento de su empresa",
-  lead: "Complete cuatro datos y el equipo de Mentor Prime Cumple revisará qué obligaciones conviene mirar primero en su organización.",
+  lead: "Complete cuatro datos y el equipo de Mentor Cumple revisará qué obligaciones conviene mirar primero en su organización.",
   confianza: [
     {
       title: "Sin compromiso",

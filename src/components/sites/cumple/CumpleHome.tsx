@@ -137,7 +137,7 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
                 No descubra lo que falta durante <span className="grad-text">una fiscalización.</span>
               </h1>
               <p className="mt-4 max-w-lg text-base leading-7 text-white/80 sm:text-lg sm:leading-8">
-                Mentor Prime Cumple identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su
+                Mentor Cumple identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su
                 cumplimiento.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -248,7 +248,7 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
             <h2 className="max-w-3xl font-cdisplay text-3xl font-extrabold tracking-tight sm:text-4xl">
               ¿Qué obligaciones debe cumplir <span className="text-cviolet">su empresa?</span>
             </h2>
-            <p className="mt-4 max-w-2xl text-cmuted">Mentor Prime Cumple integra todas las áreas de cumplimiento en un solo lugar.</p>
+            <p className="mt-4 max-w-2xl text-cmuted">Mentor Cumple integra todas las áreas de cumplimiento en un solo lugar.</p>
             <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {soluciones.map((item) => (
                 <li key={item.href}>

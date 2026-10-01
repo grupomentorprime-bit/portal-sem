@@ -6,7 +6,7 @@ import { CUMPLE_FORM_ID, CUMPLE_TENANT_ID, cumpleSite } from "../../src/sites/cu
 import { fichasPara } from "../../src/sites/cumple/norma";
 import { getCodedSite } from "../../src/sites/registry";
 
-describe("sitio Mentor Prime Cumple", () => {
+describe("sitio Mentor Cumple", () => {
   it("no se registra al importar el contrato", () => {
     assert.equal(getCodedSite("cumple"), undefined);
     assert.equal(getCodedSite("sem"), undefined);
