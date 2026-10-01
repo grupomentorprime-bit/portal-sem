@@ -224,7 +224,7 @@ describe("wildcard de Espacios — alta y resolución", () => {
         const created = await createPlatformSpace(
           db,
           {
-            name: "Mentor Prime Capacitación",
+            name: "Mentor Capacitación",
             slug: slugA,
             type: "education",
             host: "",

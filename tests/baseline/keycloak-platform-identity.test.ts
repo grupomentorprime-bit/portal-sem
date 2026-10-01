@@ -62,7 +62,7 @@ describe("identidad Keycloak — Growth OS es la plataforma", () => {
     assert.doesNotMatch(admin, /institucional/);
     assert.match(read("docs/core/IDENTITY.md"), /Display Name y la identidad visual general son \*\*Growth OS\*\*/);
     assert.match(read("docs/GLOSSARY.md"), /Espacios equivalentes/);
-    assert.match(read("docs/GLOSSARY.md"), /Mentor Prime Capacitación/);
+    assert.match(read("docs/GLOSSARY.md"), /Mentor Capacitación/);
     assert.match(read("docs/GLOSSARY.md"), /Fundación Mueve/);
   });
 });
