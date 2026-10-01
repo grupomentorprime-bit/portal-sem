@@ -43,7 +43,7 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "ley-karin",
     path: "/materias/ley-karin",
-    eyebrow: "Materia · Cumplimiento",
+    eyebrow: "Información · Cumplimiento",
     titleName: "Ley Karin",
     normRef: "Ley 21.643",
     lead: "La Ley 21.643 (Ley Karin) obliga a prevenir, investigar y resguardar frente al acoso laboral, el acoso sexual y la violencia en el trabajo. Mentor Cumple ayuda a la organización a ordenar esas obligaciones y demostrarlas.",
@@ -82,7 +82,7 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "seguridad-salud-trabajo",
     path: "/materias/seguridad-salud-trabajo",
-    eyebrow: "Materia · Cumplimiento",
+    eyebrow: "Información · Cumplimiento",
     titleName: "Seguridad y salud en el trabajo",
     normRef: "Ley 16.744 · Decreto 44",
     lead: "La Ley 16.744 y el Decreto 44 ordenan la gestión de los riesgos laborales, incluidos los psicosociales. Mentor Cumple ayuda a transformar esas exigencias en una matriz, un programa y un control permanentes.",
@@ -123,7 +123,7 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "laboral-rrhh",
     path: "/materias/laboral-rrhh",
-    eyebrow: "Materia · Cumplimiento",
+    eyebrow: "Información · Cumplimiento",
     titleName: "Laboral y RR.HH.",
     normRef: "Código del Trabajo",
     lead: "El Código del Trabajo fija obligaciones como el reglamento interno y los límites de jornada. Mentor Cumple ayuda a mantenerlas ordenadas, con responsables y evidencia.",
@@ -162,7 +162,7 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "proteccion-datos",
     path: "/materias/proteccion-datos",
-    eyebrow: "Materia · Cumplimiento",
+    eyebrow: "Información · Cumplimiento",
     titleName: "Protección de datos",
     normRef: "Ley 19.628",
     lead: "La Ley 19.628 regula la protección de la vida privada y el tratamiento de datos personales. Mentor Cumple ayuda a ordenar ese tratamiento dentro de la organización.",
@@ -201,7 +201,7 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "inclusion-laboral",
     path: "/materias/inclusion-laboral",
-    eyebrow: "Materia · Cumplimiento",
+    eyebrow: "Información · Cumplimiento",
     titleName: "Inclusión laboral",
     normRef: "Ley 21.015",
     lead: "La Ley 21.015 incorporó al Código del Trabajo la obligación de contratar personas con discapacidad en empresas de cierto tamaño. Mentor Cumple ayuda a verificar la situación de la organización y a mantener la evidencia.",
@@ -234,7 +234,7 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "contratistas-terceros",
     path: "/materias/contratistas-terceros",
-    eyebrow: "Materia · Cumplimiento",
+    eyebrow: "Información · Cumplimiento",
     titleName: "Contratistas y terceros",
     normRef: "Ley 20.123",
     lead: "La Ley 20.123 regula el trabajo en régimen de subcontratación. Mentor Cumple ayuda a ordenar el control de contratistas y la evidencia que la empresa principal necesita.",

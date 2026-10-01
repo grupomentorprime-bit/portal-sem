@@ -31,7 +31,7 @@ export function CumpleFooter({ contact }: Pick<CodedPageViewProps, "contact">) {
         </div>
         <nav className="grid content-start gap-6 sm:grid-cols-2" aria-label="Pie">
           <div>
-            <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.16em] text-ccyan">Materias</p>
+            <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.16em] text-ccyan">Información</p>
             <ul className="mt-3 space-y-2 text-sm text-white/70">
               {materiasLinks.map((item) => (
                 <li key={item.href}>

@@ -24,15 +24,18 @@ function stubNextFonts(): void {
 
 describe("Navegación Cumple", () => {
   it("el menú usa rutas reales y no anclas sueltas en paneles", async () => {
-    const { menus, soluciones, normativas, recursos } = await import("../../src/sites/cumple/content");
+    const { menus, soluciones, informacion, recursos } = await import("../../src/sites/cumple/content");
     assert.equal(soluciones.length, 6);
-    assert.equal(normativas.length, 6);
-    for (const item of [...soluciones, ...normativas, ...recursos]) {
+    assert.equal(informacion.length, 6);
+    for (const item of [...soluciones, ...informacion, ...recursos]) {
       assert.ok(item.href.startsWith("/"));
       assert.ok(!item.href.startsWith("/#"));
     }
     const inicio = menus.find((m) => m.id === "inicio");
     assert.ok(inicio && "href" in inicio && inicio.href === "/");
+    const informacionMenu = menus.find((m) => m.id === "informacion");
+    assert.ok(informacionMenu && "label" in informacionMenu && informacionMenu.label === "Información");
+    assert.ok(!menus.some((m) => m.id === "normativas"));
     const nosotros = menus.find((m) => m.id === "nosotros");
     assert.ok(nosotros && "href" in nosotros && nosotros.href === "/nosotros");
     const contacto = menus.find((m) => m.id === "contacto");
@@ -86,7 +89,7 @@ describe("Materias Cumple", () => {
   it("cada materia usa titleName institucional y eyebrow transversal", () => {
     assert.equal(materias.length, 6);
     for (const materia of materias) {
-      assert.equal(materia.eyebrow, "Materia · Cumplimiento");
+      assert.equal(materia.eyebrow, "Información · Cumplimiento");
       assert.match(materia.titleName, /\S/);
       assert.ok(!("h1" in materia), `${materia.slug}: no debe conservar h1`);
     }

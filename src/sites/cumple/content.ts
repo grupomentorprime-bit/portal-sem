@@ -61,7 +61,7 @@ export const soluciones: CardItem[] = [
   },
 ];
 
-export const normativas: CardItem[] = [
+export const informacion: CardItem[] = [
   {
     title: "Ley Karin",
     description: "Prevención, investigación y el respaldo de cada caso.",
@@ -137,7 +137,7 @@ export type MenuEntry =
 export const menus: readonly MenuEntry[] = [
   { id: "inicio", label: "Inicio", href: "/" },
   { id: "soluciones", label: "Soluciones", items: soluciones },
-  { id: "normativas", label: "Normativas", items: normativas },
+  { id: "informacion", label: "Información", items: informacion },
   { id: "recursos", label: "Recursos", items: recursos },
   { id: "nosotros", label: "Nosotros", href: "/nosotros" },
   { id: "contacto", label: "Contacto", href: "/contacto" },

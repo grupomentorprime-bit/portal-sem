@@ -8,7 +8,8 @@ Las páginas `/materias/...` dejan de verse como landing comercial y pasan a lee
 - Patrón visual: ficha documental (referencia Serpat / UV), no portal DT clonado ni landing tipo Laborsafe.
 - H1 visible = nombre de la materia (“Ley Karin”, “Seguridad y salud en el trabajo”, …).
 - Referencia normativa corta bajo el H1 cuando exista (p. ej. “Ley 21.643”).
-- Eyebrow transversal: `Materia · Cumplimiento` (el tema va en el H1, no solo en el eyebrow).
+- Eyebrow transversal: `Información · Cumplimiento` (el tema va en el H1, no solo en el eyebrow).
+- Menú: **Soluciones** (ángulo servicio) e **Información** (ángulo marco; antes “Normativas”) apuntan a las mismas URLs `/materias/...`.
 - Cumple como oferta aparece en la sección “Cómo lo ordena Mentor Cumple” y en un CTA final sobrio; no domina el héroe.
 - Sin fotos stock, sin logos de gobierno, sin colores/bloques que imiten a la DT.
 - SEO: `title` y `description` del registro del sitio pueden seguir orientados a búsqueda; el H1 en página es el nombre de la materia.
