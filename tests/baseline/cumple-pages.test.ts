@@ -165,13 +165,20 @@ describe("Plantilla de materias Cumple", () => {
     assert.equal(getCodedPageView(CUMPLE_TENANT_ID, "/materias/no-existe"), undefined);
   });
 
-  it("MateriaPage enlaza citas inline y conserva bloque de fuentes y relacionados", () => {
+  it("MateriaPage es ficha institucional sin hero comercial", () => {
     const materiaPage = readFileSync("src/components/sites/cumple/MateriaPage.tsx", "utf8");
-    assert.match(materiaPage, /SourcesBlock/);
+    assert.match(materiaPage, /titleName/);
+    assert.match(materiaPage, /normRef/);
+    assert.match(materiaPage, /content\.eyebrow/);
     assert.match(materiaPage, /citation\.anchor/);
     assert.match(materiaPage, /relatedPaths/);
-    assert.match(materiaPage, /\/evaluar/);
+    assert.match(materiaPage, /SourcesBlock/);
     assert.match(materiaPage, /disclaimer/);
+    assert.match(materiaPage, /\/evaluar/);
+    assert.match(materiaPage, /border-cline/);
+    assert.doesNotMatch(materiaPage, /#071a45/);
+    assert.doesNotMatch(materiaPage, /glow-btn/);
+    assert.doesNotMatch(materiaPage, /orb-a/);
   });
 
   it("la home usa el shell compartido y el pie lee el contacto", () => {

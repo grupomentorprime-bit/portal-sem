@@ -65,23 +65,25 @@ function Section({ id, section, tinted }: { id: string; section: MateriaSection;
 export function MateriaPage({ content }: { content: MateriaContent }) {
   return (
     <main>
-      <section className="relative overflow-x-hidden bg-[#071a45] text-white">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(640px_420px_at_72%_40%,rgba(61,107,255,0.42),transparent_68%)]" />
-        <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#6d4dff]/30 blur-3xl" />
-        <div className="relative z-10 mx-auto max-w-6xl px-6 py-14 lg:py-20">
-          <div className="rise max-w-3xl">
-            <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.2em] text-white/80">{content.eyebrow}</p>
-            <h1 className="mt-3 font-cdisplay text-[2rem] font-extrabold leading-[1.1] tracking-tight sm:text-[2.75rem]">
+      <section className="border-b border-cline bg-cpaper text-cink">
+        <div className="mx-auto max-w-6xl px-6 py-12 lg:py-16">
+          <div className="max-w-3xl">
+            <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.2em] text-cviolet">
+              {content.eyebrow}
+            </p>
+            <h1 className="mt-3 font-cdisplay text-[2rem] font-extrabold leading-[1.1] tracking-tight text-cink sm:text-[2.75rem]">
               {content.titleName}
             </h1>
             {content.normRef ? (
-              <p className="mt-3 text-sm font-semibold text-white/70">{content.normRef}</p>
+              <p className="mt-3 text-sm font-semibold text-cmuted">{content.normRef}</p>
             ) : null}
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8">{content.lead}</p>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-cmuted sm:text-lg sm:leading-8">
+              {content.lead}
+            </p>
             <div className="mt-6">
               <a
                 href="/evaluar"
-                className="glow-btn inline-flex justify-center rounded-full px-6 py-3.5 text-sm font-bold text-white"
+                className="inline-flex justify-center rounded-full border border-cline bg-ccard px-6 py-3.5 text-sm font-bold text-cink transition hover:border-caccent/40 hover:bg-csand"
               >
                 Evaluar mi empresa →
               </a>
@@ -94,27 +96,7 @@ export function MateriaPage({ content }: { content: MateriaContent }) {
       <Section id="materia-implica" section={content.implica} tinted />
       <Section id="materia-cumple" section={content.cumple} />
 
-      <section className="px-6 py-10">
-        <div className="relative mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 overflow-hidden rounded-[32px] bg-gradient-to-br from-[#1a237e] via-[#3a46d6] to-[#5b4bff] px-6 py-10 text-white sm:px-10 lg:flex-row lg:items-center">
-          <div className="orb orb-a opacity-40" />
-          <div className="relative max-w-2xl">
-            <h2 className="font-cdisplay text-2xl font-extrabold tracking-tight sm:text-3xl">
-              ¿Quiere saber en qué estado se encuentra su empresa?
-            </h2>
-            <p className="mt-3 text-base leading-7 text-white/80">
-              Responda unas preguntas y reciba un diagnóstico preliminar de sus principales obligaciones y brechas.
-            </p>
-          </div>
-          <a
-            href="/evaluar"
-            className="relative inline-flex shrink-0 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#1a237e] transition hover:bg-white/90"
-          >
-            Evaluar mi empresa ahora →
-          </a>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-6xl space-y-8 px-6 pb-16 pt-4">
+      <div className="mx-auto max-w-6xl space-y-8 px-6 py-10">
         <p className="max-w-3xl rounded-2xl border border-cline bg-csand px-5 py-4 text-sm leading-6 text-cmuted">
           {content.disclaimer}
         </p>
@@ -137,6 +119,25 @@ export function MateriaPage({ content }: { content: MateriaContent }) {
           </nav>
         ) : null}
       </div>
+
+      <section className="border-t border-cline px-6 py-12">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-2xl border border-cline bg-csand px-6 py-8 sm:px-10 lg:flex-row lg:items-center">
+          <div className="max-w-2xl">
+            <h2 className="font-cdisplay text-2xl font-extrabold tracking-tight text-cink sm:text-3xl">
+              ¿Quiere saber en qué estado se encuentra su empresa?
+            </h2>
+            <p className="mt-3 text-base leading-7 text-cmuted">
+              Responda unas preguntas y reciba un diagnóstico preliminar de sus principales obligaciones y brechas.
+            </p>
+          </div>
+          <a
+            href="/evaluar"
+            className="inline-flex shrink-0 rounded-full bg-caccent px-6 py-3.5 text-sm font-bold text-white transition hover:opacity-90"
+          >
+            Evaluar mi empresa ahora →
+          </a>
+        </div>
+      </section>
     </main>
   );
 }
