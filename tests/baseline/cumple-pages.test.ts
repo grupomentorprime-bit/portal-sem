@@ -22,6 +22,27 @@ function stubNextFonts(): void {
   };
 }
 
+describe("Navegación Cumple", () => {
+  it("el menú usa rutas reales y no anclas sueltas en paneles", async () => {
+    const { menus, soluciones, normativas, recursos } = await import("../../src/sites/cumple/content");
+    assert.equal(soluciones.length, 6);
+    assert.equal(normativas.length, 6);
+    for (const item of [...soluciones, ...normativas, ...recursos]) {
+      assert.ok(item.href.startsWith("/"));
+      assert.ok(!item.href.startsWith("/#"));
+    }
+    const inicio = menus.find((m) => m.id === "inicio");
+    assert.ok(inicio && "href" in inicio && inicio.href === "/");
+    const nosotros = menus.find((m) => m.id === "nosotros");
+    assert.ok(nosotros && "href" in nosotros && nosotros.href === "/nosotros");
+    const contacto = menus.find((m) => m.id === "contacto");
+    assert.ok(contacto && "href" in contacto && contacto.href === "/contacto");
+    const header = readFileSync("src/components/sites/cumple/site-header.tsx", "utf8");
+    assert.match(header, /href="\/evaluar"/);
+    assert.doesNotMatch(header, /href="#evaluar"/);
+  });
+});
+
 describe("SEO Cumple por ruta", () => {
   it("la home usa CUMPLE_SEO", () => {
     assert.deepEqual(resolveCumpleSeo("/"), CUMPLE_SEO);

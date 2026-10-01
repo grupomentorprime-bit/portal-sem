@@ -251,12 +251,17 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
             <p className="mt-4 max-w-2xl text-cmuted">Mentor Prime Cumple integra todas las áreas de cumplimiento en un solo lugar.</p>
             <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {soluciones.map((item) => (
-                <li id={item.href.slice(1)} key={item.href} className="scroll-mt-36 rounded-[24px] border border-cline bg-ccard p-5">
-                  <span className="grid size-11 place-items-center rounded-full bg-cviolet text-white">
-                    <Icon name={item.icon} className="size-4" />
-                  </span>
-                  <h3 className="mt-4 font-cdisplay text-lg font-extrabold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-cmuted">{item.description}</p>
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className="block scroll-mt-36 rounded-[24px] border border-cline bg-ccard p-5 transition hover:border-caccent/40 hover:bg-csand"
+                  >
+                    <span className="grid size-11 place-items-center rounded-full bg-cviolet text-white">
+                      <Icon name={item.icon} className="size-4" />
+                    </span>
+                    <h3 className="mt-4 font-cdisplay text-lg font-extrabold">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-cmuted">{item.description}</p>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -309,7 +314,7 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
                   </li>
                 ))}
               </ul>
-              <a href="#evaluar" className="glow-btn mt-8 inline-flex rounded-full px-6 py-3.5 text-sm font-bold text-white">
+              <a href="/evaluar" className="glow-btn mt-8 inline-flex rounded-full px-6 py-3.5 text-sm font-bold text-white">
                 Quiero un diagnóstico →
               </a>
             </div>
@@ -371,7 +376,7 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
               </ul>
             </div>
             <a
-              href="#evaluar"
+              href="/evaluar"
               className="relative inline-flex shrink-0 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#1a237e] transition hover:bg-white/90"
             >
               Evaluar mi empresa ahora →

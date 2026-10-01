@@ -20,42 +20,42 @@ export const soluciones: CardItem[] = [
   {
     title: "Ley Karin",
     description: "Protocolos, procedimientos y capacitaciones.",
-    href: "#ley-karin",
+    href: "/materias/ley-karin",
     icon: "shield",
     tone: "ink",
   },
   {
     title: "Seguridad y Salud en el Trabajo",
     description: "DS 44, gestión preventiva, riesgos y evidencias.",
-    href: "#sst",
+    href: "/materias/seguridad-salud-trabajo",
     icon: "clipboard",
     tone: "sand",
   },
   {
     title: "Laboral y RR.HH.",
     description: "Contratos, registros, jornada, obligaciones y vencimientos.",
-    href: "#laboral",
+    href: "/materias/laboral-rrhh",
     icon: "users",
     tone: "hot",
   },
   {
     title: "Protección de datos",
     description: "Políticas, tratamientos y controles.",
-    href: "#datos",
+    href: "/materias/proteccion-datos",
     icon: "folder",
     tone: "ink",
   },
   {
     title: "Inclusión laboral",
     description: "Obligaciones y documentación.",
-    href: "#inclusion",
+    href: "/materias/inclusion-laboral",
     icon: "users",
     tone: "sand",
   },
   {
     title: "Contratistas y terceros",
     description: "Documentos, requisitos y control.",
-    href: "#contratistas",
+    href: "/materias/contratistas-terceros",
     icon: "briefcase",
     tone: "hot",
   },
@@ -65,30 +65,44 @@ export const normativas: CardItem[] = [
   {
     title: "Ley Karin",
     description: "Prevención, investigación y el respaldo de cada caso.",
-    href: "#ley-karin",
+    href: "/materias/ley-karin",
     icon: "shield",
     tone: "ink",
   },
   {
     title: "DS 44 / SST",
     description: "Seguridad y salud en el trabajo, medidas y evidencias.",
-    href: "#sst",
+    href: "/materias/seguridad-salud-trabajo",
     icon: "clipboard",
     tone: "sand",
   },
   {
     title: "Laboral y RR.HH.",
     description: "Contratos, jornada y obligaciones del día a día.",
-    href: "#laboral",
+    href: "/materias/laboral-rrhh",
     icon: "users",
     tone: "hot",
   },
   {
     title: "Protección de datos",
     description: "Políticas, tratamientos y controles.",
-    href: "#datos",
+    href: "/materias/proteccion-datos",
     icon: "folder",
     tone: "ink",
+  },
+  {
+    title: "Inclusión laboral",
+    description: "Ley 21.015: cuotas, registro y documentación de inclusión.",
+    href: "/materias/inclusion-laboral",
+    icon: "users",
+    tone: "sand",
+  },
+  {
+    title: "Contratistas y terceros",
+    description: "Subcontratación, documentos exigibles y control de terceros.",
+    href: "/materias/contratistas-terceros",
+    icon: "briefcase",
+    tone: "hot",
   },
 ];
 
@@ -96,21 +110,21 @@ export const recursos: CardItem[] = [
   {
     title: "Cómo funciona",
     description: "Diagnóstico, plan, implementación y control permanente.",
-    href: "#como",
+    href: "/como-funciona",
     icon: "clipboard",
     tone: "sand",
   },
   {
     title: "Preguntas frecuentes",
     description: "Alcance, plazos y qué pasa cuando una ley se actualiza.",
-    href: "#faq",
+    href: "/preguntas-frecuentes",
     icon: "help",
     tone: "hot",
   },
   {
     title: "Evaluar mi empresa",
     description: "Responda unas preguntas y reciba un diagnóstico preliminar.",
-    href: "#evaluar",
+    href: "/evaluar",
     icon: "check",
     tone: "ink",
   },
@@ -121,12 +135,12 @@ export type MenuEntry =
   | { id: string; label: string; items: readonly CardItem[] };
 
 export const menus: readonly MenuEntry[] = [
-  { id: "inicio", label: "Inicio", href: "#" },
+  { id: "inicio", label: "Inicio", href: "/" },
   { id: "soluciones", label: "Soluciones", items: soluciones },
   { id: "normativas", label: "Normativas", items: normativas },
   { id: "recursos", label: "Recursos", items: recursos },
-  { id: "nosotros", label: "Nosotros", href: "#nosotros" },
-  { id: "contacto", label: "Contacto", href: "#evaluar" },
+  { id: "nosotros", label: "Nosotros", href: "/nosotros" },
+  { id: "contacto", label: "Contacto", href: "/contacto" },
 ];
 
 /** Alias para el formulario de diagnóstico (tipo de organización). */
