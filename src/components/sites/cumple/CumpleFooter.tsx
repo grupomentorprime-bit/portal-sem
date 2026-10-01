@@ -20,7 +20,7 @@ const recursosLinks = [
 
 export function CumpleFooter({ contact }: Pick<CodedPageViewProps, "contact">) {
   return (
-    <footer id="nosotros" className="scroll-mt-32 border-t border-cline bg-[#071a45] pb-24 text-white sm:pb-0">
+    <footer className="border-t border-cline bg-[#071a45] pb-24 text-white sm:pb-0">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 md:grid-cols-[1.2fr_0.9fr_0.9fr]">
         <div>
           <Logo />
@@ -68,7 +68,6 @@ export function CumpleFooter({ contact }: Pick<CodedPageViewProps, "contact">) {
           {(contact.city || contact.country) && (
             <p className="mt-2">{[contact.city, contact.country].filter(Boolean).join(", ")}</p>
           )}
-          {!contact.phone && !contact.email && !contact.city ? <p className="mt-3">Santiago, Chile</p> : null}
         </div>
       </div>
       <div className="border-t border-white/10">
@@ -77,7 +76,7 @@ export function CumpleFooter({ contact }: Pick<CodedPageViewProps, "contact">) {
             Mentor Prime Cumple es una empresa del <span className="font-semibold text-white/80">Grupo Mentor Prime</span>.
           </span>
           <span aria-hidden="true">·</span>
-          <span>© 2025</span>
+          <span>© 2026</span>
         </p>
       </div>
     </footer>

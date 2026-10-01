@@ -13,7 +13,7 @@ const CITATION_LINK_CLASS =
 /** Enlaza inline la primera aparición de cada `anchor` en los párrafos de la sección. */
 function renderParagraphs(section: MateriaSection): ReactNode[] {
   const pending = [...(section.citations ?? [])];
-  return section.paragraphs.map((paragraph) => {
+  return section.paragraphs.map((paragraph, paragraphIndex) => {
     const nodes: ReactNode[] = [];
     let rest = paragraph;
     for (;;) {
@@ -41,7 +41,7 @@ function renderParagraphs(section: MateriaSection): ReactNode[] {
       rest = rest.slice(index + citation.anchor.length);
     }
     if (rest) nodes.push(rest);
-    return <p key={paragraph}>{nodes}</p>;
+    return <p key={paragraphIndex}>{nodes}</p>;
   });
 }
 
