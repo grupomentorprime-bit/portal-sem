@@ -33,6 +33,17 @@ export type MateriaContent = {
     intro?: string;
     items: string[];
   };
+  /** Puntos visuales para “qué implica” (piloto editorial). */
+  implicaPoints?: {
+    heading: string;
+    items: { title: string; body: string }[];
+  };
+  /** Pasos del método Cumple en layout visual. */
+  processSteps?: {
+    heading: string;
+    intro?: string;
+    items: { title: string; body: string }[];
+  };
   exige: MateriaSection;
   implica: MateriaSection;
   cumple: MateriaSection;

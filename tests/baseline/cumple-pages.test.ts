@@ -105,10 +105,16 @@ describe("Materias Cumple", () => {
     assert.ok(ley?.concepts?.items.some((item) => /acoso laboral/i.test(item.title)));
     assert.ok(ley?.checklist);
     assert.ok((ley?.checklist?.items.length ?? 0) >= 3);
+    assert.ok(ley?.implicaPoints);
+    assert.equal(ley?.implicaPoints?.items.length, 3);
+    assert.ok(ley?.processSteps);
+    assert.equal(ley?.processSteps?.items.length, 4);
     for (const materia of materias) {
       if (materia.slug === "ley-karin") continue;
       assert.equal(materia.concepts, undefined);
       assert.equal(materia.checklist, undefined);
+      assert.equal(materia.implicaPoints, undefined);
+      assert.equal(materia.processSteps, undefined);
     }
   });
 
@@ -195,8 +201,11 @@ describe("Plantilla de materias Cumple", () => {
     assert.match(materiaPage, /border-cline/);
     assert.match(materiaPage, /content\.concepts/);
     assert.match(materiaPage, /content\.checklist/);
+    assert.match(materiaPage, /content\.implicaPoints/);
+    assert.match(materiaPage, /content\.processSteps/);
     assert.match(materiaPage, /ConceptsBlock|materia-concepts/);
     assert.match(materiaPage, /ChecklistBlock|materia-checklist/);
+    assert.match(materiaPage, /ImplicaPointsBlock|ProcessStepsBlock/);
     assert.doesNotMatch(materiaPage, /#071a45/);
     assert.doesNotMatch(materiaPage, /glow-btn/);
     assert.doesNotMatch(materiaPage, /orb-a/);

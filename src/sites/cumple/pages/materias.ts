@@ -106,6 +106,45 @@ export const materias: readonly MateriaContent[] = [
         "Ordenar Ley Karin también conecta con otras materias de cumplimiento (por ejemplo seguridad y salud en el trabajo). El alcance exacto depende de la operación de cada organización.",
       ],
     },
+    implicaPoints: {
+      heading: "Qué implica para la empresa",
+      items: [
+        {
+          title: "Documento no basta",
+          body: "Un protocolo archivado no responde al marco. Debe conocerse, aplicarse y poder demostrarse junto con el procedimiento de investigación y los resguardos.",
+        },
+        {
+          title: "Exposición operativa",
+          body: "Sin responsables, registros ni procedimiento claro, la organización queda débil ante cada caso y ante una eventual fiscalización. El costo aparece cuando hay plazos y evidencia.",
+        },
+        {
+          title: "Encaje con otras materias",
+          body: "Ordenar Ley Karin suele conectar con seguridad y salud en el trabajo y otras obligaciones. El alcance exacto depende de la operación de cada organización.",
+        },
+      ],
+    },
+    processSteps: {
+      heading: "Cómo lo ordena Mentor Cumple",
+      intro: "El método sigue cuatro etapas para pasar del marco a evidencia usable.",
+      items: [
+        {
+          title: "Diagnóstico",
+          body: "Identifica brechas frente a lo que la norma describe: protocolo, procedimiento, resguardos y registros.",
+        },
+        {
+          title: "Plan",
+          body: "Prioriza acciones y responsables para cerrar lo crítico primero, con orden y plazos.",
+        },
+        {
+          title: "Implementación",
+          body: "Activa el protocolo, el procedimiento de investigación y los registros que la organización necesita.",
+        },
+        {
+          title: "Control",
+          body: "Mantiene vigentes plazos, responsables y evidencia a disposición cuando se requiera.",
+        },
+      ],
+    },
     cumple: {
       heading: "Cómo lo ordena Mentor Cumple",
       paragraphs: [

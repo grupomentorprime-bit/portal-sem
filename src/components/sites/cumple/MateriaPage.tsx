@@ -148,6 +148,80 @@ function ChecklistBlock({
   );
 }
 
+function ImplicaPointsBlock({
+  points,
+}: {
+  points: NonNullable<MateriaContent["implicaPoints"]>;
+}) {
+  return (
+    <section aria-labelledby="materia-implica" className="border-y border-cline bg-cpaper">
+      <div className="mx-auto max-w-6xl px-6 py-14 lg:py-16">
+        <h2
+          id="materia-implica"
+          className="max-w-3xl font-cdisplay text-2xl font-extrabold tracking-tight text-cink sm:text-3xl"
+        >
+          {points.heading}
+        </h2>
+        <ul className="mt-8 grid gap-4 lg:grid-cols-3">
+          {points.items.map((item, index) => (
+            <li
+              key={item.title}
+              className="relative overflow-hidden rounded-2xl border border-cline bg-ccard p-5 transition hover:border-caccent/40 hover:bg-csand"
+            >
+              <span
+                className="font-cdisplay text-3xl font-extrabold tabular-nums text-cviolet/25"
+                aria-hidden
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <h3 className="mt-3 font-cdisplay text-base font-bold text-cink">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-cmuted">{item.body}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function ProcessStepsBlock({
+  steps,
+}: {
+  steps: NonNullable<MateriaContent["processSteps"]>;
+}) {
+  return (
+    <section aria-labelledby="materia-cumple" className="bg-csand">
+      <div className="mx-auto max-w-6xl px-6 py-14 lg:py-16">
+        <div className="max-w-3xl">
+          <h2
+            id="materia-cumple"
+            className="font-cdisplay text-2xl font-extrabold tracking-tight text-cink sm:text-3xl"
+          >
+            {steps.heading}
+          </h2>
+          {steps.intro ? (
+            <p className="mt-4 text-base leading-7 text-cmuted">{steps.intro}</p>
+          ) : null}
+        </div>
+        <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.items.map((item, index) => (
+            <li
+              key={item.title}
+              className="rounded-2xl border border-cline bg-ccard p-5 transition hover:border-caccent/40"
+            >
+              <span className="inline-flex size-9 items-center justify-center rounded-full bg-[#e8efff] font-cdisplay text-sm font-bold text-[#2f5bff]">
+                {index + 1}
+              </span>
+              <h3 className="mt-4 font-cdisplay text-base font-bold text-cink">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-cmuted">{item.body}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
 export function MateriaPage({ content }: { content: MateriaContent }) {
   return (
     <main>
@@ -181,8 +255,16 @@ export function MateriaPage({ content }: { content: MateriaContent }) {
       {content.concepts ? <ConceptsBlock concepts={content.concepts} /> : null}
       <Section id="materia-exige" section={content.exige} />
       {content.checklist ? <ChecklistBlock checklist={content.checklist} /> : null}
-      <Section id="materia-implica" section={content.implica} tinted={!content.checklist} />
-      <Section id="materia-cumple" section={content.cumple} />
+      {content.implicaPoints ? (
+        <ImplicaPointsBlock points={content.implicaPoints} />
+      ) : (
+        <Section id="materia-implica" section={content.implica} tinted={!content.checklist} />
+      )}
+      {content.processSteps ? (
+        <ProcessStepsBlock steps={content.processSteps} />
+      ) : (
+        <Section id="materia-cumple" section={content.cumple} />
+      )}
 
       <div className="mx-auto max-w-6xl space-y-8 px-6 py-10">
         <p className="max-w-3xl rounded-2xl border border-cline bg-csand px-5 py-4 text-sm leading-6 text-cmuted">
