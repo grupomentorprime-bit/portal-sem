@@ -138,7 +138,7 @@ export function SiteHeader() {
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <a
-              href="#evaluar"
+              href="/evaluar"
               className="glow-btn hidden rounded-full px-4 py-2 text-sm font-bold leading-none text-white transition sm:inline-flex sm:items-center"
             >
               Evaluar mi empresa →
@@ -211,7 +211,7 @@ export function SiteHeader() {
               );
             })}
             <a
-              href="#evaluar"
+              href="/evaluar"
               className="glow-btn mt-2 rounded-full px-4 py-3 text-center text-sm font-bold text-white"
               onClick={closeAll}
             >
