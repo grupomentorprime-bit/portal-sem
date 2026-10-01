@@ -72,8 +72,11 @@ export function MateriaPage({ content }: { content: MateriaContent }) {
           <div className="rise max-w-3xl">
             <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.2em] text-white/80">{content.eyebrow}</p>
             <h1 className="mt-3 font-cdisplay text-[2rem] font-extrabold leading-[1.1] tracking-tight sm:text-[2.75rem]">
-              {content.h1}
+              {content.titleName}
             </h1>
+            {content.normRef ? (
+              <p className="mt-3 text-sm font-semibold text-white/70">{content.normRef}</p>
+            ) : null}
             <p className="mt-4 max-w-2xl text-base leading-7 text-white/80 sm:text-lg sm:leading-8">{content.lead}</p>
             <div className="mt-6">
               <a

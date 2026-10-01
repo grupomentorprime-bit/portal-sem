@@ -71,7 +71,7 @@ describe("Materias Cumple", () => {
         assert.match(source.url, /^https:\/\//);
         assert.ok(!source.url.includes("example.com"));
       }
-      assert.match(materia.h1, /\S/);
+      assert.match(materia.titleName, /\S/);
       assert.ok(materia.exige.paragraphs.length >= 2);
       assert.ok(materia.implica.paragraphs.length >= 1);
       assert.ok(materia.cumple.paragraphs.length >= 1);
@@ -81,6 +81,18 @@ describe("Materias Cumple", () => {
       );
     }
     assert.equal(getMateria("ley-karin")?.path, "/materias/ley-karin");
+  });
+
+  it("cada materia usa titleName institucional y eyebrow transversal", () => {
+    assert.equal(materias.length, 6);
+    for (const materia of materias) {
+      assert.equal(materia.eyebrow, "Materia · Cumplimiento");
+      assert.match(materia.titleName, /\S/);
+      assert.ok(!("h1" in materia), `${materia.slug}: no debe conservar h1`);
+    }
+    const ley = getMateria("ley-karin");
+    assert.equal(ley?.titleName, "Ley Karin");
+    assert.equal(ley?.normRef, "Ley 21.643");
   });
 
   it("las fuentes y citas reutilizan URLs de norma.ts", () => {

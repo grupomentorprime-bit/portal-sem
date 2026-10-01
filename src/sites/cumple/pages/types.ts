@@ -18,7 +18,8 @@ export type MateriaContent = {
   slug: string;
   path: string;
   eyebrow: string;
-  h1: string;
+  titleName: string;
+  normRef?: string;
   lead: string;
   disclaimer: string;
   exige: MateriaSection;

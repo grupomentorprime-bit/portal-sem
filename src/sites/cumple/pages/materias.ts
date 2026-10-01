@@ -43,8 +43,9 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "ley-karin",
     path: "/materias/ley-karin",
-    eyebrow: "Materia · Ley Karin",
-    h1: "La empresa necesita protocolo, procedimiento y evidencia — no solo un documento archivado.",
+    eyebrow: "Materia · Cumplimiento",
+    titleName: "Ley Karin",
+    normRef: "Ley 21.643",
     lead: "La Ley 21.643 (Ley Karin) obliga a prevenir, investigar y resguardar frente al acoso laboral, el acoso sexual y la violencia en el trabajo. Mentor Prime Cumple ayuda a la organización a ordenar esas obligaciones y demostrarlas.",
     disclaimer: DISCLAIMER,
     exige: {
@@ -81,8 +82,9 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "seguridad-salud-trabajo",
     path: "/materias/seguridad-salud-trabajo",
-    eyebrow: "Materia · Seguridad y salud en el trabajo",
-    h1: "La gestión preventiva exige matriz, programa y responsables — con plazos que se puedan verificar.",
+    eyebrow: "Materia · Cumplimiento",
+    titleName: "Seguridad y salud en el trabajo",
+    normRef: "Ley 16.744 · Decreto 44",
     lead: "La Ley 16.744 y el Decreto 44 ordenan la gestión de los riesgos laborales, incluidos los psicosociales. Mentor Prime Cumple ayuda a transformar esas exigencias en una matriz, un programa y un control permanentes.",
     disclaimer: DISCLAIMER,
     exige: {
@@ -121,8 +123,9 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "laboral-rrhh",
     path: "/materias/laboral-rrhh",
-    eyebrow: "Materia · Laboral y RR.HH.",
-    h1: "El orden laboral se sostiene con reglamento, jornada y registros al día — no con supuestos.",
+    eyebrow: "Materia · Cumplimiento",
+    titleName: "Laboral y RR.HH.",
+    normRef: "Código del Trabajo",
     lead: "El Código del Trabajo fija obligaciones como el reglamento interno y los límites de jornada. Mentor Prime Cumple ayuda a mantenerlas ordenadas, con responsables y evidencia.",
     disclaimer: DISCLAIMER,
     exige: {
@@ -159,8 +162,9 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "proteccion-datos",
     path: "/materias/proteccion-datos",
-    eyebrow: "Materia · Protección de datos",
-    h1: "Los datos de trabajadores y clientes requieren reglas de tratamiento claras — y registro de cómo se aplican.",
+    eyebrow: "Materia · Cumplimiento",
+    titleName: "Protección de datos",
+    normRef: "Ley 19.628",
     lead: "La Ley 19.628 regula la protección de la vida privada y el tratamiento de datos personales. Mentor Prime Cumple ayuda a ordenar ese tratamiento dentro de la organización.",
     disclaimer: DISCLAIMER,
     exige: {
@@ -197,8 +201,9 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "inclusion-laboral",
     path: "/materias/inclusion-laboral",
-    eyebrow: "Materia · Inclusión laboral",
-    h1: "La cuota de inclusión se verifica con dotación y registros — y se prepara antes de una revisión.",
+    eyebrow: "Materia · Cumplimiento",
+    titleName: "Inclusión laboral",
+    normRef: "Ley 21.015",
     lead: "La Ley 21.015 incorporó al Código del Trabajo la obligación de contratar personas con discapacidad en empresas de cierto tamaño. Mentor Prime Cumple ayuda a verificar la situación de la organización y a mantener la evidencia.",
     disclaimer: DISCLAIMER,
     exige: {
@@ -229,8 +234,9 @@ export const materias: readonly MateriaContent[] = [
   {
     slug: "contratistas-terceros",
     path: "/materias/contratistas-terceros",
-    eyebrow: "Materia · Contratistas y terceros",
-    h1: "La empresa principal responde por la protección de todos quienes laboran en su faena — también de terceros.",
+    eyebrow: "Materia · Cumplimiento",
+    titleName: "Contratistas y terceros",
+    normRef: "Ley 20.123",
     lead: "La Ley 20.123 regula el trabajo en régimen de subcontratación. Mentor Prime Cumple ayuda a ordenar el control de contratistas y la evidencia que la empresa principal necesita.",
     disclaimer: DISCLAIMER,
     exige: {
