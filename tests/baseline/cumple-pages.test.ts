@@ -98,6 +98,20 @@ describe("Materias Cumple", () => {
     assert.equal(ley?.normRef, "Ley 21.643");
   });
 
+  it("Ley Karin incluye conceptos y checklist editorial", () => {
+    const ley = getMateria("ley-karin");
+    assert.ok(ley?.concepts);
+    assert.equal(ley?.concepts?.items.length, 3);
+    assert.ok(ley?.concepts?.items.some((item) => /acoso laboral/i.test(item.title)));
+    assert.ok(ley?.checklist);
+    assert.ok((ley?.checklist?.items.length ?? 0) >= 3);
+    for (const materia of materias) {
+      if (materia.slug === "ley-karin") continue;
+      assert.equal(materia.concepts, undefined);
+      assert.equal(materia.checklist, undefined);
+    }
+  });
+
   it("las fuentes y citas reutilizan URLs de norma.ts", () => {
     const oficiales = new Set(fichas.flatMap((f) => (f.fuente ? [f.fuente.url] : [])));
     for (const materia of materias) {
@@ -179,6 +193,10 @@ describe("Plantilla de materias Cumple", () => {
     assert.match(materiaPage, /disclaimer/);
     assert.match(materiaPage, /\/evaluar/);
     assert.match(materiaPage, /border-cline/);
+    assert.match(materiaPage, /content\.concepts/);
+    assert.match(materiaPage, /content\.checklist/);
+    assert.match(materiaPage, /ConceptsBlock|materia-concepts/);
+    assert.match(materiaPage, /ChecklistBlock|materia-checklist/);
     assert.doesNotMatch(materiaPage, /#071a45/);
     assert.doesNotMatch(materiaPage, /glow-btn/);
     assert.doesNotMatch(materiaPage, /orb-a/);

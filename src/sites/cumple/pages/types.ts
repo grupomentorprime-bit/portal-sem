@@ -22,6 +22,17 @@ export type MateriaContent = {
   normRef?: string;
   lead: string;
   disclaimer: string;
+  /** Bloque opcional de conceptos (piloto editorial Ley Karin). */
+  concepts?: {
+    heading: string;
+    items: { title: string; body: string; icon?: string; tone?: "ink" | "sand" | "hot" }[];
+  };
+  /** Checklist opcional de evidencias típicas para la organización. */
+  checklist?: {
+    heading: string;
+    intro?: string;
+    items: string[];
+  };
   exige: MateriaSection;
   implica: MateriaSection;
   cumple: MateriaSection;

@@ -46,13 +46,49 @@ export const materias: readonly MateriaContent[] = [
     eyebrow: "Información · Cumplimiento",
     titleName: "Ley Karin",
     normRef: "Ley 21.643",
-    lead: "La Ley 21.643 (Ley Karin) obliga a prevenir, investigar y resguardar frente al acoso laboral, el acoso sexual y la violencia en el trabajo. Mentor Cumple ayuda a la organización a ordenar esas obligaciones y demostrarlas.",
+    lead:
+      "La Ley 21.643 (Ley Karin) obliga a la organización a prevenir, investigar y resguardar frente al acoso laboral, el acoso sexual y la violencia en el trabajo. Esta ficha resume el marco en lenguaje ejecutivo y muestra cómo Mentor Cumple ayuda a ordenar esas obligaciones y demostrarlas.",
     disclaimer: DISCLAIMER,
+    concepts: {
+      heading: "Qué conceptos considera la Ley Karin",
+      items: [
+        {
+          title: "Acoso laboral",
+          body: "Conductas de agresión o hostigamiento en el trabajo que el marco de la Ley Karin incorpora al régimen de prevención, investigación y sanción. El detalle de tipificación debe leerse en el texto oficial.",
+          icon: "users",
+          tone: "sand",
+        },
+        {
+          title: "Acoso sexual",
+          body: "Requerimientos de carácter sexual no consentidos que afectan la dignidad o las oportunidades laborales. La ley refuerza la obligación de prevenir e investigar estos hechos con resguardos.",
+          icon: "shield",
+          tone: "ink",
+        },
+        {
+          title: "Violencia en el trabajo",
+          body: "Hechos de violencia en el contexto laboral, incluidos los que pueden involucrar a terceros ajenos a la relación laboral directa. La organización debe prever cómo actuar y documentar.",
+          icon: "briefcase",
+          tone: "hot",
+        },
+      ],
+    },
+    checklist: {
+      heading: "Qué debería poder mostrar la organización",
+      intro:
+        "Lista orientativa de evidencias típicas frente al marco descrito. No sustituye un diagnóstico ni fija el estándar de una fiscalización concreta.",
+      items: [
+        "Protocolo de prevención vigente y comunicado a quienes corresponde.",
+        "Procedimiento de investigación definido, con pasos y responsables claros.",
+        "Medidas de resguardo previstas y aplicables cuando un caso lo exige.",
+        "Registros que permitan demostrar qué se hizo, quién respondió y cuándo.",
+      ],
+    },
     exige: {
       heading: "Qué exige el marco a la organización",
       paragraphs: [
-        "Según la ficha de Ley Chile de la Biblioteca del Congreso Nacional, la Ley 21.643 fue publicada el 15 de enero de 2024 y rige desde el 1 de agosto de 2024. La ley modifica el Código del Trabajo en materia de prevención, investigación y sanción del acoso laboral, el acoso sexual y la violencia en el trabajo.",
-        "En términos prácticos, el marco exige a la organización contar con un protocolo de prevención, un procedimiento de investigación y medidas de resguardo. El detalle de artículos y de sanciones debe revisarse directamente en el texto oficial.",
+        "Según la ficha de Ley Chile de la Biblioteca del Congreso Nacional, la Ley 21.643 fue publicada el 15 de enero de 2024 y rige desde el 1 de agosto de 2024. Modifica el Código del Trabajo en materia de prevención, investigación y sanción del acoso laboral, el acoso sexual y la violencia en el trabajo.",
+        "En la práctica, el marco exige a la organización contar con un protocolo de prevención, un procedimiento de investigación y medidas de resguardo. Esas piezas deben ser operativas: no basta con archivar un documento sin uso.",
+        "El detalle de artículos, plazos específicos de un procedimiento concreto y sanciones debe revisarse directamente en el texto oficial. Esta página no fija montos de multa, porque la ficha oficial consultada no los incluye.",
       ],
       citations: [
         {
@@ -66,7 +102,8 @@ export const materias: readonly MateriaContent[] = [
       heading: "Qué implica para la empresa",
       paragraphs: [
         "Un protocolo que solo existe como documento no responde a lo que la norma describe. La organización debe poder mostrar que el protocolo se conoce, que el procedimiento de investigación está definido y que las medidas de resguardo se aplican cuando corresponde.",
-        "Sin responsables claros, sin registros y sin un procedimiento operativo, la empresa queda expuesta en la gestión de cada caso y ante una eventual fiscalización. Esta página no fija montos de multa, porque la ficha oficial consultada no los incluye.",
+        "Sin responsables claros, sin registros y sin un procedimiento operativo, la empresa queda expuesta en la gestión de cada caso y ante una eventual fiscalización. El costo del desorden aparece cuando hay que actuar con plazos, evidencia y coherencia.",
+        "Ordenar Ley Karin también conecta con otras materias de cumplimiento (por ejemplo seguridad y salud en el trabajo). El alcance exacto depende de la operación de cada organización.",
       ],
     },
     cumple: {

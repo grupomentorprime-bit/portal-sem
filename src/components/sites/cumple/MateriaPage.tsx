@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Icon } from "@/components/sites/cumple/icons";
 import { SourcesBlock } from "@/components/sites/cumple/SourcesBlock";
 import { cumpleSite } from "@/sites/cumple/site";
 import type { MateriaCitation, MateriaContent, MateriaSection } from "@/sites/cumple/pages/types";
@@ -9,6 +10,12 @@ function relatedLabel(path: string): string {
 
 const CITATION_LINK_CLASS =
   "font-semibold text-cink underline decoration-cviolet underline-offset-4 hover:text-cviolet";
+
+const conceptTones = {
+  ink: "bg-[#e8efff] text-[#2f5bff]",
+  sand: "bg-[#efe9ff] text-[#6a45f5]",
+  hot: "bg-[#e5f8ff] text-[#0c86c9]",
+} as const;
 
 /** Enlaza inline la primera aparición de cada `anchor` en los párrafos de la sección. */
 function renderParagraphs(section: MateriaSection): ReactNode[] {
@@ -48,7 +55,7 @@ function renderParagraphs(section: MateriaSection): ReactNode[] {
 function Section({ id, section, tinted }: { id: string; section: MateriaSection; tinted?: boolean }) {
   return (
     <section aria-labelledby={id} className={tinted ? "bg-csand" : undefined}>
-      <div className="mx-auto max-w-6xl px-6 py-14">
+      <div className="mx-auto max-w-6xl px-6 py-14 lg:py-16">
         <div className="max-w-3xl">
           <h2 id={id} className="font-cdisplay text-2xl font-extrabold tracking-tight text-cink sm:text-3xl">
             {section.heading}
@@ -56,6 +63,85 @@ function Section({ id, section, tinted }: { id: string; section: MateriaSection;
           <div className="mt-5 space-y-4 text-base leading-7 text-cmuted">
             {renderParagraphs(section)}
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ConceptsBlock({
+  concepts,
+}: {
+  concepts: NonNullable<MateriaContent["concepts"]>;
+}) {
+  return (
+    <section aria-labelledby="materia-concepts" className="border-b border-cline bg-cpaper">
+      <div className="mx-auto max-w-6xl px-6 py-14 lg:py-16">
+        <h2
+          id="materia-concepts"
+          className="max-w-3xl font-cdisplay text-2xl font-extrabold tracking-tight text-cink sm:text-3xl"
+        >
+          {concepts.heading}
+        </h2>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {concepts.items.map((item) => {
+            const tone = item.tone ?? "ink";
+            return (
+              <li
+                key={item.title}
+                className="rounded-2xl border border-cline bg-ccard p-5 transition hover:border-caccent/40 hover:bg-csand"
+              >
+                <span
+                  className={`grid size-10 place-items-center rounded-xl ${conceptTones[tone]}`}
+                  aria-hidden
+                >
+                  <Icon name={item.icon ?? "shield"} />
+                </span>
+                <h3 className="mt-4 font-cdisplay text-base font-bold text-cink">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-cmuted">{item.body}</p>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function ChecklistBlock({
+  checklist,
+}: {
+  checklist: NonNullable<MateriaContent["checklist"]>;
+}) {
+  return (
+    <section aria-labelledby="materia-checklist" className="bg-csand">
+      <div className="mx-auto max-w-6xl px-6 py-14 lg:py-16">
+        <div className="max-w-3xl">
+          <h2
+            id="materia-checklist"
+            className="font-cdisplay text-2xl font-extrabold tracking-tight text-cink sm:text-3xl"
+          >
+            {checklist.heading}
+          </h2>
+          {checklist.intro ? (
+            <p className="mt-4 text-base leading-7 text-cmuted">{checklist.intro}</p>
+          ) : null}
+          <ul className="mt-8 space-y-3">
+            {checklist.items.map((item) => (
+              <li
+                key={item}
+                className="flex gap-3 rounded-2xl border border-cline bg-ccard px-4 py-3.5 text-sm leading-6 text-cink sm:text-base"
+              >
+                <span
+                  className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-[#e8efff] text-[#2f5bff]"
+                  aria-hidden
+                >
+                  <Icon name="check" className="size-3.5" />
+                </span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
@@ -92,8 +178,10 @@ export function MateriaPage({ content }: { content: MateriaContent }) {
         </div>
       </section>
 
+      {content.concepts ? <ConceptsBlock concepts={content.concepts} /> : null}
       <Section id="materia-exige" section={content.exige} />
-      <Section id="materia-implica" section={content.implica} tinted />
+      {content.checklist ? <ChecklistBlock checklist={content.checklist} /> : null}
+      <Section id="materia-implica" section={content.implica} tinted={!content.checklist} />
       <Section id="materia-cumple" section={content.cumple} />
 
       <div className="mx-auto max-w-6xl space-y-8 px-6 py-10">
