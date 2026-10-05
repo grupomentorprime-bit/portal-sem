@@ -40,7 +40,7 @@ describe("composeStoredPublicHome", () => {
 
   it("los bloques publicados del Espacio se conservan", () => {
     const page = composeStoredPublicHome(MENTOR_TENANT_ID, {
-      title: "Mentor Prime Capacitacion",
+      title: "Mentor Capacitacion",
       blocks: [
         {
           id: "propio",

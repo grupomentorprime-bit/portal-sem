@@ -6,7 +6,7 @@ import { CUMPLE_FORM_ID, CUMPLE_TENANT_ID, cumpleSite } from "../../src/sites/cu
 import { fichasPara } from "../../src/sites/cumple/norma";
 import { getCodedSite } from "../../src/sites/registry";
 
-describe("sitio Mentor Prime Cumple", () => {
+describe("sitio Mentor Cumple", () => {
   it("no se registra al importar el contrato", () => {
     assert.equal(getCodedSite("cumple"), undefined);
     assert.equal(getCodedSite("sem"), undefined);
@@ -17,7 +17,20 @@ describe("sitio Mentor Prime Cumple", () => {
     assert.equal(cumpleSite.tenantId, "cumple");
     assert.deepEqual(
       cumpleSite.pages.map((page) => page.path),
-      ["/"]
+      [
+        "/",
+        "/materias/ley-karin",
+        "/materias/seguridad-salud-trabajo",
+        "/materias/laboral-rrhh",
+        "/materias/proteccion-datos",
+        "/materias/inclusion-laboral",
+        "/materias/contratistas-terceros",
+        "/como-funciona",
+        "/preguntas-frecuentes",
+        "/evaluar",
+        "/nosotros",
+        "/contacto",
+      ]
     );
     const form = cumpleSite.forms[0];
     assert.equal(form?._id, CUMPLE_FORM_ID);
@@ -53,9 +66,10 @@ describe("sitio Mentor Prime Cumple", () => {
 
   it("la página conserva el titular, el pie lee el contacto y el diagnóstico usa el formulario del sitio", () => {
     const home = readFileSync("src/components/sites/cumple/CumpleHome.tsx", "utf8");
+    const footer = readFileSync("src/components/sites/cumple/CumpleFooter.tsx", "utf8");
     const form = readFileSync("src/components/sites/cumple/eval-form.tsx", "utf8");
     assert.match(home, /No descubra lo que falta durante[\s\S]{0,80}una fiscalizaci/);
-    assert.match(home, /contact\.email/);
+    assert.match(footer, /contact\.email/);
     assert.match(form, /CUMPLE_FORM_ID/);
     assert.match(form, /\/api\/experience\/forms\//);
   });

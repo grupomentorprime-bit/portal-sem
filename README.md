@@ -111,7 +111,7 @@ Variables mínimas: ver [.env.example](./.env.example).
 | --- | --- | --- |
 | Seminario Eclesiástico Mayor | T001 (`seminario-ipn`) | Espacio; pack editorial SEM/IPN |
 | Academia ADL | T002 (`adl`) | Espacio; sin heredar branding SEM |
-| Mentor Prime Capacitación | — | Espacio equivalente a SEM y ADL |
+| Mentor Capacitación | — | Espacio equivalente a SEM y ADL |
 | Fundación Mueve | — | Espacio equivalente a SEM y ADL |
 
 El pack SEM es **dato del Espacio**, no la identidad de Growth OS. El realm Keycloak conserva el id técnico `seminario-ipn`; su nombre visible es Growth OS.

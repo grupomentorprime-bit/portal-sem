@@ -13,7 +13,7 @@
 2. Los permisos se evalúan por **membresía**, no por tenant activo en abstracto.
 3. La autorización usa **políticas** (`can`, `authorize`, `authorizeOrThrow`).
 4. Toda acción relevante genera **auditoría**.
-5. El Core es agnóstico de instituciones concretas. Growth OS es la plataforma. SEM, ADL, Mentor Prime Capacitación y Fundación Mueve son Espacios equivalentes.
+5. El Core es agnóstico de instituciones concretas. Growth OS es la plataforma. SEM, ADL, Mentor Capacitación y Fundación Mueve son Espacios equivalentes.
 
 ## Arquitectura
 

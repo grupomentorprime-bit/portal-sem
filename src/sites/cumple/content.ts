@@ -14,81 +14,95 @@ export const whatsappNumber = "";
 export const tagline = "Cumplimiento empresarial bajo control.";
 
 export const tesis =
-  "Mentor Prime Cumple le entrega una visión clara del estado de su empresa y le ayuda a implementar y mantener todo bajo control.";
+  "Mentor Cumple le entrega una visión clara del estado de su empresa y le ayuda a implementar y mantener todo bajo control.";
 
 export const soluciones: CardItem[] = [
   {
     title: "Ley Karin",
     description: "Protocolos, procedimientos y capacitaciones.",
-    href: "#ley-karin",
+    href: "/materias/ley-karin",
     icon: "shield",
     tone: "ink",
   },
   {
     title: "Seguridad y Salud en el Trabajo",
     description: "DS 44, gestión preventiva, riesgos y evidencias.",
-    href: "#sst",
+    href: "/materias/seguridad-salud-trabajo",
     icon: "clipboard",
     tone: "sand",
   },
   {
     title: "Laboral y RR.HH.",
     description: "Contratos, registros, jornada, obligaciones y vencimientos.",
-    href: "#laboral",
+    href: "/materias/laboral-rrhh",
     icon: "users",
     tone: "hot",
   },
   {
     title: "Protección de datos",
     description: "Políticas, tratamientos y controles.",
-    href: "#datos",
+    href: "/materias/proteccion-datos",
     icon: "folder",
     tone: "ink",
   },
   {
     title: "Inclusión laboral",
     description: "Obligaciones y documentación.",
-    href: "#inclusion",
+    href: "/materias/inclusion-laboral",
     icon: "users",
     tone: "sand",
   },
   {
     title: "Contratistas y terceros",
     description: "Documentos, requisitos y control.",
-    href: "#contratistas",
+    href: "/materias/contratistas-terceros",
     icon: "briefcase",
     tone: "hot",
   },
 ];
 
-export const normativas: CardItem[] = [
+export const informacion: CardItem[] = [
   {
     title: "Ley Karin",
     description: "Prevención, investigación y el respaldo de cada caso.",
-    href: "#ley-karin",
+    href: "/materias/ley-karin",
     icon: "shield",
     tone: "ink",
   },
   {
     title: "DS 44 / SST",
     description: "Seguridad y salud en el trabajo, medidas y evidencias.",
-    href: "#sst",
+    href: "/materias/seguridad-salud-trabajo",
     icon: "clipboard",
     tone: "sand",
   },
   {
     title: "Laboral y RR.HH.",
     description: "Contratos, jornada y obligaciones del día a día.",
-    href: "#laboral",
+    href: "/materias/laboral-rrhh",
     icon: "users",
     tone: "hot",
   },
   {
     title: "Protección de datos",
     description: "Políticas, tratamientos y controles.",
-    href: "#datos",
+    href: "/materias/proteccion-datos",
     icon: "folder",
     tone: "ink",
+  },
+  {
+    title: "Inclusión laboral",
+    description: "Ley 21.015: cuotas, registro y documentación de inclusión.",
+    href: "/materias/inclusion-laboral",
+    icon: "users",
+    tone: "sand",
+  },
+  {
+    title: "Contratistas y terceros",
+    description: "Subcontratación, documentos exigibles y control de terceros.",
+    href: "/materias/contratistas-terceros",
+    icon: "briefcase",
+    tone: "hot",
   },
 ];
 
@@ -96,21 +110,21 @@ export const recursos: CardItem[] = [
   {
     title: "Cómo funciona",
     description: "Diagnóstico, plan, implementación y control permanente.",
-    href: "#como",
+    href: "/como-funciona",
     icon: "clipboard",
     tone: "sand",
   },
   {
     title: "Preguntas frecuentes",
     description: "Alcance, plazos y qué pasa cuando una ley se actualiza.",
-    href: "#faq",
+    href: "/preguntas-frecuentes",
     icon: "help",
     tone: "hot",
   },
   {
     title: "Evaluar mi empresa",
     description: "Responda unas preguntas y reciba un diagnóstico preliminar.",
-    href: "#evaluar",
+    href: "/evaluar",
     icon: "check",
     tone: "ink",
   },
@@ -121,12 +135,12 @@ export type MenuEntry =
   | { id: string; label: string; items: readonly CardItem[] };
 
 export const menus: readonly MenuEntry[] = [
-  { id: "inicio", label: "Inicio", href: "#" },
+  { id: "inicio", label: "Inicio", href: "/" },
   { id: "soluciones", label: "Soluciones", items: soluciones },
-  { id: "normativas", label: "Normativas", items: normativas },
+  { id: "informacion", label: "Información", items: informacion },
   { id: "recursos", label: "Recursos", items: recursos },
-  { id: "nosotros", label: "Nosotros", href: "#nosotros" },
-  { id: "contacto", label: "Contacto", href: "#evaluar" },
+  { id: "nosotros", label: "Nosotros", href: "/nosotros" },
+  { id: "contacto", label: "Contacto", href: "/contacto" },
 ];
 
 /** Alias para el formulario de diagnóstico (tipo de organización). */
@@ -252,23 +266,60 @@ export const confian = [
   "SERVICIOS INTEGRADOS",
 ] as const;
 
-export const preguntas = [
+export type PreguntaLink = { label: string; href: string };
+
+export type Pregunta = {
+  q: string;
+  a: string;
+  /** Enlaces internos opcionales que acompañan la respuesta en la página de preguntas frecuentes. */
+  links?: readonly PreguntaLink[];
+};
+
+export const preguntas: Pregunta[] = [
   {
-    q: "¿Qué hace Mentor Prime Cumple?",
+    q: "¿Qué hace Mentor Cumple?",
     a: "Identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su cumplimiento. Reúne consultoría, plataforma y acompañamiento. No promete ausencia de sanciones.",
+    links: [{ label: "Cómo funciona", href: "/como-funciona" }],
   },
   {
     q: "¿Qué normativas cubre?",
     a: "Ley Karin, seguridad y salud en el trabajo (DS 44), laboral y RR.HH., protección de datos, inclusión laboral y contratistas. El alcance se ajusta a la operación de cada empresa.",
+    links: [
+      { label: "Ley Karin", href: "/materias/ley-karin" },
+      { label: "Seguridad y Salud en el Trabajo", href: "/materias/seguridad-salud-trabajo" },
+      { label: "Protección de datos", href: "/materias/proteccion-datos" },
+    ],
   },
   {
     q: "¿Sirve si la organización es pequeña?",
     a: "Sí. Parte por lo esencial, sin exigir un área legal completa. Después puede sumar la implementación y un control permanente.",
+    links: [{ label: "Evaluar mi empresa", href: "/evaluar" }],
   },
   {
     q: "¿Qué ocurre cuando la norma cambia?",
     a: "Se actualizan la obligación, la tarea y la evidencia. El control no queda pegado a una versión anterior de la ley.",
   },
+  {
+    q: "¿Cuánto demora el diagnóstico?",
+    a: "El plazo depende del tamaño de la organización, de la cantidad de centros de trabajo y de la documentación disponible. Tras la solicitud, el equipo revisa el caso y confirma los tiempos antes de comenzar.",
+    links: [{ label: "Solicitar el diagnóstico", href: "/evaluar" }],
+  },
+  {
+    q: "¿Mentor Cumple reemplaza a un abogado o a un prevencionista?",
+    a: "No. La información del sitio es orientativa y no sustituye asesoría legal formal. Mentor Cumple ordena obligaciones, responsables y evidencia para que el trabajo de esos profesionales quede respaldado y se mantenga al día.",
+  },
+  {
+    q: "¿Garantiza que no habrá multas ni sanciones?",
+    a: "No. Ninguna herramienta puede garantizar ese resultado, porque las decisiones de fiscalización corresponden a la autoridad. Lo que sí entrega es un estado claro de las obligaciones y la evidencia de las medidas adoptadas.",
+    links: [{ label: "Cómo funciona", href: "/como-funciona" }],
+  },
+  {
+    q: "¿Qué ocurre después del diagnóstico?",
+    a: "La organización recibe un plan priorizado. Puede implementarlo con acompañamiento del equipo o por cuenta propia, y mantener el control en la plataforma con alertas, responsables y evidencias.",
+    links: [
+      { label: "Cómo funciona", href: "/como-funciona" },
+      { label: "Laboral y RR.HH.", href: "/materias/laboral-rrhh" },
+    ],
+  },
 ];
-
 export const normas = ["Ley Karin", "DS 44", "Dirección del Trabajo", "Protocolos", "Matriz de riesgos", "Jornada laboral"];

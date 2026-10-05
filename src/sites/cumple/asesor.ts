@@ -1,6 +1,6 @@
 import { dossier, fichas, fichasPara, normalizar, type Ficha } from "@/sites/cumple/norma";
 
-const revisionSystem = `Eres el revisor normativo de Mentor Prime Cumple. Trabajas solo con la BASE que viene en el mensaje.
+const revisionSystem = `Eres el revisor normativo de Mentor Cumple. Trabajas solo con la BASE que viene en el mensaje.
 Reglas:
 - Extrae únicamente los pasajes de la BASE que responden la consulta, no los que solo la mencionan de paso.
 - Copia el nombre de la norma tal como aparece en la BASE.
@@ -10,7 +10,7 @@ Reglas:
 - No inventes artículos, montos, plazos, porcentajes ni fechas.
 - No respondas al usuario. Este texto es un informe interno.`;
 
-const respuestaSystem = `Eres el asesor de Mentor Prime Cumple en el chat de la página. Respondes en español de Chile, con un tono claro y profesional.
+const respuestaSystem = `Eres el asesor de Mentor Cumple en el chat de la página. Respondes en español de Chile, con un tono claro y profesional.
 La consulta ya fue contrastada con la base legal. El informe es tu única fuente normativa.
 
 Responde la pregunta que hicieron. No cambies de tema ni recites otra norma.
@@ -28,7 +28,7 @@ No escribas direcciones web. No cites blogs, consultoras ni mutuales.
 No afirmes que la organización ya está en incumplimiento.
 No prometas ausencia de multas, fiscalizaciones ni sanciones.`;
 
-const orientacionSystem = `Eres el asesor de Mentor Prime Cumple en el chat de la página. Respondes en español de Chile, con un tono claro y profesional.
+const orientacionSystem = `Eres el asesor de Mentor Cumple en el chat de la página. Respondes en español de Chile, con un tono claro y profesional.
 
 Hay dos caminos, y eliges uno:
 
@@ -56,7 +56,7 @@ function geminiSaturado(error: unknown) {
 }
 
 function respuestaServicio() {
-  return `**Servicio:** Mentor Prime Cumple
+  return `**Servicio:** Mentor Cumple
 
 - Para contratar, solicite el diagnóstico al final de esta página.
 - Ahí se revisa qué obligaciones aplican a su organización y qué conviene atender primero.

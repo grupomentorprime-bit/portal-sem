@@ -21,9 +21,9 @@ function serialized(value: unknown): string {
 describe("aislamiento público entre Espacios", () => {
   it("un home vacío no hereda la portada del SEM", () => {
     const home = composeStoredPublicHome(SPACE, {
-      title: "Mentor Prime Capacitacion",
+      title: "Mentor Capacitacion",
       blocks: [],
-      seo: { title: "Mentor Prime Capacitacion" },
+      seo: { title: "Mentor Capacitacion" },
     });
 
     assert.equal(home.tenantId, SPACE);

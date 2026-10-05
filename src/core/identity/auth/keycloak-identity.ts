@@ -1,7 +1,7 @@
 /**
  * Identidad del realm de plataforma.
  * El id técnico no es la marca: Growth OS es la plataforma.
- * SEM, ADL, Mentor Prime Capacitación y Fundación Mueve son Espacios equivalentes.
+ * SEM, ADL, Mentor Capacitación y Fundación Mueve son Espacios equivalentes.
  */
 
 /** Id técnico del realm. No renombrar: usuarios, sesiones y callbacks dependen de él. */

@@ -24,7 +24,7 @@ export function Logo({ onClick }: { onClick?: () => void }) {
   return (
     <Link
       href="/"
-      aria-label="Mentor Prime Cumple, volver al inicio"
+      aria-label="Mentor Cumple, volver al inicio"
       className="inline-flex shrink-0 text-current"
       onClick={(event) => {
         onClick?.();

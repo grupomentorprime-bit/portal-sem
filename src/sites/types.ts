@@ -22,6 +22,7 @@ export interface CodedSitePage {
   path: string;
   title: string;
   navLabel: string;
+  description?: string;
 }
 
 export interface CodedSite {

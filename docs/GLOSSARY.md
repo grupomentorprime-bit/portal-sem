@@ -46,10 +46,10 @@ Vocabulario vigente para docs de entrada, chrome de plataforma y conversación d
 | --- | --- | --- |
 | **SEM** (Seminario Eclesiástico Mayor) | T001 · `seminario-ipn` | Espacio; pack de datos SEM/IPN |
 | **ADL** (Academia ADL) | T002 · `adl` | Espacio; sin heredar branding SEM |
-| **Mentor Prime Capacitación** | — | Espacio equivalente a SEM y ADL |
+| **Mentor Capacitación** | — | Espacio equivalente a SEM y ADL |
 | **Fundación Mueve** | — | Espacio equivalente a SEM y ADL |
 
-SEM, ADL, Mentor Prime Capacitación y Fundación Mueve son Espacios equivalentes. Ninguno es la plataforma.
+SEM, ADL, Mentor Capacitación y Fundación Mueve son Espacios equivalentes. Ninguno es la plataforma.
 
 Prohibido tratar un Espacio como nombre del producto o como lógica de plataforma (`if (tenant === "adl")` como identidad de producto).
 
