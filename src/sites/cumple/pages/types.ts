@@ -19,7 +19,23 @@ export type MateriaContent = {
   path: string;
   eyebrow: string;
   titleName: string;
+  /** Placa tipográfica de reconocimiento en el héroe (varias líneas se apilan). */
+  mark: readonly string[];
+  /** Tono de la placa: ink (azul), sand (violeta), hot (cian). */
+  markTone: "ink" | "sand" | "hot";
   normRef?: string;
+  /** Deberes breves junto al número de ley (piloto visual Ley Karin). */
+  baton?: { label: string; icon: string }[];
+  /** Panel documental a la derecha del héroe (piloto Ley Karin). */
+  heroAside?: {
+    heading: string;
+    vigenciaLabel: string;
+    vigencia: string;
+    dutiesHeading: string;
+    duties: { label: string; detail: string; icon: string }[];
+    source: OfficialSource;
+    sourceLabel: string;
+  };
   lead: string;
   disclaimer: string;
   /** Bloque opcional de conceptos (piloto editorial Ley Karin). */

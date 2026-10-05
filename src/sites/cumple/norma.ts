@@ -47,6 +47,16 @@ export const fichas: Ficha[] = [
     },
   },
   {
+    keys: ["isl ley karin", "guia ley karin", "fenómenos ley karin", "fenomenos ley karin"],
+    titulo: "ISL, guía Ley Karin",
+    texto:
+      "El Instituto de Seguridad Laboral publica una guía sobre la Ley 21.643 que describe los fenómenos de acoso sexual, acoso laboral y violencia en el trabajo, además de orientaciones para entidades empleadoras. Esta ficha no sustituye el texto de la ley ni fija plazos o sanciones.",
+    fuente: {
+      nombre: "Ley Karin. Instituto de Seguridad Laboral (ISL).",
+      url: "https://www.isl.gob.cl/ley-karin/",
+    },
+  },
+  {
     keys: ["16.744", "16744", "accidente del trabajo", "enfermedad profesional", "enfermedades profesionales", "mutual", "isl"],
     titulo: "Ley 16.744 y seguridad y salud en el trabajo",
     texto:

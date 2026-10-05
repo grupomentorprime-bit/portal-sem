@@ -149,4 +149,52 @@ const paths: Record<string, ReactNode> = {
     </>
   ),
   chevron: <path d="m6 9 6 6 6-6" />,
+  /** Dos personas separadas por una barrera: hostigamiento en el trabajo. */
+  hostility: (
+    <>
+      <circle cx="5.4" cy="7.4" r="1.7" />
+      <path d="M8.2 16.6v-.7a2.3 2.3 0 0 0-2.3-2.3h-1a2.3 2.3 0 0 0-2.3 2.3v.7" />
+      <path d="M12 4.8v14.4" />
+      <path d="M10.3 4.8h3.4" />
+      <path d="M10.3 19.2h3.4" />
+      <circle cx="18.6" cy="7.4" r="1.7" />
+      <path d="M21.4 16.6v-.7a2.3 2.3 0 0 0-2.3-2.3h-1a2.3 2.3 0 0 0-2.3 2.3v.7" />
+    </>
+  ),
+  /** Persona frente a un límite que no cruza. */
+  boundary: (
+    <>
+      <circle cx="7" cy="8" r="2" />
+      <path d="M10.5 18.4v-.8a2.9 2.9 0 0 0-2.9-2.9h-.6a2.9 2.9 0 0 0-2.9 2.9v.8" />
+      <path d="M16 4.6v14.8" />
+      <path d="M14.5 4.6H18" />
+      <path d="M14.5 19.4H18" />
+    </>
+  ),
+  /** Lugar de trabajo con señal de alerta. */
+  "workplace-alert": (
+    <>
+      <rect x="3" y="8.6" width="12.2" height="11.6" rx="1.4" />
+      <path d="M6.1 12.2h.01M9.5 12.2h.01M6.1 15.6h.01M9.5 15.6h.01" />
+      <circle cx="17.4" cy="7" r="3.3" />
+      <path d="M17.4 5.4v2.1" />
+      <path d="M17.4 9.1h.01" />
+    </>
+  ),
+  prevent: <path d="M12 3.2 5.2 6.1v5.6c0 4 2.7 7.1 6.8 8.6 4.1-1.5 6.8-4.6 6.8-8.6V6.1L12 3.2Z" />,
+  investigate: (
+    <>
+      <rect x="3.5" y="3" width="11" height="15" rx="1.6" />
+      <path d="M6.5 7h5M6.5 10.2h3.4" />
+      <circle cx="15.6" cy="15.4" r="3.1" />
+      <path d="m17.9 17.7 2.6 2.6" />
+    </>
+  ),
+  shelter: (
+    <>
+      <path d="M3.8 13.2a8.2 8.2 0 0 1 16.4 0" />
+      <circle cx="12" cy="15.2" r="1.7" />
+      <path d="M15.2 20.4v-.5a2.7 2.7 0 0 0-2.7-2.7h-1a2.7 2.7 0 0 0-2.7 2.7v.5" />
+    </>
+  ),
 };

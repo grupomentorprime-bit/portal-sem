@@ -91,11 +91,26 @@ describe("Materias Cumple", () => {
     for (const materia of materias) {
       assert.equal(materia.eyebrow, "Información · Cumplimiento");
       assert.match(materia.titleName, /\S/);
+      assert.ok(materia.mark.length >= 1);
+      assert.ok(["ink", "sand", "hot"].includes(materia.markTone));
       assert.ok(!("h1" in materia), `${materia.slug}: no debe conservar h1`);
     }
     const ley = getMateria("ley-karin");
     assert.equal(ley?.titleName, "Ley Karin");
     assert.equal(ley?.normRef, "Ley 21.643");
+    assert.deepEqual(ley?.mark, ["LEY", "KARIN"]);
+    assert.equal(ley?.markTone, "ink");
+    assert.deepEqual(getMateria("seguridad-salud-trabajo")?.mark, ["SST"]);
+  });
+
+  it("MateriaPage renderiza la placa tipográfica en el héroe", () => {
+    const source = readFileSync("src/components/sites/cumple/MateriaPage.tsx", "utf8");
+    assert.match(source, /function MateriaMark/);
+    assert.match(source, /content\.mark/);
+    assert.match(source, /markFills/);
+    assert.match(source, /text-white/);
+    assert.doesNotMatch(source, /#e91e8c|#ff2d7a|#f72585/i);
+    assert.doesNotMatch(readFileSync("src/components/sites/cumple/site-header.tsx", "utf8"), /MenuPlate|item\.mark/);
   });
 
   it("Ley Karin incluye conceptos y checklist editorial", () => {
@@ -103,19 +118,190 @@ describe("Materias Cumple", () => {
     assert.ok(ley?.concepts);
     assert.equal(ley?.concepts?.items.length, 3);
     assert.ok(ley?.concepts?.items.some((item) => /acoso laboral/i.test(item.title)));
+    assert.deepEqual(
+      ley?.concepts?.items.map((item) => item.icon),
+      ["hostility", "boundary", "workplace-alert"],
+    );
+    assert.deepEqual(
+      ley?.baton?.map((item) => item.label),
+      ["Prevenir", "Investigar", "Resguardar"],
+    );
+    assert.ok(ley?.concepts?.items.every((item) => /preven|investig|resguard|protec/i.test(item.body)));
+    assert.ok(ley?.sources.some((s) => /isl\.gob\.cl\/ley-karin/i.test(s.url)));
+    assert.ok(ley?.heroAside);
+    assert.match(ley?.heroAside?.vigencia ?? "", /1 de agosto de 2024/i);
+    assert.equal(ley?.heroAside?.duties.length, 3);
     assert.ok(ley?.checklist);
     assert.ok((ley?.checklist?.items.length ?? 0) >= 3);
     assert.ok(ley?.implicaPoints);
     assert.equal(ley?.implicaPoints?.items.length, 3);
     assert.ok(ley?.processSteps);
     assert.equal(ley?.processSteps?.items.length, 4);
+  });
+
+  it("SST / DS 44 incluye el mismo patrón editorial que Ley Karin", () => {
+    const sst = getMateria("seguridad-salud-trabajo");
+    assert.equal(sst?.titleName, "Seguridad y salud en el trabajo");
+    assert.ok(sst?.concepts);
+    assert.equal(sst?.concepts?.items.length, 3);
+    assert.ok(sst?.concepts?.items.some((item) => /matriz/i.test(item.title)));
+    assert.ok(sst?.concepts?.items.some((item) => /programa/i.test(item.title)));
+    assert.ok(sst?.concepts?.items.some((item) => /psicosocial/i.test(item.title)));
+    assert.deepEqual(
+      sst?.baton?.map((item) => item.label),
+      ["Matriz", "Programa", "Control"],
+    );
+    assert.ok(sst?.heroAside);
+    assert.match(sst?.heroAside?.vigencia ?? "", /27 de julio de 2024/i);
+    assert.match(sst?.heroAside?.vigencia ?? "", /transitorio/i);
+    assert.equal(sst?.heroAside?.duties.length, 3);
+    assert.match(sst?.heroAside?.source.url ?? "", /1205298/);
+    assert.ok(sst?.checklist);
+    assert.ok((sst?.checklist?.items.length ?? 0) >= 3);
+    assert.ok(sst?.implicaPoints);
+    assert.equal(sst?.implicaPoints?.items.length, 3);
+    assert.ok(sst?.processSteps);
+    assert.equal(sst?.processSteps?.items.length, 4);
+    const editorial = new Set([
+      "ley-karin",
+      "seguridad-salud-trabajo",
+      "laboral-rrhh",
+      "proteccion-datos",
+      "inclusion-laboral",
+      "contratistas-terceros",
+    ]);
     for (const materia of materias) {
-      if (materia.slug === "ley-karin") continue;
+      if (editorial.has(materia.slug)) continue;
       assert.equal(materia.concepts, undefined);
       assert.equal(materia.checklist, undefined);
       assert.equal(materia.implicaPoints, undefined);
       assert.equal(materia.processSteps, undefined);
+      assert.equal(materia.baton, undefined);
+      assert.equal(materia.heroAside, undefined);
     }
+  });
+
+  it("Laboral y RR.HH. incluye el mismo patrón editorial que Ley Karin", () => {
+    const lab = getMateria("laboral-rrhh");
+    assert.equal(lab?.titleName, "Laboral y RR.HH.");
+    assert.deepEqual(lab?.mark, ["RR.HH."]);
+    assert.equal(lab?.markTone, "hot");
+    assert.ok(lab?.concepts);
+    assert.equal(lab?.concepts?.items.length, 3);
+    assert.ok(lab?.concepts?.items.some((item) => /reglamento/i.test(item.title)));
+    assert.ok(lab?.concepts?.items.some((item) => /jornada/i.test(item.title)));
+    assert.ok(lab?.concepts?.items.some((item) => /evidencia/i.test(item.title)));
+    assert.deepEqual(
+      lab?.baton?.map((item) => item.label),
+      ["Reglamento", "Jornada", "Evidencia"],
+    );
+    assert.ok(lab?.heroAside);
+    assert.equal(lab?.heroAside?.heading, "Lo esencial");
+    assert.match(lab?.heroAside?.vigenciaLabel ?? "", /marco/i);
+    assert.match(lab?.heroAside?.vigencia ?? "", /Código del Trabajo|21\.561/i);
+    assert.equal(lab?.heroAside?.duties.length, 3);
+    assert.match(lab?.heroAside?.source.url ?? "", /207436/);
+    assert.ok(lab?.checklist);
+    assert.ok((lab?.checklist?.items.length ?? 0) >= 3);
+    assert.ok(lab?.implicaPoints);
+    assert.equal(lab?.implicaPoints?.items.length, 3);
+    assert.ok(lab?.processSteps);
+    assert.equal(lab?.processSteps?.items.length, 4);
+    assert.ok(
+      lab?.sources.some((s) => /207436/.test(s.url)),
+      "debe citar Código del Trabajo en Ley Chile",
+    );
+  });
+
+  it("Protección de datos incluye el mismo patrón editorial que Ley Karin", () => {
+    const datos = getMateria("proteccion-datos");
+    assert.equal(datos?.titleName, "Protección de datos");
+    assert.deepEqual(datos?.mark, ["DATOS"]);
+    assert.equal(datos?.markTone, "ink");
+    assert.ok(datos?.concepts);
+    assert.equal(datos?.concepts?.items.length, 3);
+    assert.ok(datos?.concepts?.items.some((item) => /datos personales/i.test(item.title)));
+    assert.ok(datos?.concepts?.items.some((item) => /tratamiento/i.test(item.title)));
+    assert.ok(datos?.concepts?.items.some((item) => /evidencia/i.test(item.title)));
+    assert.deepEqual(
+      datos?.baton?.map((item) => item.label),
+      ["Datos", "Tratamiento", "Evidencia"],
+    );
+    assert.ok(datos?.heroAside);
+    assert.equal(datos?.heroAside?.heading, "Lo esencial");
+    assert.match(datos?.heroAside?.vigenciaLabel ?? "", /marco/i);
+    assert.match(datos?.heroAside?.vigencia ?? "", /19\.628/);
+    assert.equal(datos?.heroAside?.duties.length, 3);
+    assert.match(datos?.heroAside?.source.url ?? "", /141599/);
+    assert.ok(datos?.checklist);
+    assert.ok((datos?.checklist?.items.length ?? 0) >= 3);
+    assert.ok(datos?.implicaPoints);
+    assert.equal(datos?.implicaPoints?.items.length, 3);
+    assert.ok(datos?.processSteps);
+    assert.equal(datos?.processSteps?.items.length, 4);
+    assert.ok(
+      datos?.sources.some((s) => /141599/.test(s.url)),
+      "debe citar Ley 19.628 en Ley Chile",
+    );
+  });
+
+  it("Inclusión laboral incluye el mismo patrón editorial que Ley Karin", () => {
+    const inc = getMateria("inclusion-laboral");
+    assert.equal(inc?.titleName, "Inclusión laboral");
+    assert.deepEqual(inc?.mark, ["INCLUSIÓN"]);
+    assert.equal(inc?.markTone, "sand");
+    assert.ok(inc?.concepts);
+    assert.equal(inc?.concepts?.items.length, 3);
+    assert.ok(inc?.concepts?.items.some((item) => /umbral/i.test(item.title)));
+    assert.ok(inc?.concepts?.items.some((item) => /cuota/i.test(item.title)));
+    assert.ok(inc?.concepts?.items.some((item) => /evidencia/i.test(item.title)));
+    assert.deepEqual(
+      inc?.baton?.map((item) => item.label),
+      ["Umbral", "Cuota", "Evidencia"],
+    );
+    assert.ok(inc?.heroAside);
+    assert.equal(inc?.heroAside?.heading, "Lo esencial");
+    assert.match(inc?.heroAside?.vigenciaLabel ?? "", /marco/i);
+    assert.match(inc?.heroAside?.vigencia ?? "", /21\.015/);
+    assert.equal(inc?.heroAside?.duties.length, 3);
+    assert.match(inc?.heroAside?.source.url ?? "", /1103997/);
+    assert.ok(inc?.checklist);
+    assert.ok((inc?.checklist?.items.length ?? 0) >= 3);
+    assert.ok(inc?.implicaPoints);
+    assert.equal(inc?.implicaPoints?.items.length, 3);
+    assert.ok(inc?.processSteps);
+    assert.equal(inc?.processSteps?.items.length, 4);
+    assert.ok(inc?.sources.some((s) => /1103997/.test(s.url)));
+  });
+
+  it("Contratistas y terceros incluye el mismo patrón editorial que Ley Karin", () => {
+    const c = getMateria("contratistas-terceros");
+    assert.equal(c?.titleName, "Contratistas y terceros");
+    assert.deepEqual(c?.mark, ["TERCEROS"]);
+    assert.equal(c?.markTone, "hot");
+    assert.ok(c?.concepts);
+    assert.equal(c?.concepts?.items.length, 3);
+    assert.ok(c?.concepts?.items.some((item) => /empresa principal/i.test(item.title)));
+    assert.ok(c?.concepts?.items.some((item) => /faena/i.test(item.title)));
+    assert.ok(c?.concepts?.items.some((item) => /documentos|control/i.test(item.title)));
+    assert.deepEqual(
+      c?.baton?.map((item) => item.label),
+      ["Empresa principal", "Faena", "Control"],
+    );
+    assert.ok(c?.heroAside);
+    assert.equal(c?.heroAside?.heading, "Lo esencial");
+    assert.match(c?.heroAside?.vigenciaLabel ?? "", /marco/i);
+    assert.match(c?.heroAside?.vigencia ?? "", /20\.123/);
+    assert.equal(c?.heroAside?.duties.length, 3);
+    assert.match(c?.heroAside?.source.url ?? "", /254080/);
+    assert.ok(c?.checklist);
+    assert.ok((c?.checklist?.items.length ?? 0) >= 3);
+    assert.ok(c?.implicaPoints);
+    assert.equal(c?.implicaPoints?.items.length, 3);
+    assert.ok(c?.processSteps);
+    assert.equal(c?.processSteps?.items.length, 4);
+    assert.ok(c?.sources.some((s) => /254080/.test(s.url)));
+    assert.ok(c?.sources.some((s) => /28650/.test(s.url)));
   });
 
   it("las fuentes y citas reutilizan URLs de norma.ts", () => {
@@ -200,6 +386,8 @@ describe("Plantilla de materias Cumple", () => {
     assert.match(materiaPage, /\/evaluar/);
     assert.match(materiaPage, /border-cline/);
     assert.match(materiaPage, /content\.concepts/);
+    assert.match(materiaPage, /content\.baton/);
+    assert.match(materiaPage, /content\.heroAside|HeroAside/);
     assert.match(materiaPage, /content\.checklist/);
     assert.match(materiaPage, /content\.implicaPoints/);
     assert.match(materiaPage, /content\.processSteps/);
