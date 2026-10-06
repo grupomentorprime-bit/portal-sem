@@ -34,9 +34,9 @@ export function AdminModuleLayout({
       <div className={cn("mx-auto px-4 py-5 sm:px-6", widthClass)}>
         <Breadcrumb items={breadcrumbs} className="mb-3" />
 
-        <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
+            <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground">{title}</h1>
             {description ? <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p> : null}
           </div>
           {actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null}

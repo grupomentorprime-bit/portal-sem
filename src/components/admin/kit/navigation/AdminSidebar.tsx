@@ -51,12 +51,12 @@ function GrowthOsMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-gradient-to-br from-[var(--growth-os-primary)] to-[var(--growth-os-secondary)] shadow-[0_8px_18px_-10px_rgba(14,79,144,0.55)]",
+        "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[var(--growth-os-primary)]",
         className
       )}
       aria-hidden
     >
-      <span className="absolute inset-0 bg-[radial-gradient(circle_at_28%_22%,color-mix(in_srgb,white_42%,transparent),transparent_58%)]" />
+      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-br-[12px] bg-[var(--growth-os-accent)]" />
       <Sparkles className="relative h-4 w-4 text-white" strokeWidth={2.25} />
     </span>
   );
@@ -93,7 +93,7 @@ function SidebarBrand({
       )}
 
       {!collapsed ? (
-        <div className="flex min-w-0 items-center gap-2.5 rounded-[12px] border border-[var(--color-border-default)] border-l-2 border-l-[color-mix(in_srgb,var(--brand-primary)_55%,var(--color-border-default))] bg-[var(--gray-50)] px-2.5 py-2">
+        <div className="flex min-w-0 items-center gap-2.5 rounded-[12px] border border-[var(--sidebar-border)] border-l-2 border-l-[var(--growth-os-accent)] bg-[var(--sidebar-hover)] px-2.5 py-2">
           {branding.logoUrl?.trim() ? (
             <img
               src={branding.logoUrl}
@@ -126,7 +126,7 @@ function SidebarBrand({
         />
       ) : (
         <span
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--gray-100)] text-[10px] font-bold text-[var(--growth-os-primary)]"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--sidebar-hover)] text-[10px] font-bold text-[var(--sidebar-active-fg)]"
           title={`Espacio activo · ${spaceLabel}`}
           aria-label={`Espacio activo ${spaceLabel}`}
         >
@@ -194,30 +194,22 @@ function SidebarLink({
           : "px-2.5 py-2 text-[13px] font-medium",
         isSub &&
           active &&
-          "admin-nav-sub-link--active font-medium text-[var(--growth-os-primary)]",
+          "admin-nav-sub-link--active bg-[var(--sidebar-active-bg)] font-medium text-[var(--sidebar-active-fg)]",
         isSub &&
           !active &&
-          "text-[var(--gray-700)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]",
+          "text-[var(--sidebar-fg-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-fg)]",
         !isSub &&
           (active
-            ? "bg-[var(--gray-100)] text-[var(--growth-os-primary)]"
-            : "text-[var(--gray-800)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]"),
+            ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)]"
+            : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)] hover:text-white"),
         collapsed && !isSub && "justify-center px-2"
       )}
     >
-      {active && !isSub ? (
-        <span
-          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--growth-os-primary)]"
-          aria-hidden
-        />
-      ) : null}
       {(showIcon || collapsed) && !isSub ? (
         <span
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-[9px]",
-            active
-              ? "bg-white text-[var(--growth-os-primary)] shadow-[0_1px_2px_rgba(14,79,144,0.08)]"
-              : "text-[var(--gray-500)]"
+            active ? "text-[var(--sidebar-active-fg)]" : "text-[var(--sidebar-fg-muted)]"
           )}
         >
           <NavIcon icon={item.icon} className="h-4 w-4 shrink-0" />
@@ -294,8 +286,8 @@ function NavGroupSection({
           className={cn(
             "flex w-full items-center justify-center rounded-[12px] px-2 py-2 transition-colors duration-150",
             hasActiveChild || flyoutOpen
-              ? "bg-[var(--gray-100)] text-[var(--growth-os-primary)]"
-              : "text-[var(--gray-800)] hover:bg-[var(--gray-50)]"
+              ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)]"
+              : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)]"
           )}
         >
           <NavIcon icon={group.icon} className="h-[18px] w-[18px]" />
@@ -342,16 +334,14 @@ function NavGroupSection({
         className={cn(
           "flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-left transition-colors duration-150",
           hasActiveChild || expanded
-            ? "text-[var(--growth-os-primary)]"
-            : "text-[var(--gray-800)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]"
+            ? "text-[var(--sidebar-fg)]"
+            : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)]"
         )}
       >
         <span
           className={cn(
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]",
-            hasActiveChild || expanded
-              ? "bg-white text-[var(--growth-os-primary)] shadow-[0_1px_2px_rgba(14,79,144,0.08)]"
-              : "text-[var(--gray-500)]"
+            "text-[var(--sidebar-fg-muted)]"
           )}
           aria-hidden
         >
@@ -399,7 +389,7 @@ function NavGroupSection({
 function SidebarZoneLabel({ label }: { label: string }) {
   return (
     <div className="admin-nav-zone-label px-2.5 pb-1.5 pt-1">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--gray-500)]">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--sidebar-label)]">
         {label}
       </span>
     </div>
@@ -636,7 +626,7 @@ export function AdminSidebar({
       onClose={onMobileClose}
       title={PLATFORM_DISPLAY_NAME}
       side="left"
-      className="max-w-none sm:max-w-sm"
+      className="admin-shell-v2-drawer max-w-none sm:max-w-sm"
     >
       <SidebarBrand branding={ctx.branding} collapsed={false} />
       <SidebarNav ctx={ctx} collapsed={false} onNavigate={onMobileClose} />

@@ -28,20 +28,15 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
     assert.match(nav, /id: "nav-campanas"[\s\S]*?href: "\/admin\/campanas"/);
   });
 
-  it("reubica legacy bajo Sitio web / Ajustes sin borrar rutas", () => {
+  it("Sitio web / Institución / Ajustes conservan rutas activas (CMS legacy retirado)", () => {
     const nav = readSrc("src/lib/admin/nav-domains.ts");
     for (const href of [
-      "/admin/pages",
-      "/admin/menus",
       "/admin/experience-studio",
       "/admin/config",
-      "/admin/content/programs",
-      "/admin/content/courses",
       "/admin/portal/forms",
       "/admin/portal/asuntos-estudiantiles",
       "/admin/portal/admission",
-      "/admin/content",
-      "/admin/media",
+      "/admin/site/domain",
       "/admin/settings/users",
       "/admin/settings/team",
       "/admin/settings/roles",
@@ -50,11 +45,23 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
     ]) {
       assert.match(nav, new RegExp(href.replace(/\//g, "\\/")));
     }
+    for (const retired of [
+      'id: "academic-programs"',
+      'id: "academic-courses"',
+      'id: "portal-pages"',
+      'id: "portal-menus"',
+      'href: "/admin/pages"',
+      'href: "/admin/menus"',
+      'href: "/admin/media"',
+      'href: "/admin/content/programs"',
+      'href: "/admin/content/courses"',
+    ]) {
+      assert.equal(nav.includes(retired), false, `retirado aún en nav: ${retired}`);
+    }
   });
 
-  it("oferta académica sigue gated por programs.manage (no hardcode tenant)", () => {
+  it("nav sin hardcode de tenant (oferta académica CMS ya retirada)", () => {
     const nav = readSrc("src/lib/admin/nav-domains.ts");
-    assert.match(nav, /academic-programs[\s\S]*programs\.manage/);
     assert.doesNotMatch(nav, /tenant\s*===\s*["']ADL["']/i);
     assert.doesNotMatch(nav, /tenant\s*===\s*["']SEM["']/i);
   });
@@ -66,11 +73,11 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
     assert.doesNotMatch(page, /AdminDashboardClient/);
   });
 
-  it("sidebar claro + layout full-height; topbar Personas", () => {
+  it("sidebar tinta + layout full-height; topbar Personas", () => {
     const css = readSrc("src/components/admin/shell-v2/admin-shell-v2.css");
     const shell = readSrc("src/components/admin/shell-v2/AdminShellV2.tsx");
     const topBar = readSrc("src/components/admin/kit/navigation/AdminTopBar.tsx");
-    assert.match(css, /background:\s*var\(--color-surface-default\)/);
+    assert.match(css, /background:\s*var\(--growth-os-ink\)/);
     assert.match(css, /height:\s*100vh/);
     assert.match(shell, /flex min-h-screen/);
     assert.match(topBar, /Buscar personas/);

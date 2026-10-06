@@ -41,13 +41,13 @@ describe("OT-GROWTH-UX-SHELL-002 — identidad y shell", () => {
     assert.match(auth, /ProductMark/);
     assert.match(neutral, /growth-os-primary/);
     assert.match(neutral, /color-background-default/);
-    assert.match(brand, /--growth-os-primary:\s*#0e4f90/i);
-    assert.match(brand, /--growth-os-secondary:\s*#6c99cd/i);
-    assert.match(brand, /--growth-os-accent:\s*#7c5cfa/i);
+    assert.match(brand, /--growth-os-primary:\s*#6d28d9/i);
+    assert.match(brand, /--growth-os-secondary:\s*#a78bfa/i);
+    assert.match(brand, /--growth-os-accent:\s*#22d3ee/i);
     assert.match(brand, /--growth-os-success:\s*#18b981/i);
     assert.match(brand, /--growth-os-light:\s*#f59b45/i);
-    assert.match(colors, /--gray-50:\s*#f4f7fb/i);
-    assert.match(colors, /--color-background-default:\s*#f4f7fb/i);
+    assert.match(colors, /--gray-50:\s*#f7f5ff/i);
+    assert.match(colors, /--color-background-default:\s*#f7f5ff/i);
     assert.match(colors, /--color-surface-default:\s*#ffffff/i);
     assert.match(platformShell, /PlatformNeutralTheme/);
     assert.match(platformShell, /Espacios/);

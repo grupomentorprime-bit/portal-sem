@@ -9,11 +9,13 @@ import {
   Bell,
   ChevronDown,
   HelpCircle,
+  LayoutGrid,
   LogOut,
   Settings2,
   UserRound,
   Users,
 } from "lucide-react";
+import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { cn } from "@/lib/utils";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 
@@ -30,6 +32,8 @@ export interface AdminUserSummary {
   /** Espacio activo. */
   activeTenantId?: string | null;
   spaces?: AdminSpaceSummary[];
+  /** Operador de plataforma: puede abrir la lista de todos los Espacios. */
+  canOpenPlatform?: boolean;
 }
 
 interface AdminUserMenuPanelProps {
@@ -97,10 +101,10 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex items-center gap-2 rounded-xl border px-2 py-1.5 transition",
+          "flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition",
           open
-            ? "border-primary/25 bg-primary/5 shadow-sm"
-            : "border-border bg-background hover:bg-background-muted"
+            ? "bg-[color-mix(in_srgb,var(--growth-os-primary)_8%,white)] ring-1 ring-[color-mix(in_srgb,var(--growth-os-primary)_28%,transparent)]"
+            : "hover:bg-[var(--gray-50)]"
         )}
         aria-expanded={open}
         aria-haspopup="menu"
@@ -118,9 +122,10 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-xl border border-border bg-background shadow-[var(--shadow-lg)]"
+          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-[16px] border border-[var(--gray-200)] bg-white shadow-[var(--shadow-lg)]"
         >
-          <div className="flex items-center gap-3 border-b border-border bg-background-muted/30 px-4 py-3.5">
+          <div className="flex items-center gap-3 border-b border-[var(--gray-200)] px-4 pb-3.5 pt-4">
+            <span className="absolute inset-x-0 top-0 h-[3px] bg-[var(--growth-os-accent)]" aria-hidden />
             <AdminUserAvatar name={label} size="md" />
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-foreground">{label}</p>
@@ -147,6 +152,11 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
           </MenuSection>
 
           <MenuSection label="Espacio">
+            {user.canOpenPlatform ? (
+              <MenuItem icon={LayoutGrid} onClick={() => navigate(PLATFORM_ADMIN_HOME)}>
+                Todos los espacios
+              </MenuItem>
+            ) : null}
             {(user.spaces?.length ?? 0) === 0 ? (
               <p className="px-2.5 py-2 text-sm text-muted">Sin Espacio asignado</p>
             ) : (
@@ -159,15 +169,15 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
                     role="menuitem"
                     onClick={() => switchSpace(space.tenantId)}
                     className={cn(
-                      "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition",
+                      "flex w-full items-center justify-between gap-2 rounded-[12px] px-2.5 py-2 text-left text-sm transition",
                       isActive
-                        ? "bg-primary/5 font-semibold text-foreground"
-                        : "text-foreground hover:bg-background-muted"
+                        ? "bg-[var(--growth-os-primary)] font-semibold text-white"
+                        : "text-foreground hover:bg-[var(--gray-50)]"
                     )}
                   >
                     <span className="truncate">{space.name}</span>
                     {isActive ? (
-                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary">
+                      <span className="shrink-0 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide">
                         Activo
                       </span>
                     ) : null}
@@ -192,12 +202,12 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
             </p>
           ) : null}
 
-          <div className="border-t border-border p-2">
+          <div className="p-2">
             <button
               type="button"
               role="menuitem"
               onClick={handleLogout}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-[var(--color-danger)] transition hover:bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)]"
+              className="flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-left text-sm font-medium text-[var(--color-danger)] transition hover:bg-[color-mix(in_srgb,var(--color-danger)_8%,white)]"
             >
               <LogOut className="h-4 w-4 shrink-0" />
               Cerrar sesión
@@ -211,8 +221,8 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
 
 function MenuSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-border px-2 py-2">
-      <p className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+    <div className="border-b border-[var(--gray-100)] px-2 py-2">
+      <p className="px-2.5 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--gray-400)]">
         {label}
       </p>
       <div className="space-y-0.5">{children}</div>
@@ -234,9 +244,9 @@ function MenuItem({
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition hover:bg-background-muted"
+      className="flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-left text-sm text-foreground transition hover:bg-[var(--gray-50)]"
     >
-      <Icon className="h-4 w-4 shrink-0 text-muted" />
+      <Icon className="h-4 w-4 shrink-0 text-[var(--growth-os-primary)]" />
       <span>{children}</span>
     </button>
   );

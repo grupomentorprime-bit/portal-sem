@@ -10,7 +10,9 @@ import {
 import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
 import { buildAdminTenantBranding } from "@/lib/admin/tenant-branding";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
+import { resolveRequestHost } from "@/core/tenant";
 import { resolvePublicOriginForTenant } from "@/lib/portal/public-origin";
+import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
@@ -30,7 +32,8 @@ export default async function AdminLayout({
     loadSessionContext(),
     getOperationalSiteConfig(),
   ]);
-  const pathname = (await headers()).get("x-pathname") ?? "";
+  const requestHeaders = await headers();
+  const pathname = requestHeaders.get("x-pathname") ?? "";
   const isLoginRoute = pathname === "/admin/login";
   const isNoSpaceRoute = pathname === NO_SPACE_PATH;
 
@@ -104,7 +107,9 @@ export default async function AdminLayout({
   }
 
   const publicOrigin = hasSpace
-    ? await resolvePublicOriginForTenant(tenantId).catch(() => null)
+    ? await resolvePublicOriginForTenant(tenantId, {
+        requestHost: resolveRequestHost(requestHeaders),
+      }).catch(() => null)
     : null;
 
   const navBadges =
@@ -141,6 +146,7 @@ export default async function AdminLayout({
                   branding.institutionName,
                 activeTenantId: session.session.tenantId || null,
                 spaces: spaces.map((s) => ({ tenantId: s.tenantId, name: s.name })),
+                canOpenPlatform: hasPlatformOperatorCapability(session.user),
               }
             : null
         }
