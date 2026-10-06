@@ -19,7 +19,7 @@ export const adminUi = {
   navIdle:
     "text-muted hover:bg-background-muted dark:text-gray-300 dark:hover:bg-gray-800",
   primaryBtn:
-    "rounded-lg bg-primary px-4 py-2 text-sm font-medium text-text-inverse transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-background",
+    "rounded-[12px] bg-primary px-4 py-2 text-sm font-semibold text-text-inverse transition hover:bg-secondary disabled:cursor-not-allowed disabled:bg-[var(--gray-200)] disabled:text-[var(--gray-500)] disabled:opacity-100 disabled:hover:bg-[var(--gray-200)]",
   input:
     "flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm dark:border-gray-700 dark:bg-gray-900",
   card: "rounded-lg border border-border bg-background dark:border-gray-700 dark:bg-gray-900",
@@ -34,7 +34,7 @@ export const adminUi = {
   errorText: "text-sm text-[var(--color-danger)]",
   warningText: "text-sm text-[var(--color-warning)]",
   mutedText: "text-sm text-muted",
-  faintText: "text-sm text-gray-400",
+  faintText: "text-sm font-medium text-muted",
   link: "text-sm text-secondary hover:underline",
   metaLabel: "text-xs uppercase tracking-wide text-muted",
   metaValue: "mt-1 font-medium text-foreground dark:text-gray-100",

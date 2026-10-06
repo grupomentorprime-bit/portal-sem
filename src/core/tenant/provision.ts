@@ -26,6 +26,7 @@ import type {
   TenantDocument,
   TenantType,
 } from "@/core/tenant/types";
+import { brandingWithoutForeignSemAssets } from "@/core/branding/foreign-assets";
 import { getDefaultMenusForTenant } from "@/lib/cms/menu-defaults";
 import { computeItemLevels } from "@/lib/cms/menu-utils";
 
@@ -121,7 +122,7 @@ export function buildProvisionedSiteConfigDocument(
       ...config.institution,
       tenant: tenantId,
     },
-    branding: config.branding,
+    branding: brandingWithoutForeignSemAssets(tenantId, config.branding),
     heroPortal: config.heroPortal,
     seo: config.seo,
     contact: config.contact,

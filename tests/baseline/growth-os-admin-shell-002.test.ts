@@ -66,11 +66,11 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
     assert.doesNotMatch(page, /AdminDashboardClient/);
   });
 
-  it("sidebar claro + layout full-height; topbar Personas", () => {
+  it("sidebar tinta + layout full-height; topbar Personas", () => {
     const css = readSrc("src/components/admin/shell-v2/admin-shell-v2.css");
     const shell = readSrc("src/components/admin/shell-v2/AdminShellV2.tsx");
     const topBar = readSrc("src/components/admin/kit/navigation/AdminTopBar.tsx");
-    assert.match(css, /background:\s*var\(--color-surface-default\)/);
+    assert.match(css, /background:\s*var\(--growth-os-ink\)/);
     assert.match(css, /height:\s*100vh/);
     assert.match(shell, /flex min-h-screen/);
     assert.match(topBar, /Buscar personas/);
