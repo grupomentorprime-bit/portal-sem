@@ -98,7 +98,7 @@ function LossExitStages({
     list.push(row);
     groups.set(funnelKey, list);
   }
-  if (visible.length === 0) return <EmptyLine />;
+  if (visible.length === 0) return null;
   return (
     <div className="flex flex-col gap-5">
       {[...groups.entries()].map(([funnelKey, stages]) => (
@@ -286,6 +286,9 @@ export function ConversionAnaliticaClient({
     for (const row of data.losses.byExitStage) {
       const key = funnelKeyOfExit(row.key);
       if (!map.has(key)) map.set(key, key);
+    }
+    for (const row of data.closures.byFunnel) {
+      if (!map.has(row.funnelKey)) map.set(row.funnelKey, row.funnelLabel);
     }
     return [...map.entries()]
       .map(([key, label]) => ({ key, label }))
@@ -514,8 +517,8 @@ export function ConversionAnaliticaClient({
                               </span>
                             </p>
                             <p className="mt-1 text-sm tabular-nums text-muted">
-                              Avanzaron {formatCount(s.advance)} · Perdidas{" "}
-                              {formatCount(s.lost)} · Ganadas {formatCount(s.won)} ·
+                              Avanzaron {formatCount(s.advance)} · Ganadas{" "}
+                              {formatCount(s.won)} · Perdidas {formatCount(s.lost)} ·
                               Traspasadas {formatCount(s.handedOff)} · Archivadas{" "}
                               {formatCount(s.archived)}
                             </p>
@@ -534,28 +537,85 @@ export function ConversionAnaliticaClient({
               )}
             </StorySection>
 
-            {/* 4. Pérdidas */}
+            {/* 4. Pérdidas y traspasos */}
             <StorySection
               id="perdidas"
               eyebrow={labels.perdidas.eyebrow}
               question={labels.perdidas.question}
             >
-              {data.losses.total === 0 ? (
-                <EmptyLine />
-              ) : (
-                <div className="flex flex-col gap-5">
-                  <HeroMetric
-                    label="Perdidas en el período"
-                    value={data.losses.total}
-                    tone="danger"
-                  />
-                  <LossExitStages
-                    rows={data.losses.byExitStage}
-                    funnelLabels={new Map(funnelOptions.map((option) => [option.key, option.label]))}
-                    selectedFunnel={selectedFunnel}
-                  />
-                </div>
-              )}
+              {(() => {
+                const selectedClosures =
+                  selectedFunnel === ALL_FUNNELS
+                    ? {
+                        won: data.closures.won,
+                        lost: data.closures.lost,
+                        handedOff: data.closures.handedOff,
+                      }
+                    : (data.closures.byFunnel.find(
+                        (row) => row.funnelKey === selectedFunnel
+                      ) ?? { won: 0, lost: 0, handedOff: 0 });
+                const visibleExits =
+                  selectedFunnel === ALL_FUNNELS
+                    ? data.losses.byExitStage
+                    : data.losses.byExitStage.filter(
+                        (row) => funnelKeyOfExit(row.key) === selectedFunnel
+                      );
+                const stagedLosses = visibleExits.reduce(
+                  (sum, row) => sum + row.count,
+                  0
+                );
+                const unregisteredExits = selectedClosures.lost - stagedLosses;
+                const noResults =
+                  selectedClosures.won === 0 &&
+                  selectedClosures.lost === 0 &&
+                  selectedClosures.handedOff === 0;
+                if (noResults) return <EmptyLine />;
+                return (
+                  <div className="flex flex-col gap-5">
+                    <ul className="flex flex-col gap-1 text-sm" role="list">
+                      <li className="flex justify-between gap-3">
+                        <span className="text-foreground">Ganadas</span>
+                        <span className="tabular-nums text-muted">
+                          {formatCount(selectedClosures.won)}
+                        </span>
+                      </li>
+                      <li className="flex justify-between gap-3">
+                        <span className="text-foreground">Perdidas</span>
+                        <span className="tabular-nums text-muted">
+                          {formatCount(selectedClosures.lost)}
+                        </span>
+                      </li>
+                      <li className="flex justify-between gap-3">
+                        <span className="text-foreground">Traspasadas</span>
+                        <span className="tabular-nums text-muted">
+                          {formatCount(selectedClosures.handedOff)}
+                        </span>
+                      </li>
+                    </ul>
+                    {selectedClosures.lost === 0 ? null : (
+                      <LossExitStages
+                        rows={data.losses.byExitStage}
+                        funnelLabels={
+                          new Map(
+                            funnelOptions.map((option) => [option.key, option.label])
+                          )
+                        }
+                        selectedFunnel={selectedFunnel}
+                      />
+                    )}
+                    {unregisteredExits > 0 ? (
+                      <p className="flex justify-between gap-3 text-sm">
+                        <span className="text-foreground">
+                          Etapa de salida no registrada
+                        </span>
+                        <span className="tabular-nums text-muted">
+                          {formatCount(unregisteredExits)}
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })()}
               <Denominator>{CONVERSION_LOSS_REASONS_NOTE}</Denominator>
             </StorySection>
 

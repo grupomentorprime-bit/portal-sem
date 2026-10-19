@@ -172,7 +172,18 @@ export type ConversionAnalyticsResponse = {
     }>;
     ilegible: number;
   };
-  closures: { won: number; lost: number; handedOff: number };
+  closures: {
+    won: number;
+    lost: number;
+    handedOff: number;
+    byFunnel: Array<{
+      funnelKey: string;
+      funnelLabel: string;
+      won: number;
+      lost: number;
+      handedOff: number;
+    }>;
+  };
   losses: {
     total: number;
     byExitStage: ConversionCountRow[];
@@ -590,6 +601,10 @@ export function buildConversionAnalytics(
 
   // --- Cierres, pérdidas, ciclo y responsables --------------------------------
   const closures = { won: 0, lost: 0, handedOff: 0 };
+  const closureByFunnel = new Map<
+    string,
+    { label: string; won: number; lost: number; handedOff: number }
+  >();
   const lossExitMap = new Map<string, { label: string; count: number }>();
   let lossTotal = 0;
   const wonCycles: number[] = [];
@@ -648,8 +663,16 @@ export function buildConversionAnalytics(
         : null;
     const usableCycle = cycle !== null && cycle >= 0 ? cycle : null;
 
+    const funnel = funnelBucket(o);
+    let funnelClosures = closureByFunnel.get(funnel.key);
+    if (!funnelClosures) {
+      funnelClosures = { label: funnel.label, won: 0, lost: 0, handedOff: 0 };
+      closureByFunnel.set(funnel.key, funnelClosures);
+    }
+
     if (o.status === "won") {
       closures.won += 1;
+      funnelClosures.won += 1;
       row.won += 1;
       if (usableCycle !== null) {
         wonCycles.push(usableCycle);
@@ -657,9 +680,11 @@ export function buildConversionAnalytics(
       }
     } else if (o.status === "handed_off") {
       closures.handedOff += 1;
+      funnelClosures.handedOff += 1;
       row.handedOff += 1;
     } else {
       closures.lost += 1;
+      funnelClosures.lost += 1;
       row.lost += 1;
       if (usableCycle !== null) lostCycles.push(usableCycle);
       lossTotal += 1;
@@ -677,7 +702,6 @@ export function buildConversionAnalytics(
       if (!exit || !exit.from) {
         quality.etapaDeSalidaNoRegistrada += 1;
       } else {
-        const funnel = funnelBucket(o);
         const key = `${funnel.key}:${exit.from}`;
         const prev = lossExitMap.get(key);
         lossExitMap.set(key, {
@@ -814,7 +838,18 @@ export function buildConversionAnalytics(
       ),
       ilegible: quality.movimientoIlegible,
     },
-    closures,
+    closures: {
+      ...closures,
+      byFunnel: byFunnelSorted(
+        [...closureByFunnel.entries()].map(([funnelKey, v]) => ({
+          funnelKey,
+          funnelLabel: v.label,
+          won: v.won,
+          lost: v.lost,
+          handedOff: v.handedOff,
+        }))
+      ),
+    },
     losses: {
       total: lossTotal,
       byExitStage: sortCountRows(

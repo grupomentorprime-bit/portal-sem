@@ -402,6 +402,57 @@ describe("buildConversionAnalytics — pérdidas", () => {
     assert.equal(r.losses.byExitStage.length, 1);
     assert.equal(r.losses.byExitStage[0].label, "Nuevo");
   });
+
+  it("separa ganadas, perdidas y traspasadas por embudo sin inventar etapa", () => {
+    const r = build({
+      opportunities: [
+        opp({
+          _id: "a-won",
+          funnelKey: "a",
+          status: "won",
+          closedAt: "2026-09-08T12:00:00.000Z",
+        }),
+        opp({
+          _id: "a-lost",
+          funnelKey: "a",
+          status: "lost",
+          closedAt: "2026-09-08T12:00:00.000Z",
+        }),
+        opp({
+          _id: "b-hand",
+          funnelKey: "b",
+          status: "handed_off",
+          closedAt: "2026-09-08T12:00:00.000Z",
+        }),
+        opp({
+          _id: "b-lost",
+          funnelKey: "b",
+          status: "lost",
+          closedAt: "2026-09-08T12:00:00.000Z",
+        }),
+      ],
+      activities: [
+        transition("t1", "a-lost", "propuesta", "lost", "2026-09-08T11:00:00.000Z"),
+      ],
+    });
+    const funnelA = r.closures.byFunnel.find((row) => row.funnelKey === "a");
+    const funnelB = r.closures.byFunnel.find((row) => row.funnelKey === "b");
+    assert.equal(funnelA?.won, 1);
+    assert.equal(funnelA?.lost, 1);
+    assert.equal(funnelA?.handedOff, 0);
+    assert.equal(funnelB?.won, 0);
+    assert.equal(funnelB?.lost, 1);
+    assert.equal(funnelB?.handedOff, 1);
+    assert.equal(r.closures.won, 1);
+    assert.equal(r.closures.lost, 2);
+    assert.equal(r.closures.handedOff, 1);
+    assert.equal(r.losses.byExitStage.length, 1);
+    assert.equal(r.losses.byExitStage[0].key.startsWith("a:"), true);
+    assert.equal(r.quality.etapaDeSalidaNoRegistrada, 1);
+    assert.ok(
+      r.losses.byExitStage.every((row) => row.label !== "Etapa de salida no registrada")
+    );
+  });
 });
 
 describe("buildConversionAnalytics — permanencia y ciclo", () => {
@@ -715,6 +766,13 @@ describe("Conversion Engine fase 3 — pantalla, ruta y navegación (guardas de 
     assert.match(client, /CONVERSION_LOSS_REASONS_NOTE/);
     assert.match(client, /Sin datos en el período/);
     assert.match(client, /data-conversion-analitica/);
+    assert.match(client, /Etapa de salida no registrada/);
+    assert.match(client, /Ganadas/);
+    assert.match(client, /Perdidas/);
+    assert.match(client, /Traspasadas/);
+    const labels = src("src/lib/growth/labels.ts");
+    assert.match(labels, /sinFechaCierre: "Sin fecha de cierre"/);
+    assert.doesNotMatch(labels, /Cerradas sin fecha de cierre/);
     assert.match(client, /flex flex-col|grid-cols-1/);
     assert.match(client, /\/api\/growth\/conversion-analytics/);
     assert.doesNotMatch(client, /lossReason/);
