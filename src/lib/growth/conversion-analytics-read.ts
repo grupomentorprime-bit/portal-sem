@@ -16,8 +16,10 @@ import {
   GROWTH_CAMPAIGNS_COLLECTION,
   type GrowthCampaign,
 } from "@/core/growth/campaigns";
-import { createMongoGrowthFunnelDirectory } from "@/core/growth/funnel-mongo";
-import { stagesFromDefinition } from "@/core/growth/funnel-stages";
+import {
+  GROWTH_FUNNELS_COLLECTION,
+  growthFunnelResultLabel,
+} from "@/core/growth/funnel-types";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
 import { listMembershipsByTenant } from "@/lib/identity/memberships";
 import { listUsersByIds } from "@/lib/identity/users";
@@ -45,6 +47,18 @@ const CONVERSION_ACTIVITY_KINDS = [
   "opportunity_transitioned",
   "opportunity_assigned",
 ] as const;
+
+type FunnelDoc = {
+  tenantId: string;
+  key: string;
+  workflowDefinitionKey?: string;
+};
+
+type WorkflowDefinitionDoc = {
+  tenantId: string;
+  key: string;
+  states?: Array<{ key: string; label: string }>;
+};
 
 async function resolveFormNames(
   tenantId: string,
@@ -128,8 +142,6 @@ export async function getConversionAnalytics(
     kind: { $in: [...CONVERSION_ACTIVITY_KINDS] },
   };
 
-  const directory = createMongoGrowthFunnelDirectory(db);
-
   const [opportunities, activities, funnelDocs, campaigns, memberships] =
     await Promise.all([
       db
@@ -140,7 +152,10 @@ export async function getConversionAnalytics(
         .collection<GrowthActivity>(GROWTH_ACTIVIDADES_COLLECTION)
         .find(activityFilter)
         .toArray(),
-      directory.listFunnels(tenantId),
+      db
+        .collection<FunnelDoc>(GROWTH_FUNNELS_COLLECTION)
+        .find({ tenantId })
+        .toArray(),
       db
         .collection<GrowthCampaign>(GROWTH_CAMPAIGNS_COLLECTION)
         .find({ tenantId } as Filter<GrowthCampaign>)
@@ -148,22 +163,34 @@ export async function getConversionAnalytics(
       listMembershipsByTenant(tenantId),
     ]);
 
-  const funnels: ConversionFunnelInput[] = await Promise.all(
-    funnelDocs.map(async (funnel) => {
-      const definition = await directory.getDefinition(
-        tenantId,
-        funnel.workflowDefinitionKey
-      );
-      return {
-        tenantId,
-        key: funnel.key,
-        stages: stagesFromDefinition(definition).map((stage) => ({
-          key: stage.key,
-          label: stage.label,
-        })),
-      };
-    })
-  );
+  const definitionKeys = [
+    ...new Set(
+      funnelDocs
+        .map((funnel) => funnel.workflowDefinitionKey?.trim())
+        .filter((key): key is string => Boolean(key))
+    ),
+  ];
+  const definitions = definitionKeys.length
+    ? await db
+        .collection<WorkflowDefinitionDoc>("workflow_definitions")
+        .find({ tenantId, key: { $in: definitionKeys } })
+        .toArray()
+    : [];
+  const definitionByKey = new Map(definitions.map((definition) => [definition.key, definition]));
+
+  const funnels: ConversionFunnelInput[] = funnelDocs.map((funnel) => {
+    const definition = funnel.workflowDefinitionKey
+      ? definitionByKey.get(funnel.workflowDefinitionKey)
+      : undefined;
+    return {
+      tenantId,
+      key: funnel.key,
+      stages: (definition?.states ?? []).map((state) => ({
+        key: state.key,
+        label: growthFunnelResultLabel(state.key) ?? state.label,
+      })),
+    };
+  });
 
   const users = await listUsersByIds([
     ...new Set(memberships.map((membership) => membership.userId)),

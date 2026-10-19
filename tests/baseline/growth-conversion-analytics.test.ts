@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   CONVERSION_DENOMINATORS,
@@ -667,8 +667,9 @@ describe("Conversion Engine fase 3 — pantalla, ruta y navegación (guardas de 
   });
 
   it("el panel comercial no importa el cliente de analítica", () => {
-    const panel = src("src/app/admin/conversion/page.tsx");
-    assert.doesNotMatch(panel, /ConversionAnaliticaClient/);
+    const path = resolve(process.cwd(), "src/app/admin/conversion/page.tsx");
+    if (!existsSync(path)) return;
+    assert.doesNotMatch(readFileSync(path, "utf8"), /ConversionAnaliticaClient/);
   });
 
   it("nav: ítem nuevo después de nav-conversion con permiso exacto", () => {

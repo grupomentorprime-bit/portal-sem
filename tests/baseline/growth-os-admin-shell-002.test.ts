@@ -13,10 +13,16 @@ function readSrc(rel: string): string {
 describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
   it("navegación maestra: Core · Crecer · Sitio web / Equipo / Ajustes", () => {
     const nav = readSrc("src/lib/admin/nav-domains.ts");
-    assert.match(nav, /id: "ventas"/);
-    assert.match(nav, /href: "\/admin\/ventas"/);
-    assert.match(nav, /id: "mensajes"/);
-    assert.match(nav, /id: "actividad"/);
+    assert.match(nav, /id: "conversion"/);
+    assert.match(nav, /label: "CRM · Conversión"/);
+    assert.match(nav, /id: "nav-ventas"[\s\S]*?href: "\/admin\/ventas"/);
+    assert.match(nav, /label: "Oportunidades"/);
+    assert.match(nav, /label: "Panel comercial"/);
+    assert.match(nav, /label: "Mi trabajo"/);
+    assert.match(nav, /id: "nav-embudos"[\s\S]*?href: "\/admin\/ventas\/embudos"/);
+    assert.match(nav, /id: "nav-mensajes"/);
+    assert.match(nav, /id: "nav-actividad"/);
+    assert.match(nav, /groupIds: \["dashboard", "conversion"\]/);
     assert.match(nav, /id: "campanas"/);
     assert.match(nav, /id: "automatizaciones"/);
     assert.match(nav, /id: "analitica"/);
