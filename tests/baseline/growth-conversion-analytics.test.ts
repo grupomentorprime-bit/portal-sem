@@ -596,3 +596,60 @@ describe("buildConversionAnalytics — calidad de datos", () => {
     assert.equal(r.quality.movimientoIlegible, 1);
   });
 });
+
+describe("conversion-analytics-read — guarda de fuente", () => {
+  const read = readFileSync(
+    resolve(process.cwd(), "src/lib/growth/conversion-analytics-read.ts"),
+    "utf8"
+  );
+
+  it("es server-only y filtra por tenantId", () => {
+    assert.match(read, /import "server-only"/);
+    assert.match(read, /\{\s*tenantId\s*\}/);
+    assert.match(read, /tenantId,\s*kind:\s*\{\s*\$in:/);
+  });
+
+  it("lee solo los kinds de movimiento necesarios", () => {
+    const kinds = read.match(/"opportunity_[a-z_]+"/g) ?? [];
+    assert.deepEqual([...new Set(kinds)].sort(), [
+      '"opportunity_assigned"',
+      '"opportunity_opened"',
+      '"opportunity_transitioned"',
+    ]);
+  });
+
+  it("no escribe, no migra y no toca métricas de campaña", () => {
+    for (const forbidden of [
+      /insert/i,
+      /update/i,
+      /delete/i,
+      /aggregate/i,
+      /replaceOne/,
+      /bulkWrite/,
+      /createIndex/,
+      /029/,
+      /lossReason/,
+      /deriveCampaignMetrics/,
+    ]) {
+      assert.doesNotMatch(read, forbidden, String(forbidden));
+    }
+  });
+
+  it("la analítica previa no importa conversion-analytics", () => {
+    for (const file of [
+      "src/lib/growth/analytics-read.ts",
+      "src/lib/growth/analytics-aggregate.ts",
+    ]) {
+      const source = readFileSync(resolve(process.cwd(), file), "utf8");
+      assert.doesNotMatch(source, /conversion-analytics/, file);
+    }
+  });
+
+  it("la lectura server-only no se reexporta desde el índice de Growth", () => {
+    const index = readFileSync(
+      resolve(process.cwd(), "src/lib/growth/index.ts"),
+      "utf8"
+    );
+    assert.doesNotMatch(index, /conversion-analytics-read/);
+  });
+});
