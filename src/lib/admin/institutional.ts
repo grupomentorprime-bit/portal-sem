@@ -17,6 +17,8 @@ export interface AdminNavItem {
   /** Contador opcional para badge en sidebar. */
   badge?: number;
   matchPrefixes?: string[];
+  /** Rutas cubiertas por un prefijo más específico. No marcan este ítem. */
+  excludePrefixes?: string[];
   /** Permisos requeridos (todos deben estar presentes). */
   requiredPermissions?: string[];
   /** Al menos uno de estos permisos. */
@@ -225,6 +227,10 @@ export function isNavActive(pathname: string, item: AdminNavItem): boolean {
   }
 
   const prefixes = item.matchPrefixes ?? [item.href];
+  const excluded = item.excludePrefixes?.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+  if (excluded) return false;
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 

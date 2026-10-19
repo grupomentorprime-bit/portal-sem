@@ -110,7 +110,7 @@ export function ProportionBars({
   empty,
   barClassName,
 }: {
-  rows: Array<{ label: string; count: number }>;
+  rows: Array<{ key?: string; label: string; count: number }>;
   empty: string;
   barClassName?: string;
 }) {
@@ -123,7 +123,7 @@ export function ProportionBars({
       {rows.map((row) => {
         const pct = Math.round((row.count / max) * 100);
         return (
-          <li key={row.label} className="space-y-1.5">
+          <li key={row.key ?? row.label} className="space-y-1.5">
             <div className="flex items-baseline justify-between gap-3">
               <span className="min-w-0 truncate text-sm font-medium text-foreground">
                 {row.label}

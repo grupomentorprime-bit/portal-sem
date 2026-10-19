@@ -73,6 +73,52 @@ function EmptyLine() {
   return <p className="text-sm text-muted">{SECTION_EMPTY}</p>;
 }
 
+function funnelKeyOfExit(rowKey: string): string {
+  const split = rowKey.indexOf(":");
+  return split === -1 ? rowKey : rowKey.slice(0, split);
+}
+
+function LossExitStages({
+  rows,
+  funnelLabels,
+  selectedFunnel,
+}: {
+  rows: Array<{ key: string; label: string; count: number }>;
+  funnelLabels: Map<string, string>;
+  selectedFunnel: string;
+}) {
+  const visible =
+    selectedFunnel === ALL_FUNNELS
+      ? rows
+      : rows.filter((row) => funnelKeyOfExit(row.key) === selectedFunnel);
+  const groups = new Map<string, typeof visible>();
+  for (const row of visible) {
+    const funnelKey = funnelKeyOfExit(row.key);
+    const list = groups.get(funnelKey) ?? [];
+    list.push(row);
+    groups.set(funnelKey, list);
+  }
+  if (visible.length === 0) return <EmptyLine />;
+  return (
+    <div className="flex flex-col gap-5">
+      {[...groups.entries()].map(([funnelKey, stages]) => (
+        <div key={funnelKey} className="space-y-3">
+          <p className="text-sm font-medium text-foreground">
+            {selectedFunnel === ALL_FUNNELS
+              ? (funnelLabels.get(funnelKey) ?? funnelKey)
+              : "Por etapa de salida"}
+          </p>
+          <ProportionBars
+            rows={stages}
+            empty={SECTION_EMPTY}
+            barClassName="bg-[color-mix(in_srgb,var(--color-danger)_70%,white)]"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FunnelHeading({ label }: { label: string }) {
   return <h3 className="text-base font-semibold text-foreground">{label}</h3>;
 }
@@ -237,6 +283,10 @@ export function ConversionAnaliticaClient({
     for (const f of data.movement.byFunnel) map.set(f.funnelKey, f.funnelLabel);
     for (const f of data.dwell.byFunnel) map.set(f.funnelKey, f.funnelLabel);
     for (const c of data.cohorts.byFunnel) map.set(c.key, c.label);
+    for (const row of data.losses.byExitStage) {
+      const key = funnelKeyOfExit(row.key);
+      if (!map.has(key)) map.set(key, key);
+    }
     return [...map.entries()]
       .map(([key, label]) => ({ key, label }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
@@ -499,16 +549,11 @@ export function ConversionAnaliticaClient({
                     value={data.losses.total}
                     tone="danger"
                   />
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-foreground">
-                      Por etapa de salida
-                    </p>
-                    <ProportionBars
-                      rows={data.losses.byExitStage}
-                      empty={SECTION_EMPTY}
-                      barClassName="bg-[color-mix(in_srgb,var(--color-danger)_70%,white)]"
-                    />
-                  </div>
+                  <LossExitStages
+                    rows={data.losses.byExitStage}
+                    funnelLabels={new Map(funnelOptions.map((option) => [option.key, option.label]))}
+                    selectedFunnel={selectedFunnel}
+                  />
                 </div>
               )}
               <Denominator>{CONVERSION_LOSS_REASONS_NOTE}</Denominator>
