@@ -14,10 +14,7 @@ import {
 
 export type NavGroupId =
   | "dashboard"
-  | "personas"
-  | "ventas"
-  | "mensajes"
-  | "actividad"
+  | "conversion"
   | "campanas"
   | "automatizaciones"
   | "analitica"
@@ -26,6 +23,10 @@ export type NavGroupId =
   | "equipo"
   | "ajustes"
   /** @deprecated Conservados para imports / tipos legacy */
+  | "personas"
+  | "ventas"
+  | "mensajes"
+  | "actividad"
   | "institution"
   | "academic"
   | "formularios"
@@ -125,10 +126,40 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     ],
   },
   {
-    id: "personas",
-    label: "Personas",
-    icon: "people",
+    id: "conversion",
+    label: "CRM · Conversión",
+    icon: "sales",
     items: [
+      {
+        id: "nav-conversion",
+        href: "/admin/conversion",
+        label: "Panel comercial",
+        icon: "sales",
+        matchPrefixes: ["/admin/conversion"],
+        excludePrefixes: ["/admin/conversion/analitica"],
+        requiredAnyPermission: [
+          "growth.sales.view",
+          "growth.sales.read",
+          "growth.sales.operate",
+        ],
+      },
+      {
+        id: "nav-conversion-analitica",
+        href: "/admin/conversion/analitica",
+        label: "Analítica de conversión",
+        icon: "sales",
+        matchPrefixes: ["/admin/conversion/analitica"],
+        requiredAnyPermission: ["growth.sales.view"],
+      },
+      {
+        id: "nav-ventas",
+        href: "/admin/ventas",
+        label: "Oportunidades",
+        icon: "sales",
+        matchPrefixes: ["/admin/ventas"],
+        excludePrefixes: ["/admin/ventas/embudos", "/admin/ventas/mi-trabajo"],
+        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
+      },
       {
         id: "growth-personas",
         href: "/admin/personas",
@@ -140,28 +171,26 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "growth.people.manage",
         ],
       },
-    ],
-  },
-  {
-    id: "ventas",
-    label: "Ventas",
-    icon: "sales",
-    items: [
       {
-        id: "nav-ventas",
-        href: "/admin/ventas",
-        label: "Ventas",
+        id: "nav-embudos",
+        href: "/admin/ventas/embudos",
+        label: "Embudos",
         icon: "sales",
-        matchPrefixes: ["/admin/ventas"],
-        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
+        matchPrefixes: ["/admin/ventas/embudos"],
+        requiredAnyPermission: ["growth.funnels.manage"],
       },
-    ],
-  },
-  {
-    id: "mensajes",
-    label: "Mensajes",
-    icon: "messages",
-    items: [
+      {
+        id: "nav-mi-trabajo",
+        href: "/admin/ventas/mi-trabajo",
+        label: "Mi trabajo",
+        icon: "sales",
+        matchPrefixes: ["/admin/ventas/mi-trabajo"],
+        requiredAnyPermission: [
+          "growth.sales.view",
+          "growth.sales.read",
+          "growth.sales.operate",
+        ],
+      },
       {
         id: "nav-mensajes",
         href: "/admin/mensajes",
@@ -170,13 +199,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/mensajes"],
         requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
       },
-    ],
-  },
-  {
-    id: "actividad",
-    label: "Actividad",
-    icon: "activity",
-    items: [
       {
         id: "nav-actividad",
         href: "/admin/actividad",
@@ -449,6 +471,21 @@ export function buildAdminNavGroups(
   }).filter((group) => group.items.length > 0);
 }
 
+/**
+ * Un grupo con un solo enlace visible se muestra como ese módulo.
+ * El nombre y el icono son los del ítem, no los del grupo contenedor.
+ */
+export function navGroupAsDirectLink(group: AdminNavGroup): AdminNavItem | null {
+  if (group.items.length !== 1) return null;
+  const item = group.items[0];
+  return {
+    ...item,
+    label: item.label,
+    icon: item.icon,
+    badge: item.badge ?? group.badge,
+  };
+}
+
 /** Resuelve el grupo que contiene la ruta activa. */
 export function findActiveNavGroupId(
   pathname: string,
@@ -534,7 +571,7 @@ export interface NavSidebarZone {
 export const NAV_SIDEBAR_ZONES: NavSidebarZone[] = [
   {
     id: "core",
-    groupIds: ["dashboard", "personas", "ventas", "mensajes", "actividad"],
+    groupIds: ["dashboard", "conversion"],
   },
   {
     id: "grow",

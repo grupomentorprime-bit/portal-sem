@@ -653,3 +653,82 @@ describe("conversion-analytics-read — guarda de fuente", () => {
     assert.doesNotMatch(index, /conversion-analytics-read/);
   });
 });
+
+
+describe("Conversion Engine fase 3 — pantalla, ruta y navegación (guardas de fuente)", () => {
+  const src = (rel: string) => readFileSync(resolve(process.cwd(), rel), "utf8");
+
+  it("Analítica V1 no cambia", () => {
+    const page = src("src/app/admin/analitica/page.tsx");
+    assert.match(page, /getAnalyticsV1/);
+    assert.match(page, /growth\.analytics\.view/);
+    assert.doesNotMatch(page, /conversion-analytics/);
+    assert.doesNotMatch(page, /etapa/);
+  });
+
+  it("el panel comercial no importa el cliente de analítica", () => {
+    const panel = src("src/app/admin/conversion/page.tsx");
+    assert.doesNotMatch(panel, /ConversionAnaliticaClient/);
+  });
+
+  it("nav: ítem nuevo después de nav-conversion con permiso exacto", () => {
+    const nav = src("src/lib/admin/nav-domains.ts");
+    const panelIdx = nav.indexOf('id: "nav-conversion"');
+    const itemIdx = nav.indexOf('id: "nav-conversion-analitica"');
+    assert.ok(panelIdx >= 0, "nav-conversion");
+    assert.ok(itemIdx > panelIdx, "nav-conversion-analitica después de nav-conversion");
+    const panelBlock = nav.slice(panelIdx, itemIdx);
+    assert.match(
+      panelBlock,
+      /excludePrefixes:\s*\[[^\]]*"\/admin\/conversion\/analitica"/
+    );
+    const item = nav.slice(itemIdx, nav.indexOf("},", itemIdx));
+    assert.match(item, /href: "\/admin\/conversion\/analitica"/);
+    assert.match(item, /label: "Analítica de conversión"/);
+    assert.match(item, /requiredAnyPermission: \["growth\.sales\.view"\]/);
+    const groupIdx = nav.lastIndexOf('id: "conversion"', itemIdx);
+    const nextGroup = nav.indexOf('\n    id: "', itemIdx);
+    assert.ok(groupIdx >= 0 && groupIdx < itemIdx);
+    assert.ok(nextGroup > itemIdx);
+  });
+
+  it("la página nueva exige growth.sales.view y redirige al login", () => {
+    const page = src("src/app/admin/conversion/analitica/page.tsx");
+    assert.match(page, /growth\.sales\.view/);
+    assert.doesNotMatch(page, /growth\.analytics\.view/);
+    assert.match(page, /\/login\?next=\/admin\/conversion\/analitica/);
+    assert.match(page, /getConversionAnalytics/);
+  });
+
+  it("la ruta API usa growth.sales.view", () => {
+    const route = src("src/app/api/growth/conversion-analytics/route.ts");
+    assert.match(route, /requirePermission\("growth\.sales\.view"\)/);
+    assert.doesNotMatch(route, /growth\.analytics\.view/);
+    assert.match(route, /getConversionAnalytics/);
+  });
+
+  it("el cliente muestra copy contractual, una columna, sin motivos ni series de ejemplo", () => {
+    const client = src("src/components/admin/growth/ConversionAnaliticaClient.tsx");
+    assert.match(client, /CONVERSION_DENOMINATORS/);
+    assert.match(client, /CONVERSION_RATE_NOTE/);
+    assert.match(client, /CONVERSION_LOSS_REASONS_NOTE/);
+    assert.match(client, /Sin datos en el período/);
+    assert.match(client, /data-conversion-analitica/);
+    assert.match(client, /flex flex-col|grid-cols-1/);
+    assert.match(client, /\/api\/growth\/conversion-analytics/);
+    assert.doesNotMatch(client, /lossReason/);
+    assert.doesNotMatch(client, /\/api\/growth\/analytics/);
+    assert.doesNotMatch(client, /sample|ejemplo|mock/i);
+  });
+
+  it("AnaliticaClient usa las piezas extraídas y conserva su fetch", () => {
+    const visual = src("src/components/admin/growth/analitica-visual.tsx");
+    for (const name of ["StorySection", "HeroMetric", "ProportionBars", "PeriodSelector"]) {
+      assert.match(visual, new RegExp(`export function ${name}`));
+    }
+    const client = src("src/components/admin/growth/AnaliticaClient.tsx");
+    assert.match(client, /analitica-visual/);
+    assert.match(client, /\/api\/growth\/analytics/);
+    assert.doesNotMatch(client, /function StorySection|function PeriodSelector/);
+  });
+});
