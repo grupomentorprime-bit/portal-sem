@@ -40,6 +40,15 @@ export interface GrowthActivityRecorder {
     tenantId: string,
     ingestKey: string
   ): Promise<GrowthActivity | null>;
+  /**
+   * Si la actividad pertenece a una oportunidad, avanza `lastActivityAt`.
+   * Lo implementa el store de oportunidades.
+   */
+  touchOpportunityActivity?(
+    tenantId: string,
+    oportunidadId: string,
+    occurredAt: string
+  ): Promise<void>;
 }
 
 export interface RecordGrowthActivityInput {
@@ -126,6 +135,14 @@ export async function recordGrowthActivity(
 
   const saved = await store.recordActivity(draft);
   const duplicated = saved._id !== draft._id;
+
+  if (!duplicated && saved.oportunidadId && store.touchOpportunityActivity) {
+    await store.touchOpportunityActivity(
+      saved.tenantId,
+      saved.oportunidadId,
+      saved.occurredAt
+    );
+  }
 
   // Ya publicada (reintento idempotente) → no republicar
   if (saved.eventId) {

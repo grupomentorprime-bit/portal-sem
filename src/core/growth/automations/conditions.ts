@@ -27,6 +27,10 @@ export function evaluateAutomationConditionRule(
       return rule.op === "exists"
         ? oportunidad.nextAction != null
         : oportunidad.nextAction == null;
+    case "owner":
+      return rule.op === "exists"
+        ? Boolean(oportunidad.ownerUserId?.trim())
+        : !oportunidad.ownerUserId?.trim();
     default: {
       const _exhaustive: never = rule;
       void _exhaustive;

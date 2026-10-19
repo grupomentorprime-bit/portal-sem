@@ -5,6 +5,7 @@
 
 import { ObjectId } from "mongodb";
 import type { GrowthOpportunityStore } from "./opportunity-store";
+import { GROWTH_DEFAULT_STALE_AFTER_DAYS, normalizeStaleAfterDays } from "./priority";
 import {
   GROWTH_DEFAULT_OPPORTUNITY_TYPES,
   type GrowthSpaceConfig,
@@ -20,12 +21,15 @@ export async function resolveGrowthSpaceConfig(
   now = new Date().toISOString()
 ): Promise<GrowthSpaceConfig> {
   const existing = await store.getSpaceConfig(tenantId);
-  if (existing) return existing;
+  if (existing) {
+    return { ...existing, staleAfterDays: normalizeStaleAfterDays(existing.staleAfterDays) };
+  }
 
   return {
     _id: new ObjectId().toString(),
     tenantId,
     opportunityTypes: platformDefaultOpportunityTypes(),
+    staleAfterDays: GROWTH_DEFAULT_STALE_AFTER_DAYS,
     createdAt: now,
     updatedAt: now,
   };
@@ -50,8 +54,27 @@ export async function ensureGrowthSpaceConfig(
     _id: new ObjectId().toString(),
     tenantId,
     opportunityTypes: platformDefaultOpportunityTypes(),
+    staleAfterDays: GROWTH_DEFAULT_STALE_AFTER_DAYS,
     createdAt: now,
     updatedAt: now,
   };
   return store.upsertSpaceConfig(created);
+}
+
+export async function setGrowthStaleAfterDays(
+  store: GrowthOpportunityStore,
+  tenantId: string,
+  days: number,
+  now = new Date().toISOString()
+): Promise<{ ok: true; staleAfterDays: number } | { ok: false; reason: "invalid_days" }> {
+  if (!Number.isInteger(days) || days < 1 || days > 90) {
+    return { ok: false, reason: "invalid_days" };
+  }
+  const current = await ensureGrowthSpaceConfig(store, tenantId, now);
+  const saved = await store.upsertSpaceConfig({
+    ...current,
+    staleAfterDays: days,
+    updatedAt: now,
+  });
+  return { ok: true, staleAfterDays: saved.staleAfterDays ?? days };
 }

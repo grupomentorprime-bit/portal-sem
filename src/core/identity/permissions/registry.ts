@@ -55,6 +55,7 @@ export const PERMISSIONS = {
   // Growth / Ventas (OT-GROWTH-SALES-001)
   "growth.sales.read": "Ver cola de Ventas (Oportunidades)",
   "growth.sales.operate": "Operar Oportunidades (estado, seguimiento, próxima acción)",
+  "growth.funnels.manage": "Gestionar embudos y etapas de Ventas",
 
   // Growth / Automatizaciones (OT-GROWTH-AUTOMATION-002)
   "growth.automations.view": "Ver definiciones de Automatizaciones del Espacio",

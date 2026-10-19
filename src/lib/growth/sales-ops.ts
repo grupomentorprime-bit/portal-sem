@@ -7,6 +7,7 @@
 import "server-only";
 
 import {
+  assignGrowthOpportunityOwner,
   clearGrowthNextAction,
   createMongoGrowthOpportunityStore,
   listAvailableGrowthOpportunityTransitions,
@@ -18,6 +19,9 @@ import {
   type GrowthOportunidad,
   type GrowthOpportunityHandoff,
 } from "@/core/growth";
+import { applyCustomFieldPatch } from "@/core/growth/custom-fields";
+import type { GrowthFunnelField } from "@/core/growth/funnel-types";
+import { findMembership } from "@/lib/identity/memberships";
 import { getDatabase } from "@/lib/mongodb";
 import { createGrowthEventBusAdapter } from "./event-bus";
 import { createMongoGrowthOpportunityWorkflow } from "./opportunity-workflow";
@@ -139,6 +143,7 @@ export async function salesSetNextAction(input: {
   dueAt?: string;
   kind?: GrowthNextActionKind;
   assigneeUserId?: string;
+  sourceKey?: string;
 }): Promise<
   | {
       ok: true;
@@ -155,6 +160,7 @@ export async function salesSetNextAction(input: {
     dueAt: input.dueAt,
     kind: input.kind,
     assigneeUserId: input.assigneeUserId,
+    sourceKey: input.sourceKey,
     actorUserId: input.actor.userId,
     eventBus,
   });
@@ -195,4 +201,40 @@ export async function salesClearNextAction(input: {
 
 export function salesAvailableTransitions(status: string) {
   return listAvailableGrowthOpportunityTransitions(status);
+}
+
+export async function salesAssignOwner(input: {
+  tenantId: string;
+  oportunidadId: string;
+  actor: SalesOpsActor;
+  ownerUserId: string | null;
+}) {
+  const { store, eventBus } = await salesOpsDeps();
+  return assignGrowthOpportunityOwner(store, {
+    tenantId: input.tenantId,
+    oportunidadId: input.oportunidadId,
+    actorUserId: input.actor.userId,
+    ownerUserId: input.ownerUserId,
+    eventBus,
+    isMember: async (tenantId, userId) => Boolean(await findMembership(userId, tenantId)),
+  });
+}
+
+export async function salesSaveCustomFields(input: {
+  tenantId: string;
+  oportunidadId: string;
+  fields: GrowthFunnelField[];
+  patch: Record<string, unknown>;
+}) {
+  const { store } = await salesOpsDeps();
+  const existing = await store.findById(input.tenantId, input.oportunidadId);
+  if (!existing) return { ok: false as const, reason: "not_found" as const };
+  const applied = applyCustomFieldPatch(input.fields, existing.customFields, input.patch);
+  if (!applied.ok) return applied;
+  const saved = await store.replace({
+    ...existing,
+    customFields: applied.customFields,
+    updatedAt: new Date().toISOString(),
+  });
+  return { ok: true as const, oportunidad: saved, incomplete: applied.incomplete };
 }

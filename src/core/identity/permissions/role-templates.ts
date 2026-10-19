@@ -39,6 +39,7 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["workflow.view", true], ["workflow.manage", true], ["workflow.transition", true],
     ["events.view", true], ["events.manage", true], ["events.replay", false],
     ["growth.sales.view", true], ["growth.sales.operate", true],
+    ["growth.funnels.manage", true],
     ["growth.automations.view", true], ["growth.automations.manage", true],
     ["growth.campaigns.view", true], ["growth.campaigns.manage", true],
     ["growth.analytics.view", true],

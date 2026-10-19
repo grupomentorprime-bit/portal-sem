@@ -87,9 +87,11 @@ export default async function AdminLayout({
   const tenantId = session?.session.tenantId?.trim() || tenant;
   const permissions = session?.membership
     ? await (async () => {
+        const { ensureTenantRoles } = await import("@/lib/identity/roles");
         const { resolvePermissionsForMembership } = await import(
           "@/lib/identity/permission-resolver"
         );
+        await ensureTenantRoles(session.session.tenantId);
         return resolvePermissionsForMembership(
           session.session.tenantId,
           session.membership!

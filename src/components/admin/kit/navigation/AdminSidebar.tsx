@@ -17,6 +17,7 @@ import {
   findActiveNavGroupId,
   isNavPlaceholder,
   isSidebarItemActive,
+  navGroupAsDirectLink,
   NAV_SIDEBAR_ZONES,
   type AdminNavGroup,
   type NavGroupId,
@@ -248,23 +249,16 @@ function NavGroupSection({
   flyoutOpen?: boolean;
   nested?: boolean;
 }) {
-  const isSingleItem = group.items.length === 1;
+  const directLink = navGroupAsDirectLink(group);
   const hasActiveChild = group.items.some((item) =>
     isSidebarItemActive(pathname, item, searchParams)
   );
   const panelId = `nav-group-${group.id}`;
 
-  if (isSingleItem) {
-    const item = group.items[0];
-    const linkItem = {
-      ...item,
-      label: group.label,
-      icon: group.icon,
-      badge: group.badge ?? item.badge,
-    };
+  if (directLink) {
     return (
       <SidebarLink
-        item={linkItem}
+        item={directLink}
         pathname={pathname}
         searchParams={searchParams}
         collapsed={collapsed}
@@ -415,13 +409,20 @@ function SidebarNav({
   );
   const groupsById = new Map(groups.map((group) => [group.id, group]));
   const activeGroupId = findActiveNavGroupId(pathname, groups, searchParams);
-  const { isExpanded, toggleGroup, expandGroup } = useNavGroupExpanded(activeGroupId);
+  const activeGroupSize = activeGroupId
+    ? (groupsById.get(activeGroupId)?.items.length ?? 0)
+    : 0;
+  const lockActiveOpen = activeGroupSize > 1;
+  const { isExpanded, toggleGroup, expandGroup } = useNavGroupExpanded(
+    activeGroupId,
+    lockActiveOpen
+  );
   const [flyoutGroupId, setFlyoutGroupId] = useState<NavGroupId | null>(null);
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (activeGroupId) expandGroup(activeGroupId);
-  }, [activeGroupId, expandGroup]);
+    if (activeGroupId && activeGroupSize > 1) expandGroup(activeGroupId);
+  }, [pathname, activeGroupId, activeGroupSize, expandGroup]);
 
   useDeferredEffect(() => {
     if (!collapsed) setFlyoutGroupId(null);

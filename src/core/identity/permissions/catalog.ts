@@ -204,6 +204,13 @@ export const PERMISSION_MODULES: PermissionModule[] = [
         impliesLegacy: ["growth.sales.operate"],
       },
       {
+        code: "growth.funnels.manage",
+        label: "Gestionar embudos",
+        description: "Crear embudos y administrar sus etapas",
+        module: "growth",
+        impliesLegacy: ["growth.funnels.manage"],
+      },
+      {
         code: "growth.automations.view",
         label: "Ver Automatizaciones",
         description: "Ver definiciones de Automatizaciones del Espacio",
