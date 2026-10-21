@@ -12,7 +12,40 @@ export type HomeActivityTone =
   | "followup"
   | "transfer"
   | "note"
+  | "contact"
+  | "stage"
+  | "assignment"
+  | "diagnosis"
+  | "close"
   | "other";
+
+/** Etiqueta corta del tipo de acontecimiento (timeline del Inicio). */
+export function homeActivityEventLabel(tone: HomeActivityTone): string {
+  switch (tone) {
+    case "form":
+      return "Formulario";
+    case "diagnosis":
+      return "Diagnóstico";
+    case "opportunity":
+      return "Oportunidad";
+    case "stage":
+      return "Cambio de etapa";
+    case "assignment":
+      return "Asignación";
+    case "followup":
+      return "Seguimiento";
+    case "contact":
+      return "Contacto";
+    case "close":
+      return "Cierre";
+    case "transfer":
+      return "Traspaso";
+    case "note":
+      return "Nota";
+    default:
+      return "Actividad";
+  }
+}
 
 const STATUS_KEY =
   /\b(open|active|won|lost|handed_off|archived)\b/gi;
@@ -73,8 +106,18 @@ export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
   const variant = input.variant ?? "home";
   const feed = variant === "feed";
 
+  const looksLikeDiagnosis = /diagn[oó]stico/i.test(summary);
+
   switch (kind) {
     case "form_submitted":
+      if (looksLikeDiagnosis) {
+        return {
+          story: name
+            ? `${name} completó un diagnóstico.`
+            : "Se completó un diagnóstico.",
+          tone: "diagnosis",
+        };
+      }
       return {
         story: name ? `${name} envió un formulario.` : "Alguien envió un formulario.",
         tone: "form",
@@ -113,21 +156,47 @@ export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
     case "opportunity_transitioned": {
       const match = summary.match(TRANSITION_ARROW);
       if (match) {
-        const toLabel = growthOpportunityStatusLabel(match[2].toLowerCase());
+        const toKey = match[2]!.toLowerCase();
+        const toLabel = growthOpportunityStatusLabel(toKey);
+        const isClose = toKey === "won" || toKey === "lost" || toKey === "archived";
+        const tone: HomeActivityTone = isClose ? "close" : "stage";
         if (feed && name) {
-          return {
-            story: `${name} pasó a ${toLabel}.`,
-            tone: "opportunity",
-          };
+          return { story: `${name} pasó a ${toLabel}.`, tone };
         }
         return {
-          story: `La oportunidad pasó a ${toLabel}.`,
-          tone: "opportunity",
+          story: isClose
+            ? `La oportunidad se cerró como ${toLabel}.`
+            : `La oportunidad pasó a ${toLabel}.`,
+          tone,
         };
       }
       return {
-        story: "La oportunidad cambió de estado.",
-        tone: "opportunity",
+        story: "La oportunidad cambió de etapa.",
+        tone: "stage",
+      };
+    }
+    case "opportunity_assigned": {
+      if (/quitado/i.test(summary)) {
+        return {
+          story: name
+            ? `Se quitó el responsable de la oportunidad de ${name}.`
+            : "Se quitó el responsable de una oportunidad.",
+          tone: "assignment",
+        };
+      }
+      if (/reasignado/i.test(summary)) {
+        return {
+          story: name
+            ? `Se reasignó la oportunidad de ${name}.`
+            : "Se reasignó una oportunidad.",
+          tone: "assignment",
+        };
+      }
+      return {
+        story: name
+          ? `Se asignó responsable a la oportunidad de ${name}.`
+          : "Se asignó un responsable.",
+        tone: "assignment",
       };
     }
     case "next_action_set": {
@@ -177,6 +246,14 @@ export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
         tone: "other",
       };
     case "note": {
+      if (looksLikeDiagnosis) {
+        return {
+          story: name
+            ? `Quedó registrado el diagnóstico de ${name}.`
+            : "Quedó registrado un diagnóstico.",
+          tone: "diagnosis",
+        };
+      }
       if (feed) {
         return {
           story: "Se agregó una nota a la oportunidad.",
@@ -193,7 +270,7 @@ export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
         story:
           capitalizePhrase(scrubTechnicalActivityTokens(summary)) ||
           (name ? `Hubo contacto con ${name}.` : "Se registró un contacto."),
-        tone: "note",
+        tone: "contact",
       };
     case "message": {
       const channel = input.channelLabel?.trim();
@@ -204,14 +281,14 @@ export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
           story: actor
             ? `${actor} envió un mensaje${byChannel}.`
             : `Se envió un mensaje${byChannel}.`,
-          tone: "other",
+          tone: "contact",
         };
       }
       return {
         story: name
           ? `${name} envió un mensaje${byChannel}.`
           : `Se recibió un mensaje${byChannel}.`,
-        tone: "other",
+        tone: "contact",
       };
     }
     default: {

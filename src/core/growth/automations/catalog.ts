@@ -200,6 +200,19 @@ function validateConditionRule(
         rule: { field: "nextAction", op: raw.op },
       };
     }
+    case "owner": {
+      if (raw.op !== "exists" && raw.op !== "absent") {
+        return {
+          ok: false,
+          code: "invalid_condition",
+          error: "Condición owner requiere op exists|absent.",
+        };
+      }
+      return {
+        ok: true,
+        rule: { field: "owner", op: raw.op },
+      };
+    }
     default:
       return {
         ok: false,
@@ -312,6 +325,20 @@ function validateAction(
     }
     case "salesClearNextAction":
       return { ok: true, step: { kind: "action", action: "salesClearNextAction" } };
+    case "salesAssignOwner": {
+      const userId = typeof raw.userId === "string" ? raw.userId.trim() : "";
+      if (!userId) {
+        return {
+          ok: false,
+          code: "invalid_action",
+          error: "salesAssignOwner requiere userId.",
+        };
+      }
+      return {
+        ok: true,
+        step: { kind: "action", action: "salesAssignOwner", userId },
+      };
+    }
     default:
       return {
         ok: false,

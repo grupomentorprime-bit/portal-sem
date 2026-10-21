@@ -22,6 +22,12 @@ import {
 import { ADL_SITE_IDENTITY } from "../../src/core/tenant/adl-site-identity";
 import { buildBrandThemeStyle } from "../../src/core/branding/theme";
 import {
+  assetForTenant,
+  brandingWithoutForeignSemAssets,
+  faviconForTenant,
+  PLATFORM_FAVICON_PATH,
+} from "../../src/core/branding/foreign-assets";
+import {
   seoDescriptionFromConfig,
   seoTitleFromConfig,
 } from "../../src/core/branding/display";
@@ -394,5 +400,47 @@ describe("OT-GROWTH-SAAS-006 — fixture Mongo aislado", () => {
       const gone = await siteConfig.findOne({ tenantId: FIX_ISOLATION_TENANT });
       assert.equal(gone, null);
     });
+  });
+});
+
+describe("favicon genérico — un Espacio sin logo no hereda SEM", () => {
+  it("sin favicon usa la marca de plataforma", () => {
+    assert.equal(faviconForTenant("mentor-prime-capacitacion", ""), PLATFORM_FAVICON_PATH);
+    assert.equal(faviconForTenant("mentor-prime-capacitacion", "   "), PLATFORM_FAVICON_PATH);
+    assert.doesNotMatch(PLATFORM_FAVICON_PATH, /logo-sem/);
+  });
+
+  it("una ruta de SEM en otro Espacio se descarta", () => {
+    assert.equal(
+      faviconForTenant("cumple", "/images/logo-sem-favicon.png"),
+      PLATFORM_FAVICON_PATH
+    );
+    assert.equal(assetForTenant("fundacion-mueve", "/images/logo-sem-isotype.png"), "");
+    assert.equal(assetForTenant("adl", "/images/logo-ipn.svg"), "");
+    const cleaned = brandingWithoutForeignSemAssets("mentor-prime-capacitacion", {
+      logo: "/images/logo-sem-isotype.png",
+      favicon: "/images/logo-sem-favicon.png",
+      secondaryLogo: "/images/logo-ipn.svg",
+      heroImage: "/images/logo-sem.svg",
+    });
+    assert.equal(cleaned.logo, "");
+    assert.equal(cleaned.favicon, "");
+    assert.equal(cleaned.secondaryLogo, "");
+    assert.equal(cleaned.heroImage, "");
+  });
+
+  it("T001 conserva su isotipo y un logo propio de otro Espacio se respeta", () => {
+    assert.equal(
+      faviconForTenant(SEM_TENANT_ID, "/images/logo-sem-favicon.png"),
+      "/images/logo-sem-favicon.png"
+    );
+    assert.equal(
+      assetForTenant("mentor-prime-capacitacion", "/media/cliente.png"),
+      "/media/cliente.png"
+    );
+    assert.equal(
+      faviconForTenant("mentor-prime-capacitacion", "/media/cliente.png"),
+      "/media/cliente.png"
+    );
   });
 });

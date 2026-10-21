@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Plus, Search } from "lucide-react";
+import { ArrowRight, Columns3, LayoutList, Plus, Search } from "lucide-react";
 import {
   EmptyState,
   StatusBadge,
   type StatusBadgeTone,
 } from "@/components/admin/kit";
 import { PlatformCreateSpacePanel } from "@/components/platform/PlatformCreateSpacePanel";
+import { PlatformSpacesKanban } from "@/components/platform/PlatformSpacesKanban";
 import { PlatformSpaceActionsMenu } from "@/components/platform/PlatformSpaceActionsMenu";
 import { SpaceTypeFallbackMark } from "@/components/platform/SpaceTypeFallbackMark";
 import { subscribePlatformSpacesSearch } from "@/components/platform/PlatformShell";
@@ -20,6 +21,8 @@ import { cn } from "@/lib/utils";
 
 const SPACE_ROW_GRID =
   "lg:grid lg:grid-cols-[minmax(14rem,1.45fr)_minmax(7rem,0.85fr)_minmax(10rem,1.15fr)_4rem_6.75rem_auto] lg:items-center lg:gap-x-4";
+
+type SpacesView = "list" | "kanban";
 
 function statusTone(status: PlatformSpaceListItem["status"]): StatusBadgeTone {
   switch (status) {
@@ -83,6 +86,7 @@ export function PlatformSpacesCatalog({
   const initialQuery = searchParams.get("q") ?? "";
   const [query, setQuery] = useState(initialQuery);
   const [typeFilter, setTypeFilter] = useState("all");
+  const [view, setView] = useState<SpacesView>("list");
 
   const typeOptions = useMemo(() => {
     const labels = Array.from(
@@ -139,7 +143,7 @@ export function PlatformSpacesCatalog({
                   : `${spaces.length} organizaciones`}
               </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
               <label className="relative block min-w-[12rem] flex-1 sm:w-48">
                 <Search
                   className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--gray-500)]"
@@ -173,6 +177,40 @@ export function PlatformSpacesCatalog({
                   ))}
                 </select>
               ) : null}
+              <div
+                role="group"
+                aria-label="Vista de espacios"
+                className="inline-flex h-9 shrink-0 rounded-lg border border-[var(--color-border-default)] bg-[var(--gray-100)] p-0.5"
+              >
+                <button
+                  type="button"
+                  aria-pressed={view === "list"}
+                  onClick={() => setView("list")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-2.5 text-[12px] font-semibold transition",
+                    view === "list"
+                      ? "bg-white text-[var(--growth-os-primary)] shadow-sm"
+                      : "text-[var(--gray-500)] hover:text-[var(--gray-800)]"
+                  )}
+                >
+                  <LayoutList className="h-3.5 w-3.5" aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={view === "kanban"}
+                  onClick={() => setView("kanban")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-2.5 text-[12px] font-semibold transition",
+                    view === "kanban"
+                      ? "bg-white text-[var(--growth-os-primary)] shadow-sm"
+                      : "text-[var(--gray-500)] hover:text-[var(--gray-800)]"
+                  )}
+                >
+                  <Columns3 className="h-3.5 w-3.5" aria-hidden />
+                  Kanban
+                </button>
+              </div>
               <Button
                 type="button"
                 onClick={openCreate}
@@ -204,6 +242,8 @@ export function PlatformSpacesCatalog({
                 description="Prueba con otro nombre, dominio o Sitio."
               />
             </div>
+          ) : view === "kanban" ? (
+            <PlatformSpacesKanban spaces={filtered} />
           ) : (
             <div>
               <div

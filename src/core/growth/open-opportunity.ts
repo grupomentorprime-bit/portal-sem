@@ -6,8 +6,12 @@
 
 import { ObjectId } from "mongodb";
 import { recordGrowthActivity } from "./activity";
+import { setGrowthNextAction } from "./next-action";
 import type { GrowthEventBusPort } from "./event-bus-port";
 import { buildGrowthIngestKey } from "./ingest-key";
+import type { GrowthFunnelDirectory } from "./funnel-directory";
+import { growthOpportunityDefinitionKey } from "./funnel-types";
+import { resolveCaptureFunnelKey } from "./funnels";
 import { isGrowthOpportunityFinalStatus } from "./opportunity-definition";
 import type { GrowthOpportunityStore } from "./opportunity-store";
 import type { GrowthOpportunityWorkflowPort } from "./opportunity-workflow-port";
@@ -18,6 +22,7 @@ import {
 } from "./space-config";
 import type {
   GrowthActivity,
+  GrowthNextActionKind,
   GrowthOriginInput,
   GrowthOportunidad,
   GrowthOpportunitySubjectType,
@@ -38,9 +43,18 @@ export interface OpenGrowthOpportunityInput {
   subjectType?: GrowthOpportunitySubjectType;
   subjectId?: string;
   subjectLabel?: string;
+  /** Embudo del Espacio. Sin valor, usa el predeterminado. */
+  funnelKey?: string;
+  /** Si no hay funnelKey, resuelve el embudo predeterminado activo del Espacio. */
+  funnelDirectory?: GrowthFunnelDirectory;
   now?: string;
   actorUserId?: string;
   eventBus?: GrowthEventBusPort;
+  initialNextAction?: {
+    summary: string;
+    kind: GrowthNextActionKind;
+    sourceKey: string;
+  };
 }
 
 export type OpenGrowthOpportunityResult =
@@ -51,7 +65,8 @@ export type OpenGrowthOpportunityResult =
       activity?: GrowthActivity;
     }
   | { ok: false; reason: "invalid_type_key" }
-  | { ok: false; reason: "missing_tenant_or_persona" };
+  | { ok: false; reason: "missing_tenant_or_persona" }
+  | { ok: false; reason: "missing_default_funnel" };
 
 function sameSubject(
   a: { subjectType: string; subjectId?: string },
@@ -75,9 +90,18 @@ export async function openGrowthOpportunity(
   }
 
   const now = input.now ?? new Date().toISOString();
+  const requestedFunnel = input.funnelKey?.trim() || "";
+  let funnelKey = requestedFunnel || "default";
+  if (!requestedFunnel && input.funnelDirectory) {
+    const resolved = await resolveCaptureFunnelKey(
+      input.funnelDirectory,
+      tenantId
+    );
+    if (!resolved) return { ok: false, reason: "missing_default_funnel" };
+    funnelKey = resolved;
+  }
   const subjectType: GrowthOpportunitySubjectType = input.subjectType ?? "none";
   const subjectId = input.subjectId?.trim() || undefined;
-
   const config = await resolveGrowthSpaceConfig(store, tenantId, now);
   if (!isAllowedOpportunityTypeKey(config, input.typeKey)) {
     return { ok: false, reason: "invalid_type_key" };
@@ -89,6 +113,7 @@ export async function openGrowthOpportunity(
     typeKey: input.typeKey,
     subjectType,
     subjectId,
+    funnelKey,
   });
 
   if (existing && !isGrowthOpportunityFinalStatus(existing.status)) {
@@ -100,6 +125,7 @@ export async function openGrowthOpportunity(
   const reusable = siblings.find(
     (o) =>
       o.typeKey === input.typeKey &&
+      (o.funnelKey || "default") === funnelKey &&
       sameSubject(o, subjectType, subjectId) &&
       !isGrowthOpportunityFinalStatus(o.status)
   );
@@ -111,7 +137,8 @@ export async function openGrowthOpportunity(
   const wf = await workflow.start({
     tenantId,
     entityId: opportunityId,
-    metadata: { typeKey: input.typeKey, personaId },
+    definitionKey: growthOpportunityDefinitionKey(funnelKey),
+    metadata: { typeKey: input.typeKey, personaId, funnelKey },
   });
 
   const origin = buildGrowthOrigin(input.origin, now);
@@ -129,8 +156,17 @@ export async function openGrowthOpportunity(
       : {}),
     origin,
     status,
+    funnelKey,
+    organizationId: null,
     workflowInstanceId: wf.instanceId,
-    nextAction: null,
+    nextAction: input.initialNextAction
+      ? {
+          summary: input.initialNextAction.summary,
+          kind: input.initialNextAction.kind,
+          sourceKey: input.initialNextAction.sourceKey,
+          setAt: now,
+        }
+      : null,
     source: {
       sourceCollection: input.sourceCollection,
       sourceId: input.sourceId,
@@ -166,6 +202,25 @@ export async function openGrowthOpportunity(
     },
     { eventBus: input.eventBus }
   );
+
+  if (input.initialNextAction) {
+    const traced = await setGrowthNextAction(store, {
+      tenantId,
+      oportunidadId: saved._id,
+      summary: input.initialNextAction.summary,
+      kind: input.initialNextAction.kind,
+      sourceKey: input.initialNextAction.sourceKey,
+      now,
+      actorUserId: input.actorUserId,
+      eventBus: input.eventBus,
+    });
+    return {
+      ok: true,
+      outcome: "created",
+      oportunidad: traced.ok ? traced.oportunidad : saved,
+      activity: recorded.ok ? recorded.activity : undefined,
+    };
+  }
 
   return {
     ok: true,

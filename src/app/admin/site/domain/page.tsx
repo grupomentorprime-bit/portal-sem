@@ -61,12 +61,23 @@ export default async function SiteDomainPage() {
         </Link>
       }
     >
-      <section className="overflow-hidden rounded-2xl border border-border bg-background">
+      <section className="overflow-hidden rounded-2xl border border-border border-t-[3px] border-t-[var(--color-accent)] bg-background">
         <div className="bg-[color-mix(in_srgb,var(--color-primary)_7%,white)] px-5 py-5 sm:px-6">
-          <p className="flex items-center gap-2 text-sm font-medium text-muted">
-            <Globe className="h-4 w-4 text-primary" aria-hidden />
-            Dirección principal
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="flex items-center gap-2 text-sm font-medium text-muted">
+              <Globe className="h-4 w-4 text-primary" aria-hidden />
+              Dirección principal
+            </p>
+            {primary?.host ? (
+              <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-success)_10%,white)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success)]">
+                Activo
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full border border-border bg-background-soft px-2 py-0.5 text-[11px] font-semibold text-muted">
+                Pendiente
+              </span>
+            )}
+          </div>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <p className="break-all text-2xl font-semibold tracking-tight text-foreground">
@@ -74,7 +85,7 @@ export default async function SiteDomainPage() {
               </p>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">
                 {primary?.host
-                  ? "Las personas llegan a tu sitio con esta dirección."
+                  ? "Listo. Las personas llegan aquí. No hace falta otro dominio para publicar el sitio."
                   : "Cuando haya un dominio, aquí verás la dirección pública del sitio."}
               </p>
             </div>
@@ -86,10 +97,21 @@ export default async function SiteDomainPage() {
 
         {tenantId ? (
           <div className="border-t border-border px-5 py-5 sm:px-6">
-            <h2 className="text-base font-semibold text-foreground">Tu propio dominio</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-semibold text-foreground">Tu propio dominio</h2>
+              {customDomain ? (
+                <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-success)_10%,white)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success)]">
+                  Conectado
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full border border-border bg-background-soft px-2 py-0.5 text-[11px] font-semibold text-muted">
+                  Opcional · No conectado
+                </span>
+              )}
+            </div>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted">
-              Si ya tienes una dirección, como seminario.cl, conéctala aquí. El sitio
-              seguirá abierto en la dirección de arriba.
+              Solo si el cliente tiene un dominio suyo (ej. empresa.cl). El subdominio de
+              arriba ya sirve; esto es un extra.
             </p>
             <PlatformSpaceDomainPanel
               tenantId={tenantId}

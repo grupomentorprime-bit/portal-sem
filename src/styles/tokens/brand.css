@@ -4,12 +4,18 @@
  * Los nombres `--sem-*` son alias legacy, no identidad del tenant SEM.
  * `--growth-os-*` no se remapean en body: sirven para aislar /platform y auth.
  *
- * Balance visual: neutros ~75%, azul Growth OS ~20%, acentos secundarios ~5%.
+ * Balance visual: neutros claros, violeta de acción, cian solo como acento.
  */
 :root {
-  --growth-os-primary: #0e4f90;
-  --growth-os-secondary: #6c99cd;
-  --growth-os-accent: #7c5cfa;
+  --growth-os-primary: #6d28d9;
+  --growth-os-primary-hover: #5b21b6;
+  --growth-os-secondary: #a78bfa;
+  --growth-os-accent: #22d3ee;
+  --growth-os-ink: #1e1b4b;
+  --growth-os-on-ink: #ede9fe;
+  --growth-os-on-ink-muted: #c4b5fd;
+  --growth-os-on-ink-label: #a78bfa;
+  --growth-os-muted: #6b6580;
   --growth-os-success: #18b981;
   --growth-os-light: #f59b45;
 

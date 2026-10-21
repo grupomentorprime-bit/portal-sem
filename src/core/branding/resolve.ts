@@ -1,4 +1,6 @@
 import { resolveBrandingMediaUrls } from "@/core/media";
+import { PLATFORM_ASSET_FALLBACKS } from "@/lib/cms/asset-paths";
+import { assetForTenant } from "./foreign-assets";
 import type { BrandingResolverInput, ResolvedBrandingAssets } from "./types";
 
 export async function resolveBrandingAssets({
@@ -16,11 +18,16 @@ export async function resolveBrandingAssets({
         favicon: branding.favicon,
       };
 
+  const logo = assetForTenant(tenant, urls.logo);
+  const secondaryLogo = assetForTenant(tenant, urls.secondaryLogo);
+  const hero = assetForTenant(tenant, urls.hero) || PLATFORM_ASSET_FALLBACKS.hero;
+  const favicon = assetForTenant(tenant, urls.favicon);
+
   return {
-    logo: urls.logo,
-    secondaryLogo: urls.secondaryLogo,
-    hero: urls.hero,
-    favicon: urls.favicon,
+    logo,
+    secondaryLogo: secondaryLogo || undefined,
+    hero,
+    favicon: favicon || undefined,
     colors: {
       primaryColor: branding.primaryColor,
       secondaryColor: branding.secondaryColor,

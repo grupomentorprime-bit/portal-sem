@@ -14,10 +14,7 @@ import {
 
 export type NavGroupId =
   | "dashboard"
-  | "personas"
-  | "ventas"
-  | "mensajes"
-  | "actividad"
+  | "conversion"
   | "campanas"
   | "automatizaciones"
   | "analitica"
@@ -26,6 +23,10 @@ export type NavGroupId =
   | "equipo"
   | "ajustes"
   /** @deprecated Conservados para imports / tipos legacy */
+  | "personas"
+  | "ventas"
+  | "mensajes"
+  | "actividad"
   | "institution"
   | "academic"
   | "formularios"
@@ -41,6 +42,8 @@ export interface AdminNavGroup {
   icon: string;
   items: AdminNavItem[];
   badge?: number;
+  /** Ítem destino cuando el sidebar muestra el grupo como una sola fila. */
+  primaryItemId?: string;
 }
 
 interface AdminNavGroupDef {
@@ -48,6 +51,7 @@ interface AdminNavGroupDef {
   label: string;
   icon: string;
   items: AdminNavItem[];
+  primaryItemId?: string;
 }
 
 /** Ítem de navegación sin destino — dirección visual (sin página vacía). */
@@ -125,10 +129,41 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     ],
   },
   {
-    id: "personas",
-    label: "Personas",
-    icon: "people",
+    id: "conversion",
+    label: "CRM · Conversión",
+    icon: "sales",
+    primaryItemId: "nav-conversion",
     items: [
+      {
+        id: "nav-conversion",
+        href: "/admin/conversion",
+        label: "Panel comercial",
+        icon: "sales",
+        matchPrefixes: ["/admin/conversion"],
+        excludePrefixes: ["/admin/conversion/analitica"],
+        requiredAnyPermission: [
+          "growth.sales.view",
+          "growth.sales.read",
+          "growth.sales.operate",
+        ],
+      },
+      {
+        id: "nav-conversion-analitica",
+        href: "/admin/conversion/analitica",
+        label: "Analítica de conversión",
+        icon: "sales",
+        matchPrefixes: ["/admin/conversion/analitica"],
+        requiredAnyPermission: ["growth.sales.view"],
+      },
+      {
+        id: "nav-ventas",
+        href: "/admin/ventas",
+        label: "Oportunidades",
+        icon: "sales",
+        matchPrefixes: ["/admin/ventas"],
+        excludePrefixes: ["/admin/ventas/embudos", "/admin/ventas/mi-trabajo"],
+        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
+      },
       {
         id: "growth-personas",
         href: "/admin/personas",
@@ -140,28 +175,26 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "growth.people.manage",
         ],
       },
-    ],
-  },
-  {
-    id: "ventas",
-    label: "Ventas",
-    icon: "sales",
-    items: [
       {
-        id: "nav-ventas",
-        href: "/admin/ventas",
-        label: "Ventas",
+        id: "nav-embudos",
+        href: "/admin/ventas/embudos",
+        label: "Embudos",
         icon: "sales",
-        matchPrefixes: ["/admin/ventas"],
-        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
+        matchPrefixes: ["/admin/ventas/embudos"],
+        requiredAnyPermission: ["growth.funnels.manage"],
       },
-    ],
-  },
-  {
-    id: "mensajes",
-    label: "Mensajes",
-    icon: "messages",
-    items: [
+      {
+        id: "nav-mi-trabajo",
+        href: "/admin/ventas/mi-trabajo",
+        label: "Mi trabajo",
+        icon: "sales",
+        matchPrefixes: ["/admin/ventas/mi-trabajo"],
+        requiredAnyPermission: [
+          "growth.sales.view",
+          "growth.sales.read",
+          "growth.sales.operate",
+        ],
+      },
       {
         id: "nav-mensajes",
         href: "/admin/mensajes",
@@ -170,13 +203,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/mensajes"],
         requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
       },
-    ],
-  },
-  {
-    id: "actividad",
-    label: "Actividad",
-    icon: "activity",
-    items: [
       {
         id: "nav-actividad",
         href: "/admin/actividad",
@@ -242,6 +268,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "sitio-web",
     label: "Sitio web",
     icon: "site",
+    primaryItemId: "convocatorias-config",
     items: [
       {
         id: "convocatorias-config",
@@ -280,6 +307,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "institucion",
     label: "Institución",
     icon: "institution",
+    primaryItemId: "institution-branding",
     items: [
       {
         id: "institution-branding",
@@ -337,15 +365,14 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "ajustes",
     label: "Ajustes",
     icon: "settings",
+    primaryItemId: "config-roles",
     items: [
       {
         id: "config-administration",
-        href: "/admin/settings/team",
-        label: "Equipo",
+        href: "/admin/workflows",
+        label: "Operación",
         icon: "admin",
         matchPrefixes: [
-          "/admin/settings/team",
-          "/admin/settings/users",
           "/admin/workflows",
           "/admin/events",
           "/admin/experience",
@@ -445,8 +472,61 @@ export function buildAdminNavGroups(
       icon: group.icon,
       items,
       badge: groupBadge > 0 ? groupBadge : undefined,
+      primaryItemId: group.primaryItemId,
     };
   }).filter((group) => group.items.length > 0);
+}
+
+/**
+ * Un grupo con un solo enlace visible se muestra como ese módulo.
+ * El nombre y el icono son los del ítem, no los del grupo contenedor.
+ */
+export function navGroupAsDirectLink(group: AdminNavGroup): AdminNavItem | null {
+  if (group.items.length !== 1) return null;
+  const item = group.items[0];
+  return {
+    ...item,
+    label: item.label,
+    icon: item.icon,
+    badge: item.badge ?? group.badge,
+  };
+}
+
+function resolveGroupPrimaryItem(group: AdminNavGroup): AdminNavItem | null {
+  if (group.items.length === 0) return null;
+  if (group.primaryItemId) {
+    const preferred = group.items.find((item) => item.id === group.primaryItemId);
+    if (preferred) return preferred;
+  }
+  return group.items[0] ?? null;
+}
+
+/**
+ * Fila del sidebar plano: un enlace por grupo.
+ * Un solo ítem → nombre del ítem; varios → nombre del grupo + destino primario.
+ */
+export function navGroupAsSidebarLink(group: AdminNavGroup): AdminNavItem | null {
+  const direct = navGroupAsDirectLink(group);
+  if (direct) return direct;
+
+  const primary = resolveGroupPrimaryItem(group);
+  if (!primary) return null;
+
+  return {
+    ...primary,
+    label: group.label,
+    icon: group.icon,
+    badge: group.badge ?? primary.badge,
+  };
+}
+
+/** Activo a nivel de grupo (cualquier hija autorizada). */
+export function isNavGroupActive(
+  pathname: string,
+  group: AdminNavGroup,
+  searchParams?: Pick<URLSearchParams, "get"> | null
+): boolean {
+  return group.items.some((item) => isSidebarItemActive(pathname, item, searchParams));
 }
 
 /** Resuelve el grupo que contiene la ruta activa. */
@@ -534,7 +614,7 @@ export interface NavSidebarZone {
 export const NAV_SIDEBAR_ZONES: NavSidebarZone[] = [
   {
     id: "core",
-    groupIds: ["dashboard", "personas", "ventas", "mensajes", "actividad"],
+    groupIds: ["dashboard", "conversion"],
   },
   {
     id: "grow",

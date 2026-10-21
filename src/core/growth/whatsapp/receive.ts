@@ -6,6 +6,7 @@
  */
 
 import type { GrowthEventBusPort } from "../event-bus-port";
+import type { GrowthFunnelDirectory } from "../funnel-directory";
 import { isGrowthOpportunityFinalStatus } from "../opportunity-definition";
 import { openGrowthOpportunity } from "../open-opportunity";
 import type { GrowthOpportunityStore } from "../opportunity-store";
@@ -47,6 +48,8 @@ export interface ReceiveWhatsAppCloudWebhookDeps {
   oportunidades?: GrowthOpportunityStore;
   workflow?: GrowthOpportunityWorkflowPort;
   eventBus?: GrowthEventBusPort;
+  /** Resuelve el embudo predeterminado del Espacio en altas sin embudo explícito. */
+  funnels?: GrowthFunnelDirectory;
   /**
    * Fail-soft: se invoca al resolver el Espacio, antes de abrir Oportunidad
    * (p. ej. ensure del playbook H1). Errores no deben tumbar el inbound.
@@ -206,6 +209,7 @@ async function resolveOpportunityForInbound(
     workflow: GrowthOpportunityWorkflowPort;
     messaging: GrowthMessagingStore;
     eventBus?: GrowthEventBusPort;
+    funnels?: GrowthFunnelDirectory;
   },
   input: {
     tenantId: string;
@@ -264,6 +268,7 @@ async function resolveOpportunityForInbound(
       sourceId: input.extracted.messageId,
       now: input.now,
       eventBus: deps.eventBus,
+      funnelDirectory: deps.funnels,
     }
   );
 
@@ -311,7 +316,11 @@ export async function receiveWhatsAppCloudWebhook(
   let ignored = 0;
   const commercial =
     deps.oportunidades && deps.workflow
-      ? { oportunidades: deps.oportunidades, workflow: deps.workflow }
+      ? {
+          oportunidades: deps.oportunidades,
+          workflow: deps.workflow,
+          funnels: deps.funnels,
+        }
       : null;
 
   for (const extracted of messages) {
@@ -353,6 +362,7 @@ export async function receiveWhatsAppCloudWebhook(
           ...commercial,
           messaging: deps.messaging,
           eventBus: deps.eventBus,
+          funnels: commercial.funnels,
         },
         {
           tenantId: connection.tenantId,

@@ -2,24 +2,22 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useDeferredEffect } from "@/hooks/use-deferred-effect";
-import { ChevronDown, LogOut, Settings2, Sparkles, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronRight, Crown, LogOut, Settings2, UserRound } from "lucide-react";
 import { Drawer } from "@/components/admin/kit/drawers/Drawer";
 import { NavIcon } from "@/components/admin/kit/navigation/NavIcon";
 import type { AdminShellContext } from "@/components/admin/kit/utils/types";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { ProductMark } from "@/components/product";
-import { useNavGroupExpanded } from "@/components/admin/shell-v2/use-nav-group-expanded";
 import type { AdminNavItem } from "@/lib/admin/institutional";
 import { filterAdminNavGroups } from "@/lib/admin/nav-access";
 import {
-  findActiveNavGroupId,
+  isNavGroupActive,
   isNavPlaceholder,
   isSidebarItemActive,
+  navGroupAsSidebarLink,
   NAV_SIDEBAR_ZONES,
   type AdminNavGroup,
-  type NavGroupId,
 } from "@/lib/admin/nav-domains";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { cn } from "@/lib/utils";
@@ -29,6 +27,9 @@ export interface AdminSidebarProps extends AdminShellContext {
   mobileOpen: boolean;
   onMobileClose: () => void;
 }
+
+/** Maqueta visual — sin motor de onboarding ni billing. */
+const SIDEBAR_GROWTH_PROGRESS = 70;
 
 function NavBadge({ count, subtle = false }: { count: number; subtle?: boolean }) {
   if (count <= 0) return null;
@@ -51,88 +52,137 @@ function GrowthOsMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-gradient-to-br from-[var(--growth-os-primary)] to-[var(--growth-os-secondary)] shadow-[0_8px_18px_-10px_rgba(14,79,144,0.55)]",
+        "relative flex h-9 w-9 shrink-0 items-end justify-center gap-[3px] overflow-hidden rounded-[12px] bg-[var(--growth-os-primary)] px-2 pb-2 pt-2.5",
         className
       )}
       aria-hidden
     >
-      <span className="absolute inset-0 bg-[radial-gradient(circle_at_28%_22%,color-mix(in_srgb,white_42%,transparent),transparent_58%)]" />
-      <Sparkles className="relative h-4 w-4 text-white" strokeWidth={2.25} />
+      <span className="h-2 w-[3px] rounded-sm bg-white/90" />
+      <span className="h-3.5 w-[3px] rounded-sm bg-white" />
+      <span className="h-2.5 w-[3px] rounded-sm bg-white/90" />
     </span>
   );
 }
 
-function SidebarBrand({
-  branding,
-  collapsed,
-}: {
-  branding: AdminShellContext["branding"];
-  collapsed: boolean;
-}) {
-  const spaceLabel =
-    branding.institutionShortName?.trim() || branding.institutionName;
-  const spaceInitial = spaceLabel.trim().charAt(0).toUpperCase() || "E";
-
+function SidebarBrand({ collapsed }: { collapsed: boolean }) {
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-col border-b border-[var(--sidebar-border)]",
-        collapsed ? "items-center gap-2 px-2 py-3" : "gap-3 px-4 pb-4 pt-5"
+        "flex shrink-0",
+        collapsed ? "items-center justify-center px-2 py-4" : "px-4 pb-2 pt-5"
       )}
     >
       {collapsed ? (
-        <GrowthOsMark className="h-8 w-8 rounded-[10px]" />
+        <Link href="/admin" className="transition hover:opacity-90" aria-label={PLATFORM_DISPLAY_NAME}>
+          <GrowthOsMark className="h-8 w-8 rounded-[10px]" />
+        </Link>
       ) : (
         <Link
           href="/admin"
           className="inline-flex min-w-0 items-center gap-2.5 transition hover:opacity-90"
         >
           <GrowthOsMark />
-          <ProductMark size="md" className="min-w-0 [&_span]:text-[var(--gray-900)]" />
+          <ProductMark size="md" className="min-w-0 [&_span]:text-white" />
         </Link>
       )}
+    </div>
+  );
+}
 
-      {!collapsed ? (
-        <div className="flex min-w-0 items-center gap-2.5 rounded-[12px] border border-[var(--color-border-default)] border-l-2 border-l-[color-mix(in_srgb,var(--brand-primary)_55%,var(--color-border-default))] bg-[var(--gray-50)] px-2.5 py-2">
-          {branding.logoUrl?.trim() ? (
-            <img
-              src={branding.logoUrl}
-              alt=""
-              className="h-7 w-7 shrink-0 rounded-md bg-white object-contain p-0.5"
-            />
-          ) : (
-            <span
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white text-[11px] font-bold text-[var(--growth-os-primary)]"
-              aria-hidden
-            >
-              {spaceInitial}
-            </span>
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--gray-500)]">
-              Espacio activo
-            </p>
-            <p className="truncate text-[12px] font-semibold leading-tight text-[var(--gray-900)]">
-              {spaceLabel}
-            </p>
-          </div>
-        </div>
-      ) : branding.logoUrl?.trim() ? (
-        <img
-          src={branding.logoUrl}
-          alt=""
-          title={`Espacio activo · ${spaceLabel}`}
-          className="h-6 w-6 rounded-md bg-white object-contain p-0.5"
-        />
-      ) : (
-        <span
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--gray-100)] text-[10px] font-bold text-[var(--growth-os-primary)]"
-          title={`Espacio activo · ${spaceLabel}`}
+function SidebarFooter({
+  branding,
+  collapsed,
+  onNavigate,
+}: {
+  branding: AdminShellContext["branding"];
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  const spaceLabel =
+    branding.institutionShortName?.trim() || branding.institutionName;
+
+  if (collapsed) {
+    return (
+      <div className="mt-auto flex shrink-0 flex-col items-center gap-2 border-t border-[var(--sidebar-border)] px-2 py-3">
+        <Link
+          href="/admin/settings/team"
+          onClick={onNavigate}
+          title={`${spaceLabel} · Plan Pro`}
           aria-label={`Espacio activo ${spaceLabel}`}
+          className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[color-mix(in_srgb,white_8%,transparent)] text-[var(--color-warning)] transition hover:bg-[var(--sidebar-hover)]"
         >
-          {spaceInitial}
+          <Crown className="h-4 w-4" strokeWidth={2} />
+        </Link>
+        <Link
+          href="/admin"
+          onClick={onNavigate}
+          title="Acelera tu crecimiento"
+          aria-label="Continuar configuración"
+          className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--growth-os-primary)] text-[11px] font-bold text-white transition hover:opacity-90"
+        >
+          {SIDEBAR_GROWTH_PROGRESS}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-auto flex shrink-0 flex-col gap-2.5 border-t border-[var(--sidebar-border)] px-3 py-3">
+      <Link
+        href="/admin/settings/team"
+        onClick={onNavigate}
+        className="flex items-center gap-2.5 rounded-[14px] border border-[var(--sidebar-border)] bg-[color-mix(in_srgb,white_6%,transparent)] px-2.5 py-2.5 transition hover:bg-[var(--sidebar-hover)]"
+      >
+        <span
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--color-warning)_22%,transparent)] text-[var(--color-warning)]"
+          aria-hidden
+        >
+          <Crown className="h-4 w-4" strokeWidth={2} />
         </span>
-      )}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12px] font-semibold leading-tight text-white">
+            {spaceLabel}
+          </span>
+          <span className="block truncate text-[11px] text-[var(--sidebar-fg-muted)]">
+            Plan Pro
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-[var(--sidebar-fg-muted)]" aria-hidden />
+      </Link>
+
+      <div className="rounded-[14px] border border-[var(--sidebar-border)] bg-[color-mix(in_srgb,white_6%,transparent)] px-3 py-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-[18px] font-semibold tracking-tight text-white">
+            {SIDEBAR_GROWTH_PROGRESS}%
+          </p>
+        </div>
+        <div
+          className="mt-2 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,white_12%,transparent)]"
+          role="progressbar"
+          aria-valuenow={SIDEBAR_GROWTH_PROGRESS}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Progreso de configuración"
+        >
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[var(--growth-os-primary)] to-[var(--growth-os-accent)]"
+            style={{ width: `${SIDEBAR_GROWTH_PROGRESS}%` }}
+          />
+        </div>
+        <p className="mt-3 text-[12px] font-semibold leading-snug text-white">
+          Acelera tu crecimiento
+        </p>
+        <p className="mt-1 text-[11px] leading-snug text-[var(--sidebar-fg-muted)]">
+          Completa la configuración para potenciar tus resultados
+        </p>
+        <Link
+          href="/admin"
+          onClick={onNavigate}
+          className="mt-3 flex h-9 items-center justify-center rounded-[10px] bg-[var(--growth-os-primary)] text-[12px] font-semibold text-white transition hover:opacity-90"
+        >
+          Continuar
+        </Link>
+      </div>
     </div>
   );
 }
@@ -143,42 +193,35 @@ function SidebarLink({
   searchParams,
   collapsed,
   onNavigate,
-  variant = "primary",
-  showIcon = true,
+  activeOverride,
 }: {
   item: AdminNavItem;
   pathname: string;
   searchParams: URLSearchParams;
   collapsed: boolean;
   onNavigate?: () => void;
-  variant?: "primary" | "sub";
-  showIcon?: boolean;
+  /** Activo a nivel de grupo (cualquier hija del módulo). */
+  activeOverride?: boolean;
 }) {
   if (isNavPlaceholder(item)) {
-    const isSub = variant === "sub";
     return (
       <span
         title="Dirección visual — este módulo aún no existe"
         className={cn(
-          "relative flex cursor-default items-center gap-2 rounded-[12px] text-[var(--gray-500)]",
-          isSub
-            ? "py-1.5 pl-3 pr-2 text-[12.5px] leading-snug"
-            : "px-2.5 py-2 text-[13px] font-medium",
-          collapsed && !isSub && "justify-center px-2"
+          "relative flex cursor-default items-center gap-2 rounded-[12px] px-2.5 py-2 text-[13px] font-medium text-[var(--gray-500)]",
+          collapsed && "justify-center px-2"
         )}
       >
-        {(showIcon || collapsed) && !isSub ? (
-          <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-[var(--gray-400)]">
-            <NavIcon icon={item.icon} className="h-4 w-4 shrink-0" />
-          </span>
-        ) : null}
+        <span className="flex h-7 w-7 items-center justify-center rounded-[9px] text-[var(--gray-400)]">
+          <NavIcon icon={item.icon} className="h-4 w-4 shrink-0" />
+        </span>
         {!collapsed ? <span className="truncate">{item.label}</span> : null}
       </span>
     );
   }
 
-  const active = isSidebarItemActive(pathname, item, searchParams);
-  const isSub = variant === "sub";
+  const active =
+    activeOverride ?? isSidebarItemActive(pathname, item, searchParams);
   const href = item.href as string;
 
   return (
@@ -188,221 +231,28 @@ function SidebarLink({
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "relative flex items-center gap-2 rounded-[12px] transition-colors duration-150",
-        isSub
-          ? "admin-nav-sub-link py-1.5 pl-3 pr-2 text-[12.5px] leading-snug"
-          : "px-2.5 py-2 text-[13px] font-medium",
-        isSub &&
-          active &&
-          "admin-nav-sub-link--active font-medium text-[var(--growth-os-primary)]",
-        isSub &&
-          !active &&
-          "text-[var(--gray-700)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]",
-        !isSub &&
-          (active
-            ? "bg-[var(--gray-100)] text-[var(--growth-os-primary)]"
-            : "text-[var(--gray-800)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]"),
-        collapsed && !isSub && "justify-center px-2"
+        "relative flex items-center gap-2 rounded-[12px] px-2.5 py-2 text-[13px] font-medium transition-colors duration-150",
+        active
+          ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)]"
+          : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)] hover:text-white",
+        collapsed && "justify-center px-2"
       )}
     >
-      {active && !isSub ? (
-        <span
-          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--growth-os-primary)]"
-          aria-hidden
-        />
-      ) : null}
-      {(showIcon || collapsed) && !isSub ? (
-        <span
-          className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-[9px]",
-            active
-              ? "bg-white text-[var(--growth-os-primary)] shadow-[0_1px_2px_rgba(14,79,144,0.08)]"
-              : "text-[var(--gray-500)]"
-          )}
-        >
-          <NavIcon icon={item.icon} className="h-4 w-4 shrink-0" />
-        </span>
-      ) : null}
+      <span
+        className={cn(
+          "flex h-7 w-7 items-center justify-center rounded-[9px]",
+          active ? "text-[var(--sidebar-active-fg)]" : "text-[var(--sidebar-fg-muted)]"
+        )}
+      >
+        <NavIcon icon={item.icon} className="h-4 w-4 shrink-0" />
+      </span>
       {!collapsed ? (
         <>
           <span className="truncate">{item.label}</span>
-          {item.badge ? <NavBadge count={item.badge} subtle={isSub} /> : null}
+          {item.badge ? <NavBadge count={item.badge} /> : null}
         </>
       ) : null}
     </Link>
-  );
-}
-
-function NavGroupSection({
-  group,
-  pathname,
-  searchParams,
-  collapsed,
-  expanded,
-  onToggle,
-  onNavigate,
-  onFlyoutOpen,
-  flyoutOpen,
-  nested = false,
-}: {
-  group: AdminNavGroup;
-  pathname: string;
-  searchParams: URLSearchParams;
-  collapsed: boolean;
-  expanded: boolean;
-  onToggle: () => void;
-  onNavigate?: () => void;
-  onFlyoutOpen?: () => void;
-  flyoutOpen?: boolean;
-  nested?: boolean;
-}) {
-  const isSingleItem = group.items.length === 1;
-  const hasActiveChild = group.items.some((item) =>
-    isSidebarItemActive(pathname, item, searchParams)
-  );
-  const panelId = `nav-group-${group.id}`;
-
-  if (isSingleItem) {
-    const item = group.items[0];
-    const linkItem = {
-      ...item,
-      label: group.label,
-      icon: group.icon,
-      badge: group.badge ?? item.badge,
-    };
-    return (
-      <SidebarLink
-        item={linkItem}
-        pathname={pathname}
-        searchParams={searchParams}
-        collapsed={collapsed}
-        onNavigate={onNavigate}
-        variant={nested ? "sub" : "primary"}
-      />
-    );
-  }
-
-  if (collapsed) {
-    return (
-      <div className="relative">
-        <button
-          type="button"
-          onClick={onFlyoutOpen}
-          title={group.label}
-          aria-expanded={flyoutOpen}
-          aria-controls={panelId}
-          className={cn(
-            "flex w-full items-center justify-center rounded-[12px] px-2 py-2 transition-colors duration-150",
-            hasActiveChild || flyoutOpen
-              ? "bg-[var(--gray-100)] text-[var(--growth-os-primary)]"
-              : "text-[var(--gray-800)] hover:bg-[var(--gray-50)]"
-          )}
-        >
-          <NavIcon icon={group.icon} className="h-[18px] w-[18px]" />
-        </button>
-        {flyoutOpen ? (
-          <div
-            id={panelId}
-            className="admin-nav-flyout absolute left-full top-0 z-50 ml-2 min-w-[13rem] rounded-xl border border-border bg-surface p-2 shadow-[var(--shadow-lg)]"
-          >
-            <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-wider text-muted">
-              {group.label}
-            </p>
-            {group.items.map((item) => (
-              <SidebarLink
-                key={item.id ?? item.href ?? item.label}
-                item={item}
-                pathname={pathname}
-                searchParams={searchParams}
-                collapsed={false}
-                onNavigate={onNavigate}
-                variant="sub"
-                showIcon={false}
-              />
-            ))}
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "admin-nav-group rounded-[12px]",
-        expanded && "admin-nav-group--expanded bg-[var(--sidebar-group-bg)]",
-        !expanded && hasActiveChild && "bg-[var(--gray-50)]"
-      )}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        className={cn(
-          "flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-left transition-colors duration-150",
-          hasActiveChild || expanded
-            ? "text-[var(--growth-os-primary)]"
-            : "text-[var(--gray-800)] hover:bg-[var(--gray-50)] hover:text-[var(--gray-900)]"
-        )}
-      >
-        <span
-          className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]",
-            hasActiveChild || expanded
-              ? "bg-white text-[var(--growth-os-primary)] shadow-[0_1px_2px_rgba(14,79,144,0.08)]"
-              : "text-[var(--gray-500)]"
-          )}
-          aria-hidden
-        >
-          <NavIcon icon={group.icon} className="h-4 w-4" />
-        </span>
-        <span className="flex-1 truncate text-[13px] font-semibold leading-tight tracking-tight">
-          {group.label}
-        </span>
-        {group.badge ? <NavBadge count={group.badge} subtle /> : null}
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 shrink-0 opacity-70 transition-transform duration-200",
-            expanded && "rotate-180"
-          )}
-        />
-      </button>
-      <div
-        id={panelId}
-        className={cn(
-          "admin-nav-group__panel grid transition-[grid-template-rows] duration-200 ease-out",
-          expanded ? "admin-nav-group__panel--open" : "admin-nav-group__panel--closed"
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="admin-nav-subtree space-y-0.5 px-2.5 pb-2.5 pt-1.5">
-            {group.items.map((item) => (
-              <SidebarLink
-                key={item.id ?? item.href ?? item.label}
-                item={item}
-                pathname={pathname}
-                searchParams={searchParams}
-                collapsed={false}
-                onNavigate={onNavigate}
-                variant="sub"
-                showIcon={false}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SidebarZoneLabel({ label }: { label: string }) {
-  return (
-    <div className="admin-nav-zone-label px-2.5 pb-1.5 pt-1">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--gray-500)]">
-        {label}
-      </span>
-    </div>
   );
 }
 
@@ -424,53 +274,10 @@ function SidebarNav({
     ctx.navBadges
   );
   const groupsById = new Map(groups.map((group) => [group.id, group]));
-  const activeGroupId = findActiveNavGroupId(pathname, groups, searchParams);
-  const { isExpanded, toggleGroup, expandGroup } = useNavGroupExpanded(activeGroupId);
-  const [flyoutGroupId, setFlyoutGroupId] = useState<NavGroupId | null>(null);
-  const navRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    if (activeGroupId) expandGroup(activeGroupId);
-  }, [activeGroupId, expandGroup]);
-
-  useDeferredEffect(() => {
-    if (!collapsed) setFlyoutGroupId(null);
-  }, [collapsed]);
-
-  useEffect(() => {
-    function onPointerDown(event: MouseEvent) {
-      if (!navRef.current?.contains(event.target as Node)) {
-        setFlyoutGroupId(null);
-      }
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, []);
-
-  function renderGroup(group: AdminNavGroup, nested = false) {
-    return (
-      <NavGroupSection
-        key={group.id}
-        group={group}
-        pathname={pathname}
-        searchParams={searchParams}
-        collapsed={collapsed}
-        expanded={isExpanded(group.id)}
-        onToggle={() => toggleGroup(group.id)}
-        onNavigate={onNavigate}
-        nested={nested}
-        flyoutOpen={flyoutGroupId === group.id}
-        onFlyoutOpen={() =>
-          setFlyoutGroupId((current) => (current === group.id ? null : group.id))
-        }
-      />
-    );
-  }
 
   return (
     <nav
-      ref={navRef}
-      className="flex flex-1 flex-col gap-4 overflow-y-auto px-2.5 py-3"
+      className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-3"
       aria-label={`${PLATFORM_DISPLAY_NAME} · Espacio`}
     >
       {NAV_SIDEBAR_ZONES.map((zone) => {
@@ -480,20 +287,23 @@ function SidebarNav({
 
         if (zoneGroups.length === 0) return null;
 
-        const isGrow = zone.id === "grow";
-        const isTools = zone.id === "tools";
-
         return (
-          <div
-            key={zone.id}
-            className={cn(
-              isTools && "mt-auto border-t border-[var(--color-border-default)] pt-3"
-            )}
-          >
-            {zone.label && !collapsed ? <SidebarZoneLabel label={zone.label} /> : null}
-            <div className={cn("flex flex-col", isGrow ? "gap-0.5" : "gap-0.5")}>
-              {zoneGroups.map((group) => renderGroup(group, isGrow))}
-            </div>
+          <div key={zone.id} className="flex flex-col gap-0.5">
+            {zoneGroups.map((group) => {
+              const link = navGroupAsSidebarLink(group);
+              if (!link) return null;
+              return (
+                <SidebarLink
+                  key={group.id}
+                  item={link}
+                  pathname={pathname}
+                  searchParams={searchParams}
+                  collapsed={collapsed}
+                  onNavigate={onNavigate}
+                  activeOverride={isNavGroupActive(pathname, group, searchParams)}
+                />
+              );
+            })}
           </div>
         );
       })}
@@ -625,8 +435,13 @@ export function AdminSidebar({
       )}
       aria-label="Barra lateral"
     >
-      <SidebarBrand branding={ctx.branding} collapsed={collapsed} />
+      <SidebarBrand collapsed={collapsed} />
       <SidebarNav ctx={ctx} collapsed={collapsed} />
+      <SidebarFooter
+        branding={ctx.branding}
+        collapsed={collapsed}
+        onNavigate={undefined}
+      />
     </aside>
   );
 
@@ -636,10 +451,15 @@ export function AdminSidebar({
       onClose={onMobileClose}
       title={PLATFORM_DISPLAY_NAME}
       side="left"
-      className="max-w-none sm:max-w-sm"
+      className="admin-shell-v2-drawer max-w-none sm:max-w-sm"
     >
-      <SidebarBrand branding={ctx.branding} collapsed={false} />
+      <SidebarBrand collapsed={false} />
       <SidebarNav ctx={ctx} collapsed={false} onNavigate={onMobileClose} />
+      <SidebarFooter
+        branding={ctx.branding}
+        collapsed={false}
+        onNavigate={onMobileClose}
+      />
       <SidebarProfileMenu ctx={ctx} collapsed={false} onNavigate={onMobileClose} />
     </Drawer>
   );

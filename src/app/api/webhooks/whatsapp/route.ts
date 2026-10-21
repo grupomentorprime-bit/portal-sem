@@ -23,6 +23,7 @@ import {
 } from "@/core/growth/automations";
 import { publicInternalError } from "@/core/security/public-error";
 import { createGrowthEventBusAdapter } from "@/lib/growth/event-bus";
+import { openGrowthFunnelDirectory } from "@/core/growth/funnel-mongo";
 import { createMongoGrowthOpportunityWorkflow } from "@/lib/growth/opportunity-workflow";
 import { openGrowthWhatsAppConnectionStore } from "@/lib/growth/whatsapp-connections";
 import { getDatabase } from "@/lib/mongodb";
@@ -116,10 +117,13 @@ export async function POST(request: Request) {
         oportunidades,
         workflow: createMongoGrowthOpportunityWorkflow(),
         eventBus: createGrowthEventBusAdapter(),
+        funnels: await openGrowthFunnelDirectory(db),
         async onTenantResolved(tenantId) {
           if (ensuredTenants.has(tenantId)) return;
           ensuredTenants.add(tenantId);
           await ensureStartupNextActionAutomationSafe(db, tenantId);
+          const { ensureLiveGrowthFunnels } = await import("@/lib/growth/funnels-live");
+          await ensureLiveGrowthFunnels(tenantId);
         },
       },
       { rawBody, signatureHeader }

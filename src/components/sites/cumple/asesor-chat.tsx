@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Turn = { role: "user" | "assistant"; text: string };
 
@@ -86,7 +87,13 @@ function ChatIcon({ className }: { className?: string }) {
   );
 }
 
+/** En el diagnóstico móvil el botón tapa la tercera respuesta. En el resto del sitio sigue visible. */
+export function hideAsesorOnDiagnostico(pathname: string): boolean {
+  return pathname === "/evaluar" || pathname.startsWith("/evaluar/");
+}
+
 export function AsesorChat() {
+  const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
   const [peek, setPeek] = useState(false);
   const [messages, setMessages] = useState<Turn[]>([saludo]);
@@ -151,7 +158,11 @@ export function AsesorChat() {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+    <div
+      className={`fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3 ${
+        hideAsesorOnDiagnostico(pathname) ? "max-sm:hidden" : ""
+      }`}
+    >
       {open ? (
         <section
           role="dialog"

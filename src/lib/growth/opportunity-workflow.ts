@@ -7,7 +7,6 @@
 import "server-only";
 
 import {
-  GROWTH_OPPORTUNITY_DEFINITION_KEY,
   GROWTH_OPPORTUNITY_ENTITY_TYPE,
   isGrowthOpportunityFinalStatus,
   type GrowthOpportunityWorkflowPort,
@@ -28,8 +27,13 @@ const SYSTEM_ACTOR = "growth-ingest";
 
 export function createMongoGrowthOpportunityWorkflow(): GrowthOpportunityWorkflowPort {
   return {
-    async start({ tenantId, entityId, metadata }) {
+    async start({ tenantId, entityId, metadata, definitionKey }) {
       await ensureSystemDefinitions(tenantId);
+      const resolvedKey =
+        definitionKey?.trim() ||
+        (typeof metadata?.definitionKey === "string"
+          ? metadata.definitionKey
+          : "growth.opportunity.default");
       const existing = await findInstanceByEntity(
         tenantId,
         GROWTH_OPPORTUNITY_ENTITY_TYPE,
@@ -43,14 +47,9 @@ export function createMongoGrowthOpportunityWorkflow(): GrowthOpportunityWorkflo
         };
       }
 
-      const definition = await findDefinitionByKey(
-        tenantId,
-        GROWTH_OPPORTUNITY_DEFINITION_KEY
-      );
+      const definition = await findDefinitionByKey(tenantId, resolvedKey);
       if (!definition) {
-        throw new Error(
-          `Definición de workflow no encontrada: ${GROWTH_OPPORTUNITY_DEFINITION_KEY}`
-        );
+        throw new Error(`Definición de workflow no encontrada: ${resolvedKey}`);
       }
 
       const instance = await createInstance({
@@ -77,7 +76,7 @@ export function createMongoGrowthOpportunityWorkflow(): GrowthOpportunityWorkflo
       return {
         instanceId: instance._id,
         currentState: instance.currentState,
-        definitionKey: instance.definitionKey,
+        definitionKey: instance.definitionKey || resolvedKey,
       };
     },
 

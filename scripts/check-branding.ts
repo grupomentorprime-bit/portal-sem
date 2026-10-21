@@ -16,9 +16,14 @@ const COLORS_FILE = "src/styles/tokens/colors.css";
 
 /** HEX autorizados en brand.css — defaults Growth OS (`--growth-os-*`) */
 const CORPORATE_HEX = new Set([
-  "#0e4f90",
-  "#6c99cd",
-  "#7c5cfa",
+  "#6d28d9",
+  "#5b21b6",
+  "#a78bfa",
+  "#22d3ee",
+  "#1e1b4b",
+  "#ede9fe",
+  "#c4b5fd",
+  "#6b6580",
   "#18b981",
   "#f59b45",
 ]);
@@ -44,16 +49,16 @@ const FORBIDDEN_HEX = new Set([
 ]);
 
 const COLORS_CSS_ALLOWED = new Set([
-  "#f4f7fb",
-  "#eaf2fc",
-  "#d9e4f2",
-  "#b8c9de",
-  "#8fa8c4",
-  "#6c87ac",
-  "#557194",
-  "#3a5273",
-  "#1e3355",
-  "#0b1f3a",
+  "#f7f5ff",
+  "#efeafc",
+  "#e4dff2",
+  "#d4ccea",
+  "#a89fbe",
+  "#6b6580",
+  "#564f6e",
+  "#3f3958",
+  "#2a2544",
+  "#1e1b4b",
   "#ffffff",
   "#b42318",
 ]);

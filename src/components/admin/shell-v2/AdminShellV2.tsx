@@ -45,7 +45,17 @@ export function AdminShellV2({ children, ...ctx }: AdminShellV2Props) {
             onToggleSidebar={toggleCollapsed}
             onOpenMobileNav={toggleMobile}
           />
-          <AdminLayoutMaster sidebarCollapsed={collapsed}>{children}</AdminLayoutMaster>
+          <AdminLayoutMaster
+            sidebarCollapsed={collapsed}
+            shell={{
+              permissions: ctx.permissions,
+              compatMode: ctx.compatMode,
+              roleCodes: ctx.roleCodes,
+              navBadges: ctx.navBadges,
+            }}
+          >
+            {children}
+          </AdminLayoutMaster>
         </div>
       </div>
     </div>

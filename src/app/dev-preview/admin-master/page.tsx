@@ -18,7 +18,7 @@ import { loadGrowthOsHomeSnapshot } from "@/components/admin/preview/growth-os-m
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ empty?: string }>;
+  searchParams: Promise<{ empty?: string; preset?: string }>;
 }
 
 /**
@@ -37,11 +37,26 @@ export default async function AdminMasterPreviewPage({ searchParams }: PageProps
     redirect("/login?next=/dev-preview/admin-master");
   }
 
-  const empty = (await searchParams).empty === "1";
+  const params = await searchParams;
+  const empty = params.empty === "1";
   const [config, spaces, home] = await Promise.all([
     getOperationalSiteConfig(),
     listAvailableSpacesForUser(session.user._id),
-    loadGrowthOsHomeSnapshot(tenantId, empty),
+    loadGrowthOsHomeSnapshot({
+      tenantId,
+      userId: session.user._id,
+      empty,
+      periodQuery: { preset: params.preset?.trim() || "last_30d" },
+      capabilities: {
+        salesView: true,
+        salesOperate: true,
+        salesRead: true,
+        campaignsView: true,
+        analyticsView: true,
+        peopleView: true,
+        activityView: true,
+      },
+    }),
   ]);
 
   const branding = buildAdminTenantBranding(config);
@@ -77,6 +92,13 @@ export default async function AdminMasterPreviewPage({ searchParams }: PageProps
         firstName={firstName}
         spaceName={spaceName}
         home={home}
+        periodPreset={
+          params.preset === "last_7d" ||
+          params.preset === "this_month" ||
+          params.preset === "previous_month"
+            ? params.preset
+            : "last_30d"
+        }
       />
     </GrowthOsAdminMasterShell>
   );

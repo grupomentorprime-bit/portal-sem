@@ -52,7 +52,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium transition-[background-color,opacity,transform,box-shadow] duration-[var(--transition-fast)]",
+    "inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold transition-[background-color,opacity,transform,box-shadow] duration-[var(--transition-fast)]",
     focusRing,
     disabledStyles,
     variants[variant],

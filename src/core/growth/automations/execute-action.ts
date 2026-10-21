@@ -3,7 +3,11 @@
  * Actor fijo: growth-automation. No usa userId del evento/visitante.
  */
 
-import { GROWTH_AUTOMATION_ACTION_TYPES, GROWTH_AUTOMATION_SYSTEM_ACTOR } from "./types";
+import {
+  GROWTH_AUTOMATION_ACTION_TYPES,
+  GROWTH_AUTOMATION_SYSTEM_ACTOR,
+  GROWTH_STARTUP_NEXT_ACTION_SUMMARY,
+} from "./types";
 import type { GrowthAutomationActionStep } from "./types";
 import type { GrowthAutomationSalesOpsPort } from "./sales-ops-port";
 
@@ -136,6 +140,9 @@ export async function executeAutomationActionStep(input: {
         summary: actionStep.summary,
         dueAt: actionStep.dueAt,
         kind: actionStep.nextActionKind,
+        ...(actionStep.summary.trim() === GROWTH_STARTUP_NEXT_ACTION_SUMMARY
+          ? { sourceKey: "growth.startup.next_action" as const }
+          : {}),
       });
       if (!result.ok) {
         return {
@@ -169,6 +176,36 @@ export async function executeAutomationActionStep(input: {
         ok: true,
         action: actionStep.action,
         activityId: result.activity._id,
+      };
+    }
+    case "salesAssignOwner": {
+      const userId = actionStep.userId?.trim();
+      if (!userId || !input.salesOps.salesAssignOwner) {
+        return {
+          ok: false,
+          action: actionStep.action,
+          reason: "invalid_action",
+          detail: "salesAssignOwner requiere userId de un miembro del Espacio.",
+        };
+      }
+      const result = await input.salesOps.salesAssignOwner({
+        tenantId: input.tenantId,
+        oportunidadId: input.oportunidadId,
+        actor,
+        userId,
+      });
+      if (!result.ok) {
+        return {
+          ok: false,
+          action: actionStep.action,
+          reason: "action_failed",
+          detail: result.reason,
+        };
+      }
+      return {
+        ok: true,
+        action: actionStep.action,
+        ...(result.activity ? { activityId: result.activity._id } : {}),
       };
     }
     default: {

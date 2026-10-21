@@ -49,6 +49,8 @@ const GROWTH_SALES_FULL: PermissionId[] = [
   "growth.sales.read", "growth.sales.operate",
 ];
 
+const GROWTH_FUNNELS_MANAGE: PermissionId[] = ["growth.funnels.manage"];
+
 const GROWTH_AUTOMATIONS_FULL: PermissionId[] = [
   "growth.automations.view", "growth.automations.manage",
 ];
@@ -81,6 +83,7 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       ...WORKFLOW_FULL,
       ...EVENTS_FULL,
       ...GROWTH_SALES_FULL,
+      ...GROWTH_FUNNELS_MANAGE,
       ...GROWTH_AUTOMATIONS_FULL,
       ...GROWTH_CAMPAIGNS_FULL,
       ...GROWTH_ANALYTICS_FULL,
@@ -100,6 +103,7 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       ...SETTINGS_ADMIN,
       "identity.members.manage",
       ...GROWTH_SALES_FULL,
+      ...GROWTH_FUNNELS_MANAGE,
       ...GROWTH_AUTOMATIONS_FULL,
       ...GROWTH_CAMPAIGNS_FULL,
       ...GROWTH_ANALYTICS_FULL,

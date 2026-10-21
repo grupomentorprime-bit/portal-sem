@@ -7,6 +7,7 @@ import { recordGrowthActivity } from "./activity";
 import type { GrowthEventBusPort } from "./event-bus-port";
 import { extractGrowthContactFromFormData } from "./ingest-contact";
 import { buildGrowthIngestKey } from "./ingest-key";
+import type { GrowthFunnelDirectory } from "./funnel-directory";
 import { openGrowthOpportunity } from "./open-opportunity";
 import type { GrowthOpportunityStore } from "./opportunity-store";
 import type { GrowthOpportunityWorkflowPort } from "./opportunity-workflow-port";
@@ -20,6 +21,7 @@ import type {
   GrowthBaseOpportunityTypeKey,
   GrowthOportunidad,
   GrowthOriginInput,
+  GrowthNextActionKind,
   GrowthOriginKind,
   GrowthPersona,
 } from "./types";
@@ -44,6 +46,8 @@ export interface GrowthIngestDeps {
   oportunidades: GrowthOpportunityStore;
   workflow: GrowthOpportunityWorkflowPort;
   eventBus?: GrowthEventBusPort;
+  /** Sin esto, un alta sin embudo explícito usa la clave `default`. */
+  funnels?: GrowthFunnelDirectory;
 }
 
 export interface GrowthAdmissionIngestInput {
@@ -77,6 +81,15 @@ export interface GrowthFormIngestInput {
   channel?: string;
   campaign?: string;
   referrer?: string;
+  /**
+   * Si viene, la oportunidad nace con esta acción y el playbook de arranque
+   * (nextAction ausente) no la pisa. La actividad de la acción se registra igual.
+   */
+  initialNextAction?: {
+    summary: string;
+    kind: GrowthNextActionKind;
+    sourceKey: string;
+  };
 }
 
 export type GrowthIngestInput = GrowthAdmissionIngestInput | GrowthFormIngestInput;
@@ -163,6 +176,11 @@ async function ensureOpportunityForSource(
     subjectId?: string;
     subjectLabel?: string;
     now: string;
+    initialNextAction?: {
+      summary: string;
+      kind: GrowthNextActionKind;
+      sourceKey: string;
+    };
   }
 ): Promise<
   | { ok: true; oportunidad: GrowthOportunidad; created: boolean }
@@ -192,6 +210,8 @@ async function ensureOpportunityForSource(
       subjectLabel: input.subjectLabel,
       now: input.now,
       eventBus: deps.eventBus,
+      funnelDirectory: deps.funnels,
+      initialNextAction: input.initialNextAction,
     }
   );
   if (!opened.ok) return { ok: false };
@@ -429,6 +449,9 @@ export async function projectGrowthFromSignal(
     subjectId,
     subjectLabel,
     now,
+    ...(input.kind === "form" && input.initialNextAction
+      ? { initialNextAction: input.initialNextAction }
+      : {}),
   });
   if (!ensured.ok) {
     return { ok: false, reason: "open_opportunity_failed" };

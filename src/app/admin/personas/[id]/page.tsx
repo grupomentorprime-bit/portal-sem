@@ -4,6 +4,8 @@ import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 import { can } from "@/core/identity/policies/engine";
 import { getGrowthPersonaDetailView } from "@/lib/growth/personas-read";
+import { listGrowthSpaceMembers } from "@/lib/growth/space-members";
+import { ensureCumpleGrowthAssessmentPort } from "@/sites/cumple/growth-assessment";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { UserRoundX } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -12,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ oportunidad?: string }>;
+  searchParams: Promise<{ oportunidad?: string; seccion?: string }>;
 }
 
 function canViewPeople(authCtx: Parameters<typeof can>[0]): boolean {
@@ -31,6 +33,10 @@ function canOpenSales(authCtx: Parameters<typeof can>[0]): boolean {
 
 function canOpenMessages(authCtx: Parameters<typeof can>[0]): boolean {
   return canOpenSales(authCtx);
+}
+
+function canOperateSales(authCtx: Parameters<typeof can>[0]): boolean {
+  return can(authCtx, "growth.sales.operate");
 }
 
 function canOpenActivity(authCtx: Parameters<typeof can>[0]): boolean {
@@ -74,7 +80,8 @@ export default async function AdminPersonaDetailPage({
   }
 
   const { id } = await params;
-  const { oportunidad } = await searchParams;
+  const { oportunidad, seccion } = await searchParams;
+  ensureCumpleGrowthAssessmentPort();
   const persona = await getGrowthPersonaDetailView(tenantId, id);
 
   if (!persona) {
@@ -106,10 +113,13 @@ export default async function AdminPersonaDetailPage({
   return (
     <PersonaDetailClient
       persona={persona}
+      section={seccion}
       focusOportunidadId={oportunidad?.trim() || undefined}
       canOpenSales={canOpenSales(authCtx)}
       canOpenMessages={canOpenMessages(authCtx)}
       canOpenActivity={canOpenActivity(authCtx)}
+      canOperate={canOperateSales(authCtx)}
+      members={await listGrowthSpaceMembers(tenantId)}
     />
   );
 }

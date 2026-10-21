@@ -56,6 +56,7 @@ export function createMongoGrowthOpportunityStore(db: Db): GrowthOpportunityStor
       typeKey,
       subjectType,
       subjectId,
+      funnelKey,
     }) {
       const filter: Record<string, unknown> = {
         tenantId,
@@ -68,8 +69,11 @@ export function createMongoGrowthOpportunityStore(db: Db): GrowthOpportunityStor
 
       const candidates = await oportunidades.find(filter).toArray();
       return (
-        candidates.find((o) => !isGrowthOpportunityFinalStatus(o.status)) ??
-        null
+        candidates.find(
+          (o) =>
+            !isGrowthOpportunityFinalStatus(o.status) &&
+            (!funnelKey || (o.funnelKey || "default") === funnelKey)
+        ) ?? null
       );
     },
 
@@ -86,6 +90,20 @@ export function createMongoGrowthOpportunityStore(db: Db): GrowthOpportunityStor
         doc
       );
       return doc;
+    },
+
+    async touchOpportunityActivity(tenantId, oportunidadId, occurredAt) {
+      await oportunidades.updateOne(
+        {
+          tenantId,
+          _id: oportunidadId,
+          $or: [
+            { lastActivityAt: { $exists: false } },
+            { lastActivityAt: { $lt: occurredAt } },
+          ],
+        },
+        { $set: { lastActivityAt: occurredAt } }
+      );
     },
 
     async getSpaceConfig(tenantId) {

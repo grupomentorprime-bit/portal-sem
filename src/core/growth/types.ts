@@ -72,6 +72,7 @@ export type GrowthActivityKind =
   | "note"
   | "contact"
   | "handoff"
+  | "opportunity_assigned"
   | "identity_updated"
   | "identity_conflict";
 
@@ -197,6 +198,11 @@ export interface GrowthNextAction {
   assigneeUserId?: string;
   kind: GrowthNextActionKind;
   setAt: string;
+  /**
+   * Quién escribió la acción.
+   * `operator` no se reemplaza con el texto genérico del diagnóstico.
+   */
+  sourceKey?: string;
 }
 
 export interface GrowthOpportunitySource {
@@ -222,7 +228,20 @@ export interface GrowthOportunidad {
   /** Origen de esta intención — inmutable al abrir. */
   origin: GrowthOrigin;
   /** Espejo de workflow_instances.currentState. */
-  status: GrowthOpportunityStatus;
+  status: string;
+  /**
+   * Embudo del Espacio. Inmutable. Obligatorio tras la migración;
+   * ausente solo en documentos previos a ella.
+   */
+  funnelKey?: string;
+  /** Reservado. En estas fases null. */
+  organizationId?: string | null;
+  /** Responsable de la oportunidad. Ausente = sin responsable. */
+  ownerUserId?: string;
+  /** Valores de los campos del embudo. La clave desconocida se ignora al leer. */
+  customFields?: Record<string, string | number | boolean | null>;
+  /** Último movimiento comercial de esta oportunidad. */
+  lastActivityAt?: string;
   workflowInstanceId: string;
   nextAction: GrowthNextAction | null;
   source: GrowthOpportunitySource;
@@ -242,6 +261,8 @@ export interface GrowthSpaceConfig {
   _id: string;
   tenantId: string;
   opportunityTypes: GrowthOpportunityTypeConfig[];
+  /** Días sin movimiento para la banda «estancada». 1–90. Default 7. */
+  staleAfterDays?: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,0 +1,160 @@
+﻿ÔûÂ buildConversionAnalytics ÔÇö aislamiento por Espacio
+  Ô£ö una oportunidad de otro tenantId no cambia captaci├│n, cohortes ni responsables (3.0935ms)
+Ô£ö buildConversionAnalytics ÔÇö aislamiento por Espacio (3.9612ms)
+ÔûÂ buildConversionAnalytics ÔÇö captaci├│n
+  Ô£ö total es la suma de cortes por embudo y por origen (10.6421ms)
+  Ô£ö una alta archivada despu├®s cuenta en captaci├│n y no en la cohorte (0.4642ms)
+  Ô£ö sin openedAt no es alta y va al cubo de calidad (0.4704ms)
+Ô£ö buildConversionAnalytics ÔÇö captaci├│n (11.8162ms)
+ÔûÂ buildConversionAnalytics ÔÇö stock y movimiento
+  Ô£ö stock ignora el per├¡odo; movimiento ilegible no mueve otra barra (0.4034ms)
+  Ô£ö clasifica avance, abandono, ganada, traspaso y archivo; asignar no avanza (0.498ms)
+  Ô£ö handed_off con closedAt en el per├¡odo sube traspaso y no ganadas ni perdidas (0.2819ms)
+Ô£ö buildConversionAnalytics ÔÇö stock y movimiento (1.4382ms)
+ÔûÂ buildConversionAnalytics ÔÇö cierres y cohortes
+  Ô£ö won sin closedAt va a calidad y no altera la tasa (1.0892ms)
+  Ô£ö cohorte vac├¡a no tiene fila y su tasa es null (0.1466ms)
+  Ô£ö cohorte de 2 con una ganada y una abierta tiene tasa 0.5 (0.3481ms)
+  Ô£ö handed_off entra en cohorte y handedOff, no en won (0.2103ms)
+Ô£ö buildConversionAnalytics ÔÇö cierres y cohortes (2.0403ms)
+ÔûÂ buildConversionAnalytics ÔÇö p├®rdidas
+  Ô£ö cuenta etapa de salida, conserva p├®rdidas sin etapa y no registra motivos (0.8377ms)
+  Ô£ö transiciones a lost posteriores a closedAt no definen la etapa de salida (0.2371ms)
+Ô£ö buildConversionAnalytics ÔÇö p├®rdidas (1.1678ms)
+ÔûÂ buildConversionAnalytics ÔÇö permanencia y ciclo
+  Ô£ö mediana de intervalos terminados; en curso e historial incompleto no cuentan (0.4656ms)
+  Ô£ö ciclo de ganadas y perdidas se calcula por separado (0.1336ms)
+Ô£ö buildConversionAnalytics ÔÇö permanencia y ciclo (0.6797ms)
+ÔûÂ buildConversionAnalytics ÔÇö campa├▒a y fuente
+  Ô£ö atribuye solo por trackingKey del Espacio y no lee referrer (0.2555ms)
+Ô£ö buildConversionAnalytics ÔÇö campa├▒a y fuente (0.3068ms)
+ÔûÂ buildConversionAnalytics ÔÇö responsables
+  Ô£ö abierta suma en el ownerUserId vigente (0.1857ms)
+  Ô£ö cierre atribuye a la ├║ltima asignaci├│n anterior o igual a closedAt (0.2791ms)
+  Ô£ö usuario sin membres├¡a queda como Responsable no vigente (0.0952ms)
+Ô£ö buildConversionAnalytics ÔÇö responsables (0.6427ms)
+ÔûÂ buildConversionAnalytics ÔÇö calidad de datos
+  Ô£ö los cubos de calidad son n├║meros y no filas de etapa, origen ni responsable (0.4082ms)
+Ô£ö buildConversionAnalytics ÔÇö calidad de datos (0.4998ms)
+ÔûÂ conversion-analytics-read ÔÇö guarda de fuente
+  Ô£ö es server-only y filtra por tenantId (0.3179ms)
+  Ô£ö lee solo los kinds de movimiento necesarios (0.1365ms)
+  Ô£ö no escribe, no migra y no toca m├®tricas de campa├▒a (0.2498ms)
+  Ô£ö la anal├¡tica previa no importa conversion-analytics (0.4137ms)
+  Ô£ö la lectura server-only no se reexporta desde el ├¡ndice de Growth (0.2257ms)
+Ô£ö conversion-analytics-read ÔÇö guarda de fuente (1.5043ms)
+ÔûÂ Conversion Engine fase 3 ÔÇö pantalla, ruta y navegaci├│n (guardas de fuente)
+  Ô£ö Anal├¡tica V1 no cambia (0.3127ms)
+  Ô£ö el panel comercial no importa el cliente de anal├¡tica (0.1934ms)
+  Ô£û nav: ├¡tem nuevo despu├®s de nav-conversion con permiso exacto (4.4485ms)
+  Ô£û la p├ígina nueva exige growth.sales.view y redirige al login (0.4216ms)
+  Ô£û la ruta API usa growth.sales.view (0.2724ms)
+  Ô£û el cliente muestra copy contractual, una columna, sin motivos ni series de ejemplo (0.2641ms)
+  Ô£û AnaliticaClient usa las piezas extra├¡das y conserva su fetch (0.2398ms)
+Ô£û Conversion Engine fase 3 ÔÇö pantalla, ruta y navegaci├│n (guardas de fuente) (6.5243ms)
+ÔûÂ OT-GROWTH-UX-ANALYTICS-004 ÔÇö dise├▒o final Anal├¡tica
+  Ô£ö usa AnaliticaClient y conserva lectura tenant del adaptador (0.9733ms)
+  Ô£ö copy humano de cabecera, per├¡odos y error (0.4213ms)
+  Ô£ö jerarqu├¡a de historia + selector de per├¡odo sin UTC t├®cnico (0.6172ms)
+  Ô£ö no toca backend ni motores prohibidos (0.6383ms)
+Ô£ö OT-GROWTH-UX-ANALYTICS-004 ÔÇö dise├▒o final Anal├¡tica (3.7999ms)
+Ôä╣ tests 36
+Ôä╣ suites 12
+Ôä╣ pass 31
+Ôä╣ fail 5
+Ôä╣ cancelled 0
+Ôä╣ skipped 0
+Ôä╣ todo 0
+Ôä╣ duration_ms 344.0001
+
+Ô£û failing tests:
+
+test at tests\baseline\growth-conversion-analytics.test.ts:2:20280
+Ô£û nav: ├¡tem nuevo despu├®s de nav-conversion con permiso exacto (4.4485ms)
+  AssertionError [ERR_ASSERTION]: nav-conversion-analitica despu├®s de nav-conversion
+      at TestContext.<anonymous> (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:679:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\baseline\growth-conversion-analytics.test.ts:2:21333
+Ô£û la p├ígina nueva exige growth.sales.view y redirige al login (0.4216ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\semip\Proyectos\portal-sem\src\app\admin\conversion\analitica\page.tsx'
+      at readFileSync (node:fs:441:20)
+      at src (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:659:32)
+      at TestContext.<anonymous> (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:696:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\semip\\Proyectos\\portal-sem\\src\\app\\admin\\conversion\\analitica\\page.tsx'
+  }
+
+test at tests\baseline\growth-conversion-analytics.test.ts:2:21754
+Ô£û la ruta API usa growth.sales.view (0.2724ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\semip\Proyectos\portal-sem\src\app\api\growth\conversion-analytics\route.ts'
+      at readFileSync (node:fs:441:20)
+      at src (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:659:32)
+      at TestContext.<anonymous> (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:704:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\semip\\Proyectos\\portal-sem\\src\\app\\api\\growth\\conversion-analytics\\route.ts'
+  }
+
+test at tests\baseline\growth-conversion-analytics.test.ts:2:22097
+Ô£û el cliente muestra copy contractual, una columna, sin motivos ni series de ejemplo (0.2641ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\semip\Proyectos\portal-sem\src\components\admin\growth\ConversionAnaliticaClient.tsx'
+      at readFileSync (node:fs:441:20)
+      at src (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:659:32)
+      at TestContext.<anonymous> (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:711:20)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\semip\\Proyectos\\portal-sem\\src\\components\\admin\\growth\\ConversionAnaliticaClient.tsx'
+  }
+
+test at tests\baseline\growth-conversion-analytics.test.ts:2:22935
+Ô£û AnaliticaClient usa las piezas extra├¡das y conserva su fetch (0.2398ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\semip\Proyectos\portal-sem\src\components\admin\growth\analitica-visual.tsx'
+      at readFileSync (node:fs:441:20)
+      at src (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:659:32)
+      at TestContext.<anonymous> (C:\Users\semip\Proyectos\portal-sem\tests\baseline\growth-conversion-analytics.test.ts:725:20)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\semip\\Proyectos\\portal-sem\\src\\components\\admin\\growth\\analitica-visual.tsx'
+  }

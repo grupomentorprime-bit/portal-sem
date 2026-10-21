@@ -30,6 +30,7 @@ const ACTIVITY_KIND_LABELS: Record<GrowthActivityKind, string> = {
   note: "Nota",
   contact: "Contacto",
   handoff: "Traspaso",
+  opportunity_assigned: "Responsable",
   identity_updated: "Datos actualizados",
   identity_conflict: "Conflicto de identidad",
 };
@@ -60,6 +61,16 @@ export function growthOriginArrivalLabel(origin: Pick<GrowthOrigin, "kind" | "ch
   const channel = origin.channel?.trim();
   if (!channel) return base;
   return `${base} · ${channel}`;
+}
+
+const PERSONA_STATUS_LABELS: Record<string, string> = {
+  active: "Activa",
+  archived: "Archivada",
+  merged: "Fusionada",
+};
+
+export function growthPersonaStatusLabel(status: string): string {
+  return PERSONA_STATUS_LABELS[status] ?? status;
 }
 
 export function growthOpportunityStatusLabel(
@@ -167,6 +178,21 @@ export const GROWTH_OPPORTUNITY_TYPE_FILTER_OPTIONS =
     label: t.label,
   }));
 
+export const GROWTH_BAND_FILTER_OPTIONS = [
+  { value: "overdue", label: "Vencida" },
+  { value: "unfollowed", label: "Sin seguimiento" },
+  { value: "stale", label: "Estancada" },
+  { value: "unassigned", label: "Sin responsable" },
+] as const;
+
+export function growthPriorityBandLabel(band: string | null | undefined): string {
+  if (band === "overdue") return "Vencida";
+  if (band === "unfollowed") return "Sin seguimiento";
+  if (band === "stale") return "Estancada";
+  if (band === "current") return "Al día";
+  return "Cerrada";
+}
+
 export const GROWTH_NEXT_ACTION_FILTER_OPTIONS = [
   { value: "", label: "Con o sin próxima acción" },
   { value: "with", label: "Con próxima acción" },
@@ -181,7 +207,7 @@ export const GROWTH_VENTAS_NO_MATCH_DESCRIPTION =
   "Prueba con otro nombre o quita los filtros.";
 export const GROWTH_VENTAS_PAGE_TITLE = "Ventas";
 export const GROWTH_VENTAS_PAGE_DESCRIPTION =
-  "Cola de Oportunidades del Espacio activo.";
+  "Oportunidades del Espacio activo.";
 export const GROWTH_VENTAS_OPERATE_TITLE = "Oportunidad";
 export const GROWTH_VENTAS_LAST_ACTIVITY_LABEL = "Última actividad";
 export const GROWTH_VENTAS_FOLLOW_UP_LABEL = "Registrar seguimiento";
@@ -300,4 +326,31 @@ export const GROWTH_ANALITICA_PERIOD_LABELS = {
   this_month: "Este mes",
   previous_month: "Mes anterior",
   custom: "Personalizado",
+} as const;
+
+/** Conversion Engine fase 3 — copy de Analítica de conversión. */
+export const GROWTH_CONVERSION_ANALITICA_PAGE_TITLE = "Analítica de conversión";
+export const GROWTH_CONVERSION_ANALITICA_PAGE_DESCRIPTION =
+  "Cómo avanzan las oportunidades por el embudo del Espacio.";
+export const GROWTH_CONVERSION_ANALITICA_EMPTY_DESCRIPTION =
+  "Cuando haya oportunidades en el Espacio, verás aquí cómo avanzan.";
+export const GROWTH_CONVERSION_ANALITICA_FUNNEL_ALL = "Todos";
+export const GROWTH_CONVERSION_ANALITICA_FUNNEL_LABEL = "Embudo";
+export const GROWTH_CONVERSION_ANALITICA_SECTION_LABELS = {
+  captacion: { eyebrow: "Captación", question: "¿Cuántas oportunidades llegaron?" },
+  stock: { eyebrow: "Stock", question: "¿Dónde están hoy las oportunidades abiertas?" },
+  movimiento: { eyebrow: "Movimiento", question: "¿Cómo salieron de cada etapa?" },
+  perdidas: { eyebrow: "Pérdidas", question: "¿En qué etapa se perdieron?" },
+  permanencia: { eyebrow: "Permanencia", question: "¿Cuánto tiempo pasan en cada etapa?" },
+  cohortes: { eyebrow: "Cohortes", question: "¿Cómo terminaron las que entraron en el período?" },
+  responsables: { eyebrow: "Responsables", question: "¿Quién lleva y quién cerró?" },
+  calidad: { eyebrow: "Calidad de datos", question: "¿Qué no se pudo leer?" },
+} as const;
+export const GROWTH_CONVERSION_ANALITICA_QUALITY_LABELS = {
+  sinFechaApertura: "Sin fecha de apertura",
+  sinFechaCierre: "Sin fecha de cierre",
+  historialIncompleto: "Historial incompleto",
+  movimientoIlegible: "Movimiento ilegible",
+  campanaNoRegistrada: "Campaña no registrada",
+  etapaDeSalidaNoRegistrada: "Etapa de salida no registrada",
 } as const;

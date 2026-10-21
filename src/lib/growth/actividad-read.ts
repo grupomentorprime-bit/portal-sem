@@ -218,6 +218,7 @@ async function loadActivitiesForFeed(
         "contact",
         "next_action_set",
         "handoff",
+        "opportunity_assigned",
       ],
     };
     filter.actorUserId = { $ne: GROWTH_AUTOMATION_SYSTEM_ACTOR };

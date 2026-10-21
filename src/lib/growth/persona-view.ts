@@ -16,7 +16,15 @@ import {
   growthOpportunityStatusLabel,
   growthOpportunityTypeLabel,
   growthOriginArrivalLabel,
+  growthPersonaStatusLabel,
 } from "./labels";
+import {
+  buildPersonaWorkspace,
+  humanizeActivitySummary,
+  opportunityTypeDisplayLabel,
+  type GrowthPersonaAssessmentView,
+  type GrowthPersonaWorkspaceView,
+} from "./persona-workspace";
 
 export interface GrowthPersonaListItemView {
   id: string;
@@ -33,6 +41,7 @@ export interface GrowthPersonaListItemView {
 export interface GrowthNextActionView {
   summary: string;
   dueAt?: string;
+  kind: string;
   kindLabel: string;
   setAt: string;
   oportunidadId: string;
@@ -42,9 +51,12 @@ export interface GrowthNextActionView {
 export interface GrowthActivityView {
   id: string;
   summary: string;
+  kind: string;
   kindLabel: string;
   occurredAt: string;
   oportunidadId?: string;
+  sourceCollection?: string;
+  sourceId?: string;
 }
 
 export interface GrowthOportunidadView {
@@ -57,6 +69,9 @@ export interface GrowthOportunidadView {
   nextAction: GrowthNextActionView | null;
   openedAt: string;
   updatedAt: string;
+  ownerUserId?: string;
+  ownerLabel?: string;
+  funnelFieldLines?: Array<{ label: string; value: string }>;
   /** Hechos ligados a esta Oportunidad (growth_actividades). */
   relatedActivities: GrowthActivityView[];
 }
@@ -85,6 +100,7 @@ export interface GrowthPersonaDetailView {
   firstName?: string;
   lastName?: string;
   status: string;
+  statusLabel: string;
   originLabel: string;
   originCapturedAt: string;
   createdAt: string;
@@ -93,6 +109,8 @@ export interface GrowthPersonaDetailView {
   conversations: GrowthPersonaConversationView[];
   activities: GrowthActivityView[];
   primaryNextAction: GrowthNextActionView | null;
+  /** Proyección comercial reutilizable. Las evaluaciones llegan vacías si el Espacio no tiene. */
+  workspace: GrowthPersonaWorkspaceView;
 }
 
 /** Actividades internas de identidad no se muestran en la UI V1. */
@@ -139,15 +157,17 @@ export function sortActivitiesNewestFirst(
 
 function toNextActionView(
   nextAction: GrowthNextAction,
-  oportunidad: GrowthOportunidad
+  oportunidad: GrowthOportunidad,
+  typeLabels?: Record<string, string>
 ): GrowthNextActionView {
   return {
     summary: nextAction.summary,
     dueAt: nextAction.dueAt,
+    kind: nextAction.kind,
     kindLabel: growthNextActionKindLabel(nextAction.kind),
     setAt: nextAction.setAt,
     oportunidadId: oportunidad._id,
-    oportunidadTypeLabel: growthOpportunityTypeLabel(oportunidad.typeKey),
+    oportunidadTypeLabel: opportunityTypeDisplayLabel(oportunidad.typeKey, typeLabels),
   };
 }
 
@@ -157,7 +177,8 @@ function toNextActionView(
  * Entre abiertas: dueAt más cercano; luego setAt más reciente.
  */
 export function pickPrimaryNextAction(
-  oportunidades: GrowthOportunidad[]
+  oportunidades: GrowthOportunidad[],
+  typeLabels?: Record<string, string>
 ): GrowthNextActionView | null {
   const withAction = oportunidades
     .filter(
@@ -177,37 +198,45 @@ export function pickPrimaryNextAction(
   });
 
   const best = withAction[0];
-  return toNextActionView(best.nextAction, best.oportunidad);
+  return toNextActionView(best.nextAction, best.oportunidad, typeLabels);
 }
 
-export function toActivityView(a: GrowthActivity): GrowthActivityView {
+export function toActivityView(
+  a: GrowthActivity,
+  typeLabels?: Record<string, string>
+): GrowthActivityView {
   return {
     id: a._id,
-    summary: a.summary,
+    summary: humanizeActivitySummary(a.summary, typeLabels),
+    kind: a.kind,
     kindLabel: growthActivityKindLabel(a.kind),
     occurredAt: a.occurredAt,
     oportunidadId: a.oportunidadId,
+    sourceCollection: a.sourceCollection,
+    sourceId: a.sourceId,
   };
 }
 
 export function toOportunidadView(
   o: GrowthOportunidad,
-  relatedActivities: GrowthActivity[] = []
+  relatedActivities: GrowthActivity[] = [],
+  typeLabels?: Record<string, string>
 ): GrowthOportunidadView {
   const related = sortActivitiesNewestFirst(
     activitiesVisibleInUi(relatedActivities)
-  ).map(toActivityView);
+  ).map((activity) => toActivityView(activity, typeLabels));
 
   return {
     id: o._id,
-    typeLabel: growthOpportunityTypeLabel(o.typeKey),
+    typeLabel: opportunityTypeDisplayLabel(o.typeKey, typeLabels),
     statusLabel: growthOpportunityStatusLabel(o.status),
     status: o.status,
     subjectLabel: o.subjectLabel,
     originLabel: growthOriginArrivalLabel(o.origin),
-    nextAction: o.nextAction ? toNextActionView(o.nextAction, o) : null,
+    nextAction: o.nextAction ? toNextActionView(o.nextAction, o, typeLabels) : null,
     openedAt: o.openedAt,
     updatedAt: o.updatedAt,
+    ownerUserId: o.ownerUserId,
     relatedActivities: related,
   };
 }
@@ -253,7 +282,9 @@ export function toPersonaDetailView(
   persona: GrowthPersona,
   oportunidades: GrowthOportunidad[],
   activities: GrowthActivity[],
-  conversations: GrowthPersonaConversationView[] = []
+  conversations: GrowthPersonaConversationView[] = [],
+  assessments: GrowthPersonaAssessmentView[] = [],
+  typeLabels?: Record<string, string>
 ): GrowthPersonaDetailView {
   const sortedOps = [...oportunidades].sort((a, b) =>
     b.openedAt.localeCompare(a.openedAt)
@@ -269,6 +300,7 @@ export function toPersonaDetailView(
     firstName: persona.firstName,
     lastName: persona.lastName,
     status: persona.status,
+    statusLabel: growthPersonaStatusLabel(persona.status),
     originLabel: growthOriginArrivalLabel(persona.origin),
     originCapturedAt: persona.origin.capturedAt,
     createdAt: persona.createdAt,
@@ -276,11 +308,20 @@ export function toPersonaDetailView(
     oportunidades: sortedOps.map((o) =>
       toOportunidadView(
         o,
-        visibleActs.filter((a) => a.oportunidadId === o._id)
+        visibleActs.filter((a) => a.oportunidadId === o._id),
+        typeLabels
       )
     ),
     conversations,
-    activities: sortedActs.map(toActivityView),
-    primaryNextAction: pickPrimaryNextAction(sortedOps),
+    activities: sortedActs.map((activity) => toActivityView(activity, typeLabels)),
+    primaryNextAction: pickPrimaryNextAction(sortedOps, typeLabels),
+    workspace: buildPersonaWorkspace(
+      sortedOps.map((oportunidad) => ({
+        status: oportunidad.status,
+        originLabel: growthOriginArrivalLabel(oportunidad.origin),
+        openedAt: oportunidad.openedAt,
+      })),
+      assessments
+    ),
   };
 }

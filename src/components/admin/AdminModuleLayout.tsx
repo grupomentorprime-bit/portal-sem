@@ -11,6 +11,7 @@ export interface AdminModuleLayoutProps {
   children: React.ReactNode;
   maxWidth?: "6xl" | "7xl";
   className?: string;
+  hideTitle?: boolean;
 }
 
 /**
@@ -26,6 +27,7 @@ export function AdminModuleLayout({
   children,
   maxWidth = "7xl",
   className,
+  hideTitle = false,
 }: AdminModuleLayoutProps) {
   const widthClass = maxWidth === "6xl" ? "max-w-6xl" : "max-w-7xl";
 
@@ -34,15 +36,19 @@ export function AdminModuleLayout({
       <div className={cn("mx-auto px-4 py-5 sm:px-6", widthClass)}>
         <Breadcrumb items={breadcrumbs} className="mb-3" />
 
-        <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-            {description ? <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p> : null}
+        {hideTitle ? (
+          actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null
+        ) : (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground">{title}</h1>
+              {description ? <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p> : null}
+            </div>
+            {actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null}
           </div>
-          {actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null}
-        </div>
+        )}
 
-        <div className={cn("flex flex-col gap-6 py-6", sidebar ? "lg:flex-row" : undefined)}>
+        <div className={cn("flex flex-col gap-6", hideTitle ? "pt-4" : "py-6", sidebar ? "lg:flex-row" : undefined)}>
           {sidebar ? <aside className="lg:w-64 lg:shrink-0">{sidebar}</aside> : null}
           {/* Proton Pass escribe data-protonpass-form en este main antes de hidratar. */}
           <main className="min-w-0 flex-1" suppressHydrationWarning>

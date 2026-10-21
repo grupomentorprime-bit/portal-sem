@@ -345,6 +345,47 @@ export function buildDefaultSpaceHost(
   return `${slug}.${resolveDevLoopbackSuffix(options?.env ?? process.env)}`;
 }
 
+function isLocalPreviewHost(host: string | null | undefined): boolean {
+  const normalized = normalizeHost(host);
+  if (!normalized) return false;
+  return isLoopbackHost(normalized) || hostnameOf(normalized).endsWith(".localhost");
+}
+
+function loopbackSpaceSuffix(host: string): string {
+  const port = host.split(":").pop() ?? "";
+  return /^\d+$/.test(port) ? `localhost:${port}` : "localhost";
+}
+
+/**
+ * Origen de «Vista previa».
+ * El admin en loopback (o `{slug}.localhost`) abre el Espacio en local,
+ * aunque el dominio principal guardado sea el público.
+ * En el sistema público abre ese dominio principal.
+ */
+export function resolveSpacePreviewOrigin(input: {
+  slug: string;
+  primaryHost?: string | null;
+  requestHost?: string | null;
+  env?: NodeJS.ProcessEnv | Record<string, string | undefined>;
+}): string | null {
+  const env = input.env ?? process.env;
+  const slug = normalizePlatformHostSlug(input.slug);
+  if (!slug || isReservedSpaceSlug(slug, env)) return null;
+
+  const request = normalizeHost(input.requestHost);
+  if (request && isLocalPreviewHost(request)) {
+    return publicOriginFromHost(`${slug}.${loopbackSpaceSuffix(request)}`);
+  }
+
+  if (!request && resolveAppHostsFromEnv(env).every(isLoopbackHost)) {
+    return publicOriginFromHost(`${slug}.${resolveDevLoopbackSuffix(env)}`);
+  }
+
+  const fromPrimary = publicOriginFromHost(input.primaryHost);
+  if (fromPrimary) return fromPrimary;
+  return publicOriginFromHost(buildDefaultSpaceHost(slug, { env }));
+}
+
 /**
  * ¿El host es el subdominio de plataforma de este slug?
  * Incluye `{slug}.{base}` y `{slug}.localhost` (cualquier puerto).

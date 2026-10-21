@@ -3,9 +3,8 @@ import type { AdminTenantBranding } from "@/components/admin/shell-v2/types";
 import type { AdminUserSummary } from "@/components/admin/AdminUserMenuPanel";
 
 export const MOCK_BRANDING: AdminTenantBranding = {
-  institutionName: "Seminario Eclesiástico Mayor",
-  institutionShortName: "SEM",
-  logoUrl: "/images/logo-sem-isotype.png",
+  institutionName: "Espacio de ejemplo",
+  institutionShortName: "Ejemplo",
   centerLabel: "Growth OS",
 };
 
@@ -13,7 +12,7 @@ export const MOCK_USER: AdminUserSummary = {
   displayName: "Marco Antonio Sepulveda Bustos",
   email: "msepulvedabustos@gmail.com",
   roleLabel: "Super Admin",
-  institutionName: "Seminario Eclesiástico Mayor",
+  institutionName: "Espacio de ejemplo",
 };
 
 export const MOCK_PERMISSIONS = [
@@ -53,7 +52,7 @@ export const MOCK_AUDIT: AuditTimelineEntry[] = [
 
 export const MOCK_DASHBOARD_PROPS = {
   portalStatus: "active",
-  institutionName: "Seminario Eclesiástico Mayor",
+  institutionName: "Espacio de ejemplo",
   displayName: "Marco Antonio Sepulveda Bustos",
   roleLabel: "Super Admin",
   lastLoginAt: new Date(Date.now() - 7200000).toISOString(),
