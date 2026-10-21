@@ -42,6 +42,8 @@ export interface AdminNavGroup {
   icon: string;
   items: AdminNavItem[];
   badge?: number;
+  /** Ítem destino cuando el sidebar muestra el grupo como una sola fila. */
+  primaryItemId?: string;
 }
 
 interface AdminNavGroupDef {
@@ -49,6 +51,7 @@ interface AdminNavGroupDef {
   label: string;
   icon: string;
   items: AdminNavItem[];
+  primaryItemId?: string;
 }
 
 /** Ítem de navegación sin destino — dirección visual (sin página vacía). */
@@ -129,6 +132,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "conversion",
     label: "CRM · Conversión",
     icon: "sales",
+    primaryItemId: "nav-conversion",
     items: [
       {
         id: "nav-conversion",
@@ -264,6 +268,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "sitio-web",
     label: "Sitio web",
     icon: "site",
+    primaryItemId: "convocatorias-config",
     items: [
       {
         id: "convocatorias-config",
@@ -302,6 +307,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "institucion",
     label: "Institución",
     icon: "institution",
+    primaryItemId: "institution-branding",
     items: [
       {
         id: "institution-branding",
@@ -359,15 +365,14 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "ajustes",
     label: "Ajustes",
     icon: "settings",
+    primaryItemId: "config-roles",
     items: [
       {
         id: "config-administration",
-        href: "/admin/settings/team",
-        label: "Equipo",
+        href: "/admin/workflows",
+        label: "Operación",
         icon: "admin",
         matchPrefixes: [
-          "/admin/settings/team",
-          "/admin/settings/users",
           "/admin/workflows",
           "/admin/events",
           "/admin/experience",
@@ -467,6 +472,7 @@ export function buildAdminNavGroups(
       icon: group.icon,
       items,
       badge: groupBadge > 0 ? groupBadge : undefined,
+      primaryItemId: group.primaryItemId,
     };
   }).filter((group) => group.items.length > 0);
 }
@@ -484,6 +490,43 @@ export function navGroupAsDirectLink(group: AdminNavGroup): AdminNavItem | null 
     icon: item.icon,
     badge: item.badge ?? group.badge,
   };
+}
+
+function resolveGroupPrimaryItem(group: AdminNavGroup): AdminNavItem | null {
+  if (group.items.length === 0) return null;
+  if (group.primaryItemId) {
+    const preferred = group.items.find((item) => item.id === group.primaryItemId);
+    if (preferred) return preferred;
+  }
+  return group.items[0] ?? null;
+}
+
+/**
+ * Fila del sidebar plano: un enlace por grupo.
+ * Un solo ítem → nombre del ítem; varios → nombre del grupo + destino primario.
+ */
+export function navGroupAsSidebarLink(group: AdminNavGroup): AdminNavItem | null {
+  const direct = navGroupAsDirectLink(group);
+  if (direct) return direct;
+
+  const primary = resolveGroupPrimaryItem(group);
+  if (!primary) return null;
+
+  return {
+    ...primary,
+    label: group.label,
+    icon: group.icon,
+    badge: group.badge ?? primary.badge,
+  };
+}
+
+/** Activo a nivel de grupo (cualquier hija autorizada). */
+export function isNavGroupActive(
+  pathname: string,
+  group: AdminNavGroup,
+  searchParams?: Pick<URLSearchParams, "get"> | null
+): boolean {
+  return group.items.some((item) => isSidebarItemActive(pathname, item, searchParams));
 }
 
 /** Resuelve el grupo que contiene la ruta activa. */

@@ -24,6 +24,9 @@ import type { PortalInteresado } from "@/types/admission";
 import type { ExperienceFormSubmission } from "@/types/experience-forms";
 import { getDatabase } from "@/lib/mongodb";
 import { createGrowthEventBusAdapter } from "./event-bus";
+import { getGrowthAssessmentPort } from "@/core/growth/assessment";
+import { openGrowthFunnelDirectory } from "@/core/growth/funnel-mongo";
+import { ensureLiveGrowthFunnels } from "./funnels-live";
 import { createMongoGrowthOpportunityWorkflow } from "./opportunity-workflow";
 
 async function ensureStartupNextActionAutomationSafe(
@@ -51,6 +54,7 @@ async function openLiveIngestDeps(
   const db = await getDatabase();
   await ensureGrowthCoreIndexes(db);
   await ensureStartupNextActionAutomationSafe(db, tenantId);
+  await ensureLiveGrowthFunnels(tenantId);
   const [personas, oportunidades] = await Promise.all([
     openGrowthPersonaStore(db),
     openGrowthOpportunityStore(db),
@@ -60,6 +64,7 @@ async function openLiveIngestDeps(
     oportunidades,
     workflow: createMongoGrowthOpportunityWorkflow(),
     eventBus: createGrowthEventBusAdapter(),
+    funnels: await openGrowthFunnelDirectory(db),
   };
 }
 
@@ -110,18 +115,43 @@ export async function ingestFormSubmissionToGrowthSafe(
         submission.tenant,
         submission.formId
       )) ?? undefined;
-    await projectGrowthFromSignalSafe(
-      deps,
-      toGrowthFormInput({
-        _id: submission._id,
-        tenant: submission.tenant,
+    const formInput = toGrowthFormInput({
+      _id: submission._id,
+      tenant: submission.tenant,
+      formId: submission.formId,
+      destination: submission.destination,
+      data: submission.data ?? {},
+      createdAt: submission.createdAt,
+      ...(campaign ? { campaign } : {}),
+    });
+    const port = getGrowthAssessmentPort(submission.tenant);
+    const plan = port?.planFormCapture({
+      formId: submission.formId,
+      data: submission.data ?? {},
+    });
+    if (plan) formInput.initialNextAction = plan;
+    const projected = await projectGrowthFromSignalSafe(deps, formInput);
+    if (port) {
+      const links =
+        projected.ok &&
+        (projected.outcome === "projected" || projected.outcome === "idempotent_hit")
+          ? {
+              personaId: projected.persona._id,
+              oportunidadId: projected.oportunidad._id,
+            }
+          : {};
+      await port.persistFormCapture({
+        tenantId: submission.tenant,
         formId: submission.formId,
-        destination: submission.destination,
+        submissionId: submission._id,
         data: submission.data ?? {},
         createdAt: submission.createdAt,
         ...(campaign ? { campaign } : {}),
-      })
-    );
+        ...links,
+        actividades: deps.oportunidades,
+        oportunidades: deps.oportunidades,
+      });
+    }
   } catch (error) {
     console.error(
       "[Growth Core] form ingest failed (submission preserved)",

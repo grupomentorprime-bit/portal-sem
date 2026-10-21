@@ -70,9 +70,12 @@ describe("OT-GROWTH-UX-PERSONAS-004 — diseño Personas", () => {
     const detail = readSrc(
       "src/components/admin/growth/PersonaDetailClient.tsx"
     );
+    const workspace = readSrc("src/lib/growth/persona-workspace.ts");
     assert.match(detail, /GROWTH_PERSONAS_ARRIVED_PREFIX|Llegó por/);
     assert.match(detail, /GROWTH_NEXT_ACTION_SECTION_LABEL/);
-    assert.match(detail, /Oportunidades/);
+    // La pestaña se nombra en el workspace; el cliente solo renderiza item.label.
+    assert.match(workspace, /oportunidades:\s*"Oportunidades"/);
+    assert.match(detail, /visiblePersonaSections/);
     assert.match(detail, /GROWTH_PERSONAS_CONVERSATIONS_SECTION/);
     assert.match(detail, /GROWTH_TIMELINE_SECTION_LABEL/);
     assert.match(detail, /data-persona-detail/);

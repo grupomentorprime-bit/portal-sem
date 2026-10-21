@@ -21,6 +21,8 @@ import {
 } from "@/lib/experience/forms/repository";
 import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
 import { resolveConfirmationEmailCta } from "@/lib/notifications/resolve-confirmation-email-cta";
+import { reportPathForSubmission } from "@/lib/cumple/informe";
+import { CUMPLE_FORM_ID } from "@/sites/cumple/site";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -337,10 +339,23 @@ export async function POST(request: Request, { params }: RouteParams) {
       });
     }
 
+    let reportPath: string | null = null;
+    if (form._id === CUMPLE_FORM_ID && result.submissionId) {
+      try {
+        reportPath = await reportPathForSubmission(tenant, result.submissionId);
+      } catch (error) {
+        console.error(
+          "[Cumple] el diagnóstico quedó guardado, pero no se pudo entregar el informe",
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       submissionId: result.submissionId,
       message: result.message,
+      ...(reportPath ? { reportPath } : {}),
     });
   } catch (error) {
     return publicInternalError("experience-form-submit", error);

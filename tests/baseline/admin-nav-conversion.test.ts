@@ -1,13 +1,15 @@
 /**
- * Menú CRM · Conversión: rutas existentes, permisos y un solo enlace visible.
+ * Menú CRM · Conversión: rutas existentes, permisos y sidebar plano.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { filterAdminNavGroups } from "@/lib/admin/nav-access";
 import {
   findActiveNavGroupId,
+  isNavGroupActive,
   NAV_SIDEBAR_ZONES,
   navGroupAsDirectLink,
+  navGroupAsSidebarLink,
 } from "@/lib/admin/nav-domains";
 
 const FULL = [
@@ -61,6 +63,17 @@ describe("CRM · Conversión — navegación", () => {
     assert.equal(navGroupAsDirectLink(dashboard!)?.label, "Inicio");
   });
 
+  it("sidebar plano: CRM usa el nombre del grupo y el panel comercial", () => {
+    const groups = filterAdminNavGroups(FULL, false, []);
+    const conversion = groups.find((group) => group.id === "conversion");
+    assert.ok(conversion);
+    const link = navGroupAsSidebarLink(conversion);
+    assert.equal(link?.label, "CRM · Conversión");
+    assert.equal(link?.href, "/admin/conversion");
+    assert.equal(isNavGroupActive("/admin/personas", conversion), true);
+    assert.equal(isNavGroupActive("/admin/campanas", conversion), false);
+  });
+
   it("un solo enlace autorizado conserva el nombre del módulo", () => {
     const groups = filterAdminNavGroups(["growth.people.view"], false, []);
     const conversion = groups.find((group) => group.id === "conversion");
@@ -68,6 +81,7 @@ describe("CRM · Conversión — navegación", () => {
     assert.equal(conversion.items.length, 1);
     assert.equal(conversion.items[0]?.label, "Personas");
     assert.equal(navGroupAsDirectLink(conversion)?.label, "Personas");
+    assert.equal(navGroupAsSidebarLink(conversion)?.label, "Personas");
     assert.notEqual(navGroupAsDirectLink(conversion)?.label, conversion.label);
     assert.equal(
       groups.some((group) => group.id === "campanas"),

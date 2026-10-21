@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock,
@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   List,
   MoreHorizontal,
+  UserRound,
 } from "lucide-react";
 import { EmptyState, StatusBadge, aek } from "@/components/admin/kit";
 import { SearchBar } from "@/components/admin/kit/search/SearchBar";
@@ -41,6 +42,7 @@ import type {
   GrowthVentasQueueItemView,
   GrowthVentasStatusOption,
 } from "@/lib/growth/ventas-view";
+import { kanbanColumnWidth } from "@/lib/growth/kanban-column-width";
 import { cn } from "@/lib/utils";
 import { OwnerSelect } from "./OwnerSelect";
 
@@ -117,27 +119,6 @@ const BAND_PILL: Record<GrowthPriorityBand, string> = {
   stale: "bg-[#f4f3ff] text-[#6941c6]",
   current: "bg-[#e7f8ef] text-[#067647]",
 };
-
-const AVATAR_TONES = [
-  "bg-sky-100 text-sky-800",
-  "bg-violet-100 text-violet-800",
-  "bg-amber-100 text-amber-800",
-  "bg-rose-100 text-rose-800",
-  "bg-emerald-100 text-emerald-800",
-  "bg-orange-100 text-orange-800",
-];
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const letters = `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`;
-  return letters.toUpperCase() || "—";
-}
-
-function avatarTone(name: string): string {
-  let hash = 0;
-  for (const char of name) hash = (hash + char.charCodeAt(0)) % AVATAR_TONES.length;
-  return AVATAR_TONES[hash] ?? AVATAR_TONES[0];
-}
 
 function relativeActivity(iso?: string): string {
   if (!iso) return "Sin actividad";
@@ -536,11 +517,11 @@ function KanbanBoard({
   }
 
   return (
-    <div className={cn("space-y-6", pending && "opacity-70 transition-opacity")}>
+    <div className={cn("min-w-0 space-y-6", pending && "opacity-70 transition-opacity")}>
       <style>{`
-        .kanban-lane { --kanban-col: min(86vw, 18.75rem); }
+        .kanban-lane { --kanban-col: min(86vw, 22rem); }
         @media (min-width: 768px) {
-          .kanban-lane { --kanban-col: 17.25rem; }
+          .kanban-lane { --kanban-col: 18.75rem; }
         }
       `}</style>
       {isEmpty ? (
@@ -566,14 +547,7 @@ function KanbanBoard({
                 {lane.isDefault ? " · Predeterminado" : ""}
               </h2>
             ) : null}
-            <div className="kanban-lane -mx-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-1 pb-2 md:snap-none">
-              <div
-                className="grid w-max min-w-full gap-3"
-                style={{
-                  gridAutoFlow: "column",
-                  gridAutoColumns: "minmax(var(--kanban-col), 1fr)",
-                }}
-              >
+            <KanbanScroller>
               {lane.columns.map((column, index) => {
                 const theme = COLUMN_THEMES[index % COLUMN_THEMES.length];
                 const dropId = `${lane.funnelKey}:${column.key}`;
@@ -590,7 +564,7 @@ function KanbanBoard({
                     key={column.key}
                     aria-label={`${column.label}, ${cards.length}`}
                     className={cn(
-                      "flex min-h-64 snap-start flex-col rounded-2xl border-l-4 p-2.5 sm:p-3",
+                      "flex min-h-28 snap-start flex-col rounded-2xl border-l-4 p-2",
                       theme.surface,
                       theme.accent,
                       overKey === dropId && "ring-2 ring-[var(--growth-os-primary)]",
@@ -629,32 +603,35 @@ function KanbanBoard({
                       onMove(item.id, column.key, column.label);
                     }}
                   >
-                    <h3 className="mb-3 flex items-start justify-between gap-2 px-0.5">
-                      <span className="min-w-0">
-                        <span className="block text-[13px] font-semibold leading-snug text-foreground">
-                          {index + 1}. {column.label}
-                        </span>
+                    <h3 className="mb-1.5 flex items-center justify-between gap-2 px-0.5">
+                      <span
+                        className="min-w-0 truncate text-[13px] font-semibold leading-tight text-foreground"
+                        title={column.label}
+                      >
+                        {index + 1}. {column.label}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1">
                         {!column.active ? (
-                          <span className="mt-1 inline-flex rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-medium text-muted">
+                          <span className="inline-flex rounded-full bg-white/80 px-1.5 py-px text-[11px] font-medium leading-4 text-muted">
                             Inactiva
                           </span>
                         ) : null}
-                      </span>
-                      <span
-                        className={cn(
-                          "inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums",
-                          theme.badge
-                        )}
-                      >
-                        {cards.length}
+                        <span
+                          className={cn(
+                            "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
+                            theme.badge
+                          )}
+                        >
+                          {cards.length}
+                        </span>
                       </span>
                     </h3>
                     {cards.length === 0 ? (
-                      <p className="flex flex-1 items-center justify-center px-3 py-8 text-center text-xs text-muted">
+                      <p className="flex flex-1 items-center justify-center px-2 py-4 text-center text-xs text-muted">
                         Sin oportunidades
                       </p>
                     ) : (
-                      <ul className="flex flex-1 flex-col gap-2.5">
+                      <ul className="flex flex-col gap-1.5">
                         {cards.map((item) => (
                           <KanbanCard
                             key={item.id}
@@ -671,8 +648,7 @@ function KanbanBoard({
                   </section>
                 );
               })}
-              </div>
-            </div>
+            </KanbanScroller>
             {closedItems.length > 0 ? (
               <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
                 <p className={cn(aek.label, "mb-2")}>Resultados</p>
@@ -699,6 +675,46 @@ function KanbanBoard({
           </section>
         );
       })}
+    </div>
+  );
+}
+
+function KanbanScroller({ children }: { children: ReactNode }) {
+  const [lane, setLane] = useState<HTMLDivElement | null>(null);
+  const [columnPx, setColumnPx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!lane) return;
+    const measure = () => {
+      if (window.innerWidth < 768) {
+        setColumnPx(null);
+        return;
+      }
+      const next = kanbanColumnWidth(lane.clientWidth);
+      setColumnPx((current) => (current === next ? current : next));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(lane);
+    return () => observer.disconnect();
+  }, [lane]);
+
+  return (
+    <div
+      ref={setLane}
+      className="kanban-lane w-full min-w-0 max-w-full snap-x snap-proximity overflow-x-auto overscroll-x-contain pb-2"
+      style={columnPx ? ({ "--kanban-col": `${columnPx}px` } as CSSProperties) : undefined}
+    >
+      <div
+        className="grid w-max items-start"
+        style={{
+          gap: 10,
+          gridAutoFlow: "column",
+          gridAutoColumns: "var(--kanban-col)",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -738,20 +754,21 @@ function KanbanCard({
         event.dataTransfer.effectAllowed = "move";
       }}
       className={cn(
-        "rounded-xl border border-black/[0.04] border-l-[3px] bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.06)]",
+        "rounded-xl border border-black/[0.04] border-l-[3px] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(16,24,40,0.06)]",
         accent,
         draggable && "cursor-grab active:cursor-grabbing"
       )}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-1.5">
         <div className="min-w-0 flex-1">
           <Link
             href={`/admin/ventas/${encodeURIComponent(item.id)}`}
-            className="block truncate text-[13.5px] font-semibold tracking-tight text-foreground"
+            title={item.personaDisplayName}
+            className="block truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground"
           >
             {item.personaDisplayName}
           </Link>
-          <p className="mt-0.5 truncate text-xs text-muted">{item.typeLabel}</p>
+          <p className="truncate text-xs leading-4 text-muted">{item.typeLabel}</p>
         </div>
         {showActions ? (
           <button
@@ -767,38 +784,38 @@ function KanbanCard({
         ) : null}
       </div>
 
-      {band ? (
-        <p className="mt-2.5">
-          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold", BAND_PILL[band])}>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        <span className="inline-flex min-w-0 max-w-full items-center gap-1 text-[11px] leading-4">
+          <UserRound className="h-3 w-3 shrink-0 text-muted" aria-hidden />
+          <span className={cn("truncate", owner ? "text-foreground" : "text-muted")}>
+            {owner ?? "Sin responsable"}
+          </span>
+        </span>
+        {band ? (
+          <span className={cn("inline-flex shrink-0 rounded-full px-1.5 py-px text-[11px] font-semibold leading-4", BAND_PILL[band])}>
             {growthPriorityBandLabel(band)}
           </span>
-        </p>
-      ) : null}
-
-      <p className="mt-2.5 flex min-w-0 items-center gap-2 text-xs text-foreground">
-        <span
-          className={cn(
-            "grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-semibold",
-            owner ? avatarTone(owner) : "bg-[var(--gray-100)] text-muted"
-          )}
-          aria-hidden
-        >
-          {owner ? initials(owner) : "—"}
+        ) : null}
+        <span className="inline-flex min-w-0 items-center gap-1 text-[11px] leading-4 text-muted">
+          <Clock className="h-3 w-3 shrink-0" aria-hidden />
+          <span className="truncate">{relativeActivity(item.lastActivityAt)}</span>
         </span>
-        <span className="truncate">{owner ?? "Sin responsable"}</span>
-      </p>
+      </div>
 
-      <p className={cn("mt-2 flex items-start gap-1.5 text-[12.5px] leading-snug", item.hasNextAction ? "text-foreground" : "text-muted")}>
+      <p
+        className={cn(
+          "mt-1.5 flex items-start gap-1 text-[12.5px] leading-snug",
+          item.hasNextAction ? "text-foreground" : "text-muted"
+        )}
+      >
         <CalendarClock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
-        <span className="min-w-0">{item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}</span>
-      </p>
-      <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted">
-        <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        <span className="truncate">{relativeActivity(item.lastActivityAt)}</span>
+        <span className="line-clamp-2 min-w-0" title={item.hasNextAction ? item.nextActionLabel : undefined}>
+          {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
+        </span>
       </p>
 
       {actionsOpen && showActions ? (
-        <div data-kanban-actions className="mt-3 space-y-3 border-t border-[var(--admin-border-subtle)] pt-3">
+        <div data-kanban-actions className="mt-2 space-y-2 border-t border-[var(--admin-border-subtle)] pt-2">
           {draggable ? (
             <div>
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">Mover a</p>

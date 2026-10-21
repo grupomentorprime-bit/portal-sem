@@ -79,7 +79,8 @@ describe("OT-GROWTH-UX-SHELL-002 — identidad y shell", () => {
     assert.match(topBar, /\/admin\/personas/);
     assert.doesNotMatch(topBar, /GlobalSearch/);
     assert.match(sidebar, /PLATFORM_DISPLAY_NAME|ProductMark/);
-    assert.match(sidebar, /Espacio activo/);
+    assert.match(sidebar, /Plan Pro/);
+    assert.match(sidebar, /Acelera tu crecimiento/);
   });
 
   it("copy visible no usa CMS seguro / usuarios CMS en superficies principales", () => {

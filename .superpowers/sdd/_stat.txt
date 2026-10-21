@@ -1,0 +1,15 @@
+﻿ src/app/admin/conversion/analitica/page.tsx        |  80 ++
+ src/app/api/growth/conversion-analytics/route.ts   |  44 ++
+ src/components/admin/growth/AnaliticaClient.tsx    | 248 +-----
+ .../admin/growth/ConversionAnaliticaClient.tsx     | 706 +++++++++++++++++
+ src/components/admin/growth/analitica-visual.tsx   | 250 ++++++
+ src/core/growth/funnel-types.ts                    | 132 ++++
+ src/lib/admin/institutional.ts                     |   6 +
+ src/lib/admin/nav-domains.ts                       | 105 ++-
+ src/lib/growth/conversion-analytics-read.ts        | 228 ++++++
+ src/lib/growth/conversion-analytics.ts             | 859 +++++++++++++++++++++
+ src/lib/growth/index.ts                            |  22 +
+ src/lib/growth/labels.ts                           |  27 +
+ tests/baseline/growth-conversion-analytics.test.ts | 735 ++++++++++++++++++
+ tests/baseline/growth-os-admin-shell-002.test.ts   |  14 +-
+ 14 files changed, 3178 insertions(+), 278 deletions(-)

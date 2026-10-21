@@ -39,6 +39,9 @@ export interface CommercialQueueRow {
   nextActionSummary: string;
   relationLabel?: string;
   href: string;
+  /** Antigüedad legible para Inicio / colas (días desde vencimiento, apertura o última actividad). */
+  ageLabel?: string;
+  ownerLabel?: string;
 }
 
 export interface CommercialPanelRead {
@@ -63,13 +66,14 @@ async function loadOpen(tenantId: string) {
   const store = createMongoGrowthOpportunityStore(db);
   const config = await resolveGrowthSpaceConfig(store, tenantId);
   const directory = await openGrowthFunnelDirectory(db);
-  const [opportunities, funnels, personas] = await Promise.all([
+  const [opportunities, funnels, personas, members] = await Promise.all([
     db
       .collection<GrowthOportunidad>(GROWTH_OPORTUNIDADES_COLLECTION)
       .find({ tenantId, status: { $nin: ["won", "lost", "archived", "handed_off"] } })
       .toArray(),
     directory.listFunnels(tenantId),
     db.collection<GrowthPersona>(GROWTH_PERSONAS_COLLECTION).find({ tenantId }).toArray(),
+    listGrowthSpaceMembers(tenantId),
   ]);
   const scopedFunnels = funnels.filter((funnel) => funnel.tenantId === tenantId);
   const stagesByFunnel = new Map<string, GrowthFunnelStage[]>();
@@ -80,6 +84,9 @@ async function loadOpen(tenantId: string) {
   const own = opportunities.filter(
     (item) => item.tenantId === tenantId && !isGrowthOpportunityFinalStatus(item.status)
   );
+  const ownerLabelById = new Map(
+    members.map((member) => [member.userId, member.label] as const)
+  );
   return {
     now: new Date(),
     staleAfterDays: config.staleAfterDays ?? 7,
@@ -87,7 +94,28 @@ async function loadOpen(tenantId: string) {
     funnels: scopedFunnels,
     stagesByFunnel,
     personas,
+    ownerLabelById,
   };
+}
+
+function commercialAgeLabel(
+  item: GrowthOportunidad,
+  band: string | null,
+  now: Date
+): string {
+  const dayMs = 86_400_000;
+  const refIso =
+    band === "overdue"
+      ? item.nextAction?.dueAt
+      : band === "unfollowed"
+        ? item.openedAt
+        : item.lastActivityAt ?? item.updatedAt ?? item.openedAt;
+  const refMs = refIso ? Date.parse(refIso) : NaN;
+  if (!Number.isFinite(refMs)) return "—";
+  const days = Math.max(0, Math.floor((now.getTime() - refMs) / dayMs));
+  if (days === 0) return "Hoy";
+  if (days === 1) return "1 día";
+  return `${days} días`;
 }
 
 const RELATION_LABEL = {
@@ -113,6 +141,7 @@ function toRow(
     loaded.staleAfterDays
   );
   const relation = userId ? growthWorkRelation(item, userId) : null;
+  const ownerId = item.ownerUserId?.trim();
   return {
     id: item._id,
     personaLabel: persona?.displayName ?? "Persona",
@@ -125,6 +154,10 @@ function toRow(
     nextActionSummary: item.nextAction?.summary ?? "Sin seguimiento",
     relationLabel: relation ? RELATION_LABEL[relation] : undefined,
     href: `/admin/ventas/${encodeURIComponent(item._id)}`,
+    ageLabel: commercialAgeLabel(item, band, loaded.now),
+    ownerLabel: ownerId
+      ? loaded.ownerLabelById.get(ownerId) ?? "Responsable"
+      : undefined,
   };
 }
 

@@ -255,6 +255,20 @@ function ActionFields({
         </div>
       ) : null}
 
+      {actionType === "salesAssignOwner" ? (
+        <Input
+          id={`automation-owner-${idPrefix}`}
+          label="Responsable (usuario del Espacio)"
+          value={target === "pre" ? form.assignOwnerUserId : form.postAssignOwnerUserId}
+          disabled={disabled}
+          onChange={(e) => {
+            if (target === "pre") onPatch({ assignOwnerUserId: e.target.value });
+            else onPatch({ postAssignOwnerUserId: e.target.value });
+          }}
+          placeholder="Id del miembro"
+        />
+      ) : null}
+
       {actionType === "salesTransitionOpportunity" ? (
         <Select
           id={`automation-transition-${idPrefix}`}
@@ -679,6 +693,22 @@ export function AutomatizacionEditorClient({
                             patch({ typeKey: e.target.value })
                           }
                           options={[...AUTOMATION_TYPE_FILTER_OPTIONS]}
+                        />
+                      ) : null}
+                      {form.conditionKind === "owner" ? (
+                        <Select
+                          label="Responsable"
+                          value={form.ownerOp}
+                          disabled={pending || formLocked}
+                          onChange={(e) =>
+                            patch({
+                              ownerOp: e.target.value as "exists" | "absent",
+                            })
+                          }
+                          options={[
+                            { value: "absent", label: "No tiene responsable" },
+                            { value: "exists", label: "Tiene responsable" },
+                          ]}
                         />
                       ) : null}
                       {form.conditionKind === "nextAction" ? (

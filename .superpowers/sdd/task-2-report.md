@@ -1,71 +1,47 @@
-# Task 2 Report: Contenido editorial en `laboral-rrhh`
+# Task 2 — Lectura por Espacio
 
-## Status
+Status: DONE
 
-**DONE** — Editorial opcionales añadidos; tests en verde.
+## Archivos
+- Creado: `src/lib/growth/conversion-analytics-read.ts`
+- Modificado: `tests/baseline/growth-conversion-analytics.test.ts` (describe "conversion-analytics-read — guarda de fuente", 5 tests)
 
-## Commits
-
-None (per task instructions).
-
-## Changes
-
-**File:** `src/sites/cumple/pages/materias.ts` (entrada `slug: "laboral-rrhh"`)
-
-| Field | Action |
-|-------|--------|
-| `titleName`, `mark`, `markTone`, `path`, `eyebrow` | Sin cambio (`Laboral y RR.HH.`, `["RR.HH."]`, `hot`) |
-| `baton` | Añadido: Reglamento / Jornada / Evidencia (`clipboard`, `chart`, `check`) |
-| `heroAside` | Añadido: "Lo esencial", Marco, vigencia Código + 21.561, 3 duties, `BCN.codigoTrabajo` |
-| `concepts` | 3 items: Reglamento interno, Jornada, Evidencia laboral |
-| `checklist` | 4 items orientativos |
-| `implicaPoints` | 3 items (Umbral y documento, Jornada demostrable, Encaje con otras materias) |
-| `processSteps` | 4 etapas (Diagnóstico, Plan, Implementación, Control) |
-| `implica.paragraphs`, `exige`, `cumple`, `sources` | Mantenidos; `sources: [BCN.codigoTrabajo]` |
-| Otras materias | Sin cambios (proteccion-datos, inclusion-laboral, contratistas-terceros sin opcionales) |
-
-**Not modified:** `MateriaPage`, `types.ts`, tests.
-
-## TDD GREEN evidence
-
-Command:
-
-```bash
-npx tsx --test tests/baseline/cumple-pages.test.ts
-```
-
-Result (2026-10-02):
+## RED
+`npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
 
 ```
-ℹ tests 22
-ℹ pass 22
-ℹ fail 0
+✖ conversion-analytics-read — guarda de fuente
+  Error: ENOENT: no such file or directory, open '...\src\lib\growth\conversion-analytics-read.ts'
+ℹ tests 20 / pass 20 / fail 0   (la suite de guarda falla al leer el archivo inexistente)
 ```
 
-Relevant assertions now green:
+## GREEN
+Mismo comando tras implementar:
 
-- `Laboral y RR.HH. incluye el mismo patrón editorial que Ley Karin`
-- `SST / DS 44 incluye el mismo patrón editorial que Ley Karin` (guard loop; otras 3 materias sin opcionales)
-- Karin/SST tests unchanged and passing
+```
+✔ conversion-analytics-read — guarda de fuente
+  ✔ es server-only y filtra por tenantId
+  ✔ lee solo los kinds de movimiento necesarios
+  ✔ no escribe, no migra y no toca métricas de campaña
+  ✔ la analítica previa no importa conversion-analytics
+  ✔ la lectura server-only no se reexporta desde el índice de Growth
+ℹ tests 25 / pass 25 / fail 0
+```
 
-## Self-review vs brief / spec
+`tsc --noEmit` no reporta errores en archivos `conversion-analytics*`.
 
-| Requirement | Met |
-|-------------|-----|
-| baton labels Reglamento · Jornada · Evidencia | Yes |
-| heroAside heading "Lo esencial", source URL contains 207436 | Yes |
-| concepts reglamento / jornada / evidencia titles | Yes |
-| checklist ≥3 items | Yes (4) |
-| implicaPoints ×3, processSteps ×4 | Yes |
-| No invented jornada tramos or multa amounts | Yes (copy defers to Ley 21.561 / official text) |
-| Icons clipboard / chart / check only | Yes |
-| sources anchored to BCN.codigoTrabajo | Yes |
-| No TBD/TODO in added copy | Yes |
+## Implementación
+`getConversionAnalytics(tenantId, query)` devuelve `{ ok:true, data }` o `{ ok:false, error, status:400 }`.
+1. `resolveAnalyticsPeriod`; si falla, 400.
+2. `find { tenantId }` de todas las oportunidades (sin recorte por período).
+3. `find { tenantId, kind: { $in: [opened, transitioned, assigned] } }` de actividades, sin recorte por `occurredAt`.
+4. Embudos: `createMongoGrowthFunnelDirectory(db).listFunnels(tenantId)` (`find { tenantId }`), y etapas desde la definición de workflow vía `getDefinition` + `stagesFromDefinition`. Se usa `createMongo…` y no `openGrowthFunnelDirectory` porque este último ejecuta `ensureGrowthFunnelIndexes` (crearía índices).
+5. Campañas `find { tenantId }`.
+6. Membresías de cualquier estado (`listMembershipsByTenant`) + `listUsersByIds`; `active = status === "active"`; label = `displayName` o email (o userId como último recurso).
+7. Nombres de formulario solo de `origin.formId` de esas oportunidades (`resolveFormNames`, mismo patrón que `analytics-read.ts`).
+8. `readAt = new Date().toISOString()`; proyección explícita a los tipos de entrada; `buildConversionAnalytics`.
 
-## Visual verification (Step 3)
-
-Not run in this session. Recommended: `http://cumple.localhost:3000/materias/laboral-rrhh`.
-
-## Concerns
-
-None blocking.
+## Notas / desvíos
+- El brief decía "no importar conversion-analytics" para `analytics-read.ts` y `analytics-aggregate.ts`: cumple. Pero `src/lib/growth/index.ts` (Task 1) ya reexporta el núcleo puro `./conversion-analytics`; mi guarda del índice se acotó a `conversion-analytics-read` (el módulo server-only), que no se reexporta.
+- Las etapas de embudo se leen desde `workflow_definitions` a través del directorio de embudos (no listado en el brief, pero necesario para `ConversionFunnelInput.stages`). Solo lectura.
+- No se tocó migración 029, datos de producción, ni se creó colección/índice.
