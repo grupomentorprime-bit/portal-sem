@@ -1,8 +1,9 @@
 import type { ExperienceFormSubmission } from "@/types/experience-forms";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
+import { foldPersonSearchRut } from "@/lib/experience/forms/person-search";
 
 export function normalizeRosterMatchRut(rut: string): string {
-  return rut.replace(/\./g, "").replace(/-/g, "").toLowerCase().trim();
+  return foldPersonSearchRut(rut);
 }
 
 export function submissionMatchesRosterStudent(

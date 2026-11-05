@@ -195,8 +195,8 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
         type: "message",
         message: "Tu respuesta fue registrada correctamente.",
       },
-      active: true,
-      visible: true,
+      active: false,
+      visible: false,
       fields: [
         {
           id: "eventId",
@@ -244,6 +244,93 @@ export function createSemDefaultForms(tenant: string): ExperienceFormDefinition[
           type: "radio",
           name: "attendance",
           label: "¿Asistirás a la jornada del 4 de julio en Talca Aurora?",
+          validation: { required: true },
+          options: [
+            { label: "Sí, asistiré", value: "yes" },
+            { label: "No podré asistir", value: "no" },
+          ],
+        },
+        {
+          id: "justification",
+          type: "textarea",
+          name: "justification",
+          label: "Motivo de inasistencia",
+          helper:
+            "Obligatorio si no podrás asistir. Solo procede por causa de fuerza mayor; debes adjuntar respaldo documental.",
+          validation: { maxLength: 1000 },
+        },
+        {
+          id: "notes",
+          type: "textarea",
+          name: "notes",
+          label: "Comentarios adicionales (opcional)",
+          validation: { maxLength: 500 },
+        },
+      ],
+    }),
+    baseMeta("convocatoria-talca-aurora-nov-2026", tenant, {
+      name: "Convocatoria — Cierre del año académico Talca Aurora (7 noviembre)",
+      description:
+        "Confirma si asistirás al cierre del año académico 2026 el 7 de noviembre en Talca Aurora. Si no podrás asistir, indica el motivo.",
+      successMessage:
+        "¡Gracias! Hemos registrado tu respuesta. El equipo académico la tendrá en cuenta.",
+      errorMessage: "No fue posible registrar tu respuesta. Intenta nuevamente.",
+      destination: "attendance_confirmation",
+      postSubmit: {
+        type: "message",
+        message: "Tu respuesta fue registrada correctamente.",
+      },
+      active: true,
+      visible: true,
+      fields: [
+        {
+          id: "eventId",
+          type: "hidden",
+          name: "eventId",
+          label: "Evento",
+          defaultValue: "talca-aurora-nov-2026",
+        },
+        {
+          id: "studentId",
+          type: "hidden",
+          name: "studentId",
+          label: "Alumno",
+        },
+        {
+          id: "fullName",
+          type: "hidden",
+          name: "fullName",
+          label: "Nombre completo",
+        },
+        {
+          id: "program",
+          type: "hidden",
+          name: "program",
+          label: "Generación",
+        },
+        {
+          id: "email",
+          type: "email",
+          name: "email",
+          label: "Correo electrónico",
+          validation: { required: true },
+        },
+        {
+          id: "phone",
+          type: "phone",
+          name: "phone",
+          label: "Teléfono de contacto",
+          placeholder: "+56 9 1234 5678",
+          helper:
+            "Formato Chile: +56 9 1234 5678. Actualiza tu número para que el equipo pueda contactarte.",
+          validation: { required: true },
+        },
+        {
+          id: "attendance",
+          type: "radio",
+          name: "attendance",
+          label:
+            "¿Asistirás al cierre del año académico el 7 de noviembre en Talca Aurora?",
           validation: { required: true },
           options: [
             { label: "Sí, asistiré", value: "yes" },
@@ -444,6 +531,7 @@ export const SEM_DEFAULT_FORM_IDS = [
   "attendance-confirmation",
   "absence-justification",
   "convocatoria-talca-aurora-jul-2026",
+  "convocatoria-talca-aurora-nov-2026",
   "information-request",
   "program-application",
   "testimonial-submission",

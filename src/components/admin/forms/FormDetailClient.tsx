@@ -26,6 +26,7 @@ import { FormExperienceEditor } from "@/components/admin/forms/FormExperienceEdi
 import { FormSimpleVisualEditor } from "@/components/admin/forms/FormSimpleVisualEditor";
 import { FormSubmissionsPanel } from "@/components/admin/forms/FormSubmissionsPanel";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
+import { spacePublicHref, useSpacePublicOrigin } from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,6 +106,7 @@ function resolveMoreSection(raw: string | null): MoreSectionId {
 export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: FormDetailClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const publicOrigin = useSpacePublicOrigin();
   const initialTabParam = searchParams.get("tab");
   const [tab, setTab] = useState<PrimaryTabId>(() =>
     resolvePrimaryTab(initialTabParam, Boolean(convocatoria))
@@ -194,8 +196,10 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
     }
   };
 
+  const formPublicHref = spacePublicHref(publicOrigin, publicFormUrl(form._id));
+
   const handlePreview = () => {
-    window.open(publicFormUrl(form._id), "_blank", "noopener,noreferrer");
+    window.open(formPublicHref, "_blank", "noopener,noreferrer");
   };
 
   const handleArchive = async () => {
@@ -323,7 +327,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           ) : null}
           {isDirectLinkLive ? (
             <Link
-              href={publicFormUrl(form._id)}
+              href={formPublicHref}
               target="_blank"
               className="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm font-medium"
             >

@@ -358,7 +358,7 @@ export function FormsCenterClient({
               {form.visible ? "Ocultar del portal" : "Publicar en portal"}
             </ActionMenuItem>
             {canOpenDirectLink(form) ? (
-              <ActionMenuItem href={publicFormUrl(form._id)} external>
+              <ActionMenuItem href={spacePublicHref(publicOrigin, publicFormUrl(form._id))} external>
                 {directLinkLabel}
               </ActionMenuItem>
             ) : null}
@@ -386,7 +386,7 @@ export function FormsCenterClient({
           </ActionMenuItem>
           <ActionMenuItem onClick={() => handleDuplicate(form)}>Duplicar</ActionMenuItem>
           {canOpenDirectLink(form) ? (
-            <ActionMenuItem href={publicFormUrl(form._id)} external>
+            <ActionMenuItem href={spacePublicHref(publicOrigin, publicFormUrl(form._id))} external>
               {directLinkLabel}
             </ActionMenuItem>
           ) : null}

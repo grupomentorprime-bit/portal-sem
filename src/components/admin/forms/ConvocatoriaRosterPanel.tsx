@@ -25,13 +25,17 @@ import {
   upsertRosterStudent,
   type RosterSheetImportSummary,
 } from "@/lib/experience/forms/roster-import";
+import { collectPersonSearchSuggestions } from "@/lib/experience/forms/person-search";
 import {
   buildRosterExportSheets,
   buildRosterTemplateSheets,
   downloadRosterExcelFile,
 } from "@/lib/experience/forms/roster-export";
 import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
-import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
+import type {
+  ConvocatoriaExcludedStudent,
+  ConvocatoriaRosterStudent,
+} from "@/types/convocatoria-roster";
 
 interface ConvocatoriaRosterPanelProps {
   convocatoriaSlug: string;
@@ -88,6 +92,7 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [rawText, setRawText] = useState("");
   const [students, setStudents] = useState<ConvocatoriaRosterStudent[]>([]);
+  const [excludedStudents, setExcludedStudents] = useState<ConvocatoriaExcludedStudent[]>([]);
   const [sheetSummary, setSheetSummary] = useState<RosterSheetImportSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -113,6 +118,21 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
     });
   }, [students, searchQuery, generationFilter]);
 
+  const suggestedStudents = useMemo(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) return [];
+    const pool = students.filter((student) => {
+      if (generationFilter && formatGenerationDisplay(student.generation) !== generationFilter) {
+        return false;
+      }
+      return true;
+    });
+    return collectPersonSearchSuggestions(query, pool, (student) => [
+      student.fullName,
+      student.rut,
+    ]).items;
+  }, [students, searchQuery, generationFilter]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -125,6 +145,7 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
       }
       const rosterStudents = data.roster?.students ?? [];
       setStudents(rosterStudents);
+      setExcludedStudents(data.roster?.excludedStudents ?? []);
       setSheetSummary([]);
       setRawText(rosterStudentsToCsv(rosterStudents));
     } catch {
@@ -156,6 +177,7 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
       }
       const savedStudents = data.roster?.students ?? [];
       setStudents(savedStudents);
+      setExcludedStudents(data.roster?.excludedStudents ?? []);
       setRawText(rosterStudentsToCsv(savedStudents));
       setSaved(true);
     } catch {
@@ -187,6 +209,15 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
     setStudents(nextStudents);
     setRawText(rosterStudentsToCsv(nextStudents));
     setSheetSummary([]);
+    await handleSave(nextStudents);
+  };
+
+  const reinstateExcluded = async (blocked: ConvocatoriaExcludedStudent) => {
+    const { reason: _reason, excludedAt: _excludedAt, sourceFormId: _source, ...student } =
+      blocked;
+    const nextStudents = upsertRosterStudent(students, student).students;
+    setStudents(nextStudents);
+    setRawText(rosterStudentsToCsv(nextStudents));
     await handleSave(nextStudents);
   };
 
@@ -281,8 +312,48 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
       <Alert variant="info">
         Puedes subir tu Excel con <strong>4 hojas</strong> (TSR. G-2023, G-2024, G-2025, G-2026)
         o una sola lista con todas las generaciones. Busca participantes abajo, edítalos desde la
-        tabla o ajusta el listado en texto/Excel.
+        tabla o ajusta el listado en texto/Excel. Los desertores quedan fuera del listado público;
+        solo Asuntos Estudiantiles, Soporte o Administración pueden reincorporarlos aquí.
       </Alert>
+
+      {excludedStudents.length > 0 ? (
+        <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <div>
+            <p className="font-medium text-foreground">
+              Fuera de esta convocatoria ({excludedStudents.length})
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              No pueden marcar asistencia por sí mismos. Reincorpóralos solo si Asuntos
+              Estudiantiles, Soporte o Administración lo autorizan.
+            </p>
+          </div>
+          <ul className="space-y-2">
+            {excludedStudents.map((blocked) => (
+              <li
+                key={blocked.id}
+                className="flex flex-col gap-2 rounded-lg border border-border bg-background px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground">{blocked.fullName}</p>
+                  <p className="text-sm text-muted">
+                    {formatGenerationDisplay(blocked.generation)}
+                    {blocked.reason ? ` · ${blocked.reason}` : ""}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => void reinstateExcluded(blocked)}
+                >
+                  Reincorporar a la nómina
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <input
@@ -382,6 +453,24 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
             {filteredStudents.length} de {students.length} visible
             {filteredStudents.length === 1 ? "" : "s"}
           </p>
+
+          {suggestedStudents.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted">Sugerencias</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestedStudents.map((student) => (
+                  <button
+                    key={student.id}
+                    type="button"
+                    className="rounded-full border border-border bg-background px-3 py-1 text-sm text-foreground hover:bg-background-muted/60"
+                    onClick={() => setSearchQuery(student.fullName)}
+                  >
+                    {student.fullName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <AdminDataTable
             columns={columns}

@@ -62,8 +62,9 @@ describe("OT-GROWTH-TEST-001 — contratos SEM a preservar", () => {
     assert.equal(resolveRoleCode("Tenant Owner"), ROLE_CODES.SUPER_ADMIN);
   });
 
-  it("formularios base SEM incluyen convocatoria Talca Aurora y testimonio privado", () => {
+  it("formularios base SEM incluyen convocatorias Talca Aurora y testimonio privado", () => {
     assert.ok(SEM_DEFAULT_FORM_IDS.includes("convocatoria-talca-aurora-jul-2026"));
+    assert.ok(SEM_DEFAULT_FORM_IDS.includes("convocatoria-talca-aurora-nov-2026"));
     assert.ok(SEM_DEFAULT_FORM_IDS.includes("testimonial-submission"));
     const forms = createSemDefaultForms("seminario-ipn");
     assert.equal(forms.length, SEM_DEFAULT_FORM_IDS.length);
@@ -73,11 +74,12 @@ describe("OT-GROWTH-TEST-001 — contratos SEM a preservar", () => {
     assert.equal(testimonio?.visible, false);
   });
 
-  it("convocatoria activa SEM es Talca Aurora jul-2026", () => {
+  it("convocatoria activa SEM es cierre Talca Aurora nov-2026", () => {
     const active = getActiveConvocatoria();
     assert.ok(active);
-    assert.equal(active!.slug, "talca-aurora-jul-2026");
-    assert.equal(active!.formId, "convocatoria-talca-aurora-jul-2026");
+    assert.equal(active!.slug, "talca-aurora-nov-2026");
+    assert.equal(active!.formId, "convocatoria-talca-aurora-nov-2026");
+    assert.equal(active!.date, "2026-11-07");
     assert.equal(FORM_CONVOCATORIAS.filter((c) => c.active).length, 1);
   });
 

@@ -17,6 +17,10 @@ import {
 } from "@/components/admin/kit";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { getSubmissionAttachment } from "@/lib/experience/forms/attachments";
+import {
+  collectPersonSearchSuggestions,
+  matchesPersonSearch,
+} from "@/lib/experience/forms/person-search";
 import { Button } from "@/components/ui/button";
 import {
   ABSENCE_REVIEW_POLICY,
@@ -101,18 +105,37 @@ export function ExperienceFormSubmissionsTable({
   );
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = search.trim();
     return submissions.filter((submission) => {
       if (generationFilter !== "all" && getSubmissionGeneration(submission.data) !== generationFilter) {
         return false;
       }
       if (!query) return true;
-      const name = String(submission.data.fullName ?? submission.data.name ?? "").toLowerCase();
-      const email = String(submission.data.email ?? "").toLowerCase();
-      const phone = String(submission.data.phone ?? "").toLowerCase();
-      const company = String(submission.data.company ?? "").toLowerCase();
-      return name.includes(query) || email.includes(query) || phone.includes(query) || company.includes(query);
+      return matchesPersonSearch(query, [
+        String(submission.data.fullName ?? ""),
+        String(submission.data.name ?? ""),
+        String(submission.data.email ?? ""),
+        String(submission.data.phone ?? ""),
+        String(submission.data.rut ?? ""),
+        String(submission.data.company ?? ""),
+      ]);
     });
+  }, [submissions, generationFilter, search]);
+
+  const suggestedSubmissions = useMemo(() => {
+    const query = search.trim();
+    if (query.length < 2) return [];
+    const pool = submissions.filter((submission) => {
+      if (generationFilter !== "all" && getSubmissionGeneration(submission.data) !== generationFilter) {
+        return false;
+      }
+      return true;
+    });
+    return collectPersonSearchSuggestions(query, pool, (submission) => [
+      String(submission.data.fullName ?? ""),
+      String(submission.data.name ?? ""),
+      String(submission.data.rut ?? ""),
+    ]).items;
   }, [submissions, generationFilter, search]);
 
   const handleDelete = async (submission: ExperienceFormSubmission) => {
@@ -295,7 +318,7 @@ export function ExperienceFormSubmissionsTable({
 
       <FilterBar
         search={{
-          placeholder: "Buscar por nombre o correo…",
+          placeholder: "Buscar por nombre, correo o RUT…",
           value: search,
           onChange: setSearch,
         }}
@@ -333,6 +356,27 @@ export function ExperienceFormSubmissionsTable({
             : undefined
         }
       />
+
+      {suggestedSubmissions.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted">Sugerencias</p>
+          <div className="flex flex-wrap gap-2">
+            {suggestedSubmissions.map((submission) => {
+              const label = String(submission.data.fullName ?? submission.data.name ?? "Participante");
+              return (
+                <button
+                  key={submission._id ?? label}
+                  type="button"
+                  className="rounded-full border border-border bg-background px-3 py-1 text-sm text-foreground hover:bg-background-muted/60"
+                  onClick={() => setSearch(label)}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <AdminDataTable
         columns={columns}

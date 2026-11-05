@@ -70,6 +70,11 @@ import {
   getParticipantJustificationSummary,
 } from "@/lib/student-affairs/justification-display";
 import { formatJustificationDeadline } from "@/lib/experience/forms/absence-justification-deadline";
+import {
+  collectPersonSearchSuggestions,
+  matchesPersonSearch,
+} from "@/lib/experience/forms/person-search";
+import { spacePublicHref, useSpacePublicOrigin } from "@/components/admin/SpacePublicOrigin";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 import type {
   StudentAffairsFormOperations,
@@ -138,6 +143,7 @@ export function StudentAffairsOperationsPanel({
   formName,
   institutionName,
 }: StudentAffairsOperationsPanelProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const [submissions, setSubmissions] = useState<ExperienceFormSubmission[]>([]);
   const [stats, setStats] = useState<SubmissionStats | null>(null);
   const [cohortStats, setCohortStats] = useState<CohortRosterStat[]>([]);
@@ -743,6 +749,25 @@ export function StudentAffairsOperationsPanel({
     });
   }, [rosterPending, generationFilter, search, isSearchMode, filter]);
 
+  const searchSuggestions = useMemo(() => {
+    const query = search.trim();
+    if (query.length < 2) return [];
+    const fromSubmissions = submissions.map((submission) => ({
+      id: submission._id ?? submission.createdAt,
+      label: String(submission.data.fullName ?? submission.data.name ?? "").trim(),
+      fields: [submission.data.fullName, submission.data.name, submission.data.rut],
+    }));
+    const fromRoster = rosterPending.map((student) => ({
+      id: student.id,
+      label: student.fullName.trim(),
+      fields: [student.fullName, student.rut],
+    }));
+    const pool = [...fromSubmissions, ...fromRoster].filter((item) => item.label);
+    return collectPersonSearchSuggestions(query, pool, (item) =>
+      item.fields.map((field) => String(field ?? ""))
+    ).items;
+  }, [search, submissions, rosterPending]);
+
   const isRosterFilter = filter === "roster-pending";
   const isUnclosedFilter = filter === "unclosed";
 
@@ -957,7 +982,7 @@ export function StudentAffairsOperationsPanel({
     }
   };
 
-  const publicFormHref = publicFormUrl(formId);
+  const publicFormHref = spacePublicHref(publicOrigin, publicFormUrl(formId));
 
   const closureRecord = useMemo(() => {
     const report = operations?.handoffReport;
@@ -971,10 +996,7 @@ export function StudentAffairsOperationsPanel({
   }, [operations, handoffValidationStatus]);
 
   const copyFormLink = async () => {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${publicFormHref}`
-        : publicFormHref;
+    const url = publicFormHref;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -1469,6 +1491,23 @@ export function StudentAffairsOperationsPanel({
                 <p className="text-xs text-muted">
                   Buscando en todos los participantes, sin importar confirmación ni estado.
                 </p>
+              ) : null}
+              {searchSuggestions.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted">Sugerencias</p>
+                  <div className="flex flex-wrap gap-2">
+                    {searchSuggestions.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="rounded-full border border-border bg-background px-3 py-1 text-sm text-foreground hover:bg-background-muted/60"
+                        onClick={() => setSearch(item.label)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : null}
 
               <div className="flex flex-wrap items-center gap-2">
@@ -2626,17 +2665,11 @@ function getArrivalProgressToneClass(
 }
 
 function matchesParticipantQuery(query: string, ...fields: unknown[]): boolean {
-  const needle = foldSearchText(query);
-  if (!needle) return true;
-  return fields.some((field) => foldSearchText(String(field ?? "")).includes(needle));
-}
-
-function foldSearchText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
+  if (!query.trim()) return true;
+  return matchesPersonSearch(
+    query,
+    fields.map((field) => String(field ?? ""))
+  );
 }
 
 function shortProgramLabel(generation: string): string {

@@ -48,14 +48,24 @@ export async function GET(_request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const { slug } = await params;
-    const denied = await authorizeApiWrite("experience.forms.manage", {
+    let denied = await authorizeApiWrite("experience.forms.manage", {
       action: "convocatoria_roster.update",
       entity: "convocatoria_rosters",
       entityId: slug,
     });
+    if (denied) {
+      denied = await authorizeApiWrite("student-affairs.manage", {
+        action: "convocatoria_roster.update",
+        entity: "convocatoria_rosters",
+        entityId: slug,
+      });
+    }
     if (denied) return denied;
 
-    const ctx = await requirePermission("experience.forms.manage");
+    let ctx = await requirePermission("experience.forms.manage");
+    if (ctx instanceof NextResponse) {
+      ctx = await requirePermission("student-affairs.manage");
+    }
     if (ctx instanceof NextResponse) return ctx;
 
     const convocatoria = getConvocatoriaBySlug(slug);

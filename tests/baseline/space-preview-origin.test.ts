@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { resolveSpacePreviewOrigin } from "../../src/core/tenant/hosts";
 
@@ -61,5 +62,11 @@ describe("resolveSpacePreviewOrigin", () => {
       }),
       "https://seminarioipn.cl"
     );
+  });
+
+  it("la vista previa del formulario abre el sitio del Espacio, no la plataforma", () => {
+    const src = readFileSync("src/components/admin/forms/FormDetailClient.tsx", "utf8");
+    assert.match(src, /spacePublicHref\(publicOrigin, publicFormUrl\(form\._id\)\)/);
+    assert.doesNotMatch(src, /window\.open\(publicFormUrl/);
   });
 });

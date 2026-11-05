@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { reorderFormExperienceBlocks } from "@/lib/cms/form-experience-utils";
 import { counterDateInputValue, normalizeChileEventTime } from "@/lib/experience/forms/convocatoria-event-datetime";
+import { spacePublicHref, useSpacePublicOrigin } from "@/components/admin/SpacePublicOrigin";
 import { publicFormUrl } from "@/lib/admin/forms-center";
 import type {
   ExperienceFormExperience,
@@ -163,6 +164,7 @@ export function FormExperienceEditor({
   mode,
   isConvocatoria = false,
 }: FormExperienceEditorProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const [experience, setExperience] = useState<ExperienceFormExperience | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -360,7 +362,7 @@ export function FormExperienceEditor({
             Vista previa
           </Button>
           <a
-            href={publicFormUrl(formId)}
+            href={spacePublicHref(publicOrigin, publicFormUrl(formId))}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm hover:border-primary/30"

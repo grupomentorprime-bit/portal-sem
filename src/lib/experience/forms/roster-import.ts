@@ -1,5 +1,10 @@
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 import { formatGenerationDisplay, normalizeGenerationValue } from "@/lib/experience/forms/generations";
+import {
+  foldPersonSearchRut,
+  foldPersonSearchText,
+  matchesPersonSearch,
+} from "@/lib/experience/forms/person-search";
 
 const RUT_HEADERS = ["rut", "run"];
 const FIRST_NAME_HEADERS = ["nombre", "nombres", "name", "first name"];
@@ -16,11 +21,7 @@ const GENERATION_HEADERS = [
 ];
 
 export function normalizeRosterSearchText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
+  return foldPersonSearchText(value);
 }
 
 function normalizeText(value: string): string {
@@ -32,7 +33,7 @@ function normalizeHeader(value: string): string {
 }
 
 function normalizeRut(value: string): string {
-  return value.replace(/\./g, "").replace(/-/g, "").toLowerCase().trim();
+  return foldPersonSearchRut(value);
 }
 
 function formatPersonName(value: string): string {
@@ -553,35 +554,14 @@ export function rosterStudentMatchesQuery(
   student: ConvocatoriaRosterStudent,
   query: string
 ): boolean {
-  const normalizedQuery = normalizeRosterSearchText(query);
-  if (normalizedQuery.length < 2) return false;
+  if (normalizeRosterSearchText(query).length < 2) return false;
 
-  const haystack = [
+  return matchesPersonSearch(query, [
     student.fullName,
     student.generation,
     formatGenerationDisplay(student.generation),
-    student.rut ?? "",
-    student.phone ?? "",
-  ]
-    .map(normalizeRosterSearchText)
-    .join(" ");
-
-  if (haystack.includes(normalizedQuery)) return true;
-
-  const rutQuery = normalizeRut(query);
-  if (rutQuery.length >= 3 && student.rut && normalizeRut(student.rut).includes(rutQuery)) {
-    return true;
-  }
-
-  const queryTokens = normalizedQuery
-    .split(/\s+/)
-    .filter((token) => token.length >= 2);
-
-  if (queryTokens.length >= 2) {
-    const haystackTokens = new Set(haystack.split(/\s+/).filter(Boolean));
-    const overlap = queryTokens.filter((token) => haystackTokens.has(token));
-    if (overlap.length >= 2) return true;
-  }
-
-  return queryTokens.every((token) => haystack.includes(token));
+    student.rut,
+    student.phone,
+    student.email,
+  ]);
 }

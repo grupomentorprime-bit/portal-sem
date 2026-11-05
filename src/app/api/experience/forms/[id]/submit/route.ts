@@ -6,8 +6,10 @@ import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
 import { getFormExperienceUncached } from "@/lib/cms/form-experience";
 import {
   buildSelfRegisteredRosterStudent,
+  CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE,
   findConvocatoriaRosterStudent,
   findConvocatoriaRosterStudentByIdentity,
+  findExcludedConvocatoriaStudent,
   hasConvocatoriaSubmission,
   hasConvocatoriaSubmissionByEmail,
   upsertConvocatoriaRosterStudent,
@@ -67,6 +69,22 @@ export async function POST(request: Request, { params }: RouteParams) {
               ok: false,
               errors: { fullName: "Debe indicar su nombre completo." },
               error: "Complete su nombre para registrarse.",
+            },
+            { status: 422 }
+          );
+        }
+
+        const excluded = await findExcludedConvocatoriaStudent(tenant, convocatoria.slug, {
+          fullName,
+          rut,
+          studentId,
+        });
+        if (excluded) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { fullName: CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE },
+              error: CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE,
             },
             { status: 422 }
           );
@@ -175,6 +193,20 @@ export async function POST(request: Request, { params }: RouteParams) {
           };
         }
       } else {
+        const excludedById = await findExcludedConvocatoriaStudent(tenant, convocatoria.slug, {
+          studentId,
+        });
+        if (excludedById) {
+          return NextResponse.json(
+            {
+              ok: false,
+              errors: { studentId: CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE },
+              error: CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE,
+            },
+            { status: 422 }
+          );
+        }
+
         const student = await findConvocatoriaRosterStudent(tenant, convocatoria.slug, studentId);
         if (!student) {
           return NextResponse.json(
@@ -248,12 +280,14 @@ export async function POST(request: Request, { params }: RouteParams) {
         phone: String(data.phone ?? "").trim() || undefined,
       });
       if (rosterStudent) {
-        await upsertConvocatoriaRosterStudent(
+        const upserted = await upsertConvocatoriaRosterStudent(
           tenant,
           convocatoria.slug,
           id,
           rosterStudent
         );
+        // Excluidos ya se rechazan antes de guardar; aquí solo se evita reinsertarlos.
+        void upserted;
       }
     }
 

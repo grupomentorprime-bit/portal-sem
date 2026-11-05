@@ -12,6 +12,7 @@ import {
 } from "@/components/admin/kit";
 import { ExperienceFormSubmissionsTable } from "@/components/admin/forms/ExperienceFormSubmissionsTable";
 import { ConvocatoriaRosterPanel } from "@/components/admin/forms/ConvocatoriaRosterPanel";
+import { spacePublicHref, useSpacePublicOrigin } from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui/button";
 import {
   absenceReviewStatusLabel,
@@ -39,6 +40,7 @@ interface ConvocatoriaAdminPanelProps {
 }
 
 export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelProps) {
+  const publicOrigin = useSpacePublicOrigin();
   const [submissions, setSubmissions] = useState<ExperienceFormSubmission[]>([]);
   const [stats, setStats] = useState<SubmissionStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -165,7 +167,7 @@ export function ConvocatoriaAdminPanel({ convocatoria }: ConvocatoriaAdminPanelP
       description={`${formatConvocatoriaDate(convocatoria.date)} · ${convocatoria.location}`}
       actions={
         <>
-          <Link href={publicFormUrl(convocatoria.formId)} target="_blank">
+          <Link href={spacePublicHref(publicOrigin, publicFormUrl(convocatoria.formId))} target="_blank">
             <Button variant="outline" size="sm">
               Formulario público
             </Button>

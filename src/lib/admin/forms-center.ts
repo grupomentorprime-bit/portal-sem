@@ -61,7 +61,7 @@ export const FORM_CONVOCATORIAS: FormConvocatoria[] = [
     location: "Talca Aurora",
     description:
       "Confirmación de asistencia a la jornada presencial de evaluación del sábado 4 de julio de 2026.",
-    active: true,
+    active: false,
     landing: {
       theme: "convocatoria",
       eyebrow: "Convocatoria presencial · evaluación",
@@ -79,6 +79,49 @@ export const FORM_CONVOCATORIAS: FormConvocatoria[] = [
         },
         { icon: "users", label: "Para quién", value: "Estudiantes, docentes y equipo SEM" },
         { icon: "clock", label: "Horario", value: "Desde las 9:00 am — incluye evaluación académica" },
+      ],
+      ctaLabel: "Enviar mi respuesta",
+    },
+  },
+  {
+    slug: "talca-aurora-nov-2026",
+    formId: "convocatoria-talca-aurora-nov-2026",
+    title: "Cierre del año académico — Talca Aurora",
+    date: "2026-11-07",
+    location: "Talca Aurora",
+    description:
+      "Confirmación de asistencia al cierre del año académico 2026 el sábado 7 de noviembre en Talca Aurora.",
+    active: true,
+    landing: {
+      theme: "convocatoria",
+      eyebrow: "Convocatoria presencial · cierre académico",
+      headline: "Cierre del año académico en Talca Aurora",
+      subheadline:
+        "Celebramos juntos el cierre del año académico 2026: comunión, formación y encuentro presencial. Confirma tu asistencia o justifica tu inasistencia para preparar todo con excelencia.",
+      motivational:
+        "¡Nos encantará verte! Tu presencia fortalece nuestra comunidad formativa.",
+      highlights: [
+        {
+          icon: "calendar",
+          label: "Fecha",
+          value: "Sábado 7 de noviembre de 2026",
+        },
+        {
+          icon: "map-pin",
+          label: "Lugar",
+          value: "Talca Aurora",
+          href: "https://www.google.com/maps/search/?api=1&query=Aurora+Talca+Chile",
+        },
+        {
+          icon: "users",
+          label: "Para quién",
+          value: "Estudiantes, docentes y equipo SEM",
+        },
+        {
+          icon: "clock",
+          label: "Horario",
+          value: "Desde las 9:00 am — cierre del año académico",
+        },
       ],
       ctaLabel: "Enviar mi respuesta",
     },

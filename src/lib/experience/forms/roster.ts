@@ -6,14 +6,26 @@ import {
   upsertRosterStudent,
 } from "@/lib/experience/forms/roster-import";
 import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
+import { collectPersonSearchSuggestions } from "@/lib/experience/forms/person-search";
 import type {
+  ConvocatoriaExcludedStudent,
   ConvocatoriaRoster,
   ConvocatoriaRosterStudent,
 } from "@/types/convocatoria-roster";
+import {
+  CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE,
+  findExcludedStudentByIdentity,
+  reconcileExcludedStudents,
+} from "@/lib/experience/forms/roster-exclusion";
 
 const COLLECTION = "convocatoria_rosters";
 
 export { parseConvocatoriaRosterText } from "@/lib/experience/forms/roster-import";
+export {
+  CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE,
+  findExcludedStudentByIdentity,
+  reconcileExcludedStudents,
+} from "@/lib/experience/forms/roster-exclusion";
 
 export async function getConvocatoriaRoster(
   tenant: string,
@@ -31,39 +43,126 @@ export async function saveConvocatoriaRoster(
   tenant: string,
   convocatoriaSlug: string,
   formId: string,
-  students: ConvocatoriaRosterStudent[]
+  students: ConvocatoriaRosterStudent[],
+  options?: {
+    excludedStudents?: ConvocatoriaExcludedStudent[];
+  }
 ): Promise<ConvocatoriaRoster> {
   const db = await getDatabase();
   const now = new Date().toISOString();
+  const existing = await getConvocatoriaRoster(tenant, convocatoriaSlug);
+  const excludedStudents = reconcileExcludedStudents(
+    students,
+    options?.excludedStudents ?? existing?.excludedStudents ?? []
+  );
   const document: ConvocatoriaRoster = {
     tenant,
     convocatoriaSlug,
     formId,
     students,
+    ...(excludedStudents.length > 0 ? { excludedStudents } : {}),
     updatedAt: now,
   };
 
-  await db.collection<ConvocatoriaRoster>(COLLECTION).updateOne(
-    { tenant, convocatoriaSlug },
-    { $set: document },
-    { upsert: true }
-  );
+  if (excludedStudents.length === 0) {
+    await db.collection<ConvocatoriaRoster>(COLLECTION).updateOne(
+      { tenant, convocatoriaSlug },
+      {
+        $set: {
+          tenant,
+          convocatoriaSlug,
+          formId,
+          students,
+          updatedAt: now,
+        },
+        $unset: { excludedStudents: "" },
+      },
+      { upsert: true }
+    );
+  } else {
+    await db.collection<ConvocatoriaRoster>(COLLECTION).updateOne(
+      { tenant, convocatoriaSlug },
+      { $set: document },
+      { upsert: true }
+    );
+  }
 
   return document;
+}
+
+export async function findExcludedConvocatoriaStudent(
+  tenant: string,
+  convocatoriaSlug: string,
+  identity: { fullName?: string; rut?: string; studentId?: string }
+): Promise<ConvocatoriaExcludedStudent | null> {
+  const roster = await getConvocatoriaRoster(tenant, convocatoriaSlug);
+  if (!roster?.excludedStudents?.length) return null;
+  return findExcludedStudentByIdentity(roster.excludedStudents, identity);
+}
+
+export async function excludeConvocatoriaRosterStudents(
+  tenant: string,
+  convocatoriaSlug: string,
+  formId: string,
+  toExclude: ConvocatoriaExcludedStudent[]
+): Promise<ConvocatoriaRoster> {
+  const roster = await getConvocatoriaRoster(tenant, convocatoriaSlug);
+  const currentStudents = roster?.students ?? [];
+  const remainingStudents = currentStudents.filter((student) => {
+    if (toExclude.some((blocked) => blocked.id === student.id)) return false;
+    return !findRosterStudentByIdentity(toExclude, {
+      fullName: student.fullName,
+      rut: student.rut,
+    });
+  });
+
+  const previousExcluded = roster?.excludedStudents ?? [];
+  const mergedExcluded = [...previousExcluded];
+  for (const blocked of toExclude) {
+    const existing = findExcludedStudentByIdentity(mergedExcluded, {
+      fullName: blocked.fullName,
+      rut: blocked.rut,
+      studentId: blocked.id,
+    });
+    if (existing) {
+      const index = mergedExcluded.findIndex((item) => item.id === existing.id);
+      if (index >= 0) mergedExcluded[index] = { ...existing, ...blocked };
+    } else {
+      mergedExcluded.push(blocked);
+    }
+  }
+
+  return saveConvocatoriaRoster(tenant, convocatoriaSlug, formId, remainingStudents, {
+    excludedStudents: mergedExcluded,
+  });
 }
 
 export async function searchConvocatoriaRoster(
   tenant: string,
   convocatoriaSlug: string,
   query: string,
-  limit = 12
-): Promise<ConvocatoriaRosterStudent[]> {
+  limit = 40
+): Promise<{
+  students: ConvocatoriaRosterStudent[];
+  suggestions: ConvocatoriaRosterStudent[];
+  hasMore: boolean;
+  suggestionsHasMore: boolean;
+}> {
+  const empty = { students: [], suggestions: [], hasMore: false, suggestionsHasMore: false };
   const roster = await getConvocatoriaRoster(tenant, convocatoriaSlug);
-  if (!roster?.students.length) return [];
+  if (!roster?.students.length) return empty;
 
-  return roster.students
-    .filter((student) => rosterStudentMatchesQuery(student, query))
-    .slice(0, limit);
+  const matches = roster.students.filter((student) => rosterStudentMatchesQuery(student, query));
+  const suggestions = collectPersonSearchSuggestions(query, roster.students, (student) => [
+    student.fullName,
+    student.rut,
+  ]);
+  return {
+    students: matches.slice(0, limit),
+    suggestions: suggestions.items.slice(0, 8),
+    hasMore: matches.length > limit,
+    suggestionsHasMore: suggestions.hasMore,
+  };
 }
 
 export async function findConvocatoriaRosterStudentByIdentity(
@@ -129,8 +228,14 @@ export async function upsertConvocatoriaRosterStudent(
   convocatoriaSlug: string,
   formId: string,
   incoming: ConvocatoriaRosterStudent
-): Promise<ConvocatoriaRoster> {
+): Promise<ConvocatoriaRoster | { blocked: true; student: ConvocatoriaExcludedStudent }> {
   const roster = await getConvocatoriaRoster(tenant, convocatoriaSlug);
+  const blocked = findExcludedStudentByIdentity(roster?.excludedStudents ?? [], {
+    fullName: incoming.fullName,
+    rut: incoming.rut,
+    studentId: incoming.id,
+  });
+  if (blocked) return { blocked: true, student: blocked };
   const { students } = upsertRosterStudent(roster?.students ?? [], incoming);
   return saveConvocatoriaRoster(tenant, convocatoriaSlug, formId, students);
 }

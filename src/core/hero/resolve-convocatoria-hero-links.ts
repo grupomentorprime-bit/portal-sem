@@ -65,6 +65,8 @@ function slideReferencesActiveConvocatoria(
 
   if (blob.includes("talca") && blob.includes("aurora")) return true;
   if (blob.includes("jornada") && blob.includes("julio")) return true;
+  if (blob.includes("cierre") && blob.includes("noviembre")) return true;
+  if (blob.includes("jornada") && blob.includes("noviembre")) return true;
   if (title && blob.includes(title)) return true;
   if (location && blob.includes(location)) return true;
 
@@ -125,6 +127,8 @@ export function convocatoriaFormUrlForContent(
   const blob = normalizeText(`${title} ${description} ${href}`);
   if (blob.includes("talca") && blob.includes("aurora")) return formUrl;
   if (blob.includes("jornada") && blob.includes("julio")) return formUrl;
+  if (blob.includes("cierre") && blob.includes("noviembre")) return formUrl;
+  if (blob.includes("jornada") && blob.includes("noviembre")) return formUrl;
   if (blob.includes(normalizeText(convocatoria.title))) return formUrl;
   if (isConvocatoriaAttendanceCta(title, href)) return formUrl;
 

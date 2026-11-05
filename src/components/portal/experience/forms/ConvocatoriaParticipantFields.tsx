@@ -52,6 +52,9 @@ export function ConvocatoriaParticipantFields({
 }: ConvocatoriaParticipantFieldsProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RosterStudent[]>([]);
+  const [suggestions, setSuggestions] = useState<RosterStudent[]>([]);
+  const [hasMoreResults, setHasMoreResults] = useState(false);
+  const [suggestionsHasMore, setSuggestionsHasMore] = useState(false);
   const [searching, setSearching] = useState(false);
   const [lastSearchedQuery, setLastSearchedQuery] = useState("");
   const [manualEntry, setManualEntry] = useState(
@@ -73,16 +76,22 @@ export function ConvocatoriaParticipantFields({
 
   const trimmedQuery = query.trim();
   const visibleResults = trimmedQuery.length >= 2 ? results : [];
+  const visibleSuggestions = trimmedQuery.length >= 2 ? suggestions : [];
   const showEmptyResults =
     !manualEntry &&
     !selectedStudent &&
     !searching &&
     trimmedQuery.length >= 2 &&
     lastSearchedQuery === trimmedQuery &&
-    visibleResults.length === 0;
+    visibleResults.length === 0 &&
+    visibleSuggestions.length === 0;
 
   useEffect(() => {
-    if (manualEntry || trimmedQuery.length < 2) return;
+    if (manualEntry || trimmedQuery.length < 2) {
+      setHasMoreResults(false);
+      setSuggestionsHasMore(false);
+      return;
+    }
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
@@ -94,10 +103,16 @@ export function ConvocatoriaParticipantFields({
         );
         const data = await res.json();
         setResults(data.ok ? (data.students ?? []) : []);
+        setSuggestions(data.ok ? (data.suggestions ?? []) : []);
+        setHasMoreResults(Boolean(data.ok && data.hasMore));
+        setSuggestionsHasMore(Boolean(data.ok && data.suggestionsHasMore));
         setLastSearchedQuery(trimmedQuery);
       } catch {
         if (!controller.signal.aborted) {
           setResults([]);
+          setSuggestions([]);
+          setHasMoreResults(false);
+          setSuggestionsHasMore(false);
           setLastSearchedQuery(trimmedQuery);
         }
       } finally {
@@ -131,6 +146,9 @@ export function ConvocatoriaParticipantFields({
     setManualEntry(false);
     setQuery("");
     setResults([]);
+    setSuggestions([]);
+    setHasMoreResults(false);
+    setSuggestionsHasMore(false);
     setLastSearchedQuery("");
   };
 
@@ -143,6 +161,9 @@ export function ConvocatoriaParticipantFields({
     onChange("rut", "");
     setQuery("");
     setResults([]);
+    setSuggestions([]);
+    setHasMoreResults(false);
+    setSuggestionsHasMore(false);
     setLastSearchedQuery("");
   };
 
@@ -184,7 +205,7 @@ export function ConvocatoriaParticipantFields({
           {searching ? <p className="text-xs text-muted">Buscando…</p> : null}
 
           {!selectedStudent && visibleResults.length > 0 ? (
-            <ul className="portal-experience-form__lookup-results overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+            <ul className="portal-experience-form__lookup-results max-h-80 overflow-y-auto rounded-xl border border-border bg-background shadow-sm">
               {visibleResults.map((student) => (
                 <li key={student.id} className="border-b border-border last:border-0">
                   <button
@@ -201,6 +222,55 @@ export function ConvocatoriaParticipantFields({
                 </li>
               ))}
             </ul>
+          ) : null}
+
+          {!selectedStudent && visibleResults.length > 0 && hasMoreResults ? (
+            <p className="text-xs text-muted">
+              Hay más coincidencias. Agrega otro nombre o escribe tu RUT.
+            </p>
+          ) : null}
+
+          {!selectedStudent && visibleSuggestions.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted">
+                {visibleResults.length > 0
+                  ? "Sugerencias parecidas"
+                  : "No hay una coincidencia exacta. Sugerencias:"}
+              </p>
+              <ul className="portal-experience-form__lookup-results max-h-80 overflow-y-auto rounded-xl border border-border bg-background shadow-sm">
+                {visibleSuggestions.map((student) => (
+                  <li key={student.id} className="border-b border-border last:border-0">
+                    <button
+                      type="button"
+                      className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left transition hover:bg-background-muted/60 focus-visible:bg-background-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-secondary"
+                      onClick={() => handleSelectStudent(student)}
+                      disabled={disabled}
+                    >
+                      <span className="font-medium text-foreground">{student.fullName}</span>
+                      <span className="text-sm text-muted">
+                        {formatGenerationDisplay(student.generation)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {suggestionsHasMore ? (
+                <p className="text-xs text-muted">
+                  Hay más sugerencias. Agrega otro nombre o escribe tu RUT.
+                </p>
+              ) : null}
+              {visibleResults.length === 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEnableManualEntry(trimmedQuery)}
+                  disabled={disabled}
+                >
+                  No soy ninguna de estas
+                </Button>
+              ) : null}
+            </div>
           ) : null}
 
           {showEmptyResults ? (

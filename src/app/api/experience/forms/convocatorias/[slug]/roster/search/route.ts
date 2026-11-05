@@ -36,13 +36,20 @@ export async function GET(request: Request, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q")?.trim() ?? "";
     if (query.length < 2) {
-      return NextResponse.json({ ok: true, students: [] });
+      return NextResponse.json({ ok: true, students: [], suggestions: [] });
     }
 
-    const students = await searchConvocatoriaRoster(tenant, slug, query);
+    const { students, suggestions, hasMore, suggestionsHasMore } = await searchConvocatoriaRoster(
+      tenant,
+      slug,
+      query
+    );
     return NextResponse.json({
       ok: true,
       students: students.map(toPublicRosterSearchResult),
+      suggestions: suggestions.map(toPublicRosterSearchResult),
+      hasMore,
+      suggestionsHasMore,
     });
   } catch (error) {
     return publicInternalError("roster-search", error);
