@@ -43,12 +43,12 @@ function GrowthOsMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-gradient-to-br from-[var(--growth-os-primary)] to-[var(--growth-os-secondary)] shadow-[0_8px_18px_-10px_rgba(14,79,144,0.55)]",
+        "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[var(--growth-os-primary)]",
         className
       )}
       aria-hidden
     >
-      <span className="absolute inset-0 bg-[radial-gradient(circle_at_28%_22%,color-mix(in_srgb,white_42%,transparent),transparent_58%)]" />
+      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-br-[12px] bg-[var(--growth-os-accent)]" />
       <Sparkles className="relative h-4 w-4 text-white" strokeWidth={2.25} />
     </span>
   );
@@ -95,7 +95,7 @@ export function PlatformShell({
   return (
     <PlatformNeutralTheme className="min-h-screen bg-[var(--color-background-default)] text-foreground">
       <div className="flex min-h-screen">
-        <aside className="sticky top-0 z-30 hidden h-screen w-[220px] shrink-0 flex-col border-r border-[var(--color-border-default)] bg-white lg:flex">
+        <aside className="sticky top-0 z-30 hidden h-screen w-[220px] shrink-0 flex-col bg-[var(--growth-os-ink)] text-[var(--growth-os-on-ink)] lg:flex">
           <div className="px-3.5 pb-4 pt-4">
             <Link
               href={PLATFORM_ADMIN_HOME}
@@ -103,10 +103,10 @@ export function PlatformShell({
             >
               <GrowthOsMark />
               <span className="min-w-0">
-                <span className="block truncate text-[15px] font-bold leading-tight tracking-[-0.03em] text-[var(--gray-900)]">
+                <span className="block truncate text-[15px] font-bold leading-tight tracking-[-0.03em] text-white">
                   {PLATFORM_DISPLAY_NAME}
                 </span>
-                <span className="mt-0.5 block text-[11px] leading-snug text-[var(--gray-500)]">
+                <span className="mt-0.5 block text-[11px] leading-snug text-[var(--growth-os-on-ink-muted)]">
                   Operada por {PLATFORM_OPERATOR_NAME}
                 </span>
               </span>
@@ -134,7 +134,7 @@ export function PlatformShell({
           </nav>
 
           <div className="mt-auto px-2.5 pb-3 pt-2">
-            <div className="overflow-hidden rounded-2xl bg-[linear-gradient(165deg,#08315f_0%,var(--growth-os-primary)_100%)] px-3.5 py-3.5">
+            <div className="overflow-hidden rounded-2xl bg-[var(--growth-os-primary)] px-3.5 py-3.5">
               <p className="text-[13px] font-semibold text-white">
                 {PLATFORM_DISPLAY_NAME}
               </p>
@@ -291,11 +291,11 @@ function SidebarLink({
       className={cn(
         "inline-flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition",
         active
-          ? "bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,white)] text-[var(--growth-os-primary)]"
-          : "text-[var(--gray-600)] hover:bg-[var(--color-background-default)] hover:text-[var(--gray-900)]"
+          ? "bg-[var(--growth-os-primary)] text-white"
+          : "text-[var(--growth-os-on-ink)] hover:bg-white/10"
       )}
     >
-      <span className={cn(active ? "text-[var(--growth-os-primary)]" : "text-[var(--gray-500)]")}>
+      <span className={cn(active ? "text-white" : "text-[var(--growth-os-on-ink-muted)]")}>
         {icon}
       </span>
       {children}

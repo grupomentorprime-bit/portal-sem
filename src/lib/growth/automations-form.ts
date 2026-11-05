@@ -42,7 +42,9 @@ export type AutomationEditorForm = {
   statusValue: GrowthOpportunityStatus | "";
   typeKey: string;
   nextActionOp: "exists" | "absent";
+  ownerOp: "exists" | "absent";
   actionType: GrowthAutomationActionType | "";
+  assignOwnerUserId: string;
   nextActionSummary: string;
   nextActionKind: GrowthNextActionKind | "";
   followUpKind: "note" | "contact";
@@ -58,6 +60,7 @@ export type AutomationEditorForm = {
   postFollowUpKind: "note" | "contact";
   postFollowUpSummary: string;
   postTransitionToState: GrowthOpportunityStatus | "";
+  postAssignOwnerUserId: string;
 };
 
 export const EMPTY_AUTOMATION_EDITOR_FORM: AutomationEditorForm = {
@@ -69,7 +72,9 @@ export const EMPTY_AUTOMATION_EDITOR_FORM: AutomationEditorForm = {
   statusValue: "open",
   typeKey: "inquiry",
   nextActionOp: "absent",
+  ownerOp: "absent",
   actionType: "",
+  assignOwnerUserId: "",
   nextActionSummary: "",
   nextActionKind: "",
   followUpKind: "note",
@@ -84,6 +89,7 @@ export const EMPTY_AUTOMATION_EDITOR_FORM: AutomationEditorForm = {
   postFollowUpKind: "note",
   postFollowUpSummary: "",
   postTransitionToState: "active",
+  postAssignOwnerUserId: "",
 };
 
 function isEventType(value: string): value is GrowthDomainEventType {
@@ -129,6 +135,8 @@ function buildConditionRule(
     }
     case "nextAction":
       return { field: "nextAction", op: form.nextActionOp };
+    case "owner":
+      return { field: "owner", op: form.ownerOp };
     default:
       return null;
   }
@@ -141,6 +149,7 @@ type ActionFields = {
   followUpKind: "note" | "contact";
   followUpSummary: string;
   transitionToState: GrowthOpportunityStatus | "";
+  assignOwnerUserId: string;
 };
 
 function buildActionStep(
@@ -203,6 +212,14 @@ function buildActionStep(
         },
       };
     }
+    case "salesAssignOwner": {
+      const userId = fields.assignOwnerUserId.trim();
+      if (!userId) return { ok: false, error: "Indica el responsable." };
+      return {
+        ok: true,
+        step: { kind: "action", action: "salesAssignOwner", userId },
+      };
+    }
     default:
       return { ok: false, error: "Acción no soportada." };
   }
@@ -226,6 +243,9 @@ function applyActionToForm(
     if (step.action === "salesTransitionOpportunity" && step.toState) {
       form.transitionToState = step.toState as GrowthOpportunityStatus;
     }
+    if (step.action === "salesAssignOwner") {
+      form.assignOwnerUserId = step.userId;
+    }
     return;
   }
 
@@ -240,6 +260,9 @@ function applyActionToForm(
   }
   if (step.action === "salesTransitionOpportunity" && step.toState) {
     form.postTransitionToState = step.toState as GrowthOpportunityStatus;
+  }
+  if (step.action === "salesAssignOwner") {
+    form.postAssignOwnerUserId = step.userId;
   }
 }
 
@@ -263,6 +286,7 @@ export function buildAutomationStepsFromForm(
       followUpKind: form.followUpKind,
       followUpSummary: form.followUpSummary,
       transitionToState: form.transitionToState,
+      assignOwnerUserId: form.assignOwnerUserId,
     },
     "Escribe qué hacer ahora.",
     "Escribe el detalle del seguimiento.",
@@ -310,6 +334,7 @@ export function buildAutomationStepsFromForm(
         followUpKind: form.postFollowUpKind,
         followUpSummary: form.postFollowUpSummary,
         transitionToState: form.postTransitionToState,
+        assignOwnerUserId: form.postAssignOwnerUserId,
       },
       "Escribe qué hacer después de la espera.",
       "Escribe el detalle del seguimiento posterior.",
@@ -377,6 +402,10 @@ export function automationFormFromSteps(
         case "nextAction":
           form.conditionKind = "nextAction";
           form.nextActionOp = rule.op;
+          break;
+        case "owner":
+          form.conditionKind = "owner";
+          form.ownerOp = rule.op;
           break;
       }
     }

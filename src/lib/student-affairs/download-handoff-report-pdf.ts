@@ -17,8 +17,7 @@ const PAGE_W = 210;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const LINE = 5.2;
 const INSTITUTION_NAME_FALLBACK = "Institución";
-const LOGO_PATH = "/images/logo-sem-isotype-line.png";
-const LOGO_ASPECT = 827 / 1024;
+const LOGO_ASPECT = 1;
 const HEADER_H = 32;
 
 const BRAND = {
@@ -105,8 +104,10 @@ async function loadImageDataUrlFromPng(path: string, renderHeight: number): Prom
   }
 }
 
-async function loadSemLogoDataUrl(): Promise<string | null> {
-  return loadImageDataUrlFromPng(LOGO_PATH, 180);
+async function loadLogoDataUrl(logoUrl: string | undefined): Promise<string | null> {
+  const url = logoUrl?.trim();
+  if (!url || /logo-sem|logo-ipn|seminarioipn/i.test(url)) return null;
+  return loadImageDataUrlFromPng(url, 180);
 }
 
 function groupNomineesByGeneration(
@@ -769,9 +770,11 @@ export async function downloadHandoffReportPdf(input: {
   formId: string;
   report: StudentAffairsHandoffReport;
   institutionName?: string;
+  /** Logo del Espacio. Si falta, el informe no usa el isotipo de otro cliente. */
+  logoUrl?: string;
 }): Promise<void> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const logoDataUrl = await loadSemLogoDataUrl();
+  const logoDataUrl = await loadLogoDataUrl(input.logoUrl);
   const ctx = createPdfContext(doc);
   const institutionName =
     input.institutionName?.trim() || INSTITUTION_NAME_FALLBACK;

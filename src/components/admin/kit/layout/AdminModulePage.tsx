@@ -18,6 +18,8 @@ export interface AdminModulePageProps {
   className?: string;
   /** Clases del encabezado de módulo (p. ej. ocultar en móvil). */
   headerClassName?: string;
+  /** La ficha dibuja su propio encabezado; las migas siguen en el chrome. */
+  hideTitle?: boolean;
 }
 
 /**
@@ -34,6 +36,7 @@ export function AdminModulePage({
   maxWidth = "7xl",
   className,
   headerClassName,
+  hideTitle = false,
 }: AdminModulePageProps) {
   const { shellV2, setBreadcrumbOverride } = useAdminChrome();
   const breadcrumbKey = breadcrumbs
@@ -51,13 +54,15 @@ export function AdminModulePage({
   if (shellV2) {
     return (
       <div className={cn(className)}>
-        <ModuleHeader
-          title={title}
-          description={description}
-          actions={actions}
-          className={headerClassName}
-        />
-        <div className={cn("flex flex-col gap-6", sidebar ? "lg:flex-row" : undefined)}>
+        {hideTitle ? null : (
+          <ModuleHeader
+            title={title}
+            description={description}
+            actions={actions}
+            className={headerClassName}
+          />
+        )}
+        <div className={cn("flex flex-col", hideTitle ? "gap-0" : "gap-6", sidebar ? "lg:flex-row" : undefined)}>
           {sidebar ? <aside className="lg:w-64 lg:shrink-0">{sidebar}</aside> : null}
           <div className="min-w-0 flex-1">{children}</div>
         </div>
@@ -74,6 +79,7 @@ export function AdminModulePage({
       sidebar={sidebar}
       maxWidth={maxWidth}
       className={className}
+      hideTitle={hideTitle}
     >
       {children}
     </AdminModuleLayout>

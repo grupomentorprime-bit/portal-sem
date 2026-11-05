@@ -1,0 +1,488 @@
+﻿TAP version 13
+# Subtest: OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö superficie
+    # Subtest: archivos de read model, API, admin, migraci├│n e ├¡ndices existen
+    ok 1 - archivos de read model, API, admin, migraci├│n e ├¡ndices existen
+      ---
+      duration_ms: 0.9743
+      type: 'test'
+      ...
+    # Subtest: AB ÔÇö endpoint GET no escribe datos (sin mutaciones)
+    ok 2 - AB ÔÇö endpoint GET no escribe datos (sin mutaciones)
+      ---
+      duration_ms: 0.6856
+      type: 'test'
+      ...
+    # Subtest: S ÔÇö no modifica deriveCampaignMetrics
+    ok 3 - S ÔÇö no modifica deriveCampaignMetrics
+      ---
+      duration_ms: 0.4947
+      type: 'test'
+      ...
+    1..3
+ok 1 - OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö superficie
+  ---
+  duration_ms: 3.3874
+  type: 'suite'
+  ...
+# Subtest: OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö per├¡odos AÔÇôG
+    # Subtest: A ÔÇö default last_30d
+    ok 1 - A ÔÇö default last_30d
+      ---
+      duration_ms: 0.3565
+      type: 'test'
+      ...
+    # Subtest: B ÔÇö last_7d
+    ok 2 - B ÔÇö last_7d
+      ---
+      duration_ms: 0.2147
+      type: 'test'
+      ...
+    # Subtest: C ÔÇö this_month
+    ok 3 - C ÔÇö this_month
+      ---
+      duration_ms: 0.1864
+      type: 'test'
+      ...
+    # Subtest: D ÔÇö previous_month
+    ok 4 - D ÔÇö previous_month
+      ---
+      duration_ms: 0.1466
+      type: 'test'
+      ...
+    # Subtest: E ÔÇö custom v├ílido
+    ok 5 - E ÔÇö custom v├ílido
+      ---
+      duration_ms: 0.2162
+      type: 'test'
+      ...
+    # Subtest: F ÔÇö custom >366 rechazado
+    ok 6 - F ÔÇö custom >366 rechazado
+      ---
+      duration_ms: 0.1647
+      type: 'test'
+      ...
+    # Subtest: G ÔÇö [start, end) inclusivo/exclusivo
+    ok 7 - G ÔÇö [start, end) inclusivo/exclusivo
+      ---
+      duration_ms: 0.2103
+      type: 'test'
+      ...
+    1..7
+ok 2 - OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö per├¡odos AÔÇôG
+  ---
+  duration_ms: 1.9531
+  type: 'suite'
+  ...
+# Subtest: OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö m├®tricas HÔÇôW
+    # Subtest: H ÔÇö Personas excluye merged/archived
+    ok 1 - H ÔÇö Personas excluye merged/archived
+      ---
+      duration_ms: 1.1108
+      type: 'test'
+      ...
+    # Subtest: I ÔÇö Opps excluye archived de cohorte
+    ok 2 - I ÔÇö Opps excluye archived de cohorte
+      ---
+      duration_ms: 0.376
+      type: 'test'
+      ...
+    # Subtest: J ÔÇö En seguimiento snapshot sin per├¡odo
+    ok 3 - J ÔÇö En seguimiento snapshot sin per├¡odo
+      ---
+      duration_ms: 0.1846
+      type: 'test'
+      ...
+    # Subtest: K/L ÔÇö Ganadas/Perdidas usan closedAt
+    ok 4 - K/L ÔÇö Ganadas/Perdidas usan closedAt
+      ---
+      duration_ms: 0.2593
+      type: 'test'
+      ...
+    # Subtest: M/N/O ÔÇö cohorte openedAt; handed_off no es won; denom 0 ÔåÆ null
+    ok 5 - M/N/O ÔÇö cohorte openedAt; handed_off no es won; denom 0 ÔåÆ null
+      ---
+      duration_ms: 0.2691
+      type: 'test'
+      ...
+    # Subtest: P/Q ÔÇö Captaci├│n usa origen Persona; p├®rdidas usan origen Opp
+    ok 6 - P/Q ÔÇö Captaci├│n usa origen Persona; p├®rdidas usan origen Opp
+      ---
+      duration_ms: 11.3887
+      type: 'test'
+      ...
+    # Subtest: R ÔÇö campa├▒as periodizadas por openedAt
+    ok 7 - R ÔÇö campa├▒as periodizadas por openedAt
+      ---
+      duration_ms: 0.6174
+      type: 'test'
+      ...
+    # Subtest: T/U ÔÇö mensajes inbound/outbound y personas distinct
+    ok 8 - T/U ÔÇö mensajes inbound/outbound y personas distinct
+      ---
+      duration_ms: 0.3163
+      type: 'test'
+      ...
+    # Subtest: V ÔÇö conversaciones sin respuesta por ├║ltimo inbound (snapshot)
+    ok 9 - V ÔÇö conversaciones sin respuesta por ├║ltimo inbound (snapshot)
+      ---
+      duration_ms: 0.1522
+      type: 'test'
+      ...
+    # Subtest: W/X ÔÇö p├®rdidas por tipo/origen/campa├▒a + labels humanos
+    ok 10 - W/X ÔÇö p├®rdidas por tipo/origen/campa├▒a + labels humanos
+      ---
+      duration_ms: 0.3147
+      type: 'test'
+      ...
+    1..10
+ok 3 - OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö m├®tricas HÔÇôW
+  ---
+  duration_ms: 15.399
+  type: 'suite'
+  ...
+# Subtest: OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö IAM / multi-tenant / empty
+    # Subtest: Y ÔÇö permiso growth.analytics.view en registry + cat├ílogo + roles
+    ok 1 - Y ÔÇö permiso growth.analytics.view en registry + cat├ílogo + roles
+      ---
+      duration_ms: 0.6011
+      type: 'test'
+      ...
+    # Subtest: Z ÔÇö tenant A no ve tenant B
+    ok 2 - Z ÔÇö tenant A no ve tenant B
+      ---
+      duration_ms: 0.27
+      type: 'test'
+      ...
+    # Subtest: AA ÔÇö espacio vac├¡o v├ílido
+    ok 3 - AA ÔÇö espacio vac├¡o v├ílido
+      ---
+      duration_ms: 1.114
+      type: 'test'
+      ...
+    # Subtest: nav Anal├¡tica apunta a /admin/analitica con permiso
+    ok 4 - nav Anal├¡tica apunta a /admin/analitica con permiso
+      ---
+      duration_ms: 0.7543
+      type: 'test'
+      ...
+    # Subtest: ├¡ndices Anal├¡tica documentados en indexes.ts + migraci├│n 022
+    ok 5 - ├¡ndices Anal├¡tica documentados en indexes.ts + migraci├│n 022
+      ---
+      duration_ms: 0.4158
+      type: 'test'
+      ...
+    1..5
+ok 4 - OT-GROWTH-ANALYTICS-IMPLEMENT-003 ÔÇö IAM / multi-tenant / empty
+  ---
+  duration_ms: 3.421
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö aislamiento por Espacio
+    # Subtest: una oportunidad de otro tenantId no cambia captaci├│n, cohortes ni responsables
+    ok 1 - una oportunidad de otro tenantId no cambia captaci├│n, cohortes ni responsables
+      ---
+      duration_ms: 4.2044
+      type: 'test'
+      ...
+    1..1
+ok 5 - buildConversionAnalytics ÔÇö aislamiento por Espacio
+  ---
+  duration_ms: 5.3026
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö captaci├│n
+    # Subtest: total es la suma de cortes por embudo y por origen
+    ok 1 - total es la suma de cortes por embudo y por origen
+      ---
+      duration_ms: 13.168
+      type: 'test'
+      ...
+    # Subtest: una alta archivada despu├®s cuenta en captaci├│n y no en la cohorte
+    ok 2 - una alta archivada despu├®s cuenta en captaci├│n y no en la cohorte
+      ---
+      duration_ms: 0.408
+      type: 'test'
+      ...
+    # Subtest: sin openedAt no es alta y va al cubo de calidad
+    ok 3 - sin openedAt no es alta y va al cubo de calidad
+      ---
+      duration_ms: 0.3581
+      type: 'test'
+      ...
+    1..3
+ok 6 - buildConversionAnalytics ÔÇö captaci├│n
+  ---
+  duration_ms: 14.1833
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö stock y movimiento
+    # Subtest: stock ignora el per├¡odo; movimiento ilegible no mueve otra barra
+    ok 1 - stock ignora el per├¡odo; movimiento ilegible no mueve otra barra
+      ---
+      duration_ms: 0.3846
+      type: 'test'
+      ...
+    # Subtest: clasifica avance, abandono, ganada, traspaso y archivo; asignar no avanza
+    ok 2 - clasifica avance, abandono, ganada, traspaso y archivo; asignar no avanza
+      ---
+      duration_ms: 0.5101
+      type: 'test'
+      ...
+    # Subtest: handed_off con closedAt en el per├¡odo sube traspaso y no ganadas ni perdidas
+    ok 3 - handed_off con closedAt en el per├¡odo sube traspaso y no ganadas ni perdidas
+      ---
+      duration_ms: 0.2709
+      type: 'test'
+      ...
+    1..3
+ok 7 - buildConversionAnalytics ÔÇö stock y movimiento
+  ---
+  duration_ms: 1.419
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö cierres y cohortes
+    # Subtest: won sin closedAt va a calidad y no altera la tasa
+    ok 1 - won sin closedAt va a calidad y no altera la tasa
+      ---
+      duration_ms: 1.0939
+      type: 'test'
+      ...
+    # Subtest: cohorte vac├¡a no tiene fila y su tasa es null
+    ok 2 - cohorte vac├¡a no tiene fila y su tasa es null
+      ---
+      duration_ms: 0.1581
+      type: 'test'
+      ...
+    # Subtest: cohorte de 2 con una ganada y una abierta tiene tasa 0.5
+    ok 3 - cohorte de 2 con una ganada y una abierta tiene tasa 0.5
+      ---
+      duration_ms: 0.3366
+      type: 'test'
+      ...
+    # Subtest: handed_off entra en cohorte y handedOff, no en won
+    ok 4 - handed_off entra en cohorte y handedOff, no en won
+      ---
+      duration_ms: 0.1433
+      type: 'test'
+      ...
+    1..4
+ok 8 - buildConversionAnalytics ÔÇö cierres y cohortes
+  ---
+  duration_ms: 1.9521
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö p├®rdidas
+    # Subtest: cuenta etapa de salida, conserva p├®rdidas sin etapa y no registra motivos
+    ok 1 - cuenta etapa de salida, conserva p├®rdidas sin etapa y no registra motivos
+      ---
+      duration_ms: 0.6978
+      type: 'test'
+      ...
+    # Subtest: transiciones a lost posteriores a closedAt no definen la etapa de salida
+    ok 2 - transiciones a lost posteriores a closedAt no definen la etapa de salida
+      ---
+      duration_ms: 0.2051
+      type: 'test'
+      ...
+    1..2
+ok 9 - buildConversionAnalytics ÔÇö p├®rdidas
+  ---
+  duration_ms: 0.9849
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö permanencia y ciclo
+    # Subtest: mediana de intervalos terminados; en curso e historial incompleto no cuentan
+    ok 1 - mediana de intervalos terminados; en curso e historial incompleto no cuentan
+      ---
+      duration_ms: 0.4689
+      type: 'test'
+      ...
+    # Subtest: ciclo de ganadas y perdidas se calcula por separado
+    ok 2 - ciclo de ganadas y perdidas se calcula por separado
+      ---
+      duration_ms: 0.172
+      type: 'test'
+      ...
+    1..2
+ok 10 - buildConversionAnalytics ÔÇö permanencia y ciclo
+  ---
+  duration_ms: 0.7253
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö campa├▒a y fuente
+    # Subtest: atribuye solo por trackingKey del Espacio y no lee referrer
+    ok 1 - atribuye solo por trackingKey del Espacio y no lee referrer
+      ---
+      duration_ms: 0.4021
+      type: 'test'
+      ...
+    1..1
+ok 11 - buildConversionAnalytics ÔÇö campa├▒a y fuente
+  ---
+  duration_ms: 0.4807
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö responsables
+    # Subtest: abierta suma en el ownerUserId vigente
+    ok 1 - abierta suma en el ownerUserId vigente
+      ---
+      duration_ms: 0.2772
+      type: 'test'
+      ...
+    # Subtest: cierre atribuye a la ├║ltima asignaci├│n anterior o igual a closedAt
+    ok 2 - cierre atribuye a la ├║ltima asignaci├│n anterior o igual a closedAt
+      ---
+      duration_ms: 0.3551
+      type: 'test'
+      ...
+    # Subtest: usuario sin membres├¡a queda como Responsable no vigente
+    ok 3 - usuario sin membres├¡a queda como Responsable no vigente
+      ---
+      duration_ms: 0.147
+      type: 'test'
+      ...
+    1..3
+ok 12 - buildConversionAnalytics ÔÇö responsables
+  ---
+  duration_ms: 0.8993
+  type: 'suite'
+  ...
+# Subtest: buildConversionAnalytics ÔÇö calidad de datos
+    # Subtest: los cubos de calidad son n├║meros y no filas de etapa, origen ni responsable
+    ok 1 - los cubos de calidad son n├║meros y no filas de etapa, origen ni responsable
+      ---
+      duration_ms: 0.3209
+      type: 'test'
+      ...
+    1..1
+ok 13 - buildConversionAnalytics ÔÇö calidad de datos
+  ---
+  duration_ms: 0.4068
+  type: 'suite'
+  ...
+# Subtest: conversion-analytics-read ÔÇö guarda de fuente
+    # Subtest: es server-only y filtra por tenantId
+    ok 1 - es server-only y filtra por tenantId
+      ---
+      duration_ms: 0.3205
+      type: 'test'
+      ...
+    # Subtest: lee solo los kinds de movimiento necesarios
+    ok 2 - lee solo los kinds de movimiento necesarios
+      ---
+      duration_ms: 0.2086
+      type: 'test'
+      ...
+    # Subtest: no escribe, no migra y no toca m├®tricas de campa├▒a
+    ok 3 - no escribe, no migra y no toca m├®tricas de campa├▒a
+      ---
+      duration_ms: 0.2471
+      type: 'test'
+      ...
+    # Subtest: la anal├¡tica previa no importa conversion-analytics
+    ok 4 - la anal├¡tica previa no importa conversion-analytics
+      ---
+      duration_ms: 0.5136
+      type: 'test'
+      ...
+    # Subtest: la lectura server-only no se reexporta desde el ├¡ndice de Growth
+    ok 5 - la lectura server-only no se reexporta desde el ├¡ndice de Growth
+      ---
+      duration_ms: 0.3003
+      type: 'test'
+      ...
+    1..5
+ok 14 - conversion-analytics-read ÔÇö guarda de fuente
+  ---
+  duration_ms: 1.8019
+  type: 'suite'
+  ...
+# Subtest: Conversion Engine fase 3 ÔÇö pantalla, ruta y navegaci├│n (guardas de fuente)
+    # Subtest: Anal├¡tica V1 no cambia
+    ok 1 - Anal├¡tica V1 no cambia
+      ---
+      duration_ms: 0.3328
+      type: 'test'
+      ...
+    # Subtest: el panel comercial no importa el cliente de anal├¡tica
+    ok 2 - el panel comercial no importa el cliente de anal├¡tica
+      ---
+      duration_ms: 0.2096
+      type: 'test'
+      ...
+    # Subtest: nav: ├¡tem nuevo despu├®s de nav-conversion con permiso exacto
+    ok 3 - nav: ├¡tem nuevo despu├®s de nav-conversion con permiso exacto
+      ---
+      duration_ms: 0.3943
+      type: 'test'
+      ...
+    # Subtest: la p├ígina nueva exige growth.sales.view y redirige al login
+    ok 4 - la p├ígina nueva exige growth.sales.view y redirige al login
+      ---
+      duration_ms: 0.2312
+      type: 'test'
+      ...
+    # Subtest: la ruta API usa growth.sales.view
+    ok 5 - la ruta API usa growth.sales.view
+      ---
+      duration_ms: 0.2347
+      type: 'test'
+      ...
+    # Subtest: el cliente muestra copy contractual, una columna, sin motivos ni series de ejemplo
+    ok 6 - el cliente muestra copy contractual, una columna, sin motivos ni series de ejemplo
+      ---
+      duration_ms: 0.4385
+      type: 'test'
+      ...
+    # Subtest: AnaliticaClient usa las piezas extra├¡das y conserva su fetch
+    ok 7 - AnaliticaClient usa las piezas extra├¡das y conserva su fetch
+      ---
+      duration_ms: 0.4503
+      type: 'test'
+      ...
+    1..7
+ok 15 - Conversion Engine fase 3 ÔÇö pantalla, ruta y navegaci├│n (guardas de fuente)
+  ---
+  duration_ms: 2.4956
+  type: 'suite'
+  ...
+# Subtest: OT-GROWTH-UX-ANALYTICS-004 ÔÇö dise├▒o final Anal├¡tica
+    # Subtest: usa AnaliticaClient y conserva lectura tenant del adaptador
+    ok 1 - usa AnaliticaClient y conserva lectura tenant del adaptador
+      ---
+      duration_ms: 1.4279
+      type: 'test'
+      ...
+    # Subtest: copy humano de cabecera, per├¡odos y error
+    ok 2 - copy humano de cabecera, per├¡odos y error
+      ---
+      duration_ms: 0.4764
+      type: 'test'
+      ...
+    # Subtest: jerarqu├¡a de historia + selector de per├¡odo sin UTC t├®cnico
+    ok 3 - jerarqu├¡a de historia + selector de per├¡odo sin UTC t├®cnico
+      ---
+      duration_ms: 0.5731
+      type: 'test'
+      ...
+    # Subtest: no toca backend ni motores prohibidos
+    ok 4 - no toca backend ni motores prohibidos
+      ---
+      duration_ms: 0.58
+      type: 'test'
+      ...
+    1..4
+ok 16 - OT-GROWTH-UX-ANALYTICS-004 ÔÇö dise├▒o final Anal├¡tica
+  ---
+  duration_ms: 4.4296
+  type: 'suite'
+  ...
+1..16
+# tests 61
+# suites 16
+# pass 61
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 359.5685

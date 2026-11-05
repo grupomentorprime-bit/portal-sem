@@ -7,6 +7,8 @@ import {
   GROWTH_VENTAS_PAGE_TITLE,
 } from "@/lib/growth/labels";
 import { getGrowthVentasOperateView } from "@/lib/growth/ventas-read";
+import { listGrowthSpaceMembers } from "@/lib/growth/space-members";
+import { ensureCumpleGrowthAssessmentPort } from "@/sites/cumple/growth-assessment";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { CircleOff } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -53,6 +55,7 @@ export default async function AdminVentasOportunidadPage({
   }
 
   const { id } = await params;
+  ensureCumpleGrowthAssessmentPort();
   const item = await getGrowthVentasOperateView(tenantId, id);
 
   if (!item) {
@@ -84,6 +87,7 @@ export default async function AdminVentasOportunidadPage({
     <VentasOperateClient
       item={item}
       canOperate={can(authCtx, "growth.sales.operate")}
+      members={await listGrowthSpaceMembers(tenantId)}
     />
   );
 }

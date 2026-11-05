@@ -8,6 +8,8 @@ import {
   isGrowthV1FormDestination,
 } from "@/core/growth";
 import { ingestFormSubmissionToGrowthSafe } from "@/lib/growth";
+import { prepareCumpleDiagnosticoSubmission } from "@/sites/cumple/diagnostico";
+import { ensureCumpleGrowthAssessmentPort } from "@/sites/cumple/growth-assessment";
 import { validateFormSubmission } from "./validation";
 
 export interface FormSubmitResult {
@@ -30,6 +32,7 @@ export async function processFormDestination(
   submission: ExperienceFormSubmission
 ): Promise<void> {
   if (isGrowthV1FormDestination(destination)) {
+    ensureCumpleGrowthAssessmentPort();
     await ingestFormSubmissionToGrowthSafe(submission);
     return;
   }
@@ -51,7 +54,12 @@ export async function submitExperienceForm(input: {
   store: FormSubmissionStore;
 }): Promise<FormSubmitResult> {
   const { form, data, store } = input;
-  const errors = validateFormSubmission(form, data);
+  const prepared = prepareCumpleDiagnosticoSubmission(form._id, data);
+  if (prepared.applies && !prepared.ok) {
+    return { ok: false, errors: prepared.errors, message: form.errorMessage };
+  }
+  const submissionData = prepared.applies && prepared.ok ? prepared.data : data;
+  const errors = validateFormSubmission(form, submissionData);
 
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors, message: form.errorMessage };
@@ -61,7 +69,7 @@ export async function submitExperienceForm(input: {
     tenant: form.tenant,
     formId: form._id,
     destination: form.destination,
-    data,
+    data: submissionData,
     createdAt: new Date().toISOString(),
   };
 

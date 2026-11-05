@@ -107,6 +107,7 @@ export {
   clearGrowthNextAction,
   setGrowthNextAction,
 } from "./next-action";
+export { assignGrowthOpportunityOwner } from "./assign-owner";
 export type {
   ClearGrowthNextActionInput,
   SetGrowthNextActionInput,

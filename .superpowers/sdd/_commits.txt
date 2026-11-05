@@ -1,0 +1,5 @@
+﻿f3549ce fix: separar etapas de salida por embudo y activar excludePrefixes
+71dc408 fix: leer embudos de conversi├│n sin m├│dulos a├║n no versionados
+21c8c21 feat: mostrar anal├¡tica de conversi├│n en el Espacio
+ad31623 feat: leer anal├¡tica de conversi├│n del Espacio sin materializarla
+37696a0 feat: calcular anal├¡tica de conversi├│n desde el n├║cleo Growth

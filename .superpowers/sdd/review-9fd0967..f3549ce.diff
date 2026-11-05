@@ -1,0 +1,3682 @@
+﻿# Review package: 9fd0967a3eb4d80ca4ea4de957d9b807ff0b9993..f3549ce
+
+## Commits
+f3549ce fix: separar etapas de salida por embudo y activar excludePrefixes
+71dc408 fix: leer embudos de conversi├│n sin m├│dulos a├║n no versionados
+21c8c21 feat: mostrar anal├¡tica de conversi├│n en el Espacio
+ad31623 feat: leer anal├¡tica de conversi├│n del Espacio sin materializarla
+37696a0 feat: calcular anal├¡tica de conversi├│n desde el n├║cleo Growth
+
+## Files changed
+ src/app/admin/conversion/analitica/page.tsx        |  80 ++
+ src/app/api/growth/conversion-analytics/route.ts   |  44 ++
+ src/components/admin/growth/AnaliticaClient.tsx    | 248 +-----
+ .../admin/growth/ConversionAnaliticaClient.tsx     | 706 +++++++++++++++++
+ src/components/admin/growth/analitica-visual.tsx   | 250 ++++++
+ src/core/growth/funnel-types.ts                    | 132 ++++
+ src/lib/admin/institutional.ts                     |   6 +
+ src/lib/admin/nav-domains.ts                       | 105 ++-
+ src/lib/growth/conversion-analytics-read.ts        | 228 ++++++
+ src/lib/growth/conversion-analytics.ts             | 859 +++++++++++++++++++++
+ src/lib/growth/index.ts                            |  22 +
+ src/lib/growth/labels.ts                           |  27 +
+ tests/baseline/growth-conversion-analytics.test.ts | 735 ++++++++++++++++++
+ tests/baseline/growth-os-admin-shell-002.test.ts   |  14 +-
+ 14 files changed, 3178 insertions(+), 278 deletions(-)
+
+## Diff
+diff --git a/src/app/admin/conversion/analitica/page.tsx b/src/app/admin/conversion/analitica/page.tsx
+new file mode 100644
+index 0000000..9718cb0
+--- /dev/null
++++ b/src/app/admin/conversion/analitica/page.tsx
+@@ -0,0 +1,80 @@
++/**
++ * Conversion Engine fase 3 ÔÇö /admin/conversion/analitica.
++ * Lectura por Espacio; permiso growth.sales.view.
++ */
++
++import { ConversionAnaliticaClient } from "@/components/admin/growth/ConversionAnaliticaClient";
++import { can } from "@/core/identity/policies/engine";
++import type { AnalyticsPeriodPreset } from "@/lib/growth/analytics-period";
++import { getConversionAnalytics } from "@/lib/growth/conversion-analytics-read";
++import { loadSessionContext } from "@/lib/identity/sessions";
++import { redirect } from "next/navigation";
++
++export const dynamic = "force-dynamic";
++
++interface PageProps {
++  searchParams: Promise<{
++    preset?: string;
++    from?: string;
++    to?: string;
++  }>;
++}
++
++export default async function AdminConversionAnaliticaPage({
++  searchParams,
++}: PageProps) {
++  const session = await loadSessionContext();
++  const tenantId = session?.session.tenantId?.trim();
++  if (!session || !tenantId || !session.membership) {
++    redirect("/login?next=/admin/conversion/analitica");
++  }
++
++  const { resolvePermissionsForMembership } = await import(
++    "@/lib/identity/permission-resolver"
++  );
++  const { readPlatformRoles } = await import(
++    "@/core/identity/platform/capability"
++  );
++  const permissions = await resolvePermissionsForMembership(
++    tenantId,
++    session.membership
++  );
++  const authCtx = {
++    user: session.user,
++    session: session.session,
++    membership: session.membership,
++    permissions,
++    tenantId,
++    platformRoles: readPlatformRoles(session.user),
++    compatMode: false,
++  };
++
++  if (!can(authCtx, "growth.sales.view")) {
++    redirect("/admin");
++  }
++
++  const params = await searchParams;
++  const presetRaw = params.preset?.trim() || "last_30d";
++  let result: Awaited<ReturnType<typeof getConversionAnalytics>> | null = null;
++  try {
++    result = await getConversionAnalytics(tenantId, {
++      preset: presetRaw,
++      from: params.from,
++      to: params.to,
++    });
++  } catch (error) {
++    // Sin datos iniciales: el cliente reintenta y muestra AlertBanner, nunca ceros.
++    console.error(error);
++  }
++
++  const initialPreset = (
++    result?.ok ? result.data.period.preset : "last_30d"
++  ) as AnalyticsPeriodPreset;
++
++  return (
++    <ConversionAnaliticaClient
++      initial={result?.ok ? result.data : null}
++      initialPreset={initialPreset}
++    />
++  );
++}
+diff --git a/src/app/api/growth/conversion-analytics/route.ts b/src/app/api/growth/conversion-analytics/route.ts
+new file mode 100644
+index 0000000..6b1dc72
+--- /dev/null
++++ b/src/app/api/growth/conversion-analytics/route.ts
+@@ -0,0 +1,44 @@
++/**
++ * Conversion Engine fase 3 ÔÇö GET /api/growth/conversion-analytics
++ * READ-ONLY. Permiso: growth.sales.view. Espacio activo v├¡a sesi├│n.
++ */
++
++import { NextResponse } from "next/server";
++import { requirePermission } from "@/core/identity";
++import { getConversionAnalytics } from "@/lib/growth/conversion-analytics-read";
++
++export async function GET(request: Request) {
++  try {
++    const ctx = await requirePermission("growth.sales.view");
++    if (ctx instanceof NextResponse) return ctx;
++
++    const url = new URL(request.url);
++    const preset = url.searchParams.get("preset");
++    const from = url.searchParams.get("from");
++    const to = url.searchParams.get("to");
++
++    const result = await getConversionAnalytics(ctx.tenantId, {
++      preset,
++      from,
++      to,
++    });
++
++    if (!result.ok) {
++      return NextResponse.json(
++        { ok: false, error: result.error },
++        { status: result.status }
++      );
++    }
++
++    return NextResponse.json({ ok: true, ...result.data });
++  } catch (error) {
++    console.error(error);
++    return NextResponse.json(
++      {
++        ok: false,
++        error: error instanceof Error ? error.message : "Error desconocido",
++      },
++      { status: 500 }
++    );
++  }
++}
+diff --git a/src/components/admin/growth/AnaliticaClient.tsx b/src/components/admin/growth/AnaliticaClient.tsx
+index 81b3a4a..5c7ff2e 100644
+--- a/src/components/admin/growth/AnaliticaClient.tsx
++++ b/src/components/admin/growth/AnaliticaClient.tsx
+@@ -11,7 +11,6 @@ import {
+   useEffect,
+   useState,
+   useTransition,
+-  type ReactNode,
+ } from "react";
+ import { AlertBanner, EmptyState, aek } from "@/components/admin/kit";
+ import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+@@ -19,10 +18,7 @@ import { Button } from "@/components/ui/button";
+ import { Skeleton } from "@/components/ui/skeleton";
+ import type { AnalyticsV1Response } from "@/lib/growth/analytics-aggregate";
+ import { formatConversionPercent } from "@/lib/growth/analytics-aggregate";
+-import {
+-  ANALYTICS_PERIOD_PRESETS,
+-  type AnalyticsPeriodPreset,
+-} from "@/lib/growth/analytics-period";
++import type { AnalyticsPeriodPreset } from "@/lib/growth/analytics-period";
+ import {
+   GROWTH_ANALITICA_EMPTY_CAMPAIGNS,
+   GROWTH_ANALITICA_EMPTY_LOSSES,
+@@ -34,20 +30,22 @@ import {
+   GROWTH_ANALITICA_LOADING_LABEL,
+   GROWTH_ANALITICA_PAGE_DESCRIPTION,
+   GROWTH_ANALITICA_PAGE_TITLE,
+-  GROWTH_ANALITICA_PERIOD_LABELS,
+   GROWTH_ANALITICA_RETRY_LABEL,
+ } from "@/lib/growth/labels";
+ import { cn } from "@/lib/utils";
++import {
++  HeroMetric,
++  PeriodSelector,
++  ProportionBars,
++  StorySection,
++  formatCount,
++} from "./analitica-visual";
+ 
+ type FetchState =
+   | { status: "loading" }
+   | { status: "error"; message: string }
+   | { status: "ok"; data: AnalyticsV1Response };
+ 
+-const PRESET_OPTIONS = ANALYTICS_PERIOD_PRESETS.filter(
+-  (p) => p !== "custom"
+-) as Exclude<AnalyticsPeriodPreset, "custom">[];
+-
+ /** Orden humano del estado de lo generado. */
+ const SALES_STATUS_ORDER = [
+   "Abierta",
+@@ -57,139 +55,6 @@ const SALES_STATUS_ORDER = [
+   "Traspasada",
+ ] as const;
+ 
+-function formatCount(n: number): string {
+-  return new Intl.NumberFormat("es-CL").format(n);
+-}
+-
+-function toDatetimeLocalValue(iso: string): string {
+-  if (!iso) return "";
+-  const d = new Date(iso);
+-  if (Number.isNaN(d.getTime())) return "";
+-  const pad = (n: number) => String(n).padStart(2, "0");
+-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+-}
+-
+-function fromDatetimeLocalValue(value: string): string {
+-  if (!value) return "";
+-  const d = new Date(value);
+-  if (Number.isNaN(d.getTime())) return "";
+-  return d.toISOString();
+-}
+-
+-function StorySection({
+-  id,
+-  eyebrow,
+-  question,
+-  children,
+-}: {
+-  id: string;
+-  eyebrow: string;
+-  question: string;
+-  children: ReactNode;
+-}) {
+-  return (
+-    <section
+-      id={id}
+-      aria-labelledby={`${id}-title`}
+-      className="scroll-mt-6 space-y-5"
+-      data-analitica-section={id}
+-    >
+-      <header className="space-y-1">
+-        <p className={aek.label}>{eyebrow}</p>
+-        <h2
+-          id={`${id}-title`}
+-          className="text-xl font-semibold tracking-tight text-foreground sm:text-[1.35rem]"
+-        >
+-          {question}
+-        </h2>
+-      </header>
+-      {children}
+-    </section>
+-  );
+-}
+-
+-function HeroMetric({
+-  label,
+-  value,
+-  tone = "default",
+-}: {
+-  label: string;
+-  value: number;
+-  tone?: "default" | "success" | "danger" | "attention" | "snapshot";
+-}) {
+-  const valueClass =
+-    tone === "success"
+-      ? "text-[var(--growth-os-success)]"
+-      : tone === "danger"
+-        ? "text-[var(--color-danger)]"
+-        : tone === "attention"
+-          ? "text-[var(--growth-os-light)]"
+-          : tone === "snapshot"
+-            ? "text-[var(--growth-os-primary)]"
+-            : "text-foreground";
+-
+-  return (
+-    <div className="min-w-0">
+-      <p
+-        className={cn(
+-          "text-[1.75rem] font-semibold tracking-tight tabular-nums sm:text-[2rem]",
+-          valueClass
+-        )}
+-      >
+-        {formatCount(value)}
+-      </p>
+-      <p className="mt-1 text-sm text-muted">{label}</p>
+-    </div>
+-  );
+-}
+-
+-function ProportionBars({
+-  rows,
+-  empty,
+-  barClassName,
+-}: {
+-  rows: Array<{ label: string; count: number }>;
+-  empty: string;
+-  barClassName?: string;
+-}) {
+-  if (rows.length === 0) {
+-    return <p className="text-sm text-muted">{empty}</p>;
+-  }
+-  const max = Math.max(...rows.map((r) => r.count), 1);
+-  return (
+-    <ul className="space-y-3" role="list">
+-      {rows.map((row) => {
+-        const pct = Math.round((row.count / max) * 100);
+-        return (
+-          <li key={row.label} className="space-y-1.5">
+-            <div className="flex items-baseline justify-between gap-3">
+-              <span className="min-w-0 truncate text-sm font-medium text-foreground">
+-                {row.label}
+-              </span>
+-              <span className="shrink-0 text-sm tabular-nums text-muted">
+-                {formatCount(row.count)}
+-              </span>
+-            </div>
+-            <div
+-              className="h-2 overflow-hidden rounded-full bg-[var(--gray-100)]"
+-              role="img"
+-              aria-label={`${row.label}: ${formatCount(row.count)}`}
+-            >
+-              <div
+-                className={cn(
+-                  "h-full rounded-full bg-[var(--growth-os-primary)] transition-[width] duration-300",
+-                  barClassName
+-                )}
+-                style={{ width: `${pct}%` }}
+-              />
+-            </div>
+-          </li>
+-        );
+-      })}
+-    </ul>
+-  );
+-}
+-
+ function mergeSalesStatus(
+   rows: Array<{ label: string; count: number }>
+ ): Array<{ label: string; count: number }> {
+@@ -240,103 +105,6 @@ function AnaliticaSkeleton() {
+   );
+ }
+ 
+-function PeriodSelector({
+-  preset,
+-  customFrom,
+-  customTo,
+-  pending,
+-  onPresetChange,
+-  onCustomFrom,
+-  onCustomTo,
+-  onApplyCustom,
+-}: {
+-  preset: AnalyticsPeriodPreset;
+-  customFrom: string;
+-  customTo: string;
+-  pending: boolean;
+-  onPresetChange: (value: AnalyticsPeriodPreset) => void;
+-  onCustomFrom: (value: string) => void;
+-  onCustomTo: (value: string) => void;
+-  onApplyCustom: () => void;
+-}) {
+-  return (
+-    <div className="space-y-3" data-analitica-period>
+-      <nav
+-        className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+-        aria-label="Per├¡odo"
+-      >
+-        {PRESET_OPTIONS.map((p) => {
+-          const active = preset === p;
+-          return (
+-            <button
+-              key={p}
+-              type="button"
+-              disabled={pending && active}
+-              aria-pressed={active}
+-              onClick={() => onPresetChange(p)}
+-              className={cn(
+-                "shrink-0 rounded-[10px] px-3.5 py-2 text-sm font-medium transition duration-150",
+-                aek.focus,
+-                active
+-                  ? "bg-[var(--growth-os-primary)] text-white shadow-sm"
+-                  : "bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,var(--gray-100))] hover:text-[var(--growth-os-primary)]"
+-              )}
+-            >
+-              {GROWTH_ANALITICA_PERIOD_LABELS[p]}
+-            </button>
+-          );
+-        })}
+-        <button
+-          type="button"
+-          aria-pressed={preset === "custom"}
+-          onClick={() => onPresetChange("custom")}
+-          className={cn(
+-            "shrink-0 rounded-[10px] px-3.5 py-2 text-sm font-medium transition duration-150",
+-            aek.focus,
+-            preset === "custom"
+-              ? "bg-[var(--growth-os-primary)] text-white shadow-sm"
+-              : "bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,var(--gray-100))] hover:text-[var(--growth-os-primary)]"
+-          )}
+-        >
+-          {GROWTH_ANALITICA_PERIOD_LABELS.custom}
+-        </button>
+-      </nav>
+-
+-      {preset === "custom" ? (
+-        <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-3.5 py-3">
+-          <label className="grid gap-1 text-sm">
+-            <span className="text-muted">Desde</span>
+-            <input
+-              type="datetime-local"
+-              value={toDatetimeLocalValue(customFrom)}
+-              onChange={(e) => onCustomFrom(fromDatetimeLocalValue(e.target.value))}
+-              className="rounded-[10px] border border-[var(--admin-border-subtle)] bg-white px-3 py-2 text-sm text-foreground"
+-            />
+-          </label>
+-          <label className="grid gap-1 text-sm">
+-            <span className="text-muted">Hasta</span>
+-            <input
+-              type="datetime-local"
+-              value={toDatetimeLocalValue(customTo)}
+-              onChange={(e) => onCustomTo(fromDatetimeLocalValue(e.target.value))}
+-              className="rounded-[10px] border border-[var(--admin-border-subtle)] bg-white px-3 py-2 text-sm text-foreground"
+-            />
+-          </label>
+-          <Button
+-            type="button"
+-            size="sm"
+-            onClick={onApplyCustom}
+-            disabled={pending || !customFrom || !customTo}
+-            className="h-9 rounded-[10px]"
+-          >
+-            Aplicar
+-          </Button>
+-        </div>
+-      ) : null}
+-    </div>
+-  );
+-}
+-
+ export function AnaliticaClient({
+   initial,
+   initialPreset,
+diff --git a/src/components/admin/growth/ConversionAnaliticaClient.tsx b/src/components/admin/growth/ConversionAnaliticaClient.tsx
+new file mode 100644
+index 0000000..2014f31
+--- /dev/null
++++ b/src/components/admin/growth/ConversionAnaliticaClient.tsx
+@@ -0,0 +1,706 @@
++/**
++ * Conversion Engine fase 3 ÔÇö /admin/conversion/analitica.
++ * Solo datos del endpoint; una columna.
++ */
++
++"use client";
++
++import {
++  useCallback,
++  useEffect,
++  useMemo,
++  useState,
++  useTransition,
++  type ReactNode,
++} from "react";
++import { AlertBanner, EmptyState, aek } from "@/components/admin/kit";
++import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
++import { Button } from "@/components/ui/button";
++import { Skeleton } from "@/components/ui/skeleton";
++import { formatConversionPercent } from "@/lib/growth/analytics-aggregate";
++import type { AnalyticsPeriodPreset } from "@/lib/growth/analytics-period";
++import {
++  CONVERSION_DENOMINATORS,
++  CONVERSION_LOSS_REASONS_NOTE,
++  CONVERSION_RATE_NOTE,
++  type ConversionAnalyticsResponse,
++  type ConversionCohortRow,
++} from "@/lib/growth/conversion-analytics";
++import {
++  GROWTH_ANALITICA_ERROR_DESCRIPTION,
++  GROWTH_ANALITICA_ERROR_TITLE,
++  GROWTH_ANALITICA_LOADING_LABEL,
++  GROWTH_ANALITICA_RETRY_LABEL,
++  GROWTH_CONVERSION_ANALITICA_EMPTY_DESCRIPTION,
++  GROWTH_CONVERSION_ANALITICA_FUNNEL_ALL,
++  GROWTH_CONVERSION_ANALITICA_FUNNEL_LABEL,
++  GROWTH_CONVERSION_ANALITICA_PAGE_DESCRIPTION,
++  GROWTH_CONVERSION_ANALITICA_PAGE_TITLE,
++  GROWTH_CONVERSION_ANALITICA_QUALITY_LABELS,
++  GROWTH_CONVERSION_ANALITICA_SECTION_LABELS,
++} from "@/lib/growth/labels";
++import { cn } from "@/lib/utils";
++import {
++  HeroMetric,
++  PeriodSelector,
++  ProportionBars,
++  StorySection,
++  formatCount,
++} from "./analitica-visual";
++
++type FetchState =
++  | { status: "loading" }
++  | { status: "error"; message: string }
++  | { status: "ok"; data: ConversionAnalyticsResponse };
++
++const DAY_MS = 86_400_000;
++const ALL_FUNNELS = "__all__";
++const SECTION_EMPTY = "Sin datos en el per├¡odo";
++
++function formatDays(ms: number | null): string {
++  if (ms === null) return "ÔÇö";
++  return `${new Intl.NumberFormat("es-CL", {
++    minimumFractionDigits: 1,
++    maximumFractionDigits: 1,
++  }).format(ms / DAY_MS)} d`;
++}
++
++function Denominator({ children }: { children: ReactNode }) {
++  return <p className="text-sm text-muted">{children}</p>;
++}
++
++function EmptyLine() {
++  return <p className="text-sm text-muted">{SECTION_EMPTY}</p>;
++}
++
++function funnelKeyOfExit(rowKey: string): string {
++  const split = rowKey.indexOf(":");
++  return split === -1 ? rowKey : rowKey.slice(0, split);
++}
++
++function LossExitStages({
++  rows,
++  funnelLabels,
++  selectedFunnel,
++}: {
++  rows: Array<{ key: string; label: string; count: number }>;
++  funnelLabels: Map<string, string>;
++  selectedFunnel: string;
++}) {
++  const visible =
++    selectedFunnel === ALL_FUNNELS
++      ? rows
++      : rows.filter((row) => funnelKeyOfExit(row.key) === selectedFunnel);
++  const groups = new Map<string, typeof visible>();
++  for (const row of visible) {
++    const funnelKey = funnelKeyOfExit(row.key);
++    const list = groups.get(funnelKey) ?? [];
++    list.push(row);
++    groups.set(funnelKey, list);
++  }
++  if (visible.length === 0) return <EmptyLine />;
++  return (
++    <div className="flex flex-col gap-5">
++      {[...groups.entries()].map(([funnelKey, stages]) => (
++        <div key={funnelKey} className="space-y-3">
++          <p className="text-sm font-medium text-foreground">
++            {selectedFunnel === ALL_FUNNELS
++              ? (funnelLabels.get(funnelKey) ?? funnelKey)
++              : "Por etapa de salida"}
++          </p>
++          <ProportionBars
++            rows={stages}
++            empty={SECTION_EMPTY}
++            barClassName="bg-[color-mix(in_srgb,var(--color-danger)_70%,white)]"
++          />
++        </div>
++      ))}
++    </div>
++  );
++}
++
++function FunnelHeading({ label }: { label: string }) {
++  return <h3 className="text-base font-semibold text-foreground">{label}</h3>;
++}
++
++function CohortTable({
++  title,
++  rows,
++}: {
++  title: string;
++  rows: ConversionCohortRow[];
++}) {
++  if (rows.length === 0) return null;
++  return (
++    <div className="space-y-2">
++      <p className="text-sm font-medium text-foreground">{title}</p>
++      <div className="overflow-x-auto">
++        <table className="w-full min-w-[34rem] text-left text-sm">
++          <thead>
++            <tr className="text-muted">
++              <th className="py-2 pr-3 font-medium">Cohorte</th>
++              <th className="px-3 py-2 text-right font-medium">Ganadas</th>
++              <th className="px-3 py-2 text-right font-medium">Abiertas</th>
++              <th className="px-3 py-2 text-right font-medium">Perdidas</th>
++              <th className="px-3 py-2 text-right font-medium">Traspasadas</th>
++              <th className="py-2 pl-3 text-right font-medium">Tasa</th>
++            </tr>
++          </thead>
++          <tbody>
++            {rows.map((row) => (
++              <tr
++                key={row.key}
++                className="border-t border-[var(--admin-border-subtle)]"
++              >
++                <td className="py-2 pr-3 text-foreground">
++                  {row.label}{" "}
++                  <span className="text-muted">({formatCount(row.cohort)})</span>
++                </td>
++                <td className="px-3 py-2 text-right tabular-nums">
++                  {formatCount(row.won)}
++                </td>
++                <td className="px-3 py-2 text-right tabular-nums">
++                  {formatCount(row.open)}
++                </td>
++                <td className="px-3 py-2 text-right tabular-nums">
++                  {formatCount(row.lost)}
++                </td>
++                <td className="px-3 py-2 text-right tabular-nums">
++                  {formatCount(row.handedOff)}
++                </td>
++                <td className="py-2 pl-3 text-right font-semibold tabular-nums">
++                  {formatConversionPercent(row.rate)}
++                </td>
++              </tr>
++            ))}
++          </tbody>
++        </table>
++      </div>
++    </div>
++  );
++}
++
++function ConversionSkeleton() {
++  return (
++    <div
++      className="flex flex-col gap-6"
++      role="status"
++      aria-live="polite"
++      aria-label={GROWTH_ANALITICA_LOADING_LABEL}
++      data-conversion-analitica-loading
++    >
++      <Skeleton className="h-8 w-24" />
++      <Skeleton className="h-2 w-full" />
++      <Skeleton className="h-2 w-[85%]" />
++      <Skeleton className="h-24 w-full" />
++    </div>
++  );
++}
++
++export function ConversionAnaliticaClient({
++  initial,
++  initialPreset,
++}: {
++  initial: ConversionAnalyticsResponse | null;
++  initialPreset: AnalyticsPeriodPreset;
++}) {
++  const [preset, setPreset] = useState<AnalyticsPeriodPreset>(initialPreset);
++  const [customFrom, setCustomFrom] = useState("");
++  const [customTo, setCustomTo] = useState("");
++  const [funnel, setFunnel] = useState<string>(ALL_FUNNELS);
++  const [state, setState] = useState<FetchState>(
++    initial ? { status: "ok", data: initial } : { status: "loading" }
++  );
++  const [pending, startTransition] = useTransition();
++
++  const load = useCallback(
++    async (nextPreset: AnalyticsPeriodPreset) => {
++      const params = new URLSearchParams();
++      params.set("preset", nextPreset);
++      if (nextPreset === "custom") {
++        if (customFrom) params.set("from", customFrom);
++        if (customTo) params.set("to", customTo);
++      }
++      try {
++        const res = await fetch(
++          `/api/growth/conversion-analytics?${params.toString()}`,
++          { method: "GET", credentials: "same-origin" }
++        );
++        const body = (await res.json()) as
++          | ({ ok: true } & ConversionAnalyticsResponse)
++          | { ok: false; error?: string };
++        if (!res.ok || !body.ok) {
++          setState({
++            status: "error",
++            message:
++              !body.ok && body.error
++                ? body.error
++                : GROWTH_ANALITICA_ERROR_DESCRIPTION,
++          });
++          return;
++        }
++        const { ok: _ok, ...data } = body;
++        setState({ status: "ok", data });
++      } catch {
++        setState({
++          status: "error",
++          message: GROWTH_ANALITICA_ERROR_DESCRIPTION,
++        });
++      }
++    },
++    [customFrom, customTo]
++  );
++
++  useEffect(() => {
++    if (initial && preset === initialPreset && preset !== "custom") return;
++    if (preset === "custom") return;
++    startTransition(() => {
++      void load(preset);
++    });
++  }, [preset]); // eslint-disable-line react-hooks/exhaustive-deps -- carga al cambiar preset
++
++  function onApplyCustom() {
++    setPreset("custom");
++    startTransition(() => {
++      void load("custom");
++    });
++  }
++
++  function onRetry() {
++    startTransition(() => {
++      void load(preset);
++    });
++  }
++
++  const data = state.status === "ok" ? state.data : null;
++  const showSkeleton =
++    state.status === "loading" || (pending && state.status !== "error");
++
++  const funnelOptions = useMemo(() => {
++    if (!data) return [] as Array<{ key: string; label: string }>;
++    const map = new Map<string, string>();
++    for (const f of data.stock.byFunnel) map.set(f.funnelKey, f.funnelLabel);
++    for (const f of data.movement.byFunnel) map.set(f.funnelKey, f.funnelLabel);
++    for (const f of data.dwell.byFunnel) map.set(f.funnelKey, f.funnelLabel);
++    for (const c of data.cohorts.byFunnel) map.set(c.key, c.label);
++    for (const row of data.losses.byExitStage) {
++      const key = funnelKeyOfExit(row.key);
++      if (!map.has(key)) map.set(key, key);
++    }
++    return [...map.entries()]
++      .map(([key, label]) => ({ key, label }))
++      .sort((a, b) => a.label.localeCompare(b.label, "es"));
++  }, [data]);
++
++  const selectedFunnel =
++    funnel === ALL_FUNNELS || funnelOptions.some((o) => o.key === funnel)
++      ? funnel
++      : ALL_FUNNELS;
++  const pick = <T extends { funnelKey: string }>(rows: T[]): T[] =>
++    selectedFunnel === ALL_FUNNELS
++      ? rows
++      : rows.filter((r) => r.funnelKey === selectedFunnel);
++
++  const labels = GROWTH_CONVERSION_ANALITICA_SECTION_LABELS;
++
++  const view = data
++    ? (() => {
++        const stockTotal = data.stock.byFunnel.reduce(
++          (n, f) => n + f.stages.reduce((m, s) => m + s.count, 0),
++          0
++        );
++        const movementRows = data.movement.byFunnel.reduce(
++          (n, f) => n + f.stages.length,
++          0
++        );
++        const closuresTotal =
++          data.closures.won + data.closures.lost + data.closures.handedOff;
++        const qualityEntries = (
++          Object.keys(
++            GROWTH_CONVERSION_ANALITICA_QUALITY_LABELS
++          ) as Array<keyof typeof GROWTH_CONVERSION_ANALITICA_QUALITY_LABELS>
++        )
++          .map((key) => ({
++            key,
++            label: GROWTH_CONVERSION_ANALITICA_QUALITY_LABELS[key],
++            count: data.quality[key],
++          }))
++          .filter((row) => row.count > 0);
++        const noOpportunities =
++          data.captacion.total === 0 &&
++          stockTotal === 0 &&
++          movementRows === 0 &&
++          closuresTotal === 0 &&
++          data.cohorts.byFunnel.length === 0 &&
++          qualityEntries.length === 0;
++        return { stockTotal, qualityEntries, noOpportunities };
++      })()
++    : null;
++
++  const funnelSelector =
++    data && funnelOptions.length > 0 ? (
++      <label className="flex flex-wrap items-center gap-2 text-sm">
++        <span className="text-muted">{GROWTH_CONVERSION_ANALITICA_FUNNEL_LABEL}</span>
++        <select
++          value={selectedFunnel}
++          onChange={(e) => setFunnel(e.target.value)}
++          className="rounded-[10px] border border-[var(--admin-border-subtle)] bg-white px-3 py-2 text-sm text-foreground"
++          data-conversion-funnel-select
++        >
++          <option value={ALL_FUNNELS}>{GROWTH_CONVERSION_ANALITICA_FUNNEL_ALL}</option>
++          {funnelOptions.map((o) => (
++            <option key={o.key} value={o.key}>
++              {o.label}
++            </option>
++          ))}
++        </select>
++      </label>
++    ) : null;
++
++  return (
++    <AdminModulePage
++      breadcrumbs={[
++        { label: "Inicio", href: "/admin" },
++        { label: GROWTH_CONVERSION_ANALITICA_PAGE_TITLE },
++      ]}
++      title={GROWTH_CONVERSION_ANALITICA_PAGE_TITLE}
++      description={GROWTH_CONVERSION_ANALITICA_PAGE_DESCRIPTION}
++    >
++      <div
++        className="mx-auto flex w-full max-w-4xl flex-col gap-8"
++        data-conversion-analitica
++      >
++        <PeriodSelector
++          preset={preset}
++          customFrom={customFrom}
++          customTo={customTo}
++          pending={pending}
++          onPresetChange={setPreset}
++          onCustomFrom={setCustomFrom}
++          onCustomTo={setCustomTo}
++          onApplyCustom={onApplyCustom}
++        />
++
++        {state.status === "error" ? (
++          <div data-conversion-analitica-error>
++            <AlertBanner
++              variant="warning"
++              title={GROWTH_ANALITICA_ERROR_TITLE}
++              compact
++            >
++              <div className="flex flex-wrap items-center gap-3">
++                <p className="text-sm">
++                  {state.message || GROWTH_ANALITICA_ERROR_DESCRIPTION}
++                </p>
++                <Button
++                  type="button"
++                  size="sm"
++                  variant="outline"
++                  onClick={onRetry}
++                  className="h-8 rounded-[10px]"
++                >
++                  {GROWTH_ANALITICA_RETRY_LABEL}
++                </Button>
++              </div>
++            </AlertBanner>
++          </div>
++        ) : null}
++
++        {showSkeleton && !data ? <ConversionSkeleton /> : null}
++
++        {data && view?.noOpportunities ? (
++          <EmptyState
++            title={SECTION_EMPTY}
++            description={GROWTH_CONVERSION_ANALITICA_EMPTY_DESCRIPTION}
++            className="border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-6 py-10 shadow-none"
++          />
++        ) : null}
++
++        {data && view && !view.noOpportunities ? (
++          <div
++            className={cn(
++              "flex flex-col gap-12 sm:gap-14",
++              pending ? "opacity-70 transition-opacity" : undefined
++            )}
++            data-conversion-analitica-content
++            aria-busy={pending || undefined}
++          >
++            {funnelSelector}
++
++            {/* 1. Captaci├│n */}
++            <StorySection
++              id="captacion"
++              eyebrow={labels.captacion.eyebrow}
++              question={labels.captacion.question}
++            >
++              <Denominator>{CONVERSION_DENOMINATORS.captacion}</Denominator>
++              {data.captacion.total === 0 ? (
++                <EmptyLine />
++              ) : (
++                <div className="flex flex-col gap-6">
++                  <div className="grid grid-cols-1 gap-6">
++                    <HeroMetric
++                      label="Oportunidades abiertas en el per├¡odo"
++                      value={data.captacion.total}
++                    />
++                    <HeroMetric
++                      label="Archivadas despu├®s"
++                      value={data.captacion.archivedNow}
++                      tone="attention"
++                    />
++                  </div>
++                  <div className="space-y-3">
++                    <p className="text-sm font-medium text-foreground">Por embudo</p>
++                    <ProportionBars
++                      rows={data.captacion.byFunnel}
++                      empty={SECTION_EMPTY}
++                    />
++                  </div>
++                  <div className="space-y-3">
++                    <p className="text-sm font-medium text-foreground">Por origen</p>
++                    <ProportionBars
++                      rows={data.captacion.byOrigin}
++                      empty={SECTION_EMPTY}
++                    />
++                  </div>
++                </div>
++              )}
++            </StorySection>
++
++            {/* 2. Stock */}
++            <StorySection
++              id="stock"
++              eyebrow={labels.stock.eyebrow}
++              question={labels.stock.question}
++            >
++              <Denominator>{CONVERSION_DENOMINATORS.stock}</Denominator>
++              {view.stockTotal === 0 ? (
++                <p className="text-sm text-muted">No hay oportunidades abiertas ahora.</p>
++              ) : (
++                <div className="flex flex-col gap-6">
++                  {pick(data.stock.byFunnel).map((f) => (
++                    <div key={f.funnelKey} className="space-y-3">
++                      <FunnelHeading label={f.funnelLabel} />
++                      <ProportionBars rows={f.stages} empty={SECTION_EMPTY} />
++                    </div>
++                  ))}
++                </div>
++              )}
++            </StorySection>
++
++            {/* 3. Movimiento */}
++            <StorySection
++              id="movimiento"
++              eyebrow={labels.movimiento.eyebrow}
++              question={labels.movimiento.question}
++            >
++              {pick(data.movement.byFunnel).length === 0 ? (
++                <EmptyLine />
++              ) : (
++                <div className="flex flex-col gap-6">
++                  {pick(data.movement.byFunnel).map((f) => (
++                    <div key={f.funnelKey} className="space-y-3">
++                      <FunnelHeading label={f.funnelLabel} />
++                      <ul className="flex flex-col gap-3" role="list">
++                        {f.stages.map((s) => (
++                          <li
++                            key={s.key}
++                            className={cn(aek.surfaceMuted, "px-3.5 py-3")}
++                          >
++                            <p className="text-sm font-medium text-foreground">
++                              {s.label}{" "}
++                              <span className="text-muted">
++                                ┬À {formatCount(s.opportunities)} salieron
++                              </span>
++                            </p>
++                            <p className="mt-1 text-sm tabular-nums text-muted">
++                              Avanzaron {formatCount(s.advance)} ┬À Perdidas{" "}
++                              {formatCount(s.lost)} ┬À Ganadas {formatCount(s.won)} ┬À
++                              Traspasadas {formatCount(s.handedOff)} ┬À Archivadas{" "}
++                              {formatCount(s.archived)}
++                            </p>
++                          </li>
++                        ))}
++                      </ul>
++                    </div>
++                  ))}
++                  {data.movement.ilegible > 0 ? (
++                    <p className="text-sm text-muted">
++                      Movimientos que no se pudieron leer:{" "}
++                      {formatCount(data.movement.ilegible)}.
++                    </p>
++                  ) : null}
++                </div>
++              )}
++            </StorySection>
++
++            {/* 4. P├®rdidas */}
++            <StorySection
++              id="perdidas"
++              eyebrow={labels.perdidas.eyebrow}
++              question={labels.perdidas.question}
++            >
++              {data.losses.total === 0 ? (
++                <EmptyLine />
++              ) : (
++                <div className="flex flex-col gap-5">
++                  <HeroMetric
++                    label="Perdidas en el per├¡odo"
++                    value={data.losses.total}
++                    tone="danger"
++                  />
++                  <LossExitStages
++                    rows={data.losses.byExitStage}
++                    funnelLabels={new Map(funnelOptions.map((option) => [option.key, option.label]))}
++                    selectedFunnel={selectedFunnel}
++                  />
++                </div>
++              )}
++              <Denominator>{CONVERSION_LOSS_REASONS_NOTE}</Denominator>
++            </StorySection>
++
++            {/* 5. Permanencia */}
++            <StorySection
++              id="permanencia"
++              eyebrow={labels.permanencia.eyebrow}
++              question={labels.permanencia.question}
++            >
++              {pick(data.dwell.byFunnel).length === 0 ? (
++                <EmptyLine />
++              ) : (
++                <div className="flex flex-col gap-6">
++                  {pick(data.dwell.byFunnel).map((f) => (
++                    <div key={f.funnelKey} className="space-y-3">
++                      <FunnelHeading label={f.funnelLabel} />
++                      <ul className="flex flex-col gap-2" role="list">
++                        {f.stages.map((s) => (
++                          <li
++                            key={s.key}
++                            className="flex items-baseline justify-between gap-3 text-sm"
++                          >
++                            <span className="min-w-0 truncate font-medium text-foreground">
++                              {s.label}
++                            </span>
++                            <span className="shrink-0 tabular-nums text-muted">
++                              {formatDays(s.medianMs)} ┬À {formatCount(s.count)}{" "}
++                              {s.count === 1 ? "salida" : "salidas"}
++                              {s.inProgress > 0
++                                ? ` ┬À ${formatCount(s.inProgress)} en curso`
++                                : ""}
++                            </span>
++                          </li>
++                        ))}
++                      </ul>
++                    </div>
++                  ))}
++                </div>
++              )}
++              <div className="space-y-2 border-t border-[var(--admin-border-subtle)] pt-5">
++                <p className="text-sm font-medium text-foreground">
++                  Ciclo hasta el cierre (mediana)
++                </p>
++                <ul className="flex flex-col gap-1 text-sm" role="list">
++                  <li className="flex justify-between gap-3">
++                    <span className="text-foreground">Ganadas</span>
++                    <span className="tabular-nums text-muted">
++                      {formatDays(data.cycle.won.medianMs)} ┬À{" "}
++                      {formatCount(data.cycle.won.count)}
++                    </span>
++                  </li>
++                  <li className="flex justify-between gap-3">
++                    <span className="text-foreground">Perdidas</span>
++                    <span className="tabular-nums text-muted">
++                      {formatDays(data.cycle.lost.medianMs)} ┬À{" "}
++                      {formatCount(data.cycle.lost.count)}
++                    </span>
++                  </li>
++                </ul>
++              </div>
++            </StorySection>
++
++            {/* 6. Cohortes */}
++            <StorySection
++              id="cohortes"
++              eyebrow={labels.cohortes.eyebrow}
++              question={labels.cohortes.question}
++            >
++              <Denominator>{CONVERSION_DENOMINATORS.cohorte}</Denominator>
++              {data.cohorts.byFunnel.length === 0 ? (
++                <EmptyLine />
++              ) : (
++                <div className="flex flex-col gap-6">
++                  <CohortTable
++                    title="Por embudo"
++                    rows={
++                      selectedFunnel === ALL_FUNNELS
++                        ? data.cohorts.byFunnel
++                        : data.cohorts.byFunnel.filter(
++                            (r) => r.key === selectedFunnel
++                          )
++                    }
++                  />
++                  <CohortTable
++                    title="Por campa├▒a"
++                    rows={data.cohorts.byCampaign}
++                  />
++                  <CohortTable title="Por origen" rows={data.cohorts.bySource} />
++                  <Denominator>{CONVERSION_RATE_NOTE}</Denominator>
++                </div>
++              )}
++            </StorySection>
++
++            {/* 7. Responsables */}
++            <StorySection
++              id="responsables"
++              eyebrow={labels.responsables.eyebrow}
++              question={labels.responsables.question}
++            >
++              {data.owners.length === 0 ? (
++                <EmptyLine />
++              ) : (
++                <ul className="flex flex-col gap-3" role="list">
++                  {data.owners.map((o) => (
++                    <li
++                      key={o.userId ?? o.label}
++                      className={cn(aek.surfaceMuted, "px-3.5 py-3")}
++                    >
++                      <p className="text-sm font-medium text-foreground">{o.label}</p>
++                      <p className="mt-1 text-sm tabular-nums text-muted">
++                        Abiertas {formatCount(o.open)} ┬À Ganadas {formatCount(o.won)} ┬À
++                        Perdidas {formatCount(o.lost)} ┬À Traspasadas{" "}
++                        {formatCount(o.handedOff)} ┬À Ciclo ganadas{" "}
++                        {formatDays(o.wonCycleMedianMs)} ({formatCount(o.wonCycleCount)})
++                      </p>
++                    </li>
++                  ))}
++                </ul>
++              )}
++            </StorySection>
++
++            {/* 8. Calidad */}
++            <StorySection
++              id="calidad"
++              eyebrow={labels.calidad.eyebrow}
++              question={labels.calidad.question}
++            >
++              {view.qualityEntries.length === 0 ? (
++                <p className="text-sm text-muted">Sin observaciones.</p>
++              ) : (
++                <ul className="flex flex-col gap-2 text-sm" role="list">
++                  {view.qualityEntries.map((q) => (
++                    <li key={q.key} className="flex justify-between gap-3">
++                      <span className="text-foreground">{q.label}</span>
++                      <span className="tabular-nums text-muted">
++                        {formatCount(q.count)}
++                      </span>
++                    </li>
++                  ))}
++                </ul>
++              )}
++            </StorySection>
++          </div>
++        ) : null}
++      </div>
++    </AdminModulePage>
++  );
++}
+diff --git a/src/components/admin/growth/analitica-visual.tsx b/src/components/admin/growth/analitica-visual.tsx
+new file mode 100644
+index 0000000..307f969
+--- /dev/null
++++ b/src/components/admin/growth/analitica-visual.tsx
+@@ -0,0 +1,250 @@
++/**
++ * Piezas visuales compartidas por Anal├¡tica V1 y Anal├¡tica de conversi├│n.
++ * Solo presentaci├│n: sin fetch ni sem├íntica de datos.
++ */
++
++"use client";
++
++import type { ReactNode } from "react";
++import { aek } from "@/components/admin/kit";
++import { Button } from "@/components/ui/button";
++import {
++  ANALYTICS_PERIOD_PRESETS,
++  type AnalyticsPeriodPreset,
++} from "@/lib/growth/analytics-period";
++import { GROWTH_ANALITICA_PERIOD_LABELS } from "@/lib/growth/labels";
++import { cn } from "@/lib/utils";
++
++const PRESET_OPTIONS = ANALYTICS_PERIOD_PRESETS.filter(
++  (p) => p !== "custom"
++) as Exclude<AnalyticsPeriodPreset, "custom">[];
++
++export function formatCount(n: number): string {
++  return new Intl.NumberFormat("es-CL").format(n);
++}
++
++function toDatetimeLocalValue(iso: string): string {
++  if (!iso) return "";
++  const d = new Date(iso);
++  if (Number.isNaN(d.getTime())) return "";
++  const pad = (n: number) => String(n).padStart(2, "0");
++  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
++}
++
++function fromDatetimeLocalValue(value: string): string {
++  if (!value) return "";
++  const d = new Date(value);
++  if (Number.isNaN(d.getTime())) return "";
++  return d.toISOString();
++}
++
++export function StorySection({
++  id,
++  eyebrow,
++  question,
++  children,
++}: {
++  id: string;
++  eyebrow: string;
++  question: string;
++  children: ReactNode;
++}) {
++  return (
++    <section
++      id={id}
++      aria-labelledby={`${id}-title`}
++      className="scroll-mt-6 space-y-5"
++      data-analitica-section={id}
++    >
++      <header className="space-y-1">
++        <p className={aek.label}>{eyebrow}</p>
++        <h2
++          id={`${id}-title`}
++          className="text-xl font-semibold tracking-tight text-foreground sm:text-[1.35rem]"
++        >
++          {question}
++        </h2>
++      </header>
++      {children}
++    </section>
++  );
++}
++
++export function HeroMetric({
++  label,
++  value,
++  tone = "default",
++}: {
++  label: string;
++  value: number;
++  tone?: "default" | "success" | "danger" | "attention" | "snapshot";
++}) {
++  const valueClass =
++    tone === "success"
++      ? "text-[var(--growth-os-success)]"
++      : tone === "danger"
++        ? "text-[var(--color-danger)]"
++        : tone === "attention"
++          ? "text-[var(--growth-os-light)]"
++          : tone === "snapshot"
++            ? "text-[var(--growth-os-primary)]"
++            : "text-foreground";
++
++  return (
++    <div className="min-w-0">
++      <p
++        className={cn(
++          "text-[1.75rem] font-semibold tracking-tight tabular-nums sm:text-[2rem]",
++          valueClass
++        )}
++      >
++        {formatCount(value)}
++      </p>
++      <p className="mt-1 text-sm text-muted">{label}</p>
++    </div>
++  );
++}
++
++export function ProportionBars({
++  rows,
++  empty,
++  barClassName,
++}: {
++  rows: Array<{ key?: string; label: string; count: number }>;
++  empty: string;
++  barClassName?: string;
++}) {
++  if (rows.length === 0) {
++    return <p className="text-sm text-muted">{empty}</p>;
++  }
++  const max = Math.max(...rows.map((r) => r.count), 1);
++  return (
++    <ul className="space-y-3" role="list">
++      {rows.map((row) => {
++        const pct = Math.round((row.count / max) * 100);
++        return (
++          <li key={row.key ?? row.label} className="space-y-1.5">
++            <div className="flex items-baseline justify-between gap-3">
++              <span className="min-w-0 truncate text-sm font-medium text-foreground">
++                {row.label}
++              </span>
++              <span className="shrink-0 text-sm tabular-nums text-muted">
++                {formatCount(row.count)}
++              </span>
++            </div>
++            <div
++              className="h-2 overflow-hidden rounded-full bg-[var(--gray-100)]"
++              role="img"
++              aria-label={`${row.label}: ${formatCount(row.count)}`}
++            >
++              <div
++                className={cn(
++                  "h-full rounded-full bg-[var(--growth-os-primary)] transition-[width] duration-300",
++                  barClassName
++                )}
++                style={{ width: `${pct}%` }}
++              />
++            </div>
++          </li>
++        );
++      })}
++    </ul>
++  );
++}
++
++export function PeriodSelector({
++  preset,
++  customFrom,
++  customTo,
++  pending,
++  onPresetChange,
++  onCustomFrom,
++  onCustomTo,
++  onApplyCustom,
++}: {
++  preset: AnalyticsPeriodPreset;
++  customFrom: string;
++  customTo: string;
++  pending: boolean;
++  onPresetChange: (value: AnalyticsPeriodPreset) => void;
++  onCustomFrom: (value: string) => void;
++  onCustomTo: (value: string) => void;
++  onApplyCustom: () => void;
++}) {
++  return (
++    <div className="space-y-3" data-analitica-period>
++      <nav
++        className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
++        aria-label="Per├¡odo"
++      >
++        {PRESET_OPTIONS.map((p) => {
++          const active = preset === p;
++          return (
++            <button
++              key={p}
++              type="button"
++              disabled={pending && active}
++              aria-pressed={active}
++              onClick={() => onPresetChange(p)}
++              className={cn(
++                "shrink-0 rounded-[10px] px-3.5 py-2 text-sm font-medium transition duration-150",
++                aek.focus,
++                active
++                  ? "bg-[var(--growth-os-primary)] text-white shadow-sm"
++                  : "bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,var(--gray-100))] hover:text-[var(--growth-os-primary)]"
++              )}
++            >
++              {GROWTH_ANALITICA_PERIOD_LABELS[p]}
++            </button>
++          );
++        })}
++        <button
++          type="button"
++          aria-pressed={preset === "custom"}
++          onClick={() => onPresetChange("custom")}
++          className={cn(
++            "shrink-0 rounded-[10px] px-3.5 py-2 text-sm font-medium transition duration-150",
++            aek.focus,
++            preset === "custom"
++              ? "bg-[var(--growth-os-primary)] text-white shadow-sm"
++              : "bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,var(--gray-100))] hover:text-[var(--growth-os-primary)]"
++          )}
++        >
++          {GROWTH_ANALITICA_PERIOD_LABELS.custom}
++        </button>
++      </nav>
++
++      {preset === "custom" ? (
++        <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-3.5 py-3">
++          <label className="grid gap-1 text-sm">
++            <span className="text-muted">Desde</span>
++            <input
++              type="datetime-local"
++              value={toDatetimeLocalValue(customFrom)}
++              onChange={(e) => onCustomFrom(fromDatetimeLocalValue(e.target.value))}
++              className="rounded-[10px] border border-[var(--admin-border-subtle)] bg-white px-3 py-2 text-sm text-foreground"
++            />
++          </label>
++          <label className="grid gap-1 text-sm">
++            <span className="text-muted">Hasta</span>
++            <input
++              type="datetime-local"
++              value={toDatetimeLocalValue(customTo)}
++              onChange={(e) => onCustomTo(fromDatetimeLocalValue(e.target.value))}
++              className="rounded-[10px] border border-[var(--admin-border-subtle)] bg-white px-3 py-2 text-sm text-foreground"
++            />
++          </label>
++          <Button
++            type="button"
++            size="sm"
++            onClick={onApplyCustom}
++            disabled={pending || !customFrom || !customTo}
++            className="h-9 rounded-[10px]"
++          >
++            Aplicar
++          </Button>
++        </div>
++      ) : null}
++    </div>
++  );
++}
+diff --git a/src/core/growth/funnel-types.ts b/src/core/growth/funnel-types.ts
+new file mode 100644
+index 0000000..b25ff1f
+--- /dev/null
++++ b/src/core/growth/funnel-types.ts
+@@ -0,0 +1,132 @@
++/**
++ * Embudo comercial por Espacio. Las etapas viven en la definici├│n de workflow.
++ */
++
++export const GROWTH_FUNNELS_COLLECTION = "growth_funnels" as const;
++
++export const GROWTH_FUNNEL_DEFAULT_KEY = "default" as const;
++export const GROWTH_FUNNEL_DEFAULT_NAME = "Ventas" as const;
++
++export const GROWTH_FUNNEL_RESULTS = [
++  { key: "won", label: "Ganada" },
++  { key: "lost", label: "Perdida" },
++  { key: "archived", label: "Archivada" },
++  { key: "handed_off", label: "Traspasada" },
++] as const;
++
++export type GrowthFunnelResultKey = (typeof GROWTH_FUNNEL_RESULTS)[number]["key"];
++
++const RESULT_LABEL = Object.fromEntries(
++  GROWTH_FUNNEL_RESULTS.map((item) => [item.key, item.label])
++) as Record<GrowthFunnelResultKey, string>;
++
++export function isGrowthFunnelResultKey(key: string): key is GrowthFunnelResultKey {
++  return Object.prototype.hasOwnProperty.call(RESULT_LABEL, key);
++}
++
++export function growthFunnelResultLabel(key: string): string | null {
++  return isGrowthFunnelResultKey(key) ? RESULT_LABEL[key] : null;
++}
++
++export function growthOpportunityDefinitionKey(funnelKey: string): string {
++  return `growth.opportunity.${funnelKey}`;
++}
++
++export function isGrowthFunnelSlug(value: string): boolean {
++  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
++}
++
++export const GROWTH_FUNNEL_FIELD_TYPES = [
++  "text",
++  "long_text",
++  "number",
++  "date",
++  "select",
++  "boolean",
++] as const;
++
++export type GrowthFunnelFieldType = (typeof GROWTH_FUNNEL_FIELD_TYPES)[number];
++
++export const GROWTH_FUNNEL_FIELD_LIMIT = 30;
++export const GROWTH_FUNNEL_SELECT_OPTION_LIMIT = 50;
++export const GROWTH_FUNNEL_TEXT_LIMIT = 500;
++export const GROWTH_FUNNEL_LONG_TEXT_LIMIT = 4000;
++
++export interface GrowthFunnelFieldOption {
++  key: string;
++  label: string;
++  active: boolean;
++}
++
++export interface GrowthFunnelField {
++  key: string;
++  label: string;
++  type: GrowthFunnelFieldType;
++  required: boolean;
++  position: number;
++  active: boolean;
++  options?: GrowthFunnelFieldOption[];
++  help?: string;
++}
++
++export interface GrowthFunnel {
++  _id: string;
++  tenantId: string;
++  key: string;
++  name: string;
++  status: "active" | "archived";
++  isDefault: boolean;
++  workflowDefinitionKey: string;
++  /** Campos del embudo. Vac├¡o si a├║n no se definieron. */
++  fields?: GrowthFunnelField[];
++  createdAt: string;
++  updatedAt: string;
++}
++
++export interface GrowthFunnelStage {
++  key: string;
++  label: string;
++  position: number;
++  active: boolean;
++  isInitial: boolean;
++  isResult: boolean;
++}
++
++export interface GrowthFunnelTransition {
++  id: string;
++  fromState: string;
++  toState: string;
++  label: string;
++}
++
++export interface GrowthFunnelDefinition {
++  _id: string;
++  tenantId: string;
++  key: string;
++  name: string;
++  initialState: string;
++  states: Array<{
++    key: string;
++    label: string;
++    isInitial?: boolean;
++    isFinal?: boolean;
++    metadata?: Record<string, unknown>;
++  }>;
++  transitions: GrowthFunnelTransition[];
++  version: number;
++}
++
++export type GrowthFunnelFailure =
++  | "invalid_key"
++  | "duplicate_key"
++  | "not_found"
++  | "reserved_stage"
++  | "duplicate_stage"
++  | "cannot_deactivate_initial"
++  | "cannot_deactivate_result"
++  | "cannot_deactivate_last_active"
++  | "cannot_rename_result"
++  | "open_opportunities"
++  | "default_required"
++  | "archived"
++  | "not_intermediate";
+diff --git a/src/lib/admin/institutional.ts b/src/lib/admin/institutional.ts
+index 977f44e..caf9660 100644
+--- a/src/lib/admin/institutional.ts
++++ b/src/lib/admin/institutional.ts
+@@ -17,6 +17,8 @@ export interface AdminNavItem {
+   /** Contador opcional para badge en sidebar. */
+   badge?: number;
+   matchPrefixes?: string[];
++  /** Rutas cubiertas por un prefijo m├ís espec├¡fico. No marcan este ├¡tem. */
++  excludePrefixes?: string[];
+   /** Permisos requeridos (todos deben estar presentes). */
+   requiredPermissions?: string[];
+   /** Al menos uno de estos permisos. */
+@@ -225,6 +227,10 @@ export function isNavActive(pathname: string, item: AdminNavItem): boolean {
+   }
+ 
+   const prefixes = item.matchPrefixes ?? [item.href];
++  const excluded = item.excludePrefixes?.some(
++    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
++  );
++  if (excluded) return false;
+   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+ }
+ 
+diff --git a/src/lib/admin/nav-domains.ts b/src/lib/admin/nav-domains.ts
+index 1727eba..e8e559c 100644
+--- a/src/lib/admin/nav-domains.ts
++++ b/src/lib/admin/nav-domains.ts
+@@ -14,10 +14,7 @@ import {
+ 
+ export type NavGroupId =
+   | "dashboard"
+-  | "personas"
+-  | "ventas"
+-  | "mensajes"
+-  | "actividad"
++  | "conversion"
+   | "campanas"
+   | "automatizaciones"
+   | "analitica"
+@@ -26,6 +23,10 @@ export type NavGroupId =
+   | "equipo"
+   | "ajustes"
+   /** @deprecated Conservados para imports / tipos legacy */
++  | "personas"
++  | "ventas"
++  | "mensajes"
++  | "actividad"
+   | "institution"
+   | "academic"
+   | "formularios"
+@@ -125,10 +126,40 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
+     ],
+   },
+   {
+-    id: "personas",
+-    label: "Personas",
+-    icon: "people",
++    id: "conversion",
++    label: "CRM ┬À Conversi├│n",
++    icon: "sales",
+     items: [
++      {
++        id: "nav-conversion",
++        href: "/admin/conversion",
++        label: "Panel comercial",
++        icon: "sales",
++        matchPrefixes: ["/admin/conversion"],
++        excludePrefixes: ["/admin/conversion/analitica"],
++        requiredAnyPermission: [
++          "growth.sales.view",
++          "growth.sales.read",
++          "growth.sales.operate",
++        ],
++      },
++      {
++        id: "nav-conversion-analitica",
++        href: "/admin/conversion/analitica",
++        label: "Anal├¡tica de conversi├│n",
++        icon: "sales",
++        matchPrefixes: ["/admin/conversion/analitica"],
++        requiredAnyPermission: ["growth.sales.view"],
++      },
++      {
++        id: "nav-ventas",
++        href: "/admin/ventas",
++        label: "Oportunidades",
++        icon: "sales",
++        matchPrefixes: ["/admin/ventas"],
++        excludePrefixes: ["/admin/ventas/embudos", "/admin/ventas/mi-trabajo"],
++        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
++      },
+       {
+         id: "growth-personas",
+         href: "/admin/personas",
+@@ -140,28 +171,26 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
+           "growth.people.manage",
+         ],
+       },
+-    ],
+-  },
+-  {
+-    id: "ventas",
+-    label: "Ventas",
+-    icon: "sales",
+-    items: [
+       {
+-        id: "nav-ventas",
+-        href: "/admin/ventas",
+-        label: "Ventas",
++        id: "nav-embudos",
++        href: "/admin/ventas/embudos",
++        label: "Embudos",
+         icon: "sales",
+-        matchPrefixes: ["/admin/ventas"],
+-        requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
++        matchPrefixes: ["/admin/ventas/embudos"],
++        requiredAnyPermission: ["growth.funnels.manage"],
++      },
++      {
++        id: "nav-mi-trabajo",
++        href: "/admin/ventas/mi-trabajo",
++        label: "Mi trabajo",
++        icon: "sales",
++        matchPrefixes: ["/admin/ventas/mi-trabajo"],
++        requiredAnyPermission: [
++          "growth.sales.view",
++          "growth.sales.read",
++          "growth.sales.operate",
++        ],
+       },
+-    ],
+-  },
+-  {
+-    id: "mensajes",
+-    label: "Mensajes",
+-    icon: "messages",
+-    items: [
+       {
+         id: "nav-mensajes",
+         href: "/admin/mensajes",
+@@ -170,13 +199,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
+         matchPrefixes: ["/admin/mensajes"],
+         requiredAnyPermission: ["growth.sales.read", "growth.sales.operate"],
+       },
+-    ],
+-  },
+-  {
+-    id: "actividad",
+-    label: "Actividad",
+-    icon: "activity",
+-    items: [
+       {
+         id: "nav-actividad",
+         href: "/admin/actividad",
+@@ -449,6 +471,21 @@ export function buildAdminNavGroups(
+   }).filter((group) => group.items.length > 0);
+ }
+ 
++/**
++ * Un grupo con un solo enlace visible se muestra como ese m├│dulo.
++ * El nombre y el icono son los del ├¡tem, no los del grupo contenedor.
++ */
++export function navGroupAsDirectLink(group: AdminNavGroup): AdminNavItem | null {
++  if (group.items.length !== 1) return null;
++  const item = group.items[0];
++  return {
++    ...item,
++    label: item.label,
++    icon: item.icon,
++    badge: item.badge ?? group.badge,
++  };
++}
++
+ /** Resuelve el grupo que contiene la ruta activa. */
+ export function findActiveNavGroupId(
+   pathname: string,
+@@ -534,7 +571,7 @@ export interface NavSidebarZone {
+ export const NAV_SIDEBAR_ZONES: NavSidebarZone[] = [
+   {
+     id: "core",
+-    groupIds: ["dashboard", "personas", "ventas", "mensajes", "actividad"],
++    groupIds: ["dashboard", "conversion"],
+   },
+   {
+     id: "grow",
+diff --git a/src/lib/growth/conversion-analytics-read.ts b/src/lib/growth/conversion-analytics-read.ts
+new file mode 100644
+index 0000000..c8afd1b
+--- /dev/null
++++ b/src/lib/growth/conversion-analytics-read.ts
+@@ -0,0 +1,228 @@
++/**
++ * Conversion Engine fase 3 ÔÇö lectura por Espacio de la anal├¡tica de conversi├│n.
++ * Solo lee. No materializa, no crea colecciones ni ├¡ndices.
++ */
++
++import "server-only";
++
++import type { Filter } from "mongodb";
++import {
++  GROWTH_ACTIVIDADES_COLLECTION,
++  GROWTH_OPORTUNIDADES_COLLECTION,
++  type GrowthActivity,
++  type GrowthOportunidad,
++} from "@/core/growth";
++import {
++  GROWTH_CAMPAIGNS_COLLECTION,
++  type GrowthCampaign,
++} from "@/core/growth/campaigns";
++import {
++  GROWTH_FUNNELS_COLLECTION,
++  growthFunnelResultLabel,
++} from "@/core/growth/funnel-types";
++import { getExperienceFormById } from "@/lib/experience/forms/repository";
++import { listMembershipsByTenant } from "@/lib/identity/memberships";
++import { listUsersByIds } from "@/lib/identity/users";
++import { getDatabase } from "@/lib/mongodb";
++import {
++  resolveAnalyticsPeriod,
++  type ResolveAnalyticsPeriodInput,
++} from "./analytics-period";
++import {
++  buildConversionAnalytics,
++  type ConversionActivityInput,
++  type ConversionAnalyticsResponse,
++  type ConversionCampaignInput,
++  type ConversionFunnelInput,
++  type ConversionMemberInput,
++  type ConversionOpportunityInput,
++} from "./conversion-analytics";
++
++export type GetConversionAnalyticsResult =
++  | { ok: true; data: ConversionAnalyticsResponse }
++  | { ok: false; error: string; status: 400 };
++
++const CONVERSION_ACTIVITY_KINDS = [
++  "opportunity_opened",
++  "opportunity_transitioned",
++  "opportunity_assigned",
++] as const;
++
++type FunnelDoc = {
++  tenantId: string;
++  key: string;
++  workflowDefinitionKey?: string;
++};
++
++type WorkflowDefinitionDoc = {
++  tenantId: string;
++  key: string;
++  states?: Array<{ key: string; label: string }>;
++};
++
++async function resolveFormNames(
++  tenantId: string,
++  formIds: string[]
++): Promise<Map<string, string>> {
++  const map = new Map<string, string>();
++  const unique = [...new Set(formIds.map((id) => id.trim()).filter(Boolean))];
++  await Promise.all(
++    unique.map(async (formId) => {
++      try {
++        const form = await getExperienceFormById(tenantId, formId);
++        const name = form?.name?.trim();
++        if (name) map.set(formId, name);
++      } catch {
++        /* formulario irresoluble ÔåÆ label gen├®rico */
++      }
++    })
++  );
++  return map;
++}
++
++function toOpportunityInput(o: GrowthOportunidad): ConversionOpportunityInput {
++  return {
++    _id: o._id,
++    tenantId: o.tenantId,
++    status: o.status,
++    openedAt: o.openedAt,
++    closedAt: o.closedAt,
++    origin: o.origin
++      ? {
++          kind: o.origin.kind,
++          channel: o.origin.channel,
++          formId: o.origin.formId,
++          campaign: o.origin.campaign,
++        }
++      : null,
++    funnelKey: o.funnelKey,
++    ownerUserId: o.ownerUserId,
++  };
++}
++
++function toActivityInput(a: GrowthActivity): ConversionActivityInput {
++  return {
++    _id: a._id,
++    tenantId: a.tenantId,
++    oportunidadId: a.oportunidadId,
++    kind: a.kind,
++    occurredAt: a.occurredAt,
++    summary: a.summary,
++    payload: a.payload,
++  };
++}
++
++function toCampaignInput(c: GrowthCampaign): ConversionCampaignInput {
++  return {
++    tenantId: c.tenantId,
++    _id: c._id,
++    name: c.name,
++    trackingKey: c.trackingKey,
++  };
++}
++
++/**
++ * Anal├¡tica de conversi├│n del Espacio `tenantId`.
++ * Recibe todas las oportunidades del Espacio y el historial de movimiento
++ * completo: la permanencia y la atribuci├│n necesitan eventos anteriores al per├¡odo.
++ */
++export async function getConversionAnalytics(
++  tenantId: string,
++  query: ResolveAnalyticsPeriodInput = {}
++): Promise<GetConversionAnalyticsResult> {
++  const resolved = resolveAnalyticsPeriod(query);
++  if (!resolved.ok) {
++    return { ok: false, error: resolved.error, status: 400 };
++  }
++  const { period } = resolved;
++  const db = await getDatabase();
++
++  const activityFilter: Filter<GrowthActivity> = {
++    tenantId,
++    kind: { $in: [...CONVERSION_ACTIVITY_KINDS] },
++  };
++
++  const [opportunities, activities, funnelDocs, campaigns, memberships] =
++    await Promise.all([
++      db
++        .collection<GrowthOportunidad>(GROWTH_OPORTUNIDADES_COLLECTION)
++        .find({ tenantId } as Filter<GrowthOportunidad>)
++        .toArray(),
++      db
++        .collection<GrowthActivity>(GROWTH_ACTIVIDADES_COLLECTION)
++        .find(activityFilter)
++        .toArray(),
++      db
++        .collection<FunnelDoc>(GROWTH_FUNNELS_COLLECTION)
++        .find({ tenantId })
++        .toArray(),
++      db
++        .collection<GrowthCampaign>(GROWTH_CAMPAIGNS_COLLECTION)
++        .find({ tenantId } as Filter<GrowthCampaign>)
++        .toArray(),
++      listMembershipsByTenant(tenantId),
++    ]);
++
++  const definitionKeys = [
++    ...new Set(
++      funnelDocs
++        .map((funnel) => funnel.workflowDefinitionKey?.trim())
++        .filter((key): key is string => Boolean(key))
++    ),
++  ];
++  const definitions = definitionKeys.length
++    ? await db
++        .collection<WorkflowDefinitionDoc>("workflow_definitions")
++        .find({ tenantId, key: { $in: definitionKeys } })
++        .toArray()
++    : [];
++  const definitionByKey = new Map(definitions.map((definition) => [definition.key, definition]));
++
++  const funnels: ConversionFunnelInput[] = funnelDocs.map((funnel) => {
++    const definition = funnel.workflowDefinitionKey
++      ? definitionByKey.get(funnel.workflowDefinitionKey)
++      : undefined;
++    return {
++      tenantId,
++      key: funnel.key,
++      stages: (definition?.states ?? []).map((state) => ({
++        key: state.key,
++        label: growthFunnelResultLabel(state.key) ?? state.label,
++      })),
++    };
++  });
++
++  const users = await listUsersByIds([
++    ...new Set(memberships.map((membership) => membership.userId)),
++  ]);
++  const userById = new Map(users.map((user) => [user._id, user]));
++  const members: ConversionMemberInput[] = memberships.map((membership) => {
++    const user = userById.get(membership.userId);
++    const label =
++      user?.displayName?.trim() || user?.email?.trim() || membership.userId;
++    return {
++      userId: membership.userId,
++      label,
++      active: membership.status === "active",
++    };
++  });
++
++  const formIds = opportunities
++    .map((o) => o.origin?.formId)
++    .filter((id): id is string => Boolean(id?.trim()));
++  const formNameById = await resolveFormNames(tenantId, formIds);
++
++  const data = buildConversionAnalytics({
++    tenantId,
++    period,
++    readAt: new Date().toISOString(),
++    opportunities: opportunities.map(toOpportunityInput),
++    activities: activities.map(toActivityInput),
++    funnels,
++    campaigns: campaigns.map(toCampaignInput),
++    members,
++    formNameById,
++  });
++
++  return { ok: true, data };
++}
+diff --git a/src/lib/growth/conversion-analytics.ts b/src/lib/growth/conversion-analytics.ts
+new file mode 100644
+index 0000000..8358345
+--- /dev/null
++++ b/src/lib/growth/conversion-analytics.ts
+@@ -0,0 +1,859 @@
++/**
++ * Conversion Engine fase 3 ÔÇö anal├¡tica de conversi├│n.
++ * Funci├│n pura sobre documentos ya filtrados por Espacio. Sin I/O.
++ */
++
++import {
++  growthFunnelResultLabel,
++  isGrowthFunnelResultKey,
++} from "@/core/growth/funnel-types";
++import type { GrowthOrigin } from "@/core/growth/types";
++import {
++  acquisitionOriginGroupLabel,
++  computeConversionRate,
++} from "./analytics-aggregate";
++import { isTimestampInPeriod, type AnalyticsPeriod } from "./analytics-period";
++
++export const CONVERSION_DENOMINATORS = {
++  captacion:
++    "Oportunidades con fecha de apertura en el per├¡odo, incluidas las archivadas despu├®s.",
++  stock: "Oportunidades abiertas ahora. No depende del per├¡odo.",
++  cohorte:
++    "Oportunidades abiertas en el per├¡odo que no est├ín archivadas. La tasa es el estado al momento de la consulta.",
++} as const;
++
++export const CONVERSION_RATE_NOTE =
++  "Tasa al momento de la consulta. Las abiertas siguen en curso.";
++
++export const CONVERSION_LOSS_REASONS_NOTE =
++  "Los motivos de p├®rdida no se registran.";
++
++export type ConversionCountRow = { key: string; label: string; count: number };
++
++export type ConversionCohortRow = {
++  key: string;
++  label: string;
++  cohort: number;
++  won: number;
++  open: number;
++  lost: number;
++  handedOff: number;
++  rate: number | null;
++};
++
++export type ConversionOwnerRow = {
++  userId: string | null;
++  label: string;
++  open: number;
++  won: number;
++  lost: number;
++  handedOff: number;
++  wonCycleMedianMs: number | null;
++  wonCycleCount: number;
++};
++
++export type ConversionAnalyticsQuality = {
++  sinFechaApertura: number;
++  sinFechaCierre: number;
++  historialIncompleto: number;
++  movimientoIlegible: number;
++  campanaNoRegistrada: number;
++  etapaDeSalidaNoRegistrada: number;
++};
++
++export type ConversionOpportunityInput = {
++  _id: string;
++  tenantId: string;
++  status: string;
++  openedAt?: string;
++  closedAt?: string;
++  origin?: {
++    kind?: string;
++    channel?: string;
++    formId?: string;
++    campaign?: string;
++  } | null;
++  funnelKey?: string;
++  ownerUserId?: string;
++};
++
++export type ConversionActivityInput = {
++  _id: string;
++  tenantId: string;
++  oportunidadId?: string;
++  kind: string;
++  occurredAt?: string;
++  summary?: string;
++  payload?: Record<string, unknown>;
++};
++
++export type ConversionFunnelInput = {
++  tenantId: string;
++  key: string;
++  stages: Array<{ key: string; label: string }>;
++};
++
++export type ConversionCampaignInput = {
++  tenantId: string;
++  _id: string;
++  name: string;
++  trackingKey: string;
++};
++
++export type ConversionMemberInput = {
++  userId: string;
++  label: string;
++  active: boolean;
++};
++
++export type BuildConversionAnalyticsInput = {
++  tenantId: string;
++  period: AnalyticsPeriod;
++  readAt: string;
++  opportunities: ConversionOpportunityInput[];
++  activities: ConversionActivityInput[];
++  funnels: ConversionFunnelInput[];
++  campaigns: ConversionCampaignInput[];
++  members: ConversionMemberInput[];
++  formNameById?: Map<string, string>;
++};
++
++export type ConversionMovementRow = {
++  /** Etapa de salida (`fromState`). */
++  key: string;
++  label: string;
++  advance: number;
++  lost: number;
++  won: number;
++  handedOff: number;
++  archived: number;
++  /** Oportunidades distintas que salieron de la etapa en el per├¡odo. */
++  opportunities: number;
++};
++
++export type ConversionDwellRow = {
++  key: string;
++  label: string;
++  medianMs: number | null;
++  count: number;
++  inProgress: number;
++};
++
++export type ConversionCycleStat = { medianMs: number | null; count: number };
++
++export type ConversionAnalyticsResponse = {
++  tenantId: string;
++  period: AnalyticsPeriod;
++  readAt: string;
++  denominators: {
++    captacion: string;
++    stock: string;
++    cohorte: string;
++  };
++  rateNote: string;
++  captacion: {
++    total: number;
++    archivedNow: number;
++    byFunnel: ConversionCountRow[];
++    byOrigin: ConversionCountRow[];
++  };
++  stock: {
++    byFunnel: Array<{
++      funnelKey: string;
++      funnelLabel: string;
++      stages: ConversionCountRow[];
++    }>;
++  };
++  movement: {
++    byFunnel: Array<{
++      funnelKey: string;
++      funnelLabel: string;
++      stages: ConversionMovementRow[];
++    }>;
++    ilegible: number;
++  };
++  closures: { won: number; lost: number; handedOff: number };
++  losses: {
++    total: number;
++    byExitStage: ConversionCountRow[];
++    reasonsRecorded: false;
++    reasonsNote: string;
++  };
++  dwell: {
++    byFunnel: Array<{
++      funnelKey: string;
++      funnelLabel: string;
++      stages: ConversionDwellRow[];
++    }>;
++  };
++  cycle: { won: ConversionCycleStat; lost: ConversionCycleStat };
++  cohorts: {
++    byFunnel: ConversionCohortRow[];
++    byCampaign: ConversionCohortRow[];
++    bySource: ConversionCohortRow[];
++  };
++  owners: ConversionOwnerRow[];
++  quality: ConversionAnalyticsQuality;
++};
++
++const NO_FUNNEL_KEY = "sin-embudo";
++const NO_FUNNEL_LABEL = "Sin embudo";
++const UNREGISTERED_CAMPAIGN_KEY = "campana-no-registrada";
++const UNREGISTERED_CAMPAIGN_LABEL = "Campa├▒a no registrada";
++const OWNER_NONE_LABEL = "Sin responsable";
++const OWNER_NO_ATTRIBUTION_LABEL = "Sin atribuci├│n de responsable";
++const OWNER_INACTIVE_LABEL = "Responsable no vigente";
++
++const KIND_OPENED = "opportunity_opened";
++const KIND_TRANSITIONED = "opportunity_transitioned";
++const KIND_ASSIGNED = "opportunity_assigned";
++
++function bump(map: Map<string, number>, key: string, n = 1): void {
++  map.set(key, (map.get(key) ?? 0) + n);
++}
++
++function nonEmptyString(value: unknown): string | null {
++  if (typeof value !== "string") return null;
++  const trimmed = value.trim();
++  return trimmed === "" ? null : trimmed;
++}
++
++function isResultStatus(status: string): boolean {
++  return isGrowthFunnelResultKey(status);
++}
++
++function sortCountRows(
++  entries: Array<{ key: string; label: string; count: number }>
++): ConversionCountRow[] {
++  return entries
++    .filter((row) => row.count > 0)
++    .sort(
++      (a, b) => b.count - a.count || a.label.localeCompare(b.label, "es")
++    );
++}
++
++export function medianOf(values: number[]): number | null {
++  if (values.length === 0) return null;
++  const sorted = [...values].sort((a, b) => a - b);
++  const mid = Math.floor(sorted.length / 2);
++  if (sorted.length % 2 === 1) return sorted[mid];
++  return (sorted[mid - 1] + sorted[mid]) / 2;
++}
++
++function msBetween(fromIso: string, toIso: string): number | null {
++  const from = Date.parse(fromIso);
++  const to = Date.parse(toIso);
++  if (Number.isNaN(from) || Number.isNaN(to)) return null;
++  return to - from;
++}
++
++/**
++ * Responsable al que se atribuye un cierre: la ├║ltima asignaci├│n con
++ * `occurredAt <= closedAt`. `null` = sin atribuci├│n de responsable, nunca el
++ * responsable actual.
++ */
++function closureOwnerUserId(
++  activities: ConversionActivityInput[],
++  opportunityId: string,
++  closedAt: string
++): string | null {
++  const prior = activities
++    .filter(
++      (a) =>
++        a.oportunidadId === opportunityId &&
++        a.kind === KIND_ASSIGNED &&
++        typeof a.occurredAt === "string" &&
++        a.occurredAt <= closedAt
++    )
++    .sort((a, b) => a.occurredAt!.localeCompare(b.occurredAt!));
++  const last = prior.at(-1);
++  if (!last) return null;
++  const toUserId = last.payload?.toUserId;
++  if (typeof toUserId !== "string" || toUserId.trim() === "") return null;
++  return toUserId.trim();
++}
++
++type JourneyInterval = { stage: string; enter: string; exit: string | null };
++type Journey = { complete: false } | { complete: true; intervals: JourneyInterval[] };
++
++/** Recorrido de una oportunidad seg├║n el contrato; solo actividades + fechas. */
++function buildJourney(
++  opportunity: ConversionOpportunityInput,
++  acts: ConversionActivityInput[]
++): Journey {
++  const incomplete: Journey = { complete: false };
++
++  const openedActs = acts
++    .filter((a) => a.kind === KIND_OPENED && nonEmptyString(a.occurredAt))
++    .sort((a, b) => a.occurredAt!.localeCompare(b.occurredAt!));
++  const openedAct = openedActs[0];
++  const entry = openedAct?.occurredAt ?? opportunity.openedAt;
++  if (!entry || Number.isNaN(Date.parse(entry))) return incomplete;
++
++  const rawTransitions = acts.filter((a) => a.kind === KIND_TRANSITIONED);
++  const transitions: Array<{ from: string; to: string; at: string }> = [];
++  for (const t of rawTransitions) {
++    const from = nonEmptyString(t.payload?.fromState);
++    const to = nonEmptyString(t.payload?.toState);
++    const at = t.occurredAt;
++    if (!from || !to || !at || Number.isNaN(Date.parse(at))) return incomplete;
++    transitions.push({ from, to, at });
++  }
++  transitions.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
++
++  const openedStatus = nonEmptyString(openedAct?.payload?.status);
++  const firstFrom = transitions[0]?.from ?? null;
++  if (openedStatus && firstFrom && openedStatus !== firstFrom) return incomplete;
++  const firstStage = openedStatus ?? firstFrom;
++  if (!firstStage) return incomplete;
++
++  const intervals: JourneyInterval[] = [];
++  let current = firstStage;
++  let enter = entry;
++  for (const t of transitions) {
++    if (t.from !== current) return incomplete;
++    const length = msBetween(enter, t.at);
++    if (length === null || length < 0) return incomplete;
++    intervals.push({ stage: current, enter, exit: t.at });
++    current = t.to;
++    enter = t.at;
++  }
++
++  if (opportunity.status !== current) return incomplete;
++
++  const closedAt = nonEmptyString(opportunity.closedAt);
++  if (closedAt) {
++    const length = msBetween(enter, closedAt);
++    if (length === null || length < 0) return incomplete;
++    intervals.push({ stage: current, enter, exit: closedAt });
++  } else {
++    intervals.push({ stage: current, enter, exit: null });
++  }
++  return { complete: true, intervals };
++}
++
++type FunnelBucket = { key: string; label: string };
++
++type OwnerAccumulator = {
++  userId: string | null;
++  label: string;
++  open: number;
++  won: number;
++  lost: number;
++  handedOff: number;
++  wonCycles: number[];
++};
++
++type CohortAccumulator = {
++  key: string;
++  label: string;
++  cohort: number;
++  won: number;
++  open: number;
++  lost: number;
++  handedOff: number;
++};
++
++export function buildConversionAnalytics(
++  input: BuildConversionAnalyticsInput
++): ConversionAnalyticsResponse {
++  const { tenantId, period, readAt, formNameById } = input;
++  const { start, end } = period;
++
++  const opportunities = input.opportunities.filter(
++    (o) => o.tenantId === tenantId
++  );
++  const oppById = new Map(opportunities.map((o) => [o._id, o] as const));
++
++  const activities = input.activities.filter(
++    (a) =>
++      a.tenantId === tenantId &&
++      typeof a.oportunidadId === "string" &&
++      a.oportunidadId !== "" &&
++      oppById.has(a.oportunidadId)
++  );
++  const activitiesByOpp = new Map<string, ConversionActivityInput[]>();
++  for (const a of activities) {
++    const list = activitiesByOpp.get(a.oportunidadId!) ?? [];
++    list.push(a);
++    activitiesByOpp.set(a.oportunidadId!, list);
++  }
++
++  const funnelStages = new Map<string, Map<string, string>>();
++  for (const f of input.funnels) {
++    if (f.tenantId !== tenantId) continue;
++    funnelStages.set(f.key, new Map(f.stages.map((s) => [s.key, s.label])));
++  }
++
++  const campaignByTracking = new Map(
++    input.campaigns
++      .filter((c) => c.tenantId === tenantId)
++      .map((c) => [c.trackingKey, c] as const)
++  );
++  const memberByUserId = new Map<string, ConversionMemberInput>();
++  for (const m of input.members) {
++    if (!memberByUserId.has(m.userId)) memberByUserId.set(m.userId, m);
++  }
++
++  const funnelBucket = (o: ConversionOpportunityInput): FunnelBucket => {
++    const key = nonEmptyString(o.funnelKey);
++    return key
++      ? { key, label: key }
++      : { key: NO_FUNNEL_KEY, label: NO_FUNNEL_LABEL };
++  };
++
++  const stageLabel = (funnelKey: string | undefined, stage: string): string => {
++    const fromFunnel = funnelKey
++      ? funnelStages.get(funnelKey)?.get(stage)
++      : undefined;
++    return fromFunnel ?? growthFunnelResultLabel(stage) ?? stage;
++  };
++
++  const quality: ConversionAnalyticsQuality = {
++    sinFechaApertura: 0,
++    sinFechaCierre: 0,
++    historialIncompleto: 0,
++    movimientoIlegible: 0,
++    campanaNoRegistrada: 0,
++    etapaDeSalidaNoRegistrada: 0,
++  };
++
++  // --- Captaci├│n y cohortes -------------------------------------------------
++  const captacionByFunnel = new Map<string, { label: string; count: number }>();
++  const captacionByOrigin = new Map<string, number>();
++  let captacionTotal = 0;
++  let archivedNow = 0;
++
++  const cohortByFunnel = new Map<string, CohortAccumulator>();
++  const cohortByCampaign = new Map<string, CohortAccumulator>();
++  const cohortBySource = new Map<string, CohortAccumulator>();
++
++  const addToCohort = (
++    map: Map<string, CohortAccumulator>,
++    key: string,
++    label: string,
++    status: string
++  ) => {
++    let row = map.get(key);
++    if (!row) {
++      row = { key, label, cohort: 0, won: 0, open: 0, lost: 0, handedOff: 0 };
++      map.set(key, row);
++    }
++    row.cohort += 1;
++    if (status === "won") row.won += 1;
++    else if (status === "lost") row.lost += 1;
++    else if (status === "handed_off") row.handedOff += 1;
++    else row.open += 1;
++  };
++
++  for (const o of opportunities) {
++    const isResultWithoutClose =
++      (o.status === "won" || o.status === "lost" || o.status === "handed_off") &&
++      !nonEmptyString(o.closedAt);
++    if (isResultWithoutClose) quality.sinFechaCierre += 1;
++
++    if (!nonEmptyString(o.openedAt)) {
++      quality.sinFechaApertura += 1;
++      continue;
++    }
++    if (!isTimestampInPeriod(o.openedAt, start, end)) continue;
++
++    captacionTotal += 1;
++    if (o.status === "archived") archivedNow += 1;
++    const funnel = funnelBucket(o);
++    const prev = captacionByFunnel.get(funnel.key);
++    captacionByFunnel.set(funnel.key, {
++      label: funnel.label,
++      count: (prev?.count ?? 0) + 1,
++    });
++    const sourceLabel = acquisitionOriginGroupLabel(
++      (o.origin ?? null) as Pick<GrowthOrigin, "kind" | "channel" | "formId"> | null,
++      formNameById
++    );
++    bump(captacionByOrigin, sourceLabel);
++
++    if (o.status === "archived") continue;
++    if (isResultWithoutClose) continue;
++
++    addToCohort(cohortByFunnel, funnel.key, funnel.label, o.status);
++    addToCohort(cohortBySource, sourceLabel, sourceLabel, o.status);
++
++    const tracking = nonEmptyString(o.origin?.campaign);
++    if (tracking) {
++      const campaign = campaignByTracking.get(tracking);
++      if (campaign) {
++        addToCohort(
++          cohortByCampaign,
++          campaign.trackingKey,
++          campaign.name,
++          o.status
++        );
++      } else {
++        quality.campanaNoRegistrada += 1;
++        addToCohort(
++          cohortByCampaign,
++          UNREGISTERED_CAMPAIGN_KEY,
++          UNREGISTERED_CAMPAIGN_LABEL,
++          o.status
++        );
++      }
++    }
++  }
++
++  const cohortRows = (map: Map<string, CohortAccumulator>): ConversionCohortRow[] =>
++    [...map.values()]
++      .map((row) => ({
++        ...row,
++        rate: computeConversionRate(row.won, row.cohort),
++      }))
++      .sort(
++        (a, b) => b.cohort - a.cohort || a.label.localeCompare(b.label, "es")
++      );
++
++  // --- Stock -----------------------------------------------------------------
++  const stockMap = new Map<
++    string,
++    { label: string; stages: Map<string, { label: string; count: number }> }
++  >();
++  for (const o of opportunities) {
++    if (isResultStatus(o.status)) continue;
++    const funnel = funnelBucket(o);
++    let entry = stockMap.get(funnel.key);
++    if (!entry) {
++      entry = { label: funnel.label, stages: new Map() };
++      stockMap.set(funnel.key, entry);
++    }
++    const prev = entry.stages.get(o.status);
++    entry.stages.set(o.status, {
++      label: stageLabel(o.funnelKey, o.status),
++      count: (prev?.count ?? 0) + 1,
++    });
++  }
++
++  // --- Movimiento ------------------------------------------------------------
++  type MovementAcc = {
++    label: string;
++    stages: Map<
++      string,
++      ConversionMovementRow & { opps: Set<string> }
++    >;
++  };
++  const movementMap = new Map<string, MovementAcc>();
++  const transitionsByOpp = new Map<
++    string,
++    Array<{ from: string | null; to: string | null; at: string | undefined }>
++  >();
++
++  for (const a of activities) {
++    if (a.kind !== KIND_TRANSITIONED) continue;
++    const o = oppById.get(a.oportunidadId!)!;
++    const from = nonEmptyString(a.payload?.fromState);
++    const to = nonEmptyString(a.payload?.toState);
++    const list = transitionsByOpp.get(o._id) ?? [];
++    list.push({ from, to, at: a.occurredAt });
++    transitionsByOpp.set(o._id, list);
++
++    if (!isTimestampInPeriod(a.occurredAt, start, end)) continue;
++    if (!from || !to) {
++      quality.movimientoIlegible += 1;
++      continue;
++    }
++    const funnel = funnelBucket(o);
++    let acc = movementMap.get(funnel.key);
++    if (!acc) {
++      acc = { label: funnel.label, stages: new Map() };
++      movementMap.set(funnel.key, acc);
++    }
++    let row = acc.stages.get(from);
++    if (!row) {
++      row = {
++        key: from,
++        label: stageLabel(o.funnelKey, from),
++        advance: 0,
++        lost: 0,
++        won: 0,
++        handedOff: 0,
++        archived: 0,
++        opportunities: 0,
++        opps: new Set(),
++      };
++      acc.stages.set(from, row);
++    }
++    if (to === "lost") row.lost += 1;
++    else if (to === "won") row.won += 1;
++    else if (to === "handed_off") row.handedOff += 1;
++    else if (to === "archived") row.archived += 1;
++    else row.advance += 1;
++    row.opps.add(o._id);
++    row.opportunities = row.opps.size;
++  }
++
++  // --- Cierres, p├®rdidas, ciclo y responsables --------------------------------
++  const closures = { won: 0, lost: 0, handedOff: 0 };
++  const lossExitMap = new Map<string, { label: string; count: number }>();
++  let lossTotal = 0;
++  const wonCycles: number[] = [];
++  const lostCycles: number[] = [];
++  const owners = new Map<string, OwnerAccumulator>();
++
++  const ownerRow = (
++    key: string,
++    userId: string | null,
++    label: string
++  ): OwnerAccumulator => {
++    let row = owners.get(key);
++    if (!row) {
++      row = { userId, label, open: 0, won: 0, lost: 0, handedOff: 0, wonCycles: [] };
++      owners.set(key, row);
++    }
++    return row;
++  };
++  const userRow = (userId: string): OwnerAccumulator => {
++    const member = memberByUserId.get(userId);
++    const label =
++      member && member.active && nonEmptyString(member.label)
++        ? member.label
++        : OWNER_INACTIVE_LABEL;
++    return ownerRow(`u:${userId}`, userId, label);
++  };
++
++  for (const o of opportunities) {
++    if (!isResultStatus(o.status)) {
++      const ownerId = nonEmptyString(o.ownerUserId);
++      const row = ownerId
++        ? userRow(ownerId)
++        : ownerRow("none:open", null, OWNER_NONE_LABEL);
++      row.open += 1;
++      continue;
++    }
++
++    if (o.status !== "won" && o.status !== "lost" && o.status !== "handed_off") {
++      continue;
++    }
++    const closedAt = nonEmptyString(o.closedAt);
++    if (!closedAt || !isTimestampInPeriod(closedAt, start, end)) continue;
++
++    const attributed = closureOwnerUserId(
++      activitiesByOpp.get(o._id) ?? [],
++      o._id,
++      closedAt
++    );
++    const row = attributed
++      ? userRow(attributed)
++      : ownerRow("none:closure", null, OWNER_NO_ATTRIBUTION_LABEL);
++
++    const cycle =
++      nonEmptyString(o.openedAt) !== null
++        ? msBetween(o.openedAt!, closedAt)
++        : null;
++    const usableCycle = cycle !== null && cycle >= 0 ? cycle : null;
++
++    if (o.status === "won") {
++      closures.won += 1;
++      row.won += 1;
++      if (usableCycle !== null) {
++        wonCycles.push(usableCycle);
++        row.wonCycles.push(usableCycle);
++      }
++    } else if (o.status === "handed_off") {
++      closures.handedOff += 1;
++      row.handedOff += 1;
++    } else {
++      closures.lost += 1;
++      row.lost += 1;
++      if (usableCycle !== null) lostCycles.push(usableCycle);
++      lossTotal += 1;
++
++      const exits = (transitionsByOpp.get(o._id) ?? [])
++        .filter(
++          (t) =>
++            t.to === "lost" &&
++            typeof t.at === "string" &&
++            t.at !== "" &&
++            t.at <= closedAt
++        )
++        .sort((a, b) => a.at!.localeCompare(b.at!));
++      const exit = exits.at(-1);
++      if (!exit || !exit.from) {
++        quality.etapaDeSalidaNoRegistrada += 1;
++      } else {
++        const funnel = funnelBucket(o);
++        const key = `${funnel.key}:${exit.from}`;
++        const prev = lossExitMap.get(key);
++        lossExitMap.set(key, {
++          label: stageLabel(o.funnelKey, exit.from),
++          count: (prev?.count ?? 0) + 1,
++        });
++      }
++    }
++  }
++
++  // --- Permanencia -----------------------------------------------------------
++  type DwellAcc = {
++    label: string;
++    stages: Map<
++      string,
++      { label: string; durations: number[]; inProgress: number }
++    >;
++  };
++  const dwellMap = new Map<string, DwellAcc>();
++  for (const o of opportunities) {
++    const journey = buildJourney(o, activitiesByOpp.get(o._id) ?? []);
++    if (!journey.complete) {
++      quality.historialIncompleto += 1;
++      continue;
++    }
++    const funnel = funnelBucket(o);
++    for (const interval of journey.intervals) {
++      if (isResultStatus(interval.stage)) continue;
++      let acc = dwellMap.get(funnel.key);
++      const ensureRow = () => {
++        if (!acc) {
++          acc = { label: funnel.label, stages: new Map() };
++          dwellMap.set(funnel.key, acc);
++        }
++        let row = acc.stages.get(interval.stage);
++        if (!row) {
++          row = {
++            label: stageLabel(o.funnelKey, interval.stage),
++            durations: [],
++            inProgress: 0,
++          };
++          acc.stages.set(interval.stage, row);
++        }
++        return row;
++      };
++      if (interval.exit === null) {
++        if (!isResultStatus(o.status) && Date.parse(readAt) >= Date.parse(interval.enter)) {
++          ensureRow().inProgress += 1;
++        }
++        continue;
++      }
++      if (!isTimestampInPeriod(interval.exit, start, end)) continue;
++      const duration = msBetween(interval.enter, interval.exit);
++      if (duration === null || duration < 0) continue;
++      ensureRow().durations.push(duration);
++    }
++  }
++
++  // --- Armado de la respuesta -------------------------------------------------
++  const byFunnelSorted = <T extends { funnelLabel: string }>(rows: T[]): T[] =>
++    rows.sort((a, b) => a.funnelLabel.localeCompare(b.funnelLabel, "es"));
++
++  const ownerRows: ConversionOwnerRow[] = [...owners.values()]
++    .map((row) => ({
++      userId: row.userId,
++      label: row.label,
++      open: row.open,
++      won: row.won,
++      lost: row.lost,
++      handedOff: row.handedOff,
++      wonCycleMedianMs: medianOf(row.wonCycles),
++      wonCycleCount: row.wonCycles.length,
++    }))
++    .sort(
++      (a, b) =>
++        b.open + b.won + b.lost + b.handedOff -
++          (a.open + a.won + a.lost + a.handedOff) ||
++        a.label.localeCompare(b.label, "es")
++    );
++
++  return {
++    tenantId,
++    period,
++    readAt,
++    denominators: { ...CONVERSION_DENOMINATORS },
++    rateNote: CONVERSION_RATE_NOTE,
++    captacion: {
++      total: captacionTotal,
++      archivedNow,
++      byFunnel: sortCountRows(
++        [...captacionByFunnel.entries()].map(([key, v]) => ({
++          key,
++          label: v.label,
++          count: v.count,
++        }))
++      ),
++      byOrigin: sortCountRows(
++        [...captacionByOrigin.entries()].map(([label, count]) => ({
++          key: label,
++          label,
++          count,
++        }))
++      ),
++    },
++    stock: {
++      byFunnel: byFunnelSorted(
++        [...stockMap.entries()].map(([funnelKey, v]) => ({
++          funnelKey,
++          funnelLabel: v.label,
++          stages: sortCountRows(
++            [...v.stages.entries()].map(([key, s]) => ({
++              key,
++              label: s.label,
++              count: s.count,
++            }))
++          ),
++        }))
++      ),
++    },
++    movement: {
++      byFunnel: byFunnelSorted(
++        [...movementMap.entries()].map(([funnelKey, v]) => ({
++          funnelKey,
++          funnelLabel: v.label,
++          stages: [...v.stages.values()]
++            .map(({ opps: _opps, ...row }) => row)
++            .sort(
++              (a, b) =>
++                b.advance + b.lost + b.won + b.handedOff + b.archived -
++                  (a.advance + a.lost + a.won + a.handedOff + a.archived) ||
++                a.label.localeCompare(b.label, "es")
++            ),
++        }))
++      ),
++      ilegible: quality.movimientoIlegible,
++    },
++    closures,
++    losses: {
++      total: lossTotal,
++      byExitStage: sortCountRows(
++        [...lossExitMap.entries()].map(([key, v]) => ({
++          key,
++          label: v.label,
++          count: v.count,
++        }))
++      ),
++      reasonsRecorded: false,
++      reasonsNote: CONVERSION_LOSS_REASONS_NOTE,
++    },
++    dwell: {
++      byFunnel: byFunnelSorted(
++        [...dwellMap.entries()].map(([funnelKey, v]) => ({
++          funnelKey,
++          funnelLabel: v.label,
++          stages: [...v.stages.entries()]
++            .map(([key, s]) => ({
++              key,
++              label: s.label,
++              medianMs: medianOf(s.durations),
++              count: s.durations.length,
++              inProgress: s.inProgress,
++            }))
++            .sort((a, b) => a.label.localeCompare(b.label, "es")),
++        }))
++      ),
++    },
++    cycle: {
++      won: { medianMs: medianOf(wonCycles), count: wonCycles.length },
++      lost: { medianMs: medianOf(lostCycles), count: lostCycles.length },
++    },
++    cohorts: {
++      byFunnel: cohortRows(cohortByFunnel),
++      byCampaign: cohortRows(cohortByCampaign),
++      bySource: cohortRows(cohortBySource),
++    },
++    owners: ownerRows,
++    quality,
++  };
++}
+diff --git a/src/lib/growth/index.ts b/src/lib/growth/index.ts
+index 345a1bb..1427889 100644
+--- a/src/lib/growth/index.ts
++++ b/src/lib/growth/index.ts
+@@ -105,3 +105,25 @@ export type {
+   ResolveAnalyticsPeriodResult,
+   GetAnalyticsV1Result,
+ } from "./analytics-read";
++export {
++  CONVERSION_DENOMINATORS,
++  CONVERSION_LOSS_REASONS_NOTE,
++  CONVERSION_RATE_NOTE,
++  buildConversionAnalytics,
++} from "./conversion-analytics";
++export type {
++  BuildConversionAnalyticsInput,
++  ConversionActivityInput,
++  ConversionAnalyticsQuality,
++  ConversionAnalyticsResponse,
++  ConversionCampaignInput,
++  ConversionCohortRow,
++  ConversionCountRow,
++  ConversionCycleStat,
++  ConversionDwellRow,
++  ConversionFunnelInput,
++  ConversionMemberInput,
++  ConversionMovementRow,
++  ConversionOpportunityInput,
++  ConversionOwnerRow,
++} from "./conversion-analytics";
+diff --git a/src/lib/growth/labels.ts b/src/lib/growth/labels.ts
+index 8a45673..4a78173 100644
+--- a/src/lib/growth/labels.ts
++++ b/src/lib/growth/labels.ts
+@@ -301,3 +301,30 @@ export const GROWTH_ANALITICA_PERIOD_LABELS = {
+   previous_month: "Mes anterior",
+   custom: "Personalizado",
+ } as const;
++
++/** Conversion Engine fase 3 ÔÇö copy de Anal├¡tica de conversi├│n. */
++export const GROWTH_CONVERSION_ANALITICA_PAGE_TITLE = "Anal├¡tica de conversi├│n";
++export const GROWTH_CONVERSION_ANALITICA_PAGE_DESCRIPTION =
++  "C├│mo avanzan las oportunidades por el embudo del Espacio.";
++export const GROWTH_CONVERSION_ANALITICA_EMPTY_DESCRIPTION =
++  "Cuando haya oportunidades en el Espacio, ver├ís aqu├¡ c├│mo avanzan.";
++export const GROWTH_CONVERSION_ANALITICA_FUNNEL_ALL = "Todos";
++export const GROWTH_CONVERSION_ANALITICA_FUNNEL_LABEL = "Embudo";
++export const GROWTH_CONVERSION_ANALITICA_SECTION_LABELS = {
++  captacion: { eyebrow: "Captaci├│n", question: "┬┐Cu├íntas oportunidades llegaron?" },
++  stock: { eyebrow: "Stock", question: "┬┐D├│nde est├ín hoy las oportunidades abiertas?" },
++  movimiento: { eyebrow: "Movimiento", question: "┬┐C├│mo salieron de cada etapa?" },
++  perdidas: { eyebrow: "P├®rdidas", question: "┬┐En qu├® etapa se perdieron?" },
++  permanencia: { eyebrow: "Permanencia", question: "┬┐Cu├ínto tiempo pasan en cada etapa?" },
++  cohortes: { eyebrow: "Cohortes", question: "┬┐C├│mo terminaron las que entraron en el per├¡odo?" },
++  responsables: { eyebrow: "Responsables", question: "┬┐Qui├®n lleva y qui├®n cerr├│?" },
++  calidad: { eyebrow: "Calidad de datos", question: "┬┐Qu├® no se pudo leer?" },
++} as const;
++export const GROWTH_CONVERSION_ANALITICA_QUALITY_LABELS = {
++  sinFechaApertura: "Sin fecha de apertura",
++  sinFechaCierre: "Cerradas sin fecha de cierre",
++  historialIncompleto: "Historial incompleto",
++  movimientoIlegible: "Movimiento ilegible",
++  campanaNoRegistrada: "Campa├▒a no registrada",
++  etapaDeSalidaNoRegistrada: "Etapa de salida no registrada",
++} as const;
+diff --git a/tests/baseline/growth-conversion-analytics.test.ts b/tests/baseline/growth-conversion-analytics.test.ts
+new file mode 100644
+index 0000000..4d11c69
+--- /dev/null
++++ b/tests/baseline/growth-conversion-analytics.test.ts
+@@ -0,0 +1,735 @@
++/**
++ * Conversion Engine fase 3 ÔÇö n├║cleo puro de anal├¡tica de conversi├│n.
++ */
++import assert from "node:assert/strict";
++import { describe, it } from "node:test";
++import { existsSync, readFileSync } from "node:fs";
++import { resolve } from "node:path";
++import {
++  CONVERSION_DENOMINATORS,
++  CONVERSION_LOSS_REASONS_NOTE,
++  CONVERSION_RATE_NOTE,
++  buildConversionAnalytics,
++  type BuildConversionAnalyticsInput,
++  type ConversionActivityInput,
++  type ConversionOpportunityInput,
++} from "../../src/lib/growth/conversion-analytics";
++import { computeConversionRate } from "../../src/lib/growth/analytics-aggregate";
++import { resolveAnalyticsPeriod } from "../../src/lib/growth/analytics-period";
++
++const READ_AT = "2026-09-11T15:00:00.000Z";
++const PERIOD_RESULT = resolveAnalyticsPeriod({
++  preset: "last_30d",
++  now: new Date(READ_AT),
++});
++assert.ok(PERIOD_RESULT.ok);
++const period = PERIOD_RESULT.period;
++
++const T1 = "tenant-1";
++const T2 = "tenant-2";
++const DAY = 86_400_000;
++
++function origin(
++  partial: { kind?: string; channel?: string; formId?: string; campaign?: string } = {}
++) {
++  return { kind: "form", ...partial };
++}
++
++function opp(
++  partial: Partial<ConversionOpportunityInput> &
++    Pick<ConversionOpportunityInput, "_id">
++): ConversionOpportunityInput {
++  return {
++    tenantId: T1,
++    status: "open",
++    openedAt: "2026-09-05T12:00:00.000Z",
++    origin: origin(),
++    funnelKey: "ventas",
++    ...partial,
++  };
++}
++
++function activity(
++  partial: Partial<ConversionActivityInput> &
++    Pick<ConversionActivityInput, "_id" | "kind">
++): ConversionActivityInput {
++  return {
++    tenantId: T1,
++    occurredAt: "2026-09-06T12:00:00.000Z",
++    ...partial,
++  };
++}
++
++function transition(
++  id: string,
++  oportunidadId: string,
++  fromState: string | undefined,
++  toState: string | undefined,
++  occurredAt = "2026-09-06T12:00:00.000Z",
++  extra: Partial<ConversionActivityInput> = {}
++): ConversionActivityInput {
++  const payload: Record<string, unknown> = {};
++  if (fromState !== undefined) payload.fromState = fromState;
++  if (toState !== undefined) payload.toState = toState;
++  return activity({
++    _id: id,
++    kind: "opportunity_transitioned",
++    oportunidadId,
++    occurredAt,
++    payload,
++    ...extra,
++  });
++}
++
++function opened(
++  id: string,
++  oportunidadId: string,
++  status: string,
++  occurredAt: string
++): ConversionActivityInput {
++  return activity({
++    _id: id,
++    kind: "opportunity_opened",
++    oportunidadId,
++    occurredAt,
++    payload: { status },
++  });
++}
++
++function assigned(
++  id: string,
++  oportunidadId: string,
++  toUserId: string | undefined,
++  occurredAt: string
++): ConversionActivityInput {
++  return activity({
++    _id: id,
++    kind: "opportunity_assigned",
++    oportunidadId,
++    occurredAt,
++    payload: toUserId === undefined ? {} : { toUserId },
++  });
++}
++
++function build(partial: Partial<BuildConversionAnalyticsInput>) {
++  return buildConversionAnalytics({
++    tenantId: T1,
++    period,
++    readAt: READ_AT,
++    opportunities: [],
++    activities: [],
++    funnels: [
++      {
++        tenantId: T1,
++        key: "ventas",
++        stages: [
++          { key: "nuevo", label: "Nuevo" },
++          { key: "propuesta", label: "Propuesta" },
++        ],
++      },
++    ],
++    campaigns: [],
++    members: [],
++    ...partial,
++  });
++}
++
++const sum = (rows: Array<{ count: number }>) =>
++  rows.reduce((acc, r) => acc + r.count, 0);
++
++describe("buildConversionAnalytics ÔÇö aislamiento por Espacio", () => {
++  it("una oportunidad de otro tenantId no cambia captaci├│n, cohortes ni responsables", () => {
++    const base = {
++      opportunities: [
++        opp({
++          _id: "a",
++          ownerUserId: "ana",
++          origin: origin({ campaign: "verano" }),
++        }),
++      ],
++      campaigns: [
++        { tenantId: T1, _id: "c1", name: "Verano", trackingKey: "verano" },
++      ],
++      members: [{ userId: "ana", label: "Ana", active: true }],
++    };
++    const alone = build(base);
++    const withForeign = build({
++      ...base,
++      opportunities: [
++        ...base.opportunities,
++        opp({
++          _id: "x",
++          tenantId: T2,
++          ownerUserId: "ana",
++          origin: origin({ campaign: "verano" }),
++        }),
++      ],
++      activities: [
++        transition("t-x", "x", "nuevo", "propuesta", "2026-09-07T12:00:00.000Z", {
++          tenantId: T2,
++        }),
++      ],
++    });
++    assert.equal(withForeign.captacion.total, alone.captacion.total);
++    assert.deepEqual(withForeign.cohorts, alone.cohorts);
++    assert.deepEqual(withForeign.owners, alone.owners);
++    assert.deepEqual(withForeign.movement, alone.movement);
++    assert.equal(withForeign.captacion.total, 1);
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö captaci├│n", () => {
++  const three = [
++    opp({
++      _id: "a",
++      funnelKey: "ventas",
++      origin: origin({ kind: "message", channel: "whatsapp" }),
++    }),
++    opp({
++      _id: "b",
++      funnelKey: "admision",
++      origin: origin({ kind: "form" }),
++    }),
++    opp({ _id: "c", funnelKey: undefined, origin: null }),
++  ];
++
++  it("total es la suma de cortes por embudo y por origen", () => {
++    const r = build({ opportunities: three });
++    assert.equal(r.captacion.total, 3);
++    assert.equal(sum(r.captacion.byFunnel), 3);
++    assert.equal(sum(r.captacion.byOrigin), 3);
++    assert.ok(r.captacion.byFunnel.some((x) => x.label === "Sin embudo"));
++    assert.ok(r.captacion.byOrigin.some((x) => x.label === "Sin origen claro"));
++    assert.equal(r.captacion.archivedNow, 0);
++    assert.equal(r.denominators.captacion, CONVERSION_DENOMINATORS.captacion);
++  });
++
++  it("una alta archivada despu├®s cuenta en captaci├│n y no en la cohorte", () => {
++    const r = build({
++      opportunities: [
++        ...three,
++        opp({ _id: "d", status: "archived" }),
++      ],
++    });
++    assert.equal(r.captacion.total, 4);
++    assert.equal(r.captacion.archivedNow, 1);
++    assert.equal(sum(r.captacion.byFunnel), 4);
++    const cohortTotal = r.cohorts.byFunnel.reduce((a, x) => a + x.cohort, 0);
++    assert.equal(cohortTotal, 3);
++  });
++
++  it("sin openedAt no es alta y va al cubo de calidad", () => {
++    const r = build({
++      opportunities: [...three, opp({ _id: "e", openedAt: undefined })],
++    });
++    assert.equal(r.captacion.total, 3);
++    assert.equal(r.quality.sinFechaApertura, 1);
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö stock y movimiento", () => {
++  it("stock ignora el per├¡odo; movimiento ilegible no mueve otra barra", () => {
++    const r = build({
++      opportunities: [
++        opp({
++          _id: "old",
++          status: "propuesta",
++          openedAt: "2026-01-01T00:00:00.000Z",
++        }),
++        opp({ _id: "won-old", status: "won", openedAt: "2026-01-01T00:00:00.000Z" }),
++      ],
++      activities: [
++        transition("t-out", "old", "nuevo", "propuesta", "2026-02-01T00:00:00.000Z"),
++        transition("t-bad", "old", undefined, "propuesta"),
++      ],
++    });
++    const stock = r.stock.byFunnel.find((f) => f.funnelKey === "ventas");
++    assert.ok(stock);
++    assert.deepEqual(
++      stock.stages.map((s) => [s.key, s.label, s.count]),
++      [["propuesta", "Propuesta", 1]]
++    );
++    assert.equal(r.captacion.total, 0);
++    assert.equal(r.quality.movimientoIlegible, 1);
++    assert.equal(r.movement.ilegible, 1);
++    assert.equal(r.movement.byFunnel.length, 0);
++  });
++
++  it("clasifica avance, abandono, ganada, traspaso y archivo; asignar no avanza", () => {
++    const r = build({
++      opportunities: [
++        opp({ _id: "a" }),
++        opp({ _id: "b" }),
++        opp({ _id: "c" }),
++      ],
++      activities: [
++        transition("t1", "a", "nuevo", "propuesta"),
++        transition("t2", "a", "nuevo", "lost"),
++        transition("t3", "b", "nuevo", "won"),
++        transition("t4", "b", "nuevo", "handed_off"),
++        transition("t5", "c", "nuevo", "archived"),
++        assigned("as1", "a", "ana", "2026-09-07T12:00:00.000Z"),
++      ],
++    });
++    const f = r.movement.byFunnel.find((x) => x.funnelKey === "ventas");
++    assert.ok(f);
++    const row = f.stages.find((s) => s.key === "nuevo");
++    assert.ok(row);
++    assert.equal(row.advance, 1);
++    assert.equal(row.lost, 1);
++    assert.equal(row.won, 1);
++    assert.equal(row.handedOff, 1);
++    assert.equal(row.archived, 1);
++    assert.equal(row.opportunities, 3);
++  });
++
++  it("handed_off con closedAt en el per├¡odo sube traspaso y no ganadas ni perdidas", () => {
++    const r = build({
++      opportunities: [
++        opp({
++          _id: "h",
++          status: "handed_off",
++          closedAt: "2026-09-08T12:00:00.000Z",
++        }),
++      ],
++    });
++    assert.equal(r.closures.handedOff, 1);
++    assert.equal(r.closures.won, 0);
++    assert.equal(r.closures.lost, 0);
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö cierres y cohortes", () => {
++  it("won sin closedAt va a calidad y no altera la tasa", () => {
++    const withClosed = build({
++      opportunities: [
++        opp({ _id: "w", status: "won", closedAt: "2026-09-08T12:00:00.000Z" }),
++        opp({ _id: "o", status: "open" }),
++      ],
++    });
++    const withBroken = build({
++      opportunities: [
++        opp({ _id: "w", status: "won", closedAt: "2026-09-08T12:00:00.000Z" }),
++        opp({ _id: "o", status: "open" }),
++        opp({ _id: "w2", status: "won" }),
++      ],
++    });
++    assert.equal(withBroken.quality.sinFechaCierre, 1);
++    assert.equal(withBroken.closures.won, 1);
++    assert.deepEqual(withBroken.cohorts.byFunnel, withClosed.cohorts.byFunnel);
++  });
++
++  it("cohorte vac├¡a no tiene fila y su tasa es null", () => {
++    const r = build({ opportunities: [] });
++    assert.equal(r.cohorts.byFunnel.length, 0);
++    assert.equal(r.cohorts.bySource.length, 0);
++    assert.equal(computeConversionRate(0, 0), null);
++  });
++
++  it("cohorte de 2 con una ganada y una abierta tiene tasa 0.5", () => {
++    const r = build({
++      opportunities: [
++        opp({ _id: "w", status: "won", closedAt: "2026-09-08T12:00:00.000Z" }),
++        opp({ _id: "o", status: "open" }),
++      ],
++    });
++    const row = r.cohorts.byFunnel.find((x) => x.key === "ventas");
++    assert.ok(row);
++    assert.equal(row.cohort, 2);
++    assert.equal(row.won, 1);
++    assert.equal(row.open, 1);
++    assert.equal(row.rate, 0.5);
++    assert.equal(r.rateNote, CONVERSION_RATE_NOTE);
++    assert.equal(r.denominators.cohorte, CONVERSION_DENOMINATORS.cohorte);
++  });
++
++  it("handed_off entra en cohorte y handedOff, no en won", () => {
++    const r = build({
++      opportunities: [
++        opp({
++          _id: "h",
++          status: "handed_off",
++          closedAt: "2026-09-08T12:00:00.000Z",
++        }),
++      ],
++    });
++    const row = r.cohorts.byFunnel[0];
++    assert.equal(row.cohort, 1);
++    assert.equal(row.handedOff, 1);
++    assert.equal(row.won, 0);
++    assert.equal(row.rate, 0);
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö p├®rdidas", () => {
++  it("cuenta etapa de salida, conserva p├®rdidas sin etapa y no registra motivos", () => {
++    const r = build({
++      opportunities: [
++        opp({ _id: "l1", status: "lost", closedAt: "2026-09-08T12:00:00.000Z" }),
++        opp({ _id: "l2", status: "lost", closedAt: "2026-09-08T12:00:00.000Z" }),
++      ],
++      activities: [
++        transition("t1", "l1", "propuesta", "lost", "2026-09-08T11:00:00.000Z", {
++          summary: "precio",
++        }),
++      ],
++    });
++    assert.equal(r.losses.total, 2);
++    assert.equal(r.losses.byExitStage.length, 1);
++    assert.equal(r.losses.byExitStage[0].label, "Propuesta");
++    assert.equal(r.losses.byExitStage[0].count, 1);
++    assert.ok(r.losses.byExitStage.every((x) => x.label !== "precio"));
++    assert.equal(r.quality.etapaDeSalidaNoRegistrada, 1);
++    assert.equal(r.losses.reasonsRecorded, false);
++    assert.equal(r.losses.reasonsNote, CONVERSION_LOSS_REASONS_NOTE);
++    const src = readFileSync(
++      resolve(process.cwd(), "src/lib/growth/conversion-analytics.ts"),
++      "utf8"
++    );
++    assert.ok(!src.includes("lossReasonKey"));
++  });
++
++  it("transiciones a lost posteriores a closedAt no definen la etapa de salida", () => {
++    const r = build({
++      opportunities: [
++        opp({ _id: "l", status: "lost", closedAt: "2026-09-08T12:00:00.000Z" }),
++      ],
++      activities: [
++        transition("t1", "l", "nuevo", "lost", "2026-09-08T11:00:00.000Z"),
++        transition("t2", "l", "propuesta", "lost", "2026-09-09T11:00:00.000Z"),
++      ],
++    });
++    assert.equal(r.losses.byExitStage.length, 1);
++    assert.equal(r.losses.byExitStage[0].label, "Nuevo");
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö permanencia y ciclo", () => {
++  const nuevoOpened = (id: string, at: string) =>
++    opened(`op-${id}`, id, "nuevo", at);
++
++  it("mediana de intervalos terminados; en curso e historial incompleto no cuentan", () => {
++    const r = build({
++      opportunities: [
++        opp({ _id: "a", status: "propuesta", openedAt: "2026-08-20T00:00:00.000Z" }),
++        opp({ _id: "b", status: "propuesta", openedAt: "2026-08-20T00:00:00.000Z" }),
++        opp({ _id: "c", status: "nuevo", openedAt: "2026-09-01T00:00:00.000Z" }),
++        opp({ _id: "d", status: "nuevo", openedAt: "2026-08-20T00:00:00.000Z" }),
++      ],
++      activities: [
++        nuevoOpened("a", "2026-08-20T00:00:00.000Z"),
++        transition("ta", "a", "nuevo", "propuesta", "2026-08-22T00:00:00.000Z"),
++        nuevoOpened("b", "2026-08-20T00:00:00.000Z"),
++        transition("tb", "b", "nuevo", "propuesta", "2026-08-24T00:00:00.000Z"),
++        nuevoOpened("c", "2026-09-01T00:00:00.000Z"),
++        nuevoOpened("d", "2026-08-20T00:00:00.000Z"),
++        transition("td", "d", "nuevo", "propuesta", "2026-08-23T00:00:00.000Z"),
++      ],
++    });
++    const funnel = r.dwell.byFunnel.find((f) => f.funnelKey === "ventas");
++    assert.ok(funnel);
++    const nuevo = funnel.stages.find((s) => s.key === "nuevo");
++    assert.ok(nuevo);
++    assert.equal(nuevo.medianMs, 3 * DAY);
++    assert.equal(nuevo.count, 2);
++    assert.equal(nuevo.inProgress, 1);
++    assert.equal(r.quality.historialIncompleto, 1);
++    const stock = r.stock.byFunnel.find((f) => f.funnelKey === "ventas");
++    assert.ok(stock);
++    assert.equal(stock.stages.find((s) => s.key === "nuevo")?.count, 2);
++  });
++
++  it("ciclo de ganadas y perdidas se calcula por separado", () => {
++    const r = build({
++      opportunities: [
++        opp({
++          _id: "w",
++          status: "won",
++          openedAt: "2026-09-01T00:00:00.000Z",
++          closedAt: "2026-09-06T00:00:00.000Z",
++        }),
++        opp({
++          _id: "l",
++          status: "lost",
++          openedAt: "2026-09-02T00:00:00.000Z",
++          closedAt: "2026-09-03T00:00:00.000Z",
++        }),
++      ],
++    });
++    assert.equal(r.cycle.won.medianMs, 5 * DAY);
++    assert.equal(r.cycle.won.count, 1);
++    assert.equal(r.cycle.lost.medianMs, 1 * DAY);
++    assert.equal(r.cycle.lost.count, 1);
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö campa├▒a y fuente", () => {
++  it("atribuye solo por trackingKey del Espacio y no lee referrer", () => {
++    const r = build({
++      opportunities: [
++        opp({ _id: "a", origin: origin({ campaign: " verano " }) }),
++        opp({ _id: "b", origin: origin({ campaign: "desconocida" }) }),
++        opp({ _id: "c", origin: origin({ campaign: undefined }) }),
++        opp({ _id: "d", origin: null }),
++      ],
++      activities: [
++        activity({
++          _id: "ref",
++          kind: "opportunity_opened",
++          oportunidadId: "c",
++          payload: { referrer: "verano", status: "nuevo" },
++        }),
++      ],
++      campaigns: [
++        { tenantId: T1, _id: "c1", name: "Verano", trackingKey: "verano" },
++        { tenantId: T2, _id: "c2", name: "Otra", trackingKey: "desconocida" },
++      ],
++    });
++    const names = r.cohorts.byCampaign.map((x) => [x.label, x.cohort]);
++    assert.deepEqual(
++      names.sort((a, b) => String(a[0]).localeCompare(String(b[0]), "es")),
++      [
++        ["Campa├▒a no registrada", 1],
++        ["Verano", 1],
++      ]
++    );
++    assert.equal(r.quality.campanaNoRegistrada, 1);
++    const sources = r.cohorts.bySource.map((x) => x.label);
++    assert.ok(sources.includes("Sin origen claro"));
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö responsables", () => {
++  const members = [
++    { userId: "ana", label: "Ana", active: true },
++    { userId: "bruno", label: "Bruno", active: false },
++  ];
++
++  it("abierta suma en el ownerUserId vigente", () => {
++    const r = build({
++      opportunities: [opp({ _id: "a", ownerUserId: "ana" }), opp({ _id: "b" })],
++      members,
++    });
++    const ana = r.owners.find((o) => o.userId === "ana");
++    assert.equal(ana?.label, "Ana");
++    assert.equal(ana?.open, 1);
++    const none = r.owners.find((o) => o.label === "Sin responsable");
++    assert.equal(none?.userId, null);
++    assert.equal(none?.open, 1);
++  });
++
++  it("cierre atribuye a la ├║ltima asignaci├│n anterior o igual a closedAt", () => {
++    const closedAt = "2026-09-08T12:00:00.000Z";
++    const r = build({
++      opportunities: [
++        opp({ _id: "w1", status: "won", closedAt, ownerUserId: "ana" }),
++        opp({ _id: "w2", status: "won", closedAt, ownerUserId: "ana" }),
++        opp({ _id: "w3", status: "won", closedAt, ownerUserId: "ana" }),
++      ],
++      activities: [
++        assigned("a1", "w1", "ana", "2026-09-06T12:00:00.000Z"),
++        assigned("a2", "w1", "", "2026-09-07T12:00:00.000Z"),
++        assigned("a3", "w2", "bruno", "2026-09-07T12:00:00.000Z"),
++        assigned("a4", "w2", "ana", "2026-09-09T12:00:00.000Z"),
++      ],
++      members,
++    });
++    const noAttr = r.owners.find((o) => o.label === "Sin atribuci├│n de responsable");
++    assert.equal(noAttr?.userId, null);
++    assert.equal(noAttr?.won, 2);
++    const bruno = r.owners.find((o) => o.userId === "bruno");
++    assert.equal(bruno?.label, "Responsable no vigente");
++    assert.equal(bruno?.won, 1);
++    const ana = r.owners.find((o) => o.userId === "ana");
++    assert.equal(ana?.won ?? 0, 0);
++    assert.equal(ana?.open ?? 0, 0);
++  });
++
++  it("usuario sin membres├¡a queda como Responsable no vigente", () => {
++    const r = build({
++      opportunities: [opp({ _id: "a", ownerUserId: "fantasma" })],
++      members,
++    });
++    assert.equal(r.owners[0].label, "Responsable no vigente");
++    assert.equal(r.owners[0].userId, "fantasma");
++  });
++});
++
++describe("buildConversionAnalytics ÔÇö calidad de datos", () => {
++  it("los cubos de calidad son n├║meros y no filas de etapa, origen ni responsable", () => {
++    const r = build({
++      opportunities: [
++        opp({ _id: "a", openedAt: undefined }),
++        opp({ _id: "b", status: "won" }),
++        opp({ _id: "c", origin: origin({ campaign: "zzz" }) }),
++      ],
++      activities: [transition("t", "c", undefined, "propuesta")],
++    });
++    for (const key of [
++      "sinFechaApertura",
++      "sinFechaCierre",
++      "historialIncompleto",
++      "movimientoIlegible",
++      "campanaNoRegistrada",
++      "etapaDeSalidaNoRegistrada",
++    ] as const) {
++      assert.equal(typeof r.quality[key], "number");
++    }
++    const qualityLabels = [
++      "Sin fecha de apertura",
++      "Sin fecha de cierre",
++      "Historial incompleto",
++      "Movimiento ilegible",
++      "Campa├▒a no registrada",
++      "Etapa de salida no registrada",
++    ];
++    const labels = [
++      ...r.stock.byFunnel.flatMap((f) => f.stages.map((s) => s.label)),
++      ...r.captacion.byOrigin.map((x) => x.label),
++      ...r.owners.map((o) => o.label),
++    ];
++    for (const q of qualityLabels) {
++      assert.ok(!labels.includes(q), q);
++    }
++    assert.equal(r.quality.sinFechaApertura, 1);
++    assert.equal(r.quality.sinFechaCierre, 1);
++    assert.equal(r.quality.movimientoIlegible, 1);
++  });
++});
++
++describe("conversion-analytics-read ÔÇö guarda de fuente", () => {
++  const read = readFileSync(
++    resolve(process.cwd(), "src/lib/growth/conversion-analytics-read.ts"),
++    "utf8"
++  );
++
++  it("es server-only y filtra por tenantId", () => {
++    assert.match(read, /import "server-only"/);
++    assert.match(read, /\{\s*tenantId\s*\}/);
++    assert.match(read, /tenantId,\s*kind:\s*\{\s*\$in:/);
++  });
++
++  it("lee solo los kinds de movimiento necesarios", () => {
++    const kinds = read.match(/"opportunity_[a-z_]+"/g) ?? [];
++    assert.deepEqual([...new Set(kinds)].sort(), [
++      '"opportunity_assigned"',
++      '"opportunity_opened"',
++      '"opportunity_transitioned"',
++    ]);
++  });
++
++  it("no escribe, no migra y no toca m├®tricas de campa├▒a", () => {
++    for (const forbidden of [
++      /insert/i,
++      /update/i,
++      /delete/i,
++      /aggregate/i,
++      /replaceOne/,
++      /bulkWrite/,
++      /createIndex/,
++      /029/,
++      /lossReason/,
++      /deriveCampaignMetrics/,
++    ]) {
++      assert.doesNotMatch(read, forbidden, String(forbidden));
++    }
++  });
++
++  it("la anal├¡tica previa no importa conversion-analytics", () => {
++    for (const file of [
++      "src/lib/growth/analytics-read.ts",
++      "src/lib/growth/analytics-aggregate.ts",
++    ]) {
++      const source = readFileSync(resolve(process.cwd(), file), "utf8");
++      assert.doesNotMatch(source, /conversion-analytics/, file);
++    }
++  });
++
++  it("la lectura server-only no se reexporta desde el ├¡ndice de Growth", () => {
++    const index = readFileSync(
++      resolve(process.cwd(), "src/lib/growth/index.ts"),
++      "utf8"
++    );
++    assert.doesNotMatch(index, /conversion-analytics-read/);
++  });
++});
++
++
++describe("Conversion Engine fase 3 ÔÇö pantalla, ruta y navegaci├│n (guardas de fuente)", () => {
++  const src = (rel: string) => readFileSync(resolve(process.cwd(), rel), "utf8");
++
++  it("Anal├¡tica V1 no cambia", () => {
++    const page = src("src/app/admin/analitica/page.tsx");
++    assert.match(page, /getAnalyticsV1/);
++    assert.match(page, /growth\.analytics\.view/);
++    assert.doesNotMatch(page, /conversion-analytics/);
++    assert.doesNotMatch(page, /etapa/);
++  });
++
++  it("el panel comercial no importa el cliente de anal├¡tica", () => {
++    const path = resolve(process.cwd(), "src/app/admin/conversion/page.tsx");
++    if (!existsSync(path)) return;
++    assert.doesNotMatch(readFileSync(path, "utf8"), /ConversionAnaliticaClient/);
++  });
++
++  it("nav: ├¡tem nuevo despu├®s de nav-conversion con permiso exacto", () => {
++    const nav = src("src/lib/admin/nav-domains.ts");
++    const panelIdx = nav.indexOf('id: "nav-conversion"');
++    const itemIdx = nav.indexOf('id: "nav-conversion-analitica"');
++    assert.ok(panelIdx >= 0, "nav-conversion");
++    assert.ok(itemIdx > panelIdx, "nav-conversion-analitica despu├®s de nav-conversion");
++    const panelBlock = nav.slice(panelIdx, itemIdx);
++    assert.match(
++      panelBlock,
++      /excludePrefixes:\s*\[[^\]]*"\/admin\/conversion\/analitica"/
++    );
++    const item = nav.slice(itemIdx, nav.indexOf("},", itemIdx));
++    assert.match(item, /href: "\/admin\/conversion\/analitica"/);
++    assert.match(item, /label: "Anal├¡tica de conversi├│n"/);
++    assert.match(item, /requiredAnyPermission: \["growth\.sales\.view"\]/);
++    const groupIdx = nav.lastIndexOf('id: "conversion"', itemIdx);
++    const nextGroup = nav.indexOf('\n    id: "', itemIdx);
++    assert.ok(groupIdx >= 0 && groupIdx < itemIdx);
++    assert.ok(nextGroup > itemIdx);
++  });
++
++  it("la p├ígina nueva exige growth.sales.view y redirige al login", () => {
++    const page = src("src/app/admin/conversion/analitica/page.tsx");
++    assert.match(page, /growth\.sales\.view/);
++    assert.doesNotMatch(page, /growth\.analytics\.view/);
++    assert.match(page, /\/login\?next=\/admin\/conversion\/analitica/);
++    assert.match(page, /getConversionAnalytics/);
++  });
++
++  it("la ruta API usa growth.sales.view", () => {
++    const route = src("src/app/api/growth/conversion-analytics/route.ts");
++    assert.match(route, /requirePermission\("growth\.sales\.view"\)/);
++    assert.doesNotMatch(route, /growth\.analytics\.view/);
++    assert.match(route, /getConversionAnalytics/);
++  });
++
++  it("el cliente muestra copy contractual, una columna, sin motivos ni series de ejemplo", () => {
++    const client = src("src/components/admin/growth/ConversionAnaliticaClient.tsx");
++    assert.match(client, /CONVERSION_DENOMINATORS/);
++    assert.match(client, /CONVERSION_RATE_NOTE/);
++    assert.match(client, /CONVERSION_LOSS_REASONS_NOTE/);
++    assert.match(client, /Sin datos en el per├¡odo/);
++    assert.match(client, /data-conversion-analitica/);
++    assert.match(client, /flex flex-col|grid-cols-1/);
++    assert.match(client, /\/api\/growth\/conversion-analytics/);
++    assert.doesNotMatch(client, /lossReason/);
++    assert.doesNotMatch(client, /\/api\/growth\/analytics/);
++    assert.doesNotMatch(client, /sample|ejemplo|mock/i);
++  });
++
++  it("AnaliticaClient usa las piezas extra├¡das y conserva su fetch", () => {
++    const visual = src("src/components/admin/growth/analitica-visual.tsx");
++    for (const name of ["StorySection", "HeroMetric", "ProportionBars", "PeriodSelector"]) {
++      assert.match(visual, new RegExp(`export function ${name}`));
++    }
++    const client = src("src/components/admin/growth/AnaliticaClient.tsx");
++    assert.match(client, /analitica-visual/);
++    assert.match(client, /\/api\/growth\/analytics/);
++    assert.doesNotMatch(client, /function StorySection|function PeriodSelector/);
++  });
++});
+diff --git a/tests/baseline/growth-os-admin-shell-002.test.ts b/tests/baseline/growth-os-admin-shell-002.test.ts
+index f1f33b4..40fc175 100644
+--- a/tests/baseline/growth-os-admin-shell-002.test.ts
++++ b/tests/baseline/growth-os-admin-shell-002.test.ts
+@@ -13,10 +13,16 @@ function readSrc(rel: string): string {
+ describe("OT-GROWTH-UX-ADMIN-SHELL-002 ÔÇö shell productivo", () => {
+   it("navegaci├│n maestra: Core ┬À Crecer ┬À Sitio web / Equipo / Ajustes", () => {
+     const nav = readSrc("src/lib/admin/nav-domains.ts");
+-    assert.match(nav, /id: "ventas"/);
+-    assert.match(nav, /href: "\/admin\/ventas"/);
+-    assert.match(nav, /id: "mensajes"/);
+-    assert.match(nav, /id: "actividad"/);
++    assert.match(nav, /id: "conversion"/);
++    assert.match(nav, /label: "CRM ┬À Conversi├│n"/);
++    assert.match(nav, /id: "nav-ventas"[\s\S]*?href: "\/admin\/ventas"/);
++    assert.match(nav, /label: "Oportunidades"/);
++    assert.match(nav, /label: "Panel comercial"/);
++    assert.match(nav, /label: "Mi trabajo"/);
++    assert.match(nav, /id: "nav-embudos"[\s\S]*?href: "\/admin\/ventas\/embudos"/);
++    assert.match(nav, /id: "nav-mensajes"/);
++    assert.match(nav, /id: "nav-actividad"/);
++    assert.match(nav, /groupIds: \["dashboard", "conversion"\]/);
+     assert.match(nav, /id: "campanas"/);
+     assert.match(nav, /id: "automatizaciones"/);
+     assert.match(nav, /id: "analitica"/);
+

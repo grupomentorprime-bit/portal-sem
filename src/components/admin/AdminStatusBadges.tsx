@@ -5,15 +5,11 @@ interface AdminStatusBadgesProps {
 type StatusTone = "success" | "info" | "warning";
 
 export function AdminStatusBadges({ compatMode }: AdminStatusBadgesProps) {
+  if (!compatMode) return null;
+
   return (
-    <div className="admin-status-badges hidden items-center gap-1.5 xl:flex" aria-label="Estado del sistema">
-      <StatusPill label="Portal" tone="success" detail="Activo" />
-      <StatusPill
-        label="Panel"
-        tone={compatMode ? "warning" : "info"}
-        detail={compatMode ? "Abierto" : "Protegido"}
-      />
-      <StatusPill label="Accesos" tone="success" detail="Activo" />
+    <div className="admin-status-badges hidden items-center xl:flex" aria-label="Estado del sistema">
+      <StatusPill label="Panel" tone="warning" detail="Abierto" />
     </div>
   );
 }

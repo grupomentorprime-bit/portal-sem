@@ -84,7 +84,9 @@ describe("OT-GROWTH-SALES-001A — copy y proyección humana", () => {
     );
     assert.match(list, /GROWTH_NEXT_ACTION_SECTION_LABEL/);
     assert.match(read, /humanizeOriginDisplayLabel/);
-    assert.match(read, /growthOpportunityStatusLabel\(t\.toState\)/);
+    assert.match(read, /availableGrowthFunnelTransitions/);
+    assert.match(read, /stageLabel/);
+    assert.match(operate, /\{t\.label\}/);
   });
 
   it("no toca Core ni introduce segundo motor", () => {

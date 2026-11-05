@@ -52,6 +52,7 @@ export type GrowthAutomationSalesOpsPort = {
     summary: string;
     dueAt?: string;
     kind?: GrowthNextActionKind;
+    sourceKey?: string;
   }): Promise<
     | {
         ok: true;
@@ -70,6 +71,20 @@ export type GrowthAutomationSalesOpsPort = {
         ok: true;
         oportunidad: GrowthOportunidad;
         activity: GrowthActivity;
+      }
+    | { ok: false; reason: string }
+  >;
+
+  salesAssignOwner?(input: {
+    tenantId: string;
+    oportunidadId: string;
+    actor: GrowthAutomationSalesOpsActor;
+    userId: string;
+  }): Promise<
+    | {
+        ok: true;
+        oportunidad: GrowthOportunidad;
+        activity: GrowthActivity | null;
       }
     | { ok: false; reason: string }
   >;

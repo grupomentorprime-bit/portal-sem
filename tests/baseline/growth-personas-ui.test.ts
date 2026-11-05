@@ -338,7 +338,7 @@ describe("OT-GROWTH-CORE-007 — proyección de vista", () => {
 });
 
 describe("OT-GROWTH-CORE-007 — superficie /admin", () => {
-  it("rutas y nav de Personas existen en primer nivel", () => {
+  it("rutas y nav de Personas viven en CRM · Conversión", () => {
     const root = process.cwd();
     assert.ok(existsSync(resolve(root, "src/app/admin/personas/page.tsx")));
     assert.ok(existsSync(resolve(root, "src/app/admin/personas/[id]/page.tsx")));
@@ -347,11 +347,8 @@ describe("OT-GROWTH-CORE-007 — superficie /admin", () => {
     assert.match(nav, /href: "\/admin\/personas"/);
     assert.match(nav, /label: "Personas"/);
     assert.match(nav, /id: "growth-personas"/);
-    assert.match(nav, /id: "personas"/);
-    assert.match(
-      nav,
-      /groupIds: \["dashboard", "personas", "ventas", "mensajes", "actividad"\]/
-    );
+    assert.match(nav, /id: "conversion"/);
+    assert.match(nav, /groupIds: \["dashboard", "conversion"\]/);
     assert.doesNotMatch(
       nav,
       /id: "formularios"[\s\S]*?id: "growth-personas"/

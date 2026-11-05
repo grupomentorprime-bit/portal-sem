@@ -3,6 +3,7 @@
  */
 
 import type { Db } from "mongodb";
+import { oncePerDatabase } from "@/core/growth/once-per-db";
 import {
   GROWTH_AUTOMATIONS_COLLECTION,
   GROWTH_AUTOMATION_VERSIONS_COLLECTION,
@@ -38,7 +39,7 @@ async function ensureIndex(
   }
 }
 
-export async function ensureGrowthAutomationIndexes(db: Db): Promise<{
+async function ensureGrowthAutomationIndexesNow(db: Db): Promise<{
   results: Array<{ name: string; result: EnsureIndexResult }>;
 }> {
   const automations = db.collection(GROWTH_AUTOMATIONS_COLLECTION);
@@ -95,14 +96,19 @@ export async function ensureGrowthAutomationIndexes(db: Db): Promise<{
     },
   ];
 
-  const results: Array<{ name: string; result: EnsureIndexResult }> = [];
-  for (const spec of specs) {
-    const result = await ensureIndex(spec.collection, spec.keys, {
+  const results = await Promise.all(
+    specs.map(async (spec) => ({
       name: spec.name,
-      unique: spec.unique,
-      partialFilterExpression: spec.partialFilterExpression,
-    });
-    results.push({ name: spec.name, result });
-  }
+      result: await ensureIndex(spec.collection, spec.keys, {
+        name: spec.name,
+        unique: spec.unique,
+        partialFilterExpression: spec.partialFilterExpression,
+      }),
+    }))
+  );
   return { results };
+}
+
+export function ensureGrowthAutomationIndexes(db: Db) {
+  return oncePerDatabase(db, "growth-automations", () => ensureGrowthAutomationIndexesNow(db));
 }

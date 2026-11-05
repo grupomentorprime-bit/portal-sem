@@ -54,11 +54,13 @@ export function createMemoryGrowthOpportunityStore(): GrowthOpportunityStore & {
       typeKey,
       subjectType,
       subjectId,
+      funnelKey,
     }) {
       const want = subjectKey(subjectType, subjectId);
       for (const o of oportunidades.values()) {
         if (o.tenantId !== tenantId || o.personaId !== personaId) continue;
         if (o.typeKey !== typeKey) continue;
+        if (funnelKey && (o.funnelKey || "default") !== funnelKey) continue;
         if (isGrowthOpportunityFinalStatus(o.status)) continue;
         if (subjectKey(o.subjectType, o.subjectId) !== want) continue;
         return structuredClone(o);
@@ -93,6 +95,13 @@ export function createMemoryGrowthOpportunityStore(): GrowthOpportunityStore & {
         structuredClone(oportunidad)
       );
       return structuredClone(oportunidad);
+    },
+
+    async touchOpportunityActivity(tenantId, oportunidadId, occurredAt) {
+      const doc = oportunidades.get(key(tenantId, oportunidadId));
+      if (!doc) return;
+      if (doc.lastActivityAt && doc.lastActivityAt >= occurredAt) return;
+      doc.lastActivityAt = occurredAt;
     },
 
     async getSpaceConfig(tenantId) {

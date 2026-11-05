@@ -1,13 +1,35 @@
 import "server-only";
 
+import type { Db } from "mongodb";
 import { getDatabase } from "@/lib/mongodb";
 import type { DeadLetterEntry, DomainEvent, ScheduledEvent, StoredEvent } from "@/types/events";
+
+const eventIndexesReady = new Map<string, Promise<void>>();
+
+/** `core_events` se busca por `id`, no por `_id`. Sin este índice cada cierre recorre la colección. */
+function ensureCoreEventIndexes(db: Db): Promise<void> {
+  const key = db.databaseName || "default";
+  let pending = eventIndexesReady.get(key);
+  if (!pending) {
+    pending = db
+      .collection<StoredEvent>("core_events")
+      .createIndex({ id: 1 }, { unique: true, name: "id_unique" })
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        if (eventIndexesReady.get(key) === pending) eventIndexesReady.delete(key);
+        throw error;
+      });
+    eventIndexesReady.set(key, pending);
+  }
+  return pending;
+}
 
 export async function persistEvent(
   event: DomainEvent,
   extra?: Partial<StoredEvent>
 ): Promise<StoredEvent> {
   const db = await getDatabase();
+  await ensureCoreEventIndexes(db);
   const stored: StoredEvent = {
     ...event,
     status: extra?.status ?? "pending",
@@ -26,6 +48,7 @@ export async function updateEventStatus(
   update: Partial<StoredEvent>
 ): Promise<void> {
   const db = await getDatabase();
+  await ensureCoreEventIndexes(db);
   await db.collection<StoredEvent>("core_events").updateOne(
     { id: eventId },
     { $set: update }
@@ -34,6 +57,7 @@ export async function updateEventStatus(
 
 export async function getEventById(eventId: string): Promise<StoredEvent | null> {
   const db = await getDatabase();
+  await ensureCoreEventIndexes(db);
   return db.collection<StoredEvent>("core_events").findOne({ id: eventId });
 }
 

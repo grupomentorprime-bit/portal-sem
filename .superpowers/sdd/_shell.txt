@@ -1,0 +1,72 @@
+﻿TAP version 13
+# Subtest: CRM ┬À Conversi├│n ÔÇö navegaci├│n
+    # Subtest: Inicio queda fuera del grupo y Crecer conserva sus tres m├│dulos
+    ok 1 - Inicio queda fuera del grupo y Crecer conserva sus tres m├│dulos
+      ---
+      duration_ms: 2.1473
+      type: 'test'
+      ...
+    # Subtest: un solo enlace autorizado conserva el nombre del m├│dulo
+    ok 2 - un solo enlace autorizado conserva el nombre del m├│dulo
+      ---
+      duration_ms: 0.4969
+      type: 'test'
+      ...
+    # Subtest: cualquier secci├│n de CRM activa el mismo grupo
+    ok 3 - cualquier secci├│n de CRM activa el mismo grupo
+      ---
+      duration_ms: 0.7656
+      type: 'test'
+      ...
+    1..3
+ok 1 - CRM ┬À Conversi├│n ÔÇö navegaci├│n
+  ---
+  duration_ms: 4.7766
+  type: 'suite'
+  ...
+# Subtest: OT-GROWTH-UX-ADMIN-SHELL-002 ÔÇö shell productivo
+    # Subtest: navegaci├│n maestra: Core ┬À Crecer ┬À Sitio web / Equipo / Ajustes
+    ok 1 - navegaci├│n maestra: Core ┬À Crecer ┬À Sitio web / Equipo / Ajustes
+      ---
+      duration_ms: 1.624
+      type: 'test'
+      ...
+    # Subtest: Sitio web / Instituci├│n / Ajustes conservan rutas activas (CMS legacy retirado)
+    ok 2 - Sitio web / Instituci├│n / Ajustes conservan rutas activas (CMS legacy retirado)
+      ---
+      duration_ms: 0.7542
+      type: 'test'
+      ...
+    # Subtest: nav sin hardcode de tenant (oferta acad├®mica CMS ya retirada)
+    ok 3 - nav sin hardcode de tenant (oferta acad├®mica CMS ya retirada)
+      ---
+      duration_ms: 0.5439
+      type: 'test'
+      ...
+    # Subtest: Inicio productivo reutiliza GrowthOsAdminHomeMaster
+    ok 4 - Inicio productivo reutiliza GrowthOsAdminHomeMaster
+      ---
+      duration_ms: 0.3538
+      type: 'test'
+      ...
+    # Subtest: sidebar tinta + layout full-height; topbar Personas
+    ok 5 - sidebar tinta + layout full-height; topbar Personas
+      ---
+      duration_ms: 1.1545
+      type: 'test'
+      ...
+    1..5
+ok 2 - OT-GROWTH-UX-ADMIN-SHELL-002 ÔÇö shell productivo
+  ---
+  duration_ms: 5.8977
+  type: 'suite'
+  ...
+1..2
+# tests 8
+# suites 2
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 436.3771

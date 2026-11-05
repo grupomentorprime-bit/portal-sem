@@ -8,11 +8,12 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variants: Record<CardVariant, string> = {
-  default: "border border-border bg-surface",
-  outlined: "border-2 border-border bg-surface",
-  elevated: "border border-border bg-surface shadow-[var(--shadow-md)]",
+  default:
+    "border border-[var(--gray-200)] bg-white shadow-[var(--shadow-sm)]",
+  outlined: "border-2 border-[var(--gray-300)] bg-white",
+  elevated: "border border-[var(--gray-200)] bg-white shadow-[var(--shadow-md)]",
   interactive:
-    "border border-border bg-surface shadow-[var(--shadow-sm)] hover-lift cursor-pointer hover:shadow-[var(--shadow-md)]",
+    "border border-[var(--gray-200)] bg-white shadow-[var(--shadow-sm)] hover-lift cursor-pointer hover:border-[var(--growth-os-primary)] hover:shadow-[var(--shadow-md)]",
 };
 
 export function Card({
@@ -23,7 +24,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-lg)] p-6 transition-[box-shadow,transform] duration-[var(--transition-fast)]",
+        "rounded-[16px] p-6 transition-[box-shadow,transform,border-color] duration-[var(--transition-fast)]",
         variants[variant],
         className
       )}
@@ -45,7 +46,7 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-lg font-semibold text-foreground", className)}
+      className={cn("text-lg font-semibold tracking-tight text-foreground", className)}
       {...props}
     />
   );

@@ -224,16 +224,23 @@ export function PlatformSpaceDomainPanel({
     >
       {layout === "both" ? (
         <div>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-[13px] font-medium text-[var(--gray-900)]">
               Dominio propio
             </p>
-            {customIsPrimary ? (
-              <span className="text-[12px] text-[var(--gray-500)]">Principal</span>
-            ) : null}
+            {customDomain ? (
+              <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-success)_10%,white)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success)]">
+                {customIsPrimary ? "Conectado · Principal" : "Conectado"}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full border border-[var(--color-border-default)] bg-[var(--color-background-default)] px-2 py-0.5 text-[11px] font-semibold text-[var(--gray-500)]">
+                Opcional · No conectado
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-[12px] text-[var(--gray-500)]">
-            La dirección del cliente. El subdominio sigue activo.
+            Solo si el cliente tiene un dominio suyo (ej. empresa.cl). El subdominio de
+            arriba ya sirve; no hace falta llenar esto.
           </p>
         </div>
       ) : subdomain ? null : (
@@ -385,12 +392,29 @@ export function PlatformSpaceDomainPanel({
 
   if (layout !== "both") return form;
 
+  const subdomainReady = shownHosts.some((item) => !isDevHost(item.host));
+
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-[13px] font-medium text-[var(--gray-900)]">Subdominio</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[13px] font-medium text-[var(--gray-900)]">Subdominio</p>
+          {shownHosts.length > 0 ? (
+            <span
+              className={
+                subdomainReady
+                  ? "inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-success)_40%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-success)_10%,white)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success)]"
+                  : "inline-flex items-center rounded-full border border-[var(--color-border-default)] bg-[var(--color-background-default)] px-2 py-0.5 text-[11px] font-semibold text-[var(--gray-500)]"
+              }
+            >
+              {subdomainReady ? "Activo" : "Solo local"}
+            </span>
+          ) : null}
+        </div>
         <p className="mt-0.5 text-[12px] text-[var(--gray-500)]">
-          Siempre disponible, sin configurar DNS.
+          {subdomainReady
+            ? "Listo. Las personas pueden llegar por esta dirección sin configurar DNS."
+            : "Siempre disponible en este equipo, sin configurar DNS."}
         </p>
         {shownHosts.length === 0 ? (
           <p className="mt-2 text-[13px] text-[var(--gray-500)]">

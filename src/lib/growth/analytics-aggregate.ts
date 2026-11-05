@@ -3,6 +3,7 @@
  * Sin I/O. Contrato congelado CONTRACT-002 §15.
  */
 
+import { isPipelineFollowUp } from "@/core/growth/funnel-stages";
 import type { GrowthOrigin } from "@/core/growth/types";
 import type { GrowthConversationChannel } from "@/core/growth/messaging";
 import {
@@ -84,6 +85,7 @@ export type AnalyticsOportunidadInput = {
   openedAt: string;
   closedAt?: string;
   origin: GrowthOrigin;
+  funnelKey?: string;
 };
 
 export type AnalyticsCampaignInput = {
@@ -217,6 +219,7 @@ export function buildAnalyticsV1Response(input: {
   messages: AnalyticsMessageInput[];
   /** Todos los mensajes del tenant (snapshot sin respuesta). */
   allTenantMessages: AnalyticsMessageInput[];
+  initialStageByFunnel?: Record<string, string>;
   formNameById?: Map<string, string>;
 }): AnalyticsV1Response {
   const {
@@ -229,6 +232,7 @@ export function buildAnalyticsV1Response(input: {
     messages,
     allTenantMessages,
     formNameById,
+    initialStageByFunnel,
   } = input;
   const { start, end } = period;
 
@@ -256,7 +260,9 @@ export function buildAnalyticsV1Response(input: {
   );
 
   const enSeguimientoSnapshot = oportunidades.filter(
-    (o) => o.tenantId === tenantId && o.status === "active"
+    (o) =>
+      o.tenantId === tenantId &&
+      isPipelineFollowUp(o.status, o.funnelKey, initialStageByFunnel)
   ).length;
 
   const closuresWon = oportunidades.filter(
@@ -355,7 +361,9 @@ export function buildAnalyticsV1Response(input: {
     }
     row.personaIds.add(o.personaId);
     row.oportunidades += 1;
-    if (o.status === "active") row.enSeguimiento += 1;
+    if (isPipelineFollowUp(o.status, o.funnelKey, initialStageByFunnel)) {
+      row.enSeguimiento += 1;
+    }
     if (o.status === "won") row.ganadas += 1;
     if (o.status === "lost") row.perdidas += 1;
   }

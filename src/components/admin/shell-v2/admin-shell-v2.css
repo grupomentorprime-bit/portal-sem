@@ -1,31 +1,41 @@
 /**
  * Shell Administrativo V2 — tokens de layout
- * OT-UX-IMPLEMENTACION-001 Fase 1 · OT-GROWTH-UX-ADMIN-SHELL-002 (sidebar claro)
+ * OT-UX-IMPLEMENTACION-001 Fase 1 · diseño Tinta (sidebar violeta oscuro)
  */
 
 .admin-shell-v2 {
   --admin-topbar-h: 3.5rem;
   --admin-sidebar-w: 15.5rem;
   --admin-sidebar-collapsed-w: 4.5rem;
+  /* El cromo (sidebar) usa --growth-os-*. El área de trabajo hereda --brand-* del Espacio activo. */
 }
 
 .admin-shell-v2-topbar {
   height: var(--admin-topbar-h);
 }
 
-/* Pills de estado del top bar — contraste sobre fondo blanco */
+/* Estado del sistema: un solo grupo, sin cajas sueltas */
+.admin-status-badges {
+  gap: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: white;
+  box-shadow: inset 0 0 0 1px var(--gray-200);
+}
+
 .admin-status-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  border: 1px solid;
-  border-radius: 9999px;
-  padding: 0.3125rem 0.625rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--growth-os-primary) 7%, transparent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .admin-status-pill__dot {
@@ -40,53 +50,61 @@
   opacity: 0.88;
 }
 
-.admin-status-pill--success {
-  background: var(--admin-status-success-bg);
-  border-color: var(--admin-status-success-border);
-  color: var(--admin-status-success-fg);
+.admin-status-pill--success,
+.admin-status-pill--info,
+.admin-status-pill--warning {
+  color: var(--gray-700);
 }
 
 .admin-status-pill--success .admin-status-pill__dot {
   background: var(--color-success);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 30%, white);
-}
-
-.admin-status-pill--info {
-  background: var(--admin-status-info-bg);
-  border-color: var(--admin-status-info-border);
-  color: var(--admin-status-info-fg);
 }
 
 .admin-status-pill--info .admin-status-pill__dot {
   background: var(--growth-os-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--growth-os-primary) 18%, white);
-}
-
-.admin-status-pill--warning {
-  background: var(--admin-status-warning-bg);
-  border-color: var(--admin-status-warning-border);
-  color: var(--admin-status-warning-fg);
 }
 
 .admin-status-pill--warning .admin-status-pill__dot {
   background: var(--color-warning);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-warning) 28%, white);
 }
 
-/* Sidebar claro — patrón maestro Growth OS */
+/* Sidebar Tinta — navegación sobre tinta, trabajo sobre lienzo claro */
+.admin-shell-v2-sidebar,
+.admin-shell-v2-drawer {
+  background: var(--growth-os-ink);
+  color: var(--growth-os-on-ink);
+  --sidebar-fg: var(--growth-os-on-ink);
+  --sidebar-fg-muted: var(--growth-os-on-ink-muted);
+  --sidebar-hover: color-mix(in srgb, white 8%, transparent);
+  --sidebar-active-bg: var(--growth-os-primary);
+  --sidebar-active-fg: white;
+  --sidebar-label: var(--growth-os-on-ink-label);
+  --sidebar-border: color-mix(in srgb, white 14%, transparent);
+  --sidebar-group-bg: color-mix(in srgb, white 6%, transparent);
+  --gray-50: color-mix(in srgb, white 8%, transparent);
+  --gray-100: var(--growth-os-primary);
+  --gray-400: var(--growth-os-on-ink-muted);
+  --gray-500: var(--growth-os-on-ink-muted);
+  --gray-700: var(--growth-os-on-ink);
+  --gray-800: var(--growth-os-on-ink);
+  --gray-900: white;
+  --color-border-default: color-mix(in srgb, white 14%, transparent);
+  --text: var(--growth-os-on-ink);
+  --color-foreground: var(--growth-os-on-ink);
+  --text-muted: var(--growth-os-on-ink-muted);
+  --color-muted: var(--growth-os-on-ink-muted);
+  --border: color-mix(in srgb, white 14%, transparent);
+  --color-border: color-mix(in srgb, white 14%, transparent);
+  --background: var(--growth-os-ink);
+  --color-background: var(--growth-os-ink);
+}
+
 .admin-shell-v2-sidebar {
   position: sticky;
   top: 0;
   height: 100vh;
   flex-shrink: 0;
-  border-right: 1px solid var(--color-border-default);
-  background: var(--color-surface-default);
-  --sidebar-fg: var(--gray-800);
-  --sidebar-fg-muted: var(--gray-500);
-  --sidebar-hover: var(--gray-50);
-  --sidebar-active: var(--gray-100);
-  --sidebar-border: var(--color-border-default);
-  --sidebar-group-bg: var(--gray-50);
+  border-right: 1px solid transparent;
   transition: width 0.2s ease;
   z-index: 30;
 }
@@ -125,6 +143,15 @@
 
 .admin-nav-flyout {
   animation: admin-nav-flyout-in 0.15s ease-out;
+  background: white;
+  color: var(--growth-os-ink);
+  --sidebar-fg: var(--growth-os-ink);
+  --sidebar-fg-muted: var(--growth-os-muted);
+  --sidebar-hover: color-mix(in srgb, var(--growth-os-primary) 10%, white);
+  --text: var(--growth-os-ink);
+  --color-foreground: var(--growth-os-ink);
+  --text-muted: var(--growth-os-muted);
+  --color-muted: var(--growth-os-muted);
 }
 
 @keyframes admin-nav-flyout-in {
@@ -152,7 +179,8 @@
 }
 
 .admin-nav-sub-link--active {
-  background: color-mix(in srgb, var(--growth-os-primary) 8%, white);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg);
 }
 
 .admin-nav-group--expanded .admin-nav-group__panel {
@@ -170,4 +198,22 @@
 
 .admin-nav-zone-label:first-child {
   padding-top: 0.125rem;
+}
+
+/* Campos del área de trabajo: mismo acabado en todo el admin */
+.admin-shell-v2 .admin-shell-v2-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.border-0),
+.admin-shell-v2 .admin-shell-v2-main textarea,
+.admin-shell-v2 .admin-shell-v2-main select {
+  border: 1px solid var(--gray-300);
+  border-radius: 12px;
+  background-color: white;
+  color: var(--gray-900);
+}
+
+.admin-shell-v2 .admin-shell-v2-main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.border-0):focus,
+.admin-shell-v2 .admin-shell-v2-main textarea:focus,
+.admin-shell-v2 .admin-shell-v2-main select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, transparent);
+  outline: none;
 }

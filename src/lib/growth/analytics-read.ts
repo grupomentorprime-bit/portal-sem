@@ -28,6 +28,7 @@ import {
   buildAnalyticsV1Response,
   type AnalyticsV1Response,
 } from "./analytics-aggregate";
+import { liveGrowthFunnelInitialKeys } from "./funnels-live";
 import {
   resolveAnalyticsPeriod,
   type ResolveAnalyticsPeriodInput,
@@ -154,6 +155,7 @@ export async function getAnalyticsV1(
     if (o.origin?.formId?.trim()) formIds.push(o.origin.formId);
   }
   const formNameById = await resolveFormNames(tenantId, formIds);
+  const initialStageByFunnel = await liveGrowthFunnelInitialKeys(tenantId);
 
   const data = buildAnalyticsV1Response({
     tenantId,
@@ -165,6 +167,7 @@ export async function getAnalyticsV1(
     messages: messagesPeriod,
     allTenantMessages: allMessages as GrowthMessage[],
     formNameById,
+    initialStageByFunnel,
   });
 
   return { ok: true, data };

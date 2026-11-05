@@ -114,7 +114,7 @@ function SitePreviewLink() {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-background-muted",
+        "inline-flex items-center gap-1.5 rounded-[12px] border border-[color-mix(in_srgb,var(--color-primary)_35%,var(--gray-200))] bg-white px-3 py-2 text-sm font-semibold text-primary transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]",
         focusRing
       )}
     >
@@ -132,7 +132,7 @@ function SitePublishControl({
   onChange: (published: boolean) => void;
 }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-border bg-surface px-3 py-1.5">
+    <div className="flex items-center gap-2.5 rounded-full bg-white px-1.5 py-1 shadow-[var(--shadow-sm)] ring-1 ring-[var(--gray-200)]">
       <Badge variant={published ? "success" : "warning"}>
         {published ? "En línea" : "Por comenzar"}
       </Badge>

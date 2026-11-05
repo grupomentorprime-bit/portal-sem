@@ -31,6 +31,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       dueAt: body.dueAt,
       kind: body.kind,
       assigneeUserId: body.assigneeUserId,
+      sourceKey: "operator",
     });
 
     if (!result.ok) {

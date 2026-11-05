@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { hideAsesorOnDiagnostico } from "../../src/components/sites/cumple/asesor-chat";
 import { cumpleAsesorAllowed } from "../../src/sites/cumple/access";
 import { CUMPLE_FORM_ID, CUMPLE_TENANT_ID, cumpleSite } from "../../src/sites/cumple/site";
 import { fichasPara } from "../../src/sites/cumple/norma";
@@ -37,8 +38,11 @@ describe("sitio Mentor Cumple", () => {
     assert.equal(form?.destination, "information_request");
     assert.equal(form?.fields.find((field) => field.name === "email")?.validation?.required, true);
     assert.equal(form?.fields.find((field) => field.name === "fullName")?.validation?.required, true);
-    assert.equal(form?.fields.some((field) => field.name === "company"), true);
-    assert.equal(form?.fields.some((field) => field.name === "organizationType"), true);
+    assert.equal(form?.fields.find((field) => field.name === "phone")?.type, "phone");
+    assert.equal(form?.fields.find((field) => field.name === "phone")?.validation?.required, true);
+    assert.equal(form?.fields.find((field) => field.name === "company")?.validation?.required, true);
+    assert.equal(form?.fields.find((field) => field.name === "diagnosticoResumen")?.validation?.required, true);
+    assert.equal(form?.fields.some((field) => field.name === "organizationType"), false);
   });
 
   it("el asesor solo responde en el espacio cumple", () => {
@@ -72,5 +76,15 @@ describe("sitio Mentor Cumple", () => {
     assert.match(footer, /contact\.email/);
     assert.match(form, /CUMPLE_FORM_ID/);
     assert.match(form, /\/api\/experience\/forms\//);
+    assert.match(form, /name="phone"/);
+    assert.match(form, /Ver mi diagnóstico/);
+    assert.match(form, /diagnosticoResumen/);
+  });
+
+  it("oculta el asistente solo en el diagnóstico", () => {
+    assert.equal(hideAsesorOnDiagnostico("/evaluar"), true);
+    assert.equal(hideAsesorOnDiagnostico("/evaluar/"), true);
+    assert.equal(hideAsesorOnDiagnostico("/"), false);
+    assert.equal(hideAsesorOnDiagnostico("/contacto"), false);
   });
 });

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { resolveSeoImageUrls } from "@/core/media";
+import { assetForTenant, faviconForTenant } from "@/core/branding/foreign-assets";
 import {
   PLATFORM_DISPLAY_NAME,
   seoDescriptionFromConfig,
@@ -14,9 +15,11 @@ export function resolvePageTitle(pageName: string, config: SiteConfig): string {
 
 export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Metadata> {
   if (!config) {
+    const icon = faviconForTenant(null, "");
     return {
       title: PLATFORM_DISPLAY_NAME,
       description: "Portal institucional",
+      icons: { icon, apple: icon },
     };
   }
 
@@ -25,9 +28,15 @@ export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Me
   const description = seoDescriptionFromConfig(config);
   const tenant = institution.tenant;
 
-  const images = tenant
+  const resolvedImages = tenant
     ? await resolveSeoImageUrls(tenant, seo, branding)
-    : { ogImage: seo.ogImage ?? branding.heroImage ?? branding.logo };
+    : {
+        ogImage: seo.ogImage ?? branding.heroImage ?? branding.logo,
+        twitterImage: undefined as string | undefined,
+      };
+  const ogImage = assetForTenant(tenant, resolvedImages.ogImage) || undefined;
+  const twitterImage =
+    assetForTenant(tenant, resolvedImages.twitterImage) || ogImage;
 
   const favicon =
     tenant && branding.faviconMediaId
@@ -37,7 +46,7 @@ export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Me
         })
       : Promise.resolve(branding.favicon || undefined);
 
-  const faviconUrl = (await favicon) || undefined;
+  const faviconUrl = faviconForTenant(tenant, (await favicon) || branding.favicon);
 
   return {
     title,
@@ -51,15 +60,15 @@ export async function resolveSiteMetadata(config: SiteConfig | null): Promise<Me
       title,
       description,
       siteName: institution.name || PLATFORM_DISPLAY_NAME,
-      images: images.ogImage
-        ? [{ url: images.ogImage, alt: institution.name || PLATFORM_DISPLAY_NAME }]
+      images: ogImage
+        ? [{ url: ogImage, alt: institution.name || PLATFORM_DISPLAY_NAME }]
         : undefined,
       locale: "es_CL",
       type: "website",
     },
-    twitter: images.twitterImage
-      ? { card: "summary_large_image", images: [images.twitterImage] }
+    twitter: twitterImage
+      ? { card: "summary_large_image", images: [twitterImage] }
       : undefined,
-    icons: faviconUrl ? { icon: faviconUrl } : undefined,
+    icons: { icon: faviconUrl, apple: faviconUrl },
   };
 }

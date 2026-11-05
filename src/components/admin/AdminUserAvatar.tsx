@@ -38,7 +38,7 @@ export function AdminUserAvatar({
         alt={name}
         width={pixels}
         height={pixels}
-        className={cn("rounded-full object-cover ring-2 ring-border", className)}
+        className={cn("rounded-full object-cover ring-2 ring-white", className)}
         style={{ width: pixels, height: pixels }}
       />
     );
@@ -47,8 +47,8 @@ export function AdminUserAvatar({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-border",
-        "bg-gradient-to-br from-primary/15 via-background to-secondary/20 text-xs font-semibold text-primary",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full",
+        "bg-[var(--growth-os-primary)] text-[11px] font-semibold text-white",
         className
       )}
       style={{ width: pixels, height: pixels }}

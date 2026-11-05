@@ -24,6 +24,8 @@ import { migration023GrowthTeamMembershipUnique } from "@/core/migrations/023-gr
 import { migration024GrowthStartupNextAction } from "@/core/migrations/024-growth-startup-next-action";
 import { migration025PlatformDefaultDomains } from "@/core/migrations/025-platform-default-domains";
 import { migration026PlatformWildcardSubdomains } from "@/core/migrations/026-platform-wildcard-subdomains";
+import { migration027StripForeignSemAssets } from "@/core/migrations/027-strip-foreign-sem-assets";
+import { migration028GrowthFunnels } from "@/core/migrations/028-growth-funnels";
 import type { MigrationDefinition } from "@/core/migrations/types";
 
 /** Registro ordenado de migraciones — añadir nuevas al final */
@@ -54,6 +56,8 @@ export const MIGRATIONS: MigrationDefinition[] = [
   migration024GrowthStartupNextAction,
   migration025PlatformDefaultDomains,
   migration026PlatformWildcardSubdomains,
+  migration027StripForeignSemAssets,
+  migration028GrowthFunnels,
 ];
 
 export function getMigrationById(id: string): MigrationDefinition | undefined {

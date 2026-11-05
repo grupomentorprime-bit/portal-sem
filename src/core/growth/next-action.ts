@@ -23,6 +23,7 @@ export interface SetGrowthNextActionInput {
   /** Responsable (ADR assigneeUserId; OT brief: assigneeId). */
   assigneeUserId?: string;
   kind?: GrowthNextActionKind;
+  sourceKey?: string;
   now?: string;
   actorUserId?: string;
   eventBus?: GrowthEventBusPort;
@@ -104,6 +105,7 @@ export async function setGrowthNextAction(
     ...(input.assigneeUserId?.trim()
       ? { assigneeUserId: input.assigneeUserId.trim() }
       : {}),
+    ...(input.sourceKey?.trim() ? { sourceKey: input.sourceKey.trim() } : {}),
   };
 
   const updated: GrowthOportunidad = {

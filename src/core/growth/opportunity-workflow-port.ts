@@ -17,6 +17,18 @@ export interface GrowthOpportunityWorkflowStartResult {
   definitionKey: string;
 }
 
+export interface GrowthOpportunityInstalledDefinition {
+  key: string;
+  initialState?: string;
+  states?: Array<{ key: string; isInitial?: boolean }>;
+  transitions: Array<{
+    id: string;
+    fromState: string;
+    toState: string;
+    label?: string;
+  }>;
+}
+
 export interface GrowthOpportunityWorkflowTransitionResult {
   instanceId: string;
   fromState: string;
@@ -28,6 +40,7 @@ export interface GrowthOpportunityWorkflowPort {
   start(input: {
     tenantId: string;
     entityId: string;
+    definitionKey?: string;
     metadata?: Record<string, unknown>;
   }): Promise<GrowthOpportunityWorkflowStartResult>;
 
@@ -58,29 +71,54 @@ export function createMemoryGrowthOpportunityWorkflow(): GrowthOpportunityWorkfl
       tenantId: string;
       entityId: string;
       currentState: string;
+      definitionKey: string;
       status: "active" | "completed";
       history: Array<{ fromState: string; toState: string; at: string }>;
     }
   >;
+  installDefinition(definition: GrowthOpportunityInstalledDefinition): void;
 } {
   const template = GROWTH_OPPORTUNITY_WORKFLOW_TEMPLATE;
-  const initial =
+  const platformInitial =
     template.states.find((s) => s.isInitial)?.key ?? template.states[0].key;
+  const installed = new Map<string, GrowthOpportunityInstalledDefinition>();
   const instances = new Map<
     string,
     {
       tenantId: string;
       entityId: string;
       currentState: string;
+      definitionKey: string;
       status: "active" | "completed";
       history: Array<{ fromState: string; toState: string; at: string }>;
     }
   >();
 
+  function transitionsFor(definitionKey: string) {
+    return (
+      installed.get(definitionKey)?.transitions ?? template.transitions
+    );
+  }
+
+  function initialFor(definitionKey: string) {
+    const definition = installed.get(definitionKey);
+    if (!definition) return platformInitial;
+    return (
+      definition.initialState ??
+      definition.states?.find((state) => state.isInitial)?.key ??
+      platformInitial
+    );
+  }
+
   return {
     instances,
 
-    async start({ tenantId, entityId }) {
+    installDefinition(definition) {
+      installed.set(definition.key, definition);
+    },
+
+    async start({ tenantId, entityId, definitionKey }) {
+      const key = definitionKey?.trim() || GROWTH_OPPORTUNITY_DEFINITION_KEY;
       for (const [id, inst] of instances) {
         if (
           inst.tenantId === tenantId &&
@@ -90,22 +128,24 @@ export function createMemoryGrowthOpportunityWorkflow(): GrowthOpportunityWorkfl
           return {
             instanceId: id,
             currentState: inst.currentState,
-            definitionKey: GROWTH_OPPORTUNITY_DEFINITION_KEY,
+            definitionKey: inst.definitionKey,
           };
         }
       }
       const instanceId = newInstanceId();
+      const currentState = initialFor(key);
       instances.set(instanceId, {
         tenantId,
         entityId,
-        currentState: initial,
+        currentState,
+        definitionKey: key,
         status: "active",
-        history: [{ fromState: initial, toState: initial, at: new Date().toISOString() }],
+        history: [{ fromState: currentState, toState: currentState, at: new Date().toISOString() }],
       });
       return {
         instanceId,
-        currentState: initial,
-        definitionKey: GROWTH_OPPORTUNITY_DEFINITION_KEY,
+        currentState,
+        definitionKey: key,
       };
     },
 
@@ -123,12 +163,13 @@ export function createMemoryGrowthOpportunityWorkflow(): GrowthOpportunityWorkfl
         throw new Error("El workflow no está activo.");
       }
 
+      const transitions = transitionsFor(inst.definitionKey);
       const transitionDef =
         (transitionId
-          ? template.transitions.find((t) => t.id === transitionId)
+          ? transitions.find((t) => t.id === transitionId)
           : undefined) ??
         (toState
-          ? template.transitions.find(
+          ? transitions.find(
               (t) => t.fromState === inst.currentState && t.toState === toState
             )
           : undefined);

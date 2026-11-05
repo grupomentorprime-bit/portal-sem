@@ -73,6 +73,8 @@ describe("eliminar Espacio — contrato", () => {
     assert.equal(isProtectedPlatformSpace(SEM_TENANT_ID), true);
     assert.equal(isProtectedPlatformSpace(ADL_TENANT_ID), true);
     assert.equal(isProtectedPlatformSpace("fundacion-mueve"), false);
+    assert.equal(isProtectedPlatformSpace(""), false);
+    assert.equal(isProtectedPlatformSpace(undefined as unknown as string), false);
 
     const route = readSrc("src/app/api/platform/spaces/[tenantId]/route.ts");
     assert.match(route, /export async function DELETE/);

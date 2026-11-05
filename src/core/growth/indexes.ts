@@ -4,6 +4,8 @@
  */
 
 import type { Db } from "mongodb";
+import { oncePerDatabase } from "./once-per-db";
+import { GROWTH_FUNNELS_COLLECTION } from "./funnel-types";
 import {
   GROWTH_ACTIVIDADES_COLLECTION,
   GROWTH_OPORTUNIDADES_COLLECTION,
@@ -44,7 +46,7 @@ async function ensureIndex(
   }
 }
 
-export async function ensureGrowthPersonaIndexes(db: Db): Promise<{
+async function ensureGrowthPersonaIndexesNow(db: Db): Promise<{
   results: Array<{ name: string; result: EnsureIndexResult }>;
 }> {
   const personas = db.collection(GROWTH_PERSONAS_COLLECTION);
@@ -92,21 +94,22 @@ export async function ensureGrowthPersonaIndexes(db: Db): Promise<{
     },
   ];
 
-  const results: Array<{ name: string; result: EnsureIndexResult }> = [];
-  for (const spec of specs) {
-    const result = await ensureIndex(spec.collection, spec.keys, {
+  const results = await Promise.all(
+    specs.map(async (spec) => ({
       name: spec.name,
-      unique: spec.unique,
-      sparse: spec.sparse,
-    });
-    results.push({ name: spec.name, result });
-  }
+      result: await ensureIndex(spec.collection, spec.keys, {
+        name: spec.name,
+        unique: spec.unique,
+        sparse: spec.sparse,
+      }),
+    }))
+  );
 
   return { results };
 }
 
 /** Índices OT-GROWTH-CORE-003 — oportunidades + space_config (+ actividades por oportunidad). */
-export async function ensureGrowthOpportunityIndexes(db: Db): Promise<{
+async function ensureGrowthOpportunityIndexesNow(db: Db): Promise<{
   results: Array<{ name: string; result: EnsureIndexResult }>;
 }> {
   const oportunidades = db.collection(GROWTH_OPORTUNIDADES_COLLECTION);
@@ -163,6 +166,16 @@ export async function ensureGrowthOpportunityIndexes(db: Db): Promise<{
       sparse: true,
     },
     {
+      collection: oportunidades,
+      keys: { tenantId: 1, ownerUserId: 1, status: 1 },
+      name: "tenantId_ownerUserId_status",
+    },
+    {
+      collection: oportunidades,
+      keys: { tenantId: 1, "nextAction.assigneeUserId": 1, status: 1 },
+      name: "tenantId_nextActionAssignee_status",
+    },
+    {
       collection: spaceConfigs,
       keys: { tenantId: 1 },
       name: "tenantId_unique",
@@ -188,21 +201,22 @@ export async function ensureGrowthOpportunityIndexes(db: Db): Promise<{
     },
   ];
 
-  const results: Array<{ name: string; result: EnsureIndexResult }> = [];
-  for (const spec of specs) {
-    const result = await ensureIndex(spec.collection, spec.keys, {
+  const results = await Promise.all(
+    specs.map(async (spec) => ({
       name: spec.name,
-      unique: spec.unique,
-      sparse: spec.sparse,
-    });
-    results.push({ name: spec.name, result });
-  }
+      result: await ensureIndex(spec.collection, spec.keys, {
+        name: spec.name,
+        unique: spec.unique,
+        sparse: spec.sparse,
+      }),
+    }))
+  );
 
   return { results };
 }
 
 /** Índices OT-GROWTH-CORE-004 — reafirma timeline append-only (persona / oportunidad / ingestKey). */
-export async function ensureGrowthActivityIndexes(db: Db): Promise<{
+async function ensureGrowthActivityIndexesNow(db: Db): Promise<{
   results: Array<{ name: string; result: EnsureIndexResult }>;
 }> {
   const actividades = db.collection(GROWTH_ACTIVIDADES_COLLECTION);
@@ -239,17 +253,66 @@ export async function ensureGrowthActivityIndexes(db: Db): Promise<{
     },
   ];
 
-  const results: Array<{ name: string; result: EnsureIndexResult }> = [];
-  for (const spec of specs) {
-    const result = await ensureIndex(spec.collection, spec.keys, {
+  const results = await Promise.all(
+    specs.map(async (spec) => ({
       name: spec.name,
-      unique: spec.unique,
-      sparse: spec.sparse,
-    });
-    results.push({ name: spec.name, result });
-  }
+      result: await ensureIndex(spec.collection, spec.keys, {
+        name: spec.name,
+        unique: spec.unique,
+        sparse: spec.sparse,
+      }),
+    }))
+  );
 
   return { results };
+}
+
+async function ensureGrowthFunnelIndexesNow(db: Db): Promise<{
+  results: Array<{ name: string; result: EnsureIndexResult }>;
+}> {
+  const funnels = db.collection(GROWTH_FUNNELS_COLLECTION);
+  const oportunidades = db.collection(GROWTH_OPORTUNIDADES_COLLECTION);
+  const specs = [
+    {
+      collection: funnels,
+      keys: { tenantId: 1, key: 1 } as Record<string, 1 | -1>,
+      name: "tenantId_key_unique",
+      unique: true,
+    },
+    {
+      collection: oportunidades,
+      keys: { tenantId: 1, funnelKey: 1, status: 1 } as Record<string, 1 | -1>,
+      name: "tenantId_funnelKey_status",
+    },
+  ];
+  const results = await Promise.all(
+    specs.map(async (spec) => ({
+      name: spec.name,
+      result: await ensureIndex(spec.collection, spec.keys, {
+        name: spec.name,
+        unique: spec.unique,
+      }),
+    }))
+  );
+  return { results };
+}
+
+export function ensureGrowthFunnelIndexes(db: Db) {
+  return oncePerDatabase(db, "growth-funnels-v1", () => ensureGrowthFunnelIndexesNow(db));
+}
+
+export function ensureGrowthPersonaIndexes(db: Db) {
+  return oncePerDatabase(db, "growth-personas", () => ensureGrowthPersonaIndexesNow(db));
+}
+
+export function ensureGrowthOpportunityIndexes(db: Db) {
+  return oncePerDatabase(db, "growth-opportunities-v2", () =>
+    ensureGrowthOpportunityIndexesNow(db)
+  );
+}
+
+export function ensureGrowthActivityIndexes(db: Db) {
+  return oncePerDatabase(db, "growth-activities", () => ensureGrowthActivityIndexesNow(db));
 }
 
 /** Personas + Oportunidades + Actividades (ensure completo del núcleo actual). */

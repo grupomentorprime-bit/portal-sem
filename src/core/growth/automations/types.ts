@@ -43,6 +43,7 @@ export const GROWTH_AUTOMATION_ACTION_TYPES = [
   "salesRecordFollowUp",
   "salesSetNextAction",
   "salesClearNextAction",
+  "salesAssignOwner",
 ] as const;
 
 export type GrowthAutomationActionType =
@@ -93,6 +94,10 @@ export type GrowthAutomationConditionRule =
   | {
       field: "nextAction";
       op: "exists" | "absent";
+    }
+  | {
+      field: "owner";
+      op: "exists" | "absent";
     };
 
 export type GrowthAutomationConditionStep = {
@@ -124,6 +129,11 @@ export type GrowthAutomationActionStep =
   | {
       kind: "action";
       action: "salesClearNextAction";
+    }
+  | {
+      kind: "action";
+      action: "salesAssignOwner";
+      userId: string;
     };
 
 /**

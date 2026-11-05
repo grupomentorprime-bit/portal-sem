@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ficha de oportunidad</title>
+  <style>
+    :root {
+      --primary: #6d28d9;
+      --success: #18b981;
+      --gray-50: #f7f5ff;
+      --gray-100: #efeafc;
+      --gray-200: #e4dff2;
+      --gray-500: #6b6580;
+      --gray-900: #1e1b4b;
+      --surface: #fff;
+      --danger: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--gray-50);
+      color: var(--gray-900);
+      font-family: "Segoe UI", sans-serif;
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0; font-size: 28px; letter-spacing: -0.03em; }
+    .sub { margin: 6px 0 0; color: var(--gray-500); }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 24px -18px rgba(30, 27, 75, 0.45);
+    }
+    .stack { display: grid; gap: 16px; margin-top: 16px; }
+    .label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-500); }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; background: #efe7ff; color: var(--primary); font-size: 12px; font-weight: 700; padding: 4px 10px; }
+    .head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .meta { color: var(--gray-500); font-size: 14px; }
+    select, input, textarea, button { font: inherit; }
+    select, input, textarea {
+      width: 100%;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 8px 10px;
+      background: white;
+    }
+    .track { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .step { display: flex; align-items: center; gap: 8px; }
+    .pill {
+      min-width: 152px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--gray-200);
+      padding: 8px 12px;
+      background: var(--gray-100);
+    }
+    .pill.visited { background: #e8faf3; border-color: #9ee0c6; }
+    .pill.current { background: #f4edff; border-color: #c4b5fd; }
+    .mark {
+      width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center;
+      font-size: 12px; font-weight: 700; background: white; color: var(--gray-500);
+    }
+    .visited .mark { background: var(--success); color: white; }
+    .current .mark { background: var(--primary); color: white; }
+    .line { width: 16px; height: 1px; background: var(--gray-200); }
+    .now {
+      border-color: #c4b5fd;
+      background: #faf7ff;
+    }
+    .now h2 { margin: 8px 0 0; font-size: 22px; }
+    .facts { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .fact dt { color: var(--gray-500); font-size: 12px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .muted { color: var(--gray-500); }
+    .btn {
+      border-radius: 12px; border: 1px solid var(--gray-200); background: white;
+      padding: 8px 12px; font-weight: 650; cursor: default;
+    }
+    .btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cols { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    li { margin: 0 0 10px; }
+    @media (min-width: 720px) {
+      .facts, .grid { grid-template-columns: 1fr 1fr; }
+      .grid.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    }
+    @media (min-width: 1024px) {
+      .cols { grid-template-columns: 1fr 1fr; }
+      .owner { width: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <div>
+        <p class="meta">Inicio / Ventas</p>
+        <h1>Ana Riquelme</h1>
+        <p class="sub">Comercial Andes · Consulta · Diagnóstico de cumplimiento</p>
+      </div>
+      <div class="actions">
+        <button class="btn">Ventas</button>
+        <button class="btn">Abrir Persona</button>
+      </div>
+    </div>
+    <div class="stack">
+      <section class="card head">
+        <div>
+          <div class="row" style="align-items:center">
+            <span class="badge">Propuesta</span>
+            <span class="meta">Ventas · Propuesta</span>
+          </div>
+          <p>Oportunidad · Consulta · Diagnóstico de cumplimiento</p>
+          <p>Responsable · Camila Soto</p>
+        </div>
+        <label class="owner">Responsable
+          <select><option>Camila Soto</option></select>
+        </label>
+      </section>
+      <section class="card">
+        <p class="label">Etapas</p>
+        <div class="track" aria-label="Etapas del embudo">
+          <div class="step"><div class="pill visited"><span class="mark">✓</span><span><b>Abierta</b><br><span class="meta">Recorrida</span></span></div><span class="line"></span></div>
+          <div class="step"><div class="pill"><span class="mark">2</span><span><b>Contacto</b><br><span class="meta">Pendiente</span></span></div><span class="line"></span></div>
+          <div class="step"><div class="pill current"><span class="mark">3</span><span><b>Propuesta</b><br><span class="meta">Actual</span></span></div><span class="line"></span></div>
+          <div class="step"><div class="pill"><span class="mark">4</span><span><b>Pausada</b><br><span class="meta">Inactiva</span></span></div></div>
+        </div>
+        <p class="meta">Contacto queda pendiente: el historial salta de Abierta a Propuesta.</p>
+      </section>
+      <section class="card now">
+        <p class="label">Qué hacer ahora</p>
+        <h2>Llamar para revisar la propuesta</h2>
+        <div class="facts">
+          <div><dt>Responsable</dt><dd>Camila Soto</dd></div>
+          <div><dt>Vencimiento</dt><dd>20 oct 2026</dd></div>
+        </div>
+        <div class="stack">
+          <input value="Llamar para revisar la propuesta" />
+          <label>Vencimiento <input type="date" value="2026-10-20" /></label>
+          <div class="row">
+            <button class="btn primary">Guardar seguimiento</button>
+            <button class="btn">Quitar acción</button>
+          </div>
+        </div>
+      </section>
+      <section class="grid four">
+        <div class="card"><p class="label">Oportunidad</p><p>Consulta</p></div>
+        <div class="card"><p class="label">Asunto</p><p>Diagnóstico de cumplimiento</p></div>
+        <div class="card"><p class="label">Empresa</p><p>Comercial Andes</p></div>
+        <div class="card"><p class="label">Origen</p><p>Formulario</p></div>
+        <div class="card"><p class="label">Embudo</p><p>Ventas</p></div>
+        <div class="card"><p class="label">Apertura</p><p>15 oct 2026</p></div>
+        <div class="card"><p class="label">Correo</p><p>ana@andes.cl</p></div>
+        <div class="card"><p class="label">Teléfono</p><p class="muted">Sin teléfono</p></div>
+      </section>
+      <section class="cols">
+        <div class="card">
+          <p><span class="meta">Estado actual: </span><b>Propuesta</b></p>
+          <p><b>Avanzar de etapa</b></p>
+          <div class="row"><button class="btn">Abierta</button><button class="btn">Contacto</button></div>
+          <p><b>Cerrar</b></p>
+          <div class="row">
+            <button class="btn primary">Ganada</button>
+            <button class="btn">Perdida</button>
+            <button class="btn">Archivada</button>
+            <button class="btn">Traspasada</button>
+          </div>
+        </div>
+        <div class="card">
+          <p class="label">Registrar seguimiento</p>
+          <textarea rows="3" placeholder="Conversé con María. Quiere matricularse la próxima semana."></textarea>
+          <div class="row" style="margin-top:8px">
+            <button class="btn primary">Guardar nota</button>
+            <button class="btn">Registrar contacto</button>
+          </div>
+        </div>
+      </section>
+      <section class="cols">
+        <div class="card">
+          <p class="label">Qué ha pasado</p>
+          <p class="meta">Del más reciente al más antiguo.</p>
+          <ul>
+            <li><b>Oportunidad abierta → propuesta</b><br><span class="meta">Hace 1 día · 18 oct 2026</span></li>
+            <li><b>Nota: pidió la propuesta por correo</b><br><span class="meta">Hace 2 días · 17 oct 2026</span></li>
+          </ul>
+        </div>
+        <div class="stack">
+          <div class="card"><p class="label">Notas</p><p>Pidió la propuesta por correo</p></div>
+          <div class="card"><p class="label">Contactos</p><p class="muted">Sin contactos registrados.</p></div>
+          <div class="card"><p class="label">Conversaciones</p><p>WhatsApp · Abierto</p><p class="meta">¿Me envían la propuesta?</p></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

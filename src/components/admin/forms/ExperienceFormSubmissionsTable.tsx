@@ -64,6 +64,7 @@ export function ExperienceFormSubmissionsTable({
   const [testimonialSubmission, setTestimonialSubmission] = useState<ExperienceFormSubmission | null>(
     null
   );
+  const [callSubmission, setCallSubmission] = useState<ExperienceFormSubmission | null>(null);
   const { confirm, dialog } = useConfirmDialog();
 
   const isTestimonialForm = Boolean(formId && isTestimonialSubmissionForm(formId));
@@ -82,6 +83,17 @@ export function ExperienceFormSubmissionsTable({
     () => submissions.some((submission) => submission.data.attendance !== undefined),
     [submissions]
   );
+  const hasDiagnostico = useMemo(
+    () =>
+      submissions.some((submission) => String(submission.data.diagnosticoResumen ?? "").trim().length > 0),
+    [submissions]
+  );
+  const hasLoosePhone = useMemo(
+    () =>
+      !hasAttendance &&
+      submissions.some((submission) => String(submission.data.phone ?? "").trim().length > 0),
+    [submissions, hasAttendance]
+  );
   const hasGeneration = generationOptions.length > 0;
   const absenceCount = useMemo(
     () => submissions.filter((submission) => submission.data.attendance === "no").length,
@@ -97,7 +109,9 @@ export function ExperienceFormSubmissionsTable({
       if (!query) return true;
       const name = String(submission.data.fullName ?? submission.data.name ?? "").toLowerCase();
       const email = String(submission.data.email ?? "").toLowerCase();
-      return name.includes(query) || email.includes(query);
+      const phone = String(submission.data.phone ?? "").toLowerCase();
+      const company = String(submission.data.company ?? "").toLowerCase();
+      return name.includes(query) || email.includes(query) || phone.includes(query) || company.includes(query);
     });
   }, [submissions, generationFilter, search]);
 
@@ -124,6 +138,39 @@ export function ExperienceFormSubmissionsTable({
         </span>
       ),
     },
+    ...(hasLoosePhone
+      ? [
+          {
+            id: "phone",
+            header: "Teléfono",
+            cell: (submission: ExperienceFormSubmission) => (
+              <span className="text-muted whitespace-nowrap">
+                {formatSubmissionPhone(submission.data.phone)}
+              </span>
+            ),
+          } satisfies AdminDataTableColumn<ExperienceFormSubmission>,
+        ]
+      : []),
+    ...(hasDiagnostico
+      ? [
+          {
+            id: "company",
+            header: "Empresa",
+            cell: (submission: ExperienceFormSubmission) => (
+              <span className="text-muted">{String(submission.data.company ?? "—")}</span>
+            ),
+          } satisfies AdminDataTableColumn<ExperienceFormSubmission>,
+          {
+            id: "diagnostico",
+            header: "Para la llamada",
+            cell: (submission: ExperienceFormSubmission) => (
+              <span className="line-clamp-2 max-w-sm text-muted">
+                {String(submission.data.diagnosticoResumen ?? "—")}
+              </span>
+            ),
+          } satisfies AdminDataTableColumn<ExperienceFormSubmission>,
+        ]
+      : []),
     ...(hasGeneration
       ? [
           {
@@ -307,6 +354,11 @@ export function ExperienceFormSubmissionsTable({
                   Gestionar
                 </Button>
               ) : null}
+              {hasDiagnostico && submission.data.diagnosticoResumen && submissionId ? (
+                <Button variant="ghost" size="sm" onClick={() => setCallSubmission(submission)}>
+                  Ver
+                </Button>
+              ) : null}
               {isTestimonialForm && submissionId ? (
                 <Button
                   variant="ghost"
@@ -355,6 +407,28 @@ export function ExperienceFormSubmissionsTable({
             }}
             onCancel={() => setReviewSubmission(null)}
           />
+        ) : null}
+      </Drawer>
+
+      <Drawer
+        open={Boolean(callSubmission)}
+        onClose={() => setCallSubmission(null)}
+        title="Para la llamada"
+      >
+        {callSubmission ? (
+          <div className="space-y-4 text-sm">
+            <p className="font-medium">
+              {String(callSubmission.data.fullName ?? callSubmission.data.name ?? "Contacto")}
+              {callSubmission.data.company ? ` · ${String(callSubmission.data.company)}` : ""}
+            </p>
+            <p>
+              <a className="text-primary underline" href={`tel:${String(callSubmission.data.phone ?? "")}`}>
+                {formatSubmissionPhone(callSubmission.data.phone)}
+              </a>
+            </p>
+            <p className="text-muted">{String(callSubmission.data.email ?? "")}</p>
+            <p className="leading-6">{String(callSubmission.data.diagnosticoResumen ?? "")}</p>
+          </div>
         ) : null}
       </Drawer>
 

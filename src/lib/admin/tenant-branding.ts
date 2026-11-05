@@ -4,6 +4,7 @@ import {
   displayInstitutionName,
   displayInstitutionShortName,
 } from "@/core/branding";
+import { assetForTenant } from "@/core/branding/foreign-assets";
 import type { AdminTenantBranding } from "@/components/admin/shell-v2/types";
 import type { SiteConfig } from "@/types/cms";
 
@@ -21,7 +22,8 @@ export function buildAdminTenantBranding(config: SiteConfig | null): AdminTenant
   return {
     institutionName: institutionName || PLATFORM_SPACE_FALLBACK,
     institutionShortName,
-    logoUrl: config?.branding.logo?.trim() || undefined,
+    logoUrl:
+      assetForTenant(config?.institution.tenant, config?.branding.logo) || undefined,
     centerLabel: PLATFORM_DISPLAY_NAME,
   };
 }

@@ -5,32 +5,32 @@
  * en runtime los sobreescribe el Branding CMS vía --brand-* → --color-*.
  */
 export const colorDefaults = {
-  primary: "#0E4F90",
-  secondary: "#6C99CD",
-  accent: "#7C5CFA",
+  primary: "#6D28D9",
+  secondary: "#A78BFA",
+  accent: "#22D3EE",
   success: "#18B981",
   warning: "#F59B45",
   danger: "#B42318",
-  info: "#6C99CD",
+  info: "#A78BFA",
   surface: "#FFFFFF",
-  background: "#F4F7FB",
-  foreground: "#0B1F3A",
-  border: "#D9E4F2",
-  muted: "#6C87AC",
+  background: "#F7F5FF",
+  foreground: "#1E1B4B",
+  border: "#E4DFF2",
+  muted: "#6B6580",
 } as const;
 
 /** Escala neutra Growth OS (no semántica de marca) */
 export const neutralScale = {
-  50: "#F4F7FB",
-  100: "#EAF2FC",
-  200: "#D9E4F2",
-  300: "#B8C9DE",
-  400: "#8FA8C4",
-  500: "#6C87AC",
-  600: "#557194",
-  700: "#3A5273",
-  800: "#1E3355",
-  900: "#0B1F3A",
+  50: "#F7F5FF",
+  100: "#EFEAFC",
+  200: "#E4DFF2",
+  300: "#D4CCEA",
+  400: "#A89FBE",
+  500: "#6B6580",
+  600: "#564F6E",
+  700: "#3F3958",
+  800: "#2A2544",
+  900: "#1E1B4B",
 } as const;
 
 /**

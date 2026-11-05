@@ -45,6 +45,7 @@ const ACTION_LABELS: Record<GrowthAutomationActionType, string> = {
   salesClearNextAction: `Quitar ${GROWTH_NEXT_ACTION_SECTION_LABEL.toLowerCase()}`,
   salesRecordFollowUp: "Registrar seguimiento",
   salesTransitionOpportunity: "Cambiar el estado de la oportunidad",
+  salesAssignOwner: "Asignar responsable",
 };
 
 const STATUS_LABELS: Record<GrowthAutomationStatus, string> = {
@@ -84,6 +85,7 @@ export const AUTOMATION_ACTION_OPTIONS: Array<{
     value: "salesTransitionOpportunity",
     label: ACTION_LABELS.salesTransitionOpportunity,
   },
+  { value: "salesAssignOwner", label: ACTION_LABELS.salesAssignOwner },
 ];
 
 export const AUTOMATION_CONDITION_KIND_OPTIONS = [
@@ -91,6 +93,7 @@ export const AUTOMATION_CONDITION_KIND_OPTIONS = [
   { value: "status", label: "Estado" },
   { value: "typeKey", label: "Tipo de oportunidad" },
   { value: "nextAction", label: GROWTH_NEXT_ACTION_SECTION_LABEL },
+  { value: "owner", label: "Responsable" },
 ] as const;
 
 export type AutomationConditionKind =
@@ -225,6 +228,8 @@ export function automationConditionRuleLabel(
       return rule.op === "exists"
         ? `tiene «${GROWTH_NEXT_ACTION_SECTION_LABEL}»`
         : `no tiene «${GROWTH_NEXT_ACTION_SECTION_LABEL}»`;
+    case "owner":
+      return rule.op === "exists" ? "tiene responsable" : "no tiene responsable";
     default: {
       const _exhaustive: never = rule;
       void _exhaustive;
@@ -256,6 +261,8 @@ export function automationActionStepLabel(
         : "estado indicado";
       return `${ACTION_LABELS.salesTransitionOpportunity}:\n${state}`;
     }
+    case "salesAssignOwner":
+      return `${ACTION_LABELS.salesAssignOwner}:\n${step.userId}`;
     default: {
       const _exhaustive: never = step;
       void _exhaustive;
@@ -416,6 +423,9 @@ function actionListShort(step: GrowthAutomationActionStep): string {
       ? growthOpportunityStatusLabel(step.toState)
       : "cambiar estado";
     return `${ACTION_LABELS.salesTransitionOpportunity}: ${state}`;
+  }
+  if (step.action === "salesAssignOwner") {
+    return `${ACTION_LABELS.salesAssignOwner}: ${step.userId}`;
   }
   return ACTION_LABELS.salesClearNextAction;
 }

@@ -29,6 +29,7 @@ export interface GrowthOpportunityStore extends GrowthActivityRecorder {
     typeKey: string;
     subjectType: string;
     subjectId?: string;
+    funnelKey?: string;
   }): Promise<GrowthOportunidad | null>;
 
   /**

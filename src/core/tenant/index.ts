@@ -58,6 +58,7 @@ export {
   resolveSpaceBaseDomain,
   resolveRequestHost,
   resolveSemBootstrapHostsFromEnv,
+  resolveSpacePreviewOrigin,
   shouldEnterPlatformHome,
 } from "./hosts";
 

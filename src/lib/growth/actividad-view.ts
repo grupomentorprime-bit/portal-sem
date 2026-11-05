@@ -46,6 +46,7 @@ export const GROWTH_ACTIVIDAD_VENTAS_KINDS = [
   "contact",
   "next_action_set",
   "handoff",
+  "opportunity_assigned",
 ] as const satisfies readonly GrowthActivityKind[];
 
 const PERSONAS_KIND_SET = new Set<string>(GROWTH_ACTIVIDAD_PERSONAS_KINDS);

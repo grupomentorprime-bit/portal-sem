@@ -105,3 +105,25 @@ export type {
   ResolveAnalyticsPeriodResult,
   GetAnalyticsV1Result,
 } from "./analytics-read";
+export {
+  CONVERSION_DENOMINATORS,
+  CONVERSION_LOSS_REASONS_NOTE,
+  CONVERSION_RATE_NOTE,
+  buildConversionAnalytics,
+} from "./conversion-analytics";
+export type {
+  BuildConversionAnalyticsInput,
+  ConversionActivityInput,
+  ConversionAnalyticsQuality,
+  ConversionAnalyticsResponse,
+  ConversionCampaignInput,
+  ConversionCohortRow,
+  ConversionCountRow,
+  ConversionCycleStat,
+  ConversionDwellRow,
+  ConversionFunnelInput,
+  ConversionMemberInput,
+  ConversionMovementRow,
+  ConversionOpportunityInput,
+  ConversionOwnerRow,
+} from "./conversion-analytics";

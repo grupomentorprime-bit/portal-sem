@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Propuestas de color · Growth OS</title>
+  <style>
+    :root {
+      --studio: #e7e9ee;
+      --ink: #141820;
+      --muted: #5c6573;
+      --line: #d5d9e2;
+      --card: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--studio);
+      color: var(--ink);
+    }
+
+    .top {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px 32px 8px;
+    }
+    .top h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+    }
+    .top p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px 32px 40px;
+    }
+
+    .art {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      padding: 0;
+      color: inherit;
+      font: inherit;
+      display: block;
+      width: 100%;
+    }
+    .art:hover { border-color: #b7becb; }
+    .art:focus-visible {
+      outline: 2px solid #141820;
+      outline-offset: 3px;
+    }
+
+    .art-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 16px 12px;
+    }
+    .kicker {
+      margin: 0 0 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .art h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .art .note {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .swatches {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+    }
+
+    .viewport {
+      margin: 0 12px 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #f4f7fb;
+      aspect-ratio: 16 / 10;
+      position: relative;
+    }
+    .viewport .scale {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1280px;
+      height: 800px;
+      transform-origin: top left;
+    }
+
+    .stage {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 24, 32, 0.55);
+      display: none;
+      padding: 28px;
+      z-index: 5;
+    }
+    .stage.open { display: block; }
+    .stage-panel {
+      height: 100%;
+      background: var(--card);
+      border-radius: 16px;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      overflow: hidden;
+    }
+    .stage-side {
+      padding: 24px;
+      border-right: 1px solid var(--line);
+      overflow: auto;
+    }
+    .stage-side h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+    .stage-side .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .token-list {
+      list-style: none;
+      margin: 20px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+    .token-list li {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .token-list strong {
+      display: block;
+      font-size: 13px;
+    }
+    .token-list span {
+      color: var(--muted);
+      font-size: 12px;
+      font-family: Consolas, "Segoe UI Mono", monospace;
+    }
+    .chip {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+    }
+    .ratio {
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .close {
+      margin-top: 22px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+    .stage-view {
+      background: #eceff4;
+      padding: 20px;
+      overflow: auto;
+    }
+    .stage-view .app {
+      width: 1280px;
+      min-height: 800px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #d5d9e2;
+    }
+
+    /* —— App mock —— */
+    .app {
+      display: grid;
+      grid-template-columns: 232px 1fr;
+      height: 800px;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .side {
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      padding: 4px 6px 12px;
+    }
+    .mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--p);
+      position: relative;
+      flex: none;
+    }
+    .mark::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 11px;
+      height: 11px;
+      background: var(--a);
+      border-bottom-right-radius: 8px;
+    }
+    .space {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-left: 2px solid var(--p);
+      background: color-mix(in srgb, var(--bg) 70%, white);
+      border-radius: 10px;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+    .avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: white;
+      color: var(--p);
+      font-size: 11px;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+    }
+    .space small { display: block; color: var(--muted); font-size: 10px; letter-spacing: 0.04em; }
+    .space b { font-size: 12px; font-weight: 600; }
+    .nav-label {
+      margin: 10px 8px 4px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .item, .child {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 32px;
+      padding: 0 8px;
+      border-radius: 8px;
+      color: #3c4656;
+      position: relative;
+    }
+    .item svg { flex: none; opacity: 0.7; }
+    .item.active, .child.active {
+      background: var(--wash);
+      color: var(--p);
+      font-weight: 650;
+    }
+    .item.active svg { opacity: 1; }
+    .child { padding-left: 34px; height: 30px; font-size: 12.5px; }
+    .child.active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 5px;
+      bottom: 5px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--p);
+    }
+    .main { min-width: 0; display: flex; flex-direction: column; }
+    .bar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      border-bottom: 1px solid var(--line);
+    }
+    .search {
+      flex: 1;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+    }
+    .pills { display: flex; gap: 6px; }
+    .pill {
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #3c4656;
+      white-space: nowrap;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 99px; background: var(--ok); }
+    .dot.alt { background: var(--p); }
+    .who { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .who b { display: block; font-size: 12px; }
+    .who span { color: var(--muted); font-size: 11px; }
+    .who i {
+      width: 28px;
+      height: 28px;
+      border-radius: 99px;
+      background: var(--wash);
+      color: var(--p);
+      display: grid;
+      place-items: center;
+      font-style: normal;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .content { padding: 18px 22px 22px; }
+    .crumbs { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .crumbs b { color: var(--ink); font-weight: 600; }
+    .title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .title-row h3 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -0.03em;
+    }
+    .title-row p { margin: 4px 0 0; color: var(--muted); }
+    .ghost, .solid, .outline {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ghost {
+      background: white;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+    .solid {
+      background: var(--p);
+      color: white;
+      border: 1px solid var(--p);
+    }
+    .outline {
+      background: white;
+      color: var(--p);
+      border: 1px solid color-mix(in srgb, var(--p) 35%, var(--line));
+    }
+    .card {
+      margin-top: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: inset 3px 0 0 var(--stripe, transparent);
+    }
+    .app[data-edge="top"] .card.main-card {
+      box-shadow: inset 0 3px 0 var(--stripe, transparent);
+    }
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .badge {
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 6px;
+      background: var(--okbg);
+      color: var(--ok);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+    }
+    .badge.warn {
+      background: color-mix(in srgb, var(--muted) 12%, white);
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .domain {
+      margin: 8px 0 2px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .fine { margin: 0; color: var(--muted); font-size: 12.5px; }
+    .actions { display: flex; gap: 8px; }
+    .field-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .field {
+      flex: 1;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+    }
+    .split {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      color: var(--ink);
+      font-weight: 650;
+    }
+    .help { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; }
+    .help b { color: var(--p); font-weight: 650; }
+
+    @media (max-width: 1100px) {
+      .grid { grid-template-columns: 1fr; }
+      .stage-panel { grid-template-columns: 1fr; }
+      .stage-side { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Propuestas de color</h1>
+      <p>La misma pantalla de Dominio, con la paleta actual y las tres opciones. Clic en una lámina para verla a tamaño real.</p>
+    </div>
+    <p class="hint">Teclas 1–4 abren cada lámina · Esc cierra</p>
+  </header>
+  <main class="grid" id="grid"></main>
+  <div class="stage" id="stage">
+    <div class="stage-panel">
+      <aside class="stage-side" id="stage-side"></aside>
+      <div class="stage-view" id="stage-view"></div>
+    </div>
+  </div>
+  <script>
+    const palettes = [
+      {
+        id: "actual",
+        key: "1",
+        name: "Actual",
+        kicker: "Referencia",
+        note: "Azul marino y grises azulados. El acento violeta casi no se ve.",
+        primary: "#0E4F90",
+        secondary: "#6C99CD",
+        accent: "#7C5CFA",
+        bg: "#F4F7FB",
+        surface: "#FFFFFF",
+        ink: "#0B1F3A",
+        muted: "#6C87AC",
+        line: "#D9E4F2",
+        wash: "#EAF2FC",
+        ok: "#067647",
+        okbg: "#E5F6EE",
+        stripe: "transparent",
+        edge: "left"
+      },
+      {
+        id: "indigo",
+        key: "2",
+        name: "Índigo eléctrico",
+        kicker: "Recomendada",
+        note: "Más saturación y neutros limpios. Sigue viéndose como herramienta de trabajo.",
+        primary: "#4F46E5",
+        secondary: "#818CF8",
+        accent: "#22D3EE",
+        bg: "#F8F9FC",
+        surface: "#FFFFFF",
+        ink: "#0F172A",
+        muted: "#64748B",
+        line: "#E2E8F0",
+        wash: "#EEF2FF",
+        ok: "#059669",
+        okbg: "#ECFDF5",
+        stripe: "transparent",
+        edge: "left"
+      },
+      {
+        id: "coral",
+        key: "3",
+        name: "Cobalto y coral",
+        kicker: "La más cercana",
+        note: "Azul más vivo. El coral solo entra en el isotipo, el filete de la tarjeta y el foco.",
+        primary: "#2563EB",
+        secondary: "#60A5FA",
+        accent: "#FF4D6D",
+        bg: "#F6F7F9",
+        surface: "#FFFFFF",
+        ink: "#111827",
+        muted: "#6B7280",
+        line: "#E5E7EB",
+        wash: "#EFF6FF",
+        ok: "#15803D",
+        okbg: "#F0FDF4",
+        stripe: "#FF4D6D",
+        edge: "left"
+      },
+      {
+        id: "violet",
+        key: "4",
+        name: "Violeta aurora",
+        kicker: "La más distinta",
+        note: "El primario deja de ser azul. El cian queda como filete de la tarjeta.",
+        primary: "#6D28D9",
+        secondary: "#A78BFA",
+        accent: "#22D3EE",
+        bg: "#F7F5FF",
+        surface: "#FFFFFF",
+        ink: "#1E1B4B",
+        muted: "#6B6580",
+        line: "#E9E4F5",
+        wash: "#F3E8FF",
+        ok: "#059669",
+        okbg: "#ECFDF5",
+        stripe: "#22D3EE",
+        edge: "top"
+      }
+    ];
+
+    const icons = {
+      home: '<path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/>',
+      people: '<path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 1a2.5 2.5 0 1 0 0-5"/><path d="M3.5 19c.6-2.4 2.6-4 5.5-4s4.9 1.6 5.5 4M14 15c1.8 0 3.4 1 4.2 3"/>',
+      cart: '<path d="M5 7h15l-1.5 8h-12z"/><path d="M5 7 4 4H2M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/>',
+      mail: '<path d="M4 7h16v11H4z"/><path d="m4 8 8 6 8-6"/>',
+      pulse: '<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+      globe: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.2 2.4 3.3 5.1 3.3 8S14.2 17.6 12 20c-2.2-2.4-3.3-5.1-3.3-8S9.8 6.4 12 4Z"/>',
+      building: '<path d="M5 20V6l7-2v16M12 20V9l7 2v9M8 9h1M8 12h1M8 15h1M15 13h1M15 16h1M3 20h18"/>',
+      users: '<path d="M8.5 11a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM16 11.5a2 2 0 1 0 0-4"/><path d="M3.5 18.5c.5-2.2 2.4-3.5 5-3.5s4.5 1.3 5 3.5M14 15c1.6 0 3 .9 3.6 2.5"/>',
+      gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M4.8 6.8l1.6 1.6M17.6 15.6l1.6 1.6M3.5 12h2.2M18.3 12h2.2M4.8 17.2l1.6-1.6M17.6 8.4l1.6-1.6"/>'
+    };
+
+    function svg(name) {
+      return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name]}</svg>`;
+    }
+
+    function luminance(hex) {
+      const n = [0, 2, 4].map((i) => {
+        const v = parseInt(hex.slice(i + 1, i + 3), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * n[0] + 0.7152 * n[1] + 0.0722 * n[2];
+    }
+
+    function contrast(a, b) {
+      const hi = Math.max(luminance(a), luminance(b));
+      const lo = Math.min(luminance(a), luminance(b));
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
+    function app(p) {
+      const node = document.createElement("div");
+      node.className = "app";
+      node.dataset.edge = p.edge;
+      Object.entries({
+        "--p": p.primary,
+        "--s": p.secondary,
+        "--a": p.accent,
+        "--bg": p.bg,
+        "--surface": p.surface,
+        "--ink": p.ink,
+        "--muted": p.muted,
+        "--line": p.line,
+        "--wash": p.wash,
+        "--ok": p.ok,
+        "--okbg": p.okbg,
+        "--stripe": p.stripe
+      }).forEach(([k, v]) => node.style.setProperty(k, v));
+
+      node.innerHTML = `
+        <aside class="side">
+          <div class="brand"><span class="mark"></span> Growth OS</div>
+          <div class="space">
+            <div class="avatar">M</div>
+            <div><small>ESPACIO ACTIVO</small><b>Mentor Prime Cumple</b></div>
+          </div>
+          ${item("Inicio", "home")}
+          ${item("Personas", "people")}
+          ${item("Ventas", "cart")}
+          ${item("Mensajes", "mail")}
+          ${item("Actividad", "pulse")}
+          <div class="nav-label">CRECER</div>
+          ${item("Campañas", "pulse")}
+          ${item("Automatizaciones", "gear")}
+          ${item("Analítica", "pulse")}
+          ${item("Sitio web", "globe", true)}
+          <div class="child">Formularios</div>
+          <div class="child active">Dominio</div>
+          <div class="child">Ajustes del sitio</div>
+          ${item("Institución", "building")}
+          ${item("Equipo", "users")}
+          ${item("Ajustes", "gear")}
+        </aside>
+        <section class="main">
+          <div class="bar">
+            <div class="search">${svg("people")} Buscar personas</div>
+            <div class="pills">
+              <span class="pill"><i class="dot"></i> Portal · Activo</span>
+              <span class="pill"><i class="dot alt"></i> Panel · Protegido</span>
+              <span class="pill"><i class="dot"></i> Accesos · Activo</span>
+            </div>
+            <div class="who"><i>MA</i><div><b>Marco Antonio</b><span>Gestión y Calidad</span></div></div>
+          </div>
+          <div class="content">
+            <div class="crumbs">Inicio › Sitio web › <b>Dominio</b></div>
+            <div class="title-row">
+              <div>
+                <h3>Dominio</h3>
+                <p>La dirección con la que las personas encuentran tu sitio.</p>
+              </div>
+              <span class="ghost">Ajustes del sitio</span>
+            </div>
+            <article class="card main-card">
+              <div class="card-top">
+                <div>
+                  <div class="eyebrow">${svg("globe")} Dirección principal <span class="badge">Activo</span></div>
+                  <div class="domain">cumple.mentorprime.cl</div>
+                  <p class="fine">Listo. Las personas llegan aquí. No hace falta otro dominio para publicar el sitio.</p>
+                </div>
+                <div class="actions">
+                  <span class="solid">Abrir sitio</span>
+                  <span class="outline">Copiar dirección</span>
+                </div>
+              </div>
+            </article>
+            <article class="card">
+              <div class="eyebrow">Tu propio dominio <span class="badge warn">Opcional · No conectado</span></div>
+              <p class="fine">Solo si el cliente tiene un dominio suyo (ej. empresa.cl). El subdominio de arriba ya sirve; esto es un extra.</p>
+              <div class="field-row">
+                <div class="field">ej. seminario.cl</div>
+                <span class="solid">Guardar dominio</span>
+              </div>
+              <div class="split"><span>Otras direcciones</span><span>1 ▾</span></div>
+              <p class="help">Cada página publicada cuelga de tu dominio, por ejemplo <b>/contacto</b></p>
+            </article>
+          </div>
+        </section>
+      `;
+      return node;
+    }
+
+    function item(label, icon) {
+      return `<div class="item">${svg(icon)} ${label}</div>`;
+    }
+
+    function tokens(p) {
+      return [
+        ["Primario", p.primary],
+        ["Secundario", p.secondary],
+        ["Acento", p.accent],
+        ["Fondo", p.bg],
+        ["Texto", p.ink]
+      ];
+    }
+
+    function paintSwatches(p) {
+      return [p.primary, p.secondary, p.accent, p.ink]
+        .map((hex) => `<span class="swatch" style="background:${hex}"></span>`)
+        .join("");
+    }
+
+    const grid = document.getElementById("grid");
+    const stage = document.getElementById("stage");
+    const stageSide = document.getElementById("stage-side");
+    const stageView = document.getElementById("stage-view");
+
+    palettes.forEach((p) => {
+      const button = document.createElement("button");
+      button.className = "art";
+      button.type = "button";
+      button.innerHTML = `
+        <div class="art-head">
+          <div>
+            <p class="kicker">${p.kicker} · ${p.key}</p>
+            <h2>${p.name}</h2>
+            <p class="note">${p.note}</p>
+          </div>
+          <div class="swatches">${paintSwatches(p)}</div>
+        </div>
+        <div class="viewport"><div class="scale"></div></div>
+      `;
+      button.querySelector(".scale").append(app(p));
+      button.addEventListener("click", () => open(p));
+      grid.append(button);
+    });
+
+    function fit() {
+      document.querySelectorAll(".viewport").forEach((view) => {
+        const scale = view.clientWidth / 1280;
+        const inner = view.querySelector(".scale");
+        inner.style.transform = `scale(${scale})`;
+        view.style.height = `${800 * scale}px`;
+      });
+    }
+
+    function open(p) {
+      const ratio = contrast(p.primary, "#FFFFFF");
+      const pass = ratio >= 4.5 ? "pasa AA" : "no llega a AA";
+      stageSide.innerHTML = `
+        <p class="kicker">${p.kicker}</p>
+        <h2>${p.name}</h2>
+        <p class="note">${p.note}</p>
+        <ul class="token-list">
+          ${tokens(p).map(([name, hex]) => `<li><i class="chip" style="background:${hex}"></i><div><strong>${name}</strong><span>${hex}</span></div></li>`).join("")}
+        </ul>
+        <p class="ratio">Texto blanco sobre el botón primario: ${ratio.toFixed(1)}:1, ${pass}. Verde, ámbar y rojo de estado no cambian de rol.</p>
+        <button class="close" type="button">Cerrar</button>
+      `;
+      stageSide.querySelector(".close").addEventListener("click", close);
+      stageView.replaceChildren(app(p));
+      stage.classList.add("open");
+    }
+
+    function close() {
+      stage.classList.remove("open");
+    }
+
+    stage.addEventListener("click", (event) => {
+      if (event.target === stage) close();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") close();
+      const found = palettes.find((p) => p.key === event.key);
+      if (found) open(found);
+    });
+
+    window.addEventListener("resize", fit);
+    fit();
+  </script>
+</body>
+</html>

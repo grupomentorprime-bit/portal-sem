@@ -14,11 +14,14 @@ import {
   GROWTH_PERSONAS_COLLECTION,
   createMongoGrowthOpportunityStore,
   createMongoGrowthPersonaStore,
+  resolveGrowthSpaceConfig,
   type GrowthActivity,
   type GrowthOportunidad,
   type GrowthOpportunityStatus,
   type GrowthPersona,
 } from "@/core/growth";
+import { presentFunnelFieldRows } from "@/core/growth/custom-fields";
+import { openGrowthFunnelDirectory } from "@/core/growth/funnel-mongo";
 import {
   GROWTH_CONVERSACIONES_COLLECTION,
   GROWTH_MENSAJES_COLLECTION,
@@ -26,6 +29,7 @@ import {
   type GrowthMessage,
 } from "@/core/growth/messaging";
 import { getDatabase } from "@/lib/mongodb";
+import { listGrowthSpaceMembers } from "./space-members";
 import {
   humanizeOriginDisplayLabel,
   isKnownHumanOriginChannel,
@@ -37,6 +41,8 @@ import {
   truncateMessagePreview,
 } from "./mensajes-view";
 import { buildPersonaOriginMongoFilter } from "./personas-origin-filter";
+import { getGrowthAssessmentPort } from "@/core/growth/assessment";
+import { buildPersonaWorkspace } from "./persona-workspace";
 import {
   escapeGrowthSearchRegex,
   toOportunidadDetailView,
@@ -47,6 +53,7 @@ import {
   type GrowthPersonaDetailView,
   type GrowthPersonaListItemView,
 } from "./persona-view";
+import type { GrowthPersonaAssessmentView } from "./persona-workspace";
 
 /** Presentación: mismo humanize que Ventas; no toca valores persistidos. */
 function presentPersonaListItem(
@@ -61,13 +68,22 @@ function presentPersonaListItem(
 function presentPersonaDetail(
   view: GrowthPersonaDetailView
 ): GrowthPersonaDetailView {
+  const oportunidades = view.oportunidades.map((o) => ({
+    ...o,
+    originLabel: humanizeOriginDisplayLabel(o.originLabel),
+  }));
   return {
     ...view,
     originLabel: humanizeOriginDisplayLabel(view.originLabel),
-    oportunidades: view.oportunidades.map((o) => ({
-      ...o,
-      originLabel: humanizeOriginDisplayLabel(o.originLabel),
-    })),
+    oportunidades,
+    workspace: buildPersonaWorkspace(
+      oportunidades.map((oportunidad) => ({
+        status: oportunidad.status,
+        originLabel: oportunidad.originLabel,
+        openedAt: oportunidad.openedAt,
+      })),
+      view.workspace.assessments
+    ),
   };
 }
 
@@ -293,9 +309,83 @@ export async function getGrowthPersonaDetailView(
     listPersonaConversationViews(tenantId, personaId),
   ]);
 
-  return presentPersonaDetail(
-    toPersonaDetailView(persona, oportunidades, activities, conversations)
+  const [assessments, spaceConfig] = await Promise.all([
+    listPersonaAssessmentViews(
+      tenantId,
+      personaId,
+      oportunidades.map((oportunidad) => oportunidad._id)
+    ),
+    resolveGrowthSpaceConfig(oportunidadesStore, tenantId),
+  ]);
+  const typeLabels = Object.fromEntries(
+    spaceConfig.opportunityTypes.map((type) => [type.key, type.label])
   );
+
+  const detail = toPersonaDetailView(
+    persona,
+    oportunidades,
+    activities,
+    conversations,
+    assessments,
+    typeLabels
+  );
+  const [members, funnels] = await Promise.all([
+    listGrowthSpaceMembers(tenantId),
+    openGrowthFunnelDirectory(db).then((directory) => directory.listFunnels(tenantId)),
+  ]);
+  detail.oportunidades = detail.oportunidades.map((view) => {
+    const source = oportunidades.find((item) => item._id === view.id && item.tenantId === tenantId);
+    const funnel = funnels.find(
+      (item) => item.tenantId === tenantId && item.key === (source?.funnelKey || "default")
+    );
+    const lines = presentFunnelFieldRows(funnel?.fields ?? [], source?.customFields)
+      .filter((row) => row.value != null && row.value !== "")
+      .map((row) => ({
+        label: row.label,
+        value:
+          row.type === "boolean"
+            ? row.value
+              ? "Sí"
+              : "No"
+            : row.type === "select"
+              ? row.options.find((option) => option.key === row.value)?.label ?? String(row.value)
+              : String(row.value),
+      }));
+    return {
+      ...view,
+      ownerLabel: view.ownerUserId
+        ? members.find((member) => member.userId === view.ownerUserId)?.label ?? "Sin acceso"
+        : undefined,
+      funnelFieldLines: lines,
+    };
+  });
+  return presentPersonaDetail(detail);
+}
+
+async function listPersonaAssessmentViews(
+  tenantId: string,
+  personaId: string,
+  oportunidadIds: string[]
+): Promise<GrowthPersonaAssessmentView[]> {
+  const port = getGrowthAssessmentPort(tenantId);
+  if (!port) return [];
+  try {
+    const rows = await port.listForPersona(tenantId, personaId, oportunidadIds);
+    const seen = new Set<string>();
+    const views: GrowthPersonaAssessmentView[] = [];
+    for (const row of rows) {
+      if (!row.id || seen.has(row.id)) continue;
+      seen.add(row.id);
+      views.push(row);
+    }
+    return views;
+  } catch (error) {
+    console.error(
+      "[Personas] no se pudieron leer las evaluaciones del Espacio",
+      error instanceof Error ? error.message : error
+    );
+    return [];
+  }
 }
 
 /**

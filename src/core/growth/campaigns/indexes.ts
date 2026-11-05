@@ -6,6 +6,7 @@
  */
 
 import type { Db } from "mongodb";
+import { oncePerDatabase } from "@/core/growth/once-per-db";
 import { GROWTH_CAMPAIGNS_COLLECTION } from "./types";
 
 export type EnsureIndexResult = "created" | "exists";
@@ -37,7 +38,7 @@ async function ensureIndex(
   }
 }
 
-export async function ensureGrowthCampaignIndexes(db: Db): Promise<{
+async function ensureGrowthCampaignIndexesNow(db: Db): Promise<{
   results: Array<{ name: string; result: EnsureIndexResult }>;
 }> {
   const campaigns = db.collection(GROWTH_CAMPAIGNS_COLLECTION);
@@ -73,14 +74,19 @@ export async function ensureGrowthCampaignIndexes(db: Db): Promise<{
     },
   ];
 
-  const results: Array<{ name: string; result: EnsureIndexResult }> = [];
-  for (const spec of specs) {
-    const result = await ensureIndex(campaigns, spec.keys, {
+  const results = await Promise.all(
+    specs.map(async (spec) => ({
       name: spec.name,
-      unique: spec.unique,
-      partialFilterExpression: spec.partialFilterExpression,
-    });
-    results.push({ name: spec.name, result });
-  }
+      result: await ensureIndex(campaigns, spec.keys, {
+        name: spec.name,
+        unique: spec.unique,
+        partialFilterExpression: spec.partialFilterExpression,
+      }),
+    }))
+  );
   return { results };
+}
+
+export function ensureGrowthCampaignIndexes(db: Db) {
+  return oncePerDatabase(db, "growth-campaigns", () => ensureGrowthCampaignIndexesNow(db));
 }

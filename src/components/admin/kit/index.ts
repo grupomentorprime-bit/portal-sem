@@ -7,6 +7,7 @@
 export { AdminSidebar } from "@/components/admin/kit/navigation/AdminSidebar";
 export { AdminTopBar } from "@/components/admin/kit/navigation/AdminTopBar";
 export { AdminBreadcrumb, Breadcrumbs } from "@/components/admin/kit/navigation/AdminBreadcrumb";
+export { AdminModuleSubnav } from "@/components/admin/kit/navigation/AdminModuleSubnav";
 export { ModuleHeader } from "@/components/admin/kit/navigation/ModuleHeader";
 
 // Layout

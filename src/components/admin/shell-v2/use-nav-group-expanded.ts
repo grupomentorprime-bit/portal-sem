@@ -6,11 +6,27 @@ import type { NavGroupId } from "@/lib/admin/nav-domains";
 
 const STORAGE_KEY = "sem-admin-nav-expanded-group";
 
-export function useNavGroupExpanded(activeGroupId: NavGroupId | null) {
-  const [expandedGroupId, setExpandedGroupId] = useState<NavGroupId | null>(null);
+export function useNavGroupExpanded(
+  activeGroupId: NavGroupId | null,
+  lockActiveOpen = false
+) {
+  const [expandedGroupId, setExpandedGroupId] = useState<NavGroupId | null>(
+    lockActiveOpen ? activeGroupId : null
+  );
   const [hydrated, setHydrated] = useState(false);
 
   useDeferredEffect(() => {
+    if (lockActiveOpen && activeGroupId) {
+      setExpandedGroupId(activeGroupId);
+      try {
+        localStorage.setItem(STORAGE_KEY, activeGroupId);
+      } catch {
+        /* ignore */
+      }
+      setHydrated(true);
+      return;
+    }
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as NavGroupId | null;
       if (stored) {
@@ -22,7 +38,7 @@ export function useNavGroupExpanded(activeGroupId: NavGroupId | null) {
       if (activeGroupId) setExpandedGroupId(activeGroupId);
     }
     setHydrated(true);
-  }, [activeGroupId]);
+  }, [activeGroupId, lockActiveOpen]);
 
   useDeferredEffect(() => {
     if (!hydrated || !activeGroupId) return;

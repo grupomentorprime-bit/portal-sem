@@ -74,6 +74,8 @@ export function automationActionPastLine(
       return `Registró el seguimiento “${step.summary.trim()}”.`;
     case "salesClearNextAction":
       return "Quitó qué hacer ahora.";
+    case "salesAssignOwner":
+      return "Asignó un responsable a la oportunidad.";
     case "salesTransitionOpportunity": {
       if (step.toState) {
         return `Cambió el estado de la oportunidad a «${step.toState}».`;

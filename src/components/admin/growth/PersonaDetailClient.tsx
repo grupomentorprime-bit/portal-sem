@@ -1,20 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
-import {
-  EmptyState,
-  Section,
-  StatusBadge,
-  aek,
-} from "@/components/admin/kit";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { ArrowLeft, Mail, Phone } from "lucide-react";
+import { EmptyState, StatusBadge } from "@/components/admin/kit";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
-import { formatRelativeTime } from "@/lib/admin/audit-labels";
 import {
-  GROWTH_NO_NEXT_ACTION_LABEL,
   GROWTH_NEXT_ACTION_SECTION_LABEL,
+  GROWTH_NO_NEXT_ACTION_LABEL,
   GROWTH_PERSONAS_ACTIVITY_EMPTY_DESCRIPTION,
   GROWTH_PERSONAS_ACTIVITY_EMPTY_TITLE,
   GROWTH_PERSONAS_ARRIVED_PREFIX,
@@ -31,32 +26,46 @@ import {
   GROWTH_TIMELINE_SECTION_LABEL,
   GROWTH_VIEW_DETAIL_LABEL,
 } from "@/lib/growth/labels";
-import type {
-  GrowthNextActionView,
-  GrowthOportunidadView,
-  GrowthPersonaConversationView,
-  GrowthPersonaDetailView,
-} from "@/lib/growth/persona-view";
+import type { GrowthPersonaDetailView } from "@/lib/growth/persona-view";
+import {
+  nextActionExecution,
+  partitionPersonaNotes,
+  personaInitials,
+  preferredOperableOpportunityId,
+  resolvePersonaSection,
+  visiblePersonaSections,
+  visibleTimelineActivities,
+  type GrowthPersonaSectionId,
+} from "@/lib/growth/persona-workspace";
 import { cn } from "@/lib/utils";
+import {
+  PersonaActivityList,
+  PersonaAssessmentCard,
+  PersonaAssessmentHistory,
+  PersonaContactCard,
+  PersonaConversationList,
+  PersonaNextStep,
+  PersonaNotesList,
+  PersonaOpportunityList,
+  PersonaSignalRow,
+  formatPersonaWhen,
+  personaPanelClass,
+} from "./persona/PersonaCommercialRecord";
+import {
+  PersonaFollowUpForm,
+  PersonaQuickActions,
+  PersonaWorkPanel,
+} from "./persona/PersonaWorkActions";
 
 export interface PersonaDetailClientProps {
   persona: GrowthPersonaDetailView;
+  section?: string;
   focusOportunidadId?: string;
   canOpenSales?: boolean;
   canOpenMessages?: boolean;
   canOpenActivity?: boolean;
-}
-
-function formatWhen(iso?: string): string | null {
-  if (!iso) return null;
-  try {
-    return new Date(iso).toLocaleString("es-CL", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
+  canOperate?: boolean;
+  members?: Array<{ userId: string; label: string }>;
 }
 
 function arrivedLabel(originLabel: string): string {
@@ -66,349 +75,423 @@ function arrivedLabel(originLabel: string): string {
   return `${GROWTH_PERSONAS_ARRIVED_PREFIX} ${trimmed}`;
 }
 
-function NextActionBlock({ action }: { action: GrowthNextActionView | null }) {
-  if (!action) {
-    return (
-      <div
-        className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-5 py-5"
-        data-persona-next-action="empty"
-      >
-        <p className={aek.label}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-        <p className="mt-2 text-sm text-muted">{GROWTH_NO_NEXT_ACTION_LABEL}</p>
-      </div>
-    );
-  }
+function sectionHref(
+  pathname: string,
+  section: GrowthPersonaSectionId,
+  oportunidadId?: string
+): string {
+  const params = new URLSearchParams();
+  if (section !== "resumen") params.set("seccion", section);
+  if (oportunidadId) params.set("oportunidad", oportunidadId);
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
 
-  const due = formatWhen(action.dueAt);
+type SectionScrollHint = "none" | "end" | "start" | "both";
+
+const SECTION_SCROLL_MASK: Record<Exclude<SectionScrollHint, "none">, string> = {
+  end: "linear-gradient(to right, #000 calc(100% - 2.25rem), transparent)",
+  start: "linear-gradient(to right, transparent, #000 1rem)",
+  both: "linear-gradient(to right, transparent, #000 1rem, #000 calc(100% - 2.25rem), transparent)",
+};
+
+function PersonaSectionNav({
+  pathname,
+  section,
+  sections,
+  focusOportunidadId,
+}: {
+  pathname: string;
+  section: GrowthPersonaSectionId;
+  sections: Array<{ id: GrowthPersonaSectionId; label: string }>;
+  focusOportunidadId?: string;
+}) {
+  const navRef = useRef<HTMLElement>(null);
+  const [hint, setHint] = useState<SectionScrollHint>("none");
+
+  const syncScrollHint = useCallback(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const narrow = window.matchMedia("(max-width: 639px)").matches;
+    const max = el.scrollWidth - el.clientWidth;
+    const start = el.scrollLeft > 1;
+    const end = max - el.scrollLeft > 1;
+    const next: SectionScrollHint = !narrow || max <= 1
+      ? "none"
+      : start && end
+        ? "both"
+        : end
+          ? "end"
+          : start
+            ? "start"
+            : "none";
+    setHint((prev) => (prev === next ? prev : next));
+  }, []);
+
+  const sectionKey = sections.map((item) => item.id).join("\n");
+
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    let alive = true;
+    const revealCurrent = () => {
+      if (!alive) return;
+      el.querySelector<HTMLElement>("[aria-current='page']")?.scrollIntoView({
+        block: "nearest",
+        inline: "nearest",
+      });
+      syncScrollHint();
+    };
+    revealCurrent();
+    const observer = new ResizeObserver(() => syncScrollHint());
+    observer.observe(el);
+    for (const child of el.children) observer.observe(child);
+    const media = window.matchMedia("(max-width: 639px)");
+    media.addEventListener("change", syncScrollHint);
+    void document.fonts?.ready.then(revealCurrent);
+    return () => {
+      alive = false;
+      observer.disconnect();
+      media.removeEventListener("change", syncScrollHint);
+    };
+  }, [section, sectionKey, syncScrollHint]);
+
+  const mask = hint === "none" ? undefined : SECTION_SCROLL_MASK[hint];
 
   return (
-    <div
-      className={cn(
-        "rounded-[var(--radius-lg)] border border-primary/20",
-        "bg-[color-mix(in_srgb,var(--color-primary)_4%,white)] px-5 py-5"
-      )}
-      data-persona-next-action="pending"
-    >
-      <p className={aek.label}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-      <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-        {action.summary}
-      </p>
-      <p className="mt-1.5 text-sm text-muted">
-        {action.kindLabel}
-        {action.oportunidadTypeLabel ? ` · ${action.oportunidadTypeLabel}` : ""}
-        {due ? ` · Para ${due}` : ""}
-      </p>
-      <Link
-        href={`?oportunidad=${encodeURIComponent(action.oportunidadId)}#oportunidad-${action.oportunidadId}`}
-        className="mt-3.5 inline-flex text-xs font-semibold text-primary hover:underline"
+    <div className="mt-4 border-b border-[var(--admin-border-subtle)]">
+      <nav
+        ref={navRef}
+        aria-label="Secciones de la persona"
+        onScroll={syncScrollHint}
+        className="flex gap-1 overflow-x-auto overscroll-x-contain scroll-px-8"
+        style={mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined}
       >
-        Ver oportunidad
-      </Link>
+        {sections.map((item) => {
+          const current = item.id === section;
+          return (
+            <Link
+              key={item.id}
+              href={sectionHref(pathname, item.id, focusOportunidadId)}
+              aria-current={current ? "page" : undefined}
+              onFocus={(event) => {
+                event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" });
+              }}
+              className={cn(
+                "shrink-0 border-b-2 px-2 py-2.5 text-[13px] font-medium sm:px-3 sm:text-sm",
+                current
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted hover:text-foreground"
+              )}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
-  );
-}
-
-function opportunityStatusTone(
-  status: string
-): "active" | "inactive" | "info" {
-  if (status === "won" || status === "handed_off") return "active";
-  if (status === "lost" || status === "archived") return "inactive";
-  return "info";
-}
-
-function OportunidadRow({
-  op,
-  focused,
-  isPrimaryAction,
-  canOpenSales,
-}: {
-  op: GrowthOportunidadView;
-  focused: boolean;
-  isPrimaryAction: boolean;
-  canOpenSales: boolean;
-}) {
-  const showOwnNextAction = !isPrimaryAction && (focused || Boolean(op.nextAction));
-
-  return (
-    <li
-      id={`oportunidad-${op.id}`}
-      className={cn(
-        "scroll-mt-24 border-b border-[var(--admin-border-subtle)] py-4 last:border-b-0",
-        focused && "rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-primary)_3%,white)] px-3 -mx-1"
-      )}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[15px] font-semibold tracking-tight text-foreground">
-            {op.typeLabel}
-            {op.subjectLabel ? ` · ${op.subjectLabel}` : ""}
-          </p>
-          <p className="mt-1 text-sm text-muted">{op.originLabel}</p>
-        </div>
-        <StatusBadge tone={opportunityStatusTone(op.status)} label={op.statusLabel} />
-      </div>
-
-      {showOwnNextAction ? (
-        <p className="mt-3 text-sm text-muted">
-          {op.nextAction ? (
-            <>
-              <span className="font-medium text-foreground">
-                {op.nextAction.summary}
-              </span>
-              {op.nextAction.dueAt ? ` · ${formatWhen(op.nextAction.dueAt)}` : ""}
-            </>
-          ) : (
-            GROWTH_NO_NEXT_ACTION_LABEL
-          )}
-        </p>
-      ) : null}
-
-      {focused ? (
-        <div className="mt-4 border-t border-[var(--admin-border-subtle)] pt-3.5">
-          <p className={aek.label}>{GROWTH_RELATED_HISTORY_LABEL}</p>
-          {op.relatedActivities.length === 0 ? (
-            <p className="mt-1.5 text-sm text-muted">
-              Todavía no hay hechos ligados a esta oportunidad.
-            </p>
-          ) : (
-            <ul className="mt-2.5 space-y-2">
-              {op.relatedActivities.map((act) => {
-                const kindDiffers = act.kindLabel !== act.summary;
-                return (
-                  <li key={act.id} className="text-sm text-foreground">
-                    <span className="font-medium">{act.summary}</span>
-                    <span className="text-muted">
-                      {kindDiffers ? ` · ${act.kindLabel}` : ""} ·{" "}
-                      {formatRelativeTime(act.occurredAt)}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {canOpenSales ? (
-            <Link
-              href={`/admin/ventas/${encodeURIComponent(op.id)}`}
-              className="mt-3.5 inline-flex text-xs font-semibold text-primary hover:underline"
-            >
-              {GROWTH_PERSONAS_OPEN_IN_SALES}
-            </Link>
-          ) : null}
-        </div>
-      ) : (
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <Link
-            href={`?oportunidad=${encodeURIComponent(op.id)}#oportunidad-${op.id}`}
-            className="inline-flex text-xs font-semibold text-primary hover:underline"
-          >
-            {GROWTH_VIEW_DETAIL_LABEL}
-          </Link>
-          {canOpenSales ? (
-            <Link
-              href={`/admin/ventas/${encodeURIComponent(op.id)}`}
-              className="inline-flex text-xs font-semibold text-primary hover:underline"
-            >
-              {GROWTH_PERSONAS_OPEN_IN_SALES}
-            </Link>
-          ) : null}
-        </div>
-      )}
-    </li>
-  );
-}
-
-function ConversationRow({
-  conversation,
-  canOpenMessages,
-}: {
-  conversation: GrowthPersonaConversationView;
-  canOpenMessages: boolean;
-}) {
-  return (
-    <li className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--admin-border-subtle)] py-3.5 last:border-b-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <p className="text-sm font-semibold text-foreground">
-            {conversation.channelLabel}
-          </p>
-          {conversation.statusLabel ? (
-            <span className="text-xs text-muted">{conversation.statusLabel}</span>
-          ) : null}
-          {conversation.timeLabel ? (
-            <span className="text-xs text-muted">{conversation.timeLabel}</span>
-          ) : null}
-        </div>
-        <p className="mt-1 line-clamp-2 text-sm text-muted">
-          {conversation.lastMessagePreview || "Sin mensajes aún"}
-        </p>
-      </div>
-      {canOpenMessages ? (
-        <Link
-          href={`/admin/mensajes?c=${encodeURIComponent(conversation.id)}`}
-          className="inline-flex shrink-0 text-xs font-semibold text-primary hover:underline"
-        >
-          {GROWTH_PERSONAS_OPEN_IN_MESSAGES}
-        </Link>
-      ) : null}
-    </li>
   );
 }
 
 export function PersonaDetailClient({
   persona,
+  section: requestedSection,
   focusOportunidadId,
   canOpenSales = false,
   canOpenMessages = false,
   canOpenActivity = false,
+  canOperate = false,
+  members = [],
 }: PersonaDetailClientProps) {
-  useEffect(() => {
-    if (!focusOportunidadId) return;
-    const el = document.getElementById(`oportunidad-${focusOportunidadId}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [focusOportunidadId]);
-
+  const [work, setWork] = useState<null | "contact" | "next">(null);
+  const pathname = usePathname();
+  const assessments = persona.workspace?.assessments ?? [];
+  const section = resolvePersonaSection(requestedSection, assessments.length > 0);
+  const sections = visiblePersonaSections(assessments.length > 0);
+  const latest = assessments[0];
+  const notes = partitionPersonaNotes(persona.activities);
+  const timeline = visibleTimelineActivities(persona.activities, {
+    omitSourceIds: section === "resumen" ? assessments.map((item) => item.id) : [],
+  });
+  const resumenTimeline = timeline.slice(0, 5);
   const conversations = persona.conversations ?? [];
   const contactLine = [persona.email, persona.phone].filter(Boolean);
+  const action = persona.primaryNextAction;
+  const actionAssessment = action
+    ? assessments.find((item) => item.oportunidadId === action.oportunidadId)
+    : undefined;
+  const due = formatPersonaWhen(action?.dueAt);
+  const targetId = preferredOperableOpportunityId(
+    persona.oportunidades.map((item) => ({ id: item.id, status: item.status })),
+    action?.oportunidadId
+  );
+  const execution = action
+    ? nextActionExecution({
+        kind: action.kind,
+        reportPath: actionAssessment?.reportPath,
+        conversationId: canOpenMessages ? conversations[0]?.id : undefined,
+      })
+    : null;
+  const operable = Boolean(canOperate && targetId);
+
+  useEffect(() => {
+    if (section !== "oportunidades" || !focusOportunidadId) return;
+    const el = document.getElementById(`oportunidad-${focusOportunidadId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [section, focusOportunidadId]);
 
   return (
     <AdminModulePage
+      hideTitle
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
         { label: GROWTH_PERSONAS_PAGE_TITLE, href: "/admin/personas" },
         { label: persona.displayName },
       ]}
       title={persona.displayName}
-      description={arrivedLabel(persona.originLabel)}
-      actions={
-        <Button href="/admin/personas" variant="outline" size="sm">
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          {GROWTH_PERSONAS_PAGE_TITLE}
-        </Button>
-      }
     >
-      <div className={aek.sectionGap} data-persona-detail>
-        <div className="space-y-1">
-          {contactLine.length > 0 ? (
-            <p className="text-sm text-muted">{contactLine.join(" · ")}</p>
-          ) : (
-            <p className="text-sm text-muted">Sin correo ni teléfono</p>
-          )}
-        </div>
-
-        <NextActionBlock action={persona.primaryNextAction} />
-
-        <Section
-          title="Oportunidades"
-          description="Qué quiere esta persona."
-        >
-          {persona.oportunidades.length === 0 ? (
-            <EmptyState
-              title={GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_TITLE}
-              description={GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_DESCRIPTION}
-              className="bg-[var(--admin-surface)] py-10"
-            />
-          ) : (
-            <ul className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-4 sm:px-5">
-              {persona.oportunidades.map((op) => (
-                <OportunidadRow
-                  key={op.id}
-                  op={op}
-                  focused={focusOportunidadId === op.id}
-                  isPrimaryAction={
-                    persona.primaryNextAction?.oportunidadId === op.id
-                  }
-                  canOpenSales={canOpenSales}
-                />
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section
-          title={GROWTH_PERSONAS_CONVERSATIONS_SECTION}
-          description="Contexto reciente, sin bandeja."
-        >
-          {conversations.length === 0 ? (
-            <EmptyState
-              title={GROWTH_PERSONAS_CONVERSATIONS_EMPTY_TITLE}
-              description={GROWTH_PERSONAS_CONVERSATIONS_EMPTY_DESCRIPTION}
-              className="bg-[var(--admin-surface)] py-10"
-            />
-          ) : (
-            <ul
-              className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-4 sm:px-5"
-              data-persona-conversations
-            >
-              {conversations.map((c) => (
-                <ConversationRow
-                  key={c.id}
-                  conversation={c}
-                  canOpenMessages={canOpenMessages}
-                />
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section
-          title={GROWTH_TIMELINE_SECTION_LABEL}
-          description="Hechos recientes, del más nuevo al más antiguo."
-        >
-          {persona.activities.length === 0 ? (
-            <EmptyState
-              title={GROWTH_PERSONAS_ACTIVITY_EMPTY_TITLE}
-              description={GROWTH_PERSONAS_ACTIVITY_EMPTY_DESCRIPTION}
-              className="bg-[var(--admin-surface)] py-10"
-            />
-          ) : (
-            <ol
-              className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-5 py-4"
-              data-persona-activity
-            >
-              {persona.activities.map((a, index) => {
-                const kindDiffers = a.kindLabel !== a.summary;
-                return (
-                  <li
-                    key={a.id}
-                    className={cn(
-                      "relative flex gap-3 pb-4 last:pb-0",
-                      index < persona.activities.length - 1 &&
-                        "after:absolute after:left-[5px] after:top-3 after:h-[calc(100%-4px)] after:w-px after:bg-[var(--admin-border-subtle)]"
-                    )}
-                  >
-                    <span
-                      className="relative z-[1] mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full border-2 border-primary/50 bg-[var(--admin-surface)]"
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                        <span className="text-sm font-medium text-foreground">
-                          {a.summary}
-                        </span>
-                        <time className="text-xs text-muted">
-                          {formatRelativeTime(a.occurredAt)}
-                        </time>
-                      </div>
-                      {kindDiffers ? (
-                        <p className="mt-0.5 text-sm text-muted">{a.kindLabel}</p>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-          {canOpenActivity ? (
-            <div className="mt-3">
-              <Link
-                href="/admin/actividad"
-                className="inline-flex text-xs font-semibold text-primary hover:underline"
+      <div className="space-y-4" data-persona-detail>
+        <header>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 gap-3.5">
+              <div
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_14%,white)] text-sm font-semibold text-primary"
+                aria-hidden
               >
-                {GROWTH_PERSONAS_OPEN_ACTIVITY}
-              </Link>
+                {personaInitials(persona.displayName)}
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                    {persona.displayName}
+                  </h1>
+                  <StatusBadge
+                    tone={persona.status === "active" ? "active" : "inactive"}
+                    label={persona.statusLabel}
+                  />
+                </div>
+                <p className="mt-1 text-sm text-muted">{arrivedLabel(persona.originLabel)}</p>
+                <div className="mt-2 flex flex-col gap-1 text-sm text-muted sm:flex-row sm:flex-wrap sm:gap-x-4">
+                  {persona.email ? (
+                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span className="truncate">{persona.email}</span>
+                    </span>
+                  ) : null}
+                  {persona.phone ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      {persona.phone}
+                    </span>
+                  ) : null}
+                  {contactLine.length === 0 ? <span>Sin correo ni teléfono</span> : null}
+                </div>
+              </div>
             </div>
-          ) : null}
-        </Section>
+            <Button href="/admin/personas" variant="outline" size="sm" className="shrink-0 rounded-full">
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              Volver a personas
+            </Button>
+          </div>
+          <PersonaSectionNav
+            pathname={pathname}
+            section={section}
+            sections={sections}
+            focusOportunidadId={focusOportunidadId}
+          />
+        </header>
+
+        <PersonaQuickActions
+          canOperate={operable}
+          messagesHref={
+            canOpenMessages && conversations[0]
+              ? `/admin/mensajes?c=${encodeURIComponent(conversations[0].id)}`
+              : undefined
+          }
+          onContact={() => setWork("contact")}
+          onNext={() => setWork("next")}
+        />
+        {work && targetId ? (
+          <PersonaWorkPanel
+            mode={work}
+            oportunidadId={targetId}
+            initialSummary={action?.oportunidadId === targetId ? action.summary : ""}
+            initialKind={action?.oportunidadId === targetId ? action.kind : undefined}
+            hasCurrent={Boolean(action && action.oportunidadId === targetId)}
+            onDone={() => setWork(null)}
+          />
+        ) : null}
+
+        {section === "resumen" ? (
+          <div className="space-y-3">
+            <PersonaSignalRow signals={persona.workspace?.signals ?? []} />
+            <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.75fr)]">
+              <div>
+                <PersonaNextStep
+                  label={GROWTH_NEXT_ACTION_SECTION_LABEL}
+                  emptyLabel={GROWTH_NO_NEXT_ACTION_LABEL}
+                  summary={action?.summary}
+                  kindLabel={action?.kindLabel}
+                  support={
+                    action
+                      ? [
+                          actionAssessment
+                            ? `${actionAssessment.title}: ${actionAssessment.headline}.`
+                            : "",
+                          [action.oportunidadTypeLabel, due ? `Para ${due}` : ""].filter(Boolean).join(" · "),
+                        ].filter(Boolean)
+                      : undefined
+                  }
+                  reportHref={execution?.type === "report" ? execution.href : undefined}
+                  salesHref={
+                    action && canOpenSales
+                      ? `/admin/ventas/${encodeURIComponent(action.oportunidadId)}`
+                      : undefined
+                  }
+                  salesLabel={GROWTH_PERSONAS_OPEN_IN_SALES}
+                  messagesHref={execution?.type === "messages" ? execution.href : undefined}
+                  messagesLabel={GROWTH_PERSONAS_OPEN_IN_MESSAGES}
+                  opportunityHref={
+                    action ? sectionHref(pathname, "oportunidades", action.oportunidadId) : undefined
+                  }
+                  onUpdate={operable ? () => setWork("next") : undefined}
+                  onRegisterContact={
+                    operable && action?.kind === "contact" ? () => setWork("contact") : undefined
+                  }
+                />
+              </div>
+              <PersonaContactCard
+                email={persona.email}
+                phone={persona.phone}
+                organizationName={latest?.organizationName}
+                originLabel={persona.originLabel}
+              />
+            </div>
+            {latest ? (
+              <Link
+                href={sectionHref(pathname, "diagnosticos", focusOportunidadId)}
+                className={cn(personaPanelClass, "block px-3 py-2.5 text-sm")}
+              >
+                <span className="font-semibold text-foreground">{latest.title}</span>
+                <span className="text-muted"> · {latest.headline}</span>
+              </Link>
+            ) : null}
+            <section className={cn(personaPanelClass, "px-3 py-3 sm:px-4")}>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">Actividad reciente</p>
+                  <Link
+                    href={sectionHref(pathname, "actividad", focusOportunidadId)}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Ver toda la actividad
+                  </Link>
+                </div>
+                <PersonaActivityList
+                  activities={resumenTimeline}
+                  emptyTitle={GROWTH_PERSONAS_ACTIVITY_EMPTY_TITLE}
+                  emptyDescription={GROWTH_PERSONAS_ACTIVITY_EMPTY_DESCRIPTION}
+                  relatedHref={(id) => sectionHref(pathname, "oportunidades", id)}
+                  reportHref={(activity) =>
+                    assessments.find((item) => item.id === activity.sourceId)?.reportPath
+                  }
+                />
+              </section>
+          </div>
+        ) : null}
+
+        {section === "diagnosticos" && latest ? (
+          <div className="space-y-4">
+            <PersonaAssessmentCard
+              assessment={latest}
+              capturedLabel={formatPersonaWhen(latest.capturedAt)}
+              sourceLabel={persona.originLabel}
+            />
+            <PersonaAssessmentHistory
+              assessments={assessments.slice(1)}
+              sourceLabel={persona.originLabel}
+            />
+          </div>
+        ) : null}
+
+        {section === "oportunidades" ? (
+          <PersonaOpportunityList
+            oportunidades={persona.oportunidades}
+            focusOportunidadId={focusOportunidadId}
+            primaryOportunidadId={action?.oportunidadId}
+            canOpenSales={canOpenSales}
+            detailHref={(id) => sectionHref(pathname, "oportunidades", id)}
+            relatedHistoryLabel={GROWTH_RELATED_HISTORY_LABEL}
+            emptyTitle={GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_TITLE}
+            emptyDescription={GROWTH_PERSONAS_OPPORTUNITIES_EMPTY_DESCRIPTION}
+            noNextActionLabel={GROWTH_NO_NEXT_ACTION_LABEL}
+            openInSalesLabel={GROWTH_PERSONAS_OPEN_IN_SALES}
+            viewDetailLabel={GROWTH_VIEW_DETAIL_LABEL}
+            canOperate={canOperate}
+            members={members}
+          />
+        ) : null}
+
+        {section === "actividad" ? (
+          <div className="space-y-4">
+            <section className={cn(personaPanelClass, "px-4 py-4 sm:px-5")}>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-foreground">
+                  {GROWTH_TIMELINE_SECTION_LABEL}
+                </p>
+                {canOpenActivity ? (
+                  <Link
+                    href="/admin/actividad"
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    {GROWTH_PERSONAS_OPEN_ACTIVITY}
+                  </Link>
+                ) : null}
+              </div>
+              <PersonaActivityList
+                activities={timeline}
+                emptyTitle={GROWTH_PERSONAS_ACTIVITY_EMPTY_TITLE}
+                emptyDescription={GROWTH_PERSONAS_ACTIVITY_EMPTY_DESCRIPTION}
+                relatedHref={(id) => sectionHref(pathname, "oportunidades", id)}
+                reportHref={(activity) =>
+                  assessments.find((item) => item.id === activity.sourceId)?.reportPath
+                }
+              />
+            </section>
+            <section data-persona-conversations>
+              <div className="mb-2">
+                <p className="text-sm font-semibold text-foreground">
+                  {GROWTH_PERSONAS_CONVERSATIONS_SECTION}
+                </p>
+                <p className="text-xs text-muted">Contexto reciente, sin bandeja.</p>
+              </div>
+              {conversations.length === 0 ? (
+                <EmptyState
+                  title={GROWTH_PERSONAS_CONVERSATIONS_EMPTY_TITLE}
+                  description={GROWTH_PERSONAS_CONVERSATIONS_EMPTY_DESCRIPTION}
+                  className="bg-[var(--admin-surface)] py-8"
+                />
+              ) : (
+                <PersonaConversationList
+                  conversations={conversations}
+                  canOpenMessages={canOpenMessages}
+                  openLabel={GROWTH_PERSONAS_OPEN_IN_MESSAGES}
+                />
+              )}
+            </section>
+          </div>
+        ) : null}
+
+        {section === "notas" ? (
+          <div className="space-y-3">
+            {operable && targetId ? (
+              <section className={cn(personaPanelClass, "px-3 py-3")}>
+                <p className="mb-2 text-sm font-semibold text-foreground">Agregar nota</p>
+                <PersonaFollowUpForm oportunidadId={targetId} kind="note" />
+              </section>
+            ) : null}
+            <PersonaNotesList notes={notes.human} automatic={notes.automatic} />
+          </div>
+        ) : null}
       </div>
     </AdminModulePage>
   );

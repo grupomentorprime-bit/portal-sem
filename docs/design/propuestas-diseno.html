@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tres diseños · Violeta aurora</title>
+  <style>
+    :root {
+      --studio: #e7e9ee;
+      --ink: #141820;
+      --muted: #5c6573;
+      --line: #d5d9e2;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--studio);
+      color: var(--ink);
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-end;
+      padding: 28px 32px 8px;
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: -0.03em; }
+    .top p { margin: 6px 0 0; color: var(--muted); font-size: 14px; max-width: 720px; }
+    .hint { margin: 0; color: var(--muted); font-size: 13px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      padding: 18px 32px 40px;
+    }
+    @media (min-width: 1100px) {
+      .grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .art {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 0;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .art:hover { border-color: #b7becb; }
+    .art:focus-visible { outline: 2px solid #141820; outline-offset: 3px; }
+    .art-head { padding: 14px 14px 10px; }
+    .kicker {
+      margin: 0 0 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .art h2 { margin: 0; font-size: 18px; letter-spacing: -0.02em; }
+    .note { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .viewport {
+      margin: 0 12px 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      position: relative;
+      background: #f7f5ff;
+    }
+    .scale {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1280px;
+      height: 800px;
+      transform-origin: top left;
+    }
+    .stage {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 24, 32, 0.55);
+      display: none;
+      padding: 28px;
+      z-index: 5;
+    }
+    .stage.open { display: grid; }
+    .stage-panel {
+      background: white;
+      border-radius: 16px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .stage-side { padding: 24px; border-right: 1px solid var(--line); overflow: auto; }
+    .stage-side h2 { margin: 8px 0; font-size: 22px; letter-spacing: -0.03em; }
+    .stage-side ul { margin: 16px 0 0; padding-left: 18px; color: #3c4656; line-height: 1.5; }
+    .close {
+      margin-top: 20px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: white;
+      font: inherit;
+      cursor: pointer;
+    }
+    .stage-view { background: #eceff4; padding: 20px; overflow: auto; }
+    .stage-view .app { width: 1280px; height: 800px; border-radius: 12px; overflow: hidden; border: 1px solid #d5d9e2; }
+
+    .app {
+      width: 1280px;
+      height: 800px;
+      font-size: 13px;
+      color: #1e1b4b;
+      --p: #6d28d9;
+      --a: #22d3ee;
+      --ink: #1e1b4b;
+      --muted: #6b6580;
+      --ok: #059669;
+      --okbg: #ecfdf5;
+    }
+    .mark {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--p); position: relative; flex: none;
+    }
+    .mark::after {
+      content: "";
+      position: absolute; right: 0; bottom: 0;
+      width: 11px; height: 11px; background: var(--a);
+      border-bottom-right-radius: 8px;
+    }
+    .badge {
+      height: 20px; padding: 0 7px; border-radius: 6px;
+      background: var(--okbg); color: var(--ok);
+      font-size: 11px; font-weight: 700;
+      display: inline-flex; align-items: center;
+    }
+    .badge.warn { background: #f3f0f8; color: #6b6580; font-weight: 600; }
+
+    /* Tinta */
+    .tinta { display: grid; grid-template-columns: 232px 1fr; background: #f7f5ff; }
+    .tinta .side { background: #1e1b4b; color: #ede9fe; padding: 16px 12px; }
+    .tinta .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; padding: 2px 8px 14px; }
+    .tinta .space {
+      margin: 0 4px 12px; padding: 8px; border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      display: flex; gap: 8px; align-items: center;
+    }
+    .tinta .space small { display: block; font-size: 10px; letter-spacing: 0.06em; color: #c4b5fd; }
+    .tinta .avatar {
+      width: 26px; height: 26px; border-radius: 7px; background: #6d28d9; color: white;
+      display: grid; place-items: center; font-size: 11px; font-weight: 700;
+    }
+    .tinta .item, .tinta .child {
+      height: 32px; display: flex; align-items: center; gap: 8px;
+      padding: 0 10px; border-radius: 8px; color: #ddd6fe;
+    }
+    .tinta .child { padding-left: 34px; height: 30px; }
+    .tinta .active { background: #6d28d9; color: white; font-weight: 650; }
+    .tinta .label { margin: 12px 10px 4px; font-size: 10px; letter-spacing: 0.08em; color: #a78bfa; font-weight: 700; }
+    .tinta .main { display: flex; flex-direction: column; min-width: 0; }
+    .tinta .bar {
+      height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 18px;
+      background: white; border-bottom: 1px solid #e9e4f5;
+    }
+    .tinta .search, .lamina .search, .aire .search {
+      flex: 1; height: 34px; border-radius: 10px; border: 1px solid #e9e4f5;
+      display: flex; align-items: center; padding: 0 12px; color: #6b6580; background: white; gap: 8px;
+    }
+    .tinta .content { padding: 20px 22px; }
+    .crumbs { color: #6b6580; font-size: 12px; }
+    .crumbs b { color: #1e1b4b; }
+    .tinta h3 { margin: 8px 0 0; font-size: 28px; letter-spacing: -0.03em; }
+    .lead { margin: 4px 0 0; color: #6b6580; }
+    .row { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .card {
+      margin-top: 16px; background: white; border: 1px solid #e9e4f5; border-radius: 14px; padding: 16px 18px;
+      box-shadow: inset 0 3px 0 #22d3ee;
+    }
+    .domain { margin: 8px 0 2px; font-size: 22px; font-weight: 750; letter-spacing: -0.03em; }
+    .fine { margin: 0; color: #6b6580; font-size: 12.5px; }
+    .actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #6d28d9;
+      background: #6d28d9; color: white; font-weight: 650; display: inline-flex; align-items: center;
+    }
+    .btn.ghost {
+      background: white; color: #6d28d9;
+      border-color: #ddd6fe;
+    }
+    .fieldrow { display: flex; gap: 10px; margin-top: 12px; }
+    .field {
+      flex: 1; height: 36px; border: 1px solid #e9e4f5; border-radius: 8px;
+      display: flex; align-items: center; padding: 0 12px; color: #6b6580; background: white;
+    }
+    .split { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e9e4f5; display: flex; justify-content: space-between; font-weight: 650; }
+    .help b { color: #6d28d9; }
+
+    /* Aire */
+    .aire { display: grid; grid-template-columns: 220px 1fr; background: #fbfaff; }
+    .aire .side { padding: 22px 18px; }
+    .aire .brand { display: flex; gap: 8px; align-items: center; font-weight: 700; margin-bottom: 22px; }
+    .aire .item, .aire .child { height: 34px; display: flex; align-items: center; color: #6b6580; }
+    .aire .child { padding-left: 14px; }
+    .aire .active { color: #6d28d9; font-weight: 700; }
+    .aire .label { margin: 16px 0 6px; font-size: 10px; letter-spacing: 0.12em; color: #a78bfa; font-weight: 700; }
+    .aire .main { padding: 28px 48px 32px; }
+    .aire .bar { display: flex; justify-content: flex-end; margin-bottom: 28px; }
+    .aire h3 { margin: 10px 0 0; font-size: 40px; letter-spacing: -0.045em; font-weight: 650; }
+    .aire .domain { font-size: 28px; margin: 18px 0 6px; }
+    .aire .block { margin-top: 28px; padding-top: 22px; border-top: 1px solid #ece7f6; }
+    .aire .btn { border-radius: 999px; padding: 0 16px; height: 38px; }
+    .aire .link { color: #0e7490; font-weight: 700; }
+    .aire .field { border: 0; border-bottom: 1px solid #ddd6fe; border-radius: 0; padding-left: 0; background: transparent; }
+
+    /* Lámina */
+    .lamina { background: #ddd6fe; padding: 40px; height: 800px; }
+    .lamina .shell {
+      height: 100%; background: white; border-radius: 22px; overflow: hidden;
+      display: grid; grid-template-columns: 228px 1fr;
+    }
+    .lamina .side { padding: 16px 12px; border-right: 1px solid #f3e8ff; }
+    .lamina .brand { display: flex; gap: 8px; align-items: center; font-weight: 700; padding: 4px 8px 12px; }
+    .lamina .space {
+      display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: #f5f3ff; margin-bottom: 8px;
+    }
+    .lamina .space small { display: block; font-size: 10px; letter-spacing: 0.05em; color: #8b83a6; }
+    .lamina .avatar {
+      width: 26px; height: 26px; border-radius: 8px; background: white; color: #6d28d9;
+      display: grid; place-items: center; font-weight: 700; font-size: 11px;
+    }
+    .lamina .item, .lamina .child { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 8px; color: #4c4668; }
+    .lamina .child { padding-left: 32px; }
+    .lamina .active { background: #f3e8ff; color: #6d28d9; font-weight: 700; }
+    .lamina .label { margin: 10px 8px 4px; font-size: 10px; letter-spacing: 0.08em; color: #a78bfa; font-weight: 700; }
+    .lamina .main { background: #fbfaff; display: flex; flex-direction: column; }
+    .lamina .bar { height: 58px; display: flex; align-items: center; gap: 12px; padding: 0 18px; }
+    .lamina .content { padding: 8px 22px 22px; }
+    .lamina h3 { margin: 8px 0 0; font-size: 28px; letter-spacing: -0.03em; }
+    .lamina .card { background: #f5f3ff; border: 0; box-shadow: inset 0 3px 0 #22d3ee; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Tres diseños sobre Violeta aurora</h1>
+      <p>La paleta 4 se mantiene: violeta <b>#6D28D9</b>, cian <b>#22D3EE</b>, tinta <b>#1E1B4B</b>. Lo que cambia es la estructura. Clic para verla a tamaño real.</p>
+    </div>
+    <p class="hint">Teclas 1–3 · Esc cierra</p>
+  </header>
+  <main class="grid" id="grid"></main>
+  <div class="stage" id="stage">
+    <div class="stage-panel">
+      <aside class="stage-side" id="side"></aside>
+      <div class="stage-view" id="view"></div>
+    </div>
+  </div>
+  <script>
+    const designs = [
+      {
+        id: "tinta",
+        key: "1",
+        name: "Tinta",
+        kicker: "La que aplicaría",
+        note: "La navegación va en violeta oscuro. El trabajo queda claro y el botón violeta resalta más.",
+        points: [
+          "Sidebar #1E1B4B, ítem activo en violeta sólido.",
+          "Área de trabajo clara, tarjetas blancas.",
+          "El cian solo como filete de la tarjeta principal."
+        ]
+      },
+      {
+        id: "aire",
+        key: "2",
+        name: "Aire",
+        note: "Sin cajas. El dominio es el título y los botones son píldoras. La página respira.",
+        kicker: "La más distinta",
+        points: [
+          "Sin tarjetas ni bordes de panel.",
+          "Dominio en grande, acciones en píldora.",
+          "Copiar dirección pasa a enlace cian, no a botón."
+        ]
+      },
+      {
+        id: "lamina",
+        key: "3",
+        name: "Lámina",
+        note: "Una hoja blanca flota sobre un fondo violeta. La tarjeta principal se tiñe, no se encierra.",
+        kicker: "La más cercana a hoy",
+        points: [
+          "Fondo #EDE9FE y un panel blanco de esquinas amplias.",
+          "La dirección principal va sobre lavado violeta.",
+          "El cian sigue siendo solo el filete superior."
+        ]
+      }
+    ];
+
+    const svg = (d) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    const I = {
+      home: svg('<path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/>'),
+      people: svg('<path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7 .5a2.5 2.5 0 1 0 0-5"/><path d="M3.5 19c.6-2.4 2.6-4 5.5-4s4.9 1.6 5.5 4"/>'),
+      globe: svg('<circle cx="12" cy="12" r="8"/><path d="M4 12h16"/>')
+    };
+
+    function tinta() {
+      const el = document.createElement("div");
+      el.className = "app tinta";
+      el.innerHTML = `
+        <aside class="side">
+          <div class="brand"><span class="mark"></span> Growth OS</div>
+          <div class="space"><div class="avatar">M</div><div><small>ESPACIO ACTIVO</small><b>Mentor Prime Cumple</b></div></div>
+          <div class="item">${I.home} Inicio</div>
+          <div class="item">${I.people} Personas</div>
+          <div class="item">Ventas</div>
+          <div class="item">Mensajes</div>
+          <div class="item">Actividad</div>
+          <div class="label">CRECER</div>
+          <div class="item">Campañas</div>
+          <div class="item">Automatizaciones</div>
+          <div class="item">Analítica</div>
+          <div class="label">SITIO</div>
+          <div class="item">${I.globe} Sitio web</div>
+          <div class="child">Formularios</div>
+          <div class="child active">Dominio</div>
+          <div class="child">Ajustes del sitio</div>
+          <div class="item">Institución</div>
+          <div class="item">Equipo</div>
+          <div class="item">Ajustes</div>
+        </aside>
+        <section class="main">
+          <div class="bar"><div class="search">Buscar personas</div><span class="badge">Portal activo</span></div>
+          <div class="content">
+            <div class="crumbs">Inicio › Sitio web › <b>Dominio</b></div>
+            <div class="row">
+              <div><h3>Dominio</h3><p class="lead">La dirección con la que las personas encuentran tu sitio.</p></div>
+              <span class="btn ghost">Ajustes del sitio</span>
+            </div>
+            <article class="card">
+              <div class="row">
+                <div>
+                  <div>Dirección principal <span class="badge">Activo</span></div>
+                  <div class="domain">cumple.mentorprime.cl</div>
+                  <p class="fine">Listo. Las personas llegan aquí. No hace falta otro dominio para publicar el sitio.</p>
+                </div>
+                <div class="actions"><span class="btn">Abrir sitio</span><span class="btn ghost">Copiar dirección</span></div>
+              </div>
+            </article>
+            <article class="card" style="box-shadow:none">
+              <div>Tu propio dominio <span class="badge warn">Opcional · No conectado</span></div>
+              <p class="fine">Solo si el cliente tiene un dominio suyo. El subdominio de arriba ya sirve.</p>
+              <div class="fieldrow"><div class="field">ej. seminario.cl</div><span class="btn">Guardar dominio</span></div>
+              <div class="split"><span>Otras direcciones</span><span>1</span></div>
+              <p class="help fine">Cada página publicada cuelga de tu dominio, por ejemplo <b>/contacto</b></p>
+            </article>
+          </div>
+        </section>`;
+      return el;
+    }
+
+    function aire() {
+      const el = document.createElement("div");
+      el.className = "app aire";
+      el.innerHTML = `
+        <aside class="side">
+          <div class="brand"><span class="mark"></span> Growth OS</div>
+          <div class="item">Inicio</div>
+          <div class="item">Personas</div>
+          <div class="item">Ventas</div>
+          <div class="item">Mensajes</div>
+          <div class="label">CRECER</div>
+          <div class="item">Campañas</div>
+          <div class="item">Analítica</div>
+          <div class="label">SITIO</div>
+          <div class="item">Sitio web</div>
+          <div class="child">Formularios</div>
+          <div class="child active">Dominio</div>
+          <div class="child">Ajustes del sitio</div>
+          <div class="item">Institución</div>
+          <div class="item">Ajustes</div>
+        </aside>
+        <section class="main">
+          <div class="bar"><div class="search" style="max-width:280px">Buscar personas</div></div>
+          <div class="crumbs">Inicio › Sitio web › <b>Dominio</b></div>
+          <h3>Dominio</h3>
+          <p class="lead">La dirección con la que las personas encuentran tu sitio.</p>
+          <div class="block">
+            <div>Dirección principal <span class="badge">Activo</span></div>
+            <div class="domain">cumple.mentorprime.cl</div>
+            <p class="fine">Listo. Las personas llegan aquí. No hace falta otro dominio para publicar el sitio.</p>
+            <div class="actions" style="margin-top:16px"><span class="btn">Abrir sitio</span><span class="link">Copiar dirección</span></div>
+          </div>
+          <div class="block">
+            <div>Tu propio dominio <span class="badge warn">Opcional</span></div>
+            <p class="fine">Solo si el cliente tiene un dominio suyo. El subdominio de arriba ya sirve.</p>
+            <div class="fieldrow"><div class="field">ej. seminario.cl</div><span class="btn">Guardar dominio</span></div>
+            <p class="help fine" style="margin-top:14px">Cada página publicada cuelga de tu dominio, por ejemplo <b>/contacto</b></p>
+          </div>
+        </section>`;
+      return el;
+    }
+
+    function lamina() {
+      const el = document.createElement("div");
+      el.className = "app lamina";
+      el.innerHTML = `
+        <div class="shell">
+          <aside class="side">
+            <div class="brand"><span class="mark"></span> Growth OS</div>
+            <div class="space"><div class="avatar">M</div><div><small>ESPACIO ACTIVO</small><b>Mentor Prime Cumple</b></div></div>
+            <div class="item">${I.home} Inicio</div>
+            <div class="item">${I.people} Personas</div>
+            <div class="item">Ventas</div>
+            <div class="item">Mensajes</div>
+            <div class="item">Actividad</div>
+            <div class="label">CRECER</div>
+            <div class="item">Campañas</div>
+            <div class="item">Automatizaciones</div>
+            <div class="item">Analítica</div>
+            <div class="item">${I.globe} Sitio web</div>
+            <div class="child">Formularios</div>
+            <div class="child active">Dominio</div>
+            <div class="child">Ajustes del sitio</div>
+            <div class="item">Institución</div>
+            <div class="item">Equipo</div>
+            <div class="item">Ajustes</div>
+          </aside>
+          <section class="main">
+            <div class="bar"><div class="search">Buscar personas</div><span class="badge">Portal activo</span></div>
+            <div class="content">
+              <div class="crumbs">Inicio › Sitio web › <b>Dominio</b></div>
+              <div class="row">
+                <div><h3>Dominio</h3><p class="lead">La dirección con la que las personas encuentran tu sitio.</p></div>
+                <span class="btn ghost">Ajustes del sitio</span>
+              </div>
+              <article class="card">
+                <div class="row">
+                  <div>
+                    <div>Dirección principal <span class="badge">Activo</span></div>
+                    <div class="domain">cumple.mentorprime.cl</div>
+                    <p class="fine">Listo. Las personas llegan aquí. No hace falta otro dominio para publicar el sitio.</p>
+                  </div>
+                  <div class="actions"><span class="btn">Abrir sitio</span><span class="btn ghost">Copiar dirección</span></div>
+                </div>
+              </article>
+              <article class="card" style="box-shadow:none;background:white">
+                <div>Tu propio dominio <span class="badge warn">Opcional · No conectado</span></div>
+                <div class="fieldrow"><div class="field">ej. seminario.cl</div><span class="btn">Guardar dominio</span></div>
+              </article>
+            </div>
+          </section>
+        </div>`;
+      return el;
+    }
+
+    const builders = { tinta, aire, lamina };
+    const grid = document.getElementById("grid");
+    const stage = document.getElementById("stage");
+
+    designs.forEach((d) => {
+      const button = document.createElement("button");
+      button.className = "art";
+      button.type = "button";
+      button.innerHTML = `
+        <div class="art-head">
+          <p class="kicker">${d.kicker} · ${d.key}</p>
+          <h2>${d.name}</h2>
+          <p class="note">${d.note}</p>
+        </div>
+        <div class="viewport"><div class="scale"></div></div>`;
+      button.querySelector(".scale").append(builders[d.id]());
+      button.addEventListener("click", () => open(d));
+      grid.append(button);
+    });
+
+    function fit() {
+      document.querySelectorAll(".viewport").forEach((view) => {
+        const scale = view.clientWidth / 1280;
+        view.querySelector(".scale").style.transform = `scale(${scale})`;
+        view.style.height = `${800 * scale}px`;
+      });
+    }
+
+    function open(d) {
+      document.getElementById("side").innerHTML = `
+        <p class="kicker">${d.kicker}</p>
+        <h2>${d.name}</h2>
+        <p class="note">${d.note}</p>
+        <ul>${d.points.map((p) => `<li>${p}</li>`).join("")}</ul>
+        <button class="close" type="button">Cerrar</button>`;
+      document.querySelector(".close").addEventListener("click", close);
+      const view = document.getElementById("view");
+      view.replaceChildren(builders[d.id]());
+      stage.classList.add("open");
+    }
+
+    function close() { stage.classList.remove("open"); }
+    stage.addEventListener("click", (e) => { if (e.target === stage) close(); });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+      const found = designs.find((d) => d.key === e.key);
+      if (found) open(found);
+    });
+    window.addEventListener("resize", fit);
+    fit();
+  </script>
+</body>
+</html>
