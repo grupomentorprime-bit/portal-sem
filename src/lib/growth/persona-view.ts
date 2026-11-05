@@ -41,6 +41,7 @@ export interface GrowthPersonaListItemView {
 export interface GrowthNextActionView {
   summary: string;
   dueAt?: string;
+  assigneeUserId?: string;
   kind: string;
   kindLabel: string;
   setAt: string;
@@ -163,6 +164,9 @@ function toNextActionView(
   return {
     summary: nextAction.summary,
     dueAt: nextAction.dueAt,
+    ...(nextAction.assigneeUserId
+      ? { assigneeUserId: nextAction.assigneeUserId }
+      : {}),
     kind: nextAction.kind,
     kindLabel: growthNextActionKindLabel(nextAction.kind),
     setAt: nextAction.setAt,

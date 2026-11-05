@@ -90,6 +90,8 @@ export type ConversionActivityInput = {
 export type ConversionFunnelInput = {
   tenantId: string;
   key: string;
+  /** Nombre comercial del embudo. Si falta, se usa la clave. */
+  label?: string;
   stages: Array<{ key: string; label: string }>;
 };
 
@@ -391,9 +393,12 @@ export function buildConversionAnalytics(
   }
 
   const funnelStages = new Map<string, Map<string, string>>();
+  const funnelLabels = new Map<string, string>();
   for (const f of input.funnels) {
     if (f.tenantId !== tenantId) continue;
     funnelStages.set(f.key, new Map(f.stages.map((s) => [s.key, s.label])));
+    const label = f.label?.trim();
+    if (label) funnelLabels.set(f.key, label);
   }
 
   const campaignByTracking = new Map(
@@ -409,7 +414,7 @@ export function buildConversionAnalytics(
   const funnelBucket = (o: ConversionOpportunityInput): FunnelBucket => {
     const key = nonEmptyString(o.funnelKey);
     return key
-      ? { key, label: key }
+      ? { key, label: funnelLabels.get(key) ?? key }
       : { key: NO_FUNNEL_KEY, label: NO_FUNNEL_LABEL };
   };
 

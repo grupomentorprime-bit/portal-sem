@@ -237,8 +237,10 @@ export type GrowthOsHomeFunnelStageOrder = {
 export function pickPrimaryFunnel(
   analytics: ConversionAnalyticsResponse
 ): ConversionAnalyticsResponse["stock"]["byFunnel"][number] | null {
-  const rows = analytics.stock.byFunnel.filter((f) => f.funnelKey !== "sin-embudo");
-  const pool = rows.length > 0 ? rows : analytics.stock.byFunnel;
+  // Solo embudos configurados. «Sin embudo» no se presenta en Home (estado vacío).
+  const pool = analytics.stock.byFunnel.filter(
+    (f) => f.funnelKey !== "sin-embudo"
+  );
   if (pool.length === 0) return null;
   return pool
     .slice()
@@ -385,9 +387,9 @@ function bandHref(
   band: "overdue" | "unfollowed" | "stale" | "unassigned",
   spaceWide: boolean
 ): string {
+  if (band === "unassigned") return "/admin/ventas?banda=unassigned";
   if (spaceWide) return `/admin/ventas?banda=${band}`;
-  if (band === "unassigned") return "/admin/conversion";
-  return `/admin/ventas/mi-trabajo#${band}`;
+  return `/admin/ventas?mias=1&banda=${band}`;
 }
 
 /**

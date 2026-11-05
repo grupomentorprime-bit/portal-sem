@@ -38,7 +38,9 @@ export function AdminModuleSubnav({
 
   if (!activeGroup || activeGroup.items.length < 2) return null;
 
-  const items = activeGroup.items.filter((item) => !isNavPlaceholder(item));
+  const items = activeGroup.items.filter(
+    (item) => !isNavPlaceholder(item) && !item.subnavHidden
+  );
   if (items.length < 2) return null;
 
   return (

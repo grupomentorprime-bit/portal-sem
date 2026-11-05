@@ -28,30 +28,16 @@ describe("CRM · Conversión — navegación", () => {
     const conversion = groups.find((group) => group.id === "conversion");
     assert.ok(conversion);
     assert.equal(conversion.label, "CRM · Conversión");
+    const visible = conversion.items.filter((item) => !item.subnavHidden);
     assert.deepEqual(
-      conversion.items.map((item) => item.label),
-      [
-        "Panel comercial",
-        "Oportunidades",
-        "Personas",
-        "Embudos",
-        "Mi trabajo",
-        "Mensajes",
-        "Actividad",
-      ]
+      visible.map((item) => item.label),
+      ["Oportunidades", "Personas", "Mensajes", "Embudos"]
     );
     assert.deepEqual(
-      conversion.items.map((item) => item.href),
-      [
-        "/admin/conversion",
-        "/admin/ventas",
-        "/admin/personas",
-        "/admin/ventas/embudos",
-        "/admin/ventas/mi-trabajo",
-        "/admin/mensajes",
-        "/admin/actividad",
-      ]
+      visible.map((item) => item.href),
+      ["/admin/ventas", "/admin/personas", "/admin/mensajes", "/admin/ventas/embudos"]
     );
+    assert.ok(conversion.items.some((item) => item.id === "nav-actividad" && item.subnavHidden));
 
     const core = NAV_SIDEBAR_ZONES.find((zone) => zone.id === "core");
     const grow = NAV_SIDEBAR_ZONES.find((zone) => zone.id === "grow");
@@ -63,13 +49,13 @@ describe("CRM · Conversión — navegación", () => {
     assert.equal(navGroupAsDirectLink(dashboard!)?.label, "Inicio");
   });
 
-  it("sidebar plano: CRM usa el nombre del grupo y el panel comercial", () => {
+  it("sidebar plano: CRM usa el nombre del grupo y Oportunidades", () => {
     const groups = filterAdminNavGroups(FULL, false, []);
     const conversion = groups.find((group) => group.id === "conversion");
     assert.ok(conversion);
     const link = navGroupAsSidebarLink(conversion);
     assert.equal(link?.label, "CRM · Conversión");
-    assert.equal(link?.href, "/admin/conversion");
+    assert.equal(link?.href, "/admin/ventas");
     assert.equal(isNavGroupActive("/admin/personas", conversion), true);
     assert.equal(isNavGroupActive("/admin/campanas", conversion), false);
   });
@@ -97,7 +83,6 @@ describe("CRM · Conversión — navegación", () => {
       "/admin/personas",
       "/admin/personas/p-1",
       "/admin/ventas/embudos",
-      "/admin/conversion",
       "/admin/ventas/mi-trabajo",
       "/admin/mensajes",
       "/admin/actividad",

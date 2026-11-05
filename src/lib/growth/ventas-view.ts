@@ -62,6 +62,8 @@ export interface GrowthVentasOpportunityOperateView
   phone?: string;
   closedAt?: string;
   organizationName?: string;
+  priorityBand: GrowthPriorityBand | null;
+  priorityLabel: string;
   stageTrack: OpportunityStageTrack;
   conversations: GrowthPersonaConversationView[];
 }

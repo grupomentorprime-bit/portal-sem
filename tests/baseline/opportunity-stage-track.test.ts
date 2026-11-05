@@ -58,8 +58,10 @@ describe("ficha de oportunidad — recorrido real", () => {
     assert.equal(byKey.proposal, "current");
     assert.equal(byKey.paused, "pending");
     assert.equal(track.steps.find((step) => step.key === "paused")?.caption, "Inactiva");
+    assert.equal(track.steps.find((step) => step.key === "contact")?.occurredAt, null);
     assert.equal(track.resultLabel, null);
-    assert.equal(track.notes.length, 0);
+    assert.match(track.notes.join(" "), /Contacto queda pendiente/);
+    assert.match(track.notes.join(" "), /salta de Abierta a Propuesta/);
   });
 
   it("sin historial solo muestra la etapa actual", () => {
@@ -106,6 +108,83 @@ describe("ficha de oportunidad — recorrido real", () => {
     assert.match(track.notes.join(" "), /no se marcan/i);
   });
 
+  it("sin historial, solo la etapa inicial muestra la fecha de apertura", () => {
+    const track = presentOpportunityStageTrack({
+      stages: stages(),
+      status: "open",
+      openedAt: "2026-10-19T15:52:00.000Z",
+      activities: [],
+    });
+    assert.equal(
+      track.steps.find((step) => step.key === "open")?.occurredAt,
+      "2026-10-19T15:52:00.000Z"
+    );
+    assert.equal(track.steps.find((step) => step.key === "contact")?.mark, "pending");
+    assert.equal(track.steps.find((step) => step.key === "contact")?.occurredAt, null);
+    assert.match(track.notes.join(" "), /fecha de la etapa actual es la de apertura/);
+  });
+
+  it("una etapa que no es la inicial no hereda la fecha de apertura", () => {
+    const track = presentOpportunityStageTrack({
+      stages: stages(),
+      status: "contact",
+      openedAt: "2026-10-19T15:52:00.000Z",
+      activities: [],
+    });
+    assert.equal(track.steps.find((step) => step.key === "contact")?.occurredAt, null);
+    assert.equal(track.steps.find((step) => step.key === "open")?.mark, "pending");
+  });
+
+  it("la fecha de una etapa es la última mención del historial", () => {
+    const track = presentOpportunityStageTrack({
+      stages: stages(),
+      status: "open",
+      activities: [
+        {
+          kind: "opportunity_opened",
+          occurredAt: "2026-10-15T15:00:00.000Z",
+          payload: { status: "open" },
+        },
+        {
+          kind: "opportunity_transitioned",
+          occurredAt: "2026-10-18T15:00:00.000Z",
+          payload: { fromState: "open", toState: "proposal" },
+        },
+        {
+          kind: "opportunity_transitioned",
+          occurredAt: "2026-10-19T15:00:00.000Z",
+          payload: { fromState: "proposal", toState: "open" },
+        },
+      ],
+    });
+    assert.equal(
+      track.steps.find((step) => step.key === "open")?.occurredAt,
+      "2026-10-19T15:00:00.000Z"
+    );
+    assert.equal(track.steps.find((step) => step.key === "contact")?.occurredAt, null);
+    assert.equal(
+      track.steps.find((step) => step.key === "proposal")?.occurredAt,
+      "2026-10-19T15:00:00.000Z"
+    );
+    assert.equal(track.steps.find((step) => step.key === "proposal")?.mark, "visited");
+    assert.equal(track.steps.find((step) => step.key === "open")?.mark, "current");
+  });
+
+  it("la ficha no repite el seguimiento ni marca etapas sin historial", () => {
+    const operate = readFileSync(
+      resolve(process.cwd(), "src/components/admin/growth/VentasOperateClient.tsx"),
+      "utf8"
+    );
+    assert.match(operate, /Programar seguimiento/);
+    assert.match(operate, /agregar nota/i);
+    assert.match(operate, /Cambiar etapa/);
+    assert.match(operate, /data-oportunidad-ficha/);
+    assert.match(operate, /formatStageWhen\(step\.occurredAt\)/);
+    assert.doesNotMatch(operate, /function InfoCard/);
+    assert.doesNotMatch(operate, /opacity-70/);
+    assert.doesNotMatch(operate, /value=\{item\.nextAction\?\.summary/);
+  });
+
   it("la lectura de la ficha sigue filtrando por Espacio y no toca el tablero", () => {
     const read = readFileSync(
       resolve(process.cwd(), "src/lib/growth/ventas-read.ts"),
@@ -116,6 +195,8 @@ describe("ficha de oportunidad — recorrido real", () => {
       "utf8"
     );
     assert.match(read, /presentOpportunityStageTrack/);
+    assert.match(read, /occurredAt: activity\.occurredAt/);
+    assert.match(read, /openedAt: oportunidad\.openedAt/);
     assert.match(read, /tenantId, oportunidadId/);
     assert.match(read, /opportunity_transitioned/);
     assert.match(list, /function KanbanBoard/);

@@ -282,6 +282,41 @@ describe("OT-GROWTH-UX-ADMIN-MASTER-001 — maqueta Inicio", () => {
     assert.equal(view.period?.label, "Últimos 30 días");
   });
 
+  it("004 — sin embudo configurado no inventa silueta ni etapas sueltas", () => {
+    const onlyOrphan = projectGrowthOsHomeDashboard({
+      analytics: minimalAnalytics({
+        stock: {
+          byFunnel: [
+            {
+              funnelKey: "sin-embudo",
+              funnelLabel: "Sin embudo",
+              stages: [{ key: "open", label: "open", count: 1 }],
+            },
+          ],
+        },
+        captacion: {
+          total: 1,
+          archivedNow: 0,
+          byFunnel: [{ key: "sin-embudo", label: "Sin embudo", count: 1 }],
+          byOrigin: [],
+        },
+        closures: { won: 0, lost: 0, handedOff: 0, byFunnel: [] },
+        cohorts: { byFunnel: [], byCampaign: [], bySource: [] },
+      }),
+      commercialRows: [],
+      commercialCounts: { overdue: 0, unfollowed: 0, stale: 0 },
+      activityCountInPeriod: 0,
+      activities: [],
+      periodLabel: "Últimos 30 días",
+      capabilities: caps,
+      hasCampaigns: false,
+      hasAutomations: false,
+    });
+    assert.equal(onlyOrphan.funnel, null);
+    assert.equal(onlyOrphan.metrics.oportunidadesActivas, 1);
+    assert.equal(buildHomeFunnelFigure(onlyOrphan.funnel), null);
+  });
+
   it("004 — multi-embudo no mezcla etapas ni ganadas ajenas; operate no abre analítica", () => {
     const multi = minimalAnalytics({
       stock: {
@@ -506,6 +541,32 @@ describe("OT-GROWTH-UX-ADMIN-MASTER-001 — maqueta Inicio", () => {
     assert.equal(funnelSegmentColor(4, 5, "stage"), "#5FD09C");
     assert.equal(funnelSegmentColor(2, 3, "stage"), "#4E9FFF");
     assert.equal(funnelSegmentColor(0, 5, "result"), FUNNEL_RESULT_COLOR);
+
+    for (const segments of [2, 3, 4, 5, 7]) {
+      const edges = Array.from({ length: segments + 1 }, (_, index) =>
+        funnelSilhouetteEdge(index, segments, 22)
+      );
+      assert.equal(edges[0], 100);
+      assert.equal(edges[segments], 22);
+      for (let i = 1; i < edges.length; i += 1) {
+        assert.ok(
+          edges[i]! < edges[i - 1]!,
+          `silueta ${segments} etapas: corte ${i} no se estrecha`
+        );
+      }
+      assert.equal(
+        funnelSegmentColor(0, segments, "stage").toLowerCase(),
+        "#5b2de0"
+      );
+      assert.notEqual(
+        funnelSegmentColor(segments - 1, segments, "stage").toLowerCase(),
+        FUNNEL_RESULT_COLOR.toLowerCase()
+      );
+      assert.equal(
+        funnelSegmentColor(segments, segments, "result"),
+        FUNNEL_RESULT_COLOR
+      );
+    }
   });
 
   it("001A — no muestra identificadores técnicos de origen", () => {
@@ -600,6 +661,7 @@ describe("OT-GROWTH-UX-ADMIN-MASTER-001 — maqueta Inicio", () => {
     assert.match(home, /Conversión total:/);
     assert.match(home, /cohortDenominator/);
     assert.match(home, /HomeConversionFunnel/);
+    assert.match(home, /Sin embudo configurado/);
     assert.doesNotMatch(home, /won-period|stage\.count \/ top|FUNNEL_HEX/);
     const funnelUi = readSrc(
       "src/components/admin/preview/growth-os-master/HomeConversionFunnel.tsx"

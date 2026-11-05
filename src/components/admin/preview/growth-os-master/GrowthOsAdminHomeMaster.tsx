@@ -707,11 +707,19 @@ export function GrowthOsAdminHomeMaster({
 
           {!funnelFigure ? (
             <EmptyState
-              title={canSales ? "Sin oportunidades abiertas" : "Embudo no disponible"}
+              title={
+                !canSales
+                  ? "Embudo no disponible"
+                  : !funnel && home.metrics.oportunidadesActivas > 0
+                    ? "Sin embudo configurado"
+                    : "Sin oportunidades abiertas"
+              }
               description={
-                canSales
-                  ? "Cuando haya oportunidades abiertas, verás aquí el stock por etapa."
-                  : "Necesitas permiso de ventas para ver el embudo del Espacio."
+                !canSales
+                  ? "Necesitas permiso de ventas para ver el embudo del Espacio."
+                  : !funnel && home.metrics.oportunidadesActivas > 0
+                    ? "Hay oportunidades abiertas, pero este Espacio aún no tiene un embudo configurado."
+                    : "Cuando haya oportunidades abiertas, verás aquí el stock por etapa."
               }
               icon={<TrendingUp className="h-8 w-8" strokeWidth={1.5} />}
               className="mt-4 flex-1 border-dashed bg-[var(--gray-50)] py-8 shadow-none"

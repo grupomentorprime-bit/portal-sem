@@ -79,17 +79,23 @@ async function inventory(db: Db) {
 }
 
 async function ensureTempEmptySpace(db: Db) {
+  const at = new Date().toISOString();
+  const tempTenantFields = {
+    tenantId: TEMP_TENANT,
+    name: "Validación SaaS vacío",
+    slug: TEMP_TENANT,
+    status: "active" as const,
+    type: "other" as const,
+    code: "VAL-EMPTY",
+    defaultSiteId: TEMP_TENANT,
+    updatedAt: at,
+  };
   await db.collection("tenants").updateOne(
     { _id: TEMP_TENANT as unknown as import("mongodb").ObjectId },
     {
-      $set: {
-        name: "Validación SaaS vacío",
-        status: "active",
-        updatedAt: new Date().toISOString(),
-      },
+      $set: tempTenantFields,
       $setOnInsert: {
-        createdAt: new Date().toISOString(),
-        code: "VAL-EMPTY",
+        createdAt: at,
       },
     },
     { upsert: true }
@@ -98,15 +104,10 @@ async function ensureTempEmptySpace(db: Db) {
     await db.collection("tenants").updateOne(
       { _id: TEMP_TENANT as never },
       {
-        $set: {
-          name: "Validación SaaS vacío",
-          status: "active",
-          updatedAt: new Date().toISOString(),
-        },
+        $set: tempTenantFields,
         $setOnInsert: {
           _id: TEMP_TENANT,
-          createdAt: new Date().toISOString(),
-          code: "VAL-EMPTY",
+          createdAt: at,
         },
       },
       { upsert: true }
@@ -421,19 +422,23 @@ async function main() {
       .find({ tenantId })
       .toArray();
     if (!home.funnel) {
+      const okEmpty =
+        home.metrics.oportunidadesActivas === 0 || funnelDocs.length === 0;
       note(
         `stages:${tenantId}`,
-        home.metrics.oportunidadesActivas === 0,
-        home.metrics.oportunidadesActivas === 0
-          ? "sin embudo visual porque no hay stock (ok)"
-          : "hay stock pero funnel=null"
+        okEmpty,
+        funnelDocs.length === 0
+          ? `sin embudo configurado → funnel null (activas=${home.metrics.oportunidadesActivas})`
+          : home.metrics.oportunidadesActivas === 0
+            ? "sin embudo visual porque no hay stock (ok)"
+            : "hay stock configurado pero funnel=null"
       );
       continue;
     }
     const matched = funnelDocs.find((f) => f.key === home.funnel!.funnelKey);
     note(
       `stages:${tenantId}`,
-      Boolean(matched) || home.funnel.funnelKey === "sin-embudo",
+      Boolean(matched) && home.funnel.funnelKey !== "sin-embudo",
       `Home muestra ${home.funnel.funnelKey}/${home.funnel.funnelLabel}; etapas=[${home.funnel.stages.map((s) => s.label).join(", ")}]; embudosEspacio=[${funnelDocs.map((f) => f.key).join(", ")}]`
     );
   }
@@ -591,10 +596,11 @@ async function main() {
       note(
         "multi-live-stages",
         liveMulti.funnel?.funnelKey === "retail" &&
+          liveMulti.funnel.funnelLabel === "Retail corto" &&
           !(liveMulti.funnel?.stages.some((s) => s.key === "diagnostico") ?? true) &&
           liveMulti.funnel.periodWon === 0 &&
           liveMulti.metrics.ganadas === 1,
-        `live funnel=${liveMulti.funnel?.funnelKey} stages=[${liveMulti.funnel?.stages.map((s) => s.key).join(",")}] periodWon=${liveMulti.funnel?.periodWon} ganadasEspacio=${liveMulti.metrics.ganadas}`
+        `live funnel=${liveMulti.funnel?.funnelKey}/${liveMulti.funnel?.funnelLabel} stages=[${liveMulti.funnel?.stages.map((s) => s.key).join(",")}] periodWon=${liveMulti.funnel?.periodWon} ganadasEspacio=${liveMulti.metrics.ganadas}`
       );
     }
   }

@@ -25,6 +25,8 @@ export interface AdminNavItem {
   requiredAnyPermission?: string[];
   /** Al menos uno de estos códigos de rol. */
   requiredRole?: string[];
+  /** En el grupo activo, no aparece en la subnav horizontal (sí cuenta para match/activo). */
+  subnavHidden?: boolean;
 }
 
 /**

@@ -19,13 +19,10 @@ const outDir = resolve("docs/validation/crm-nav");
 mkdirSync(outDir, { recursive: true });
 
 const CRM_LINKS = [
-  ["Panel comercial", "/admin/conversion"],
   ["Oportunidades", "/admin/ventas"],
   ["Personas", "/admin/personas"],
-  ["Embudos", "/admin/ventas/embudos"],
-  ["Mi trabajo", "/admin/ventas/mi-trabajo"],
   ["Mensajes", "/admin/mensajes"],
-  ["Actividad", "/admin/actividad"],
+  ["Embudos", "/admin/ventas/embudos"],
 ] as const;
 
 function fail(message: string): never {
@@ -210,7 +207,7 @@ async function main() {
       () => localStorage.getItem("sem-admin-nav-expanded-group") === "conversion"
     );
 
-    await side.getByRole("link", { name: "Actividad", exact: true }).click();
+    await page.goto(`${baseUrl}/admin/actividad`, { waitUntil: "domcontentloaded" });
     await page.waitForURL("**/admin/actividad**", { waitUntil: "domcontentloaded", timeout: 180000 });
     await assertCrmOpen(side, "actividad");
 
@@ -221,23 +218,18 @@ async function main() {
     }
     await page.screenshot({ path: resolve(outDir, "desktop-inicio.png") });
     await page.goto(`${baseUrl}/admin/conversion`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Panel comercial" }).waitFor({ timeout: 60000 });
-    if ((await page.getByText("Vencidas").count()) < 1) fail("el panel no muestra vencidas");
-    if ((await page.locator(".w-72").count()) > 0) fail("el panel duplica el Kanban");
+    await page.waitForURL("**/admin/ventas**", { waitUntil: "domcontentloaded", timeout: 180000 });
+    await page.getByRole("heading", { name: "Oportunidades" }).waitFor({ timeout: 60000 });
+    if ((await page.getByText("Vencidas").count()) < 1) fail("Oportunidades no muestra atención Vencidas");
+    await page.getByRole("link", { name: "Actividad", exact: true }).waitFor({ timeout: 20000 });
     await page.screenshot({ path: resolve(outDir, "desktop-panel.png"), fullPage: true });
 
-    await page.goto(`${baseUrl}/admin/ventas/mi-trabajo`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: "Mi trabajo" }).waitFor({ timeout: 60000 });
+    await page.goto(`${baseUrl}/admin/ventas?mias=1`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { name: "Oportunidades" }).waitFor({ timeout: 60000 });
+    await page.getByRole("button", { name: "Mías", exact: true }).waitFor({ timeout: 20000 });
+    const miasPressed = await page.getByRole("button", { name: "Mías", exact: true }).getAttribute("aria-pressed");
+    if (miasPressed !== "true") fail("filtro Mías no queda activo");
     await page.getByText(tempName).waitFor({ timeout: 60000 });
-    if ((await page.getByText("Tu oportunidad").count()) < 1) {
-      fail("Mi trabajo no distingue la oportunidad propia");
-    }
-    if ((await page.locator(".w-72").count()) > 0) fail("Mi trabajo duplica el Kanban");
-    const detail = page.getByRole("link", { name: new RegExp(tempName) });
-    const detailHref = await detail.getAttribute("href");
-    if (detailHref !== `/admin/ventas/${tempId}`) {
-      fail(`Mi trabajo no abre el detalle: ${detailHref}`);
-    }
     await page.screenshot({ path: resolve(outDir, "desktop-mi-trabajo.png"), fullPage: true });
 
     await page.getByRole("button", { name: "Colapsar menú" }).click();

@@ -620,29 +620,14 @@ describe("Conversion Engine fase 2", () => {
       []
     );
     const conversion = groups.find((group) => group.id === "conversion");
+    const visible = conversion?.items.filter((item) => !item.subnavHidden) ?? [];
     assert.deepEqual(
-      conversion?.items.map((item) => item.label),
-      [
-        "Panel comercial",
-        "Oportunidades",
-        "Personas",
-        "Embudos",
-        "Mi trabajo",
-        "Mensajes",
-        "Actividad",
-      ]
+      visible.map((item) => item.label),
+      ["Oportunidades", "Personas", "Mensajes", "Embudos"]
     );
     assert.deepEqual(
-      conversion?.items.map((item) => item.href),
-      [
-        "/admin/conversion",
-        "/admin/ventas",
-        "/admin/personas",
-        "/admin/ventas/embudos",
-        "/admin/ventas/mi-trabajo",
-        "/admin/mensajes",
-        "/admin/actividad",
-      ]
+      visible.map((item) => item.href),
+      ["/admin/ventas", "/admin/personas", "/admin/mensajes", "/admin/ventas/embudos"]
     );
     assert.equal(groups.some((group) => group.id === "dashboard"), true);
     const legacy = opportunity({ funnelKey: "default", status: "open" });

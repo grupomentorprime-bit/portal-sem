@@ -206,25 +206,30 @@ async function resolvePrimarySite(tenant: TenantDocument) {
 
 async function buildListItem(tenant: TenantDocument): Promise<PlatformSpaceListItem> {
   const db = await getDatabase();
-  const site = await resolvePrimarySite(tenant);
+  // Docs parciales (p. ej. scripts de validación) pueden omitir tenantId/type.
+  const tenantId =
+    (typeof tenant.tenantId === "string" && tenant.tenantId.trim()) ||
+    String(tenant._id);
+  const type = tenant.type || "other";
+  const site = await resolvePrimarySite({ ...tenant, tenantId });
   const primaryDomain = site
     ? await findPrimaryDomainBySiteId(db, site.siteId)
     : null;
-  const memberCount = await countMembershipsByTenant(tenant.tenantId);
+  const memberCount = await countMembershipsByTenant(tenantId);
   const siteConfig = site ? await findSiteConfigBySiteId(db, site.siteId) : null;
   const scopedConfig =
-    siteConfig && siteConfig.tenantId === tenant.tenantId ? siteConfig : null;
+    siteConfig && siteConfig.tenantId === tenantId ? siteConfig : null;
   const visuals = scopedConfig
-    ? await resolveSpaceVisuals(tenant.tenantId, scopedConfig.branding)
+    ? await resolveSpaceVisuals(tenantId, scopedConfig.branding)
     : { logoUrl: null, coverUrl: null };
 
   return {
-    tenantId: tenant.tenantId,
+    tenantId,
     name: tenant.name?.trim() || PLATFORM_SPACE_FALLBACK,
     status: tenant.status,
     statusLabel: labelTenantStatus(tenant.status),
-    type: tenant.type,
-    typeLabel: labelTenantType(tenant.type),
+    type,
+    typeLabel: labelTenantType(type),
     primaryDomain: primaryDomain?.host ?? null,
     primaryDomainKind: primaryDomain?.kind ?? null,
     primarySite: site

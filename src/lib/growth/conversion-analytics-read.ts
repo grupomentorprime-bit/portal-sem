@@ -51,6 +51,7 @@ const CONVERSION_ACTIVITY_KINDS = [
 type FunnelDoc = {
   tenantId: string;
   key: string;
+  name?: string;
   workflowDefinitionKey?: string;
 };
 
@@ -182,9 +183,11 @@ export async function getConversionAnalytics(
     const definition = funnel.workflowDefinitionKey
       ? definitionByKey.get(funnel.workflowDefinitionKey)
       : undefined;
+    const name = funnel.name?.trim();
     return {
       tenantId,
       key: funnel.key,
+      label: name || funnel.key,
       stages: (definition?.states ?? []).map((state) => ({
         key: state.key,
         label: growthFunnelResultLabel(state.key) ?? state.label,

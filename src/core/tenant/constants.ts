@@ -31,6 +31,8 @@ export const SITE_CONFIG_COLLECTION = "site_config" as const;
 
 /** T001 y T002 no se borran desde Platform. La comparación vive en constantes, no en runtime de producto. */
 export function isProtectedPlatformSpace(tenantId: string): boolean {
+  if (typeof tenantId !== "string") return false;
   const id = tenantId.trim();
+  if (!id) return false;
   return id === SEM_TENANT_ID || id === ADL_TENANT_ID;
 }

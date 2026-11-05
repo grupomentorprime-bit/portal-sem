@@ -28,9 +28,6 @@ export interface AdminSidebarProps extends AdminShellContext {
   onMobileClose: () => void;
 }
 
-/** Maqueta visual — sin motor de onboarding ni billing. */
-const SIDEBAR_GROWTH_PROGRESS = 70;
-
 function NavBadge({ count, subtle = false }: { count: number; subtle?: boolean }) {
   if (count <= 0) return null;
   return (
@@ -113,15 +110,6 @@ function SidebarFooter({
         >
           <Crown className="h-4 w-4" strokeWidth={2} />
         </Link>
-        <Link
-          href="/admin"
-          onClick={onNavigate}
-          title="Acelera tu crecimiento"
-          aria-label="Continuar configuración"
-          className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--growth-os-primary)] text-[11px] font-bold text-white transition hover:opacity-90"
-        >
-          {SIDEBAR_GROWTH_PROGRESS}
-        </Link>
       </div>
     );
   }
@@ -149,40 +137,6 @@ function SidebarFooter({
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-[var(--sidebar-fg-muted)]" aria-hidden />
       </Link>
-
-      <div className="rounded-[14px] border border-[var(--sidebar-border)] bg-[color-mix(in_srgb,white_6%,transparent)] px-3 py-3">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-[18px] font-semibold tracking-tight text-white">
-            {SIDEBAR_GROWTH_PROGRESS}%
-          </p>
-        </div>
-        <div
-          className="mt-2 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,white_12%,transparent)]"
-          role="progressbar"
-          aria-valuenow={SIDEBAR_GROWTH_PROGRESS}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Progreso de configuración"
-        >
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[var(--growth-os-primary)] to-[var(--growth-os-accent)]"
-            style={{ width: `${SIDEBAR_GROWTH_PROGRESS}%` }}
-          />
-        </div>
-        <p className="mt-3 text-[12px] font-semibold leading-snug text-white">
-          Acelera tu crecimiento
-        </p>
-        <p className="mt-1 text-[11px] leading-snug text-[var(--sidebar-fg-muted)]">
-          Completa la configuración para potenciar tus resultados
-        </p>
-        <Link
-          href="/admin"
-          onClick={onNavigate}
-          className="mt-3 flex h-9 items-center justify-center rounded-[10px] bg-[var(--growth-os-primary)] text-[12px] font-semibold text-white transition hover:opacity-90"
-        >
-          Continuar
-        </Link>
-      </div>
     </div>
   );
 }

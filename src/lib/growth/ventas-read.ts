@@ -30,6 +30,7 @@ import {
   stagesFromDefinition,
 } from "@/core/growth/funnel-stages";
 import type { GrowthFunnel, GrowthFunnelStage } from "@/core/growth/funnel-types";
+import { opportunityBelongsToUser } from "@/core/growth/work-queue";
 import { getDatabase } from "@/lib/mongodb";
 import { ensureLiveGrowthFunnels } from "./funnels-live";
 import { listGrowthSpaceMembers } from "./space-members";
@@ -40,6 +41,7 @@ import {
   growthOpportunityStatusLabel,
   growthOpportunityTypeLabel,
   growthOriginArrivalLabel,
+  growthPriorityBandLabel,
 } from "./labels";
 import { presentOpportunityStageTrack } from "./opportunity-stage-track";
 import { listPersonaConversationViews } from "./personas-read";
@@ -76,6 +78,9 @@ export interface GrowthVentasListFilters {
   nextAction?: string;
   /** overdue | unfollowed | stale | current | unassigned */
   band?: string;
+  /** Solo oportunidades del usuario (responsable o próxima acción). */
+  mine?: boolean;
+  userId?: string;
   limit?: number;
 }
 
@@ -219,12 +224,17 @@ export async function readGrowthVentasBoard(
     filter.personaId = { $in: personaIds };
   }
 
-  const oportunidades = await db
+  const fetched = await db
     .collection<GrowthOportunidad>(GROWTH_OPORTUNIDADES_COLLECTION)
     .find(filter)
     .sort({ updatedAt: -1 })
     .limit(limit)
     .toArray();
+
+  const mineUserId = filters.mine ? filters.userId?.trim() : "";
+  const oportunidades = mineUserId
+    ? fetched.filter((item) => opportunityBelongsToUser(item, mineUserId))
+    : fetched;
 
   if (oportunidades.length === 0) {
     return emptyBoard(tenantId, funnels, stagesByFunnel, funnelFilter);
@@ -417,10 +427,17 @@ export async function getGrowthVentasOperateView(
     phone: persona.phone,
     closedAt: oportunidad.closedAt,
     organizationName: assessment?.organizationName,
+    priorityBand: presented.priorityBand,
+    priorityLabel: growthPriorityBandLabel(presented.priorityBand),
     stageTrack: presentOpportunityStageTrack({
       stages: stagesByFunnel.get(presented.funnelKey) ?? [],
       status: oportunidad.status,
-      activities: stageActivities,
+      openedAt: oportunidad.openedAt,
+      activities: stageActivities.map((activity) => ({
+        kind: activity.kind,
+        occurredAt: activity.occurredAt,
+        payload: activity.payload,
+      })),
     }),
     conversations,
   };

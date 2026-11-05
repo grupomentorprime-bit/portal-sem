@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { can } from "@/core/identity/policies/engine";
 import { readMyWork, type CommercialQueueRow } from "@/lib/growth/commercial-read";
@@ -29,8 +29,8 @@ function Section({
             >
               <p className="font-medium text-foreground">{row.personaLabel}</p>
               <p className="mt-1 text-sm text-muted">
-                {row.funnelName} · {row.stageLabel} · {row.bandLabel}
-                {row.dueAt ? ` · vence ${row.dueAt.slice(0, 10)}` : ""}
+                {row.funnelName} ┬À {row.stageLabel} ┬À {row.bandLabel}
+                {row.dueAt ? ` ┬À vence ${row.dueAt.slice(0, 10)}` : ""}
               </p>
               {row.relationLabel ? (
                 <p className="mt-1 text-xs font-medium text-foreground">{row.relationLabel}</p>
@@ -74,7 +74,7 @@ export default async function AdminMyWorkPage() {
   return (
     <AdminModulePage
       title="Mi trabajo"
-      description="Oportunidades abiertas donde eres responsable o tienes la próxima acción. Cada una abre su ficha de Ventas."
+      description="Oportunidades abiertas donde eres responsable o tienes la pr├│xima acci├│n. Cada una abre su ficha de Ventas."
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
         { label: "Ventas", href: "/admin/ventas" },
@@ -88,7 +88,7 @@ export default async function AdminMyWorkPage() {
           <Section id="overdue" title="Vencidas" rows={work.overdue} />
           <Section id="unfollowed" title="Sin seguimiento" rows={work.unfollowed} />
           <Section id="stale" title="Estancadas" rows={work.stale} />
-          <Section id="current" title="Al día" rows={work.current} />
+          <Section id="current" title="Al d├¡a" rows={work.current} />
         </div>
       )}
     </AdminModulePage>

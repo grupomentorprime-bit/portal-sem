@@ -13,21 +13,35 @@ import type {
   TenantDocument,
 } from "@/core/tenant/types";
 
+/**
+ * Docs legacy/parciales pueden tener `_id` sin `tenantId`.
+ * El catálogo Platform y los menús de acciones asumen siempre un id string.
+ */
+function normalizeTenantDocument(tenant: TenantDocument): TenantDocument {
+  const fromField =
+    typeof tenant.tenantId === "string" ? tenant.tenantId.trim() : "";
+  const tenantId = fromField || String(tenant._id);
+  if (tenant.tenantId === tenantId) return tenant;
+  return { ...tenant, tenantId };
+}
+
 export async function listTenants(db: Db): Promise<TenantDocument[]> {
-  return db
+  const rows = await db
     .collection<TenantDocument>(TENANTS_COLLECTION)
     .find({})
     .sort({ name: 1 })
     .toArray();
+  return rows.map(normalizeTenantDocument);
 }
 
 export async function findTenantById(
   db: Db,
   tenantId: string
 ): Promise<TenantDocument | null> {
-  return db.collection<TenantDocument>(TENANTS_COLLECTION).findOne({
+  const row = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOne({
     $or: [{ _id: tenantId }, { tenantId }],
   });
+  return row ? normalizeTenantDocument(row) : null;
 }
 
 export async function findTenantBySlug(
@@ -36,9 +50,10 @@ export async function findTenantBySlug(
 ): Promise<TenantDocument | null> {
   const normalized = slug.trim().toLowerCase();
   if (!normalized) return null;
-  return db.collection<TenantDocument>(TENANTS_COLLECTION).findOne({
+  const row = await db.collection<TenantDocument>(TENANTS_COLLECTION).findOne({
     $or: [{ slug: normalized }, { tenantId: normalized }, { _id: normalized }],
   });
+  return row ? normalizeTenantDocument(row) : null;
 }
 
 export async function findSiteById(

@@ -204,6 +204,43 @@ describe("buildConversionAnalytics — captación", () => {
     assert.equal(r.denominators.captacion, CONVERSION_DENOMINATORS.captacion);
   });
 
+  it("usa el nombre comercial del embudo, no la clave técnica", () => {
+    const r = build({
+      opportunities: [
+        opp({ _id: "a", funnelKey: "retail", status: "lead" }),
+        opp({ _id: "b", funnelKey: "b2b", status: "diagnostico" }),
+      ],
+      funnels: [
+        {
+          tenantId: T1,
+          key: "retail",
+          label: "Retail corto",
+          stages: [
+            { key: "lead", label: "Lead" },
+            { key: "cita", label: "Cita" },
+          ],
+        },
+        {
+          tenantId: T1,
+          key: "b2b",
+          label: "B2B largo",
+          stages: [
+            { key: "diagnostico", label: "Diagnóstico" },
+            { key: "propuesta", label: "Propuesta" },
+          ],
+        },
+      ],
+    });
+    const retail = r.stock.byFunnel.find((f) => f.funnelKey === "retail");
+    const b2b = r.stock.byFunnel.find((f) => f.funnelKey === "b2b");
+    assert.equal(retail?.funnelLabel, "Retail corto");
+    assert.equal(b2b?.funnelLabel, "B2B largo");
+    assert.equal(
+      r.captacion.byFunnel.find((x) => x.key === "retail")?.label,
+      "Retail corto"
+    );
+  });
+
   it("una alta archivada después cuenta en captación y no en la cohorte", () => {
     const r = build({
       opportunities: [
@@ -723,17 +760,12 @@ describe("Conversion Engine fase 3 — pantalla, ruta y navegación (guardas de 
     assert.doesNotMatch(readFileSync(path, "utf8"), /ConversionAnaliticaClient/);
   });
 
-  it("nav: ítem nuevo después de nav-conversion con permiso exacto", () => {
+  it("nav: analítica de conversión en el grupo CRM con permiso exacto", () => {
     const nav = src("src/lib/admin/nav-domains.ts");
-    const panelIdx = nav.indexOf('id: "nav-conversion"');
+    const ventasIdx = nav.indexOf('id: "nav-ventas"');
     const itemIdx = nav.indexOf('id: "nav-conversion-analitica"');
-    assert.ok(panelIdx >= 0, "nav-conversion");
-    assert.ok(itemIdx > panelIdx, "nav-conversion-analitica después de nav-conversion");
-    const panelBlock = nav.slice(panelIdx, itemIdx);
-    assert.match(
-      panelBlock,
-      /excludePrefixes:\s*\[[^\]]*"\/admin\/conversion\/analitica"/
-    );
+    assert.ok(ventasIdx >= 0, "nav-ventas");
+    assert.ok(itemIdx > ventasIdx, "nav-conversion-analitica después de nav-ventas");
     const item = nav.slice(itemIdx, nav.indexOf("},", itemIdx));
     assert.match(item, /href: "\/admin\/conversion\/analitica"/);
     assert.match(item, /label: "Analítica de conversión"/);

@@ -8,11 +8,13 @@ export function OwnerSelect({
   ownerUserId,
   members,
   disabled,
+  showLabel = true,
 }: {
   opportunityId: string;
   ownerUserId?: string;
   members: Array<{ userId: string; label: string }>;
   disabled?: boolean;
+  showLabel?: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +23,10 @@ export function OwnerSelect({
 
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-muted">Responsable</span>
+      {showLabel ? <span className="mb-1 block text-muted">Responsable</span> : null}
       <select
-        className="w-full rounded-[var(--radius-md)] border border-[var(--admin-border-subtle)] bg-white px-2 py-1.5 text-sm"
+        aria-label="Responsable"
+        className="w-full rounded-[var(--radius-md)] border border-[var(--admin-border-subtle)] bg-white px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:bg-[var(--admin-surface-muted)]"
         value={ownerUserId ?? ""}
         disabled={disabled || pending}
         onChange={(event) => {

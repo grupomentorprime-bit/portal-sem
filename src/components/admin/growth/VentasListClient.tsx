@@ -46,6 +46,14 @@ import { kanbanColumnWidth } from "@/lib/growth/kanban-column-width";
 import { cn } from "@/lib/utils";
 import { OwnerSelect } from "./OwnerSelect";
 
+export interface VentasAttentionCounts {
+  overdue: number;
+  unfollowed: number;
+  stale: number;
+  /** null = sin permiso de vista de Espacio (no se muestra). */
+  unassigned: number | null;
+}
+
 export interface VentasListClientProps {
   items: GrowthVentasQueueItemView[];
   funnels: GrowthVentasFunnelOption[];
@@ -57,9 +65,10 @@ export interface VentasListClientProps {
   funnel: string;
   nextAction: string;
   band: string;
+  mine: boolean;
   vista: "lista" | "kanban";
+  attention: VentasAttentionCounts;
   canOperate: boolean;
-  canManageFunnels: boolean;
   members: Array<{ userId: string; label: string }>;
 }
 
@@ -167,9 +176,10 @@ export function VentasListClient({
   funnel,
   nextAction,
   band,
+  mine,
   vista,
+  attention,
   canOperate,
-  canManageFunnels,
   members,
 }: VentasListClientProps) {
   const router = useRouter();
@@ -186,6 +196,7 @@ export function VentasListClient({
       funnel?: string;
       nextAction?: string;
       band?: string;
+      mine?: boolean;
       vista?: "lista" | "kanban";
     }) => {
       const params = new URLSearchParams();
@@ -195,6 +206,7 @@ export function VentasListClient({
       const nextFunnel = next.funnel ?? funnel;
       const nextNext = next.nextAction ?? nextAction;
       const nextBand = next.band ?? band;
+      const nextMine = next.mine ?? mine;
       const nextVista = next.vista ?? vista;
       if (nextQ.trim()) params.set("q", nextQ.trim());
       if (nextStatus) params.set("status", nextStatus);
@@ -202,13 +214,14 @@ export function VentasListClient({
       if (nextFunnel) params.set("funnel", nextFunnel);
       if (nextNext) params.set("nextAction", nextNext);
       if (nextBand) params.set("banda", nextBand);
+      if (nextMine) params.set("mias", "1");
       if (nextVista === "lista") params.set("vista", "lista");
       const qs = params.toString();
       startTransition(() => {
         router.push(qs ? `/admin/ventas?${qs}` : "/admin/ventas");
       });
     },
-    [band, funnel, nextAction, q, router, status, type, vista]
+    [band, funnel, mine, nextAction, q, router, status, type, vista]
   );
 
   const move = useCallback(
@@ -238,9 +251,17 @@ export function VentasListClient({
     [confirm, router]
   );
 
-  const hasFilters = Boolean(q || status || type || nextAction || funnel || band);
+  const hasFilters = Boolean(q || status || type || nextAction || funnel || band || mine);
   const isEmpty = items.length === 0;
   const isTrueEmpty = isEmpty && !hasFilters;
+  const attentionChips = [
+    { key: "overdue", label: "Vencidas", count: attention.overdue },
+    { key: "unfollowed", label: "Sin seguimiento", count: attention.unfollowed },
+    { key: "stale", label: "Estancadas", count: attention.stale },
+    ...(attention.unassigned != null
+      ? [{ key: "unassigned", label: "Sin responsable", count: attention.unassigned }]
+      : []),
+  ] as const;
   const knownStatus = statusOptions.some((option) => option.value === status);
   const statusChoices = !status || knownStatus
     ? statusOptions
@@ -259,22 +280,13 @@ export function VentasListClient({
         placeholder="Buscar por empresa, persona u oportunidad…"
         value={q}
         onChange={(value) => pushFilters({ q: value })}
-        className="w-full shrink-0 sm:w-[240px]"
+        className="w-full shrink-0 sm:w-[28rem]"
       />
       <FilterPill
         label="Filtrar por estado"
         value={status}
         onChange={(value) => pushFilters({ status: value })}
         options={[{ value: "", label: "Todos los estados" }, ...statusChoices]}
-      />
-      <FilterPill
-        label="Filtrar por embudo"
-        value={funnel}
-        onChange={(value) => pushFilters({ funnel: value })}
-        options={[
-          { value: "", label: "Todos los embudos" },
-          ...funnels.map((item) => ({ value: item.key, label: item.name })),
-        ]}
       />
       <FilterPill
         label="Filtrar por tipo"
@@ -348,6 +360,45 @@ export function VentasListClient({
         </label>
       </header>
 
+      <div
+        className="mb-4 flex flex-wrap items-center gap-2"
+        aria-label="Atención comercial"
+      >
+        {attentionChips.map((chip) => {
+          const active = band === chip.key;
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => pushFilters({ band: active ? "" : chip.key })}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition",
+                active
+                  ? "border-[var(--growth-os-primary)] bg-[color-mix(in_srgb,var(--growth-os-primary)_12%,white)] text-foreground"
+                  : "border-[var(--admin-border-subtle)] bg-white text-muted hover:text-foreground"
+              )}
+            >
+              <span>{chip.label}</span>
+              <span className="tabular-nums text-foreground">{chip.count}</span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          aria-pressed={mine}
+          onClick={() => pushFilters({ mine: !mine })}
+          className={cn(
+            "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition",
+            mine
+              ? "border-[var(--growth-os-primary)] bg-[color-mix(in_srgb,var(--growth-os-primary)_12%,white)] text-foreground"
+              : "border-[var(--admin-border-subtle)] bg-white text-muted hover:text-foreground"
+          )}
+        >
+          Mías
+        </button>
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div
           className="inline-flex rounded-xl bg-white p-1 shadow-sm ring-1 ring-[var(--admin-border-subtle)]"
@@ -383,11 +434,12 @@ export function VentasListClient({
             Lista
           </button>
         </div>
-        {canManageFunnels ? (
-          <Link href="/admin/ventas/embudos" className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline">
-            Embudos
-          </Link>
-        ) : null}
+        <Link
+          href="/admin/actividad"
+          className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Actividad
+        </Link>
       </div>
 
       <div className="mb-5">{filterBar}</div>
@@ -547,7 +599,7 @@ function KanbanBoard({
                 {lane.isDefault ? " · Predeterminado" : ""}
               </h2>
             ) : null}
-            <KanbanScroller>
+            <KanbanScroller columnCount={lane.columns.length}>
               {lane.columns.map((column, index) => {
                 const theme = COLUMN_THEMES[index % COLUMN_THEMES.length];
                 const dropId = `${lane.funnelKey}:${column.key}`;
@@ -679,39 +731,66 @@ function KanbanBoard({
   );
 }
 
-function KanbanScroller({ children }: { children: ReactNode }) {
+function KanbanScroller({
+  columnCount,
+  children,
+}: {
+  columnCount: number;
+  children: ReactNode;
+}) {
   const [lane, setLane] = useState<HTMLDivElement | null>(null);
-  const [columnPx, setColumnPx] = useState<number | null>(null);
+  const [layout, setLayout] = useState<{ columnPx: number; fills: boolean } | null>(null);
 
   useEffect(() => {
     if (!lane) return;
     const measure = () => {
       if (window.innerWidth < 768) {
-        setColumnPx(null);
+        setLayout(null);
         return;
       }
-      const next = kanbanColumnWidth(lane.clientWidth);
-      setColumnPx((current) => (current === next ? current : next));
+      const columnPx = kanbanColumnWidth(lane.clientWidth, columnCount);
+      if (columnPx == null) {
+        setLayout(null);
+        return;
+      }
+      const used = columnCount * columnPx + (columnCount - 1) * 10;
+      const fills = used >= lane.clientWidth - columnCount;
+      setLayout((current) =>
+        current?.columnPx === columnPx && current.fills === fills ? current : { columnPx, fills }
+      );
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(lane);
     return () => observer.disconnect();
-  }, [lane]);
+  }, [lane, columnCount]);
+
+  const fills = layout?.fills === true;
 
   return (
     <div
       ref={setLane}
       className="kanban-lane w-full min-w-0 max-w-full snap-x snap-proximity overflow-x-auto overscroll-x-contain pb-2"
-      style={columnPx ? ({ "--kanban-col": `${columnPx}px` } as CSSProperties) : undefined}
+      style={
+        layout
+          ? ({ "--kanban-col": `${layout.columnPx}px` } as CSSProperties)
+          : undefined
+      }
     >
       <div
-        className="grid w-max items-start"
-        style={{
-          gap: 10,
-          gridAutoFlow: "column",
-          gridAutoColumns: "var(--kanban-col)",
-        }}
+        className={cn("grid items-start", fills ? "w-full" : "w-max")}
+        style={
+          fills
+            ? {
+                gap: 10,
+                gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+              }
+            : {
+                gap: 10,
+                gridAutoFlow: "column",
+                gridAutoColumns: "var(--kanban-col)",
+              }
+        }
       >
         {children}
       </div>

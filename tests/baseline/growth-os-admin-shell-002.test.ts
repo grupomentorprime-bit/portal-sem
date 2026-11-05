@@ -17,11 +17,12 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
     assert.match(nav, /label: "CRM · Conversión"/);
     assert.match(nav, /id: "nav-ventas"[\s\S]*?href: "\/admin\/ventas"/);
     assert.match(nav, /label: "Oportunidades"/);
-    assert.match(nav, /label: "Panel comercial"/);
-    assert.match(nav, /label: "Mi trabajo"/);
+    assert.match(nav, /primaryItemId: "nav-ventas"/);
+    assert.doesNotMatch(nav, /label: "Panel comercial"/);
+    assert.match(nav, /id: "nav-mi-trabajo"[\s\S]*?subnavHidden:\s*true/);
     assert.match(nav, /id: "nav-embudos"[\s\S]*?href: "\/admin\/ventas\/embudos"/);
     assert.match(nav, /id: "nav-mensajes"/);
-    assert.match(nav, /id: "nav-actividad"/);
+    assert.match(nav, /id: "nav-actividad"[\s\S]*?subnavHidden:\s*true/);
     assert.match(nav, /groupIds: \["dashboard", "conversion"\]/);
     assert.match(nav, /id: "campanas"/);
     assert.match(nav, /id: "automatizaciones"/);

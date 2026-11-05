@@ -3,6 +3,7 @@
  * Una sola banda por oportunidad abierta.
  */
 
+import { isCalendarDueOverdue } from "./commercial-dates";
 import { isGrowthOpportunityFinalStatus } from "./opportunity-definition";
 import type { GrowthNextAction, GrowthOportunidad } from "./types";
 
@@ -60,8 +61,8 @@ export function growthPriorityBand(
 ): GrowthPriorityBand | null {
   if (isGrowthOpportunityFinalStatus(item.status)) return null;
   const nowMs = now.getTime();
-  const due = time(item.nextAction?.dueAt);
-  if (item.nextAction && due != null && due < nowMs) return "overdue";
+  const dueAt = item.nextAction?.dueAt;
+  if (item.nextAction && dueAt && isCalendarDueOverdue(dueAt, now)) return "overdue";
   if (item.nextAction == null) return "unfollowed";
   const last =
     time(item.lastActivityAt) ?? time(item.updatedAt) ?? time(item.openedAt) ?? nowMs;
