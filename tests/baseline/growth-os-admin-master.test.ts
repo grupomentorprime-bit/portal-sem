@@ -537,9 +537,9 @@ describe("OT-GROWTH-UX-ADMIN-MASTER-001 — maqueta Inicio", () => {
     for (let i = 1; i < edges.length; i += 1) {
       assert.ok(edges[i]! < edges[i - 1]!, `corte ${i} no se estrecha`);
     }
-    assert.equal(funnelSegmentColor(0, 5, "stage"), "#5B2DE0");
-    assert.equal(funnelSegmentColor(4, 5, "stage"), "#5FD09C");
-    assert.equal(funnelSegmentColor(2, 3, "stage"), "#4E9FFF");
+    assert.equal(funnelSegmentColor(0, 5, "stage"), "var(--admin-funnel-1)");
+    assert.equal(funnelSegmentColor(4, 5, "stage"), "var(--admin-funnel-5)");
+    assert.equal(funnelSegmentColor(2, 3, "stage"), "var(--admin-funnel-3)");
     assert.equal(funnelSegmentColor(0, 5, "result"), FUNNEL_RESULT_COLOR);
 
     for (const segments of [2, 3, 4, 5, 7]) {
@@ -555,12 +555,12 @@ describe("OT-GROWTH-UX-ADMIN-MASTER-001 — maqueta Inicio", () => {
         );
       }
       assert.equal(
-        funnelSegmentColor(0, segments, "stage").toLowerCase(),
-        "#5b2de0"
+        funnelSegmentColor(0, segments, "stage"),
+        "var(--admin-funnel-1)"
       );
       assert.notEqual(
-        funnelSegmentColor(segments - 1, segments, "stage").toLowerCase(),
-        FUNNEL_RESULT_COLOR.toLowerCase()
+        funnelSegmentColor(segments - 1, segments, "stage"),
+        FUNNEL_RESULT_COLOR
       );
       assert.equal(
         funnelSegmentColor(segments, segments, "result"),

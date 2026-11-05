@@ -192,7 +192,7 @@ function scanFile(filePath: string): Violation[] {
         continue;
       }
 
-      if (INFRASTRUCTURE_FILES.has(file)) continue;
+      if (INFRASTRUCTURE_FILES.has(file) || CSS_INFRASTRUCTURE.has(file)) continue;
 
       violations.push({ file, line, color, kind: "hex" });
     }

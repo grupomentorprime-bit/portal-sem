@@ -37,10 +37,10 @@ export function HomePeriodSelect({
   };
 
   return (
-    <label className="relative inline-flex items-center text-sm text-[#344054]">
+    <label className="relative inline-flex items-center text-sm text-[var(--admin-home-label)]">
       <span className="sr-only">Período</span>
       <Calendar
-        className="pointer-events-none absolute left-3 h-4 w-4 text-[#667085]"
+        className="pointer-events-none absolute left-3 h-4 w-4 text-[var(--admin-home-slate)]"
         aria-hidden
       />
       <select
@@ -49,15 +49,15 @@ export function HomePeriodSelect({
         onChange={(e) => onChange(e.target.value)}
         data-home-period
         className={cn(
-          "h-10 min-w-[12.25rem] cursor-pointer appearance-none rounded-[12px] border border-[#E4E7EC] bg-white",
-          "bg-[length:12px] bg-[right_0.85rem_center] bg-no-repeat pl-9 pr-9 text-sm font-medium text-[#344054]",
-          "shadow-[0_1px_2px_rgba(16,24,40,0.05)] outline-none transition",
-          "hover:border-[#D0D5DD]",
+          "h-10 min-w-[12.25rem] cursor-pointer appearance-none rounded-[12px] border border-[var(--admin-home-border-strong)] bg-white",
+          "bg-[length:12px] bg-[right_0.85rem_center] bg-no-repeat pl-9 pr-9 text-sm font-medium text-[var(--admin-home-label)]",
+          "shadow-[var(--admin-shadow-card)] outline-none transition",
+          "hover:border-[var(--admin-home-line)]",
           "focus-visible:ring-2 focus-visible:ring-[var(--growth-os-primary)]/25",
           pending && "opacity-70"
         )}
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236B7280' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236b6580' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
         }}
       >
         {HOME_PRESETS.map((p) => (

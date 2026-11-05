@@ -162,7 +162,7 @@ export function FunnelsAdminClient({
         </Button>
       </form>
       {error ? (
-        <p role="alert" className="mb-4 text-sm text-red-600">
+        <p role="alert" className="mb-4 text-sm text-destructive">
           {error}
         </p>
       ) : null}

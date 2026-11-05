@@ -27,14 +27,14 @@ export interface GrowthOsHomeFunnelFigure {
 
 /** Progresión de la maqueta. El verde final queda reservado a Ganadas. */
 export const FUNNEL_OPEN_STAGE_COLORS = [
-  "#5B2DE0",
-  "#8278FB",
-  "#4E9FFF",
-  "#52C3EF",
-  "#5FD09C",
+  "var(--admin-funnel-1)",
+  "var(--admin-funnel-2)",
+  "var(--admin-funnel-3)",
+  "var(--admin-funnel-4)",
+  "var(--admin-funnel-5)",
 ] as const;
 
-export const FUNNEL_RESULT_COLOR = "#3AAA4C";
+export const FUNNEL_RESULT_COLOR = "var(--admin-funnel-result)";
 
 export function buildHomeFunnelFigure(
   funnel: GrowthOsHomeFunnel | null
@@ -89,19 +89,6 @@ export function funnelSilhouetteEnd(lastCount: number): number {
   return 46;
 }
 
-function mixHex(a: string, b: string, t: number): string {
-  const parse = (hex: string) => {
-    const n = Number.parseInt(hex.slice(1), 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, (n >> 0) & 255] as const;
-  };
-  const from = parse(a);
-  const to = parse(b);
-  const mixed = from.map((channel, i) =>
-    Math.round(channel + (to[i]! - channel) * t)
-  );
-  return `#${mixed.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
-}
-
 export function funnelSegmentColor(
   index: number,
   stageCount: number,
@@ -114,7 +101,8 @@ export function funnelSegmentColor(
   if (stageCount <= scale.length) {
     return scale[clamped]!;
   }
+  // Más etapas que tokens: se elige el tramo más cercano, sin inventar hex.
   const scaled = (clamped / (stageCount - 1)) * (scale.length - 1);
-  const i = Math.min(scale.length - 2, Math.floor(scaled));
-  return mixHex(scale[i]!, scale[i + 1]!, scaled - i);
+  const i = Math.min(scale.length - 1, Math.round(scaled));
+  return scale[i]!;
 }

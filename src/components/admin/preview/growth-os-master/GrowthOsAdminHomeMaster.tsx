@@ -94,8 +94,8 @@ const TONE_STYLE: Record<
     Icon: FileText,
   },
   diagnosis: {
-    bg: "bg-[#EDE9FE]",
-    fg: "text-[#7C3AED]",
+    bg: "bg-[var(--admin-home-violet-bg)]",
+    fg: "text-[var(--admin-home-violet-fg)]",
     Icon: GraduationCap,
   },
   opportunity: {
@@ -104,13 +104,13 @@ const TONE_STYLE: Record<
     Icon: Handshake,
   },
   stage: {
-    bg: "bg-[#DBEAFE]",
-    fg: "text-[#3B82F6]",
+    bg: "bg-[var(--admin-home-blue-bg)]",
+    fg: "text-[var(--admin-home-blue-fg)]",
     Icon: TrendingUp,
   },
   assignment: {
-    bg: "bg-[#E0E7FF]",
-    fg: "text-[#4F46E5]",
+    bg: "bg-[var(--admin-home-indigo-bg)]",
+    fg: "text-[var(--admin-home-indigo-fg)]",
     Icon: UserPlus,
   },
   followup: {
@@ -119,13 +119,13 @@ const TONE_STYLE: Record<
     Icon: Sparkles,
   },
   contact: {
-    bg: "bg-[#D1FAE5]",
-    fg: "text-[#12B76A]",
+    bg: "bg-[var(--admin-home-green-bg)]",
+    fg: "text-[var(--admin-home-green-fg)]",
     Icon: MessageCircle,
   },
   close: {
-    bg: "bg-[#FEF3C7]",
-    fg: "text-[#B54708]",
+    bg: "bg-[var(--admin-home-amber-bg)]",
+    fg: "text-[var(--admin-home-amber-fg)]",
     Icon: Trophy,
   },
   transfer: {
@@ -146,44 +146,44 @@ const TONE_STYLE: Record<
 };
 
 const REASON_DOT: Record<string, string> = {
-  overdue: "bg-[#F04438]",
-  unfollowed: "bg-[#F79009]",
-  stale: "bg-[#98A2B3]",
+  overdue: "bg-[var(--admin-home-danger)]",
+  unfollowed: "bg-[var(--admin-home-amber-strong)]",
+  stale: "bg-[var(--admin-home-muted)]",
 };
 
 const REASON_TEXT: Record<string, string> = {
-  overdue: "text-[#F04438]",
-  unfollowed: "text-[#DC6803]",
-  stale: "text-[#667085]",
+  overdue: "text-[var(--admin-home-danger)]",
+  unfollowed: "text-[var(--admin-home-amber-deep)]",
+  stale: "text-[var(--admin-home-slate)]",
 };
 
 const AGE_TEXT: Record<string, string> = {
-  overdue: "text-[#F04438]",
-  unfollowed: "text-[#F04438]",
-  stale: "text-[#667085]",
+  overdue: "text-[var(--admin-home-danger)]",
+  unfollowed: "text-[var(--admin-home-danger)]",
+  stale: "text-[var(--admin-home-slate)]",
 };
 
 const PRIORITY_PILL: Record<string, { label: string; className: string }> = {
   overdue: {
     label: "Alta",
-    className: "bg-[#FEE4E2] text-[#D92D20]",
+    className: "bg-[var(--admin-home-danger-bg)] text-[var(--admin-home-danger-fg)]",
   },
   unfollowed: {
     label: "Media",
-    className: "bg-[#FEF0C7] text-[#DC6803]",
+    className: "bg-[var(--admin-home-warn-bg)] text-[var(--admin-home-amber-deep)]",
   },
   stale: {
     label: "Baja",
-    className: "bg-[#F2F4F7] text-[#667085]",
+    className: "bg-[var(--admin-home-divider)] text-[var(--admin-home-slate)]",
   },
 };
 
 const AVATAR_TONES = [
-  "bg-[#EDE9FE] text-[#7C3AED]",
-  "bg-[#DBEAFE] text-[#3B82F6]",
-  "bg-[#FCE7F3] text-[#DB2777]",
-  "bg-[#E0E7FF] text-[#4F46E5]",
-  "bg-[#FFEDD5] text-[#C2410C]",
+  "bg-[var(--admin-home-violet-bg)] text-[var(--admin-home-violet-fg)]",
+  "bg-[var(--admin-home-blue-bg)] text-[var(--admin-home-blue-fg)]",
+  "bg-[var(--admin-home-pink-bg)] text-[var(--admin-home-pink-fg)]",
+  "bg-[var(--admin-home-indigo-bg)] text-[var(--admin-home-indigo-fg)]",
+  "bg-[var(--admin-home-orange-bg)] text-[var(--admin-home-orange-fg)]",
 ];
 
 const ORIGIN_VISUALS: Array<{
@@ -193,20 +193,20 @@ const ORIGIN_VISUALS: Array<{
   bar: string;
   Icon: typeof Users;
 }> = [
-  { match: /whatsapp/i, bg: "bg-[#D1FAE5]", fg: "text-[#12B76A]", bar: "bg-[#12B76A]", Icon: MessageCircle },
-  { match: /campañ|campana|campan/i, bg: "bg-[#DBEAFE]", fg: "text-[#3B82F6]", bar: "bg-[#3B82F6]", Icon: Megaphone },
-  { match: /referid/i, bg: "bg-[#FEF3C7]", fg: "text-[#F79009]", bar: "bg-[#F79009]", Icon: Users },
-  { match: /evento/i, bg: "bg-[#CCFBF1]", fg: "text-[#0F766E]", bar: "bg-[#14B8A6]", Icon: CalendarDays },
-  { match: /manual|registro/i, bg: "bg-[#FCE7F3]", fg: "text-[#DB2777]", bar: "bg-[#DB2777]", Icon: PenLine },
-  { match: /admis/i, bg: "bg-[#E0E7FF]", fg: "text-[#4F46E5]", bar: "bg-[#4F46E5]", Icon: GraduationCap },
-  { match: /form|diagn|web/i, bg: "bg-[#EDE9FE]", fg: "text-[#7C3AED]", bar: "bg-[#7C3AED]", Icon: FileText },
+  { match: /whatsapp/i, bg: "bg-[var(--admin-home-green-bg)]", fg: "text-[var(--admin-home-green-fg)]", bar: "bg-[var(--admin-home-green-fg)]", Icon: MessageCircle },
+  { match: /campañ|campana|campan/i, bg: "bg-[var(--admin-home-blue-bg)]", fg: "text-[var(--admin-home-blue-fg)]", bar: "bg-[var(--admin-home-blue-fg)]", Icon: Megaphone },
+  { match: /referid/i, bg: "bg-[var(--admin-home-amber-bg)]", fg: "text-[var(--admin-home-amber-strong)]", bar: "bg-[var(--admin-home-amber-strong)]", Icon: Users },
+  { match: /evento/i, bg: "bg-[var(--admin-home-teal-bg)]", fg: "text-[var(--admin-home-teal-fg)]", bar: "bg-[var(--admin-home-teal-bar)]", Icon: CalendarDays },
+  { match: /manual|registro/i, bg: "bg-[var(--admin-home-pink-bg)]", fg: "text-[var(--admin-home-pink-fg)]", bar: "bg-[var(--admin-home-pink-fg)]", Icon: PenLine },
+  { match: /admis/i, bg: "bg-[var(--admin-home-indigo-bg)]", fg: "text-[var(--admin-home-indigo-fg)]", bar: "bg-[var(--admin-home-indigo-fg)]", Icon: GraduationCap },
+  { match: /form|diagn|web/i, bg: "bg-[var(--admin-home-violet-bg)]", fg: "text-[var(--admin-home-violet-fg)]", bar: "bg-[var(--admin-home-violet-fg)]", Icon: FileText },
 ];
 
 const ORIGIN_FALLBACK = [
-  { bg: "bg-[#EDE9FE]", fg: "text-[#7C3AED]", bar: "bg-[#7C3AED]", Icon: FileText },
-  { bg: "bg-[#D1FAE5]", fg: "text-[#12B76A]", bar: "bg-[#12B76A]", Icon: MessageCircle },
-  { bg: "bg-[#DBEAFE]", fg: "text-[#3B82F6]", bar: "bg-[#3B82F6]", Icon: Megaphone },
-  { bg: "bg-[#FEF3C7]", fg: "text-[#F79009]", bar: "bg-[#F79009]", Icon: Users },
+  { bg: "bg-[var(--admin-home-violet-bg)]", fg: "text-[var(--admin-home-violet-fg)]", bar: "bg-[var(--admin-home-violet-fg)]", Icon: FileText },
+  { bg: "bg-[var(--admin-home-green-bg)]", fg: "text-[var(--admin-home-green-fg)]", bar: "bg-[var(--admin-home-green-fg)]", Icon: MessageCircle },
+  { bg: "bg-[var(--admin-home-blue-bg)]", fg: "text-[var(--admin-home-blue-fg)]", bar: "bg-[var(--admin-home-blue-fg)]", Icon: Megaphone },
+  { bg: "bg-[var(--admin-home-amber-bg)]", fg: "text-[var(--admin-home-amber-strong)]", bar: "bg-[var(--admin-home-amber-strong)]", Icon: Users },
 ];
 
 function originVisual(label: string, index: number) {
@@ -225,7 +225,7 @@ function SectionTitle({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="inline-flex items-center gap-1.5 text-[15px] font-bold tracking-tight text-[#101828]">
+      <h2 className="inline-flex items-center gap-1.5 text-[15px] font-bold tracking-tight text-[var(--admin-home-ink)]">
         {children}
       </h2>
       {action}
@@ -236,7 +236,7 @@ function SectionTitle({
 function TitleHint({ text }: { text: string }) {
   return (
     <span
-      className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[#98A2B3]"
+      className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[var(--admin-home-muted)]"
       title={text}
     >
       <Info className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
@@ -306,7 +306,7 @@ function TrendSpark({ values, color, label }: { values: number[]; color: string;
 function TrendDelta({ trend }: { trend?: HomeMetricTrend }) {
   const pct = trend?.deltaPct;
   if (pct == null || !Number.isFinite(pct)) {
-    return <p className="text-[12px] font-medium text-[#98A2B3]">vs. período anterior</p>;
+    return <p className="text-[12px] font-medium text-[var(--admin-home-muted)]">vs. período anterior</p>;
   }
   const rounded = Math.round(pct);
   const up = rounded > 0;
@@ -314,10 +314,10 @@ function TrendDelta({ trend }: { trend?: HomeMetricTrend }) {
   const favorable = trend?.higherIsBetter ? up : down;
   const unfavorable = trend?.higherIsBetter ? down : up;
   const tone = favorable
-    ? "text-[#12B76A]"
+    ? "text-[var(--admin-home-green-fg)]"
     : unfavorable
-      ? "text-[#F04438]"
-      : "text-[#667085]";
+      ? "text-[var(--admin-home-danger)]"
+      : "text-[var(--admin-home-slate)]";
   const Icon = up ? ArrowUp : down ? ArrowDown : null;
   const sign = rounded > 0 ? "+" : "";
   return (
@@ -327,7 +327,7 @@ function TrendDelta({ trend }: { trend?: HomeMetricTrend }) {
         {sign}
         {rounded}%
       </span>
-      <span className="font-medium text-[#98A2B3]">vs. período anterior</span>
+      <span className="font-medium text-[var(--admin-home-muted)]">vs. período anterior</span>
     </p>
   );
 }
@@ -353,7 +353,7 @@ function MetricCard({
 }) {
   return (
     <div
-      className="relative flex min-h-[132px] flex-col rounded-[18px] border border-[#EEF0F4] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_rgba(16,24,40,0.04)]"
+      className="relative flex min-h-[132px] flex-col rounded-[18px] border border-[var(--admin-home-border)] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_rgba(16,24,40,0.04)]"
       title={title}
     >
       <div className="flex items-center gap-2.5 pr-[5.5rem]">
@@ -366,9 +366,9 @@ function MetricCard({
         >
           <Icon className="h-[18px] w-[18px]" strokeWidth={2.1} aria-hidden />
         </span>
-        <p className="text-[13px] font-medium leading-tight text-[#667085]">{label}</p>
+        <p className="text-[13px] font-medium leading-tight text-[var(--admin-home-slate)]">{label}</p>
       </div>
-      <p className="mt-3 text-[1.85rem] font-bold tabular-nums leading-none tracking-[-0.045em] text-[#101828]">
+      <p className="mt-3 text-[1.85rem] font-bold tabular-nums leading-none tracking-[-0.045em] text-[var(--admin-home-ink)]">
         {formatCount(value)}
       </p>
       <div className="mt-2.5 pr-[5.5rem]">
@@ -418,41 +418,41 @@ function CommercialPerformanceBody({
     canAssign ? (
       <Link
         href="/admin/ventas?banda=unassigned"
-        className="mt-4 flex items-center gap-3 rounded-[12px] border border-dashed border-[#FDB022]/65 bg-[#FFFAEB]/80 px-3 py-2.5 transition hover:border-[#FDB022] hover:bg-[#FFFAEB]"
+        className="mt-4 flex items-center gap-3 rounded-[12px] border border-dashed border-[var(--admin-home-warn-border)]/65 bg-[var(--admin-home-warn-soft)]/80 px-3 py-2.5 transition hover:border-[var(--admin-home-warn-border)] hover:bg-[var(--admin-home-warn-soft)]"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FEF0C7] text-[#B54708]">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--admin-home-warn-bg)] text-[var(--admin-home-amber-fg)]">
           <UserX className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[13px] font-semibold text-[#93370D]">
+          <span className="block text-[13px] font-semibold text-[var(--admin-home-warn-title)]">
             Pendiente de asignación
           </span>
-          <span className="block text-[11px] text-[#B54708]/90">
+          <span className="block text-[11px] text-[var(--admin-home-amber-fg)]/90">
             {unassigned.open === 1
               ? "1 oportunidad activa sin responsable"
               : `${unassigned.open} oportunidades activas sin responsable`}
           </span>
         </span>
-        <span className="text-[16px] font-bold tabular-nums text-[#93370D]">
+        <span className="text-[16px] font-bold tabular-nums text-[var(--admin-home-warn-title)]">
           {unassigned.open}
         </span>
       </Link>
     ) : (
-      <div className="mt-4 flex items-center gap-3 rounded-[12px] border border-dashed border-[#FDB022]/65 bg-[#FFFAEB]/80 px-3 py-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FEF0C7] text-[#B54708]">
+      <div className="mt-4 flex items-center gap-3 rounded-[12px] border border-dashed border-[var(--admin-home-warn-border)]/65 bg-[var(--admin-home-warn-soft)]/80 px-3 py-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--admin-home-warn-bg)] text-[var(--admin-home-amber-fg)]">
           <UserX className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[13px] font-semibold text-[#93370D]">
+          <span className="block text-[13px] font-semibold text-[var(--admin-home-warn-title)]">
             Pendiente de asignación
           </span>
-          <span className="block text-[11px] text-[#B54708]/90">
+          <span className="block text-[11px] text-[var(--admin-home-amber-fg)]/90">
             {unassigned.open === 1
               ? "1 oportunidad activa sin responsable"
               : `${unassigned.open} oportunidades activas sin responsable`}
           </span>
         </span>
-        <span className="text-[16px] font-bold tabular-nums text-[#93370D]">
+        <span className="text-[16px] font-bold tabular-nums text-[var(--admin-home-warn-title)]">
           {unassigned.open}
         </span>
       </div>
@@ -558,23 +558,23 @@ const NEXT_STEP_ICON: Record<
 > = {
   overdue: {
     Icon: AlertCircle,
-    bg: "bg-[#FEE4E2]",
-    fg: "text-[#D92D20]",
+    bg: "bg-[var(--admin-home-danger-bg)]",
+    fg: "text-[var(--admin-home-danger-fg)]",
   },
   unfollowed: {
     Icon: Sparkles,
-    bg: "bg-[#FEF0C7]",
-    fg: "text-[#DC6803]",
+    bg: "bg-[var(--admin-home-warn-bg)]",
+    fg: "text-[var(--admin-home-amber-deep)]",
   },
   stale: {
     Icon: PauseCircle,
-    bg: "bg-[#F2F4F7]",
-    fg: "text-[#667085]",
+    bg: "bg-[var(--admin-home-divider)]",
+    fg: "text-[var(--admin-home-slate)]",
   },
   unassigned: {
     Icon: UserPlus,
-    bg: "bg-[#FEF0C7]",
-    fg: "text-[#B54708]",
+    bg: "bg-[var(--admin-home-warn-bg)]",
+    fg: "text-[var(--admin-home-amber-fg)]",
   },
 };
 
@@ -608,11 +608,11 @@ export function GrowthOsAdminHomeMaster({
     <div className="flex flex-col gap-5" data-growth-os-home>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-[1.85rem] font-bold leading-[1.15] tracking-[-0.04em] text-[#101828] sm:text-[2rem]">
+          <h1 className="text-[1.85rem] font-bold leading-[1.15] tracking-[-0.04em] text-[var(--admin-home-ink)] sm:text-[2rem]">
             {greeting}, {firstName}{" "}
             <span aria-hidden>☀️</span>
           </h1>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-[#667085]" title={spaceName}>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-[var(--admin-home-slate)]" title={spaceName}>
             Aquí tienes el estado de tu negocio hoy.
           </p>
         </div>
@@ -627,9 +627,9 @@ export function GrowthOsAdminHomeMaster({
             label="Nuevos prospectos"
             value={home.metrics.nuevosProspectos}
             icon={Users}
-            iconBg="bg-[#EDE9FE]"
-            iconFg="text-[#7C3AED]"
-            spark="#7C3AED"
+            iconBg="bg-[var(--admin-home-violet-bg)]"
+            iconFg="text-[var(--admin-home-violet-fg)]"
+            spark="var(--admin-home-violet-fg)"
             trend={home.trends?.nuevosProspectos}
             title={home.denominators.captacion}
           />
@@ -637,9 +637,9 @@ export function GrowthOsAdminHomeMaster({
             label="Oportunidades activas"
             value={home.metrics.oportunidadesActivas}
             icon={Target}
-            iconBg="bg-[#DBEAFE]"
-            iconFg="text-[#3B82F6]"
-            spark="#3B82F6"
+            iconBg="bg-[var(--admin-home-blue-bg)]"
+            iconFg="text-[var(--admin-home-blue-fg)]"
+            spark="var(--admin-home-blue-fg)"
             trend={home.trends?.oportunidadesActivas}
             title={home.denominators.stock}
           />
@@ -647,9 +647,9 @@ export function GrowthOsAdminHomeMaster({
             label="Ganadas"
             value={home.metrics.ganadas}
             icon={Trophy}
-            iconBg="bg-[#D1FAE5]"
-            iconFg="text-[#12B76A]"
-            spark="#12B76A"
+            iconBg="bg-[var(--admin-home-green-bg)]"
+            iconFg="text-[var(--admin-home-green-fg)]"
+            spark="var(--admin-home-green-fg)"
             trend={home.trends?.ganadas}
             title="Oportunidades ganadas con closedAt en el período"
           />
@@ -657,9 +657,9 @@ export function GrowthOsAdminHomeMaster({
             label="Por atender"
             value={home.metrics.porAtender}
             icon={Clock}
-            iconBg="bg-[#FEF3C7]"
-            iconFg="text-[#F79009]"
-            spark="#F79009"
+            iconBg="bg-[var(--admin-home-amber-bg)]"
+            iconFg="text-[var(--admin-home-amber-strong)]"
+            spark="var(--admin-home-amber-strong)"
             trend={home.trends?.porAtender}
             title="Vencidas, sin seguimiento o estancadas. La cola es el estado actual; no hay foto del período anterior."
           />
@@ -667,9 +667,9 @@ export function GrowthOsAdminHomeMaster({
             label="Actividad"
             value={home.metrics.actividad}
             icon={Activity}
-            iconBg="bg-[#EDE9FE]"
-            iconFg="text-[#8B5CF6]"
-            spark="#8B5CF6"
+            iconBg="bg-[var(--admin-home-violet-bg)]"
+            iconFg="text-[var(--admin-home-violet-soft)]"
+            spark="var(--admin-home-violet-soft)"
             trend={home.trends?.actividad}
             title="Actividades del Espacio con occurredAt en el período"
           />
@@ -680,14 +680,14 @@ export function GrowthOsAdminHomeMaster({
         <section
           className={cn(
             cardClass,
-            "flex h-full min-w-0 flex-col rounded-[16px] border-[#EEF0F4] p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_20px_rgba(16,24,40,0.04)] sm:p-6 xl:col-span-5"
+            "flex h-full min-w-0 flex-col rounded-[16px] border-[var(--admin-home-border)] p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_20px_rgba(16,24,40,0.04)] sm:p-6 xl:col-span-5"
           )}
         >
           <SectionTitle
             action={
               funnel && funnel.cohortSize > 0 ? (
                 <span
-                  className="text-[13px] font-semibold text-[#7C3AED]"
+                  className="text-[13px] font-semibold text-[var(--admin-home-violet-fg)]"
                   title={`${funnel.cohortDenominator} ${funnel.cohortNote} Numerador: ganadas de esa cohorte (${funnel.cohortWon}).`}
                 >
                   Conversión total: {formatCohortPct(funnel.cohortRate)}
@@ -732,7 +732,7 @@ export function GrowthOsAdminHomeMaster({
         <section
           className={cn(
             cardClass,
-            "flex h-full flex-col rounded-[16px] border-[#EEF0F4] p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_20px_rgba(16,24,40,0.04)] xl:col-span-4"
+            "flex h-full flex-col rounded-[16px] border-[var(--admin-home-border)] p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_20px_rgba(16,24,40,0.04)] xl:col-span-4"
           )}
         >
           <SectionTitle
@@ -740,7 +740,7 @@ export function GrowthOsAdminHomeMaster({
               canSales ? (
                 <Link
                   href="/admin/conversion"
-                  className="text-[13px] font-semibold text-[#7C3AED] hover:underline"
+                  className="text-[13px] font-semibold text-[var(--admin-home-violet-fg)] hover:underline"
                 >
                   Ver todas
                 </Link>
@@ -759,12 +759,12 @@ export function GrowthOsAdminHomeMaster({
               className="mt-4 flex-1 border-dashed bg-[var(--gray-50)] py-8 shadow-none"
             />
           ) : (
-            <ul className="mt-4 flex min-h-0 flex-1 flex-col divide-y divide-[#F2F4F7]">
+            <ul className="mt-4 flex min-h-0 flex-1 flex-col divide-y divide-[var(--admin-home-divider)]">
               {home.attention.map((item, index) => {
                 const band = item.band ?? "";
                 const priority = PRIORITY_PILL[band] ?? {
                   label: item.bandLabel,
-                  className: "bg-[#F2F4F7] text-[#667085]",
+                  className: "bg-[var(--admin-home-divider)] text-[var(--admin-home-slate)]",
                 };
                 return (
                   <li key={item.id} className="flex flex-1 items-center py-3 first:pt-1 last:pb-0">
@@ -779,11 +779,11 @@ export function GrowthOsAdminHomeMaster({
                         {personaInitial(item.displayName)}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-semibold leading-5 tracking-tight text-[#101828]">
+                        <p className="truncate text-[14px] font-semibold leading-5 tracking-tight text-[var(--admin-home-ink)]">
                           {item.displayName}
                         </p>
                         <p
-                          className="mt-0.5 truncate text-[12px] leading-4 text-[#667085]"
+                          className="mt-0.5 truncate text-[12px] leading-4 text-[var(--admin-home-slate)]"
                           title={item.ownerLabel}
                         >
                           {item.contextLabel}
@@ -791,13 +791,13 @@ export function GrowthOsAdminHomeMaster({
                         <p
                           className={cn(
                             "mt-1 inline-flex items-center gap-1.5 text-[12px] font-medium leading-4",
-                            REASON_TEXT[band] ?? "text-[#667085]"
+                            REASON_TEXT[band] ?? "text-[var(--admin-home-slate)]"
                           )}
                         >
                           <span
                             className={cn(
                               "h-1.5 w-1.5 shrink-0 rounded-full",
-                              REASON_DOT[band] ?? "bg-[#98A2B3]"
+                              REASON_DOT[band] ?? "bg-[var(--admin-home-muted)]"
                             )}
                             aria-hidden
                           />
@@ -808,7 +808,7 @@ export function GrowthOsAdminHomeMaster({
                         <span
                           className={cn(
                             "text-[12px] font-semibold tabular-nums",
-                            AGE_TEXT[band] ?? "text-[#667085]"
+                            AGE_TEXT[band] ?? "text-[var(--admin-home-slate)]"
                           )}
                         >
                           {item.ageLabel}
@@ -825,7 +825,7 @@ export function GrowthOsAdminHomeMaster({
                           href={item.href}
                           size="sm"
                           variant="outline"
-                          className="h-8 rounded-[10px] border-[#E4E7EC] bg-white px-3 text-[12px] font-semibold text-[#344054] shadow-none hover:bg-[#F9FAFB]"
+                          className="h-8 rounded-[10px] border-[var(--admin-home-border-strong)] bg-white px-3 text-[12px] font-semibold text-[var(--admin-home-label)] shadow-none hover:bg-[var(--admin-home-hover)]"
                         >
                           {REVIEW_CTA_LABEL}
                         </Button>
@@ -841,7 +841,7 @@ export function GrowthOsAdminHomeMaster({
         <section
           className={cn(
             cardClass,
-            "flex h-full flex-col rounded-[16px] border-[#EEF0F4] p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_20px_rgba(16,24,40,0.04)] xl:col-span-3"
+            "flex h-full flex-col rounded-[16px] border-[var(--admin-home-border)] p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_20px_rgba(16,24,40,0.04)] xl:col-span-3"
           )}
         >
           <SectionTitle>
@@ -874,19 +874,19 @@ export function GrowthOsAdminHomeMaster({
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-3">
-                        <span className="truncate text-[13px] font-medium text-[#344054]">
+                        <span className="truncate text-[13px] font-medium text-[var(--admin-home-label)]">
                           {item.label}
                         </span>
                         <span className="shrink-0 tabular-nums text-[13px]">
-                          <span className="font-semibold text-[#101828]">
+                          <span className="font-semibold text-[var(--admin-home-ink)]">
                             {formatCount(item.count)}
                           </span>
-                          <span className="ml-1.5 font-medium text-[#98A2B3]">
+                          <span className="ml-1.5 font-medium text-[var(--admin-home-muted)]">
                             {formatSharePct(item.share)}
                           </span>
                         </span>
                       </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#F2F4F7]">
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--admin-home-divider)]">
                         <div
                           className={cn("h-full rounded-full", visual.bar)}
                           style={{ width: `${width}%` }}

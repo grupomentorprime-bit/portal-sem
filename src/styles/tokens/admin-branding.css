@@ -61,4 +61,82 @@
 
   /* Legacy alias */
   --light: var(--color-warning);
+
+  /* Kanban — acentos de columna (solo presentación) */
+  --admin-kanban-1-surface: #e7f1ff;
+  --admin-kanban-1-accent: #3b82f6;
+  --admin-kanban-1-badge: #dbeafe;
+  --admin-kanban-1-fg: #1d4ed8;
+  --admin-kanban-2-surface: #f1eefe;
+  --admin-kanban-2-accent: #8b5cf6;
+  --admin-kanban-2-badge: #ede9fe;
+  --admin-kanban-2-fg: #6d28d9;
+  --admin-kanban-3-surface: #fff6dc;
+  --admin-kanban-3-accent: #f59e0b;
+  --admin-kanban-3-badge: #fef3c7;
+  --admin-kanban-3-fg: #b45309;
+  --admin-kanban-4-surface: #ffefe3;
+  --admin-kanban-4-accent: #f97316;
+  --admin-kanban-4-badge: #ffedd5;
+  --admin-kanban-4-fg: #c2410c;
+  --admin-kanban-5-surface: #ffecee;
+  --admin-kanban-5-accent: #fb7185;
+  --admin-kanban-5-badge: #ffe4e6;
+  --admin-kanban-5-fg: #be123c;
+
+  /* Prioridad comercial */
+  --admin-band-overdue-bg: #fde8e8;
+  --admin-band-overdue-fg: #b42318;
+  --admin-band-unfollowed-bg: #fff4e5;
+  --admin-band-unfollowed-fg: #b54708;
+  --admin-band-stale-bg: #f4f3ff;
+  --admin-band-stale-fg: #6941c6;
+  --admin-band-current-bg: #e7f8ef;
+  --admin-band-current-fg: #067647;
+
+  /* Home — tonos de actividad y origen */
+  --admin-home-violet-bg: #ede9fe;
+  --admin-home-violet-fg: #7c3aed;
+  --admin-home-blue-bg: #dbeafe;
+  --admin-home-blue-fg: #3b82f6;
+  --admin-home-indigo-bg: #e0e7ff;
+  --admin-home-indigo-fg: #4f46e5;
+  --admin-home-green-bg: #d1fae5;
+  --admin-home-green-fg: #12b76a;
+  --admin-home-amber-bg: #fef3c7;
+  --admin-home-amber-fg: #b54708;
+  --admin-home-amber-strong: #f79009;
+  --admin-home-amber-deep: #dc6803;
+  --admin-home-pink-bg: #fce7f3;
+  --admin-home-pink-fg: #db2777;
+  --admin-home-orange-bg: #ffedd5;
+  --admin-home-orange-fg: #c2410c;
+  --admin-home-teal-bg: #ccfbf1;
+  --admin-home-teal-fg: #0f766e;
+  --admin-home-teal-bar: #14b8a6;
+  --admin-home-danger: #f04438;
+  --admin-home-danger-bg: #fee4e2;
+  --admin-home-danger-fg: #d92d20;
+  --admin-home-warn-bg: #fef0c7;
+  --admin-home-warn-soft: #fffaeb;
+  --admin-home-warn-border: #fdb022;
+  --admin-home-warn-title: #93370d;
+  --admin-home-muted: #98a2b3;
+  --admin-home-slate: #667085;
+  --admin-home-ink: #101828;
+  --admin-home-label: #344054;
+  --admin-home-border: #eef0f4;
+  --admin-home-divider: #f2f4f7;
+  --admin-home-border-strong: #e4e7ec;
+  --admin-home-hover: #f9fafb;
+  --admin-home-violet-soft: #8b5cf6;
+  --admin-home-line: #d0d5dd;
+
+  /* Embudo Inicio */
+  --admin-funnel-1: #5b2de0;
+  --admin-funnel-2: #8278fb;
+  --admin-funnel-3: #4e9fff;
+  --admin-funnel-4: #52c3ef;
+  --admin-funnel-5: #5fd09c;
+  --admin-funnel-result: #3aaa4c;
 }

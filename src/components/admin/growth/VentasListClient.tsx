@@ -115,18 +115,38 @@ function FilterPill({
 }
 
 const COLUMN_THEMES = [
-  { surface: "bg-[#e7f1ff]", accent: "border-l-[#3b82f6]", badge: "bg-[#dbeafe] text-[#1d4ed8]" },
-  { surface: "bg-[#f1eefe]", accent: "border-l-[#8b5cf6]", badge: "bg-[#ede9fe] text-[#6d28d9]" },
-  { surface: "bg-[#fff6dc]", accent: "border-l-[#f59e0b]", badge: "bg-[#fef3c7] text-[#b45309]" },
-  { surface: "bg-[#ffefe3]", accent: "border-l-[#f97316]", badge: "bg-[#ffedd5] text-[#c2410c]" },
-  { surface: "bg-[#ffecee]", accent: "border-l-[#fb7185]", badge: "bg-[#ffe4e6] text-[#be123c]" },
+  {
+    surface: "bg-[var(--admin-kanban-1-surface)]",
+    accent: "border-l-[var(--admin-kanban-1-accent)]",
+    badge: "bg-[var(--admin-kanban-1-badge)] text-[var(--admin-kanban-1-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-2-surface)]",
+    accent: "border-l-[var(--admin-kanban-2-accent)]",
+    badge: "bg-[var(--admin-kanban-2-badge)] text-[var(--admin-kanban-2-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-3-surface)]",
+    accent: "border-l-[var(--admin-kanban-3-accent)]",
+    badge: "bg-[var(--admin-kanban-3-badge)] text-[var(--admin-kanban-3-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-4-surface)]",
+    accent: "border-l-[var(--admin-kanban-4-accent)]",
+    badge: "bg-[var(--admin-kanban-4-badge)] text-[var(--admin-kanban-4-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-5-surface)]",
+    accent: "border-l-[var(--admin-kanban-5-accent)]",
+    badge: "bg-[var(--admin-kanban-5-badge)] text-[var(--admin-kanban-5-fg)]",
+  },
 ] as const;
 
 const BAND_PILL: Record<GrowthPriorityBand, string> = {
-  overdue: "bg-[#fde8e8] text-[#b42318]",
-  unfollowed: "bg-[#fff4e5] text-[#b54708]",
-  stale: "bg-[#f4f3ff] text-[#6941c6]",
-  current: "bg-[#e7f8ef] text-[#067647]",
+  overdue: "bg-[var(--admin-band-overdue-bg)] text-[var(--admin-band-overdue-fg)]",
+  unfollowed: "bg-[var(--admin-band-unfollowed-bg)] text-[var(--admin-band-unfollowed-fg)]",
+  stale: "bg-[var(--admin-band-stale-bg)] text-[var(--admin-band-stale-fg)]",
+  current: "bg-[var(--admin-band-current-bg)] text-[var(--admin-band-current-fg)]",
 };
 
 function relativeActivity(iso?: string): string {

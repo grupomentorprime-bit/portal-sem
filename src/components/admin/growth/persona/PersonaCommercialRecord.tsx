@@ -63,10 +63,10 @@ export function formatPersonaDate(iso: string): string {
 }
 
 const assessmentToneClass: Record<GrowthPersonaAssessmentTone, string> = {
-  clear: "bg-emerald-500",
-  doubt: "bg-amber-500",
+  clear: "bg-[var(--color-success)]",
+  doubt: "bg-[var(--color-warning)]",
   gap: "bg-[var(--color-danger)]",
-  missing: "bg-slate-400",
+  missing: "bg-[var(--gray-400)]",
 };
 
 function signalHint(signal: GrowthPersonaSignalView): string | null {
