@@ -36,6 +36,29 @@ describe("decidePublicSite", () => {
     );
   });
 
+  it("el formulario se abre aunque el sitio siga por comenzar", () => {
+    assert.deepEqual(
+      decidePublicSite({
+        hasTenant: true,
+        sitePublished: false,
+        hasSiteModule: false,
+        pathname: "/formularios/convocatoria-talca-aurora-nov-2026",
+        registeredPaths: [],
+      }),
+      { kind: "passthrough" }
+    );
+    assert.equal(
+      decidePublicSite({
+        hasTenant: true,
+        sitePublished: false,
+        hasSiteModule: false,
+        pathname: "/",
+        registeredPaths: [],
+      }).kind,
+      "coming-soon"
+    );
+  });
+
   it("sin publicar muestra por comenzar en cualquier ruta", () => {
     assert.equal(
       decidePublicSite({

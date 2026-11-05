@@ -71,14 +71,14 @@ export const FORM_CONVOCATORIAS: FormConvocatoria[] = [
       motivational: "¡Nos encantará verte! Tu presencia fortalece nuestra comunidad formativa.",
       highlights: [
         { icon: "calendar", label: "Fecha", value: "Sábado 4 de julio de 2026" },
+        { icon: "clock", label: "Horario", value: "Desde las 9:00 am — incluye evaluación académica" },
         {
           icon: "map-pin",
           label: "Lugar",
           value: "Talca Aurora",
-          href: "https://www.google.com/maps/search/?api=1&query=Aurora+Talca+Chile",
+          href: "https://maps.app.goo.gl/mMieKcyFbgz9iKAF9",
         },
         { icon: "users", label: "Para quién", value: "Estudiantes, docentes y equipo SEM" },
-        { icon: "clock", label: "Horario", value: "Desde las 9:00 am — incluye evaluación académica" },
       ],
       ctaLabel: "Enviar mi respuesta",
     },
@@ -107,20 +107,20 @@ export const FORM_CONVOCATORIAS: FormConvocatoria[] = [
           value: "Sábado 7 de noviembre de 2026",
         },
         {
+          icon: "clock",
+          label: "Horario",
+          value: "Desde las 9:00 am — cierre del año académico",
+        },
+        {
           icon: "map-pin",
           label: "Lugar",
           value: "Talca Aurora",
-          href: "https://www.google.com/maps/search/?api=1&query=Aurora+Talca+Chile",
+          href: "https://maps.app.goo.gl/mMieKcyFbgz9iKAF9",
         },
         {
           icon: "users",
           label: "Para quién",
           value: "Estudiantes, docentes y equipo SEM",
-        },
-        {
-          icon: "clock",
-          label: "Horario",
-          value: "Desde las 9:00 am — cierre del año académico",
         },
       ],
       ctaLabel: "Enviar mi respuesta",

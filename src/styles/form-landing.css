@@ -271,14 +271,97 @@
 }
 
 .form-landing--convocatoria .form-landing__highlight {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icon label"
+    "value value";
+  align-items: center;
+  column-gap: 0.65rem;
+  row-gap: 0.2rem;
+  height: 100%;
   border: 1px solid color-mix(in srgb, var(--sem-accent) 32%, white);
   background: white;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--sem-primary) 10%, transparent);
 }
 
+.form-landing--convocatoria .form-landing__highlight:has(.form-landing__highlight-desc) {
+  grid-template-areas:
+    "icon label"
+    "value value"
+    "desc desc";
+}
+
+.form-landing--convocatoria .form-landing__highlight-text {
+  display: contents;
+}
+
+.form-landing--convocatoria .form-landing__highlight-label {
+  grid-area: label;
+}
+
+.form-landing--convocatoria .form-landing__highlight-value {
+  grid-area: value;
+  align-self: start;
+  text-wrap: pretty;
+}
+
+.form-landing--convocatoria .form-landing__highlight-desc {
+  grid-area: desc;
+  margin-top: 0;
+  text-wrap: pretty;
+}
+
+.form-landing--convocatoria .form-landing__highlights {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .form-landing--convocatoria .form-landing__highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .form-landing--convocatoria .form-landing__highlight-icon {
+  grid-area: icon;
   background: linear-gradient(135deg, var(--sem-secondary), var(--sem-accent));
 }
+
+.form-landing__minimap {
+  position: relative;
+  width: 100%;
+  max-width: var(--fl-content-max);
+  aspect-ratio: 741 / 472;
+  margin: 0.75rem auto 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--sem-accent) 32%, white);
+  background: white;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--sem-primary) 10%, transparent);
+}
+
+.form-landing__minimap iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  pointer-events: none;
+}
+
+.form-landing__minimap-open {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  text-indent: -9999px;
+  white-space: nowrap;
+}
+
+.form-landing__minimap-open:hover {
+  color: var(--sem-secondary);
+}
+
 
 .form-landing--convocatoria .form-landing__editorial-inner {
   background: linear-gradient(

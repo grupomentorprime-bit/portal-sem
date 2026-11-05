@@ -314,6 +314,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         let confirmationEmailAttachment:
           | { filename: string; content: Buffer }
           | undefined;
+        let eventWhen: string | undefined;
 
         try {
           const experience = await getFormExperienceUncached(tenant, id, form.name);
@@ -325,6 +326,14 @@ export async function POST(request: Request, { params }: RouteParams) {
           confirmationEmailCtaUrl = resolvedCta.url;
           confirmationEmailAttachment = resolvedCta.attachment;
           confirmationEmailCtaLabel = experience.formShell.confirmationEmailCtaLabel;
+          const calendar = experience.infoCards.find(
+            (card) => card.icon === "calendar" && card.visible !== false && card.value.trim()
+          );
+          const clock = experience.infoCards.find(
+            (card) => card.icon === "clock" && card.visible !== false && card.value.trim()
+          );
+          const when = [calendar?.value.trim(), clock?.value.trim()].filter(Boolean).join(" · ");
+          eventWhen = when || undefined;
         } catch (experienceError) {
           console.error(
             "[convocatoria] failed to load form experience for email, using defaults",
@@ -345,6 +354,7 @@ export async function POST(request: Request, { params }: RouteParams) {
             confirmationEmailCtaUrl,
             confirmationEmailCtaLabel,
             confirmationEmailAttachment,
+            eventWhen,
           });
 
           if (emailResult.ok) {

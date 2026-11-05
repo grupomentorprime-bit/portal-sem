@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { resolveSpacePreviewOrigin } from "../../src/core/tenant/hosts";
+import {
+  resolveSpacePreviewOrigin,
+  resolveSpacePublishedOrigin,
+} from "../../src/core/tenant/hosts";
 
 const LOCAL_ENV = {
   APP_URL: "http://localhost:3000",
@@ -64,9 +67,31 @@ describe("resolveSpacePreviewOrigin", () => {
     );
   });
 
+  it("en local la vista previa es el Espacio local y ver público sigue en la web", () => {
+    assert.equal(
+      resolveSpacePreviewOrigin({
+        slug: "seminario-ipn",
+        primaryHost: "seminario-ipn.mentorprime.cl",
+        requestHost: "localhost:3000",
+        env: LOCAL_ENV,
+      }),
+      "http://seminario-ipn.localhost:3000"
+    );
+    assert.equal(
+      resolveSpacePublishedOrigin({
+        slug: "seminario-ipn",
+        primaryHost: "seminario-ipn.mentorprime.cl",
+        env: LOCAL_ENV,
+      }),
+      "https://seminario-ipn.mentorprime.cl"
+    );
+  });
+
   it("la vista previa del formulario abre el sitio del Espacio, no la plataforma", () => {
     const src = readFileSync("src/components/admin/forms/FormDetailClient.tsx", "utf8");
     assert.match(src, /spacePublicHref\(publicOrigin, publicFormUrl\(form\._id\)\)/);
+    assert.match(src, /window\.open\(previewHref/);
+    assert.match(src, /publishedFormHref/);
     assert.doesNotMatch(src, /window\.open\(publicFormUrl/);
   });
 });

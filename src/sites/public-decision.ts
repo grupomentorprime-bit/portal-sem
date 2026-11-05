@@ -3,6 +3,7 @@ import type { ContactInfo, SocialLinks } from "@/types/cms";
 export type PublicSiteDecision =
   | { kind: "platform" }
   | { kind: "coming-soon" }
+  | { kind: "passthrough" }
   | { kind: "page"; path: string }
   | { kind: "not-found" };
 
@@ -10,6 +11,11 @@ function normalizePublicPath(pathname: string): string {
   const path = pathname.split("?")[0]?.split("#")[0] ?? "/";
   if (path.length > 1 && path.endsWith("/")) return path.slice(0, -1);
   return path || "/";
+}
+
+function isDirectFormPath(pathname: string): boolean {
+  const path = normalizePublicPath(pathname);
+  return path === "/formularios" || path.startsWith("/formularios/");
 }
 
 export function decidePublicSite(input: {
@@ -20,6 +26,7 @@ export function decidePublicSite(input: {
   registeredPaths: string[];
 }): PublicSiteDecision {
   if (!input.hasTenant) return { kind: "platform" };
+  if (isDirectFormPath(input.pathname)) return { kind: "passthrough" };
   if (!input.sitePublished || !input.hasSiteModule) return { kind: "coming-soon" };
 
   const path = normalizePublicPath(input.pathname);

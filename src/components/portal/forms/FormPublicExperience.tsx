@@ -25,6 +25,7 @@ import {
   normalizeChileEventTime,
   resolveChileEventStartMs,
 } from "@/lib/experience/forms/convocatoria-event-datetime";
+import { TALCA_AURORA_VENUE } from "@/lib/experience/forms/talca-aurora-venue";
 import { FormLandingCountdown } from "./FormLandingCountdown";
 
 const INFO_ICONS: Record<FormExperienceInfoIcon, typeof Calendar> = {
@@ -208,8 +209,11 @@ export function FormPublicExperience({
           </section>
         );
 
-      case "info_cards":
+      case "info_cards": {
         if (!isBlockEnabled(experience, "info_cards") || visibleCards.length === 0) return null;
+        const showVenueMap = visibleCards.some(
+          (card) => card.href === TALCA_AURORA_VENUE.googleMapsUrl
+        );
         return (
           <section className="form-landing__info-cards" aria-label="Información">
             <ul className="form-landing__highlights form-landing__highlights--section">
@@ -244,8 +248,28 @@ export function FormPublicExperience({
                 );
               })}
             </ul>
+            {showVenueMap ? (
+              <div className="form-landing__minimap">
+                <iframe
+                  title={`Mapa de ${TALCA_AURORA_VENUE.place}`}
+                  src={TALCA_AURORA_VENUE.embedUrl}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  tabIndex={-1}
+                />
+                <a
+                  className="form-landing__minimap-open"
+                  href={TALCA_AURORA_VENUE.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Abrir mapa de {TALCA_AURORA_VENUE.place}
+                </a>
+              </div>
+            ) : null}
           </section>
         );
+      }
 
       case "editorial":
         if (!isBlockEnabled(experience, "editorial") || !experience.editorial.enabled) return null;

@@ -1,8 +1,10 @@
 import { FormDetailClient } from "@/components/admin/forms/FormDetailClient";
-import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
+import { getConvocatoriaByFormId, publicFormUrl } from "@/lib/admin/forms-center";
+import { publicUrlForPath } from "@/core/tenant/hosts";
 import { getSessionActiveTenantId } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
+import { resolvePublishedOriginForTenant } from "@/lib/portal/public-origin";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +29,17 @@ export default async function AdminFormDetailPage({ params }: FormDetailPageProp
   if (!form) notFound();
 
   const convocatoria = getConvocatoriaByFormId(id);
+  const publishedOrigin = await resolvePublishedOriginForTenant(tenantId).catch(() => null);
+  const publishedFormHref = publishedOrigin
+    ? publicUrlForPath(publishedOrigin, publicFormUrl(form._id))
+    : null;
 
-  return <FormDetailClient form={form} convocatoria={convocatoria} tenantId={tenantId} />;
+  return (
+    <FormDetailClient
+      form={form}
+      convocatoria={convocatoria}
+      tenantId={tenantId}
+      publishedFormHref={publishedFormHref}
+    />
+  );
 }

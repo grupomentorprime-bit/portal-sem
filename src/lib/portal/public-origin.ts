@@ -7,6 +7,7 @@ import {
   findDefaultSiteForTenant,
   findPrimaryDomainBySiteId,
   resolveSpacePreviewOrigin,
+  resolveSpacePublishedOrigin,
 } from "@/core/tenant";
 
 /**
@@ -34,5 +35,27 @@ export async function resolvePublicOriginForTenant(
     slug,
     primaryHost: primary?.host,
     requestHost: options?.requestHost,
+  });
+}
+
+/** Origen de «Ver público»: el dominio del Espacio en la web, no el localhost del admin. */
+export async function resolvePublishedOriginForTenant(
+  tenantId: string | null | undefined
+): Promise<string | null> {
+  const trimmed = tenantId?.trim();
+  if (!trimmed || trimmed === "default") return null;
+
+  const db = await getDatabase();
+  const site = await findDefaultSiteForTenant(db, trimmed);
+  const siteId =
+    site?.siteId?.trim() ||
+    site?._id ||
+    (trimmed === SEM_TENANT_ID ? SEM_SITE_ID : trimmed);
+
+  const primary = await findPrimaryDomainBySiteId(db, siteId);
+  const slug = site?.slug?.trim() || siteId;
+  return resolveSpacePublishedOrigin({
+    slug,
+    primaryHost: primary?.host,
   });
 }

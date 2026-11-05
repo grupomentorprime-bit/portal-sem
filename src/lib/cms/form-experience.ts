@@ -3,7 +3,7 @@ import { getDatabase } from "@/lib/mongodb";
 import {
   counterDateInputValue,
   DEFAULT_CHILE_EVENT_TIME,
-  formatConvocatoriaFechaLabel,
+  formatConvocatoriaFechaLines,
   formatConvocatoriaHorarioLabel,
   normalizeChileEventTime,
 } from "@/lib/experience/forms/convocatoria-event-datetime";
@@ -16,10 +16,12 @@ import {
 import type {
   ExperienceFormExperience,
   FormExperienceBlock,
+  FormExperienceInfoIcon,
   FormExperienceTemplateId,
 } from "@/types/experience-form-experience";
 import type { CmsVersionSnapshot } from "@/types/cms-shared";
 import { createCmsId } from "@/types/cms-shared";
+import { TALCA_AURORA_VENUE } from "@/lib/experience/forms/talca-aurora-venue";
 
 export { toFormLandingConfig, reorderFormExperienceBlocks } from "@/lib/cms/form-experience-utils";
 
@@ -31,6 +33,24 @@ function sortBlocks(blocks: FormExperienceBlock[]): FormExperienceBlock[] {
   return [...blocks].sort((a, b) => a.order - b.order);
 }
 
+/** Fecha, horario, lugar y público: el dato de tiempo queda junto a la fecha. */
+const CONVOCATORIA_CARD_ORDER: Partial<Record<FormExperienceInfoIcon, number>> = {
+  calendar: 0,
+  clock: 1,
+  "map-pin": 2,
+  users: 3,
+};
+
+function splitAudienceLine(value: string): { value: string; description: string } | null {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  const index = normalized.lastIndexOf(" y ");
+  if (index <= 0) return null;
+  const head = normalized.slice(0, index).trim();
+  const tail = normalized.slice(index + 1).trim();
+  if (!head || !tail) return null;
+  return { value: head, description: tail };
+}
+
 function sortInfoCards(experience: ExperienceFormExperience): ExperienceFormExperience {
   return {
     ...experience,
@@ -39,9 +59,6 @@ function sortInfoCards(experience: ExperienceFormExperience): ExperienceFormExpe
     blocks: sortBlocks(experience.blocks),
   };
 }
-
-const TALCA_MAPS_HREF =
-  "https://www.google.com/maps/search/?api=1&query=Aurora+Talca+Chile";
 
 function enhanceConvocatoriaExperience(
   experience: ExperienceFormExperience,
@@ -63,20 +80,32 @@ function enhanceConvocatoriaExperience(
     secondaryCtas: [],
   };
 
-  const horarioLabel = formatConvocatoriaHorarioLabel(eventTime);
-  const fechaLabel = formatConvocatoriaFechaLabel(eventDate);
+  const horarioLabel = formatConvocatoriaHorarioLabel(eventTime, false);
+  const fechaLabel = formatConvocatoriaFechaLines(eventDate);
 
   const infoCards = experience.infoCards.map((card) => {
-    if (card.icon === "map-pin" && !card.href) {
-      return { ...card, href: TALCA_MAPS_HREF };
+    const order = CONVOCATORIA_CARD_ORDER[card.icon] ?? card.order + 10;
+
+    if (card.icon === "map-pin") {
+      return { ...card, order, href: TALCA_AURORA_VENUE.googleMapsUrl };
     }
     if (card.icon === "clock") {
-      return { ...card, value: horarioLabel };
+      return {
+        ...card,
+        order,
+        value: horarioLabel,
+        description: "Incluye evaluación académica",
+      };
     }
     if (card.icon === "calendar") {
-      return { ...card, value: fechaLabel };
+      const [headline, year] = fechaLabel.split("\n");
+      return { ...card, order, value: headline, description: year };
     }
-    return card;
+    if (card.icon === "users" && !card.description) {
+      const audience = splitAudienceLine(card.value);
+      return audience ? { ...card, order, ...audience } : { ...card, order };
+    }
+    return { ...card, order };
   });
 
   return sortInfoCards({

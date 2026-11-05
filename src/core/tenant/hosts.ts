@@ -386,6 +386,20 @@ export function resolveSpacePreviewOrigin(input: {
   return publicOriginFromHost(buildDefaultSpaceHost(slug, { env }));
 }
 
+/** Dominio público del Espacio, el de «Ver público», aunque el admin esté en local. */
+export function resolveSpacePublishedOrigin(input: {
+  slug: string;
+  primaryHost?: string | null;
+  env?: NodeJS.ProcessEnv | Record<string, string | undefined>;
+}): string | null {
+  const env = input.env ?? process.env;
+  const slug = normalizePlatformHostSlug(input.slug);
+  if (!slug || isReservedSpaceSlug(slug, env)) return null;
+  const fromPrimary = publicOriginFromHost(input.primaryHost);
+  if (fromPrimary) return fromPrimary;
+  return publicOriginFromHost(buildDefaultSpaceHost(slug, { env }));
+}
+
 /**
  * ¿El host es el subdominio de plataforma de este slug?
  * Incluye `{slug}.{base}` y `{slug}.localhost` (cualquier puerto).

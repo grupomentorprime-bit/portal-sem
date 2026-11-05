@@ -2,23 +2,21 @@ import "server-only";
 
 import {
   formatConvocatoriaDate,
-  formatSubmissionPhone,
   publicFormUrl,
   type FormConvocatoria,
 } from "@/lib/admin/forms-center";
-import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
 import { resolvePublicUrl } from "@/lib/app-url";
-import {
-  renderCredentialRow,
-  renderInfoBox,
-  renderTransactionalEmail,
-} from "@/lib/notifications/email-layout";
+import { renderTransactionalEmail } from "@/lib/notifications/email-layout";
 import { sendTransactionalHtmlEmail } from "@/lib/notifications/email";
 import {
   emailAbsoluteUrl,
   type EmailIdentity,
 } from "@/lib/notifications/identity";
 import { resolveEmailIdentityForTenant } from "@/lib/notifications/resolve-identity";
+import {
+  isTalcaAuroraLocation,
+  TALCA_AURORA_VENUE,
+} from "@/lib/experience/forms/talca-aurora-venue";
 
 export interface ConvocatoriaConfirmationEmailInput {
   tenantId: string;
@@ -35,6 +33,8 @@ export interface ConvocatoriaConfirmationEmailInput {
   confirmationEmailCtaLabel?: string;
   /** PDF u otro documento adjunto al correo (p. ej. programa de la jornada). */
   confirmationEmailAttachment?: { filename: string; content: Buffer };
+  /** Fecha y horario tal como se ven en el formulario. */
+  eventWhen?: string;
 }
 
 type ConfirmationRenderInput = Omit<
@@ -55,25 +55,56 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function professorAvatarHtml(mood: "happy" | "sad", institutionName: string): string {
-  const bg = mood === "happy" ? "#d8f3e4" : "#dbe8f4";
-  const accent = mood === "happy" ? "#3ED6AF" : "#246AA1";
-  const face = mood === "happy" ? "☺" : "☹";
-  const label = mood === "happy" ? "Tu profe está feliz" : "Tu profe te extraña";
-
+function directionButton(href: string, label: string, background: string, color: string): string {
   return `
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
       <tr>
-        <td width="72" valign="top" style="padding-right:14px;">
-          <div style="width:64px;height:64px;border-radius:999px;background:${bg};border:2px solid ${accent};text-align:center;line-height:60px;font-size:30px;color:#002A47;">
-            ${face}
-          </div>
+        <td align="center" bgcolor="${background}" style="border-radius:10px;">
+          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"
+            style="display:block;padding:13px 10px;font-size:14px;font-weight:700;line-height:1.2;color:${color};text-decoration:none;border-radius:10px;font-family:Segoe UI,Helvetica,Arial,sans-serif;">
+            ${escapeHtml(label)}
+          </a>
         </td>
-        <td valign="middle">
-          <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#5C7289;">
-            ${label}
-          </p>
-          <p style="margin:0;font-size:12px;color:#5C7289;">Equipo académico — ${escapeHtml(institutionName)}</p>
+      </tr>
+    </table>
+  `;
+}
+
+function directionsCardHtml(): string {
+  const venue = TALCA_AURORA_VENUE;
+  return `
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:18px 0 0;border-collapse:separate;">
+      <tr>
+        <td style="border-radius:16px;overflow:hidden;border:1px solid #E4DFF2;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td bgcolor="#1E1B4B" style="padding:18px 20px 16px;">
+                <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#22D3EE;">
+                  Cómo llegar
+                </p>
+                <p style="margin:0;font-size:20px;line-height:1.25;font-weight:700;color:#ffffff;">
+                  ${escapeHtml(venue.name)}
+                </p>
+                <p style="margin:6px 0 0;font-size:13px;line-height:1.4;color:#D4CCEA;">
+                  ${escapeHtml(venue.place)}
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#F7F5FF" style="padding:16px 16px 18px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td width="50%" valign="top" style="padding-right:6px;">
+                      ${directionButton(venue.googleDirectionsUrl, "Google Maps", "#1A73E8", "#ffffff")}
+                    </td>
+                    <td width="50%" valign="top" style="padding-left:6px;">
+                      ${directionButton(venue.wazeUrl, "Waze", "#33CCFF", "#002A47")}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
@@ -81,9 +112,9 @@ function professorAvatarHtml(mood: "happy" | "sad", institutionName: string): st
 }
 
 function professorQuoteBox(mood: "happy" | "sad", message: string): string {
-  const bg = mood === "happy" ? "#ecfbf4" : "#edf4fb";
-  const border = mood === "happy" ? "#3ED6AF" : "#246AA1";
-  const text = mood === "happy" ? "#0f5132" : "#1e3f5f";
+  const bg = mood === "happy" ? "#ECFDF5" : "#EFEAFC";
+  const border = mood === "happy" ? "#18B981" : "#6D28D9";
+  const text = mood === "happy" ? "#065F46" : "#1E1B4B";
 
   return `
     <div style="margin:20px 0 0;padding:18px 20px;border-radius:14px;background:${bg};border-left:4px solid ${border};">
@@ -109,7 +140,9 @@ export function renderConvocatoriaConfirmationEmail(
   const mood = isAttending ? "happy" : "sad";
   const eventTitle = input.convocatoria.landing?.headline ?? input.convocatoria.title;
   const eventDate = formatConvocatoriaDate(input.convocatoria.date);
+  const eventWhen = input.eventWhen?.trim() || eventDate;
   const eventLocation = input.convocatoria.location;
+  const showDirections = isAttending && isTalcaAuroraLocation(eventLocation);
   const professorMessage =
     input.professorMessage?.trim() ||
     (isAttending ? DEFAULT_YES_MESSAGE : DEFAULT_NO_MESSAGE);
@@ -117,50 +150,40 @@ export function renderConvocatoriaConfirmationEmail(
     input.identity,
     publicFormUrl(input.convocatoria.formId)
   );
-  const ctaUrl =
-    resolvePublicUrl(input.confirmationEmailCtaUrl, input.identity.origin) || formUrl;
-  const defaultCtaLabel = isAttending ? "Ver detalles de la convocatoria" : "Revisar convocatoria";
-  const ctaLabel = input.confirmationEmailCtaLabel?.trim() || defaultCtaLabel;
+  const customCtaUrl = resolvePublicUrl(input.confirmationEmailCtaUrl, input.identity.origin);
+  const ctaUrl = showDirections ? customCtaUrl : customCtaUrl || formUrl;
+  const defaultCtaLabel = isAttending ? "Ver el programa" : "Revisar convocatoria";
+  const ctaLabel = ctaUrl ? input.confirmationEmailCtaLabel?.trim() || defaultCtaLabel : undefined;
   const firstName = input.participantName.trim().split(/\s+/)[0] || input.participantName;
 
   const headline = isAttending
     ? "¡Tu asistencia quedó confirmada!"
     : "Recibimos tu respuesta";
 
-  const locationBit = eventLocation.trim() ? ` en ${eventLocation.trim()}` : "";
   const previewText = isAttending
-    ? `¡Nos vemos${locationBit}, ${firstName}! Tu asistencia fue registrada.`
+    ? showDirections
+      ? `${firstName}, te esperamos en el ${TALCA_AURORA_VENUE.name}. Abre la ruta en Google Maps o Waze.`
+      : `${firstName}, tu asistencia quedó registrada.`
     : `${firstName}, gracias por avisarnos. El equipo académico revisará tu respuesta.`;
 
   const intro = isAttending
-    ? `<p style="margin:0 0 16px;">Registramos correctamente tu confirmación para la jornada presencial. Guarda este correo como comprobante.</p>`
-    : `<p style="margin:0 0 16px;">Registramos que no podrás asistir a la jornada. Si enviaste una justificación, el equipo académico la revisará según la política institucional.</p>`;
+    ? `<p style="margin:0 0 8px;">Tu lugar quedó reservado. Te esperamos.</p>`
+    : `<p style="margin:0 0 8px;">Registramos que no podrás asistir. Si enviaste una justificación, el equipo académico la revisará.</p>`;
 
-  const summaryHtml = renderInfoBox(`
-    ${renderCredentialRow("Participante", input.participantName)}
-    ${renderCredentialRow("Respuesta", isAttending ? "Sí, asistiré" : "No podré asistir")}
-    ${input.generation ? renderCredentialRow("Programa", formatGenerationDisplay(input.generation)) : ""}
-    ${input.phone ? renderCredentialRow("Teléfono", formatSubmissionPhone(input.phone)) : ""}
-    ${renderCredentialRow("Fecha", eventDate)}
-    ${renderCredentialRow("Lugar", eventLocation)}
-    <p style="margin:14px 0 0;">${attendanceBadge(input.attendance)}</p>
-  `);
+  const whenHtml = `
+    <p style="margin:14px 0 0;font-size:15px;line-height:1.45;font-weight:700;color:#1E1B4B;">
+      ${escapeHtml(eventWhen)}
+    </p>
+    <p style="margin:4px 0 0;">${attendanceBadge(input.attendance)}</p>
+  `;
 
   const bodyHtml = `
     ${intro}
-    <div style="margin:22px 0;padding:20px;border-radius:16px;background:#F5F7F9;border:1px solid #D1D9E0;">
-      ${professorAvatarHtml(mood, institution)}
-      ${professorQuoteBox(mood, professorMessage)}
-    </div>
-    <h2 style="margin:24px 0 10px;font-size:15px;color:#141F29;">Resumen de tu respuesta</h2>
-    ${summaryHtml}
-    <p style="margin:18px 0 0;font-size:14px;line-height:1.7;color:#5C7289;">
-      ${isAttending
-        ? "Te esperamos puntualmente desde las 9:00 a.m. Recuerda que la jornada incluye evaluación académica."
-        : "Si tu situación cambia, contacta a asuntos estudiantiles. Estamos para acompañarte en tu proceso formativo."}
-    </p>
+    ${whenHtml}
+    ${showDirections ? directionsCardHtml() : ""}
+    ${professorQuoteBox(mood, professorMessage)}
     ${input.confirmationEmailAttachment
-      ? `<p style="margin:18px 0 0;font-size:14px;line-height:1.7;color:#5C7289;">El programa de la jornada va <strong>adjunto a este correo</strong>. También puedes descargarlo con el botón de abajo.</p>`
+      ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#5C7289;">El programa va <strong>adjunto</strong> a este correo.</p>`
       : ""}
   `;
 

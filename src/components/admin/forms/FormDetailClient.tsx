@@ -70,6 +70,8 @@ interface FormDetailClientProps {
   form: ExperienceFormDefinition;
   convocatoria?: FormConvocatoria;
   tenantId: string;
+  /** Dirección del formulario en la web. La vista previa usa el sitio local. */
+  publishedFormHref?: string | null;
 }
 
 function resolvePrimaryTab(
@@ -103,7 +105,12 @@ function resolveMoreSection(raw: string | null): MoreSectionId {
   return "presentacion";
 }
 
-export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: FormDetailClientProps) {
+export function FormDetailClient({
+  form: initialForm,
+  convocatoria,
+  tenantId,
+  publishedFormHref,
+}: FormDetailClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const publicOrigin = useSpacePublicOrigin();
@@ -196,10 +203,11 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
     }
   };
 
-  const formPublicHref = spacePublicHref(publicOrigin, publicFormUrl(form._id));
+  const previewHref = spacePublicHref(publicOrigin, publicFormUrl(form._id));
+  const liveHref = publishedFormHref || previewHref;
 
   const handlePreview = () => {
-    window.open(formPublicHref, "_blank", "noopener,noreferrer");
+    window.open(previewHref, "_blank", "noopener,noreferrer");
   };
 
   const handleArchive = async () => {
@@ -327,7 +335,7 @@ export function FormDetailClient({ form: initialForm, convocatoria, tenantId }: 
           ) : null}
           {isDirectLinkLive ? (
             <Link
-              href={formPublicHref}
+              href={liveHref}
               target="_blank"
               className="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm font-medium"
             >

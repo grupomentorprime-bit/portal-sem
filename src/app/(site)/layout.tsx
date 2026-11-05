@@ -75,6 +75,10 @@ export default async function SiteLayout({
     registeredPaths: site?.pages.map((page) => page.path) ?? [],
   });
 
+  if (decision.kind === "passthrough") {
+    return children;
+  }
+
   if (decision.kind === "coming-soon") {
     return (
       <ComingSoonPage

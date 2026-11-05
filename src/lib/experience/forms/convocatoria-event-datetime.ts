@@ -1,4 +1,6 @@
-const CHILE_EVENT_OFFSET = "-04:00";
+const CHILE_TIME_ZONE = "America/Santiago";
+/** Respaldo de invierno. Noviembre usa el offset real de Santiago (UTC−3). */
+const CHILE_STANDARD_OFFSET = "-04:00";
 
 export const DEFAULT_CHILE_EVENT_TIME = "09:00";
 
@@ -27,6 +29,37 @@ export function counterDateInputValue(targetDate?: string): string {
   return targetDate.trim().slice(0, 10);
 }
 
+/** Offset de America/Santiago ese día, para que las 9:00 sigan siendo las 9:00. */
+function santiagoOffsetForDate(dateOnly: string): string {
+  const probe = new Date(`${dateOnly}T15:00:00Z`);
+  if (!Number.isFinite(probe.getTime())) return CHILE_STANDARD_OFFSET;
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CHILE_TIME_ZONE,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(probe);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((item) => item.type === type)?.value ?? "0");
+  const wallAsUtc = Date.UTC(
+    part("year"),
+    part("month") - 1,
+    part("day"),
+    part("hour"),
+    part("minute"),
+    part("second")
+  );
+  const diffMinutes = Math.round((wallAsUtc - probe.getTime()) / 60000);
+  const sign = diffMinutes >= 0 ? "+" : "-";
+  const abs = Math.abs(diffMinutes);
+  return `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`;
+}
+
 /** Fecha/hora canónica de inicio de jornada convocatoria en Chile. */
 export function buildChileEventStartIso(
   eventDate: string,
@@ -34,8 +67,7 @@ export function buildChileEventStartIso(
 ): string {
   const dateOnly = eventDate.trim().slice(0, 10);
   const normalizedTime = normalizeChileEventTime(time);
-  const [hours, minutes] = normalizedTime.split(":").map(Number);
-  return `${dateOnly}T${pad2(hours)}:${pad2(minutes)}:00${CHILE_EVENT_OFFSET}`;
+  return `${dateOnly}T${normalizedTime}:00${santiagoOffsetForDate(dateOnly)}`;
 }
 
 /** Normaliza fechas guardadas en CMS (solo día o medianoche UTC) al inicio real del evento. */
@@ -114,38 +146,55 @@ export function formatChileNowDateTime(date = new Date()): string {
   return formatChileEventDateTime(date.getTime());
 }
 
-/** Etiqueta legible para tarjeta Fecha: «Sábado 4 de julio de 2026». */
-export function formatConvocatoriaFechaLabel(eventDate: string): string {
+function capitalizeEs(value: string): string {
+  return value.charAt(0).toLocaleUpperCase("es-CL") + value.slice(1);
+}
+
+/** Fecha de la tarjeta en dos líneas: «Sábado 7 de noviembre» y «2026». */
+export function formatConvocatoriaFechaLines(eventDate: string): string {
   const dateOnly = eventDate.trim().slice(0, 10);
-  const parsed = new Date(`${dateOnly}T12:00:00${CHILE_EVENT_OFFSET}`);
+  const parsed = new Date(`${dateOnly}T12:00:00${santiagoOffsetForDate(dateOnly)}`);
   if (!Number.isFinite(parsed.getTime())) return dateOnly;
 
-  const formatted = new Intl.DateTimeFormat("es-CL", {
+  const parts = new Intl.DateTimeFormat("es-CL", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: "America/Santiago",
-  }).format(parsed);
+  }).formatToParts(parsed);
 
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+
+  const weekday = capitalizeEs(part("weekday"));
+  const day = part("day");
+  const month = part("month");
+  const year = part("year");
+  if (!weekday || !day || !month || !year) return dateOnly;
+
+  return `${weekday} ${day} de ${month}\n${year}`;
 }
 
-/** Etiqueta legible para tarjeta Horario: «Desde las 9:00 am — incluye evaluación académica». */
+/** Etiqueta legible para tarjeta Fecha: «Sábado 4 de julio de 2026». */
+export function formatConvocatoriaFechaLabel(eventDate: string): string {
+  return formatConvocatoriaFechaLines(eventDate).replace("\n", " de ");
+}
+
+/** Hora de reloj, sin pasar por el cambio de horario. «09:00» queda «9:00 a. m.». */
+function formatChileWallClock(time: string): string {
+  const normalized = normalizeChileEventTime(time);
+  const [hour24, minutes] = normalized.split(":").map(Number);
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  const period = hour24 < 12 ? "a. m." : "p. m.";
+  return `${hour12}:${pad2(minutes)}\u00a0${period.replace(/ /g, "\u00a0")}`;
+}
+
+/** Etiqueta legible para tarjeta Horario: «Desde las 9:00 a. m. — incluye evaluación académica». */
 export function formatConvocatoriaHorarioLabel(
   time: string = DEFAULT_CHILE_EVENT_TIME,
   includeEvaluationNote = true
 ): string {
-  const normalized = normalizeChileEventTime(time);
-  const [hours, minutes] = normalized.split(":").map(Number);
-  const anchor = new Date(`2026-01-01T${pad2(hours)}:${pad2(minutes)}:00${CHILE_EVENT_OFFSET}`);
-  const formatted = new Intl.DateTimeFormat("es-CL", {
-    hour: "numeric",
-    minute: minutes > 0 ? "2-digit" : undefined,
-    hour12: true,
-    timeZone: "America/Santiago",
-  }).format(anchor);
-
-  const base = `Desde las ${formatted}`;
+  const base = `Desde las ${formatChileWallClock(time)}`;
   return includeEvaluationNote ? `${base} — incluye evaluación académica` : base;
 }
