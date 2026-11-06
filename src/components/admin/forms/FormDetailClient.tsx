@@ -3,21 +3,26 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  Archive,
+  Check,
   ClipboardList,
   ExternalLink,
   Eye,
   FileText,
   HelpCircle,
+  Inbox,
   Layout,
+  Link2,
+  Monitor,
   MoreHorizontal,
   Palette,
+  Play,
   Search,
   Settings,
   Trash2,
   Users,
 } from "lucide-react";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
-import { StatusBadge } from "@/components/admin/kit";
 import { AdminModuleCenter } from "@/components/admin/AdminModuleCenter";
 import { ConvocatoriaRosterPanel } from "@/components/admin/forms/ConvocatoriaRosterPanel";
 import { ExperienceFormFieldsEditor } from "@/components/admin/forms/ExperienceFormFieldsEditor";
@@ -35,7 +40,6 @@ import {
   publicFormUrl,
   isExperienceFormArchived,
   type FormConvocatoria,
-  isExperienceFormPrivate,
   isPrivateExperienceForm,
   PRIVATE_EXPERIENCE_FORM_LABEL,
 } from "@/lib/admin/forms-center";
@@ -294,6 +298,12 @@ export function FormDetailClient({
   const isPrivate = isPrivateExperienceForm(form);
   const isDirectLinkLive = form.active && !isArchived && (form.visible || isPrivate);
   const isPublished = form.active && (isPrivate || form.visible);
+  const summary = form.description?.trim()
+    ? form.description
+    : convocatoria
+      ? "Nómina de alumnos, preguntas y publicación."
+      : "Edita las preguntas y publícalo cuando esté listo.";
+  const questionLabel = `${form.fields.length} ${form.fields.length === 1 ? "pregunta" : "preguntas"}`;
 
   const openMore = (section: MoreSectionId) => {
     setMoreSection(section);
@@ -302,35 +312,35 @@ export function FormDetailClient({
 
   return (
     <AdminModulePage
-      breadcrumbs={
-        convocatoria
-          ? [
-              { label: "Inicio", href: "/admin" },
-              { label: "Formularios" },
-              { label: "Gestión", href: "/admin/portal/forms" },
-              { label: form.name },
-            ]
-          : [
-              { label: "Inicio", href: "/admin" },
-              { label: "Formularios" },
-              { label: "Gestión", href: "/admin/portal/forms" },
-              { label: form.name },
-            ]
-      }
+      hideTitle
+      breadcrumbs={[
+        { label: "Inicio", href: "/admin" },
+        { label: "Formularios" },
+        { label: "Gestión", href: "/admin/portal/forms" },
+        { label: form.name },
+      ]}
       title={form.name}
-      description={
-        convocatoria
-          ? "Nómina de alumnos, preguntas y publicación."
-          : (form.description ?? "Edita las preguntas y publícalo cuando esté listo.")
-      }
-      actions={
-        <div className="admin-form-detail__header-actions">
-          <div className="admin-form-detail__header-nav">
+      description={summary}
+    >
+      <AdminModuleCenter className="admin-form-detail">
+        <header className="admin-form-detail__hero">
+          <div className="admin-form-detail__hero-main">
+            <span className="admin-form-detail__hero-icon" aria-hidden="true">
+              <FileText className="h-5 w-5" />
+            </span>
+            <div className="admin-form-detail__hero-copy">
+              <h1 className="admin-form-detail__hero-title">{form.name}</h1>
+              <p className="admin-form-detail__hero-desc">{summary}</p>
+            </div>
+          </div>
+
+          <div className="admin-form-detail__header-actions">
             {isDirectLinkLive ? (
               <Button
                 variant="ghost"
                 size="sm"
                 type="button"
+                className="admin-form-detail__btn admin-form-detail__btn--quiet"
                 onClick={() => window.open(liveHref, "_blank", "noopener,noreferrer")}
               >
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -338,22 +348,33 @@ export function FormDetailClient({
               </Button>
             ) : null}
             {!isArchived ? (
-              <Button variant="ghost" size="sm" type="button" onClick={handlePreview}>
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                className="admin-form-detail__btn admin-form-detail__btn--quiet"
+                onClick={handlePreview}
+              >
                 <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                 Vista previa
               </Button>
             ) : null}
-          </div>
-          <div className="admin-form-detail__header-commit">
             {isArchived ? (
               <>
-                <Button variant="outline" size="sm" onClick={handleRestore} loading={archiving}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="admin-form-detail__btn admin-form-detail__btn--primary"
+                  onClick={handleRestore}
+                  loading={archiving}
+                >
                   Restaurar
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="danger"
                   size="sm"
                   type="button"
+                  className="admin-form-detail__btn"
                   onClick={handlePurge}
                   loading={purging}
                 >
@@ -363,12 +384,19 @@ export function FormDetailClient({
               </>
             ) : (
               <>
-                <Button variant="outline" size="sm" onClick={handleSave} loading={saving}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="admin-form-detail__btn"
+                  onClick={handleSave}
+                  loading={saving}
+                >
                   Guardar
                 </Button>
                 <Button
                   variant={convocatoria ? "outline" : "primary"}
                   size="sm"
+                  className={`admin-form-detail__btn${convocatoria ? "" : " admin-form-detail__btn--primary"}`}
                   onClick={handlePublish}
                   loading={publishing}
                 >
@@ -378,73 +406,70 @@ export function FormDetailClient({
                   variant="ghost"
                   size="sm"
                   type="button"
+                  className="admin-form-detail__btn admin-form-detail__btn--danger"
                   onClick={handleArchive}
                   loading={archiving}
                 >
+                  <Archive className="h-3.5 w-3.5" aria-hidden="true" />
                   Archivar
                 </Button>
                 {convocatoria ? (
                   <Button
                     variant="primary"
                     size="sm"
+                    className="admin-form-detail__btn admin-form-detail__btn--primary"
                     href={`/admin/portal/asuntos-estudiantiles/${encodeURIComponent(form._id)}`}
                   >
+                    <Play className="h-3.5 w-3.5" aria-hidden="true" />
                     Ir a operación
                   </Button>
                 ) : null}
               </>
             )}
           </div>
-        </div>
-      }
-    >
-      <AdminModuleCenter className="admin-form-detail">
-        <div className="admin-form-detail__status">
-          <div className="admin-form-detail__badges">
-            <StatusBadge
-              tone={isPublished ? "active" : "draft"}
-              label={isPublished ? "Publicado" : "Borrador"}
-            />
-            <StatusBadge
-              tone={form.active ? "active" : "inactive"}
-              label={form.active ? "Acepta respuestas" : "Sin respuestas"}
-            />
+
+          <div className="admin-form-detail__status" aria-label="Estado del formulario">
+            <StatusChip tone={isPublished ? "ok" : "off"} icon={isPublished ? Check : FileText}>
+              {isPublished ? "Publicado" : "Borrador"}
+            </StatusChip>
+            <StatusChip tone={form.active ? "ok" : "off"} icon={Inbox}>
+              {form.active ? "Acepta respuestas" : "Sin respuestas"}
+            </StatusChip>
             {isPrivate ? (
-              <StatusBadge tone="neutral" label={PRIVATE_EXPERIENCE_FORM_LABEL} />
+              <StatusChip tone="meta" icon={Link2}>
+                {PRIVATE_EXPERIENCE_FORM_LABEL}
+              </StatusChip>
             ) : (
-              <StatusBadge
-                tone={form.visible ? "active" : "draft"}
-                label={form.visible ? "En el portal" : "Fuera del listado"}
-              />
+              <StatusChip tone={form.visible ? "ok" : "off"} icon={Monitor}>
+                {form.visible ? "En el portal" : "Fuera del listado"}
+              </StatusChip>
             )}
-            {isArchived ? <StatusBadge tone="inactive" label="Archivado" /> : null}
-            <span className="admin-form-detail__meta">
-              <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-              {form.fields.length} {form.fields.length === 1 ? "pregunta" : "preguntas"}
-            </span>
+            {isArchived ? (
+              <StatusChip tone="off" icon={Archive}>
+                Archivado
+              </StatusChip>
+            ) : null}
+            <StatusChip tone="meta" icon={FileText}>
+              {questionLabel}
+            </StatusChip>
           </div>
-        </div>
-        {!isArchived && !isPublished ? (
-          <p className="admin-form-detail__hint">
-            Cuando esté listo, pulsa <strong>Publicar</strong> para empezar a recibir respuestas
-            {isPrivate ? " por el enlace." : " y mostrarlo en el portal."}
-          </p>
-        ) : null}
-        {isPrivate ? (
-          <p className="admin-form-detail__hint">
-            Solo se abre con el enlace directo. No aparece en el menú ni en el listado público.
-          </p>
-        ) : null}
+
+          {!isArchived && !isPublished ? (
+            <p className="admin-form-detail__hint">
+              Cuando esté listo, pulsa <strong>Publicar</strong> para empezar a recibir respuestas
+              {isPrivate ? " por el enlace." : " y mostrarlo en el portal."}
+            </p>
+          ) : null}
+          {isPrivate ? (
+            <p className="admin-form-detail__hint">
+              Solo se abre con el enlace directo. No aparece en el menú ni en el listado público.
+            </p>
+          ) : null}
+        </header>
 
         <div className="admin-form-detail__workspace">
         <nav className="admin-form-detail__tabs" aria-label="Secciones del formulario">
-          <TabButton
-            active={tab === "formulario"}
-            icon={FileText}
-            onClick={() => setTab("formulario")}
-          >
-            Formulario
-          </TabButton>
+          <TabButton active={tab === "formulario"} icon={FileText} onClick={() => setTab("formulario")}>Formulario</TabButton>
           {!convocatoria ? (
             <TabButton
               active={tab === "respuestas"}
@@ -477,15 +502,17 @@ export function FormDetailClient({
         ) : null}
 
         {error ? (
-          <p className="admin-form-detail__alert admin-form-detail__alert--error">{error}</p>
+          <p className="admin-form-detail__alert admin-form-detail__alert--error" role="alert">
+            {error}
+          </p>
         ) : null}
         {saved ? (
-          <p className="admin-form-detail__alert admin-form-detail__alert--success">
+          <p className="admin-form-detail__alert admin-form-detail__alert--success" role="status">
             Listo, guardamos los cambios.
           </p>
         ) : null}
         {publishedMsg ? (
-          <p className="admin-form-detail__alert admin-form-detail__alert--success">
+          <p className="admin-form-detail__alert admin-form-detail__alert--success" role="status">
             Publicado. Ya puede recibir respuestas
             {isPrivate ? "." : " y aparece en el portal."}
           </p>
@@ -683,5 +710,22 @@ function TabButton({
       <Icon className="h-4 w-4" aria-hidden="true" />
       {children}
     </button>
+  );
+}
+
+function StatusChip({
+  tone,
+  icon: Icon,
+  children,
+}: {
+  tone: "ok" | "off" | "meta";
+  icon: typeof FileText;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className={`admin-form-detail__status-chip admin-form-detail__status-chip--${tone}`}>
+      <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      {children}
+    </span>
   );
 }

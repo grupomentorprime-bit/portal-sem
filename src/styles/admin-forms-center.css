@@ -674,36 +674,129 @@
   color: white;
 }
 
-/* ─── Detalle de formulario (compacto) ─────────────────────── */
+/* ─── Detalle de formulario ────────────────────────────────── */
+
+.admin-form-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-form-detail__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  padding: 1.2rem 1.3rem 1.05rem;
+  border: 1px solid var(--admin-border-subtle, var(--border));
+  border-radius: 1.15rem;
+  background: var(--admin-surface, white);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--sem-primary) 7%, transparent);
+}
+
+.admin-form-detail__hero-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.admin-form-detail__hero-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--sem-primary) 12%, white);
+  color: var(--sem-primary);
+}
+
+.admin-form-detail__hero-copy {
+  min-width: 0;
+}
+
+.admin-form-detail__hero-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 1.6vw, 1.45rem);
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+.admin-form-detail__hero-desc {
+  margin: 0.28rem 0 0;
+  max-width: 46rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--muted, var(--gray-600));
+}
 
 .admin-form-detail__header-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.35rem 0.5rem;
+  gap: 0.35rem 0.45rem;
 }
 
-.admin-form-detail__header-nav,
-.admin-form-detail__header-commit {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem;
+.admin-form-detail__btn {
+  border-radius: 0.7rem;
 }
 
-.admin-form-detail__header-nav {
-  margin-right: 0.15rem;
-  padding-right: 0.65rem;
-  border-right: 1px solid var(--border);
+.admin-form-detail__btn--quiet {
+  color: var(--muted, var(--gray-600));
+  font-weight: 600;
+}
+
+.admin-form-detail__btn--quiet:hover {
+  color: var(--foreground);
+}
+
+.admin-form-detail__btn--danger {
+  color: color-mix(in srgb, var(--color-danger) 88%, black);
+}
+
+.admin-form-detail__btn--danger:hover {
+  background: color-mix(in srgb, var(--color-danger) 8%, white);
+  color: color-mix(in srgb, var(--color-danger) 80%, black);
 }
 
 .admin-form-detail__status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.75rem;
-  margin-bottom: 0.85rem;
+  gap: 0.4rem;
+}
+
+.admin-form-detail__status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.7rem;
+  padding: 0.15rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.admin-form-detail__status-chip--ok {
+  background: color-mix(in srgb, var(--sem-success) 16%, white);
+  color: color-mix(in srgb, var(--sem-success) 42%, var(--sem-primary));
+}
+
+.admin-form-detail__status-chip--off {
+  background: var(--background-muted, var(--gray-100));
+  color: var(--muted, var(--gray-600));
+}
+
+.admin-form-detail__status-chip--meta {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--background-muted, var(--gray-50)) 70%, white);
+  color: var(--muted, var(--gray-700));
 }
 
 .admin-form-detail__summary {
@@ -716,14 +809,14 @@
 
 .admin-form-detail__workspace {
   overflow: hidden;
-  border-radius: var(--radius-xl);
+  border-radius: 1.15rem;
   border: 1px solid var(--admin-border-subtle);
   background: var(--admin-surface, white);
-  box-shadow: var(--admin-shadow-card);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--sem-primary) 6%, transparent);
 }
 
 .admin-form-detail__panel {
-  padding: 1rem 1.1rem 1.25rem;
+  padding: 1.05rem 1.15rem 1.25rem;
 }
 
 .admin-form-detail__summary-main {
@@ -788,54 +881,71 @@
 }
 
 .admin-form-detail__hint {
-  margin: -0.35rem 0 0.85rem;
+  margin: -0.2rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: var(--gray-600);
+  color: var(--muted, var(--gray-600));
 }
 
 .admin-form-detail__tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
   margin: 0;
-  padding: 0.45rem 0.65rem 0;
+  padding: 0.7rem 0.85rem 0.65rem;
+  overflow-x: auto;
   border-bottom: 1px solid var(--admin-border-subtle);
-  background: color-mix(in srgb, var(--admin-surface-muted, var(--gray-50)) 72%, white);
+  background: transparent;
+  scrollbar-width: none;
+}
+
+.admin-form-detail__tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-form-detail__tab {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 0.375rem;
-  height: 2.35rem;
-  padding: 0 0.9rem;
+  gap: 0.4rem;
+  height: 2.15rem;
+  padding: 0 0.95rem;
   border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0.65rem 0.65rem 0 0;
+  border-radius: 999px;
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--muted, var(--gray-600));
   background: transparent;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .admin-form-detail__tab:hover {
   color: var(--foreground);
-  background: color-mix(in srgb, white 70%, transparent);
+  background: color-mix(in srgb, var(--sem-primary) 6%, white);
 }
 
 .admin-form-detail__tab--active,
 .admin-form-detail__tab--active:hover {
-  background: var(--admin-surface, white);
-  border-bottom-color: var(--color-primary);
-  color: var(--foreground);
+  background: color-mix(in srgb, var(--sem-primary) 14%, white);
+  color: var(--sem-primary);
 }
 
 .admin-form-detail__tab:focus-visible {
-  outline: 2px solid var(--color-secondary);
+  outline: 2px solid var(--sem-primary);
   outline-offset: -2px;
+}
+
+@media (max-width: 720px) {
+  .admin-form-detail__hero {
+    padding: 1rem;
+  }
+
+  .admin-form-detail__btn--primary {
+    flex: 1 1 100%;
+    order: -1;
+  }
 }
 
 .admin-form-detail__section-nav {
@@ -1521,8 +1631,9 @@
 
 .roster-hub__count {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
   color: var(--foreground);
 }
 
@@ -1543,10 +1654,11 @@
 }
 
 .roster-hub__filters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem);
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: space-between;
+  gap: 0.65rem 0.85rem;
 }
 
 .roster-hub__generations {
@@ -1592,8 +1704,11 @@
 
 .roster-hub__search-row {
   display: flex;
+  flex: 1 1 16rem;
   align-items: center;
   gap: 0.35rem;
+  max-width: 22rem;
+  margin-left: auto;
   min-width: 0;
 }
 
@@ -1605,8 +1720,76 @@
 }
 
 @media (max-width: 860px) {
-  .roster-hub__filters {
-    grid-template-columns: 1fr;
+  .roster-hub__search-row {
+    flex-basis: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .roster-hub__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.roster-hub__name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.roster-hub__name-generation {
+  display: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.roster-hub .admin-data-table__scroll {
+  border: 1px solid var(--admin-border-subtle, var(--border));
+  border-radius: 0.9rem;
+  background: white;
+  box-shadow: none;
+}
+
+.roster-hub thead th {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--background-soft, var(--gray-50)) 80%, white);
+}
+
+.roster-hub tbody tr:hover {
+  background: color-mix(in srgb, var(--sem-primary) 4%, white);
+}
+
+.roster-hub__empty {
+  border-style: dashed;
+}
+
+@media (max-width: 720px) {
+  .roster-hub__col-generation {
+    display: none;
+  }
+
+  .roster-hub__name-generation {
+    display: block;
+  }
+
+  .roster-hub .admin-data-table--sticky-end th:last-child,
+  .roster-hub .admin-data-table--sticky-end td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: white;
+    box-shadow: -8px 0 12px -10px color-mix(in srgb, var(--sem-primary) 35%, transparent);
+  }
+
+  .roster-hub .admin-data-table--sticky-end thead th:last-child {
+    background: color-mix(in srgb, var(--background-soft, var(--gray-50)) 80%, white);
   }
 }
 

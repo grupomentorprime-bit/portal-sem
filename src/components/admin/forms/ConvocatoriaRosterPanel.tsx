@@ -1,15 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useDeferredEffect } from "@/hooks/use-deferred-effect";
-import { Download, Pencil, Upload, UserPlus } from "lucide-react";
+import { Download, Pencil, Upload, UserPlus, Users } from "lucide-react";
 import {
   AdminDataTable,
   ColumnActions,
+  EmptyState,
   LoadingState,
   SearchBar,
   type AdminDataTableColumn,
 } from "@/components/admin/kit";
+import type { SortState } from "@/components/admin/kit/utils/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,6 +110,7 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
   const [editingStudent, setEditingStudent] = useState<ConvocatoriaRosterStudent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [generationFilter, setGenerationFilter] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -123,6 +126,19 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
       return rosterStudentMatchesQuery(student, query);
     });
   }, [students, searchQuery, generationFilter]);
+
+  const visibleStudents = useMemo(() => {
+    if (!sort) return filteredStudents;
+    const direction = sort.direction === "asc" ? 1 : -1;
+    return [...filteredStudents].sort((left, right) => {
+      const value = (student: ConvocatoriaRosterStudent) => {
+        if (sort.columnId === "rut") return student.rut ?? "";
+        if (sort.columnId === "generation") return formatGenerationDisplay(student.generation);
+        return student.fullName;
+      };
+      return value(left).localeCompare(value(right), "es", { sensitivity: "base", numeric: true }) * direction;
+    });
+  }, [filteredStudents, sort]);
 
   const suggestedStudents = useMemo(() => {
     const query = searchQuery.trim();
@@ -219,8 +235,10 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
   };
 
   const reinstateExcluded = async (blocked: ConvocatoriaExcludedStudent) => {
-    const { reason: _reason, excludedAt: _excludedAt, sourceFormId: _source, ...student } =
-      blocked;
+    const student = { ...blocked };
+    delete student.reason;
+    delete student.excludedAt;
+    delete student.sourceFormId;
     const nextStudents = upsertRosterStudent(students, student).students;
     setStudents(nextStudents);
     setRawText(rosterStudentsToCsv(nextStudents));
@@ -295,40 +313,70 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
     {
       id: "rut",
       header: "RUT",
-      cell: (student) => <span className="text-muted">{student.rut ?? "—"}</span>,
+      sortable: true,
+      cell: (student) => <span className="tabular-nums text-muted">{student.rut ?? "—"}</span>,
     },
     {
       id: "name",
       header: "Nombre",
-      cell: (student) => <span className="font-medium">{student.fullName}</span>,
+      sortable: true,
+      cell: (student) => (
+        <span className="roster-hub__name-cell">
+          <span className="font-medium">{student.fullName}</span>
+          <span className="roster-hub__name-generation">
+            {formatGenerationDisplay(student.generation)}
+          </span>
+        </span>
+      ),
     },
     {
       id: "generation",
       header: "Generación",
+      sortable: true,
+      headerClassName: "roster-hub__col-generation",
+      cellClassName: "roster-hub__col-generation",
       cell: (student) => (
         <span className="text-muted">{formatGenerationDisplay(student.generation)}</span>
       ),
     },
   ];
 
-  if (loading) return <LoadingState variant="table" />;
+  const toggleSort = (columnId: string) => {
+    setSort((current) => {
+      if (!current || current.columnId !== columnId) return { columnId, direction: "asc" };
+      return { columnId, direction: current.direction === "asc" ? "desc" : "asc" };
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="roster-hub" aria-busy="true" aria-live="polite">
+        <p className="roster-hub__count">Cargando nómina…</p>
+        <LoadingState variant="table" />
+      </div>
+    );
+  }
 
   const rosterCountLabel =
-    students.length === 0
-      ? "Sin alumnos en la nómina"
-      : filteredStudents.length === students.length
-        ? `${students.length} en la nómina`
-        : `${filteredStudents.length} de ${students.length}`;
+    error && students.length === 0
+      ? "No se pudo cargar la nómina"
+      : students.length === 0
+        ? "Sin alumnos en la nómina"
+        : filteredStudents.length === students.length
+          ? `${students.length} en la nómina`
+          : `${filteredStudents.length} de ${students.length}`;
 
   return (
     <div className="roster-hub">
       <div className="roster-hub__bar">
         <div>
           <p className="roster-hub__count">{rosterCountLabel}</p>
-          <p className="roster-hub__hint">
-            Sube un Excel con una hoja por generación, o agrega alumnos uno a uno. Quienes desertan
-            no aparecen en el listado público.
-          </p>
+          {error && students.length === 0 ? null : (
+            <p className="roster-hub__hint">
+              Sube un Excel con una hoja por generación, o agrega alumnos uno a uno. Quienes desertan
+              no aparecen en el listado público.
+            </p>
+          )}
         </div>
         <div className="roster-hub__actions">
           <input
@@ -377,6 +425,30 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
             ))}
           </ul>
         </div>
+      ) : null}
+
+      {error && students.length === 0 ? (
+        <div className="admin-form-detail__alert admin-form-detail__alert--error" role="alert">
+          <p>{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => void load()}
+          >
+            Reintentar
+          </Button>
+        </div>
+      ) : null}
+
+      {students.length === 0 && !error ? (
+        <EmptyState
+          className="roster-hub__empty"
+          icon={<Users className="h-8 w-8" aria-hidden="true" />}
+          title="Sin alumnos en la nómina"
+          description="Sube un Excel con una hoja por generación, o agrega alumnos uno a uno. Quienes desertan no aparecen en el listado público."
+        />
       ) : null}
 
       {students.length > 0 ? (
@@ -460,9 +532,14 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
           ) : null}
 
           <AdminDataTable
+            className="roster-hub__table"
             columns={columns}
-            data={filteredStudents}
+            data={visibleStudents}
             rowKey={(student) => student.id}
+            sort={sort ?? undefined}
+            onSort={toggleSort}
+            tableMinWidth="min-w-full"
+            stickyEndColumn
             emptyTitle="Sin resultados"
             emptyDescription="No hay participantes que coincidan con la búsqueda o el filtro."
             rowActionsLabel="Acciones"
@@ -546,8 +623,16 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
         </div>
       </details>
 
-      {saved ? <p className="text-sm font-medium text-success">Listado actualizado.</p> : null}
-      {error ? <p className="text-sm text-primary">{error}</p> : null}
+      {saved ? (
+        <p className="admin-form-detail__alert admin-form-detail__alert--success" role="status">
+          Listado actualizado.
+        </p>
+      ) : null}
+      {error && students.length > 0 ? (
+        <p className="admin-form-detail__alert admin-form-detail__alert--error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <ConvocatoriaRosterStudentDialog
         open={dialogOpen}
