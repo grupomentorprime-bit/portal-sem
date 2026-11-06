@@ -9,6 +9,7 @@ export interface ConfirmOptions {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
+  hideCancel?: boolean;
 }
 
 interface ConfirmState extends ConfirmOptions {
@@ -42,6 +43,7 @@ export function useConfirmDialog() {
       confirmLabel={pending.confirmLabel}
       cancelLabel={pending.cancelLabel}
       destructive={pending.destructive}
+      hideCancel={pending.hideCancel}
       onClose={() => close(false)}
       onConfirm={() => close(true)}
     />

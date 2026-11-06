@@ -12,6 +12,7 @@ export interface ConfirmDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
+  hideCancel?: boolean;
   loading?: boolean;
 }
 
@@ -25,14 +26,17 @@ export function ConfirmDialog({
   confirmLabel = "Confirmar",
   cancelLabel = "Cancelar",
   destructive = false,
+  hideCancel = false,
   loading = false,
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} title={title} description={description} size="sm">
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-          {cancelLabel}
-        </Button>
+        {hideCancel ? null : (
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            {cancelLabel}
+          </Button>
+        )}
         <Button
           type="button"
           variant={destructive ? "danger" : "primary"}

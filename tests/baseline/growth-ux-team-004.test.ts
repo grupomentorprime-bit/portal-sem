@@ -53,6 +53,7 @@ describe("OT-GROWTH-UX-TEAM-004 — diseño Equipo", () => {
     assert.match(client, /Cancelar invitación/);
     assert.match(client, /Reenviar correo/);
     assert.match(client, /correo corporativo/);
+    assert.match(client, /Envío exitoso/);
     assert.match(client, /\/api\/identity\/members\/\$\{encodeURIComponent\(membershipId\)\}\/resend-access/);
     assert.match(client, /\/api\/identity\/invitations\/resend/);
     assert.match(client, /Invitaciones pendientes/);

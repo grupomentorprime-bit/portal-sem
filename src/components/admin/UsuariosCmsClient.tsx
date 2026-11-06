@@ -199,22 +199,32 @@ export function UsuariosCmsClient() {
     setMemberActionSaving({ membershipId, action: "resend-access" });
     setActionError("");
     setActionNotice("");
-    const res = await fetch(
-      `/api/identity/members/${encodeURIComponent(membershipId)}/resend-access`,
-      { method: "POST" }
-    );
-    const data = await res.json();
-    if (!data.ok) {
-      setActionError(humanizeTeamError(data.error, "No se pudo enviar el correo de acceso."));
+    try {
+      const res = await fetch(
+        `/api/identity/members/${encodeURIComponent(membershipId)}/resend-access`,
+        { method: "POST" }
+      );
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; message?: string };
+      if (!res.ok || !data.ok) {
+        setActionError(humanizeTeamError(data.error, "No se pudo enviar el correo de acceso."));
+        return;
+      }
+      const message =
+        typeof data.message === "string" && data.message
+          ? data.message
+          : `Enviamos el correo corporativo de acceso a ${email}.`;
+      setActionNotice(message);
+      await confirm({
+        title: "Envío exitoso",
+        description: message,
+        confirmLabel: "Listo",
+        hideCancel: true,
+      });
+    } catch {
+      setActionError("No se pudo enviar el correo de acceso.");
+    } finally {
       setMemberActionSaving(null);
-      return;
     }
-    setActionNotice(
-      typeof data.message === "string" && data.message
-        ? data.message
-        : `Enviamos el correo corporativo de acceso a ${email}.`
-    );
-    setMemberActionSaving(null);
   }
 
   async function handleMemberAction(membershipId: string, action: MemberAction) {
@@ -264,24 +274,34 @@ export function UsuariosCmsClient() {
     setInvitationResendingId(invitationId);
     setActionError("");
     setActionNotice("");
-    const res = await fetch("/api/identity/invitations/resend", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ invitationId }),
-    });
-    const data = await res.json();
-    if (!data.ok) {
-      setActionError(humanizeTeamError(data.error, "No se pudo reenviar la invitación."));
+    try {
+      const res = await fetch("/api/identity/invitations/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; message?: string };
+      if (!res.ok || !data.ok) {
+        setActionError(humanizeTeamError(data.error, "No se pudo reenviar la invitación."));
+        return;
+      }
+      const message =
+        typeof data.message === "string" && data.message
+          ? data.message
+          : `Reenviamos la invitación corporativa a ${email}.`;
+      setActionNotice(message);
+      await loadTeam();
+      await confirm({
+        title: "Envío exitoso",
+        description: message,
+        confirmLabel: "Listo",
+        hideCancel: true,
+      });
+    } catch {
+      setActionError("No se pudo reenviar la invitación.");
+    } finally {
       setInvitationResendingId(null);
-      return;
     }
-    setActionNotice(
-      typeof data.message === "string" && data.message
-        ? data.message
-        : `Reenviamos la invitación corporativa a ${email}.`
-    );
-    await loadTeam();
-    setInvitationResendingId(null);
   }
 
   async function handleCancelInvitation(invitationId: string, email: string) {
