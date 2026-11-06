@@ -19,7 +19,7 @@ export interface AssignableRole {
   label: string;
 }
 
-export type MemberAction = "remove-access";
+export type MemberAction = "remove-access" | "resend-access";
 
 export type UserCmsCardPanel = "roles" | "actions";
 
@@ -117,6 +117,17 @@ export function UserCmsCard({
               className={panelButtonClass("roles")}
             >
               Cambiar rol
+            </button>
+          ) : null}
+          {canManage ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onMemberAction(member.membershipId, "resend-access")}
+              className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground transition hover:bg-background-muted disabled:opacity-50"
+              data-team-resend-access
+            >
+              {actionSaving === "resend-access" ? "Enviando…" : "Reenviar acceso"}
             </button>
           ) : null}
           {canManage ? (

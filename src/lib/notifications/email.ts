@@ -6,6 +6,7 @@ import {
   renderSteps,
   renderTransactionalEmail,
 } from "@/lib/notifications/email-layout";
+import { GROWTH_LOGIN_PATH } from "@/lib/identity/login-route";
 import {
   emailAbsoluteUrl,
   type EmailIdentity,
@@ -86,6 +87,66 @@ export function renderInvitationEmail(input: {
     subject: `Invitación — ${institution}`,
     html,
   };
+}
+
+/** Acceso ya creado: mismo formato corporativo, con enlace para entrar. */
+export function renderAccessReminderEmail(input: {
+  identity: EmailIdentity;
+  displayName: string;
+  email: string;
+}): { subject: string; html: string } {
+  const institution = input.identity.displayName;
+  const loginUrl = emailAbsoluteUrl(input.identity, GROWTH_LOGIN_PATH);
+
+  const bodyHtml = `
+    <p style="margin:0 0 16px;">
+      Te reenviamos el acceso al Espacio <strong>${escapeHtml(institution)}</strong>.
+    </p>
+    <p style="margin:0 0 16px;">
+      Entra con el correo <strong>${escapeHtml(input.email)}</strong> y la contraseña que ya definiste.
+    </p>
+    ${renderSteps([
+      "Abre el enlace de acceso.",
+      "Inicia sesión con tu correo.",
+      "Entra al centro de administración de este Espacio.",
+    ])}
+  `;
+
+  const html = renderTransactionalEmail({
+    institutionName: institution,
+    previewText: `Tu acceso a ${institution}.`,
+    headline: "Tu acceso",
+    greeting: `Hola, ${input.displayName}`,
+    bodyHtml,
+    ctaLabel: "Entrar al Espacio",
+    ctaUrl: loginUrl,
+    footerNote: "Si no reconoces este correo, contacta a quien administra el Espacio.",
+  });
+
+  return {
+    subject: `Tu acceso — ${institution}`,
+    html,
+  };
+}
+
+export async function sendAccessReminderEmail(input: {
+  tenantId: string;
+  to: string;
+  displayName: string;
+}): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const { subject, html } = renderAccessReminderEmail({
+    identity,
+    displayName: input.displayName,
+    email: input.to,
+  });
+
+  return sendTransactionalHtmlEmail({
+    to: input.to,
+    subject,
+    html,
+    identity,
+  });
 }
 
 export async function sendInvitationEmail(

@@ -19,6 +19,8 @@ const ACTION_LABELS: Record<string, string> = {
   "membership.restore": "restauró el acceso de un usuario",
   "membership.remove": "eliminó a un usuario del CMS",
   "user.invite.revoke": "canceló una invitación",
+  "user.invite.resend": "reenvió una invitación",
+  "access.email.resend": "reenvió el acceso por correo",
   "student_affairs.handoff.validated": "validó el informe de cierre de jornada",
 };
 
@@ -33,6 +35,12 @@ export function formatAuditMessage(
     }
     if (entry.action === "user.invite.revoke" && entry.metadata?.email) {
       return `${actorName} canceló la invitación a ${entry.metadata.email as string}`;
+    }
+    if (
+      (entry.action === "user.invite.resend" || entry.action === "access.email.resend") &&
+      entry.metadata?.email
+    ) {
+      return `${actorName} reenvió el acceso a ${entry.metadata.email as string}`;
     }
     if (entry.action === "membership.roles.update" && entry.metadata?.role) {
       const role = getInstitutionalRoleLabel(String(entry.metadata.role));

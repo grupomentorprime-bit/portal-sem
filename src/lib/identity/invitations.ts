@@ -131,6 +131,27 @@ export function serializeInvitationWithoutToken(invitation: IdentityInvitation) 
   };
 }
 
+/** Nuevo enlace y nueva vigencia. El token anterior deja de servir. */
+export async function renewInvitationToken(
+  invitationId: string,
+  tenantId: string
+): Promise<IdentityInvitation | null> {
+  const db = await getDatabase();
+  const expires = new Date();
+  expires.setMinutes(expires.getMinutes() + INVITATION_TTL_MINUTES);
+
+  return db.collection<IdentityInvitation>("identity_invitations").findOneAndUpdate(
+    { _id: invitationId, tenantId, status: "pending" },
+    {
+      $set: {
+        token: generateToken(24),
+        expiresAt: expires.toISOString(),
+      },
+    },
+    { returnDocument: "after" }
+  );
+}
+
 export async function revokeInvitation(
   invitationId: string,
   tenantId: string

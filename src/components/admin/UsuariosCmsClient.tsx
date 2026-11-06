@@ -60,6 +60,8 @@ export function UsuariosCmsClient() {
     action: MemberAction;
   } | null>(null);
   const [invitationRevokingId, setInvitationRevokingId] = useState<string | null>(null);
+  const [invitationResendingId, setInvitationResendingId] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState("");
   const [openCardPanel, setOpenCardPanel] = useState<{
     membershipId: string;
     panel: UserCmsCardPanel;
@@ -182,7 +184,45 @@ export function UsuariosCmsClient() {
     setOpenCardPanel(null);
   }
 
+  async function handleResendAccess(membershipId: string) {
+    const member = members.find((m) => m.membershipId === membershipId);
+    const label = member?.displayName || member?.email || "esta persona";
+    const email = member?.email || "";
+    const ok = await confirm({
+      title: `¿Reenviar acceso a ${label}?`,
+      description: `Le enviaremos un correo corporativo a ${email} con el enlace para entrar a este Espacio.`,
+      confirmLabel: "Enviar correo",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+
+    setMemberActionSaving({ membershipId, action: "resend-access" });
+    setActionError("");
+    setActionNotice("");
+    const res = await fetch(
+      `/api/identity/members/${encodeURIComponent(membershipId)}/resend-access`,
+      { method: "POST" }
+    );
+    const data = await res.json();
+    if (!data.ok) {
+      setActionError(humanizeTeamError(data.error, "No se pudo enviar el correo de acceso."));
+      setMemberActionSaving(null);
+      return;
+    }
+    setActionNotice(
+      typeof data.message === "string" && data.message
+        ? data.message
+        : `Enviamos el correo corporativo de acceso a ${email}.`
+    );
+    setMemberActionSaving(null);
+  }
+
   async function handleMemberAction(membershipId: string, action: MemberAction) {
+    if (action === "resend-access") {
+      await handleResendAccess(membershipId);
+      return;
+    }
+
     const member = members.find((m) => m.membershipId === membershipId);
     const label = member?.displayName || member?.email || "esta persona";
     const ok = await confirm({
@@ -196,6 +236,7 @@ export function UsuariosCmsClient() {
 
     setMemberActionSaving({ membershipId, action });
     setActionError("");
+    setActionNotice("");
     const res = await fetch(
       `/api/identity/members/${encodeURIComponent(membershipId)}?action=remove-access`,
       { method: "DELETE" }
@@ -209,6 +250,38 @@ export function UsuariosCmsClient() {
     await loadTeam();
     setMemberActionSaving(null);
     setOpenCardPanel(null);
+  }
+
+  async function handleResendInvitation(invitationId: string, email: string) {
+    const ok = await confirm({
+      title: "¿Reenviar la invitación?",
+      description: `Reenviaremos el correo corporativo a ${email}. El enlace anterior dejará de funcionar.`,
+      confirmLabel: "Enviar correo",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+
+    setInvitationResendingId(invitationId);
+    setActionError("");
+    setActionNotice("");
+    const res = await fetch("/api/identity/invitations/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invitationId }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      setActionError(humanizeTeamError(data.error, "No se pudo reenviar la invitación."));
+      setInvitationResendingId(null);
+      return;
+    }
+    setActionNotice(
+      typeof data.message === "string" && data.message
+        ? data.message
+        : `Reenviamos la invitación corporativa a ${email}.`
+    );
+    await loadTeam();
+    setInvitationResendingId(null);
   }
 
   async function handleCancelInvitation(invitationId: string, email: string) {
@@ -267,14 +340,25 @@ export function UsuariosCmsClient() {
                   {inv.roles.map((r) => r.label).join(", ") || "Sin rol"} · Invitación pendiente
                 </p>
               </div>
-              <button
-                type="button"
-                disabled={invitationRevokingId === inv.id}
-                onClick={() => handleCancelInvitation(inv.id, inv.email)}
-                className="shrink-0 rounded-lg border border-[var(--state-danger-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] disabled:opacity-50"
-              >
-                {invitationRevokingId === inv.id ? "Cancelando…" : "Cancelar invitación"}
-              </button>
+              <div className="flex shrink-0 flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  disabled={invitationResendingId === inv.id || invitationRevokingId === inv.id}
+                  onClick={() => handleResendInvitation(inv.id, inv.email)}
+                  className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-background disabled:opacity-50"
+                  data-team-resend-invite
+                >
+                  {invitationResendingId === inv.id ? "Enviando…" : "Reenviar correo"}
+                </button>
+                <button
+                  type="button"
+                  disabled={invitationRevokingId === inv.id || invitationResendingId === inv.id}
+                  onClick={() => handleCancelInvitation(inv.id, inv.email)}
+                  className="rounded-lg border border-[var(--state-danger-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] disabled:opacity-50"
+                >
+                  {invitationRevokingId === inv.id ? "Cancelando…" : "Cancelar invitación"}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -366,7 +450,17 @@ export function UsuariosCmsClient() {
         </div>
       ) : null}
 
-      {actionError && activeTab === "team" ? (
+      {actionNotice ? (
+        <div
+          className="rounded-xl border border-[var(--state-success-border)] bg-[var(--state-success-bg)] px-4 py-3 text-sm text-[var(--color-success)]"
+          data-team-resend-notice
+          role="status"
+        >
+          {actionNotice}
+        </div>
+      ) : null}
+
+      {actionError ? (
         <div
           className="rounded-xl border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]"
           data-team-action-error
