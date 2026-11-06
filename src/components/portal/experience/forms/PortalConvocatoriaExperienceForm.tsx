@@ -277,6 +277,13 @@ export function PortalConvocatoriaExperienceForm({
       };
 
       if (!payload.ok) {
+        const alreadyRegistered = isAlreadyRegisteredResponse(payload.errors, payload.error);
+        if (alreadyRegistered) {
+          setErrors({});
+          setValidationSummary([]);
+          setGlobalError("Ya registraste una respuesta para esta convocatoria.");
+          return;
+        }
         if (payload.errors) {
           setErrors(payload.errors);
           setValidationSummary(buildValidationSummaryItems(payload.errors, form));
@@ -353,6 +360,16 @@ export function PortalConvocatoriaExperienceForm({
       />
       <PortalFormActions submitLabel={submitLabel} loading={submitting} disabled={!submitReady} />
     </form>
+  );
+}
+
+function isAlreadyRegisteredResponse(
+  errors: Record<string, string> | undefined,
+  globalError: string | undefined
+): boolean {
+  const messages = [...Object.values(errors ?? {}), globalError ?? ""];
+  return messages.some((message) =>
+    /ya registraste una respuesta|ya existe una respuesta registrada/i.test(message)
   );
 }
 

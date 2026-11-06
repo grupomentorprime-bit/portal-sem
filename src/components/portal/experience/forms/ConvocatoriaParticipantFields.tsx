@@ -229,16 +229,18 @@ export function ConvocatoriaParticipantFields({
     <div className="portal-experience-form__stack space-y-6">
       {!manualEntry ? (
         <div className="portal-experience-form__field portal-experience-form__field--lookup space-y-3">
-          <Input
-            label="Busca tu nombre o RUT en el listado"
-            placeholder="Escribe tu nombre, apellido o RUT…"
-            helper="Selecciona tu registro. Si ya tenemos tu correo y teléfono, solo confírmalos."
-            icon={Search}
-            value={query}
-            disabled={disabled || Boolean(selectedStudent)}
-            onChange={(event) => setQuery(event.target.value)}
-            error={errors.studentId}
-          />
+          {!selectedStudent ? (
+            <Input
+              label="Busca tu nombre o RUT en el listado"
+              placeholder="Escribe tu nombre, apellido o RUT…"
+              helper="Selecciona tu registro. Si ya tenemos tu correo y teléfono, solo confírmalos."
+              icon={Search}
+              value={query}
+              disabled={disabled}
+              onChange={(event) => setQuery(event.target.value)}
+              error={errors.studentId}
+            />
+          ) : null}
 
           {searching ? <p className="text-xs text-muted">Buscando…</p> : null}
 
@@ -353,9 +355,15 @@ export function ConvocatoriaParticipantFields({
                   Cambiar
                 </button>
               </div>
+              {errors.studentId ? (
+                <p className="mt-3 text-sm text-primary" role="alert">
+                  {errors.studentId}
+                </p>
+              ) : null}
             </div>
           ) : null}
 
+          {!selectedStudent ? (
           <button
             type="button"
             className="portal-experience-form__manual-entry-link text-sm font-medium text-primary hover:underline"
@@ -364,6 +372,7 @@ export function ConvocatoriaParticipantFields({
           >
             No encuentro mi nombre en el listado
           </button>
+          ) : null}
         </div>
       ) : (
         <div className="portal-experience-form__field space-y-4 rounded-xl border border-border bg-background-muted/20 p-4">
