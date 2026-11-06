@@ -235,10 +235,15 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
   };
 
   const reinstateExcluded = async (blocked: ConvocatoriaExcludedStudent) => {
-    const student = { ...blocked };
-    delete student.reason;
-    delete student.excludedAt;
-    delete student.sourceFormId;
+    const student: ConvocatoriaRosterStudent = {
+      id: blocked.id,
+      fullName: blocked.fullName,
+      generation: blocked.generation,
+      ...(blocked.rut ? { rut: blocked.rut } : {}),
+      ...(blocked.phone ? { phone: blocked.phone } : {}),
+      ...(blocked.email ? { email: blocked.email } : {}),
+      ...(blocked.outreachLog ? { outreachLog: blocked.outreachLog } : {}),
+    };
     const nextStudents = upsertRosterStudent(students, student).students;
     setStudents(nextStudents);
     setRawText(rosterStudentsToCsv(nextStudents));
