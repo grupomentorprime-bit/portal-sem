@@ -221,6 +221,12 @@ export function buildDefaultFormExperience(
       attendanceYesSuccessMessage:
         "¡Gracias por confirmar tu asistencia! Nos vemos en Talca Aurora. ¡Qué gusto contar contigo!",
       celebrateAttendanceYes: true,
+      ...(formId === "convocatoria-talca-aurora-nov-2026"
+        ? {
+            confirmationEmailCtaLabel: "Descargar el programa",
+            confirmationEmailCtaUrl: "/documentos/Programa-Cierre-Academico-2026.pdf",
+          }
+        : {}),
     };
     experience.appearance.layout = "event";
     experience.counter = {

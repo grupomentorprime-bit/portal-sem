@@ -240,6 +240,68 @@ export async function upsertConvocatoriaRosterStudent(
   return saveConvocatoriaRoster(tenant, convocatoriaSlug, formId, students);
 }
 
+function firstFilledContact(...values: Array<string | undefined>): string | undefined {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return undefined;
+}
+
+/** Completa correo y teléfono del listado con la última respuesta conocida de esa persona. */
+export async function hydrateRosterStudentContact(
+  tenant: string,
+  students: ConvocatoriaRosterStudent[]
+): Promise<ConvocatoriaRosterStudent[]> {
+  const missing = students.filter((student) => !student.email?.trim() || !student.phone?.trim());
+  if (missing.length === 0) return students;
+
+  const ids = [...new Set(missing.map((student) => student.id))];
+  const db = await getDatabase();
+  const prior = await db
+    .collection<{
+      data?: { studentId?: string; email?: string; phone?: string };
+    }>("experience_form_submissions")
+    .find({
+      tenant,
+      "data.studentId": { $in: ids },
+    })
+    .project({
+      "data.studentId": 1,
+      "data.email": 1,
+      "data.phone": 1,
+    })
+    .sort({ createdAt: -1 })
+    .limit(400)
+    .toArray();
+
+  const known = new Map<string, { email?: string; phone?: string }>();
+  for (const doc of prior) {
+    const studentId = String(doc.data?.studentId ?? "").trim();
+    if (!studentId) continue;
+    const current = known.get(studentId) ?? {};
+    if (!current.email) {
+      const email = String(doc.data?.email ?? "").trim();
+      if (email) current.email = email;
+    }
+    if (!current.phone) {
+      const phone = String(doc.data?.phone ?? "").trim();
+      if (phone) current.phone = phone;
+    }
+    known.set(studentId, current);
+  }
+
+  return students.map((student) => {
+    const extra = known.get(student.id);
+    if (!extra) return student;
+    return {
+      ...student,
+      email: firstFilledContact(student.email, extra.email),
+      phone: firstFilledContact(student.phone, extra.phone),
+    };
+  });
+}
+
 export async function hasConvocatoriaSubmissionByEmail(
   tenant: string,
   formId: string,

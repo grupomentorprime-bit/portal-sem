@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
 import { getConvocatoriaBySlug } from "@/lib/admin/forms-center";
-import { searchConvocatoriaRoster } from "@/lib/experience/forms/roster";
+import {
+  hydrateRosterStudentContact,
+  searchConvocatoriaRoster,
+} from "@/lib/experience/forms/roster";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 import { publicInternalError } from "@/core/security/public-error";
 
 function toPublicRosterSearchResult(
   student: ConvocatoriaRosterStudent
-): Pick<ConvocatoriaRosterStudent, "id" | "fullName" | "generation" | "phone"> {
+): Pick<ConvocatoriaRosterStudent, "id" | "fullName" | "generation" | "phone" | "email"> {
   return {
     id: student.id,
     fullName: student.fullName,
     generation: student.generation,
     phone: student.phone,
+    email: student.email,
   };
 }
 
@@ -44,10 +48,16 @@ export async function GET(request: Request, { params }: RouteParams) {
       slug,
       query
     );
+    const withContact = await hydrateRosterStudentContact(tenant, [...students, ...suggestions]);
+    const contactById = new Map(withContact.map((student) => [student.id, student]));
     return NextResponse.json({
       ok: true,
-      students: students.map(toPublicRosterSearchResult),
-      suggestions: suggestions.map(toPublicRosterSearchResult),
+      students: students.map((student) =>
+        toPublicRosterSearchResult(contactById.get(student.id) ?? student)
+      ),
+      suggestions: suggestions.map((student) =>
+        toPublicRosterSearchResult(contactById.get(student.id) ?? student)
+      ),
       hasMore,
       suggestionsHasMore,
     });

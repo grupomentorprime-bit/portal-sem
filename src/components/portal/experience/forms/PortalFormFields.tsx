@@ -7,6 +7,7 @@ import { RadioGroup } from "@/components/ui/radio";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ExperienceFormField } from "@/types/experience-forms";
+import { AttendanceTeacherIcon } from "./AttendanceTeacherIcon";
 import { ChilePhoneInput } from "./ChilePhoneInput";
 
 interface PortalFormFieldsProps {
@@ -55,6 +56,27 @@ export function PortalFormFields({
       ))}
     </div>
   );
+}
+
+function attendanceOptionIcon(fieldName: string, value: string) {
+  if (fieldName !== "attendance") return undefined;
+  if (value === "yes") {
+    return (
+      <AttendanceTeacherIcon
+        mood="happy"
+        className="portal-experience-form__attendance-mood"
+      />
+    );
+  }
+  if (value === "no") {
+    return (
+      <AttendanceTeacherIcon
+        mood="sad"
+        className="portal-experience-form__attendance-mood"
+      />
+    );
+  }
+  return undefined;
 }
 
 function renderField(
@@ -111,7 +133,11 @@ function renderField(
             onChange={(v) => onChange(field.name, v)}
             className={field.name === "attendance" ? "portal-experience-form__radio-cards" : undefined}
             options={
-              field.options?.map((opt) => ({ label: opt.label, value: opt.value })) ?? []
+              field.options?.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+                icon: attendanceOptionIcon(field.name, opt.value),
+              })) ?? []
             }
           />
           {field.helper && !error ? (

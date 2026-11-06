@@ -192,6 +192,8 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
           attendanceYesMessage={shell.attendanceYesMessage}
           attendanceNoMessage={shell.attendanceNoMessage}
           attendanceYesSuccessMessage={shell.attendanceYesSuccessMessage}
+          programDownloadUrl={shell.confirmationEmailCtaUrl}
+          programDownloadLabel={shell.confirmationEmailCtaLabel}
         />
       ) : (
         <PortalExperienceForm

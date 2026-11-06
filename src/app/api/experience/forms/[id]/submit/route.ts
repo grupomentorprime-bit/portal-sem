@@ -22,6 +22,7 @@ import {
   saveFormSubmission,
 } from "@/lib/experience/forms/repository";
 import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
+import { updateRosterStudentContactFields } from "@/lib/student-affairs/roster-outreach";
 import { resolveConfirmationEmailCta } from "@/lib/notifications/resolve-confirmation-email-cta";
 import { reportPathForSubmission } from "@/lib/cumple/informe";
 import { CUMPLE_FORM_ID } from "@/sites/cumple/site";
@@ -137,6 +138,7 @@ export async function POST(request: Request, { params }: RouteParams) {
             fullName: rosterMatch.fullName,
             program: rosterGeneration,
             generation: rosterGeneration,
+            email: email || rosterMatch.email?.trim() || "",
             phone:
               submittedPhone ||
               formatChilePhoneDisplay(rosterMatch.phone ?? "") ||
@@ -234,6 +236,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         const submittedPhone =
           normalizeChilePhone(String(data.phone ?? "").trim()) ??
           String(data.phone ?? "").trim();
+        const submittedEmail = String(data.email ?? "").trim();
 
         const normalizedGeneration = normalizeGenerationValue(student.generation);
 
@@ -245,6 +248,7 @@ export async function POST(request: Request, { params }: RouteParams) {
           fullName: student.fullName,
           program: normalizedGeneration,
           generation: normalizedGeneration,
+          email: submittedEmail || student.email?.trim() || "",
           phone:
             submittedPhone ||
             formatChilePhoneDisplay(student.phone ?? "") ||
@@ -291,6 +295,30 @@ export async function POST(request: Request, { params }: RouteParams) {
       }
     }
 
+    if (convocatoria && String(data.registrationMode ?? "") === "roster") {
+      const rosterStudentId = String(data.studentId ?? "").trim();
+      if (rosterStudentId) {
+        try {
+          const confirmedEmail = String(data.email ?? "").trim();
+          const confirmedPhone = String(data.phone ?? "").trim();
+          if (confirmedEmail || confirmedPhone) {
+            await updateRosterStudentContactFields({
+              tenant,
+              formId: id,
+              studentId: rosterStudentId,
+              ...(confirmedEmail ? { email: confirmedEmail } : {}),
+              ...(confirmedPhone ? { phone: confirmedPhone } : {}),
+            });
+          }
+        } catch (contactError) {
+          console.error(
+            "[convocatoria] no se pudo guardar el correo o teléfono corregido",
+            contactError
+          );
+        }
+      }
+    }
+
     if (convocatoria) {
       const participantEmail = String(data.email ?? "").trim();
       const attendance =
@@ -322,10 +350,12 @@ export async function POST(request: Request, { params }: RouteParams) {
             attendance === "yes"
               ? experience.formShell.attendanceYesMessage
               : experience.formShell.attendanceNoMessage;
-          const resolvedCta = await resolveConfirmationEmailCta(tenant, experience.formShell);
-          confirmationEmailCtaUrl = resolvedCta.url;
-          confirmationEmailAttachment = resolvedCta.attachment;
-          confirmationEmailCtaLabel = experience.formShell.confirmationEmailCtaLabel;
+          if (attendance === "yes") {
+            const resolvedCta = await resolveConfirmationEmailCta(tenant, experience.formShell);
+            confirmationEmailCtaUrl = resolvedCta.url;
+            confirmationEmailAttachment = resolvedCta.attachment;
+            confirmationEmailCtaLabel = experience.formShell.confirmationEmailCtaLabel;
+          }
           const calendar = experience.infoCards.find(
             (card) => card.icon === "calendar" && card.visible !== false && card.value.trim()
           );

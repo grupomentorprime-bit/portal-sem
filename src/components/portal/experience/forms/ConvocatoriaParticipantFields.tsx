@@ -32,7 +32,18 @@ interface RosterStudent {
   fullName: string;
   generation: string;
   phone?: string;
+  email?: string;
 }
+
+interface RosterContact {
+  email: string;
+  phone: string;
+}
+
+const CONTACT_ON_FILE_HELPER = "Lo tenemos registrado. Confírmalo o corrígelo si está mal.";
+const EMAIL_MISSING_HELPER = "No tenemos un correo registrado. Escríbelo para continuar.";
+const PHONE_MISSING_HELPER =
+  "No tenemos un teléfono registrado. Escríbelo para continuar. Formato: +56 9 1234 5678.";
 
 const ROSTER_FIELD_NAMES = new Set(["studentId", "fullName", "program", "generation", "rut"]);
 const ABSENCE_ONLY_FIELD_NAMES = new Set(["justification", "justificationAttachment"]);
@@ -60,6 +71,7 @@ export function ConvocatoriaParticipantFields({
   const [manualEntry, setManualEntry] = useState(
     () => String(values.registrationMode ?? "") === "manual"
   );
+  const [rosterContact, setRosterContact] = useState<RosterContact | null>(null);
 
   const identityReady = isConvocatoriaIdentityReady(values);
 
@@ -126,12 +138,28 @@ export function ConvocatoriaParticipantFields({
     };
   }, [convocatoriaSlug, manualEntry, trimmedQuery]);
 
-  const remainingFields = fields.filter(
-    (field) =>
-      !ROSTER_FIELD_NAMES.has(field.name) &&
-      !ABSENCE_ONLY_FIELD_NAMES.has(field.name) &&
-      field.type !== "hidden"
-  );
+  const remainingFields = fields
+    .filter(
+      (field) =>
+        !ROSTER_FIELD_NAMES.has(field.name) &&
+        !ABSENCE_ONLY_FIELD_NAMES.has(field.name) &&
+        field.type !== "hidden"
+    )
+    .map((field) => {
+      if (field.name === "email") {
+        return {
+          ...field,
+          helper: rosterContact?.email ? CONTACT_ON_FILE_HELPER : EMAIL_MISSING_HELPER,
+        };
+      }
+      if (field.name === "phone") {
+        return {
+          ...field,
+          helper: rosterContact?.phone ? CONTACT_ON_FILE_HELPER : PHONE_MISSING_HELPER,
+        };
+      }
+      return field;
+    });
 
   const handleSelectStudent = (student: RosterStudent) => {
     onChange("registrationMode", "roster");
@@ -140,9 +168,13 @@ export function ConvocatoriaParticipantFields({
     onChange("program", student.generation);
     onChange("generation", student.generation);
     onChange("rut", student.rut ?? "");
-    if (student.phone) {
-      onChange("phone", formatChilePhoneDisplay(student.phone) || student.phone);
-    }
+    const phone = student.phone
+      ? formatChilePhoneDisplay(student.phone) || student.phone
+      : "";
+    const email = student.email?.trim() ?? "";
+    onChange("phone", phone);
+    onChange("email", email);
+    setRosterContact({ email, phone });
     setManualEntry(false);
     setQuery("");
     setResults([]);
@@ -159,6 +191,9 @@ export function ConvocatoriaParticipantFields({
     onChange("program", "");
     onChange("generation", "");
     onChange("rut", "");
+    onChange("phone", "");
+    onChange("email", "");
+    setRosterContact(null);
     setQuery("");
     setResults([]);
     setSuggestions([]);
@@ -185,6 +220,9 @@ export function ConvocatoriaParticipantFields({
     onChange("program", "");
     onChange("generation", "");
     onChange("rut", "");
+    onChange("phone", "");
+    onChange("email", "");
+    setRosterContact(null);
   };
 
   return (
@@ -194,7 +232,7 @@ export function ConvocatoriaParticipantFields({
           <Input
             label="Busca tu nombre o RUT en el listado"
             placeholder="Escribe tu nombre, apellido o RUT…"
-            helper="Selecciona tu registro. Luego completarás teléfono, correo y asistencia."
+            helper="Selecciona tu registro. Si ya tenemos tu correo y teléfono, solo confírmalos."
             icon={Search}
             value={query}
             disabled={disabled || Boolean(selectedStudent)}

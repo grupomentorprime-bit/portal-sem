@@ -1,5 +1,7 @@
 import "server-only";
 
+import { readFile } from "fs/promises";
+import path from "path";
 import { findMediaById } from "@/core/media/lookup";
 import { resolvePublicUrl } from "@/lib/app-url";
 import {
@@ -27,6 +29,48 @@ function buildStorageKeyFromAsset(
   const safeTenant = tenant.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
   const ext = extension.replace(/^\./, "").toLowerCase() || "bin";
   return `${safeTenant}/${mediaId}/${mediaId}.${ext}`;
+}
+
+function publicDocumentFile(url: string): { absolutePath: string; filename: string } | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  let pathname = trimmed.split("?")[0] ?? "";
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      pathname = new URL(trimmed).pathname;
+    } catch {
+      return null;
+    }
+  }
+
+  if (!pathname.startsWith("/documentos/") || pathname.includes("..")) return null;
+  const filename = path.basename(pathname);
+  if (!filename.toLowerCase().endsWith(".pdf")) return null;
+
+  return {
+    absolutePath: path.join(process.cwd(), "public", "documentos", filename),
+    filename,
+  };
+}
+
+async function attachmentFromPublicDocument(
+  url: string
+): Promise<ResolvedConfirmationEmailCta["attachment"]> {
+  const document = publicDocumentFile(url);
+  if (!document) return undefined;
+
+  try {
+    const content = await readFile(document.absolutePath);
+    if (content.length === 0 || content.length > MAX_ATTACHMENT_BYTES) return undefined;
+    return { filename: document.filename, content };
+  } catch (error) {
+    console.warn("[convocatoria] confirmation program file missing", {
+      path: document.absolutePath,
+      error,
+    });
+    return undefined;
+  }
 }
 
 function attachmentFilename(originalName: string, storageKey: string): string {
@@ -110,7 +154,8 @@ export async function resolveConfirmationEmailCta(
       return { url, attachment };
     }
 
-    return { url: resolvePublicUrl(storedUrl) };
+    const attachment = await attachmentFromPublicDocument(storedUrl);
+    return { url: resolvePublicUrl(storedUrl), attachment };
   }
 
   return {};

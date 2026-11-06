@@ -217,6 +217,47 @@
   color: var(--foreground);
 }
 
+.convocatoria-program-download {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(100%, 22rem);
+  margin-top: 0.5rem;
+}
+
+.convocatoria-program-download__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  background: var(--sem-primary);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.convocatoria-program-download__button svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.convocatoria-program-download__button:hover {
+  background: var(--sem-secondary);
+}
+
+.convocatoria-program-download__note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
 @keyframes portal-form-success-pop {
   from {
     opacity: 0;
@@ -835,8 +876,8 @@
 
 .form-focused-shell .portal-experience-form__radio-cards label {
   align-items: center;
-  min-height: 3.25rem;
-  padding: 0.875rem 1rem;
+  min-height: 4.5rem;
+  padding: 0.75rem 1rem;
   border: 1.5px solid color-mix(in srgb, var(--sem-primary) 16%, var(--border));
   border-radius: var(--radius-lg);
   background: var(--background);
@@ -857,6 +898,34 @@
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--sem-secondary) 20%, transparent),
     0 4px 12px color-mix(in srgb, var(--sem-primary) 10%, transparent);
+}
+
+.form-focused-shell .portal-experience-form__radio-cards label[data-option="no"]:has(:checked) {
+  border-color: color-mix(in srgb, var(--sem-secondary) 55%, var(--sem-primary));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sem-secondary) 16%, white),
+    color-mix(in srgb, var(--sem-accent) 18%, white)
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--sem-secondary) 22%, transparent),
+    0 4px 12px color-mix(in srgb, var(--sem-primary) 8%, transparent);
+}
+
+.form-focused-shell .portal-experience-form__attendance-mood {
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.form-focused-shell .portal-experience-form__radio-cards label[data-option="yes"]:has(:checked) .portal-experience-form__attendance-mood {
+  animation: attendance-yes-teacher-bounce 2.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.form-focused-shell .portal-experience-form__radio-cards label[data-option="no"]:has(:checked) .portal-experience-form__attendance-mood {
+  animation: attendance-no-teacher-sway 2.4s ease-in-out infinite;
+  transform-origin: center bottom;
 }
 
 .form-focused-shell .portal-experience-form__radio-cards label span span:first-child {

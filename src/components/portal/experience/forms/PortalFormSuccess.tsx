@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -10,6 +10,7 @@ interface PortalFormSuccessProps {
   closeLabel?: string;
   /** overlay = pantalla completa inmediata; inline = dentro del formulario */
   variant?: "overlay" | "inline";
+  children?: ReactNode;
 }
 
 export function PortalFormSuccess({
@@ -17,6 +18,7 @@ export function PortalFormSuccess({
   onClose,
   closeLabel = "Entendido",
   variant = "overlay",
+  children,
 }: PortalFormSuccessProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +42,7 @@ export function PortalFormSuccess({
       </div>
       <p className="portal-experience-form__success-title">¡Respuesta enviada!</p>
       <p className="portal-experience-form__success-message">{message}</p>
+      {children}
       {onClose ? (
         <Button type="button" variant="primary" onClick={onClose} className="mt-2">
           {closeLabel}

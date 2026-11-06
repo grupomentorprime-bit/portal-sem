@@ -34,6 +34,8 @@ interface PortalConvocatoriaExperienceFormProps {
   attendanceYesMessage?: string;
   attendanceNoMessage?: string;
   attendanceYesSuccessMessage?: string;
+  programDownloadUrl?: string;
+  programDownloadLabel?: string;
 }
 
 export function PortalConvocatoriaExperienceForm({
@@ -47,6 +49,8 @@ export function PortalConvocatoriaExperienceForm({
   attendanceYesMessage,
   attendanceNoMessage,
   attendanceYesSuccessMessage,
+  programDownloadUrl,
+  programDownloadLabel,
 }: PortalConvocatoriaExperienceFormProps) {
   const [values, setValues] = useState<Record<string, unknown>>(() => initialValues(form));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -313,6 +317,8 @@ export function PortalConvocatoriaExperienceForm({
             attendance={submittedAttendance}
             message={successMessage}
             notice={successNotice}
+            programDownloadUrl={programDownloadUrl}
+            programDownloadLabel={programDownloadLabel}
           />
         ) : (
           <>

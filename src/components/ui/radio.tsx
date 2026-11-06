@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils";
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import { focusRing } from "./shared";
 
 export interface RadioProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
   label?: string;
   description?: string;
+  icon?: ReactNode;
 }
 
 export function Radio({
@@ -13,6 +14,8 @@ export function Radio({
   label,
   description,
   id,
+  icon,
+  value,
   ...props
 }: RadioProps) {
   const inputId =
@@ -21,6 +24,7 @@ export function Radio({
   return (
     <label
       htmlFor={inputId}
+      data-option={value !== undefined ? String(value) : undefined}
       className={cn(
         "group flex cursor-pointer items-start gap-3",
         props.disabled && "cursor-not-allowed opacity-50",
@@ -31,6 +35,7 @@ export function Radio({
         <input
           type="radio"
           id={inputId}
+          value={value}
           className={cn("sr-only", focusRing)}
           {...props}
         />
@@ -55,6 +60,7 @@ export function Radio({
           ) : null}
         </span>
       )}
+      {icon ? <span className="ml-auto shrink-0">{icon}</span> : null}
     </label>
   );
 }
@@ -63,7 +69,7 @@ export interface RadioGroupProps {
   name: string;
   value: string;
   onChange: (value: string) => void;
-  options: Array<{ value: string; label: string; description?: string }>;
+  options: Array<{ value: string; label: string; description?: string; icon?: ReactNode }>;
   legend?: string;
   className?: string;
 }
@@ -88,6 +94,7 @@ export function RadioGroup({
           value={opt.value}
           label={opt.label}
           description={opt.description}
+          icon={opt.icon}
           checked={value === opt.value}
           onChange={() => onChange(opt.value)}
         />
