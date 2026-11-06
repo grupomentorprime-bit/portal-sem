@@ -98,43 +98,47 @@ export function AbsenceJustificationFields({
 
         {hasSelectedFile ? (
           <div className="absence-attachment-card" role="status" aria-live="polite">
-            <div className="absence-attachment-card__icon" aria-hidden="true">
-              {uploading ? <Loader2 className="animate-spin" /> : <FileCheck2 />}
-            </div>
-            <div className="absence-attachment-card__body">
-              <p className="absence-attachment-card__eyebrow">
-                {uploading ? "Subiendo documento…" : isUploaded ? "Documento listo" : "Documento adjunto"}
-              </p>
-              <p className="absence-attachment-card__filename">{selectedName}</p>
-              {selectedSize > 0 ? (
-                <p className="absence-attachment-card__meta">{formatFileSize(selectedSize)}</p>
-              ) : null}
-              {!isUploaded && !uploading && !errors.justificationAttachment ? (
-                <p className="absence-attachment-card__meta text-[var(--state-warning-fg)]">
-                  El archivo se subirá al enviar el formulario.
+            <div className="absence-attachment-card__top">
+              <div className="absence-attachment-card__icon" aria-hidden="true">
+                {uploading ? <Loader2 className="animate-spin" /> : <FileCheck2 />}
+              </div>
+              <div className="absence-attachment-card__body">
+                <p className="absence-attachment-card__eyebrow">
+                  {uploading ? "Subiendo documento…" : isUploaded ? "Documento listo" : "Documento adjunto"}
                 </p>
-              ) : null}
+                {selectedSize > 0 ? (
+                  <p className="absence-attachment-card__meta">{formatFileSize(selectedSize)}</p>
+                ) : null}
+              </div>
+              <div className="absence-attachment-card__actions">
+                <button
+                  type="button"
+                  className="absence-attachment-card__change"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={disabled || uploading}
+                >
+                  <FileUp className="h-4 w-4" aria-hidden="true" />
+                  Cambiar
+                </button>
+                <button
+                  type="button"
+                  className="absence-attachment-card__remove"
+                  onClick={handleClearFile}
+                  disabled={disabled || uploading}
+                  aria-label="Quitar archivo adjunto"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
             </div>
-            <div className="absence-attachment-card__actions">
-              <button
-                type="button"
-                className="absence-attachment-card__change"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || uploading}
-              >
-                <FileUp className="h-4 w-4" aria-hidden="true" />
-                Cambiar
-              </button>
-              <button
-                type="button"
-                className="absence-attachment-card__remove"
-                onClick={handleClearFile}
-                disabled={disabled || uploading}
-                aria-label="Quitar archivo adjunto"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
+            <p className="absence-attachment-card__filename" title={selectedName}>
+              {selectedName}
+            </p>
+            {!isUploaded && !uploading && !errors.justificationAttachment ? (
+              <p className="absence-attachment-card__meta">
+                El archivo se subirá al enviar el formulario.
+              </p>
+            ) : null}
           </div>
         ) : (
           <button

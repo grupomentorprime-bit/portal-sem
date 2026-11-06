@@ -389,13 +389,19 @@
 
 .absence-attachment-card {
   display: flex;
-  align-items: center;
-  gap: 0.875rem;
+  flex-direction: column;
+  gap: 0.625rem;
   padding: 1rem 1.125rem;
   border: 2px solid color-mix(in srgb, var(--sem-success) 45%, transparent);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--sem-success) 10%, white);
   box-shadow: 0 4px 16px color-mix(in srgb, var(--sem-success) 12%, transparent);
+}
+
+.absence-attachment-card__top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .absence-attachment-card__icon {
@@ -430,12 +436,12 @@
 }
 
 .absence-attachment-card__filename {
-  margin: 0.25rem 0 0;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.35;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
   color: var(--foreground);
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .absence-attachment-card__meta {
