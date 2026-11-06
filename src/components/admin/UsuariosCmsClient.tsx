@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Search, UserPlus } from "lucide-react";
+import { ArrowLeft, LayoutGrid, List, Search, UserPlus } from "lucide-react";
+import { PORTAL_ROLE_CODES, type PortalRoleCode } from "@/core/identity/roles/codes";
 import { InviteUserWizard } from "@/components/admin/InviteUserWizard";
 import {
   UserCmsCard,
@@ -16,6 +17,42 @@ import { cn } from "@/lib/utils";
 import "@/styles/admin-users-cms.css";
 
 type UsersCmsTab = "team" | "invite";
+type TeamView = "lista" | "kanban";
+
+const TEAM_VIEW_KEY = "growth-os-team-view";
+
+const COLUMN_THEMES = [
+  {
+    surface: "bg-[var(--admin-kanban-1-surface)]",
+    accent: "bg-[var(--admin-kanban-1-accent)]",
+    badge: "bg-[var(--admin-kanban-1-badge)] text-[var(--admin-kanban-1-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-2-surface)]",
+    accent: "bg-[var(--admin-kanban-2-accent)]",
+    badge: "bg-[var(--admin-kanban-2-badge)] text-[var(--admin-kanban-2-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-3-surface)]",
+    accent: "bg-[var(--admin-kanban-3-accent)]",
+    badge: "bg-[var(--admin-kanban-3-badge)] text-[var(--admin-kanban-3-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-4-surface)]",
+    accent: "bg-[var(--admin-kanban-4-accent)]",
+    badge: "bg-[var(--admin-kanban-4-badge)] text-[var(--admin-kanban-4-fg)]",
+  },
+  {
+    surface: "bg-[var(--admin-kanban-5-surface)]",
+    accent: "bg-[var(--admin-kanban-5-accent)]",
+    badge: "bg-[var(--admin-kanban-5-badge)] text-[var(--admin-kanban-5-fg)]",
+  },
+] as const;
+
+function roleRank(code: string | undefined): number {
+  const index = PORTAL_ROLE_CODES.indexOf(code as PortalRoleCode);
+  return index === -1 ? PORTAL_ROLE_CODES.length : index;
+}
 
 const LAST_ADMIN_API_HINT = /sin un Dueño o Administrador|LAST_SPACE_ADMIN|último administrador/i;
 
@@ -49,6 +86,7 @@ export function UsuariosCmsClient() {
   >([]);
   const [activeTab, setActiveTab] = useState<UsersCmsTab>("team");
   const [searchQuery, setSearchQuery] = useState("");
+  const [teamView, setTeamView] = useState<TeamView>("lista");
   const [assignableRoles, setAssignableRoles] = useState<AssignableRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -96,6 +134,16 @@ export function UsuariosCmsClient() {
   }, []);
 
   useEffect(() => {
+    const saved = window.localStorage.getItem(TEAM_VIEW_KEY);
+    if (saved === "kanban" || saved === "lista") setTeamView(saved);
+  }, []);
+
+  function selectTeamView(next: TeamView) {
+    setTeamView(next);
+    window.localStorage.setItem(TEAM_VIEW_KEY, next);
+  }
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
@@ -135,11 +183,29 @@ export function UsuariosCmsClient() {
       : activeMembers;
 
     return [...bySearch].sort((a, b) => {
+      const rank = roleRank(a.roles[0]?.code) - roleRank(b.roles[0]?.code);
+      if (rank !== 0) return rank;
       const aName = (a.displayName || a.email).toLowerCase();
       const bName = (b.displayName || b.email).toLowerCase();
       return aName.localeCompare(bName, "es");
     });
   }, [activeMembers, searchQuery]);
+
+  const roleColumns = useMemo(() => {
+    const groups = new Map<string, { code: string; label: string; members: UserCmsCardData[] }>();
+    for (const member of filteredMembers) {
+      const role = member.roles[0];
+      const code = role?.code || "colaborador";
+      const current = groups.get(code) ?? {
+        code,
+        label: role?.label || "Colaborador",
+        members: [],
+      };
+      current.members.push(member);
+      groups.set(code, current);
+    }
+    return [...groups.values()].sort((a, b) => roleRank(a.code) - roleRank(b.code));
+  }, [filteredMembers]);
 
   async function handleInvite(payload: {
     email: string;
@@ -331,6 +397,25 @@ export function UsuariosCmsClient() {
     setInvitationRevokingId(null);
   }
 
+  function renderTeamMember(member: UserCmsCardData, layout: "list" | "board") {
+    return (
+      <UserCmsCard
+        key={member.membershipId}
+        member={member}
+        layout={layout}
+        assignableRoles={assignableRoles}
+        activePanel={openCardPanel?.membershipId === member.membershipId ? openCardPanel.panel : null}
+        onPanelToggle={(panel) => handlePanelToggle(member.membershipId, panel)}
+        saving={roleSavingId === member.membershipId}
+        actionSaving={
+          memberActionSaving?.membershipId === member.membershipId ? memberActionSaving.action : null
+        }
+        onRoleChange={handleRoleChange}
+        onMemberAction={handleMemberAction}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <p className="text-sm text-muted" data-team-loading>
@@ -506,32 +591,65 @@ export function UsuariosCmsClient() {
                 aria-label="Buscar en el Equipo"
               />
             </label>
-            <span className="text-xs text-muted sm:justify-self-end">
-              {filteredMembers.length} persona{filteredMembers.length === 1 ? "" : "s"}
-            </span>
+            <div className="users-cms-controls-side">
+              <span className="text-xs text-muted">
+                {filteredMembers.length} persona{filteredMembers.length === 1 ? "" : "s"}
+              </span>
+              <div className="users-cms-tabs" role="group" aria-label="Vista del Equipo" data-team-view-toggle>
+                <button
+                  type="button"
+                  aria-pressed={teamView === "lista"}
+                  onClick={() => selectTeamView("lista")}
+                  className={cn("users-cms-tab", teamView === "lista" && "users-cms-tab--active")}
+                  data-team-view="lista"
+                >
+                  <List className="mr-1.5 inline h-3.5 w-3.5" aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={teamView === "kanban"}
+                  onClick={() => selectTeamView("kanban")}
+                  className={cn("users-cms-tab", teamView === "kanban" && "users-cms-tab--active")}
+                  data-team-view="kanban"
+                >
+                  <LayoutGrid className="mr-1.5 inline h-3.5 w-3.5" aria-hidden />
+                  Kanban
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="users-cms-grid">
-            {filteredMembers.map((member) => (
-              <UserCmsCard
-                key={member.membershipId}
-                member={member}
-                assignableRoles={assignableRoles}
-                activePanel={
-                  openCardPanel?.membershipId === member.membershipId ? openCardPanel.panel : null
-                }
-                onPanelToggle={(panel) => handlePanelToggle(member.membershipId, panel)}
-                saving={roleSavingId === member.membershipId}
-                actionSaving={
-                  memberActionSaving?.membershipId === member.membershipId
-                    ? memberActionSaving.action
-                    : null
-                }
-                onRoleChange={handleRoleChange}
-                onMemberAction={handleMemberAction}
-              />
-            ))}
-          </div>
+          {filteredMembers.length > 0 && teamView === "lista" ? (
+            <div className="users-cms-rows" data-team-rows>
+              {filteredMembers.map((member) => renderTeamMember(member, "list"))}
+            </div>
+          ) : null}
+
+          {filteredMembers.length > 0 && teamView === "kanban" ? (
+            <div className="users-cms-board" data-team-board>
+              {roleColumns.map((column, index) => {
+                const theme = COLUMN_THEMES[index % COLUMN_THEMES.length];
+                return (
+                  <section
+                    key={column.code}
+                    className={cn("users-cms-column", theme.surface)}
+                    data-team-column={column.code}
+                    aria-label={column.label}
+                  >
+                    <header className="users-cms-column-head">
+                      <span className={cn("users-cms-column-accent", theme.accent)} aria-hidden />
+                      <h3 className="truncate">{column.label}</h3>
+                      <span className={cn("users-cms-column-count", theme.badge)}>{column.members.length}</span>
+                    </header>
+                    <div className="users-cms-column-cards">
+                      {column.members.map((member) => renderTeamMember(member, "board"))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          ) : null}
 
           {filteredMembers.length === 0 ? (
             <div

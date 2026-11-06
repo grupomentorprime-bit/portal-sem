@@ -1,19 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, ExternalLink, Eye, Plus, RefreshCw } from "lucide-react";
+import {
+  Archive,
+  CheckCircle2,
+  ClipboardList,
+  ExternalLink,
+  Eye,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
+import type { KpiAccent } from "@/components/admin/kit/dashboard/KpiCard";
 import {
   ActionMenu,
   ActionMenuItem,
   AdminDataTable,
   ColumnActions,
   ContentGrid,
-  FilterBar,
   KpiCard,
   LoadingState,
-  QuickActions,
+  SearchBar,
   StatusBadge,
   type AdminDataTableColumn,
 } from "@/components/admin/kit";
@@ -25,6 +33,7 @@ import {
   useSpacePublicOrigin,
 } from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   listFormConvocatorias,
   formatConvocatoriaDate,
@@ -76,8 +85,84 @@ function getFormTipo(
 const tipoLabel: Record<"convocatoria" | "landing" | "none", string> = {
   convocatoria: "Convocatoria",
   landing: "Con landing",
-  none: "—",
+  none: "General",
 };
+
+function FormName({
+  title,
+  subtitle,
+  href,
+}: {
+  title: string;
+  subtitle?: string;
+  href?: string;
+}) {
+  const heading = href ? (
+    <Link href={href} className="forms-hub__title hover:underline">
+      {title}
+    </Link>
+  ) : (
+    <p className="forms-hub__title">{title}</p>
+  );
+
+  return (
+    <div className="forms-hub__name">
+      {heading}
+      {subtitle ? (
+        <p className="forms-hub__subtitle" title={subtitle}>
+          {subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function HubKpi({
+  selected = false,
+  onSelect,
+  label,
+  value,
+  delta,
+  accent,
+  icon,
+}: {
+  selected?: boolean;
+  onSelect?: () => void;
+  label: string;
+  value: number;
+  delta: string;
+  accent: KpiAccent;
+  icon: ReactNode;
+}) {
+  const activate = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onSelect) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    }
+  };
+
+  return (
+    <KpiCard
+      layout="classic"
+      accent={accent}
+      icon={icon}
+      label={label}
+      value={value}
+      delta={delta}
+      className={cn(
+        "forms-hub__kpi text-left",
+        onSelect && "cursor-pointer",
+        selected && "forms-hub__kpi--selected"
+      )}
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      aria-pressed={onSelect ? selected : undefined}
+      onClick={onSelect}
+      onKeyDown={onSelect ? activate : undefined}
+    />
+  );
+}
 
 export function FormsCenterClient({
   initialForms,
@@ -317,7 +402,7 @@ export function FormsCenterClient({
 
     if (archived) {
       return (
-        <ColumnActions>
+        <ColumnActions className="forms-hub__actions">
           <Button type="button" variant="primary" size="sm" onClick={() => handleRestore(form)}>
             Restaurar
           </Button>
@@ -337,7 +422,7 @@ export function FormsCenterClient({
         : `${formDetailHref}?tab=respuestas`;
 
       return (
-        <ColumnActions>
+        <ColumnActions className="forms-hub__actions">
           <Link href={manageHref}>
             <Button type="button" variant="primary" size="sm">
               {convocatoria ? "Ir a operación" : "Gestionar respuestas"}
@@ -371,7 +456,7 @@ export function FormsCenterClient({
     }
 
     return (
-      <ColumnActions>
+      <ColumnActions className="forms-hub__actions">
         <Link href={`${formDetailHref}${convocatoria ? "?tab=participantes" : "?tab=formulario"}`}>
           <Button type="button" variant="primary" size="sm">
             {convocatoria ? "Configurar" : "Gestionar"}
@@ -407,12 +492,10 @@ export function FormsCenterClient({
           const { convocatoria } = row;
           const landing = convocatoria.landing;
           return (
-            <div>
-              <p className="font-medium text-foreground">{convocatoria.title}</p>
-              <p className="text-xs text-muted">
-                {landing?.subheadline ?? convocatoria.description}
-              </p>
-            </div>
+            <FormName
+              title={convocatoria.title}
+              subtitle={landing?.subheadline ?? convocatoria.description}
+            />
           );
         }
 
@@ -425,14 +508,11 @@ export function FormsCenterClient({
           : (landing?.subheadline ?? form.description);
 
         return (
-          <div>
-            <p className="font-medium text-foreground">
-              <Link href={`/admin/portal/forms/${form._id}`} className="hover:underline">
-                {title}
-              </Link>
-            </p>
-            {subtitle ? <p className="text-xs text-muted">{subtitle}</p> : null}
-          </div>
+          <FormName
+            title={title}
+            subtitle={subtitle}
+            href={`/admin/portal/forms/${form._id}`}
+          />
         );
       },
     },
@@ -470,13 +550,26 @@ export function FormsCenterClient({
       header: "Tipo",
       cell: (row) => {
         if (row.kind === "orphan") {
-          return <span className="text-sm text-muted">Convocatoria</span>;
+          return <span className="forms-hub__tipo forms-hub__tipo--convocatoria">Convocatoria</span>;
         }
         const tipo = getFormTipo(row.form._id, convocatoriaFormIds);
-        return <span className="text-sm text-muted">{tipoLabel[tipo]}</span>;
+        return (
+          <span
+            className={cn(
+              "forms-hub__tipo",
+              tipo === "convocatoria" && "forms-hub__tipo--convocatoria",
+              tipo === "landing" && "forms-hub__tipo--landing"
+            )}
+          >
+            {tipoLabel[tipo]}
+          </span>
+        );
       },
     },
   ];
+
+  const filtersDirty = Boolean(search) || filter !== "live" || publishFilter !== "all";
+  const portalHref = spacePublicHref(publicOrigin, "/");
 
   return (
     <AdminModulePage
@@ -486,116 +579,169 @@ export function FormsCenterClient({
         { label: "Formularios" },
       ]}
       title="Formularios"
-      description="Crea formularios y publica las preguntas que necesitas."
+      description="Crea, publica y archiva los formularios del sitio."
+      actions={
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              window.open(portalHref, publicOrigin ? "_blank" : "_self", "noopener,noreferrer");
+            }}
+          >
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            Ver portal
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void handleSeed()}
+            loading={loading}
+            disabled={loading}
+          >
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+            Formularios base
+          </Button>
+          <Button type="button" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+            Nuevo formulario
+          </Button>
+        </>
+      }
     >
+      <div className="forms-hub">
       {error ? (
-        <div className="mb-4 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
+        <div className="rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger)]">
           {error}
         </div>
       ) : null}
 
-      {loading ? <LoadingState variant="cards" className="mb-6" /> : null}
+      {loading ? <LoadingState variant="cards" /> : null}
 
-      <ContentGrid cols={4} className="mb-6">
-        <KpiCard label="Formularios activos" value={activeForms.length} />
-        <KpiCard label="Activos" value={activeCount} variant="success" />
-        <KpiCard label="Publicados en portal" value={publishedCount} variant="info" />
-        <KpiCard label="Archivados" value={archivedForms.length} variant="neutral" />
+      <ContentGrid cols={4}>
+        <HubKpi
+          accent="primary"
+          icon={<ClipboardList className="h-4 w-4" />}
+          label="En uso"
+          value={activeForms.length}
+          delta="Sin archivar"
+          selected={filter === "live" && publishFilter === "all"}
+          onSelect={() => {
+            setFilter("live");
+            setPublishFilter("all");
+          }}
+        />
+        <HubKpi
+          accent="success"
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          label="Activos"
+          value={activeCount}
+          delta="Pueden recibir respuestas"
+        />
+        <HubKpi
+          accent="info"
+          icon={<Eye className="h-4 w-4" />}
+          label="En el portal"
+          value={publishedCount}
+          delta="Visibles en el sitio"
+          selected={filter === "live" && publishFilter === "published"}
+          onSelect={() => {
+            setFilter("live");
+            setPublishFilter("published");
+          }}
+        />
+        <HubKpi
+          accent="neutral"
+          icon={<Archive className="h-4 w-4" />}
+          label="Archivados"
+          value={archivedForms.length}
+          delta="Fuera del sitio"
+          selected={filter === "archived"}
+          onSelect={() => setFilter("archived")}
+        />
       </ContentGrid>
 
-      <QuickActions
-        className="mb-6"
-        items={[
-          {
-            id: "new",
-            title: "Nuevo formulario",
-            description: "Plantilla, IA o desde cero",
-            onClick: () => setCreateOpen(true),
-            icon: <Plus className="h-5 w-5" />,
-          },
-          {
-            id: "portal",
-            title: "Ver portal",
-            description: "Abrir el sitio",
-            href: spacePublicHref(publicOrigin, "/"),
-            icon: <ExternalLink className="h-5 w-5" />,
-          },
-          {
-            id: "seed",
-            title: "Traer formularios base",
-            description: "Si faltan los del portal",
-            onClick: handleSeed,
-            icon: <RefreshCw className="h-5 w-5" />,
-          },
-        ]}
-      />
-
-      <FilterBar
-        className="mb-4"
-        search={{
-          placeholder: "Buscar por nombre…",
-          value: search,
-          onChange: setSearch,
-        }}
-        filters={
-          <div className="flex flex-wrap gap-2">
-            <Button
+      <section className="forms-hub__workspace" aria-label="Listado de formularios">
+        <div className="forms-hub__toolbar">
+          <div className="forms-hub__segments" role="group" aria-label="Archivo">
+            <button
               type="button"
-              size="sm"
-              variant={filter === "live" ? "primary" : "outline"}
+              className={cn("forms-hub__segment", filter === "live" && "forms-hub__segment--active")}
+              aria-pressed={filter === "live"}
               onClick={() => setFilter("live")}
             >
-              <ClipboardList className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              En uso ({activeForms.length})
-            </Button>
-            <Button
+              En uso
+              <span className="forms-hub__segment-count">{activeForms.length}</span>
+            </button>
+            <button
               type="button"
-              size="sm"
-              variant={filter === "archived" ? "primary" : "outline"}
+              className={cn(
+                "forms-hub__segment",
+                filter === "archived" && "forms-hub__segment--active"
+              )}
+              aria-pressed={filter === "archived"}
               onClick={() => setFilter("archived")}
             >
-              Archivados ({archivedForms.length})
-            </Button>
-            {filter === "live" ? (
-              <>
-                {(["all", "published", "unpublished"] as const).map((value) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    size="sm"
-                    variant={publishFilter === value ? "primary" : "outline"}
-                    onClick={() => setPublishFilter(value)}
-                  >
-                    {value === "all" ? (
-                      "Todos"
-                    ) : value === "published" ? (
-                      <>
-                        <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                        Publicados
-                      </>
-                    ) : (
-                      "No publicados"
-                    )}
-                  </Button>
-                ))}
-              </>
-            ) : null}
+              Archivados
+              <span className="forms-hub__segment-count">{archivedForms.length}</span>
+            </button>
           </div>
-        }
-        onReset={
-          search || filter !== "live" || publishFilter !== "all"
-            ? () => {
+
+          {filter === "live" ? (
+            <div className="forms-hub__segments" role="group" aria-label="Publicación">
+              {(
+                [
+                  ["all", "Todos"],
+                  ["published", "Publicados"],
+                  ["unpublished", "No publicados"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={cn(
+                    "forms-hub__segment",
+                    publishFilter === value && "forms-hub__segment--active"
+                  )}
+                  aria-pressed={publishFilter === value}
+                  onClick={() => setPublishFilter(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <SearchBar
+            className="forms-hub__search"
+            placeholder="Buscar por nombre…"
+            value={search}
+            onChange={setSearch}
+          />
+
+          {filtersDirty ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
                 setSearch("");
                 setFilter("live");
                 setPublishFilter("all");
-              }
-            : undefined
-        }
-      />
+              }}
+            >
+              Limpiar
+            </Button>
+          ) : null}
+        </div>
 
       <AdminDataTable
+        className="forms-hub__table"
         columns={columns}
         data={tableRows}
+        rowActionsLabel="Acciones"
         rowKey={(row) =>
           row.kind === "form" ? row.form._id : `orphan-${row.convocatoria.slug}`
         }
@@ -612,7 +758,7 @@ export function FormsCenterClient({
         rowActions={(row) => {
           if (row.kind === "orphan") {
             return (
-              <ColumnActions>
+              <ColumnActions className="forms-hub__actions">
                 <Button
                   type="button"
                   variant="primary"
@@ -630,6 +776,8 @@ export function FormsCenterClient({
           return renderFormActions(row.form);
         }}
       />
+      </section>
+      </div>
 
       <CreateFormDialog
         open={createOpen}

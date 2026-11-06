@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionMenu, ActionMenuItem } from "@/components/admin/kit/actions/ActionMenu";
 import { Badge } from "@/components/ui";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { isProtectedMember } from "@/core/identity/roles/helpers";
@@ -42,6 +43,7 @@ interface UserCmsCardProps {
   onMemberAction?: (membershipId: string, action: MemberAction) => void;
   saving?: boolean;
   actionSaving?: MemberAction | null;
+  layout?: "list" | "board";
 }
 
 function statusLabel(status: string): string | null {
@@ -60,9 +62,9 @@ export function UserCmsCard({
   onMemberAction,
   saving,
   actionSaving,
+  layout = "board",
 }: UserCmsCardProps) {
   const showRoles = activePanel === "roles";
-  const showActions = activePanel === "actions";
   const primaryRole = member.roles[0];
   const isProtected = isProtectedMember(member.roles);
   const label = member.displayName || member.email;
@@ -73,92 +75,71 @@ export function UserCmsCard({
   const busy = Boolean(saving || actionSaving);
   const usefulStatus = statusLabel(member.status);
 
-  const panelButtonClass = (panel: UserCmsCardPanel) =>
-    cn(
-      "rounded-lg border px-3 py-1.5 text-sm transition disabled:opacity-50",
-      activePanel === panel
-        ? "border-primary bg-primary/8 font-medium text-primary"
-        : "border-border text-muted hover:bg-background-muted hover:text-foreground"
-    );
+  const menu = (canEditRole || canManage) ? (
+    <div className="users-cms-person-actions">
+      {actionSaving === "resend-access" ? <span className="text-xs text-muted">Enviando…</span> : null}
+      <ActionMenu label={`Acciones de ${label}`}>
+        {canEditRole ? (
+          <ActionMenuItem onClick={() => onPanelToggle?.("roles")}>Cambiar rol</ActionMenuItem>
+        ) : null}
+        {canManage ? (
+          <ActionMenuItem
+            onClick={() => {
+              if (!busy) onMemberAction(member.membershipId, "resend-access");
+            }}
+          >
+            <span data-team-resend-access>Reenviar acceso</span>
+          </ActionMenuItem>
+        ) : null}
+        {canManage ? (
+          <ActionMenuItem
+            destructive
+            onClick={() => {
+              if (!busy) onMemberAction(member.membershipId, "remove-access");
+            }}
+          >
+            <span data-team-remove>Quitar acceso</span>
+          </ActionMenuItem>
+        ) : null}
+      </ActionMenu>
+    </div>
+  ) : null;
 
   return (
     <article
       className={cn(
-        "rounded-xl border border-border bg-background p-4 shadow-sm transition-shadow",
-        member.status !== "active" &&
-          "border-[var(--state-warning-border)] bg-[var(--state-warning-bg)]/25",
-        activePanel && "ring-1 ring-primary/15"
+        "users-cms-person",
+        layout === "list" ? "users-cms-person--list" : "users-cms-person--board",
+        member.status !== "active" && "users-cms-person--inactive",
+        activePanel && "users-cms-person--open"
       )}
       data-team-member
+      data-team-layout={layout}
     >
-      <div className="flex items-start gap-3">
-        <AdminUserAvatar name={label} size="md" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <div className="users-cms-person-main">
+        <div className="users-cms-person-identity">
+          <AdminUserAvatar name={label} size="md" />
+          <div className="min-w-0 flex-1">
             <h3 className="truncate font-semibold text-foreground">{label}</h3>
-            <span className="text-sm font-medium text-foreground/80">{roleLabel}</span>
+            <p className="mt-0.5 truncate text-sm text-muted">{member.email}</p>
+            {layout === "board" && isProtected ? (
+              <span className="users-cms-role mt-2">Super administrador</span>
+            ) : null}
+            {usefulStatus ? (
+              <div className="mt-2">
+                <Badge variant="warning">{usefulStatus}</Badge>
+              </div>
+            ) : null}
           </div>
-          <p className="mt-0.5 truncate text-sm text-muted">{member.email}</p>
-          {usefulStatus ? (
-            <div className="mt-2">
-              <Badge variant="warning">{usefulStatus}</Badge>
-            </div>
-          ) : null}
         </div>
+        {layout === "list" ? (
+          <div className="users-cms-roles">
+            <span className="users-cms-role">{roleLabel}</span>
+            {isProtected ? <span className="users-cms-role">Super administrador</span> : null}
+          </div>
+        ) : null}
+        {menu}
       </div>
-
-      {(canEditRole || canManage) && (
-        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border pt-3">
-          {canEditRole ? (
-            <button
-              type="button"
-              onClick={() => onPanelToggle?.("roles")}
-              disabled={busy}
-              className={panelButtonClass("roles")}
-            >
-              Cambiar rol
-            </button>
-          ) : null}
-          {canManage ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => onMemberAction(member.membershipId, "resend-access")}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm text-foreground transition hover:bg-background-muted disabled:opacity-50"
-              data-team-resend-access
-            >
-              {actionSaving === "resend-access" ? "Enviando…" : "Reenviar acceso"}
-            </button>
-          ) : null}
-          {canManage ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => onPanelToggle?.("actions")}
-              className={panelButtonClass("actions")}
-            >
-              Gestionar
-            </button>
-          ) : null}
-        </div>
-      )}
-
-      {isProtected && member.status === "active" ? (
-        <p className="mt-3 text-xs text-muted">Dueño del Espacio — rol no modificable desde Equipo.</p>
-      ) : null}
-
-      {showActions && canManage ? (
-        <div className="mt-3 rounded-lg border border-border/80 bg-background-soft p-3" data-team-remove>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onMemberAction(member.membershipId, "remove-access")}
-            className="w-full rounded-lg border border-[var(--state-danger-border)] bg-background px-3 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--state-danger-bg)] disabled:opacity-50"
-          >
-            {actionSaving === "remove-access" ? "Quitando acceso…" : "Quitar acceso"}
-          </button>
-        </div>
-      ) : null}
 
       {showRoles && canEditRole ? (
         <div className="mt-3 rounded-lg border border-border/80 bg-background-soft p-3" data-team-roles>

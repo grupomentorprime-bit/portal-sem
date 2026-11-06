@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ClipboardList,
@@ -321,115 +320,123 @@ export function FormDetailClient({
       title={form.name}
       description={
         convocatoria
-          ? "Participantes, preguntas y publicación de la convocatoria."
+          ? "Nómina de alumnos, preguntas y publicación."
           : (form.description ?? "Edita las preguntas y publícalo cuando esté listo.")
       }
       actions={
-        <div className="flex flex-wrap gap-2">
-          {convocatoria ? (
-            <Link href={`/admin/portal/asuntos-estudiantiles/${encodeURIComponent(form._id)}`}>
-              <Button variant="outline" size="sm">
-                Ir a operación
+        <div className="admin-form-detail__header-actions">
+          <div className="admin-form-detail__header-nav">
+            {isDirectLinkLive ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => window.open(liveHref, "_blank", "noopener,noreferrer")}
+              >
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                {isPrivate ? "Enlace privado" : "Ver público"}
               </Button>
-            </Link>
-          ) : null}
-          {isDirectLinkLive ? (
-            <Link
-              href={liveHref}
-              target="_blank"
-              className="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm font-medium"
-            >
-              {isPrivate ? "Abrir enlace privado" : "Ver público"}
-              <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Link>
-          ) : null}
-          {!isArchived ? (
-            <>
-              <Button variant="outline" type="button" onClick={handlePreview}>
-                <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
+            ) : null}
+            {!isArchived ? (
+              <Button variant="ghost" size="sm" type="button" onClick={handlePreview}>
+                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                 Vista previa
               </Button>
-              <Button variant="secondary" onClick={handleSave} loading={saving}>
-                Guardar
-              </Button>
-              <Button variant="primary" onClick={handlePublish} loading={publishing}>
-                {isPublished ? "Actualizar publicación" : "Publicar"}
-              </Button>
-            </>
-          ) : null}
-          {isArchived ? (
-            <>
-              <Button variant="secondary" onClick={handleRestore} loading={archiving}>
-                Restaurar
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={handlePurge}
-                loading={purging}
-                className="text-primary"
-              >
-                <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                Eliminar definitivamente
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              type="button"
-              onClick={handleArchive}
-              loading={archiving}
-              className="text-primary"
-            >
-              <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-              Archivar
-            </Button>
-          )}
+            ) : null}
+          </div>
+          <div className="admin-form-detail__header-commit">
+            {isArchived ? (
+              <>
+                <Button variant="outline" size="sm" onClick={handleRestore} loading={archiving}>
+                  Restaurar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={handlePurge}
+                  loading={purging}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Eliminar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" onClick={handleSave} loading={saving}>
+                  Guardar
+                </Button>
+                <Button
+                  variant={convocatoria ? "outline" : "primary"}
+                  size="sm"
+                  onClick={handlePublish}
+                  loading={publishing}
+                >
+                  {isPublished ? "Actualizar publicación" : "Publicar"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  onClick={handleArchive}
+                  loading={archiving}
+                >
+                  Archivar
+                </Button>
+                {convocatoria ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    href={`/admin/portal/asuntos-estudiantiles/${encodeURIComponent(form._id)}`}
+                  >
+                    Ir a operación
+                  </Button>
+                ) : null}
+              </>
+            )}
+          </div>
         </div>
       }
     >
       <AdminModuleCenter className="admin-form-detail">
-        <div className="admin-form-detail__summary">
-          <div className="admin-form-detail__summary-main">
-            <p className="admin-form-detail__eyebrow">Formulario</p>
-            <div className="admin-form-detail__badges">
+        <div className="admin-form-detail__status">
+          <div className="admin-form-detail__badges">
+            <StatusBadge
+              tone={isPublished ? "active" : "draft"}
+              label={isPublished ? "Publicado" : "Borrador"}
+            />
+            <StatusBadge
+              tone={form.active ? "active" : "inactive"}
+              label={form.active ? "Acepta respuestas" : "Sin respuestas"}
+            />
+            {isPrivate ? (
+              <StatusBadge tone="neutral" label={PRIVATE_EXPERIENCE_FORM_LABEL} />
+            ) : (
               <StatusBadge
-                tone={isPublished ? "active" : "draft"}
-                label={isPublished ? "Publicado" : "Borrador"}
+                tone={form.visible ? "active" : "draft"}
+                label={form.visible ? "En el portal" : "Fuera del listado"}
               />
-              <StatusBadge
-                tone={form.active ? "active" : "inactive"}
-                label={form.active ? "Acepta respuestas" : "Sin respuestas"}
-              />
-              {isPrivate ? (
-                <StatusBadge tone="neutral" label={PRIVATE_EXPERIENCE_FORM_LABEL} />
-              ) : (
-                <StatusBadge
-                  tone={form.visible ? "active" : "draft"}
-                  label={form.visible ? "En el portal" : "Fuera del listado"}
-                />
-              )}
-              {isArchived ? <StatusBadge tone="inactive" label="Archivado" /> : null}
-              <span className="admin-form-detail__meta">
-                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                {form.fields.length}{" "}
-                {form.fields.length === 1 ? "pregunta" : "preguntas"}
-              </span>
-            </div>
+            )}
+            {isArchived ? <StatusBadge tone="inactive" label="Archivado" /> : null}
+            <span className="admin-form-detail__meta">
+              <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+              {form.fields.length} {form.fields.length === 1 ? "pregunta" : "preguntas"}
+            </span>
           </div>
-          {!isArchived && !isPublished ? (
-            <p className="admin-form-detail__hint">
-              Cuando esté listo, pulsa <strong>Publicar</strong> para empezar a recibir respuestas
-              {isPrivate ? " por el enlace." : " y mostrarlo en el portal."}
-            </p>
-          ) : null}
-          {isPrivate ? (
-            <p className="admin-form-detail__hint">
-              Solo se abre con el enlace directo. No aparece en el menú ni en el listado público.
-            </p>
-          ) : null}
         </div>
+        {!isArchived && !isPublished ? (
+          <p className="admin-form-detail__hint">
+            Cuando esté listo, pulsa <strong>Publicar</strong> para empezar a recibir respuestas
+            {isPrivate ? " por el enlace." : " y mostrarlo en el portal."}
+          </p>
+        ) : null}
+        {isPrivate ? (
+          <p className="admin-form-detail__hint">
+            Solo se abre con el enlace directo. No aparece en el menú ni en el listado público.
+          </p>
+        ) : null}
 
+        <div className="admin-form-detail__workspace">
         <nav className="admin-form-detail__tabs" aria-label="Secciones del formulario">
           <TabButton
             active={tab === "formulario"}
@@ -461,10 +468,13 @@ export function FormDetailClient({
           </TabButton>
         </nav>
 
-        <p className="admin-form-detail__tab-help">
-          <HelpCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {PRIMARY_HELP[tab]}
-        </p>
+        <div className="admin-form-detail__panel">
+        {tab === "mas" ? (
+          <p className="admin-form-detail__tab-help">
+            <HelpCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {PRIMARY_HELP.mas}
+          </p>
+        ) : null}
 
         {error ? (
           <p className="admin-form-detail__alert admin-form-detail__alert--error">{error}</p>
@@ -644,6 +654,8 @@ export function FormDetailClient({
             </div>
           </div>
         ) : null}
+        </div>
+        </div>
       </AdminModuleCenter>
       {dialog}
     </AdminModulePage>

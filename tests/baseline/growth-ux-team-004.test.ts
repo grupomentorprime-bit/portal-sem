@@ -33,7 +33,7 @@ describe("OT-GROWTH-UX-TEAM-004 — diseño Equipo", () => {
     const card = readSrc("src/components/admin/UserCmsCard.tsx");
     assert.match(card, /Cambiar rol/);
     assert.match(card, /Quitar acceso/);
-    assert.match(card, /Gestionar/);
+    assert.match(card, /Super administrador/);
     assert.match(card, /Reenviar acceso/);
     assert.match(card, /data-team-resend-access/);
     assert.match(card, /data-team-member/);
@@ -54,6 +54,15 @@ describe("OT-GROWTH-UX-TEAM-004 — diseño Equipo", () => {
     assert.match(client, /Reenviar correo/);
     assert.match(client, /correo corporativo/);
     assert.match(client, /Envío exitoso/);
+    assert.match(client, /Vista del Equipo/);
+    assert.match(client, /data-team-view="lista"/);
+    assert.match(client, /data-team-view="kanban"/);
+    assert.match(client, /\bLista\b/);
+    assert.match(client, /\bKanban\b/);
+    assert.match(client, /data-team-view-toggle/);
+    assert.match(client, /data-team-board/);
+    assert.match(client, /data-team-rows/);
+    assert.doesNotMatch(client, /draggable|onDragStart/);
     assert.match(client, /\/api\/identity\/members\/\$\{encodeURIComponent\(membershipId\)\}\/resend-access/);
     assert.match(client, /\/api\/identity\/invitations\/resend/);
     assert.match(client, /Invitaciones pendientes/);

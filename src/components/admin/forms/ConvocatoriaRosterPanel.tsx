@@ -6,12 +6,12 @@ import { Download, Pencil, Upload, UserPlus } from "lucide-react";
 import {
   AdminDataTable,
   ColumnActions,
-  FilterBar,
   LoadingState,
+  SearchBar,
   type AdminDataTableColumn,
 } from "@/components/admin/kit";
-import { Alert } from "@/components/ui";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { ConvocatoriaRosterStudentDialog } from "@/components/admin/forms/ConvocatoriaRosterStudentDialog";
 import {
@@ -31,7 +31,7 @@ import {
   buildRosterTemplateSheets,
   downloadRosterExcelFile,
 } from "@/lib/experience/forms/roster-export";
-import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
+import { formatGenerationCode, formatGenerationDisplay } from "@/lib/experience/forms/generations";
 import type {
   ConvocatoriaExcludedStudent,
   ConvocatoriaRosterStudent,
@@ -39,6 +39,12 @@ import type {
 
 interface ConvocatoriaRosterPanelProps {
   convocatoriaSlug: string;
+}
+
+function generationFilterLabel(display: string): string {
+  const code = formatGenerationCode(display);
+  if (code.startsWith("G-") && /pastores/i.test(display)) return `${code} · Pastores`;
+  return code;
 }
 
 const ROSTER_FORMAT_HELP =
@@ -307,85 +313,56 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
 
   if (loading) return <LoadingState variant="table" />;
 
+  const rosterCountLabel =
+    students.length === 0
+      ? "Sin alumnos en la nómina"
+      : filteredStudents.length === students.length
+        ? `${students.length} en la nómina`
+        : `${filteredStudents.length} de ${students.length}`;
+
   return (
-    <div className="space-y-4">
-      <Alert variant="info">
-        Puedes subir tu Excel con <strong>4 hojas</strong> (TSR. G-2023, G-2024, G-2025, G-2026)
-        o una sola lista con todas las generaciones. Busca participantes abajo, edítalos desde la
-        tabla o ajusta el listado en texto/Excel. Los desertores quedan fuera del listado público;
-        solo Asuntos Estudiantiles, Soporte o Administración pueden reincorporarlos aquí.
-      </Alert>
-
-      {excludedStudents.length > 0 ? (
-        <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-          <div>
-            <p className="font-medium text-foreground">
-              Fuera de esta convocatoria ({excludedStudents.length})
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              No pueden marcar asistencia por sí mismos. Reincorpóralos solo si Asuntos
-              Estudiantiles, Soporte o Administración lo autorizan.
-            </p>
-          </div>
-          <ul className="space-y-2">
-            {excludedStudents.map((blocked) => (
-              <li
-                key={blocked.id}
-                className="flex flex-col gap-2 rounded-lg border border-border bg-background px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground">{blocked.fullName}</p>
-                  <p className="text-sm text-muted">
-                    {formatGenerationDisplay(blocked.generation)}
-                    {blocked.reason ? ` · ${blocked.reason}` : ""}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={saving}
-                  onClick={() => void reinstateExcluded(blocked)}
-                >
-                  Reincorporar a la nómina
-                </Button>
-              </li>
-            ))}
-          </ul>
+    <div className="roster-hub">
+      <div className="roster-hub__bar">
+        <div>
+          <p className="roster-hub__count">{rosterCountLabel}</p>
+          <p className="roster-hub__hint">
+            Sube un Excel con una hoja por generación, o agrega alumnos uno a uno. Quienes desertan
+            no aparecen en el listado público.
+          </p>
         </div>
-      ) : null}
-
-      <div className="flex flex-wrap gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv,.txt,.xlsx,.xls"
-          className="sr-only"
-          onChange={(event) => void handleFileChange(event)}
-        />
-        <Button variant="primary" type="button" onClick={openAddDialog}>
-          <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-          Agregar alumno individual
-        </Button>
-        <Button
-          variant="secondary"
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          loading={importing}
-        >
-          <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
-          Subir Excel o CSV
-        </Button>
-        <Button variant="outline" type="button" onClick={() => void handleDownloadTemplate()}>
-          <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-          Descargar plantilla Excel
-        </Button>
-        {students.length > 0 ? (
-          <Button variant="outline" type="button" onClick={() => void handleDownloadList()}>
-            <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-            Descargar listado Excel
+        <div className="roster-hub__actions">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.txt,.xlsx,.xls"
+            className="sr-only"
+            onChange={(event) => void handleFileChange(event)}
+          />
+          <Button variant="ghost" size="sm" type="button" onClick={() => void handleDownloadTemplate()}>
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+            Plantilla
           </Button>
-        ) : null}
+          {students.length > 0 ? (
+            <Button variant="ghost" size="sm" type="button" onClick={() => void handleDownloadList()}>
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              Descargar
+            </Button>
+          ) : null}
+          <Button variant="outline" size="sm" type="button" onClick={openAddDialog}>
+            <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
+            Agregar alumno
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            loading={importing}
+          >
+            <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+            Subir Excel
+          </Button>
+        </div>
       </div>
 
       {sheetSummary.length > 1 ? (
@@ -403,56 +380,66 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
       ) : null}
 
       {students.length > 0 ? (
-        <div className="space-y-3 rounded-xl border border-border bg-background p-4">
-          <FilterBar
-            search={{
-              placeholder: "Nombre, apellido o RUT…",
-              value: searchQuery,
-              onChange: setSearchQuery,
-            }}
-            filters={
-              generationSummary.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  <Button
+        <div className="space-y-3">
+          <div className="roster-hub__filters">
+            {generationSummary.length > 0 ? (
+              <div className="forms-hub__segments roster-hub__generations" role="group" aria-label="Generación">
+                <button
+                  type="button"
+                  className={cn(
+                    "forms-hub__segment",
+                    generationFilter === null && "forms-hub__segment--active"
+                  )}
+                  aria-pressed={generationFilter === null}
+                  onClick={() => setGenerationFilter(null)}
+                >
+                  Todas
+                  <span className="forms-hub__segment-count">{students.length}</span>
+                </button>
+                {generationSummary.map((item) => (
+                  <button
+                    key={item.generation}
                     type="button"
-                    size="sm"
-                    variant={generationFilter === null ? "primary" : "outline"}
-                    onClick={() => setGenerationFilter(null)}
+                    className={cn(
+                      "forms-hub__segment",
+                      generationFilter === item.generation && "forms-hub__segment--active"
+                    )}
+                    aria-pressed={generationFilter === item.generation}
+                    title={item.generation}
+                    onClick={() =>
+                      setGenerationFilter((current) =>
+                        current === item.generation ? null : item.generation
+                      )
+                    }
                   >
-                    Todas ({students.length})
-                  </Button>
-                  {generationSummary.map((item) => (
-                    <Button
-                      key={item.generation}
-                      type="button"
-                      size="sm"
-                      variant={generationFilter === item.generation ? "primary" : "outline"}
-                      onClick={() =>
-                        setGenerationFilter((current) =>
-                          current === item.generation ? null : item.generation
-                        )
-                      }
-                    >
-                      {item.generation}: {item.count}
-                    </Button>
-                  ))}
-                </div>
-              ) : undefined
-            }
-            onReset={
-              searchQuery || generationFilter
-                ? () => {
+                    {generationFilterLabel(item.generation)}
+                    <span className="forms-hub__segment-count">{item.count}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className="roster-hub__search-row">
+              <SearchBar
+                className="roster-hub__search"
+                placeholder="Nombre, apellido o RUT…"
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
+              {searchQuery || generationFilter ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
                     setSearchQuery("");
                     setGenerationFilter(null);
-                  }
-                : undefined
-            }
-          />
-
-          <p className="text-sm text-muted">
-            {filteredStudents.length} de {students.length} visible
-            {filteredStudents.length === 1 ? "" : "s"}
-          </p>
+                  }}
+                >
+                  Limpiar
+                </Button>
+              ) : null}
+            </div>
+          </div>
 
           {suggestedStudents.length > 0 ? (
             <div className="space-y-2">
@@ -478,15 +465,16 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
             rowKey={(student) => student.id}
             emptyTitle="Sin resultados"
             emptyDescription="No hay participantes que coincidan con la búsqueda o el filtro."
+            rowActionsLabel="Acciones"
             rowActions={(student) => (
               <ColumnActions>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => openEditDialog(student)}
                 >
-                  <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                   Editar
                 </Button>
               </ColumnActions>
@@ -495,11 +483,50 @@ export function ConvocatoriaRosterPanel({ convocatoriaSlug }: ConvocatoriaRoster
         </div>
       ) : null}
 
-      <details className="rounded-xl border border-border bg-background-muted/20">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground">
-          Edición avanzada en texto (CSV)
-        </summary>
-        <div className="space-y-3 border-t border-border p-4">
+      {excludedStudents.length > 0 ? (
+        <details className="roster-hub__aside">
+          <summary className="roster-hub__summary">
+            Fuera de esta convocatoria
+            <span className="roster-hub__count-pill">{excludedStudents.length}</span>
+          </summary>
+          <div className="roster-hub__aside-body">
+            <p className="roster-hub__aside-note">
+              No pueden marcar asistencia por sí mismos. Reincorpóralos solo si Asuntos
+              Estudiantiles, Soporte o Administración lo autorizan.
+            </p>
+            <ul className="roster-hub__excluded">
+              {excludedStudents.map((blocked) => (
+                <li key={blocked.id} className="roster-hub__excluded-item">
+                  <div className="roster-hub__person">
+                    <p className="roster-hub__person-name">{blocked.fullName}</p>
+                    <p className="roster-hub__person-meta">
+                      {formatGenerationDisplay(blocked.generation)}
+                    </p>
+                    {blocked.reason ? (
+                      <p className="roster-hub__reason" title={blocked.reason}>
+                        {blocked.reason}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={saving}
+                    onClick={() => void reinstateExcluded(blocked)}
+                  >
+                    Reincorporar
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
+      ) : null}
+
+      <details className="roster-hub__advanced">
+        <summary className="roster-hub__summary">Edición avanzada en texto (CSV)</summary>
+        <div className="roster-hub__advanced-body space-y-3">
           <Textarea
             label="Listado de alumnos"
             helper={ROSTER_FORMAT_HELP}

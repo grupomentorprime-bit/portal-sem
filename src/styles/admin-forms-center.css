@@ -676,12 +676,54 @@
 
 /* ─── Detalle de formulario (compacto) ─────────────────────── */
 
+.admin-form-detail__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem 0.5rem;
+}
+
+.admin-form-detail__header-nav,
+.admin-form-detail__header-commit {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.admin-form-detail__header-nav {
+  margin-right: 0.15rem;
+  padding-right: 0.65rem;
+  border-right: 1px solid var(--border);
+}
+
+.admin-form-detail__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
 .admin-form-detail__summary {
   margin-bottom: 1.25rem;
   padding: 0.875rem 1rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--background-muted, var(--gray-50));
+}
+
+.admin-form-detail__workspace {
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--admin-border-subtle);
+  background: var(--admin-surface, white);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.admin-form-detail__panel {
+  padding: 1rem 1.1rem 1.25rem;
 }
 
 .admin-form-detail__summary-main {
@@ -746,9 +788,7 @@
 }
 
 .admin-form-detail__hint {
-  margin: 0.75rem 0 0;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
+  margin: -0.35rem 0 0.85rem;
   font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--gray-600);
@@ -757,35 +797,45 @@
 .admin-form-detail__tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-bottom: 0.5rem;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0.45rem 0.65rem 0;
+  border-bottom: 1px solid var(--admin-border-subtle);
+  background: color-mix(in srgb, var(--admin-surface-muted, var(--gray-50)) 72%, white);
 }
 
 .admin-form-detail__tab {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  height: 2.25rem;
-  padding: 0 0.875rem;
-  border-radius: var(--radius-md);
+  height: 2.35rem;
+  padding: 0 0.9rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0.65rem 0.65rem 0 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--gray-600);
-  background: white;
-  border: 1px solid var(--border);
+  color: var(--muted, var(--gray-600));
+  background: transparent;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .admin-form-detail__tab:hover {
-  border-color: color-mix(in srgb, var(--sem-accent) 45%, var(--border));
-  color: var(--sem-primary);
+  color: var(--foreground);
+  background: color-mix(in srgb, white 70%, transparent);
 }
 
-.admin-form-detail__tab--active {
-  background: var(--sem-primary);
-  border-color: var(--sem-primary);
-  color: white;
+.admin-form-detail__tab--active,
+.admin-form-detail__tab--active:hover {
+  background: var(--admin-surface, white);
+  border-bottom-color: var(--color-primary);
+  color: var(--foreground);
+}
+
+.admin-form-detail__tab:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: -2px;
 }
 
 .admin-form-detail__section-nav {
@@ -1268,5 +1318,418 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: white;
+}
+
+/* ─── Hub de formularios (listado) ─────────────────────────── */
+
+.forms-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.forms-hub__kpi {
+  min-height: 100%;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.forms-hub__kpi[role="button"]:hover {
+  transform: translateY(-1px);
+}
+
+.forms-hub__kpi--selected {
+  box-shadow:
+    var(--admin-shadow-card),
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 32%, transparent);
+}
+
+.forms-hub__workspace {
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--admin-border-subtle);
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.forms-hub__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--admin-border-subtle);
+  background: color-mix(in srgb, var(--admin-surface-muted, var(--background-soft)) 80%, white);
+}
+
+.forms-hub__segments {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border-subtle);
+  background: color-mix(in srgb, var(--background) 55%, var(--admin-surface-muted, var(--background-soft)));
+}
+
+.forms-hub__segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.85rem;
+  padding: 0.2rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.forms-hub__segment:hover {
+  color: var(--foreground);
+}
+
+.forms-hub__segment:focus-visible,
+.forms-hub__kpi:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+.forms-hub__segment--active {
+  background: var(--admin-surface, white);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--sem-primary) 8%, transparent);
+}
+
+.forms-hub__segment-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.forms-hub__segment--active .forms-hub__segment-count {
+  color: var(--color-primary);
+}
+
+.forms-hub__search {
+  flex: 1 1 14rem;
+  max-width: none;
+  margin-left: auto;
+}
+
+@media (min-width: 960px) {
+  .forms-hub__search {
+    max-width: 22rem;
+  }
+}
+
+.forms-hub__workspace .admin-data-table__scroll,
+.forms-hub__workspace .forms-hub__table {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.forms-hub__workspace thead th {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.forms-hub__workspace tbody td {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
+.forms-hub__name {
+  min-width: 12rem;
+  max-width: 34rem;
+}
+
+.forms-hub__title {
+  font-size: 0.9375rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+
+.forms-hub__subtitle {
+  display: -webkit-box;
+  margin: 0.15rem 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.forms-hub__tipo {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--background-muted);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.forms-hub__tipo--convocatoria {
+  border-color: color-mix(in srgb, var(--color-secondary) 28%, var(--border));
+  background: var(--state-info-bg);
+  color: var(--state-info-fg);
+}
+
+.forms-hub__tipo--landing {
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--border));
+  background: color-mix(in srgb, var(--color-primary) 6%, white);
+  color: var(--foreground);
+}
+
+.forms-hub__actions > a,
+.forms-hub__actions > button {
+  min-width: 11.25rem;
+}
+
+.forms-hub__actions > a > * {
+  width: 100%;
+}
+
+/* ─── Nómina de convocatoria ───────────────────────────────── */
+
+.roster-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.roster-hub__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.roster-hub__count {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.roster-hub__hint {
+  margin: 0.2rem 0 0;
+  max-width: 36rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.roster-hub__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.roster-hub__filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.roster-hub__generations {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.roster-hub__generations .forms-hub__segment {
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--foreground);
+  box-shadow: none;
+}
+
+.roster-hub__generations .forms-hub__segment:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--color-primary) 6%, white);
+}
+
+.roster-hub__generations .forms-hub__segment--active,
+.roster-hub__generations .forms-hub__segment--active:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+  box-shadow: none;
+}
+
+.roster-hub__generations .forms-hub__segment-count {
+  color: var(--muted);
+}
+
+.roster-hub__generations .forms-hub__segment--active .forms-hub__segment-count {
+  color: color-mix(in srgb, white 78%, transparent);
+}
+
+.roster-hub__search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.roster-hub__search {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+}
+
+@media (max-width: 860px) {
+  .roster-hub__filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roster-hub__meta {
+  margin: -0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.roster-hub__aside,
+.roster-hub__advanced {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--admin-surface, white);
+}
+
+.roster-hub__aside {
+  border-color: color-mix(in srgb, var(--color-danger, var(--sem-primary)) 28%, var(--border));
+  background: color-mix(in srgb, var(--state-danger-bg) 55%, var(--admin-surface, var(--background)));
+}
+
+.roster-hub__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--foreground);
+  cursor: pointer;
+  list-style: none;
+}
+
+.roster-hub__summary::-webkit-details-marker {
+  display: none;
+}
+
+.roster-hub__summary::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+
+.roster-hub__aside[open] > .roster-hub__summary::before,
+.roster-hub__advanced[open] > .roster-hub__summary::before {
+  transform: rotate(45deg);
+}
+
+.roster-hub__count-pill {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.4rem;
+  justify-content: center;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: white;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.roster-hub__aside-body,
+.roster-hub__advanced-body {
+  padding: 0 1rem 1rem;
+}
+
+.roster-hub__aside-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.roster-hub__excluded {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roster-hub__excluded-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: white;
+}
+
+.roster-hub__person {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.roster-hub__person-name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.roster-hub__person-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.roster-hub__reason {
+  display: -webkit-box;
+  margin: 0.3rem 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--foreground);
 }
 
