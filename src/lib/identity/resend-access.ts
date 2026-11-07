@@ -31,7 +31,7 @@ async function deliverInvitationEmail(input: {
     token: input.token,
     expiresAt: input.expiresAt,
   });
-  if (!sent.ok) return { ok: false, error: sent.error, status: 502 };
+  if (!sent.ok) return { ok: false, error: sent.error, status: 422 };
   return { ok: true, email: input.email, message: input.message };
 }
 
@@ -94,7 +94,7 @@ export async function resendMemberAccessEmail(input: {
       to: email,
       displayName,
     });
-    if (!sent.ok) return { ok: false, error: sent.error, status: 502 };
+    if (!sent.ok) return { ok: false, error: sent.error, status: 422 };
     return {
       ok: true,
       email,

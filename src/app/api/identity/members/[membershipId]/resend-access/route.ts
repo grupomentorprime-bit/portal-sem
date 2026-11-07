@@ -16,6 +16,24 @@ interface RouteContext {
   params: Promise<{ membershipId: string }>;
 }
 
+const SEND_DEADLINE_MS = 8_000;
+
+function withDeadline<T>(work: Promise<T>, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), SEND_DEADLINE_MS);
+    work.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      }
+    );
+  });
+}
+
 export async function POST(_request: Request, context: RouteContext) {
   try {
     const ctx = await requirePermission("settings.team");
@@ -64,13 +82,20 @@ export async function POST(_request: Request, context: RouteContext) {
       return NextResponse.json({ ok: false, error: manageCheck.error }, { status: 403 });
     }
 
-    const result = await resendMemberAccessEmail({
-      tenantId: ctx.tenantId,
-      email: targetUser.email,
-      displayName: targetUser.displayName || targetUser.email,
-      roleIds: membership.roleIds,
-      invitedBy: ctx.user._id,
-    });
+    const result = await withDeadline(
+      resendMemberAccessEmail({
+        tenantId: ctx.tenantId,
+        email: targetUser.email,
+        displayName: targetUser.displayName || targetUser.email,
+        roleIds: membership.roleIds,
+        invitedBy: ctx.user._id,
+      }),
+      {
+        ok: false,
+        error: "El servicio de correo no respondió. Intenta de nuevo.",
+        status: 422,
+      }
+    );
     if (!result.ok) {
       return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
     }

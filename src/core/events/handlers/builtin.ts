@@ -44,7 +44,7 @@ export function registerNotificationHandlers(): void {
       const displayName = String(event.payload.displayName ?? "");
       const expiresAt = String(event.payload.expiresAt ?? "");
 
-      if (!email) return;
+      if (!email || event.payload.emailSent === true) return;
 
       const { findInvitationById } = await import("@/lib/identity/invitations");
       const invitation = await findInvitationById(event.entityId, event.tenantId);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { createInvitation, findInvitationById, listInvitationsByTenant, revokeInvitation, serializeInvitationWithoutToken } from "@/lib/identity/invitations";
+import { sendInvitationEmail } from "@/lib/notifications/email";
 import { findMembership } from "@/lib/identity/memberships";
 import { ensureTenantRoles, findRoleByCode, findRoleByName, getCallerRoleCode, getRoleCode } from "@/lib/identity/roles";
 import { writeAudit } from "@/lib/identity/audit";
@@ -137,6 +138,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const sent = await sendInvitationEmail({
+      tenantId: ctx.tenantId,
+      to: invitation.email,
+      displayName: invitation.displayName,
+      token: invitation.token,
+      expiresAt: invitation.expiresAt,
+    });
+    if (!sent.ok) {
+      return NextResponse.json({ ok: false, error: sent.error }, { status: 422 });
+    }
+
     if (!ctx.compatMode) {
       await writeAudit({
         tenantId: ctx.tenantId,
@@ -160,6 +172,7 @@ export async function POST(request: Request) {
         displayName: invitation.displayName,
         roleIds: invitation.roleIds,
         expiresAt: invitation.expiresAt,
+        emailSent: true,
       },
     }).catch(console.error);
 

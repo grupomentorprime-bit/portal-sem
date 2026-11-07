@@ -185,6 +185,8 @@ function publicEmailError(error: { name?: string }): string {
     case "invalid_parameter":
     case "missing_required_field":
       return "El correo no se pudo armar. Revisa el destinatario y vuelve a intentar.";
+    case "application_error":
+      return "El servicio de correo no respondió. Intenta de nuevo.";
     default:
       return "No se pudo enviar el correo.";
   }
@@ -203,17 +205,20 @@ export async function sendTransactionalHtmlEmail(input: {
   }
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: formatFromHeader(input.identity.displayName, getTechnicalMailbox()),
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      ...(input.identity.replyTo ? { replyTo: input.identity.replyTo } : {}),
-      attachments: input.attachments?.map((attachment) => ({
-        filename: attachment.filename,
-        content: attachment.content,
-      })),
-    });
+    const { data, error } = await resend.emails.send(
+      {
+        from: formatFromHeader(input.identity.displayName, getTechnicalMailbox()),
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        ...(input.identity.replyTo ? { replyTo: input.identity.replyTo } : {}),
+        attachments: input.attachments?.map((attachment) => ({
+          filename: attachment.filename,
+          content: attachment.content,
+        })),
+      },
+      { signal: AbortSignal.timeout(6_000) } as { headers?: HeadersInit }
+    );
 
     if (error) {
       logServerError("email", error);

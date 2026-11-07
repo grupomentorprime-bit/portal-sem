@@ -1,5 +1,5 @@
 /** Si Keycloak no responde, el reenvío sigue con el enlace para entrar. */
-export const ACCESS_PASSWORD_CHECK_MS = 7_000;
+export const ACCESS_PASSWORD_CHECK_MS = 2_500;
 
 /**
  * Espera la consulta de contraseña solo un momento.
