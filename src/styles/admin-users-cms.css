@@ -86,7 +86,7 @@
 }
 
 .users-cms-rows {
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--color-border);
   border-radius: 0.9rem;
   background: var(--color-background);
@@ -101,8 +101,20 @@
   background: var(--color-background);
 }
 
+.users-cms-person--list:first-child {
+  border-top-left-radius: 0.85rem;
+  border-top-right-radius: 0.85rem;
+}
+
 .users-cms-person--list:last-child {
   border-bottom: 0;
+  border-bottom-left-radius: 0.85rem;
+  border-bottom-right-radius: 0.85rem;
+}
+
+.users-cms-person--list:has([aria-expanded="true"]) {
+  position: relative;
+  z-index: 30;
 }
 
 .users-cms-person-main {

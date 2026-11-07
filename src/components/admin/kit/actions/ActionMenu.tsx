@@ -21,6 +21,7 @@ export interface ActionMenuProps {
 /** Menú de acciones compacto (⋯). */
 export function ActionMenu({ label = "Acciones", children, align = "end" }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +32,17 @@ export function ActionMenu({ label = "Acciones", children, align = "end" }: Acti
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
+  function toggle() {
+    if (!open && ref.current) {
+      const trigger = ref.current.getBoundingClientRect();
+      const estimatedMenuHeight = 148;
+      const spaceBelow = window.innerHeight - trigger.bottom;
+      const spaceAbove = trigger.top;
+      setOpenUp(spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow);
+    }
+    setOpen((value) => !value);
+  }
+
   return (
     <div ref={ref} className="relative inline-block">
       <Button
@@ -39,14 +51,15 @@ export function ActionMenu({ label = "Acciones", children, align = "end" }: Acti
         size="sm"
         aria-label={label}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
       >
         <MoreHorizontal className="h-4 w-4" />
       </Button>
       {open ? (
         <div
           className={cn(
-            "absolute z-50 mt-1 min-w-[10rem] rounded-lg border border-border bg-background py-1 shadow-[var(--shadow-lg)]",
+            "absolute z-50 min-w-[10rem] rounded-lg border border-border bg-background py-1 shadow-[var(--shadow-lg)]",
+            openUp ? "bottom-full mb-1" : "mt-1",
             align === "end" ? "right-0" : "left-0"
           )}
           role="menu"
