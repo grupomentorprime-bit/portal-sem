@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
+import { accessPasswordCheck } from "@/lib/identity/access-password-check";
 import { keycloakUserNeedsPassword } from "@/lib/identity/keycloak-admin";
 import {
   createInvitation,
@@ -84,7 +85,7 @@ export async function resendMemberAccessEmail(input: {
 
   const displayName = input.displayName.trim() || email;
   const needsPassword = isKeycloakOnlyAuth()
-    ? await keycloakUserNeedsPassword(email)
+    ? await accessPasswordCheck(keycloakUserNeedsPassword(email))
     : false;
 
   if (!needsPassword) {

@@ -89,8 +89,9 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ ok: true, email: result.email, message: result.message });
   } catch (error) {
     console.error(error);
+    const message = error instanceof Error ? error.message.trim() : "";
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "No se pudo enviar el correo." },
+      { ok: false, error: message || "No se pudo enviar el correo." },
       { status: 500 }
     );
   }

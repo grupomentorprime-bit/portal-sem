@@ -56,8 +56,13 @@ function roleRank(code: string | undefined): number {
 
 const LAST_ADMIN_API_HINT = /sin un Dueño o Administrador|LAST_SPACE_ADMIN|último administrador/i;
 
-function humanizeTeamError(raw: string | undefined, fallback: string): string {
-  const message = (raw ?? "").trim();
+function humanizeTeamError(raw: unknown, fallback: string): string {
+  const message =
+    typeof raw === "string"
+      ? raw.trim()
+      : raw && typeof raw === "object" && "message" in raw && typeof raw.message === "string"
+        ? raw.message.trim()
+        : "";
   if (!message) return fallback;
   if (LAST_ADMIN_API_HINT.test(message)) {
     return "No puedes quitar este acceso porque el Espacio debe tener al menos un administrador.";
@@ -272,7 +277,16 @@ export function UsuariosCmsClient() {
       );
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; message?: string };
       if (!res.ok || !data.ok) {
-        setActionError(humanizeTeamError(data.error, "No se pudo enviar el correo de acceso."));
+        const raw =
+          typeof data.error === "string" && data.error.trim()
+            ? data.error
+            : typeof data.message === "string"
+              ? data.message
+              : "";
+        const fallback = res.status
+          ? `No se pudo enviar el correo de acceso (${res.status}).`
+          : "No se pudo enviar el correo de acceso.";
+        setActionError(humanizeTeamError(raw, fallback));
         return;
       }
       const message =
@@ -285,7 +299,7 @@ export function UsuariosCmsClient() {
         description: message,
         confirmLabel: "Listo",
         hideCancel: true,
-      });
+      }).catch(() => undefined);
     } catch {
       setActionError("No se pudo enviar el correo de acceso.");
     } finally {

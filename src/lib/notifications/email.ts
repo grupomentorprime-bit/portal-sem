@@ -168,6 +168,28 @@ export async function sendInvitationEmail(
   });
 }
 
+function publicEmailError(error: { name?: string }): string {
+  switch (error.name) {
+    case "missing_api_key":
+    case "invalid_api_key":
+    case "restricted_api_key":
+      return "El correo transaccional no está configurado.";
+    case "invalid_from_address":
+      return "El remitente del correo no está verificado.";
+    case "monthly_quota_exceeded":
+    case "daily_quota_exceeded":
+      return "Se alcanzó el límite de correos. Intenta más tarde.";
+    case "rate_limit_exceeded":
+      return "Hay demasiados envíos seguidos. Espera un momento e intenta de nuevo.";
+    case "validation_error":
+    case "invalid_parameter":
+    case "missing_required_field":
+      return "El correo no se pudo armar. Revisa el destinatario y vuelve a intentar.";
+    default:
+      return "No se pudo enviar el correo.";
+  }
+}
+
 export async function sendTransactionalHtmlEmail(input: {
   to: string;
   subject: string;
@@ -180,22 +202,27 @@ export async function sendTransactionalHtmlEmail(input: {
     return { ok: false, error: "El correo transaccional no está configurado." };
   }
 
-  const { data, error } = await resend.emails.send({
-    from: formatFromHeader(input.identity.displayName, getTechnicalMailbox()),
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-    ...(input.identity.replyTo ? { replyTo: input.identity.replyTo } : {}),
-    attachments: input.attachments?.map((attachment) => ({
-      filename: attachment.filename,
-      content: attachment.content,
-    })),
-  });
+  try {
+    const { data, error } = await resend.emails.send({
+      from: formatFromHeader(input.identity.displayName, getTechnicalMailbox()),
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      ...(input.identity.replyTo ? { replyTo: input.identity.replyTo } : {}),
+      attachments: input.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+      })),
+    });
 
-  if (error) {
+    if (error) {
+      logServerError("email", error);
+      return { ok: false, error: publicEmailError(error) };
+    }
+
+    return { ok: true, id: data?.id };
+  } catch (error) {
     logServerError("email", error);
     return { ok: false, error: "No se pudo enviar el correo." };
   }
-
-  return { ok: true, id: data?.id };
 }

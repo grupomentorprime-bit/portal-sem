@@ -38,6 +38,23 @@ export interface SetKeycloakPasswordError {
   code: "not_configured" | "keycloak_error";
 }
 
+const KEYCLOAK_ADMIN_TIMEOUT_MS = 8_000;
+
+function keycloakSignal(): AbortSignal {
+  return AbortSignal.timeout(KEYCLOAK_ADMIN_TIMEOUT_MS);
+}
+
+async function keycloakFetch(url: string | URL, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: keycloakSignal() });
+  } catch (error) {
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      throw new Error("El servicio de identidad no respondió a tiempo.");
+    }
+    throw error;
+  }
+}
+
 function getKeycloakAdminConfig(): KeycloakAdminConfig | null {
   const keycloak = getKeycloakConfig();
   const adminUser = process.env.KEYCLOAK_ADMIN?.trim();
@@ -75,7 +92,7 @@ async function getAdminToken(config: KeycloakAdminConfig): Promise<string> {
     password: config.adminPassword,
   });
 
-  const res = await fetch(`${config.baseUrl}/realms/master/protocol/openid-connect/token`, {
+  const res = await keycloakFetch(`${config.baseUrl}/realms/master/protocol/openid-connect/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -110,7 +127,7 @@ async function findKeycloakUserId(
   url.searchParams.set("email", email);
   url.searchParams.set("exact", "true");
 
-  const res = await fetch(url, {
+  const res = await keycloakFetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -130,7 +147,7 @@ async function createKeycloakUserShell(
   input: ProvisionKeycloakUserInput
 ): Promise<string> {
   const { firstName, lastName } = splitDisplayName(input.displayName);
-  const res = await fetch(
+  const res = await keycloakFetch(
     `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users`,
     {
       method: "POST",
@@ -181,7 +198,7 @@ async function setKeycloakUserPassword(
   userId: string,
   password: string
 ): Promise<void> {
-  const res = await fetch(
+  const res = await keycloakFetch(
     `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users/${encodeURIComponent(userId)}/reset-password`,
     {
       method: "PUT",
@@ -213,7 +230,7 @@ export async function keycloakUserNeedsPassword(email: string): Promise<boolean>
     const userId = await findKeycloakUserId(config, token, email.toLowerCase().trim());
     if (!userId) return true;
 
-    const res = await fetch(
+    const res = await keycloakFetch(
       `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users/${encodeURIComponent(userId)}/credentials`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
