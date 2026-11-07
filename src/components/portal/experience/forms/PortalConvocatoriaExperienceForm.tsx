@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  alreadyRegisteredConfirmationMessage,
+  shouldShowConvocatoriaSubmitButton,
+  type ConvocatoriaRegistrationLookup,
+  type RegisteredAttendance,
+} from "@/lib/experience/forms/already-registered-confirmation";
 import {
   getUploadedJustificationAttachment,
   hasJustificationAttachment,
@@ -58,6 +66,11 @@ export function PortalConvocatoriaExperienceForm({
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submittedAttendance, setSubmittedAttendance] = useState<"yes" | "no" | null>(null);
+  const [registrationResult, setRegistrationResult] = useState<{
+    studentId: string;
+    registered: boolean;
+    attendance: RegisteredAttendance;
+  } | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
@@ -68,7 +81,92 @@ export function PortalConvocatoriaExperienceForm({
     [className]
   );
 
+  const registrationMode = String(values.registrationMode ?? "");
+  const selectedStudentId = String(values.studentId ?? "").trim();
+  const rosterSelected = registrationMode === "roster" && selectedStudentId.length > 0;
+  const matchedRegistration =
+    rosterSelected && registrationResult?.studentId === selectedStudentId
+      ? registrationResult
+      : null;
+  const registrationLookup: ConvocatoriaRegistrationLookup = !rosterSelected
+    ? "idle"
+    : !matchedRegistration
+      ? "pending"
+      : matchedRegistration.registered
+        ? "registered"
+        : "open";
+  const existingRegistration =
+    registrationResult?.registered && registrationResult.studentId === selectedStudentId
+      ? { attendance: registrationResult.attendance }
+      : null;
+
   const submitReady = useMemo(() => canSubmitConvocatoriaForm(values), [values]);
+  const showSubmit = shouldShowConvocatoriaSubmitButton({
+    registrationMode,
+    studentId: selectedStudentId,
+    lookup: registrationLookup,
+  });
+
+  const resetIdentity = useCallback(() => {
+    setRegistrationResult(null);
+    setGlobalError(null);
+    setErrors({});
+    setValidationSummary([]);
+    setValues((prev) => {
+      const next = { ...prev };
+      for (const key of [
+        "registrationMode",
+        "studentId",
+        "fullName",
+        "program",
+        "generation",
+        "rut",
+        "phone",
+        "email",
+        "attendance",
+        "notes",
+        "justification",
+        "justificationAttachment",
+        "justificationAttachmentFile",
+      ]) {
+        delete next[key];
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!rosterSelected) return;
+
+    const controller = new AbortController();
+    const studentId = selectedStudentId;
+
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/experience/forms/convocatorias/${encodeURIComponent(convocatoriaSlug)}/registration?studentId=${encodeURIComponent(studentId)}`,
+          { signal: controller.signal }
+        );
+        const data = (await res.json()) as {
+          ok?: boolean;
+          registered?: boolean;
+          attendance?: unknown;
+        };
+        if (controller.signal.aborted) return;
+        setRegistrationResult({
+          studentId,
+          registered: Boolean(data.ok && data.registered),
+          attendance:
+            data.attendance === "yes" || data.attendance === "no" ? data.attendance : null,
+        });
+      } catch {
+        if (controller.signal.aborted) return;
+        setRegistrationResult({ studentId, registered: false, attendance: null });
+      }
+    })();
+
+    return () => controller.abort();
+  }, [convocatoriaSlug, rosterSelected, selectedStudentId]);
 
   const handleChange = useCallback((name: string, value: unknown) => {
     setValues((prev) => {
@@ -182,6 +280,7 @@ export function PortalConvocatoriaExperienceForm({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!showSubmit) return;
     setGlobalError(null);
     setValidationSummary([]);
 
@@ -273,15 +372,26 @@ export function PortalConvocatoriaExperienceForm({
         message?: string;
         errors?: Record<string, string>;
         error?: string;
+        alreadyRegistered?: boolean;
+        attendance?: unknown;
         confirmationEmail?: { sent: boolean; reason?: string };
       };
 
       if (!payload.ok) {
-        const alreadyRegistered = isAlreadyRegisteredResponse(payload.errors, payload.error);
+        const alreadyRegistered =
+          payload.alreadyRegistered || isAlreadyRegisteredResponse(payload.errors, payload.error);
         if (alreadyRegistered) {
           setErrors({});
           setValidationSummary([]);
-          setGlobalError("Ya registraste una respuesta para esta convocatoria.");
+          setGlobalError(null);
+          setRegistrationResult({
+            studentId: String(values.studentId ?? "").trim(),
+            registered: true,
+            attendance:
+              payload.attendance === "yes" || payload.attendance === "no"
+                ? payload.attendance
+                : null,
+          });
           return;
         }
         if (payload.errors) {
@@ -303,11 +413,14 @@ export function PortalConvocatoriaExperienceForm({
           : null
       );
       setSuccessMessage(
-        confirmedAttendance && attendanceYesSuccessMessage
-          ? attendanceYesSuccessMessage
-          : declinedAttendance && attendanceNoMessage
-            ? attendanceNoMessage
-            : payload.message ?? form.postSubmit?.message ?? form.successMessage ?? "Formulario enviado correctamente."
+        firstFilled(
+          confirmedAttendance ? attendanceYesSuccessMessage : null,
+          declinedAttendance ? attendanceNoMessage : null,
+          payload.message,
+          form.postSubmit?.message,
+          form.successMessage,
+          "Formulario enviado correctamente."
+        )
       );
     } catch {
       setGlobalError(form.errorMessage);
@@ -315,6 +428,39 @@ export function PortalConvocatoriaExperienceForm({
       setSubmitting(false);
     }
   };
+
+  if (existingRegistration) {
+    return (
+      <div className={`${formClass} portal-experience-form--submitted`}>
+        <PortalFormSuccess
+          kicker="Registro confirmado"
+          title="Ya estás registrado"
+          message={alreadyRegisteredConfirmationMessage(existingRegistration.attendance)}
+          variant="overlay"
+          className="portal-experience-form__success--registered"
+        >
+          {existingRegistration.attendance === "yes" && programDownloadUrl ? (
+            <div className="convocatoria-program-download">
+              <a
+                className="convocatoria-program-download__button"
+                href={programDownloadUrl}
+                download
+              >
+                <Download aria-hidden="true" />
+                {programDownloadLabel?.trim() || "Descargar el programa"}
+              </a>
+              <p className="convocatoria-program-download__note">
+                También te lo enviamos adjunto en el correo de confirmación.
+              </p>
+            </div>
+          ) : null}
+          <Button type="button" variant="outline" onClick={resetIdentity}>
+            Buscar otro nombre
+          </Button>
+        </PortalFormSuccess>
+      </div>
+    );
+  }
 
   if (successMessage) {
     return (
@@ -344,6 +490,11 @@ export function PortalConvocatoriaExperienceForm({
   return (
     <form className={formClass} onSubmit={handleSubmit} noValidate aria-labelledby="portal-form-title">
       <PortalFormHeader form={form} overline={overline} title={title} description={description} />
+      {registrationLookup === "pending" ? (
+        <p className="portal-experience-form__identity-hint rounded-xl border border-dashed border-border bg-background-muted/25 px-4 py-3 text-sm text-muted" role="status">
+          Revisando si ya registraste tu respuesta…
+        </p>
+      ) : null}
       {validationSummary.length > 0 ? <PortalFormValidationSummary items={validationSummary} /> : null}
       {globalError ? <PortalFormError message={globalError} /> : null}
       <ConvocatoriaParticipantFields
@@ -358,9 +509,23 @@ export function PortalConvocatoriaExperienceForm({
         attendanceYesMessage={attendanceYesMessage}
         attendanceNoMessage={attendanceNoMessage}
       />
-      <PortalFormActions submitLabel={submitLabel} loading={submitting} disabled={!submitReady} />
+      {showSubmit ? (
+        <PortalFormActions
+          submitLabel={submitLabel}
+          loading={submitting}
+          disabled={!submitReady}
+        />
+      ) : null}
     </form>
   );
+}
+
+function firstFilled(...candidates: Array<string | null | undefined>): string {
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+    if (trimmed) return trimmed;
+  }
+  return "Formulario enviado correctamente.";
 }
 
 function isAlreadyRegisteredResponse(

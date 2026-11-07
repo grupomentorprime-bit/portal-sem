@@ -145,6 +145,8 @@
   padding: 2rem 1.5rem;
   text-align: center;
   outline: none;
+  scroll-margin-top: calc(var(--form-focused-header-h, 4.5rem) + 1rem);
+  scroll-margin-bottom: 1.5rem;
 }
 
 .portal-experience-form__success--overlay {
@@ -176,9 +178,10 @@
   inset: 0;
   z-index: var(--z-modal, 50);
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 1.25rem;
+  overflow-y: auto;
   background: color-mix(in srgb, var(--sem-primary) 45%, transparent);
   backdrop-filter: blur(4px);
   animation: portal-form-success-fade-in 0.25s ease both;
@@ -199,6 +202,50 @@
   width: 2.5rem;
   height: 2.5rem;
   color: color-mix(in srgb, var(--sem-success) 75%, var(--sem-primary));
+}
+
+.portal-experience-form__success-kicker {
+  margin: 0;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sem-success) 55%, var(--sem-primary));
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.portal-experience-form__success--registered {
+  width: min(100%, 36rem);
+  margin-block: auto;
+  padding: 2rem 1.5rem;
+  border-width: 3px;
+  border-color: var(--sem-success);
+  box-shadow:
+    0 16px 48px color-mix(in srgb, var(--sem-success) 28%, transparent),
+    0 0 0 8px color-mix(in srgb, var(--sem-success) 18%, transparent);
+}
+
+.portal-experience-form__success--registered .portal-experience-form__success-icon-wrap {
+  width: 4.75rem;
+  height: 4.75rem;
+}
+
+.portal-experience-form__success--registered .portal-experience-form__success-icon {
+  width: 2.8rem;
+  height: 2.8rem;
+}
+
+.portal-experience-form__success--registered .portal-experience-form__success-title {
+  font-size: clamp(1.85rem, 5vw, 2.4rem);
+  letter-spacing: -0.02em;
+}
+
+.portal-experience-form__success--registered .portal-experience-form__success-message {
+  font-size: clamp(1.125rem, 2.8vw, 1.35rem);
+  font-weight: 600;
+  max-width: 28rem;
 }
 
 .portal-experience-form__success-title {

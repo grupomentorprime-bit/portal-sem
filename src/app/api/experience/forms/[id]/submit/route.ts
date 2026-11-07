@@ -7,12 +7,13 @@ import { getFormExperienceUncached } from "@/lib/cms/form-experience";
 import {
   buildSelfRegisteredRosterStudent,
   CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE,
+  findConvocatoriaRegistrationByEmail,
+  findConvocatoriaRegistrationByStudentId,
   findConvocatoriaRosterStudent,
   findConvocatoriaRosterStudentByIdentity,
   findExcludedConvocatoriaStudent,
-  hasConvocatoriaSubmission,
-  hasConvocatoriaSubmissionByEmail,
   upsertConvocatoriaRosterStudent,
+  type ConvocatoriaRegistrationAttendance,
 } from "@/lib/experience/forms/roster";
 import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
 import { publicInternalError } from "@/core/security/public-error";
@@ -29,6 +30,19 @@ import { CUMPLE_FORM_ID } from "@/sites/cumple/site";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+function alreadyRegisteredResponse(field: string, attendance: ConvocatoriaRegistrationAttendance) {
+  return NextResponse.json(
+    {
+      ok: false,
+      alreadyRegistered: true,
+      attendance,
+      errors: { [field]: "Ya registraste una respuesta para esta convocatoria." },
+      error: "Ya registraste una respuesta para esta convocatoria.",
+    },
+    { status: 422 }
+  );
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
@@ -102,27 +116,16 @@ export async function POST(request: Request, { params }: RouteParams) {
         const useRosterMatch = rosterMatch && rosterGeneration !== "other";
 
         if (useRosterMatch) {
-          const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, rosterMatch.id);
-          if (alreadySubmitted) {
-            return NextResponse.json(
-              {
-                ok: false,
-                errors: { fullName: "Ya registraste una respuesta para esta convocatoria." },
-                error: "Ya existe una respuesta registrada con tu nombre.",
-              },
-              { status: 422 }
-            );
+          const byStudent = await findConvocatoriaRegistrationByStudentId(tenant, id, rosterMatch.id);
+          if (byStudent.registered) {
+            return alreadyRegisteredResponse("fullName", byStudent.attendance);
           }
 
-          if (email && (await hasConvocatoriaSubmissionByEmail(tenant, id, email))) {
-            return NextResponse.json(
-              {
-                ok: false,
-                errors: { email: "Ya existe una respuesta registrada con este correo." },
-                error: "Ya registraste una respuesta para esta convocatoria.",
-              },
-              { status: 422 }
-            );
+          if (email) {
+            const byEmail = await findConvocatoriaRegistrationByEmail(tenant, id, email);
+            if (byEmail.registered) {
+              return alreadyRegisteredResponse("email", byEmail.attendance);
+            }
           }
 
           const submittedPhone =
@@ -160,27 +163,20 @@ export async function POST(request: Request, { params }: RouteParams) {
             );
           }
 
-          if (email && (await hasConvocatoriaSubmissionByEmail(tenant, id, email))) {
-            return NextResponse.json(
-              {
-                ok: false,
-                errors: { email: "Ya existe una respuesta registrada con este correo." },
-                error: "Ya registraste una respuesta para esta convocatoria.",
-              },
-              { status: 422 }
-            );
+          if (email) {
+            const byEmail = await findConvocatoriaRegistrationByEmail(tenant, id, email);
+            if (byEmail.registered) {
+              return alreadyRegisteredResponse("email", byEmail.attendance);
+            }
           }
 
-          const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, rosterStudent.id);
-          if (alreadySubmitted) {
-            return NextResponse.json(
-              {
-                ok: false,
-                errors: { fullName: "Ya registraste una respuesta para esta convocatoria." },
-                error: "Ya existe una respuesta registrada con tu nombre.",
-              },
-              { status: 422 }
-            );
+          const byStudent = await findConvocatoriaRegistrationByStudentId(
+            tenant,
+            id,
+            rosterStudent.id
+          );
+          if (byStudent.registered) {
+            return alreadyRegisteredResponse("fullName", byStudent.attendance);
           }
 
           data = {
@@ -221,16 +217,9 @@ export async function POST(request: Request, { params }: RouteParams) {
           );
         }
 
-        const alreadySubmitted = await hasConvocatoriaSubmission(tenant, id, studentId);
-        if (alreadySubmitted) {
-          return NextResponse.json(
-            {
-              ok: false,
-              errors: { studentId: "Ya registraste una respuesta para esta convocatoria." },
-              error: "Ya existe una respuesta registrada con tu nombre.",
-            },
-            { status: 422 }
-          );
+        const byStudent = await findConvocatoriaRegistrationByStudentId(tenant, id, studentId);
+        if (byStudent.registered) {
+          return alreadyRegisteredResponse("studentId", byStudent.attendance);
         }
 
         const submittedPhone =

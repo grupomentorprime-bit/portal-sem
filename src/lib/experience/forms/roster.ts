@@ -13,7 +13,6 @@ import type {
   ConvocatoriaRosterStudent,
 } from "@/types/convocatoria-roster";
 import {
-  CONVOCATORIA_EXCLUSION_PUBLIC_MESSAGE,
   findExcludedStudentByIdentity,
   reconcileExcludedStudents,
 } from "@/lib/experience/forms/roster-exclusion";
@@ -191,18 +190,79 @@ export async function findConvocatoriaRosterStudent(
   return roster.students.find((student) => student.id === studentId) ?? null;
 }
 
+const SUBMISSIONS_COLLECTION = "experience_form_submissions";
+
+export type ConvocatoriaRegistrationAttendance = "yes" | "no" | null;
+
+export interface ConvocatoriaRegistrationStatus {
+  registered: boolean;
+  attendance: ConvocatoriaRegistrationAttendance;
+}
+
+function readRegistrationAttendance(value: unknown): ConvocatoriaRegistrationAttendance {
+  return value === "yes" || value === "no" ? value : null;
+}
+
+async function findConvocatoriaRegistration(
+  filter: Record<string, unknown>
+): Promise<ConvocatoriaRegistrationStatus> {
+  const db = await getDatabase();
+  const doc = await db.collection(SUBMISSIONS_COLLECTION).findOne(filter, {
+    projection: { "data.attendance": 1 },
+  });
+  if (!doc) return { registered: false, attendance: null };
+  const attendance = (doc as { data?: { attendance?: unknown } }).data?.attendance;
+  return { registered: true, attendance: readRegistrationAttendance(attendance) };
+}
+
+export async function findConvocatoriaRegistrationByStudentId(
+  tenant: string,
+  formId: string,
+  studentId: string
+): Promise<ConvocatoriaRegistrationStatus> {
+  const id = studentId.trim();
+  if (!id) return { registered: false, attendance: null };
+  return findConvocatoriaRegistration({
+    tenant,
+    formId,
+    "data.studentId": id,
+  });
+}
+
+function submissionEmailFilter(email: string): Record<string, unknown> | null {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return null;
+  return {
+    "data.email": {
+      $regex: new RegExp(
+        `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+        "i"
+      ),
+    },
+  };
+}
+
+export async function findConvocatoriaRegistrationByEmail(
+  tenant: string,
+  formId: string,
+  email: string
+): Promise<ConvocatoriaRegistrationStatus> {
+  const emailFilter = submissionEmailFilter(email);
+  if (!emailFilter) return { registered: false, attendance: null };
+  return findConvocatoriaRegistration({
+    tenant,
+    formId,
+    ...emailFilter,
+  });
+}
+
 export async function hasConvocatoriaSubmission(
   tenant: string,
   formId: string,
   studentId: string
 ): Promise<boolean> {
-  const db = await getDatabase();
-  const count = await db.collection("experience_form_submissions").countDocuments({
-    tenant,
-    formId,
-    "data.studentId": studentId,
-  });
-  return count > 0;
+  const status = await findConvocatoriaRegistrationByStudentId(tenant, formId, studentId);
+  return status.registered;
 }
 
 export function buildSelfRegisteredRosterStudent(input: {
@@ -307,14 +367,6 @@ export async function hasConvocatoriaSubmissionByEmail(
   formId: string,
   email: string
 ): Promise<boolean> {
-  const normalizedEmail = email.trim().toLowerCase();
-  if (!normalizedEmail) return false;
-
-  const db = await getDatabase();
-  const count = await db.collection("experience_form_submissions").countDocuments({
-    tenant,
-    formId,
-    "data.email": { $regex: new RegExp(`^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
-  });
-  return count > 0;
+  const status = await findConvocatoriaRegistrationByEmail(tenant, formId, email);
+  return status.registered;
 }
