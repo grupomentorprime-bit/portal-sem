@@ -1,3 +1,45 @@
+# Task 1 Report: Modelo puro SEM + remap
+
+## Goal
+Implement the pure SEM Admisión funnel helpers and the legacy status remap helper, with no UI or migration work.
+
+## What changed
+- Added `src/core/growth/sem-admision-funnel.ts`.
+- Added `tests/baseline/sem-admision-funnel.test.ts`.
+- Exported the new SEM Admisión helpers from `src/core/growth/index.ts`.
+
+## TDD Evidence
+
+### RED
+Test file added first:
+`tests/baseline/sem-admision-funnel.test.ts`
+
+Verified failure:
+- Command: `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`
+- Result: failed as expected with `Cannot find module '../../src/core/growth/sem-admision-funnel'`
+
+### GREEN
+Implemented the minimal helper module and barrel export:
+- `SEM_ADMISION_FUNNEL_NAME = "Admisión"`
+- `SEM_ADMISION_STAGE_KEYS` with the six SEM stages
+- `semAdmisionIntermediateStages()`
+- `semAdmisionStages()`
+- `isSemAdmisionStages()`
+- `mapLegacyStatusToSemAdmision()`
+
+Verified passing:
+- Command: `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`
+- Result: pass
+
+## Verification
+- Focused test file passed after implementation.
+- Lint diagnostics for edited files: no errors.
+
+## Commit
+- `5de113c` `feat(growth): modelo puro embudo Admisión SEM`
+
+## Notes
+- The worktree still has unrelated pre-existing modifications in `.superpowers/sdd/progress.md` and `.superpowers/sdd/task-1-brief.md`; դրանք were left untouched.
 # Task 1 — Núcleo puro y pruebas de aceptación
 
 Status: DONE_WITH_CONCERNS (decisiones de interpretación abajo)
@@ -36,3 +78,14 @@ Status: DONE_WITH_CONCERNS (decisiones de interpretación abajo)
 - Archivadas: suman en captación y `archivedNow` (subconjunto, no corte extra); fuera de cohorte.
 - No se tocaron otros archivos, migración 029, git config, ni datos. Sin push.
 - Los archivos nuevos se guardaron con LF; git avisa que los convertirá a CRLF (comportamiento del repo en Windows).
+
+## Review Fix Notes
+- `isSemAdmisionStages()` now requires both the six SEM intermediates and the four platform result stages.
+- Added a regression test covering the intermediates-only case so the validator fails when result stages are missing.
+
+## Test Command
+- `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`
+
+## Test Output
+- Initial run failed on `returns false for intermediates without result stages` with `true !== false`.
+- After the fix, the focused test suite passed: 3 tests, 0 failures.

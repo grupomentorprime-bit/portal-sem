@@ -4,6 +4,7 @@ import {
   SEM_ADMISION_FUNNEL_NAME,
   isSemAdmisionStages,
   mapLegacyStatusToSemAdmision,
+  semAdmisionIntermediateStages,
   semAdmisionStages,
 } from "../../src/core/growth/sem-admision-funnel";
 import { platformDefaultStages } from "../../src/core/growth/funnel-stages";
@@ -21,6 +22,10 @@ describe("sem admision funnel", () => {
     assert.ok(stages.some((s) => s.key === "won" && s.isResult));
     assert.equal(isSemAdmisionStages(stages), true);
     assert.equal(isSemAdmisionStages(platformDefaultStages()), false);
+  });
+
+  it("returns false for intermediates without result stages", () => {
+    assert.equal(isSemAdmisionStages(semAdmisionIntermediateStages()), false);
   });
 
   it("remapea open→interes, otras intermedias→contactado, y no toca resultados ni etapas SEM", () => {

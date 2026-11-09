@@ -59,11 +59,20 @@ export function isSemAdmisionStages(stages: GrowthFunnelStage[]): boolean {
     .filter((stage) => !stage.isResult && !isGrowthFunnelResultKey(stage.key))
     .slice()
     .sort((a, b) => a.position - b.position || a.key.localeCompare(b.key));
+  const results = stages
+    .filter((stage) => stage.isResult)
+    .slice();
   if (intermediates.length !== SEM_ADMISION_STAGE_KEYS.length) return false;
   if (
     !intermediates.every(
       (stage, index) => stage.key === SEM_ADMISION_STAGE_KEYS[index] && stage.active
     )
+  ) {
+    return false;
+  }
+  if (
+    results.length !== GROWTH_FUNNEL_RESULTS.length ||
+    !results.every((stage, index) => stage.key === GROWTH_FUNNEL_RESULTS[index].key && stage.isResult)
   ) {
     return false;
   }
