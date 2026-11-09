@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
 import { sortVentasQueueByPriority } from "../../src/lib/growth/ventas-board";
 
@@ -11,5 +14,36 @@ describe("cola ventas por prioridad comercial", () => {
     ] as any);
 
     assert.deepEqual(sorted.map((item) => item.id), ["a", "b", "c"]);
+  });
+
+  it("parsea la vista de ventas con cola como default", async () => {
+    const modulePath = resolve(process.cwd(), "src/lib/growth/ventas-vista.ts");
+    assert.equal(existsSync(modulePath), true);
+
+    const { parseGrowthVentasVista } = (await import(pathToFileURL(modulePath).href)) as {
+      parseGrowthVentasVista: (raw: string | undefined | null) => "cola" | "kanban" | "lista";
+    };
+
+    assert.equal(parseGrowthVentasVista(undefined), "cola");
+    assert.equal(parseGrowthVentasVista(""), "cola");
+    assert.equal(parseGrowthVentasVista("kanban"), "kanban");
+    assert.equal(parseGrowthVentasVista("lista"), "lista");
+    assert.equal(parseGrowthVentasVista("COLA"), "cola");
+  });
+
+  it("expone cola como vista predeterminada y en el switcher", () => {
+    const pageSource = readFileSync(
+      resolve(process.cwd(), "src/app/admin/ventas/page.tsx"),
+      "utf8"
+    );
+    const listSource = readFileSync(
+      resolve(process.cwd(), "src/components/admin/growth/VentasListClient.tsx"),
+      "utf8"
+    );
+
+    assert.match(pageSource, /parseGrowthVentasVista\(params\.vista\)/);
+    assert.match(listSource, /aria-pressed=\{vista === "cola"\}/);
+    assert.match(listSource, /pushFilters\(\{ vista: "cola" \}\)/);
+    assert.match(listSource, /Cola/);
   });
 });

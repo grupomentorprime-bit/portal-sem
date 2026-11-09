@@ -12,6 +12,7 @@ import {
   Handshake,
   LayoutGrid,
   List,
+  ListOrdered,
   MoreHorizontal,
   UserRound,
 } from "lucide-react";
@@ -42,6 +43,7 @@ import type {
   GrowthVentasQueueItemView,
   GrowthVentasStatusOption,
 } from "@/lib/growth/ventas-view";
+import type { GrowthVentasVista } from "@/lib/growth/ventas-vista";
 import { kanbanColumnWidth } from "@/lib/growth/kanban-column-width";
 import { cn } from "@/lib/utils";
 import { OwnerSelect } from "./OwnerSelect";
@@ -66,7 +68,7 @@ export interface VentasListClientProps {
   nextAction: string;
   band: string;
   mine: boolean;
-  vista: "lista" | "kanban";
+  vista: GrowthVentasVista;
   attention: VentasAttentionCounts;
   canOperate: boolean;
   members: Array<{ userId: string; label: string }>;
@@ -217,7 +219,7 @@ export function VentasListClient({
       nextAction?: string;
       band?: string;
       mine?: boolean;
-      vista?: "lista" | "kanban";
+      vista?: GrowthVentasVista;
     }) => {
       const params = new URLSearchParams();
       const nextQ = next.q ?? q;
@@ -235,7 +237,7 @@ export function VentasListClient({
       if (nextNext) params.set("nextAction", nextNext);
       if (nextBand) params.set("banda", nextBand);
       if (nextMine) params.set("mias", "1");
-      if (nextVista === "lista") params.set("vista", "lista");
+      if (nextVista !== "cola") params.set("vista", nextVista);
       const qs = params.toString();
       startTransition(() => {
         router.push(qs ? `/admin/ventas?${qs}` : "/admin/ventas");
@@ -274,6 +276,7 @@ export function VentasListClient({
   const hasFilters = Boolean(q || status || type || nextAction || funnel || band || mine);
   const isEmpty = items.length === 0;
   const isTrueEmpty = isEmpty && !hasFilters;
+  const isListView = vista === "cola" || vista === "lista";
   const attentionChips = [
     { key: "overdue", label: "Vencidas", count: attention.overdue },
     { key: "unfollowed", label: "Sin seguimiento", count: attention.unfollowed },
@@ -334,7 +337,7 @@ export function VentasListClient({
           className="h-10 shrink-0 rounded-xl"
           onClick={() =>
             startTransition(() => {
-              router.push(vista === "lista" ? "/admin/ventas?vista=lista" : "/admin/ventas");
+              router.push("/admin/ventas");
             })
           }
         >
@@ -427,6 +430,20 @@ export function VentasListClient({
         >
           <button
             type="button"
+            aria-pressed={vista === "cola"}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
+              vista === "cola"
+                ? "bg-[var(--growth-os-primary)] text-white"
+                : "text-muted hover:text-foreground"
+            )}
+            onClick={() => pushFilters({ vista: "cola" })}
+          >
+            <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+            Cola
+          </button>
+          <button
+            type="button"
             aria-pressed={vista === "kanban"}
             className={cn(
               "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
@@ -472,7 +489,7 @@ export function VentasListClient({
           {moveError}
         </p>
       ) : null}
-      {vista === "lista" && isEmpty ? (
+      {isListView && isEmpty ? (
         <EmptyState
           title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
           description={
@@ -481,61 +498,14 @@ export function VentasListClient({
           icon={<Handshake className="h-8 w-8" />}
         />
       ) : null}
-      {vista === "lista" && !isEmpty ? (
-        <ul className={cn("flex flex-col gap-3", (pending || moving) && "opacity-70 transition-opacity")}>
-          {items.map((item) => (
-            <li key={item.id} className={cn(rowClass, "px-4 py-4")}>
-              <Link
-                href={`/admin/ventas/${encodeURIComponent(item.id)}`}
-                className="flex items-start gap-4 no-underline"
-              >
-                <div className="min-w-0 flex-1 space-y-2.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[15px] font-semibold tracking-tight text-foreground">
-                      {item.personaDisplayName}
-                    </p>
-                    <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
-                  </div>
-
-                  <div>
-                    <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-                    <p
-                      className={cn(
-                        "text-[17px] font-semibold tracking-tight",
-                        item.hasNextAction ? "text-foreground" : "text-muted"
-                      )}
-                    >
-                      {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
-                    </p>
-                  </div>
-
-                  <p className="text-sm text-muted">
-                    {item.originLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.typeLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.funnelName}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.stageLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.priorityBand ? growthPriorityBandLabel(item.priorityBand) : item.statusLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.ownerLabel ?? "Sin responsable"}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
-                  </p>
-                </div>
-                <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted" />
-              </Link>
-              <OpportunityMoveControl
-                item={item}
-                canOperate={canOperate}
-                pending={pending || moving}
-                onMove={move}
-              />
-            </li>
-          ))}
-        </ul>
+      {isListView && !isEmpty ? (
+        <VentasQueueList
+          items={items}
+          vista={vista}
+          canOperate={canOperate}
+          pending={pending || moving}
+          onMove={move}
+        />
       ) : null}
       {vista === "kanban" ? (
         <KanbanBoard
@@ -551,6 +521,139 @@ export function VentasListClient({
         />
       ) : null}
     </AdminModulePage>
+  );
+}
+
+function VentasQueueList({
+  items,
+  vista,
+  canOperate,
+  pending,
+  onMove,
+}: {
+  items: GrowthVentasQueueItemView[];
+  vista: Extract<GrowthVentasVista, "cola" | "lista">;
+  canOperate: boolean;
+  pending: boolean;
+  onMove: (id: string, toState: string, label: string) => void;
+}) {
+  return (
+    <ul className={cn("flex flex-col gap-3", pending && "opacity-70 transition-opacity")}>
+      {items.map((item) => (
+        <li key={item.id} className={cn(rowClass, "px-4 py-4")}>
+          <Link
+            href={`/admin/ventas/${encodeURIComponent(item.id)}`}
+            className="flex items-start gap-4 no-underline"
+          >
+            {vista === "cola" ? <ColaRowBody item={item} /> : <ListaRowBody item={item} />}
+            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted" />
+          </Link>
+          <OpportunityMoveControl
+            item={item}
+            canOperate={canOperate}
+            pending={pending}
+            onMove={onMove}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ColaRowBody({ item }: { item: GrowthVentasQueueItemView }) {
+  return (
+    <div className="min-w-0 flex-1 space-y-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-[15px] font-semibold tracking-tight text-foreground">
+          {item.personaDisplayName}
+        </p>
+        <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
+        {item.priorityBand ? (
+          <span
+            className={cn(
+              "inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+              BAND_PILL[item.priorityBand]
+            )}
+          >
+            {growthPriorityBandLabel(item.priorityBand)}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="grid gap-2 text-sm sm:grid-cols-3">
+        <div className="min-w-0">
+          <p className={cn(aek.label, "mb-1")}>Etapa</p>
+          <p className="truncate text-foreground">{item.stageLabel}</p>
+        </div>
+        <div className="min-w-0">
+          <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
+          <p
+            className={cn(
+              "truncate font-medium",
+              item.hasNextAction ? "text-foreground" : "text-muted"
+            )}
+            title={item.hasNextAction ? item.nextActionLabel : undefined}
+          >
+            {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
+          </p>
+        </div>
+        <div className="min-w-0">
+          <p className={cn(aek.label, "mb-1")}>Responsable</p>
+          <p className={cn("truncate", item.ownerLabel ? "text-foreground" : "text-muted")}>
+            {item.ownerLabel ?? "Sin responsable"}
+          </p>
+        </div>
+      </div>
+
+      <p className="text-sm text-muted">
+        {item.funnelName}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.typeLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
+      </p>
+    </div>
+  );
+}
+
+function ListaRowBody({ item }: { item: GrowthVentasQueueItemView }) {
+  return (
+    <div className="min-w-0 flex-1 space-y-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-[15px] font-semibold tracking-tight text-foreground">
+          {item.personaDisplayName}
+        </p>
+        <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
+      </div>
+
+      <div>
+        <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
+        <p
+          className={cn(
+            "text-[17px] font-semibold tracking-tight",
+            item.hasNextAction ? "text-foreground" : "text-muted"
+          )}
+        >
+          {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
+        </p>
+      </div>
+
+      <p className="text-sm text-muted">
+        {item.originLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.typeLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.funnelName}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.stageLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.priorityBand ? growthPriorityBandLabel(item.priorityBand) : item.statusLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.ownerLabel ?? "Sin responsable"}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
+      </p>
+    </div>
   );
 }
 
