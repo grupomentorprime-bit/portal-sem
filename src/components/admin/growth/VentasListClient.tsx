@@ -504,6 +504,7 @@ export function VentasListClient({
       ) : null}
       {vista === "kanban" ? (
         <KanbanBoard
+          copy={copy}
           items={items}
           lanes={lanes}
           canOperate={canOperate}
@@ -653,6 +654,7 @@ function ListaRowBody({ item }: { item: GrowthVentasQueueItemView }) {
 }
 
 function KanbanBoard({
+  copy,
   items,
   lanes,
   canOperate,
@@ -663,6 +665,7 @@ function KanbanBoard({
   onMove,
   onReject,
 }: {
+  copy: ReturnType<typeof growthVentasPageCopy>;
   items: GrowthVentasQueueItemView[];
   lanes: GrowthVentasBoardLane[];
   canOperate: boolean;
