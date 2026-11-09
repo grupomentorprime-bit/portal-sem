@@ -79,6 +79,7 @@ export {
   SEM_ADMISION_STAGE_KEYS,
   isSemAdmisionStages,
   mapLegacyStatusToSemAdmision,
+  planSemAdmisionStatusRemaps,
   semAdmisionIntermediateStages,
   semAdmisionStages,
 } from "./sem-admision-funnel";
