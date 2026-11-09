@@ -98,6 +98,22 @@ export function growthVentasStatusOptions(
   return options;
 }
 
+export function sortVentasQueueByPriority<
+  T extends {
+    priorityRank: number;
+    priorityKey: number | null;
+    updatedAt: string;
+  }
+>(items: T[]): T[] {
+  return items.slice().sort((a, b) => {
+    if (a.priorityRank !== b.priorityRank) return a.priorityRank - b.priorityRank;
+    if (a.priorityKey != null && b.priorityKey != null && a.priorityKey !== b.priorityKey) {
+      return a.priorityKey - b.priorityKey;
+    }
+    return b.updatedAt.localeCompare(a.updatedAt);
+  });
+}
+
 function columnsForFunnel(
   stages: GrowthFunnelStage[],
   items: GrowthVentasQueueItemView[]
