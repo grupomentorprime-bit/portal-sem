@@ -7,7 +7,11 @@ import {
   semAdmisionIntermediateStages,
   semAdmisionStages,
 } from "../../src/core/growth/sem-admision-funnel";
+import { createMemoryFunnelDirectory } from "../../src/core/growth/funnel-memory";
+import { ensureGrowthFunnelsForTenant, applySemAdmisionDefaultFunnel } from "../../src/core/growth/funnels";
 import { platformDefaultStages } from "../../src/core/growth/funnel-stages";
+import { SEM_TENANT_ID } from "../../src/core/tenant/constants";
+import { stagesFromDefinition } from "../../src/core/growth/funnel-stages";
 
 describe("sem admision funnel", () => {
   it("define seis etapas con interes inicial y resultados de plataforma", () => {
@@ -35,5 +39,27 @@ describe("sem admision funnel", () => {
     assert.equal(mapLegacyStatusToSemAdmision("won"), null);
     assert.equal(mapLegacyStatusToSemAdmision("interes"), null);
     assert.equal(mapLegacyStatusToSemAdmision("orientacion"), null);
+  });
+
+  it("applySemAdmisionDefaultFunnel renombra default y deja etapas SEM; segunda pasada no cambia", async () => {
+    const directory = createMemoryFunnelDirectory();
+    await ensureGrowthFunnelsForTenant(directory, SEM_TENANT_ID, "2026-11-09T00:00:00.000Z");
+    const first = await applySemAdmisionDefaultFunnel(
+      directory,
+      SEM_TENANT_ID,
+      "2026-11-09T01:00:00.000Z"
+    );
+    assert.equal(first.changed, true);
+    assert.equal(first.funnel.name, "Admisión");
+    assert.equal(isSemAdmisionStages(first.stages), true);
+
+    const second = await applySemAdmisionDefaultFunnel(
+      directory,
+      SEM_TENANT_ID,
+      "2026-11-09T02:00:00.000Z"
+    );
+    assert.equal(second.changed, false);
+    const def = await directory.getDefinition(SEM_TENANT_ID, first.funnel.workflowDefinitionKey);
+    assert.equal(isSemAdmisionStages(stagesFromDefinition(def)), true);
   });
 });

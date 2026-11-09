@@ -17,6 +17,11 @@ import {
 } from "./funnel-stages";
 import { isGrowthOpportunityFinalStatus } from "./opportunity-definition";
 import {
+  SEM_ADMISION_FUNNEL_NAME,
+  isSemAdmisionStages,
+  semAdmisionStages,
+} from "./sem-admision-funnel";
+import {
   GROWTH_FUNNEL_DEFAULT_KEY,
   GROWTH_FUNNEL_DEFAULT_NAME,
   growthOpportunityDefinitionKey,
@@ -72,6 +77,21 @@ export async function listGrowthFunnelStages(
     funnel.workflowDefinitionKey
   );
   return stagesFromDefinition(definition);
+}
+
+export async function replaceGrowthFunnelStages(
+  directory: GrowthFunnelDirectory,
+  input: {
+    tenantId: string;
+    funnelKey: string;
+    stages: GrowthFunnelStage[];
+    now?: string;
+  }
+): Promise<{ ok: true; stages: GrowthFunnelStage[] } | { ok: false; reason: GrowthFunnelFailure }> {
+  const funnel = await directory.findFunnel(input.tenantId, input.funnelKey);
+  if (!funnel || funnel.tenantId !== input.tenantId) return { ok: false, reason: "not_found" };
+  const definition = await writeStages(directory, funnel, input.stages, nowIso(input.now));
+  return { ok: true, stages: stagesFromDefinition(definition) };
 }
 
 export async function growthFunnelInitialKeys(
@@ -220,6 +240,48 @@ export async function renameGrowthFunnel(
   const stages = await listGrowthFunnelStages(directory, input.tenantId, input.key);
   if (stages) await writeStages(directory, next, stages, now);
   return { ok: true, funnel: next };
+}
+
+export async function applySemAdmisionDefaultFunnel(
+  directory: GrowthFunnelDirectory,
+  tenantId: string,
+  now?: string
+): Promise<{ funnel: GrowthFunnel; stages: GrowthFunnelStage[]; changed: boolean }> {
+  const at = nowIso(now);
+  const funnel = await ensureGrowthFunnelsForTenant(directory, tenantId, at);
+  let current = funnel;
+  let changed = false;
+
+  if (current.name !== SEM_ADMISION_FUNNEL_NAME) {
+    const renamed = await renameGrowthFunnel(directory, {
+      tenantId,
+      key: current.key,
+      name: SEM_ADMISION_FUNNEL_NAME,
+      now: at,
+    });
+    if (renamed.ok) {
+      current = renamed.funnel;
+      changed = true;
+    }
+  }
+
+  const existing = stagesFromDefinition(
+    await directory.getDefinition(tenantId, current.workflowDefinitionKey)
+  );
+  if (isSemAdmisionStages(existing)) {
+    return { funnel: current, stages: existing, changed };
+  }
+
+  const replaced = await replaceGrowthFunnelStages(directory, {
+    tenantId,
+    funnelKey: current.key,
+    stages: semAdmisionStages(),
+    now: at,
+  });
+  if (!replaced.ok) {
+    return { funnel: current, stages: existing, changed };
+  }
+  return { funnel: current, stages: replaced.stages, changed: true };
 }
 
 export async function archiveGrowthFunnel(
