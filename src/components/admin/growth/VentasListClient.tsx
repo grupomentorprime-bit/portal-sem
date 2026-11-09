@@ -27,14 +27,9 @@ import {
   growthPriorityBandLabel,
   GROWTH_NO_NEXT_ACTION_LABEL,
   GROWTH_OPPORTUNITY_TYPE_FILTER_OPTIONS,
-  GROWTH_VENTAS_EMPTY_DESCRIPTION,
-  GROWTH_VENTAS_EMPTY_TITLE,
   GROWTH_VENTAS_LAST_ACTIVITY_LABEL,
-  GROWTH_VENTAS_NO_MATCH_DESCRIPTION,
-  GROWTH_VENTAS_NO_MATCH_TITLE,
-  GROWTH_VENTAS_PAGE_DESCRIPTION,
-  GROWTH_VENTAS_PAGE_TITLE,
   GROWTH_NEXT_ACTION_SECTION_LABEL,
+  growthVentasPageCopy,
 } from "@/lib/growth/labels";
 import type { GrowthPriorityBand } from "@/core/growth/priority";
 import type {
@@ -57,6 +52,7 @@ export interface VentasAttentionCounts {
 }
 
 export interface VentasListClientProps {
+  copy: ReturnType<typeof growthVentasPageCopy>;
   items: GrowthVentasQueueItemView[];
   funnels: GrowthVentasFunnelOption[];
   lanes: GrowthVentasBoardLane[];
@@ -188,6 +184,7 @@ async function requestOpportunityTransition(
 }
 
 export function VentasListClient({
+  copy,
   items,
   funnels,
   lanes,
@@ -351,18 +348,18 @@ export function VentasListClient({
     <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: GROWTH_VENTAS_PAGE_TITLE },
+        { label: copy.title },
       ]}
-      title={GROWTH_VENTAS_PAGE_TITLE}
+      title={copy.title}
       hideTitle
     >
       {dialog}
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-[1.7rem] font-bold tracking-tight text-foreground">
-            {GROWTH_VENTAS_PAGE_TITLE}
+            {copy.title}
           </h1>
-          <p className="mt-1 text-sm text-muted">{GROWTH_VENTAS_PAGE_DESCRIPTION}</p>
+          <p className="mt-1 text-sm text-muted">{copy.description}</p>
         </div>
         <label className="relative inline-flex h-10 max-w-full items-center gap-1.5 rounded-xl border border-[var(--admin-border-subtle)] bg-white pl-3 pr-9 text-sm shadow-sm">
           <span className="shrink-0 text-muted">Embudo:</span>
@@ -491,10 +488,8 @@ export function VentasListClient({
       ) : null}
       {isListView && isEmpty ? (
         <EmptyState
-          title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
-          description={
-            hasFilters ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION : GROWTH_VENTAS_EMPTY_DESCRIPTION
-          }
+          title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
+          description={hasFilters ? copy.noMatchDescription : copy.emptyDescription}
           icon={<Handshake className="h-8 w-8" />}
         />
       ) : null}
@@ -682,10 +677,8 @@ function KanbanBoard({
   if (lanes.length === 0) {
     return (
       <EmptyState
-        title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
-        description={
-          hasFilters ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION : GROWTH_VENTAS_EMPTY_DESCRIPTION
-        }
+        title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
+        description={hasFilters ? copy.noMatchDescription : copy.emptyDescription}
         icon={<Handshake className="h-8 w-8" />}
       />
     );
@@ -701,10 +694,10 @@ function KanbanBoard({
       `}</style>
       {isEmpty ? (
         <EmptyState
-          title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
+          title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
           description={
             hasFilters
-              ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION
+              ? copy.noMatchDescription
               : "El tablero muestra las etapas del embudo. Las oportunidades aparecerán en su columna."
           }
           icon={<Handshake className="h-8 w-8" />}
@@ -1096,3 +1089,5 @@ function OpportunityMoveControl({
     </form>
   );
 }
+
+

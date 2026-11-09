@@ -1,6 +1,7 @@
 import { VentasListClient } from "@/components/admin/growth/VentasListClient";
 import { can } from "@/core/identity/policies/engine";
 import { readCommercialPanel } from "@/lib/growth/commercial-read";
+import { growthVentasPageCopy } from "@/lib/growth/labels";
 import { readGrowthVentasBoard } from "@/lib/growth/ventas-read";
 import { parseGrowthVentasVista } from "@/lib/growth/ventas-vista";
 import { listGrowthSpaceMembers } from "@/lib/growth/space-members";
@@ -83,9 +84,11 @@ export default async function AdminVentasPage({ searchParams }: PageProps) {
     readCommercialPanel(tenantId, userId, canViewSpace),
   ]);
   const members = await listGrowthSpaceMembers(tenantId);
+  const copy = growthVentasPageCopy(tenantId);
 
   return (
     <VentasListClient
+      copy={copy}
       items={board.items}
       funnels={board.funnels}
       lanes={board.lanes}

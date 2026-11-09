@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
 import { sortVentasQueueByPriority } from "../../src/lib/growth/ventas-board";
+import { growthVentasPageCopy } from "../../src/lib/growth/labels";
+import { ADL_TENANT_ID, SEM_TENANT_ID } from "../../src/core/tenant/constants";
 
 describe("cola ventas por prioridad comercial", () => {
   it("ordena overdue antes que unfollowed y current", () => {
@@ -45,5 +47,10 @@ describe("cola ventas por prioridad comercial", () => {
     assert.match(listSource, /aria-pressed=\{vista === "cola"\}/);
     assert.match(listSource, /pushFilters\(\{ vista: "cola" \}\)/);
     assert.match(listSource, /Cola/);
+  });
+
+  it("usa copy SEM en la página de ventas", () => {
+    assert.equal(growthVentasPageCopy(SEM_TENANT_ID).title, "Admisión");
+    assert.equal(growthVentasPageCopy(ADL_TENANT_ID).title, "Ventas");
   });
 });

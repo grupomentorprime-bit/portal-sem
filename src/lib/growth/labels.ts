@@ -12,6 +12,7 @@ import {
   type GrowthOrigin,
   type GrowthOriginKind,
 } from "@/core/growth/types";
+import { isSemTenant } from "@/core/tenant/is-sem";
 
 const ORIGIN_KIND_LABELS: Record<GrowthOriginKind, string> = {
   admission: "Admisión",
@@ -222,6 +223,35 @@ export const GROWTH_VENTAS_NOTE_KIND_LABEL = "Nota";
 export const GROWTH_VENTAS_CONTACT_KIND_LABEL = "Contacto";
 export const GROWTH_VENTAS_FOLLOW_UP_PLACEHOLDER =
   "Conversé con María. Quiere matricularse la próxima semana.";
+
+export function growthVentasPageCopy(tenantId: string): {
+  title: string;
+  description: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  noMatchTitle: string;
+  noMatchDescription: string;
+} {
+  if (isSemTenant(tenantId)) {
+    return {
+      title: "Admisión",
+      description: "Postulantes y próximas acciones del Espacio.",
+      emptyTitle: "Aún no hay postulantes en seguimiento",
+      emptyDescription:
+        "Cuando lleguen consultas o postulaciones, aparecerán aquí para darles seguimiento.",
+      noMatchTitle: "No encontramos postulantes",
+      noMatchDescription: "Prueba con otro nombre o quita los filtros.",
+    };
+  }
+  return {
+    title: GROWTH_VENTAS_PAGE_TITLE,
+    description: GROWTH_VENTAS_PAGE_DESCRIPTION,
+    emptyTitle: GROWTH_VENTAS_EMPTY_TITLE,
+    emptyDescription: GROWTH_VENTAS_EMPTY_DESCRIPTION,
+    noMatchTitle: GROWTH_VENTAS_NO_MATCH_TITLE,
+    noMatchDescription: GROWTH_VENTAS_NO_MATCH_DESCRIPTION,
+  };
+}
 
 /** OT-GROWTH-MESSAGING-004 — bandeja de mensajes. */
 export const GROWTH_MENSAJES_PAGE_TITLE = "Mensajes";
