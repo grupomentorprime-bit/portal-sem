@@ -4,6 +4,7 @@ import {
   SEM_ADMISION_FUNNEL_NAME,
   isSemAdmisionStages,
   mapLegacyStatusToSemAdmision,
+  planSemAdmisionStatusRemaps,
   semAdmisionIntermediateStages,
   semAdmisionStages,
 } from "../../src/core/growth/sem-admision-funnel";
@@ -39,6 +40,19 @@ describe("sem admision funnel", () => {
     assert.equal(mapLegacyStatusToSemAdmision("won"), null);
     assert.equal(mapLegacyStatusToSemAdmision("interes"), null);
     assert.equal(mapLegacyStatusToSemAdmision("orientacion"), null);
+  });
+
+  it("planSemAdmisionStatusRemaps solo lista abiertas legacy", () => {
+    const plan = planSemAdmisionStatusRemaps([
+      { _id: "1", status: "open" },
+      { _id: "2", status: "won" },
+      { _id: "3", status: "interes" },
+      { _id: "4", status: "seguimiento" },
+    ]);
+    assert.deepEqual(plan, [
+      { id: "1", from: "open", to: "interes" },
+      { id: "4", from: "seguimiento", to: "contactado" },
+    ]);
   });
 
   it("applySemAdmisionDefaultFunnel renombra default y deja etapas SEM; segunda pasada no cambia", async () => {

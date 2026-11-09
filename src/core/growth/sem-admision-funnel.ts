@@ -88,3 +88,15 @@ export function mapLegacyStatusToSemAdmision(status: string): string | null {
   if (key === "open") return "interes";
   return "contactado";
 }
+
+export function planSemAdmisionStatusRemaps(
+  rows: Array<{ _id: string; status: string }>
+): Array<{ id: string; from: string; to: string }> {
+  const out: Array<{ id: string; from: string; to: string }> = [];
+  for (const row of rows) {
+    const to = mapLegacyStatusToSemAdmision(row.status);
+    if (!to || to === row.status) continue;
+    out.push({ id: row._id, from: row.status, to });
+  }
+  return out;
+}
