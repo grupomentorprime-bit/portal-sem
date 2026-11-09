@@ -231,6 +231,7 @@ export function growthVentasPageCopy(tenantId: string): {
   emptyDescription: string;
   noMatchTitle: string;
   noMatchDescription: string;
+  columnEmptyLabel: string;
 } {
   if (isSemTenant(tenantId)) {
     return {
@@ -241,6 +242,7 @@ export function growthVentasPageCopy(tenantId: string): {
         "Cuando lleguen consultas o postulaciones, aparecerán aquí para darles seguimiento.",
       noMatchTitle: "No encontramos postulantes",
       noMatchDescription: "Prueba con otro nombre o quita los filtros.",
+      columnEmptyLabel: "Sin postulantes en esta etapa",
     };
   }
   return {
@@ -250,6 +252,7 @@ export function growthVentasPageCopy(tenantId: string): {
     emptyDescription: GROWTH_VENTAS_EMPTY_DESCRIPTION,
     noMatchTitle: GROWTH_VENTAS_NO_MATCH_TITLE,
     noMatchDescription: GROWTH_VENTAS_NO_MATCH_DESCRIPTION,
+    columnEmptyLabel: "Sin elementos en esta etapa",
   };
 }
 

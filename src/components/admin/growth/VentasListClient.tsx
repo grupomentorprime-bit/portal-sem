@@ -39,6 +39,7 @@ import type {
   GrowthVentasStatusOption,
 } from "@/lib/growth/ventas-view";
 import type { GrowthVentasVista } from "@/lib/growth/ventas-vista";
+import { filterVentasColaItems } from "@/lib/growth/ventas-board";
 import { kanbanColumnWidth } from "@/lib/growth/kanban-column-width";
 import { cn } from "@/lib/utils";
 import { OwnerSelect } from "./OwnerSelect";
@@ -271,9 +272,11 @@ export function VentasListClient({
   );
 
   const hasFilters = Boolean(q || status || type || nextAction || funnel || band || mine);
-  const isEmpty = items.length === 0;
-  const isTrueEmpty = isEmpty && !hasFilters;
   const isListView = vista === "cola" || vista === "lista";
+  const queueItems = vista === "cola" ? filterVentasColaItems(items) : items;
+  const isEmpty = items.length === 0;
+  const isListEmpty = queueItems.length === 0;
+  const isTrueEmpty = (isListView ? isListEmpty : isEmpty) && !hasFilters;
   const attentionChips = [
     { key: "overdue", label: "Vencidas", count: attention.overdue },
     { key: "unfollowed", label: "Sin seguimiento", count: attention.unfollowed },
@@ -486,16 +489,16 @@ export function VentasListClient({
           {moveError}
         </p>
       ) : null}
-      {isListView && isEmpty ? (
+      {isListView && isListEmpty ? (
         <EmptyState
           title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
           description={hasFilters ? copy.noMatchDescription : copy.emptyDescription}
           icon={<Handshake className="h-8 w-8" />}
         />
       ) : null}
-      {isListView && !isEmpty ? (
+      {isListView && !isListEmpty ? (
         <VentasQueueList
-          items={items}
+          items={queueItems}
           vista={vista}
           canOperate={canOperate}
           pending={pending || moving}
@@ -799,7 +802,7 @@ function KanbanBoard({
                     </h3>
                     {cards.length === 0 ? (
                       <p className="flex flex-1 items-center justify-center px-2 py-4 text-center text-xs text-muted">
-                        Sin oportunidades
+                        {copy.columnEmptyLabel}
                       </p>
                     ) : (
                       <ul className="flex flex-col gap-1.5">

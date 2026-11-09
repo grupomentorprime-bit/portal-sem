@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
-import { sortVentasQueueByPriority } from "../../src/lib/growth/ventas-board";
+import { filterVentasColaItems, sortVentasQueueByPriority } from "../../src/lib/growth/ventas-board";
 import { growthVentasPageCopy } from "../../src/lib/growth/labels";
 import { ADL_TENANT_ID, SEM_TENANT_ID } from "../../src/core/tenant/constants";
 
@@ -16,6 +16,17 @@ describe("cola ventas por prioridad comercial", () => {
     ] as any);
 
     assert.deepEqual(sorted.map((item) => item.id), ["a", "b", "c"]);
+  });
+
+  it("cola filtra solo oportunidades abiertas", () => {
+    const visible = filterVentasColaItems([
+      { id: "a", status: "interes" },
+      { id: "b", status: "contactado" },
+      { id: "c", status: "won" },
+      { id: "d", status: "archived" },
+    ] as any);
+
+    assert.deepEqual(visible.map((item) => item.id), ["a", "b"]);
   });
 
   it("parsea la vista de ventas con cola como default", async () => {
@@ -46,11 +57,16 @@ describe("cola ventas por prioridad comercial", () => {
     assert.match(pageSource, /parseGrowthVentasVista\(params\.vista\)/);
     assert.match(listSource, /aria-pressed=\{vista === "cola"\}/);
     assert.match(listSource, /pushFilters\(\{ vista: "cola" \}\)/);
+    assert.match(listSource, /vista === "cola" \? filterVentasColaItems\(items\) : items/);
     assert.match(listSource, /Cola/);
   });
 
-  it("usa copy SEM en la página de ventas", () => {
+  it("usa copy SEM en la página de ventas y evita 'Sin oportunidades' en kanban", () => {
     assert.equal(growthVentasPageCopy(SEM_TENANT_ID).title, "Admisión");
+    assert.equal(
+      growthVentasPageCopy(SEM_TENANT_ID).columnEmptyLabel,
+      "Sin postulantes en esta etapa"
+    );
     assert.equal(growthVentasPageCopy(ADL_TENANT_ID).title, "Ventas");
   });
 });

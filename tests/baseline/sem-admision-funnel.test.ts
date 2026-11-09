@@ -4,6 +4,7 @@ import {
   SEM_ADMISION_FUNNEL_NAME,
   isSemAdmisionStages,
   mapLegacyStatusToSemAdmision,
+  mapLegacyStatusToSemAdmisionDetailed,
   planSemAdmisionStatusRemaps,
   semAdmisionIntermediateStages,
   semAdmisionStages,
@@ -33,13 +34,31 @@ describe("sem admision funnel", () => {
     assert.equal(isSemAdmisionStages(semAdmisionIntermediateStages()), false);
   });
 
-  it("remapea open→interes, otras intermedias→contactado, y no toca resultados ni etapas SEM", () => {
+  it("remapea estados legacy conocidos y deja intactos resultados o etapas SEM", () => {
     assert.equal(mapLegacyStatusToSemAdmision("open"), "interes");
     assert.equal(mapLegacyStatusToSemAdmision("in_follow_up"), "contactado");
     assert.equal(mapLegacyStatusToSemAdmision("en-seguimiento"), "contactado");
+    assert.equal(mapLegacyStatusToSemAdmision("seguimiento"), "contactado");
     assert.equal(mapLegacyStatusToSemAdmision("won"), null);
     assert.equal(mapLegacyStatusToSemAdmision("interes"), null);
     assert.equal(mapLegacyStatusToSemAdmision("orientacion"), null);
+  });
+
+  it("marca unknown open como interes con motivo para log", () => {
+    assert.deepEqual(mapLegacyStatusToSemAdmisionDetailed(""), {
+      to: "interes",
+      reason: "open",
+    });
+    assert.deepEqual(mapLegacyStatusToSemAdmisionDetailed("open"), {
+      to: "interes",
+      reason: "open",
+    });
+    assert.deepEqual(mapLegacyStatusToSemAdmisionDetailed("legacy-weird-stage"), {
+      to: "interes",
+      reason: "unknown_open",
+      from: "legacy-weird-stage",
+    });
+    assert.equal(mapLegacyStatusToSemAdmision("legacy-weird-stage"), "interes");
   });
 
   it("planSemAdmisionStatusRemaps solo lista abiertas legacy", () => {
@@ -47,11 +66,13 @@ describe("sem admision funnel", () => {
       { _id: "1", status: "open" },
       { _id: "2", status: "won" },
       { _id: "3", status: "interes" },
-      { _id: "4", status: "seguimiento" },
+      { _id: "4", status: "legacy-weird-stage" },
+      { _id: "5", status: "seguimiento" },
     ]);
     assert.deepEqual(plan, [
-      { id: "1", from: "open", to: "interes" },
-      { id: "4", from: "seguimiento", to: "contactado" },
+      { id: "1", from: "open", to: "interes", reason: "open" },
+      { id: "4", from: "legacy-weird-stage", to: "interes", reason: "unknown_open" },
+      { id: "5", from: "seguimiento", to: "contactado", reason: "legacy_follow_up" },
     ]);
   });
 

@@ -7,6 +7,7 @@ import { isGrowthOpportunityFinalStatus } from "@/core/growth/opportunity-defini
 import { intermediateStages } from "@/core/growth/funnel-stages";
 import {
   GROWTH_FUNNEL_RESULTS,
+  isGrowthFunnelResultKey,
   type GrowthFunnel,
   type GrowthFunnelStage,
 } from "@/core/growth/funnel-types";
@@ -112,6 +113,14 @@ export function sortVentasQueueByPriority<
     }
     return b.updatedAt.localeCompare(a.updatedAt);
   });
+}
+
+export function filterVentasColaItems<T extends { status: string }>(items: T[]): T[] {
+  return items.filter(
+    (item) =>
+      !isGrowthOpportunityFinalStatus(item.status) &&
+      !isGrowthFunnelResultKey(item.status)
+  );
 }
 
 function columnsForFunnel(

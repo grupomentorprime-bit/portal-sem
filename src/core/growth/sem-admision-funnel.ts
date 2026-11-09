@@ -28,6 +28,23 @@ const SEM_LABELS: Record<SemAdmisionStageKey, string> = {
 };
 
 const SEM_KEY_SET = new Set<string>(SEM_ADMISION_STAGE_KEYS);
+const LEGACY_FOLLOW_UP_KEYS = new Set([
+  "in_follow_up",
+  "in-follow-up",
+  "en-seguimiento",
+  "seguimiento",
+]);
+
+export type SemAdmisionLegacyRemapReason =
+  | "legacy_follow_up"
+  | "unknown_open"
+  | "open";
+
+export interface SemAdmisionLegacyRemapDetail {
+  to: SemAdmisionStageKey;
+  reason: SemAdmisionLegacyRemapReason;
+  from?: string;
+}
 
 export function semAdmisionIntermediateStages(): GrowthFunnelStage[] {
   return SEM_ADMISION_STAGE_KEYS.map((key, position) => ({
@@ -81,22 +98,42 @@ export function isSemAdmisionStages(stages: GrowthFunnelStage[]): boolean {
 
 /** null = no cambiar (resultado, o ya es etapa SEM). */
 export function mapLegacyStatusToSemAdmision(status: string): string | null {
-  const key = status.trim();
-  if (!key) return "interes";
+  return mapLegacyStatusToSemAdmisionDetailed(status)?.to ?? null;
+}
+
+/** null = no cambiar (resultado, o ya es etapa SEM). */
+export function mapLegacyStatusToSemAdmisionDetailed(
+  status: string
+): SemAdmisionLegacyRemapDetail | null {
+  const key = status.trim().toLowerCase();
+  if (!key || key === "open") return { to: "interes", reason: "open" };
   if (isGrowthOpportunityFinalStatus(key) || isGrowthFunnelResultKey(key)) return null;
   if (SEM_KEY_SET.has(key)) return null;
-  if (key === "open") return "interes";
-  return "contactado";
+  if (LEGACY_FOLLOW_UP_KEYS.has(key)) {
+    return { to: "contactado", reason: "legacy_follow_up" };
+  }
+  return { to: "interes", reason: "unknown_open", from: key };
 }
 
 export function planSemAdmisionStatusRemaps(
   rows: Array<{ _id: string; status: string }>
-): Array<{ id: string; from: string; to: string }> {
-  const out: Array<{ id: string; from: string; to: string }> = [];
+): Array<{
+  id: string;
+  from: string;
+  to: SemAdmisionStageKey;
+  reason: SemAdmisionLegacyRemapReason;
+}> {
+  const out: Array<{
+    id: string;
+    from: string;
+    to: SemAdmisionStageKey;
+    reason: SemAdmisionLegacyRemapReason;
+  }> = [];
   for (const row of rows) {
-    const to = mapLegacyStatusToSemAdmision(row.status);
-    if (!to || to === row.status) continue;
-    out.push({ id: row._id, from: row.status, to });
+    const from = row.status.trim().toLowerCase();
+    const remap = mapLegacyStatusToSemAdmisionDetailed(row.status);
+    if (!remap || remap.to === from) continue;
+    out.push({ id: row._id, from, to: remap.to, reason: remap.reason });
   }
   return out;
 }

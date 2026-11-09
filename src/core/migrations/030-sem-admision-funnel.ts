@@ -25,6 +25,7 @@ export const migration030SemAdmisionFunnel: MigrationDefinition = {
     );
 
     let remapped = 0;
+    let unknownOpenRemaps = 0;
     for (const item of plan) {
       await db.collection(GROWTH_OPORTUNIDADES_COLLECTION).updateOne(
         { tenantId: SEM_TENANT_ID, _id: item.id },
@@ -39,7 +40,12 @@ export const migration030SemAdmisionFunnel: MigrationDefinition = {
         { $set: { currentState: item.to } }
       );
       remapped += 1;
-      log(`remap opp=${item.id} ${item.from}->${item.to}`);
+      if (item.reason === "unknown_open") {
+        unknownOpenRemaps += 1;
+        log(`remap_unknown_open opp=${item.id} ${item.from}->${item.to}`);
+      } else {
+        log(`remap opp=${item.id} reason=${item.reason} ${item.from}->${item.to}`);
+      }
     }
 
     return {
@@ -48,6 +54,7 @@ export const migration030SemAdmisionFunnel: MigrationDefinition = {
       details: [
         `funnelChanged=${applied.changed}`,
         `remapped=${remapped}`,
+        `unknownOpenRemaps=${unknownOpenRemaps}`,
         `opps=${opps.length}`,
       ],
     };
