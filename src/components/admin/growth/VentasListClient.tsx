@@ -12,6 +12,7 @@ import {
   Handshake,
   LayoutGrid,
   List,
+  ListOrdered,
   MoreHorizontal,
   UserRound,
 } from "lucide-react";
@@ -26,14 +27,9 @@ import {
   growthPriorityBandLabel,
   GROWTH_NO_NEXT_ACTION_LABEL,
   GROWTH_OPPORTUNITY_TYPE_FILTER_OPTIONS,
-  GROWTH_VENTAS_EMPTY_DESCRIPTION,
-  GROWTH_VENTAS_EMPTY_TITLE,
   GROWTH_VENTAS_LAST_ACTIVITY_LABEL,
-  GROWTH_VENTAS_NO_MATCH_DESCRIPTION,
-  GROWTH_VENTAS_NO_MATCH_TITLE,
-  GROWTH_VENTAS_PAGE_DESCRIPTION,
-  GROWTH_VENTAS_PAGE_TITLE,
   GROWTH_NEXT_ACTION_SECTION_LABEL,
+  growthVentasPageCopy,
 } from "@/lib/growth/labels";
 import type { GrowthPriorityBand } from "@/core/growth/priority";
 import type {
@@ -42,6 +38,8 @@ import type {
   GrowthVentasQueueItemView,
   GrowthVentasStatusOption,
 } from "@/lib/growth/ventas-view";
+import type { GrowthVentasVista } from "@/lib/growth/ventas-vista";
+import { filterVentasColaItems } from "@/lib/growth/ventas-board";
 import { kanbanColumnWidth } from "@/lib/growth/kanban-column-width";
 import { cn } from "@/lib/utils";
 import { OwnerSelect } from "./OwnerSelect";
@@ -55,6 +53,7 @@ export interface VentasAttentionCounts {
 }
 
 export interface VentasListClientProps {
+  copy: ReturnType<typeof growthVentasPageCopy>;
   items: GrowthVentasQueueItemView[];
   funnels: GrowthVentasFunnelOption[];
   lanes: GrowthVentasBoardLane[];
@@ -66,7 +65,7 @@ export interface VentasListClientProps {
   nextAction: string;
   band: string;
   mine: boolean;
-  vista: "lista" | "kanban";
+  vista: GrowthVentasVista;
   attention: VentasAttentionCounts;
   canOperate: boolean;
   members: Array<{ userId: string; label: string }>;
@@ -186,6 +185,7 @@ async function requestOpportunityTransition(
 }
 
 export function VentasListClient({
+  copy,
   items,
   funnels,
   lanes,
@@ -217,7 +217,7 @@ export function VentasListClient({
       nextAction?: string;
       band?: string;
       mine?: boolean;
-      vista?: "lista" | "kanban";
+      vista?: GrowthVentasVista;
     }) => {
       const params = new URLSearchParams();
       const nextQ = next.q ?? q;
@@ -235,7 +235,7 @@ export function VentasListClient({
       if (nextNext) params.set("nextAction", nextNext);
       if (nextBand) params.set("banda", nextBand);
       if (nextMine) params.set("mias", "1");
-      if (nextVista === "lista") params.set("vista", "lista");
+      if (nextVista !== "cola") params.set("vista", nextVista);
       const qs = params.toString();
       startTransition(() => {
         router.push(qs ? `/admin/ventas?${qs}` : "/admin/ventas");
@@ -272,8 +272,11 @@ export function VentasListClient({
   );
 
   const hasFilters = Boolean(q || status || type || nextAction || funnel || band || mine);
+  const isListView = vista === "cola" || vista === "lista";
+  const queueItems = vista === "cola" ? filterVentasColaItems(items) : items;
   const isEmpty = items.length === 0;
-  const isTrueEmpty = isEmpty && !hasFilters;
+  const isListEmpty = queueItems.length === 0;
+  const isTrueEmpty = (isListView ? isListEmpty : isEmpty) && !hasFilters;
   const attentionChips = [
     { key: "overdue", label: "Vencidas", count: attention.overdue },
     { key: "unfollowed", label: "Sin seguimiento", count: attention.unfollowed },
@@ -334,7 +337,7 @@ export function VentasListClient({
           className="h-10 shrink-0 rounded-xl"
           onClick={() =>
             startTransition(() => {
-              router.push(vista === "lista" ? "/admin/ventas?vista=lista" : "/admin/ventas");
+              router.push("/admin/ventas");
             })
           }
         >
@@ -348,18 +351,18 @@ export function VentasListClient({
     <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: GROWTH_VENTAS_PAGE_TITLE },
+        { label: copy.title },
       ]}
-      title={GROWTH_VENTAS_PAGE_TITLE}
+      title={copy.title}
       hideTitle
     >
       {dialog}
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-[1.7rem] font-bold tracking-tight text-foreground">
-            {GROWTH_VENTAS_PAGE_TITLE}
+            {copy.title}
           </h1>
-          <p className="mt-1 text-sm text-muted">{GROWTH_VENTAS_PAGE_DESCRIPTION}</p>
+          <p className="mt-1 text-sm text-muted">{copy.description}</p>
         </div>
         <label className="relative inline-flex h-10 max-w-full items-center gap-1.5 rounded-xl border border-[var(--admin-border-subtle)] bg-white pl-3 pr-9 text-sm shadow-sm">
           <span className="shrink-0 text-muted">Embudo:</span>
@@ -427,6 +430,20 @@ export function VentasListClient({
         >
           <button
             type="button"
+            aria-pressed={vista === "cola"}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
+              vista === "cola"
+                ? "bg-[var(--growth-os-primary)] text-white"
+                : "text-muted hover:text-foreground"
+            )}
+            onClick={() => pushFilters({ vista: "cola" })}
+          >
+            <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+            Cola
+          </button>
+          <button
+            type="button"
             aria-pressed={vista === "kanban"}
             className={cn(
               "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
@@ -472,73 +489,25 @@ export function VentasListClient({
           {moveError}
         </p>
       ) : null}
-      {vista === "lista" && isEmpty ? (
+      {isListView && isListEmpty ? (
         <EmptyState
-          title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
-          description={
-            hasFilters ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION : GROWTH_VENTAS_EMPTY_DESCRIPTION
-          }
+          title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
+          description={hasFilters ? copy.noMatchDescription : copy.emptyDescription}
           icon={<Handshake className="h-8 w-8" />}
         />
       ) : null}
-      {vista === "lista" && !isEmpty ? (
-        <ul className={cn("flex flex-col gap-3", (pending || moving) && "opacity-70 transition-opacity")}>
-          {items.map((item) => (
-            <li key={item.id} className={cn(rowClass, "px-4 py-4")}>
-              <Link
-                href={`/admin/ventas/${encodeURIComponent(item.id)}`}
-                className="flex items-start gap-4 no-underline"
-              >
-                <div className="min-w-0 flex-1 space-y-2.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[15px] font-semibold tracking-tight text-foreground">
-                      {item.personaDisplayName}
-                    </p>
-                    <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
-                  </div>
-
-                  <div>
-                    <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-                    <p
-                      className={cn(
-                        "text-[17px] font-semibold tracking-tight",
-                        item.hasNextAction ? "text-foreground" : "text-muted"
-                      )}
-                    >
-                      {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
-                    </p>
-                  </div>
-
-                  <p className="text-sm text-muted">
-                    {item.originLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.typeLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.funnelName}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.stageLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.priorityBand ? growthPriorityBandLabel(item.priorityBand) : item.statusLabel}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {item.ownerLabel ?? "Sin responsable"}
-                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-                    {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
-                  </p>
-                </div>
-                <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted" />
-              </Link>
-              <OpportunityMoveControl
-                item={item}
-                canOperate={canOperate}
-                pending={pending || moving}
-                onMove={move}
-              />
-            </li>
-          ))}
-        </ul>
+      {isListView && !isListEmpty ? (
+        <VentasQueueList
+          items={queueItems}
+          vista={vista}
+          canOperate={canOperate}
+          pending={pending || moving}
+          onMove={move}
+        />
       ) : null}
       {vista === "kanban" ? (
         <KanbanBoard
+          copy={copy}
           items={items}
           lanes={lanes}
           canOperate={canOperate}
@@ -554,7 +523,141 @@ export function VentasListClient({
   );
 }
 
+function VentasQueueList({
+  items,
+  vista,
+  canOperate,
+  pending,
+  onMove,
+}: {
+  items: GrowthVentasQueueItemView[];
+  vista: Extract<GrowthVentasVista, "cola" | "lista">;
+  canOperate: boolean;
+  pending: boolean;
+  onMove: (id: string, toState: string, label: string) => void;
+}) {
+  return (
+    <ul className={cn("flex flex-col gap-3", pending && "opacity-70 transition-opacity")}>
+      {items.map((item) => (
+        <li key={item.id} className={cn(rowClass, "px-4 py-4")}>
+          <Link
+            href={`/admin/ventas/${encodeURIComponent(item.id)}`}
+            className="flex items-start gap-4 no-underline"
+          >
+            {vista === "cola" ? <ColaRowBody item={item} /> : <ListaRowBody item={item} />}
+            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted" />
+          </Link>
+          <OpportunityMoveControl
+            item={item}
+            canOperate={canOperate}
+            pending={pending}
+            onMove={onMove}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ColaRowBody({ item }: { item: GrowthVentasQueueItemView }) {
+  return (
+    <div className="min-w-0 flex-1 space-y-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-[15px] font-semibold tracking-tight text-foreground">
+          {item.personaDisplayName}
+        </p>
+        <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
+        {item.priorityBand ? (
+          <span
+            className={cn(
+              "inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+              BAND_PILL[item.priorityBand]
+            )}
+          >
+            {growthPriorityBandLabel(item.priorityBand)}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="grid gap-2 text-sm sm:grid-cols-3">
+        <div className="min-w-0">
+          <p className={cn(aek.label, "mb-1")}>Etapa</p>
+          <p className="truncate text-foreground">{item.stageLabel}</p>
+        </div>
+        <div className="min-w-0">
+          <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
+          <p
+            className={cn(
+              "truncate font-medium",
+              item.hasNextAction ? "text-foreground" : "text-muted"
+            )}
+            title={item.hasNextAction ? item.nextActionLabel : undefined}
+          >
+            {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
+          </p>
+        </div>
+        <div className="min-w-0">
+          <p className={cn(aek.label, "mb-1")}>Responsable</p>
+          <p className={cn("truncate", item.ownerLabel ? "text-foreground" : "text-muted")}>
+            {item.ownerLabel ?? "Sin responsable"}
+          </p>
+        </div>
+      </div>
+
+      <p className="text-sm text-muted">
+        {item.funnelName}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.typeLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
+      </p>
+    </div>
+  );
+}
+
+function ListaRowBody({ item }: { item: GrowthVentasQueueItemView }) {
+  return (
+    <div className="min-w-0 flex-1 space-y-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-[15px] font-semibold tracking-tight text-foreground">
+          {item.personaDisplayName}
+        </p>
+        <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
+      </div>
+
+      <div>
+        <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
+        <p
+          className={cn(
+            "text-[17px] font-semibold tracking-tight",
+            item.hasNextAction ? "text-foreground" : "text-muted"
+          )}
+        >
+          {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
+        </p>
+      </div>
+
+      <p className="text-sm text-muted">
+        {item.originLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.typeLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.funnelName}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.stageLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.priorityBand ? growthPriorityBandLabel(item.priorityBand) : item.statusLabel}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {item.ownerLabel ?? "Sin responsable"}
+        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+        {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
+      </p>
+    </div>
+  );
+}
+
 function KanbanBoard({
+  copy,
   items,
   lanes,
   canOperate,
@@ -565,6 +668,7 @@ function KanbanBoard({
   onMove,
   onReject,
 }: {
+  copy: ReturnType<typeof growthVentasPageCopy>;
   items: GrowthVentasQueueItemView[];
   lanes: GrowthVentasBoardLane[];
   canOperate: boolean;
@@ -579,10 +683,8 @@ function KanbanBoard({
   if (lanes.length === 0) {
     return (
       <EmptyState
-        title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
-        description={
-          hasFilters ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION : GROWTH_VENTAS_EMPTY_DESCRIPTION
-        }
+        title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
+        description={hasFilters ? copy.noMatchDescription : copy.emptyDescription}
         icon={<Handshake className="h-8 w-8" />}
       />
     );
@@ -598,10 +700,10 @@ function KanbanBoard({
       `}</style>
       {isEmpty ? (
         <EmptyState
-          title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
+          title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
           description={
             hasFilters
-              ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION
+              ? copy.noMatchDescription
               : "El tablero muestra las etapas del embudo. Las oportunidades aparecerán en su columna."
           }
           icon={<Handshake className="h-8 w-8" />}
@@ -700,7 +802,7 @@ function KanbanBoard({
                     </h3>
                     {cards.length === 0 ? (
                       <p className="flex flex-1 items-center justify-center px-2 py-4 text-center text-xs text-muted">
-                        Sin oportunidades
+                        {copy.columnEmptyLabel}
                       </p>
                     ) : (
                       <ul className="flex flex-col gap-1.5">
@@ -993,3 +1095,5 @@ function OpportunityMoveControl({
     </form>
   );
 }
+
+

@@ -55,6 +55,7 @@ import {
 import {
   growthVentasBoardLanes,
   growthVentasStatusOptions,
+  sortVentasQueueByPriority,
 } from "./ventas-board";
 import type {
   GrowthVentasBoardLane,
@@ -264,7 +265,8 @@ export async function readGrowthVentasBoard(
     }
   }
 
-  const items = oportunidades
+  const items = sortVentasQueueByPriority(
+    oportunidades
     .filter((oportunidad) => oportunidad.tenantId === tenantId)
     .map((oportunidad) =>
       presentQueueItem(
@@ -277,7 +279,8 @@ export async function readGrowthVentasBoard(
         config.staleAfterDays ?? 7,
         oportunidad.ownerUserId ? ownerLabels.get(oportunidad.ownerUserId) : undefined
       )
-    );
+    )
+  );
 
   const band = filters.band?.trim();
   const visible = items.filter((item) => {

@@ -7,6 +7,7 @@ import { isGrowthOpportunityFinalStatus } from "@/core/growth/opportunity-defini
 import { intermediateStages } from "@/core/growth/funnel-stages";
 import {
   GROWTH_FUNNEL_RESULTS,
+  isGrowthFunnelResultKey,
   type GrowthFunnel,
   type GrowthFunnelStage,
 } from "@/core/growth/funnel-types";
@@ -96,6 +97,30 @@ export function growthVentasStatusOptions(
     options.push({ value: result.key, label: result.label });
   }
   return options;
+}
+
+export function sortVentasQueueByPriority<
+  T extends {
+    priorityRank: number;
+    priorityKey: number | null;
+    updatedAt: string;
+  }
+>(items: T[]): T[] {
+  return items.slice().sort((a, b) => {
+    if (a.priorityRank !== b.priorityRank) return a.priorityRank - b.priorityRank;
+    if (a.priorityKey != null && b.priorityKey != null && a.priorityKey !== b.priorityKey) {
+      return a.priorityKey - b.priorityKey;
+    }
+    return b.updatedAt.localeCompare(a.updatedAt);
+  });
+}
+
+export function filterVentasColaItems<T extends { status: string }>(items: T[]): T[] {
+  return items.filter(
+    (item) =>
+      !isGrowthOpportunityFinalStatus(item.status) &&
+      !isGrowthFunnelResultKey(item.status)
+  );
 }
 
 function columnsForFunnel(

@@ -74,6 +74,16 @@ export {
   listAvailableGrowthOpportunityTransitions,
 } from "./opportunity-definition";
 export type { GrowthOpportunityAvailableTransition } from "./opportunity-definition";
+export {
+  SEM_ADMISION_FUNNEL_NAME,
+  SEM_ADMISION_STAGE_KEYS,
+  isSemAdmisionStages,
+  mapLegacyStatusToSemAdmision,
+  planSemAdmisionStatusRemaps,
+  semAdmisionIntermediateStages,
+  semAdmisionStages,
+} from "./sem-admision-funnel";
+export type { SemAdmisionStageKey } from "./sem-admision-funnel";
 export type { GrowthOpportunityStore } from "./opportunity-store";
 export type { GrowthOpportunityWorkflowPort } from "./opportunity-workflow-port";
 export {
