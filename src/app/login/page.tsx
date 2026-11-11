@@ -53,7 +53,8 @@ export default async function GrowthLoginPage({
     if (tenantId) {
       line = publicThresholdLine(await readSpaceAttentionCount(tenantId));
     }
-  } catch {
+  } catch (error) {
+    console.error("threshold.public", error);
     line = publicThresholdLine(null);
   }
 

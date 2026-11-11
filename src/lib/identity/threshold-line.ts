@@ -22,7 +22,8 @@ export function publicThresholdLine(count: number | null): string {
 }
 
 export function redirectPath(redirectTo: string): string {
-  return redirectTo.split("?")[0] ?? "";
+  const withoutFragment = redirectTo.split("#")[0] ?? "";
+  return withoutFragment.split("?")[0] ?? "";
 }
 
 export function crossingMayResolveAccess(path: string, hasTenant: boolean): boolean {

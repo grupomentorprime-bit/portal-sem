@@ -63,6 +63,14 @@ describe("frase de cruce", () => {
     assert.equal(redirectPath("/admin?empty=1"), "/admin");
   });
 
+  it("quita el fragmento del path", () => {
+    assert.equal(redirectPath("/admin#x"), "/admin");
+  });
+
+  it("quita query y fragmento del path", () => {
+    assert.equal(redirectPath("/admin?preset=1#x"), "/admin");
+  });
+
   it("plataforma, sin Espacio y otro path no anuncian llegada", () => {
     assert.deepEqual(
       crossingThresholdLine({

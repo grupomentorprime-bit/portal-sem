@@ -92,7 +92,8 @@ export async function POST(request: Request) {
         tenantId: activeTenantId,
         redirectTo,
       });
-    } catch {
+    } catch (error) {
+      console.error("threshold.crossing", error);
       threshold = null;
     }
 

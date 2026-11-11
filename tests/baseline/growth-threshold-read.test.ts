@@ -41,7 +41,10 @@ describe("lectura del umbral", () => {
     assert.match(src, /readCrossingThresholdLine/);
     assert.match(src, /thresholdLine: threshold\.line/);
     assert.match(src, /thresholdArrival: threshold\.announceArrival/);
-    assert.match(src, /catch/);
+    assert.match(
+      src,
+      /try\s*\{[\s\S]*?readCrossingThresholdLine[\s\S]*?\}\s*catch(?:\s*\([^)]*\))?\s*\{[\s\S]*?threshold\s*=\s*null/
+    );
   });
 });
 
