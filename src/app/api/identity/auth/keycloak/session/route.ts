@@ -20,6 +20,7 @@ import { updateUserLastLogin } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
 import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
+import { readCrossingThresholdLine } from "@/lib/identity/threshold-read";
 import { publicInternalError } from "@/core/security/public-error";
 
 /**
@@ -84,6 +85,17 @@ export async function POST(request: Request) {
       next: body.next,
     });
 
+    let threshold: { line: string; announceArrival: boolean } | null = null;
+    try {
+      threshold = await readCrossingThresholdLine({
+        userId: user._id,
+        tenantId: activeTenantId,
+        redirectTo,
+      });
+    } catch {
+      threshold = null;
+    }
+
     return NextResponse.json({
       ok: true,
       user: {
@@ -95,6 +107,12 @@ export async function POST(request: Request) {
       hasSpace: Boolean(activeTenantId),
       isPlatformOperator,
       redirectTo,
+      ...(threshold
+        ? {
+            thresholdLine: threshold.line,
+            thresholdArrival: threshold.announceArrival,
+          }
+        : {}),
     });
   } catch (error) {
     if (error instanceof KeycloakAuthError) {
