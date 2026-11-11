@@ -7,6 +7,7 @@ export const THRESHOLD_BREATH_MS = 700;
 
 const ENTER_SPACE = "Entra a tu Espacio.";
 const ENTER_SPACE_NOW = "Entras a tu Espacio.";
+const ENTER_DESKTOP = "Entras a tu escritorio.";
 const SPACE_CLEAR = "Este Espacio está al día.";
 const ENTER_PLATFORM = "Entras a la plataforma.";
 const NO_SPACE = "Todavía no tienes un Espacio.";
@@ -69,6 +70,9 @@ export function crossingThresholdLine(input: {
   }
   if (path === "/admin/sin-espacio") {
     return { line: NO_SPACE, announceArrival: false };
+  }
+  if (path === "/escritorio") {
+    return { line: ENTER_DESKTOP, announceArrival: false };
   }
   if (path === "/admin" && input.studentAffairs) {
     return { line: ENTER_WORK, announceArrival: false };

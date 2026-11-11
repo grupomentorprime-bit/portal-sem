@@ -317,7 +317,7 @@ describe("OT-GROWTH-PROD-005 — superficie y guard", () => {
         isPlatformOperator: false,
         next: "/platform",
       }),
-      "/admin"
+      "/escritorio"
     );
     assert.equal(
       resolvePostAuthDestination({

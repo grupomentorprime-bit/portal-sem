@@ -1,6 +1,7 @@
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 
 const SPACE_HOME = "/admin";
+const DESKTOP_HOME = "/escritorio";
 const NO_SPACE_PATH = "/admin/sin-espacio";
 
 function sanitizeNext(next: string | null | undefined): string | null {
@@ -13,6 +14,7 @@ function isDefaultSpaceLanding(path: string): boolean {
   const pathOnly = path.split("?")[0];
   return (
     pathOnly === SPACE_HOME ||
+    pathOnly === DESKTOP_HOME ||
     pathOnly === "/admin/config" ||
     pathOnly === NO_SPACE_PATH
   );
@@ -39,7 +41,7 @@ export function resolvePostAuthDestination(input: {
   const nextPath = next?.split("?")[0] ?? "";
 
   if (nextPath.startsWith(PLATFORM_ADMIN_HOME)) {
-    return input.isPlatformOperator ? next! : input.hasSpace ? SPACE_HOME : NO_SPACE_PATH;
+    return input.isPlatformOperator ? next! : input.hasSpace ? DESKTOP_HOME : NO_SPACE_PATH;
   }
 
   // Operador: siempre Growth OS Master, con o sin membresía de cliente.
@@ -55,5 +57,5 @@ export function resolvePostAuthDestination(input: {
     return next;
   }
 
-  return SPACE_HOME;
+  return DESKTOP_HOME;
 }

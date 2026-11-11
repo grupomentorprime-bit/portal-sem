@@ -50,26 +50,26 @@ describe("OT-GROWTH-AUTH-ENTRY-FIX-002 — resolvePostAuthDestination", () => {
     );
   });
 
-  it("C · usuario normal + solo SEM → /admin", () => {
+  it("C · usuario normal + solo SEM → /escritorio", () => {
     assert.equal(
       resolvePostAuthDestination({
         hasSpace: true,
         isPlatformOperator: false,
         next: null,
       }),
-      "/admin"
+      "/escritorio"
     );
     assert.equal(pickActiveTenantId([{ tenantId: SEM, joinedAt: "2026-01-01T00:00:00.000Z" }]), SEM);
   });
 
-  it("D · usuario normal + solo ADL → /admin (ADL activo vía picker)", () => {
+  it("D · usuario normal + solo ADL → /escritorio (ADL activo vía picker)", () => {
     assert.equal(
       resolvePostAuthDestination({
         hasSpace: true,
         isPlatformOperator: false,
         next: null,
       }),
-      "/admin"
+      "/escritorio"
     );
     assert.equal(pickActiveTenantId([{ tenantId: ADL, joinedAt: "2026-01-01T00:00:00.000Z" }]), ADL);
   });
@@ -86,7 +86,7 @@ describe("OT-GROWTH-AUTH-ENTRY-FIX-002 — resolvePostAuthDestination", () => {
         isPlatformOperator: false,
         next: null,
       }),
-      "/admin"
+      "/escritorio"
     );
   });
 
@@ -117,7 +117,7 @@ describe("OT-GROWTH-AUTH-ENTRY-FIX-002 — resolvePostAuthDestination", () => {
         isPlatformOperator: false,
         next: "/platform",
       }),
-      "/admin"
+      "/escritorio"
     );
     assert.equal(
       resolvePostAuthDestination({
