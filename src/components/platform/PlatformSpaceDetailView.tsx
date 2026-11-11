@@ -6,6 +6,7 @@ import { PlatformEnterSpacePanel } from "@/components/platform/PlatformEnterSpac
 import { PlatformSpaceDomainPanel } from "@/components/platform/PlatformSpaceDomainPanel";
 import { customDomainCnameTarget } from "@/core/tenant/custom-domain-records";
 import { PlatformSpaceActionsMenu } from "@/components/platform/PlatformSpaceActionsMenu";
+import { SpaceAppsPanel } from "@/components/platform/SpaceAppsPanel";
 import { SpaceTypeFallbackMark } from "@/components/platform/SpaceTypeFallbackMark";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { PlatformSpaceDetail, PlatformSpaceMember } from "@/lib/platform/spaces";
@@ -162,6 +163,15 @@ export function PlatformSpaceDetailView({
           hasAccess={operatorHasAccess}
         />
       ) : null}
+
+      <Section title="Aplicaciones">
+        <SpaceAppsPanel
+          tenantId={space.tenantId}
+          contractedApps={space.contractedApps}
+          aprendeHoyEntryUrl={space.aprendeHoyEntryUrl}
+          openAppRequests={space.openAppRequests}
+        />
+      </Section>
 
       <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(16rem,0.72fr)]">
         <Section title="Dominios">

@@ -62,4 +62,13 @@ describe("rutas del escritorio", () => {
     assert.match(back, /\/api\/identity\/me/);
     assert.match(back, /href="\/escritorio"/);
   });
+
+  it("la ficha del Espacio muestra las aplicaciones y guarda el contrato", () => {
+    const view = read("src/components/platform/PlatformSpaceDetailView.tsx");
+    assert.match(view, /SpaceAppsPanel/);
+    const panel = read("src/components/platform/SpaceAppsPanel.tsx");
+    assert.match(panel, /\/api\/platform\/spaces\//);
+    assert.match(panel, /contractedApps/);
+    assert.match(panel, /Solicitud abierta/);
+  });
 });
