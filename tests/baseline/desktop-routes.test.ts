@@ -51,4 +51,15 @@ describe("rutas del escritorio", () => {
     const menu = read("src/components/admin/AdminUserMenuPanel.tsx");
     assert.match(menu, /spaceSwitchLanding/);
   });
+
+  it("Growth OS y Cumple ofrecen volver al escritorio", () => {
+    const top = read("src/components/admin/kit/navigation/AdminTopBar.tsx");
+    assert.match(top, /href="\/escritorio"/);
+    assert.match(top, /Escritorio/);
+    const shell = read("src/components/sites/cumple/CumpleShell.tsx");
+    assert.match(shell, /EscritorioReturn/);
+    const back = read("src/components/desktop/EscritorioReturn.tsx");
+    assert.match(back, /\/api\/identity\/me/);
+    assert.match(back, /href="\/escritorio"/);
+  });
 });
