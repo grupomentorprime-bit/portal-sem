@@ -1,8 +1,6 @@
 import "server-only";
 
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
-import { accessPasswordCheck } from "@/lib/identity/access-password-check";
-import { keycloakUserNeedsPassword } from "@/lib/identity/keycloak-admin";
 import {
   createInvitation,
   findPendingInvitationByEmail,
@@ -68,8 +66,7 @@ export async function resendPendingInvitationEmail(input: {
 }
 
 /**
- * Persona del Equipo: correo corporativo para entrar.
- * Si todavía no tiene contraseña, el correo incluye el enlace para crearla.
+ * Persona del Equipo: correo con el enlace para crear o renovar la contraseña.
  */
 export async function resendMemberAccessEmail(input: {
   tenantId: string;
@@ -77,7 +74,6 @@ export async function resendMemberAccessEmail(input: {
   displayName: string;
   roleIds: string[];
   invitedBy: string;
-  lastLoginAt?: string | null;
 }): Promise<SendResult> {
   const email = normalizeEmail(input.email);
   if (!email) {
@@ -85,12 +81,7 @@ export async function resendMemberAccessEmail(input: {
   }
 
   const displayName = input.displayName.trim() || email;
-  const neverEntered = isKeycloakOnlyAuth() && !input.lastLoginAt;
-  const needsPassword = neverEntered
-    ? true
-    : isKeycloakOnlyAuth()
-      ? await accessPasswordCheck(keycloakUserNeedsPassword(email))
-      : false;
+  const needsPassword = isKeycloakOnlyAuth();
 
   if (!needsPassword) {
     const sent = await sendAccessReminderEmail({

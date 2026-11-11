@@ -13,9 +13,10 @@ import {
 } from "@/lib/notifications/identity";
 import { resolveEmailIdentityForTenant } from "@/lib/notifications/resolve-identity";
 import {
+  emailFailureMessage,
   formatFromHeader,
   getResendClient,
-  getTechnicalMailbox,
+  mailboxForSend,
 } from "@/lib/notifications/transport";
 
 export type { EmailIdentity } from "@/lib/notifications/identity";
@@ -168,30 +169,6 @@ export async function sendInvitationEmail(
   });
 }
 
-function publicEmailError(error: { name?: string }): string {
-  switch (error.name) {
-    case "missing_api_key":
-    case "invalid_api_key":
-    case "restricted_api_key":
-      return "El correo transaccional no está configurado.";
-    case "invalid_from_address":
-      return "El remitente del correo no está verificado.";
-    case "monthly_quota_exceeded":
-    case "daily_quota_exceeded":
-      return "Se alcanzó el límite de correos. Intenta más tarde.";
-    case "rate_limit_exceeded":
-      return "Hay demasiados envíos seguidos. Espera un momento e intenta de nuevo.";
-    case "validation_error":
-    case "invalid_parameter":
-    case "missing_required_field":
-      return "El correo no se pudo armar. Revisa el destinatario y vuelve a intentar.";
-    case "application_error":
-      return "El servicio de correo no respondió. Intenta de nuevo.";
-    default:
-      return "No se pudo enviar el correo.";
-  }
-}
-
 export async function sendTransactionalHtmlEmail(input: {
   to: string;
   subject: string;
@@ -207,7 +184,7 @@ export async function sendTransactionalHtmlEmail(input: {
   try {
     const { data, error } = await resend.emails.send(
       {
-        from: formatFromHeader(input.identity.displayName, getTechnicalMailbox()),
+        from: formatFromHeader(input.identity.displayName, mailboxForSend()),
         to: input.to,
         subject: input.subject,
         html: input.html,
@@ -222,7 +199,7 @@ export async function sendTransactionalHtmlEmail(input: {
 
     if (error) {
       logServerError("email", error);
-      return { ok: false, error: publicEmailError(error) };
+      return { ok: false, error: emailFailureMessage(error) };
     }
 
     return { ok: true, id: data?.id };

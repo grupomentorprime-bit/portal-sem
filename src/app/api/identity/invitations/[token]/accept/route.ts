@@ -53,6 +53,26 @@ async function handleKeycloakAccept(
   const needsPassword = await keycloakUserNeedsPassword(invitation.email);
 
   if (!needsPassword) {
+    if (body.password) {
+      if (body.password.length < 8) {
+        return NextResponse.json(
+          { ok: false, error: "La contraseña debe tener al menos 8 caracteres." },
+          { status: 400 }
+        );
+      }
+      const passwordResult = await setKeycloakPasswordForInvite({
+        email: invitation.email,
+        displayName: invitation.displayName,
+        password: body.password,
+      });
+      if (!passwordResult.ok) {
+        return NextResponse.json(
+          { ok: false, error: "No se pudo completar el acceso. Intenta de nuevo." },
+          { status: passwordResult.code === "not_configured" ? 503 : 502 }
+        );
+      }
+    }
+
     const { createUser } = await import("@/lib/identity/users");
     const user =
       existing ??

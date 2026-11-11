@@ -295,7 +295,7 @@ describe("OT-GROWTH-PROD-002 — copy de motor sin cliente hardcodeado", () => {
     assert.doesNotMatch(invitation, /Invitación al CMS/);
     assert.doesNotMatch(invitation, /getAppBaseUrl/);
     assert.match(invitation, /formatFromHeader/);
-    assert.match(invitation, /getTechnicalMailbox/);
+    assert.match(invitation, /mailboxForSend/);
 
     const envExample = readSrc(".env.example");
     assert.doesNotMatch(envExample, /Portal SEM/);

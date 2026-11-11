@@ -1,7 +1,6 @@
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { AcceptInviteForm } from "@/components/identity/AcceptInviteForm";
 import { getAppBaseUrl } from "@/lib/app-url";
-import { keycloakUserNeedsPassword } from "@/lib/identity/keycloak-admin";
 import { findInvitationByToken } from "@/lib/identity/invitations";
 import { findUserByEmail } from "@/lib/identity/users";
 
@@ -35,10 +34,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   }
 
   const existingUserRecord = await findUserByEmail(invitation.email);
-  const needsPassword = isKeycloakOnlyAuth()
-    ? await keycloakUserNeedsPassword(invitation.email)
-    : !existingUserRecord;
-  const existingUser = isKeycloakOnlyAuth() ? !needsPassword : Boolean(existingUserRecord);
+  const existingUser = isKeycloakOnlyAuth() ? false : Boolean(existingUserRecord);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
