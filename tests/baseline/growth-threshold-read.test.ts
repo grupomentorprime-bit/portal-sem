@@ -44,3 +44,39 @@ describe("lectura del umbral", () => {
     assert.match(src, /catch/);
   });
 });
+
+describe("puerta del umbral", () => {
+  it("login conserva el contrato de entrada y no usa ProductAuthFrame", () => {
+    const page = readSrc("src/app/login/page.tsx");
+    assert.match(page, /loadSessionContext/);
+    assert.match(page, /resolvePostAuthDestination/);
+    assert.match(page, /hasPlatformOperatorCapability/);
+    assert.match(page, /LoginForm/);
+    assert.match(page, /ThresholdLogin/);
+    assert.match(page, /readSpaceAttentionCount/);
+    assert.match(page, /publicThresholdLine/);
+    assert.doesNotMatch(page, /ProductAuthFrame/);
+    assert.doesNotMatch(page, /redirect\("\/admin"\)/);
+    assert.doesNotMatch(page, /\/api\/identity\/auth\/keycloak\/login/);
+  });
+
+  it("el formulario espera el callback y si no hay provider navega solo", () => {
+    const form = readSrc("src/components/identity/LoginForm.tsx");
+    assert.match(form, /Usuario/);
+    assert.match(form, /Contraseña/);
+    assert.match(form, /type="password"/);
+    assert.match(form, /\/api\/identity\/auth\/keycloak\/session/);
+    assert.match(form, /useThresholdOnAuthenticated/);
+    assert.match(form, /await onAuthenticated/);
+    assert.match(form, /window\.location\.assign\(destination\)/);
+    assert.doesNotMatch(form, /href=\{loginHref\}/);
+  });
+
+  it("el respiro usa la función pura y escribe la señal antes de abrir", () => {
+    const scene = readSrc("src/components/identity/ThresholdLogin.tsx");
+    assert.match(scene, /thresholdBreathMs/);
+    assert.match(scene, /markThresholdArrival/);
+    assert.match(scene, /prefers-reduced-motion: reduce/);
+    assert.match(scene, /aria-live="polite"/);
+  });
+});
