@@ -230,6 +230,17 @@ export async function keycloakUserNeedsPassword(email: string): Promise<boolean>
     const userId = await findKeycloakUserId(config, token, email.toLowerCase().trim());
     if (!userId) return true;
 
+    const userRes = await keycloakFetch(
+      `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users/${encodeURIComponent(userId)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (userRes.ok) {
+      const user = (await userRes.json()) as { requiredActions?: string[] };
+      if (user.requiredActions?.includes("UPDATE_PASSWORD")) return true;
+    } else {
+      await userRes.text();
+    }
+
     const res = await keycloakFetch(
       `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users/${encodeURIComponent(userId)}/credentials`,
       { headers: { Authorization: `Bearer ${token}` } }

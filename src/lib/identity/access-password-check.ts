@@ -1,10 +1,10 @@
-/** Si Keycloak no responde, el reenvío sigue con el enlace para entrar. */
+/** Si no confirmamos la contraseña, el reenvío incluye el enlace para crearla. */
 export const ACCESS_PASSWORD_CHECK_MS = 2_500;
 
 /**
  * Espera la consulta de contraseña solo un momento.
- * Si no hay respuesta, devuelve false: la persona ya está en el Equipo
- * y recibe el enlace de acceso en lugar de dejar la petición colgada.
+ * Si no hay respuesta, devuelve true: no afirmamos que la contraseña ya existe
+ * y el correo lleva el enlace para crearla.
  */
 export function accessPasswordCheck(
   lookup: Promise<boolean>,
@@ -18,10 +18,10 @@ export function accessPasswordCheck(
       clearTimeout(timer);
       resolve(needsPassword);
     };
-    const timer = setTimeout(() => finish(false), timeoutMs);
+    const timer = setTimeout(() => finish(true), timeoutMs);
     lookup.then(
       (needsPassword) => finish(needsPassword),
-      () => finish(false)
+      () => finish(true)
     );
   });
 }

@@ -77,6 +77,7 @@ export async function resendMemberAccessEmail(input: {
   displayName: string;
   roleIds: string[];
   invitedBy: string;
+  lastLoginAt?: string | null;
 }): Promise<SendResult> {
   const email = normalizeEmail(input.email);
   if (!email) {
@@ -84,9 +85,12 @@ export async function resendMemberAccessEmail(input: {
   }
 
   const displayName = input.displayName.trim() || email;
-  const needsPassword = isKeycloakOnlyAuth()
-    ? await accessPasswordCheck(keycloakUserNeedsPassword(email))
-    : false;
+  const neverEntered = isKeycloakOnlyAuth() && !input.lastLoginAt;
+  const needsPassword = neverEntered
+    ? true
+    : isKeycloakOnlyAuth()
+      ? await accessPasswordCheck(keycloakUserNeedsPassword(email))
+      : false;
 
   if (!needsPassword) {
     const sent = await sendAccessReminderEmail({
