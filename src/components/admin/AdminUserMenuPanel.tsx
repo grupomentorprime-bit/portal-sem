@@ -18,6 +18,7 @@ import {
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { cn } from "@/lib/utils";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
+import { spaceSwitchLanding } from "@/lib/desktop/catalog";
 
 export interface AdminSpaceSummary {
   tenantId: string;
@@ -80,7 +81,7 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
     const data = await res.json().catch(() => ({ ok: false }));
     if (!data.ok) return;
     // Contrato UX: al cambiar de Espacio, volver a Inicio.
-    window.location.assign("/admin");
+    window.location.assign(spaceSwitchLanding(window.location.pathname));
   }
 
   if (!user) {

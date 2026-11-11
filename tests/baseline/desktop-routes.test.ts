@@ -42,4 +42,13 @@ describe("rutas del escritorio", () => {
     assert.match(src, /code\s*===\s*11000/);
     assert.match(src, /return;/);
   });
+
+  it("la página redirige con escritorioRedirect y pinta MentorDesktop", () => {
+    const src = read("src/app/escritorio/page.tsx");
+    assert.match(src, /escritorioRedirect/);
+    assert.match(src, /MentorDesktop/);
+    assert.match(src, /readSpaceContract/);
+    const menu = read("src/components/admin/AdminUserMenuPanel.tsx");
+    assert.match(menu, /spaceSwitchLanding/);
+  });
 });
