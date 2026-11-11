@@ -79,4 +79,21 @@ describe("puerta del umbral", () => {
     assert.match(scene, /prefers-reduced-motion: reduce/);
     assert.match(scene, /aria-live="polite"/);
   });
+
+  it("el inicio envuelve la atención y el movimiento se apaga si la persona lo pide", () => {
+    const home = readSrc(
+      "src/components/admin/preview/growth-os-master/GrowthOsAdminHomeMaster.tsx"
+    );
+    const arrival = readSrc("src/components/identity/ThresholdArrival.tsx");
+    const motion = readSrc("src/styles/foundation/motion.css");
+    assert.match(home, /ThresholdArrival/);
+    assert.match(home, /Qué necesita atención/);
+    assert.match(arrival, /consumeThresholdArrival/);
+    assert.match(arrival, /prefers-reduced-motion: reduce/);
+    assert.match(motion, /threshold-arrival\[data-threshold-arrival="true"\] > ul > li:first-child/);
+    assert.match(motion, /\.threshold-arrival\[data-threshold-arrival="true"\] > :not\(ul\)/);
+    const reduceAt = motion.indexOf("@media (prefers-reduced-motion: reduce)");
+    const ruleAt = motion.indexOf(".threshold-arrival[data-threshold-arrival=\"true\"]", reduceAt);
+    assert.ok(reduceAt > 0 && ruleAt > reduceAt);
+  });
 });

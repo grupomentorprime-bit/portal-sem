@@ -114,12 +114,19 @@
   animation: f-slide-up var(--motion-duration-normal) var(--motion-ease-enter) forwards;
 }
 
+.threshold-arrival[data-threshold-arrival="true"] > ul > li:first-child,
+.threshold-arrival[data-threshold-arrival="true"] > :not(ul) {
+  animation: f-slide-up var(--motion-duration-normal) var(--motion-ease-enter) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-f-fade-in,
   .animate-f-slide-up,
   .animate-f-scale-in,
   .animate-f-reveal,
   .animate-slide-up,
+  .threshold-arrival[data-threshold-arrival="true"] > ul > li:first-child,
+  .threshold-arrival[data-threshold-arrival="true"] > :not(ul),
   .portal-home-experience [data-block]:not([data-block="hero"]) > .portal-home-x__reveal {
     animation: none !important;
     opacity: 1 !important;
