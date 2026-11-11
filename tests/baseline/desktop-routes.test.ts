@@ -29,5 +29,17 @@ describe("rutas del escritorio", () => {
     assert.match(src, /parseContractPatch/);
     assert.match(src, /newlyContracted/);
     assert.match(src, /fulfillOpen/);
+    assert.match(src, /findTenantById/);
+    assert.match(src, /getDatabase/);
+    assert.match(src, /if\s*\(!tenant\)\s*return NextResponse\.json\(\{ ok: false \}, \{ status: 404 \}\)/);
+    assert.match(src, /readSpaceContract\(tenant\.tenantId\)/);
+    assert.match(src, /writeSpaceContract\(tenant\.tenantId,\s*patch\)/);
+    assert.match(src, /fulfillOpen\(tenant\.tenantId,\s*appId\)/);
+  });
+
+  it("la store ignora el duplicado abierto concurrente", () => {
+    const src = read("src/lib/desktop/store.ts");
+    assert.match(src, /code\s*===\s*11000/);
+    assert.match(src, /return;/);
   });
 });

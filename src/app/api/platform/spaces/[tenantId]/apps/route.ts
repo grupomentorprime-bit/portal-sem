@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { findTenantById } from "@/core/tenant";
 import { requirePlatformOperator } from "@/core/identity/middleware/guards";
 import {
   newlyContracted,
@@ -10,6 +11,7 @@ import {
   readSpaceContract,
   writeSpaceContract,
 } from "@/lib/desktop/store";
+import { getDatabase } from "@/lib/mongodb";
 
 interface RouteParams {
   params: Promise<{ tenantId: string }>;
@@ -31,18 +33,22 @@ export async function POST(request: Request, { params }: RouteParams) {
   });
   if (!patch.ok) return NextResponse.json({ ok: false }, { status: 400 });
 
-  const before = await readSpaceContract(decoded);
-  await writeSpaceContract(decoded, patch);
+  const db = await getDatabase();
+  const tenant = await findTenantById(db, decoded);
+  if (!tenant) return NextResponse.json({ ok: false }, { status: 404 });
+
+  const before = await readSpaceContract(tenant.tenantId);
+  await writeSpaceContract(tenant.tenantId, patch);
 
   const store = mongoAppRequestStore();
   for (const appId of newlyContracted(before.contracted, patch.contractedApps)) {
-    await store.fulfillOpen(decoded, appId);
+    await store.fulfillOpen(tenant.tenantId, appId);
   }
 
   return NextResponse.json({
     ok: true,
     contractedApps: resolveContractedApps({
-      tenantId: decoded,
+      tenantId: tenant.tenantId,
       contractedApps: patch.contractedApps,
     }),
   });

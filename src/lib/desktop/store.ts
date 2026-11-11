@@ -27,7 +27,12 @@ export function mongoAppRequestStore(): AppRequestStore {
           name: "one_open_request",
         }
       );
-      await db.collection<AppRequest>(REQUESTS).insertOne(row);
+      try {
+        await db.collection<AppRequest>(REQUESTS).insertOne(row);
+      } catch (error) {
+        if ((error as { code?: unknown }).code === 11000) return;
+        throw error;
+      }
     },
     async fulfillOpen(tenantId, appId) {
       const db = await getDatabase();
