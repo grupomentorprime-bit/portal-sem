@@ -52,7 +52,9 @@ describe("OT-GROWTH-UX-SHELL-002 — identidad y shell", () => {
     assert.match(platformShell, /PlatformNeutralTheme/);
     assert.match(platformShell, /Espacios/);
     assert.match(platformShell, /Ir al Espacio/);
-    assert.match(login, /ProductAuthFrame/);
+    assert.match(login, /ThresholdLogin/);
+    assert.match(login, /PlatformNeutralTheme/);
+    assert.doesNotMatch(login, /ProductAuthFrame/);
     assert.match(noSpace, /ProductAuthFrame/);
     assert.match(platformLayout, /ProductAuthFrame/);
     assert.equal(PLATFORM_DISPLAY_NAME, "Growth OS");
