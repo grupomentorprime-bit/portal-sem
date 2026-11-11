@@ -26,6 +26,7 @@ export interface IdentityUser {
   emailVerified: boolean;
   displayName: string;
   photoMediaId?: string;
+  desktopWallpaper?: "mar" | "valle" | "noche";
   jobTitle?: string;
   phone?: string;
   timezone?: string;

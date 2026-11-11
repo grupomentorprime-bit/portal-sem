@@ -34,6 +34,9 @@ import {
   labelTenantStatus,
   labelTenantType,
 } from "@/lib/platform/space-labels";
+import { resolveContractedApps } from "@/lib/desktop/contract";
+import { mongoAppRequestStore } from "@/lib/desktop/store";
+import type { MentorAppId } from "@/lib/desktop/catalog";
 
 export interface PlatformSpaceListItem {
   tenantId: string;
@@ -111,6 +114,13 @@ export interface PlatformSpaceDetail {
   logoUrl: string | null;
   coverUrl: string | null;
   tagline: string | null;
+  contractedApps: MentorAppId[];
+  aprendeHoyEntryUrl: string | null;
+  openAppRequests: Array<{
+    appId: MentorAppId;
+    requestedBy: string;
+    createdAt: string;
+  }>;
 }
 
 function asConfiguredText(value: unknown): string | null {
@@ -301,6 +311,13 @@ export async function getPlatformSpaceDetail(
     findRoleByCode(tenant.tenantId, ROLE_CODES.SUPER_ADMIN),
     findRoleByCode(tenant.tenantId, ROLE_CODES.INSTITUTION_ADMIN),
   ]);
+  const openAppRequests = (await mongoAppRequestStore().listOpen(tenant.tenantId)).map(
+    (row) => ({
+      appId: row.appId,
+      requestedBy: row.requestedBy,
+      createdAt: row.createdAt,
+    })
+  );
 
   const scopedMemberships = memberships.filter(
     (membership) => membership.tenantId === tenant.tenantId
@@ -406,5 +423,11 @@ export async function getPlatformSpaceDetail(
       siteConfig && siteConfig.tenantId === tenant.tenantId
         ? readTagline(siteConfig.institution)
         : null,
+    contractedApps: resolveContractedApps({
+      tenantId: tenant.tenantId,
+      contractedApps: tenant.contractedApps,
+    }),
+    aprendeHoyEntryUrl: tenant.aprendeHoyEntryUrl ?? null,
+    openAppRequests,
   };
 }
