@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission, isAuthContext } from "@/core/identity";
 import { getSiteConfigForTenant, updateSiteConfig } from "@/lib/cms/config";
-import { validateSiteConfigUpdate } from "@/lib/cms/validation";
-import type { SiteConfigUpdate } from "@/types/cms";
+import type { SiteConfigPatch } from "@/lib/cms/site-config-patch";
 
 export async function GET() {
   try {
@@ -37,19 +36,19 @@ export async function PUT(request: Request) {
     const ctx = await requirePermission("settings.update");
     if (!isAuthContext(ctx)) return ctx;
 
-    const body = (await request.json()) as SiteConfigUpdate;
-    const errors = validateSiteConfigUpdate(body);
+    const body = (await request.json()) as SiteConfigPatch;
+    const result = await updateSiteConfig(body, { tenantId: ctx.tenantId });
 
-    if (errors.length > 0) {
-      return NextResponse.json(
-        { ok: false, errors },
-        { status: 400 }
-      );
-    }
-
-    const config = await updateSiteConfig(body, { tenantId: ctx.tenantId });
-
-    if (!config) {
+    if (!result.ok) {
+      if (result.code === "invalid") {
+        return NextResponse.json({ ok: false, errors: result.errors }, { status: 400 });
+      }
+      if (result.code === "conflict") {
+        return NextResponse.json(
+          { ok: false, error: "La ficha cambió mientras guardabas. Vuelve a intentar." },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { ok: false, error: "Configuración institucional no encontrada." },
         { status: 404 }
@@ -57,9 +56,9 @@ export async function PUT(request: Request) {
     }
 
     const { rebuildUsageIndex } = await import("@/core/media/usage");
-    await rebuildUsageIndex(config.institution.tenant);
+    await rebuildUsageIndex(result.config.institution.tenant);
 
-    return NextResponse.json({ ok: true, config });
+    return NextResponse.json({ ok: true, config: result.config });
   } catch (error) {
     console.error(error);
 

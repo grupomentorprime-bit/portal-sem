@@ -52,14 +52,33 @@ export function ThresholdLogin({
 
   return (
     <ThresholdAuthContext.Provider value={onAuthenticated}>
-      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-10 px-5 py-16">
-        <h1
-          aria-live="polite"
-          className="text-[clamp(2rem,4vw,2.75rem)] font-semibold leading-[1.05] tracking-[-0.04em] text-[var(--growth-os-primary)]"
-        >
-          {phrase}
-        </h1>
-        {children}
+      <main
+        className="relative flex min-h-screen w-full flex-col items-center justify-center px-5 py-16 text-white"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(8,12,20,.55) 0%, rgba(8,12,20,.08) 22%, rgba(8,12,20,.08) 68%, rgba(8,12,20,.58) 100%), url(/desktop/mar.jpg) center/cover no-repeat, #102033",
+        }}
+      >
+        <div className="flex w-full max-w-md flex-col">
+          <div
+            className="rounded-[30px] border px-6 py-7 shadow-[0_16px_40px_rgba(0,0,0,.35)] [&_label]:text-white [&_input]:border-white/35 [&_input]:bg-[rgba(255,255,255,.14)] [&_input]:text-white [&_input]:placeholder:text-white/50"
+            style={{
+              background: "rgba(8,12,20,.68)",
+              borderColor: "rgba(255,255,255,.32)",
+              backdropFilter: "blur(28px) saturate(1.5)",
+              WebkitBackdropFilter: "blur(28px) saturate(1.5)",
+            }}
+          >
+            <h1
+              aria-live="polite"
+              className="mb-6 text-[clamp(2rem,4vw,2.75rem)] font-semibold leading-[1.05] tracking-[-0.04em] text-white"
+              style={{ textShadow: "0 1px 2px rgba(0,0,0,.55)" }}
+            >
+              {phrase}
+            </h1>
+            {children}
+          </div>
+        </div>
       </main>
     </ThresholdAuthContext.Provider>
   );

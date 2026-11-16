@@ -1,9 +1,14 @@
 import { AdminPageFrame } from "@/components/admin/AdminPageFrame";
 import { StorageIntegrationsClient } from "@/components/admin/StorageIntegrationsClient";
+import { requirePageAnyPermission } from "@/lib/admin/require-page-permission";
 
 export const dynamic = "force-dynamic";
 
-export default function IntegrationsSettingsPage() {
+export default async function IntegrationsSettingsPage() {
+  await requirePageAnyPermission(["settings.integrations"], {
+    nextPath: "/admin/settings/integrations",
+  });
+
   return (
     <AdminPageFrame
       title="Integraciones"

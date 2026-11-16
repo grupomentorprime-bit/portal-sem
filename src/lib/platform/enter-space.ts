@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   grantOperatorSpaceAccess as grantOperatorSpaceAccessCore,
+  grantOwnerSpaceAccess as grantOwnerSpaceAccessCore,
   operatorHasActiveSpaceAccess as operatorHasActiveSpaceAccessCore,
   PlatformEnterSpaceError,
   SPACE_ACCESS_REQUIRED_MESSAGE,
@@ -31,4 +32,13 @@ export async function grantOperatorSpaceAccess(input: {
 }) {
   const db = await getDatabase();
   return grantOperatorSpaceAccessCore(db, input);
+}
+
+/** Solo el superadministrador. El operador no pasa por aquí. */
+export async function grantOwnerSpaceAccess(input: {
+  tenantId: string;
+  ownerUserId: string;
+}) {
+  const db = await getDatabase();
+  return grantOwnerSpaceAccessCore(db, input);
 }

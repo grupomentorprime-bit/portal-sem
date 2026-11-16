@@ -1,3 +1,4 @@
+import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/identity/LogoutButton";
@@ -14,6 +15,10 @@ export default async function SinEspacioPage() {
   const session = await loadSessionContext();
   if (!session) {
     redirect("/login");
+  }
+
+  if (hasPlatformOperatorCapability(session.user)) {
+    redirect("/escritorio");
   }
 
   if (session.membership && session.session.tenantId?.trim()) {

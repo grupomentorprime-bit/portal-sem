@@ -20,6 +20,7 @@ import { updateUserLastLogin } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
 import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
+import { DESK_ENTERED_COOKIE } from "@/lib/desktop/catalog";
 import { readCrossingThresholdLine } from "@/lib/identity/threshold-read";
 import { publicInternalError } from "@/core/security/public-error";
 
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
       threshold = null;
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       user: {
         id: user._id,
@@ -115,6 +116,8 @@ export async function POST(request: Request) {
           }
         : {}),
     });
+    response.cookies.set(DESK_ENTERED_COOKIE, "", { path: "/", maxAge: 0, sameSite: "lax" });
+    return response;
   } catch (error) {
     if (error instanceof KeycloakAuthError) {
       const status =

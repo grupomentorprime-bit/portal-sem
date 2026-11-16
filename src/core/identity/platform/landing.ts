@@ -24,13 +24,12 @@ function isDefaultSpaceLanding(path: string): boolean {
  * Destino post-login (única función de entrada tras autenticar).
  *
  * Prioridad:
- * 1. Operador de plataforma (`platformRoles`) → `/platform`
- *    (incluso con membresías SEM/ADL; no se infiere por email/tenant/rol SEM)
- * 2. Usuario sin Espacio → `/admin/sin-espacio`
- * 3. Usuario con Espacio(s) → `/admin` (o `next` profundo no-default);
+ * 1. `next=/platform…` solo si es operador de plataforma (`platformRoles`).
+ * 2. Operador de plataforma → `/escritorio`
+ *    (incluso sin membresía; no se infiere por email/tenant/rol de un Espacio)
+ * 3. Usuario sin Espacio → `/admin/sin-espacio`
+ * 4. Usuario con Espacio(s) → `/escritorio` (o `next` profundo no-default);
  *    el Espacio activo lo resuelve `resolveActiveTenantForUser` / picker existente
- *
- * `next=/platform…` solo se honra si el usuario es operador.
  */
 export function resolvePostAuthDestination(input: {
   hasSpace: boolean;
@@ -44,9 +43,13 @@ export function resolvePostAuthDestination(input: {
     return input.isPlatformOperator ? next! : input.hasSpace ? DESKTOP_HOME : NO_SPACE_PATH;
   }
 
-  // Operador: siempre Growth OS Master, con o sin membresía de cliente.
+  if (nextPath === DESKTOP_HOME) {
+    return DESKTOP_HOME;
+  }
+
+  // Operador: la mesa. La consola solo si pidió /platform.
   if (input.isPlatformOperator) {
-    return PLATFORM_ADMIN_HOME;
+    return DESKTOP_HOME;
   }
 
   if (!input.hasSpace) {

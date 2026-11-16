@@ -325,11 +325,11 @@
 .setting-list .setting-copy > span,
 .setting-list a > span:not(.mini-glyph) { display: block; margin-top: 2px; color: #6b6580; font-size: 13px; }
 .ajustes-window.is-space { width: min(720px, 100%); max-height: calc(100vh - 260px); display: flex; flex-direction: column; overflow: hidden; padding: 20px 18px 16px; border-radius: 22px; border-color: var(--nelzuri-line-soft); box-shadow: 0 28px 64px -32px rgba(11, 30, 93,.7), 0 0 0 1px rgba(255,255,255,.65); }
-.ajustes-window.is-space.is-settings-surface { width: min(1120px, 100%); max-height: calc(100vh - 160px); }
+.ajustes-window.is-space.is-settings-surface { width: min(1120px, 100%); max-height: calc(100vh - 160px); min-height: min(560px, calc(100vh - 160px)); }
 .ajustes-window.is-space .ajustes-head { flex: none; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--nelzuri-line-soft); }
 .ajustes-window.is-space .ajustes-head h2 { margin: 4px 0 6px; font-size: 26px; }
 .ajustes-window.is-space .ajustes-head .ghost { flex: none; margin-top: 2px; }
-.settings-surface { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); gap: 16px; overflow: hidden; }
+.settings-surface { min-height: 0; flex: 1 1 auto; display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); gap: 16px; overflow: hidden; }
 .settings-surface.is-links-only { grid-template-columns: 1fr; }
 .settings-nav { min-height: 0; overflow: auto; display: grid; gap: 14px; align-content: start; padding-right: 4px; border-right: 1px solid var(--nelzuri-line-soft); }
 .settings-nav h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nelzuri-azul-digital); font-weight: 700; }
@@ -362,11 +362,25 @@
 .cfg-block-edit label, .cfg-block-edit .mb-2 { font-size: 13px; font-weight: 650; color: #3f3a52; }
 .cfg-block-edit input { width: 100%; border: 1px solid var(--nelzuri-line-soft); border-radius: 12px; padding: 10px 12px; font: inherit; font-weight: 500; color: #101828; background: #fff; }
 .space-presence .form-ok { margin: 0; color: #047857; font-size: 13px; font-weight: 650; }
+.space-presence .form-error { margin: 0; color: #b91c1c; font-size: 13px; font-weight: 650; }
+.ajustes-head .ghost:focus-visible,
+.cfg-block .ghost:focus-visible,
+.cfg-block .primary:focus-visible,
+.space-presence-bar .primary:focus-visible,
+.space-site-links .space-row:focus-visible {
+  outline: 2px solid var(--nelzuri-azul-digital);
+  outline-offset: 2px;
+}
+.settings-main > .space-presence { overflow: visible; }
 @media (max-width: 900px) {
-  .settings-surface { grid-template-columns: 1fr; }
-  .settings-nav { border-right: 0; border-bottom: 1px solid var(--nelzuri-line-soft); padding-right: 0; padding-bottom: 12px; max-height: 220px; }
+  .ajustes-back { padding: 56px 12px 120px; }
+  .ajustes-window.is-space.is-settings-surface { min-height: 0; max-height: calc(100vh - 140px); width: min(100%, calc(100vw - 16px)); }
+  .settings-surface { grid-template-columns: 1fr; overflow: auto; align-content: start; }
+  .settings-nav { border-right: 0; border-bottom: 1px solid var(--nelzuri-line-soft); padding-right: 0; padding-bottom: 12px; max-height: none; min-height: auto; height: auto; overflow: visible; }
+  .settings-main { overflow: visible; min-height: auto; height: auto; }
   .cfg-read-row { grid-template-columns: 1fr; gap: 2px; }
   .cfg-block-head { flex-direction: column; }
+  .cfg-block-actions { width: 100%; }
 }
 .ajustes-window.is-account { width: min(720px, 100%); max-height: min(640px, calc(100vh - 300px)); display: flex; flex-direction: column; overflow: hidden; padding: 20px 18px 16px; border-radius: 22px; box-shadow: 0 28px 64px -32px rgba(11, 30, 93,.7), 0 0 0 1px rgba(255,255,255,.65); }
 .ajustes-window.is-account .ajustes-head { flex: none; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--nelzuri-line-soft); }

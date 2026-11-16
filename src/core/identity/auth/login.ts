@@ -14,7 +14,6 @@ import {
 } from "@/lib/identity/users";
 import { createMembership } from "@/lib/identity/memberships";
 import { ensureTenantRoles, getSuperAdminRole } from "@/lib/identity/roles";
-import { ensureSuperAdminMembershipForEmail } from "@/lib/identity/iam-guard";
 import { writeAudit } from "@/lib/identity/audit";
 import type { IdentityUser } from "@/types/identity";
 
@@ -43,9 +42,6 @@ export async function loginWithEmail(input: {
   }
 
   const preferred = input.preferredTenantId?.trim() || null;
-  if (preferred) {
-    await ensureSuperAdminMembershipForEmail(user.email, preferred, user._id);
-  }
 
   const { resolveActiveTenantForUser } = await import("@/lib/identity/active-space");
   const resolved = await resolveActiveTenantForUser(user._id, preferred);

@@ -42,15 +42,17 @@ export function LogoUploader({
   value,
   onChange,
   tenant,
+  description = "Logo principal del portal. Se recomienda formato PNG con fondo transparente.",
 }: {
   value: string;
   onChange: (value: string) => void;
   tenant: string;
+  description?: string;
 }) {
   return (
     <ImageUploader
       label="Logo institucional"
-      description="Logo principal del portal. Se recomienda formato PNG con fondo transparente."
+      description={description}
       value={value}
       onChange={onChange}
       tenant={tenant}

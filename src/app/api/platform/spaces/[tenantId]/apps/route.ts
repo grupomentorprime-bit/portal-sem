@@ -11,6 +11,7 @@ import {
   readSpaceContract,
   writeSpaceContract,
 } from "@/lib/desktop/store";
+import { writeAudit } from "@/lib/identity/audit";
 import { getDatabase } from "@/lib/mongodb";
 
 interface RouteParams {
@@ -43,6 +44,24 @@ export async function POST(request: Request, { params }: RouteParams) {
   const store = mongoAppRequestStore();
   for (const appId of newlyContracted(before.contracted, patch.contractedApps)) {
     await store.fulfillOpen(tenant.tenantId, appId);
+  }
+
+  const appsChanged = before.contracted.join(",") !== patch.contractedApps.join(",");
+  const entryChanged = (before.aprendeHoyEntryUrl ?? null) !== patch.aprendeHoyEntryUrl;
+  if (appsChanged || entryChanged) {
+    await writeAudit({
+      scope: "platform",
+      userId: ctx.user._id,
+      action: "platform.space.contract",
+      entity: "tenant",
+      entityId: tenant.tenantId,
+      metadata: {
+        name: tenant.name,
+        contractedApps: patch.contractedApps,
+        appsChanged,
+        entryChanged,
+      },
+    });
   }
 
   return NextResponse.json({

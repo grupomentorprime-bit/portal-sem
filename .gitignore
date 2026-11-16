@@ -51,3 +51,7 @@ yarn-error.log*
 
 # local SDD / superpowers artifacts (do not version)
 /.superpowers/
+
+# Local secrets / scratch
+tmp-creds.txt
+tmp-*.txt

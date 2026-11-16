@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
-import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
+import { PLATFORM_ADMIN_HOME, PLATFORM_ROLE_CODES } from "@/core/identity/platform/codes";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding";
 import { readPlatformRoles } from "@/core/identity/platform/capability";
 import { redirect } from "next/navigation";
@@ -60,7 +60,11 @@ export default async function PlatformLayout({
   const roleLabel = labelPlatformRole(roles);
 
   return (
-    <PlatformShell userName={userName} roleLabel={roleLabel}>
+    <PlatformShell
+      userName={userName}
+      roleLabel={roleLabel}
+      showUsers={roles.includes(PLATFORM_ROLE_CODES.OWNER)}
+    >
       {children}
     </PlatformShell>
   );

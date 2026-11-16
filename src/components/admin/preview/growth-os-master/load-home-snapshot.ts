@@ -117,8 +117,9 @@ export async function loadGrowthOsHomeSnapshot(
     capabilities.salesView || capabilities.salesRead;
 
   const db = await getDatabase();
+  const activityFilter = { tenantId, kind: { $ne: "identity_conflict" as const } };
 
-  const [analyticsResult, commercial, personas, campaignCount, automationCount, funnelDocs] =
+  const [analyticsResult, commercial, personas, campaignCount, automationCount, funnelDocs, activityRows] =
     await Promise.all([
       capabilities.salesView || capabilities.salesRead || capabilities.salesOperate
         ? getConversionAnalytics(tenantId, periodQuery)
@@ -149,6 +150,12 @@ export async function loadGrowthOsHomeSnapshot(
         }>(GROWTH_FUNNELS_COLLECTION)
         .find({ tenantId })
         .toArray(),
+      db
+        .collection<GrowthActivity>(GROWTH_ACTIVIDADES_COLLECTION)
+        .find(activityFilter)
+        .sort({ occurredAt: -1 })
+        .limit(80)
+        .toArray(),
     ]);
 
   const analytics =
@@ -162,24 +169,71 @@ export async function loadGrowthOsHomeSnapshot(
   const primaryFunnelDoc = primaryStock
     ? funnelDocs.find((f) => f.key === primaryStock.funnelKey)
     : undefined;
-  if (primaryFunnelDoc?.workflowDefinitionKey) {
-    const definition = await db
-      .collection<{
-        tenantId: string;
-        key: string;
-        states?: Array<{ key: string; label: string }>;
-      }>("workflow_definitions")
-      .findOne({
-        tenantId,
-        key: primaryFunnelDoc.workflowDefinitionKey,
-      });
-    const stages = (definition?.states ?? [])
+  const prev = period ? previousEqualWindow(period.start, period.end) : null;
+  const [definition, activityCount, opportunityRows, activityTimeRows] = await Promise.all([
+    primaryFunnelDoc?.workflowDefinitionKey
+      ? db
+          .collection<{
+            tenantId: string;
+            key: string;
+            states?: Array<{ key: string; label: string }>;
+          }>("workflow_definitions")
+          .findOne({
+            tenantId,
+            key: primaryFunnelDoc.workflowDefinitionKey,
+          })
+      : Promise.resolve(null),
+    db.collection(GROWTH_ACTIVIDADES_COLLECTION).countDocuments(
+      period
+        ? {
+            ...activityFilter,
+            occurredAt: { $gte: period.start, $lt: period.end },
+          }
+        : activityFilter
+    ),
+    prev
+      ? db
+          .collection<{
+            openedAt?: string;
+            closedAt?: string | null;
+            status?: string;
+          }>(GROWTH_OPORTUNIDADES_COLLECTION)
+          .find(
+            {
+              tenantId,
+              $or: [
+                { closedAt: { $exists: false } },
+                { closedAt: null },
+                { closedAt: { $gte: prev.start } },
+                { openedAt: { $gte: prev.start, $lt: period!.end } },
+              ],
+            },
+            { projection: { openedAt: 1, closedAt: 1, status: 1 } }
+          )
+          .toArray()
+      : Promise.resolve([]),
+    prev
+      ? db
+          .collection<{ occurredAt?: string }>(GROWTH_ACTIVIDADES_COLLECTION)
+          .find(
+            {
+              ...activityFilter,
+              occurredAt: { $gte: prev.start, $lt: period!.end },
+            },
+            { projection: { occurredAt: 1 } }
+          )
+          .toArray()
+      : Promise.resolve([]),
+  ]);
+
+  if (definition) {
+    const stages = (definition.states ?? [])
       .filter((state) => !isGrowthFunnelResultKey(state.key))
       .map((state) => ({
         key: state.key,
         label: growthFunnelResultLabel(state.key) ?? state.label,
       }));
-    if (stages.length > 0) {
+    if (stages.length > 0 && primaryFunnelDoc) {
       funnelStageOrder = {
         funnelKey: primaryFunnelDoc.key,
         stages,
@@ -187,29 +241,10 @@ export async function loadGrowthOsHomeSnapshot(
     }
   }
 
-  const activityFilter = { tenantId, kind: { $ne: "identity_conflict" as const } };
-  const activityRows = await db
-    .collection<GrowthActivity>(GROWTH_ACTIVIDADES_COLLECTION)
-    .find(activityFilter)
-    .sort({ occurredAt: -1 })
-    .limit(80)
-    .toArray();
-
   const inPeriod = (iso: string | undefined) =>
     period
       ? isTimestampInPeriod(iso, period.start, period.end)
       : Boolean(iso);
-
-  const activityCount = period
-    ? await db.collection(GROWTH_ACTIVIDADES_COLLECTION).countDocuments({
-        tenantId,
-        kind: { $ne: "identity_conflict" },
-        occurredAt: { $gte: period.start, $lt: period.end },
-      })
-    : await db.collection(GROWTH_ACTIVIDADES_COLLECTION).countDocuments({
-        tenantId,
-        kind: { $ne: "identity_conflict" },
-      });
 
   const nameById = new Map(personas.map((item) => [item.id, item.displayName]));
   const rawActivities = activitiesVisibleInUi(activityRows)
@@ -260,41 +295,7 @@ export async function loadGrowthOsHomeSnapshot(
     funnelStageOrder,
   });
 
-  if (!period) return view;
-
-  const prev = previousEqualWindow(period.start, period.end);
-  const [opportunityRows, activityTimeRows] = await Promise.all([
-    db
-      .collection<{
-        openedAt?: string;
-        closedAt?: string | null;
-        status?: string;
-      }>(GROWTH_OPORTUNIDADES_COLLECTION)
-      .find(
-        {
-          tenantId,
-          $or: [
-            { closedAt: { $exists: false } },
-            { closedAt: null },
-            { closedAt: { $gte: prev.start } },
-            { openedAt: { $gte: prev.start, $lt: period.end } },
-          ],
-        },
-        { projection: { openedAt: 1, closedAt: 1, status: 1 } }
-      )
-      .toArray(),
-    db
-      .collection<{ occurredAt?: string }>(GROWTH_ACTIVIDADES_COLLECTION)
-      .find(
-        {
-          tenantId,
-          kind: { $ne: "identity_conflict" },
-          occurredAt: { $gte: prev.start, $lt: period.end },
-        },
-        { projection: { occurredAt: 1 } }
-      )
-      .toArray(),
-  ]);
+  if (!period || !prev) return view;
 
   view.trends = projectHomeMetricTrends({
     periodStart: period.start,

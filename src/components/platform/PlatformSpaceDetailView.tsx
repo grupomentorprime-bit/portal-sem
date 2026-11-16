@@ -1,32 +1,78 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Box, ChevronLeft, ChevronRight, Inbox, Link2, Users } from "lucide-react";
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { StatusBadge, type StatusBadgeTone } from "@/components/admin/kit";
+import { GrowthOsWelcomeBand } from "@/components/product/GrowthOsWelcomeBand";
 import { PlatformEnterSpacePanel } from "@/components/platform/PlatformEnterSpacePanel";
 import { PlatformSpaceDomainPanel } from "@/components/platform/PlatformSpaceDomainPanel";
 import { customDomainCnameTarget } from "@/core/tenant/custom-domain-records";
 import { PlatformSpaceActionsMenu } from "@/components/platform/PlatformSpaceActionsMenu";
 import { SpaceAppsPanel } from "@/components/platform/SpaceAppsPanel";
 import { SpaceTypeFallbackMark } from "@/components/platform/SpaceTypeFallbackMark";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { PlatformSpaceDetail, PlatformSpaceMember } from "@/lib/platform/spaces";
+import { cn } from "@/lib/utils";
 
 function Section({
   title,
+  detail,
   children,
 }: {
   title: string;
+  detail?: string;
   children: React.ReactNode;
 }) {
   return (
-    <Card className="rounded-[10px] border-[var(--color-border-default)] bg-white p-0 shadow-none">
-      <CardHeader className="mb-0 border-b border-[var(--color-border-default)] px-4 py-2.5">
-        <CardTitle className="text-[13px] font-semibold text-[var(--gray-800)]">
+    <section className="overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-white shadow-[0_10px_28px_-24px_rgba(14,79,144,0.45)]">
+      <div className="border-b border-[var(--color-border-default)] px-4 py-3.5 sm:px-5">
+        <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-[var(--gray-900)]">
           {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 py-3">{children}</CardContent>
-    </Card>
+        </h2>
+        {detail ? (
+          <p className="text-[12px] text-[var(--gray-500)]">{detail}</p>
+        ) : null}
+      </div>
+      <div className="px-4 py-4 sm:px-5">{children}</div>
+    </section>
+  );
+}
+
+function MetricTile({
+  label,
+  value,
+  icon: Icon,
+  card,
+  iconBg,
+}: {
+  label: string;
+  value: number;
+  icon: typeof Users;
+  card: string;
+  iconBg: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-2xl border px-3.5 py-3 shadow-[0_8px_20px_-18px_rgba(14,79,144,0.45)]",
+        card
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80",
+          iconBg
+        )}
+      >
+        <Icon className="h-5 w-5" strokeWidth={2.1} aria-hidden />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[1.35rem] font-semibold tabular-nums leading-none tracking-[-0.04em] text-[var(--gray-900)]">
+          {value}
+        </span>
+        <span className="mt-1 block truncate text-[12px] text-[var(--gray-500)]">
+          {label}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -100,7 +146,7 @@ export function PlatformSpaceDetailView({
     null;
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4">
       <Link
         href={`${PLATFORM_ADMIN_HOME}#espacios`}
         className="inline-flex items-center gap-0.5 text-[13px] text-[var(--gray-500)] transition hover:text-[var(--gray-900)]"
@@ -109,52 +155,73 @@ export function PlatformSpaceDetailView({
         Espacios
       </Link>
 
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <SpaceMark space={space} />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-[18px] font-semibold tracking-[-0.02em] text-[var(--gray-900)]">
-                {space.name}
-              </h1>
-              <StatusBadge
-                tone={tenantStatusTone(space.status)}
-                label={space.statusLabel}
+      <GrowthOsWelcomeBand
+        eyebrow={space.typeLabel}
+        title={
+          <span className="inline-flex items-center gap-3">
+            <SpaceMark space={space} />
+            <span className="truncate">{space.name}</span>
+          </span>
+        }
+        subtitle={
+          space.tagline?.trim() ||
+          `${space.site?.name ?? "Sin sitio"} · ${memberLabel}`
+        }
+        aside={
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <StatusBadge
+              tone={tenantStatusTone(space.status)}
+              label={space.statusLabel}
+            />
+            <div className="flex items-center gap-2">
+              <PlatformEnterSpacePanel
+                tenantId={space.tenantId}
+                spaceName={space.name}
+                hasAccess={operatorHasAccess}
+                compact
+              />
+              <PlatformSpaceActionsMenu
+                tenantId={space.tenantId}
+                spaceName={space.name}
+                status={space.status}
               />
             </div>
-            <p className="mt-0.5 truncate text-[13px] text-[var(--gray-500)]">
-              {space.typeLabel}
-              <span className="mx-1.5 text-[var(--gray-300)]" aria-hidden>
-                ·
-              </span>
-              {space.site?.name ?? "Sin Sitio"}
-              <span className="mx-1.5 text-[var(--gray-300)]" aria-hidden>
-                ·
-              </span>
-              {memberLabel}
-            </p>
-            {space.tagline ? (
-              <p className="mt-0.5 truncate text-[13px] text-[var(--gray-500)]">
-                {space.tagline}
-              </p>
-            ) : null}
           </div>
-        </div>
+        }
+      />
 
-        <div className="flex shrink-0 items-center gap-2">
-          <PlatformEnterSpacePanel
-            tenantId={space.tenantId}
-            spaceName={space.name}
-            hasAccess={operatorHasAccess}
-            compact
+      <section aria-label="Resumen del cliente">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            label="Personas con acceso"
+            value={space.memberCount}
+            icon={Users}
+            card="border-[color-mix(in_srgb,var(--growth-os-primary)_16%,white)] bg-[color-mix(in_srgb,var(--growth-os-primary)_7%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-primary)_14%,white)] text-[var(--growth-os-primary)]"
           />
-          <PlatformSpaceActionsMenu
-            tenantId={space.tenantId}
-            spaceName={space.name}
-            status={space.status}
+          <MetricTile
+            label="Dominios"
+            value={space.domains.length}
+            icon={Link2}
+            card="border-[color-mix(in_srgb,var(--growth-os-light)_22%,white)] bg-[color-mix(in_srgb,var(--growth-os-light)_10%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-light)_18%,white)] text-[var(--growth-os-light)]"
+          />
+          <MetricTile
+            label="Aplicaciones"
+            value={space.contractedApps.length}
+            icon={Box}
+            card="border-[color-mix(in_srgb,var(--growth-os-success)_18%,white)] bg-[color-mix(in_srgb,var(--growth-os-success)_8%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-success)_16%,white)] text-[var(--growth-os-success)]"
+          />
+          <MetricTile
+            label={space.openAppRequests.length === 1 ? "Solicitud abierta" : "Solicitudes abiertas"}
+            value={space.openAppRequests.length}
+            icon={Inbox}
+            card="border-[color-mix(in_srgb,var(--growth-os-accent)_16%,white)] bg-[color-mix(in_srgb,var(--growth-os-accent)_7%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-accent)_14%,white)] text-[var(--growth-os-accent)]"
           />
         </div>
-      </header>
+      </section>
 
       {!operatorHasAccess ? (
         <PlatformEnterSpacePanel
@@ -164,7 +231,14 @@ export function PlatformSpaceDetailView({
         />
       ) : null}
 
-      <Section title="Aplicaciones">
+      <Section
+        title="Aplicaciones"
+        detail={
+          space.contractedApps.length === 1
+            ? "1 en el plan"
+            : `${space.contractedApps.length} en el plan`
+        }
+      >
         <SpaceAppsPanel
           tenantId={space.tenantId}
           contractedApps={space.contractedApps}
@@ -174,7 +248,14 @@ export function PlatformSpaceDetailView({
       </Section>
 
       <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(16rem,0.72fr)]">
-        <Section title="Dominios">
+        <Section
+          title="Dominios"
+          detail={
+            space.domains.length === 1
+              ? "1 dirección"
+              : `${space.domains.length} direcciones`
+          }
+        >
           <PlatformSpaceDomainPanel
             tenantId={space.tenantId}
             subdomain={subdomainHosts[0]?.host ?? null}
@@ -186,7 +267,7 @@ export function PlatformSpaceDetailView({
           />
         </Section>
 
-        <Section title="Personas con acceso">
+        <Section title="Personas" detail={memberLabel}>
           <PeoplePanel
             members={space.principalMembers}
             memberCount={space.memberCount}
@@ -196,7 +277,7 @@ export function PlatformSpaceDetailView({
       </div>
 
       {(space.identity || space.tenantId) && (
-        <details className="group rounded-[10px] border border-[var(--color-border-default)] bg-white px-4 py-2.5">
+        <details className="group overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-white px-4 py-3.5 shadow-[0_10px_28px_-24px_rgba(14,79,144,0.45)] sm:px-5">
           <summary className="cursor-pointer list-none text-[13px] text-[var(--gray-600)] transition hover:text-[var(--gray-900)] [&::-webkit-details-marker]:hidden">
             <span className="inline-flex items-center gap-2">
               <ChevronRight className="h-3.5 w-3.5 text-[var(--gray-400)] transition group-open:rotate-90" />

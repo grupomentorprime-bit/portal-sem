@@ -28,25 +28,25 @@ function readSrc(rel: string): string {
 }
 
 describe("OT-GROWTH-AUTH-ENTRY-FIX-002 — resolvePostAuthDestination", () => {
-  it("A · operador + membresía SEM → /platform", () => {
+  it("A · operador + membresía SEM → /escritorio", () => {
     assert.equal(
       resolvePostAuthDestination({
         hasSpace: true,
         isPlatformOperator: true,
         next: "/admin",
       }),
-      PLATFORM_ADMIN_HOME
+      "/escritorio"
     );
   });
 
-  it("B · operador + varias membresías → /platform", () => {
+  it("B · operador + varias membresías → /escritorio", () => {
     assert.equal(
       resolvePostAuthDestination({
         hasSpace: true,
         isPlatformOperator: true,
         next: null,
       }),
-      PLATFORM_ADMIN_HOME
+      "/escritorio"
     );
   });
 
@@ -145,14 +145,14 @@ describe("OT-GROWTH-AUTH-ENTRY-FIX-002 — resolvePostAuthDestination", () => {
     );
   });
 
-  it("operador sin Espacio → /platform; next profundo /platform se conserva", () => {
+  it("operador sin Espacio → /escritorio; next profundo /platform se conserva", () => {
     assert.equal(
       resolvePostAuthDestination({
         hasSpace: false,
         isPlatformOperator: true,
         next: null,
       }),
-      PLATFORM_ADMIN_HOME
+      "/escritorio"
     );
     assert.equal(
       resolvePostAuthDestination({
@@ -191,7 +191,7 @@ describe("OT-GROWTH-AUTH-ENTRY-FIX-002 — un solo resolver en puntos de entrada
     assert.match(login, /redirectTo/);
 
     assert.match(landing, /Operador de plataforma/);
-    assert.match(landing, /siempre Growth OS Master/);
+    assert.match(landing, /return DESKTOP_HOME/);
     // Prioridad operador antes de hasSpace → /admin
     const opIdx = landing.indexOf("if (input.isPlatformOperator)");
     const noSpaceIdx = landing.indexOf("if (!input.hasSpace)");

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         activeTenantId: tenantId,
-        redirectedTo: "/admin",
+        redirectedTo: "/escritorio",
         unchanged: true,
       });
     }
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       activeTenantId: tenantId,
-      redirectedTo: "/admin",
+      redirectedTo: "/escritorio",
     });
   } catch (error) {
     console.error(error);

@@ -13,11 +13,7 @@ import {
   findMembershipAnyStatus,
   MembershipConflictError,
 } from "@/lib/identity/memberships";
-import { ensureTenantRoles, getSuperAdminRole, ensureSuperAdminMembership } from "@/lib/identity/roles";
-import {
-  ensureSuperAdminMembershipForEmail,
-  SUPER_ADMIN_BOOTSTRAP_EMAIL,
-} from "@/lib/identity/iam-guard";
+import { ensureTenantRoles, getSuperAdminRole } from "@/lib/identity/roles";
 import {
   createUser,
   findUserByEmail,
@@ -105,11 +101,6 @@ export async function resolveKeycloakMembership(
 
   const existingAny = await findMembershipAnyStatus(user._id, tenantId);
   if (existingAny) {
-    if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {
-      await ensureSuperAdminMembership(tenantId, user._id);
-      return findMembership(user._id, tenantId);
-    }
-
     const invitation = await findPendingInvitationByEmail(tenantId, user.email);
     if (invitation && existingAny.status !== "active") {
       // Reinvitación: reactivar sobre la membership existente (D3). Rol desde invitación, no realm.
@@ -181,11 +172,6 @@ export async function resolveKeycloakMembership(
     }
   }
 
-  if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {
-    await ensureSuperAdminMembership(tenantId, user._id);
-    return findMembership(user._id, tenantId);
-  }
-
   return null;
 }
 
@@ -211,7 +197,6 @@ export async function finishKeycloakLogin(
   );
 
   if (preferred) {
-    await ensureSuperAdminMembershipForEmail(user.email, preferred, user._id);
     await resolveKeycloakMembership(user, preferred, accessToken);
   }
 

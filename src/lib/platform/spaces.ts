@@ -258,6 +258,19 @@ async function buildListItem(tenant: TenantDocument): Promise<PlatformSpaceListI
 }
 
 /**
+ * Nombres de Espacio para armar listas de cuentas.
+ * Una sola lectura de tenants: sin sitio, dominio, miembros ni media.
+ */
+export async function listPlatformSpaceNames(): Promise<{ tenantId: string; name: string }[]> {
+  const db = await getDatabase();
+  const tenants = await listTenants(db);
+  return tenants.map((tenant) => ({
+    tenantId: tenant.tenantId,
+    name: tenant.name?.trim() || PLATFORM_SPACE_FALLBACK,
+  }));
+}
+
+/**
  * Catálogo global de Espacios para operadores de Growth OS.
  * No usa membresías del caller ni el listado de Espacios de la cuenta.
  */
