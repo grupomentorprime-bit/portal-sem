@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import sharp from "sharp";
 import {
@@ -95,5 +97,22 @@ describe("avatar del escritorio", () => {
     );
 
     await deleteAvatarPhoto(userId);
+  });
+
+  it("define rutas para preset, foto y lectura del avatar", () => {
+    const route = readFileSync(
+      resolve(process.cwd(), "src/app/api/desktop/avatar/route.ts"),
+      "utf8"
+    );
+    assert.match(route, /parseAvatarPresetId/);
+    assert.match(route, /multipart\/form-data/);
+    assert.match(route, /clear/);
+
+    const fileRoute = readFileSync(
+      resolve(process.cwd(), "src/app/api/desktop/avatar/file/route.ts"),
+      "utf8"
+    );
+    assert.match(fileRoute, /readAvatarPhoto/);
+    assert.match(fileRoute, /userId/);
   });
 });
