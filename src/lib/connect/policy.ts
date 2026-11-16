@@ -22,9 +22,34 @@ export type ConnectAccessInput = {
 };
 
 const LAUNCH_CODE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+const TRANSACTION_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 export function isLaunchCode(value: string): boolean {
   return LAUNCH_CODE_PATTERN.test(value);
+}
+
+/** Prueba de la transacción: 32 bytes en base64url. No viaja en la respuesta de emisión. */
+export function isTransactionVerifier(value: string): boolean {
+  return LAUNCH_CODE_PATTERN.test(value);
+}
+
+/** SHA-256 hex del verificador. Es lo único que se guarda con el código. */
+export function isTransactionHash(value: string): boolean {
+  return TRANSACTION_HASH_PATTERN.test(value);
+}
+
+/** El navegador crea la prueba. El servidor solo recibe y guarda su hash. */
+export function createTransactionVerifier(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+
+export async function hashTransactionVerifier(verifier: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export function normalizeOrigin(value: string | null | undefined): string | null {
@@ -146,18 +171,26 @@ export function readCallbackSubmission(input: {
   method: string;
   queryCode: string | null;
   bodyCode: string | null;
+  bodyTransaction: string | null;
   originHeader: string | null;
   requestOrigin: string;
   allowedIssuer: string;
   spaceBaseDomain?: string | null;
 }):
-  | { ok: true; code: string; issuerOrigin: string; destinationOrigin: string }
-  | { ok: false; reason: "method" | "query_code" | "missing_code" | "malformed" | "issuer" | "destination" } {
+  | { ok: true; code: string; transaction: string; issuerOrigin: string; destinationOrigin: string }
+  | {
+      ok: false;
+      reason: "method" | "query_code" | "missing_code" | "malformed" | "transaction" | "issuer" | "destination";
+    } {
   if (input.method.toUpperCase() !== "POST") return { ok: false, reason: "method" };
   if (input.queryCode != null) return { ok: false, reason: "query_code" };
   const code = input.bodyCode?.trim() ?? "";
   if (!code) return { ok: false, reason: "missing_code" };
   if (code.length > 128 || !isLaunchCode(code)) return { ok: false, reason: "malformed" };
+  const transaction = input.bodyTransaction?.trim() ?? "";
+  if (!transaction || transaction.length > 128 || !isTransactionVerifier(transaction)) {
+    return { ok: false, reason: "transaction" };
+  }
   const issuer = normalizeOrigin(input.originHeader);
   const allowed = normalizeOrigin(input.allowedIssuer);
   if (!issuer || !allowed || issuer !== allowed || !isDeskOrigin(issuer)) {
@@ -167,7 +200,7 @@ export function readCallbackSubmission(input: {
   if (!destination || !isCumpleProductOrigin(destination, input.spaceBaseDomain)) {
     return { ok: false, reason: "destination" };
   }
-  return { ok: true, code, issuerOrigin: issuer, destinationOrigin: destination };
+  return { ok: true, code, transaction, issuerOrigin: issuer, destinationOrigin: destination };
 }
 
 export function productLandingUrl(
@@ -187,6 +220,7 @@ export function productLandingUrl(
 export function connectLaunchForm(input: {
   callback: string;
   code: string;
+  transaction: string;
   deskOrigin: string;
 }):
   | {
@@ -194,10 +228,11 @@ export function connectLaunchForm(input: {
       action: string;
       method: "POST";
       referrerPolicy: "no-referrer";
-      fields: { code: string };
+      fields: { code: string; transaction: string };
     }
   | { ok: false } {
-  if (!isLaunchCode(input.code.trim())) return { ok: false };
+  const transaction = input.transaction.trim();
+  if (!isLaunchCode(input.code.trim()) || !isTransactionVerifier(transaction)) return { ok: false };
   let url: URL;
   try {
     url = new URL(input.callback);
@@ -212,7 +247,7 @@ export function connectLaunchForm(input: {
     action: `${url.origin}${CONNECT_CALLBACK_PATH}`,
     method: "POST",
     referrerPolicy: "no-referrer",
-    fields: { code: input.code },
+      fields: { code: input.code, transaction },
   };
 }
 

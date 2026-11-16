@@ -29,7 +29,11 @@ import {
   type WallpaperChoice,
 } from "@/lib/desktop/catalog";
 import { canManageAppKeys, desktopVisibleApps } from "@/lib/desktop/app-access";
-import { connectLaunchForm } from "@/lib/connect/policy";
+import {
+  connectLaunchForm,
+  createTransactionVerifier,
+  hashTransactionVerifier,
+} from "@/lib/connect/policy";
 import { desktopClick, type DesktopClick } from "@/lib/desktop/contract";
 import {
   deskIconsForDock,
@@ -804,10 +808,12 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }
 
   async function beginConnect(appId: "cumple") {
+    const transaction = createTransactionVerifier();
+    const transactionHash = await hashTransactionVerifier(transaction);
     const response = await fetch("/api/connect/launch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appId }),
+      body: JSON.stringify({ appId, transactionHash }),
     }).catch(() => null);
     const body = (await response?.json().catch(() => null)) as {
       ok?: boolean;
@@ -820,6 +826,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
         ? connectLaunchForm({
             callback: body.callback,
             code: body.code,
+            transaction,
             deskOrigin: window.location.origin,
           })
         : null;
@@ -839,7 +846,11 @@ export function MentorDesktop(props: MentorDesktopProps) {
     field.type = "hidden";
     field.name = "code";
     field.value = form.fields.code;
-    element.append(field);
+    const proof = document.createElement("input");
+    proof.type = "hidden";
+    proof.name = "transaction";
+    proof.value = form.fields.transaction;
+    element.append(field, proof);
     document.body.append(element);
     element.submit();
   }

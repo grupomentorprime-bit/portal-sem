@@ -29,7 +29,7 @@ export function EscritorioReturn({
   return (
     <a
       href={target}
-      className="fixed left-3 top-3 z-40 rounded-full bg-white/90 px-3 py-1 text-[13px] font-medium text-stone-900 shadow"
+      className="fixed left-3 top-3 z-[70] rounded-full bg-white/90 px-3 py-1 text-[13px] font-medium text-stone-900 shadow"
     >
       Escritorio
     </a>

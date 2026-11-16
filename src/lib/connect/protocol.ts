@@ -6,6 +6,8 @@ import {
   evaluateConnectAccess,
   isDeskOrigin,
   isLaunchCode,
+  isTransactionHash,
+  isTransactionVerifier,
   normalizeOrigin,
   type ConnectAccessInput,
 } from "@/lib/connect/policy";
@@ -17,6 +19,7 @@ export type LaunchTicket = {
   appId: "cumple";
   destinationOrigin: string;
   issuerOrigin: string;
+  transactionHash: string;
   expiresAt: string;
   usedAt: string | null;
 };
@@ -40,6 +43,19 @@ export function createLaunchCode(): string {
 
 export function hashLaunchCode(code: string): string {
   return createHash("sha256").update(code).digest("hex");
+}
+
+/** Mismo SHA-256 hex que `hashTransactionVerifier` en el navegador. */
+export function hashTransaction(verifier: string): string {
+  return createHash("sha256").update(verifier).digest("hex");
+}
+
+function transactionMatches(verifier: string, expectedHash: string): boolean {
+  if (!isTransactionVerifier(verifier) || !isTransactionHash(expectedHash)) return false;
+  const actual = createHash("sha256").update(verifier).digest();
+  const expected = Buffer.from(expectedHash, "hex");
+  if (actual.length !== expected.length) return false;
+  return timingSafeEqual(actual, expected);
 }
 
 function secretsMatch(provided: string, expected: string): boolean {
@@ -71,6 +87,7 @@ export function createMemoryLaunchCodeStore(): LaunchCodeStore {
           appId: ticket.appId,
           destinationOrigin: ticket.destinationOrigin,
           issuerOrigin: ticket.issuerOrigin,
+          transactionHash: ticket.transactionHash,
           expiresAt: ticket.expiresAt,
           usedAt: null,
         };
@@ -112,6 +129,7 @@ export async function issueLaunchCode(input: {
   tenantId: string;
   appId: string;
   issuerOrigin: string;
+  transactionHash: string;
   access: ConnectAccessInput;
   store: LaunchCodeStore;
   audit: (event: ConnectAudit) => void;
@@ -146,6 +164,20 @@ export async function issueLaunchCode(input: {
     );
   }
 
+  const transactionHash = input.transactionHash.trim().toLowerCase();
+  if (!isTransactionHash(transactionHash)) {
+    return reject(
+      input.audit,
+      {
+        action: "connect.reject",
+        tenantId,
+        userId: input.userId,
+        metadata: { appId: CONNECT_APP_ID, reason: "transaction" },
+      },
+      "transaction"
+    );
+  }
+
   const issuer = normalizeOrigin(input.issuerOrigin);
   if (!issuer || !isDeskOrigin(issuer)) {
     return reject(
@@ -169,6 +201,7 @@ export async function issueLaunchCode(input: {
     appId: CONNECT_APP_ID,
     destinationOrigin: decision.destinationOrigin,
     issuerOrigin: issuer,
+    transactionHash,
     expiresAt,
     usedAt: null,
   });
@@ -192,6 +225,7 @@ export async function redeemLaunchCode(input: {
   previousSecret?: string | null;
   providedSecret: string;
   code: string;
+  transaction: string;
   destinationOrigin: string;
   issuerOrigin: string | null;
   accessFor: (ticket: {
@@ -246,8 +280,72 @@ export async function redeemLaunchCode(input: {
     );
   }
 
+  const transaction = input.transaction.trim();
+  if (!isTransactionVerifier(transaction)) {
+    return reject(
+      input.audit,
+      {
+        action: "connect.reject",
+        tenantId: "none",
+        userId: "none",
+        metadata: { appId: CONNECT_APP_ID, reason: "transaction" },
+      },
+      "transaction"
+    );
+  }
+
   const nowIso = input.now.toISOString();
   const codeHash = hashLaunchCode(input.code);
+  const pending = await input.store.find(codeHash);
+  if (!pending) {
+    return reject(
+      input.audit,
+      {
+        action: "connect.reject",
+        tenantId: "none",
+        userId: "none",
+        metadata: { appId: CONNECT_APP_ID, reason: "unknown" },
+      },
+      "unknown"
+    );
+  }
+  if (pending.usedAt) {
+    return reject(
+      input.audit,
+      {
+        action: "connect.reject",
+        tenantId: pending.tenantId,
+        userId: pending.userId,
+        metadata: { appId: CONNECT_APP_ID, reason: "reused" },
+      },
+      "reused"
+    );
+  }
+  if (Date.parse(pending.expiresAt) <= Date.parse(nowIso)) {
+    return reject(
+      input.audit,
+      {
+        action: "connect.reject",
+        tenantId: pending.tenantId,
+        userId: pending.userId,
+        metadata: { appId: CONNECT_APP_ID, reason: "expired" },
+      },
+      "expired"
+    );
+  }
+  if (!transactionMatches(transaction, pending.transactionHash)) {
+    return reject(
+      input.audit,
+      {
+        action: "connect.reject",
+        tenantId: pending.tenantId,
+        userId: pending.userId,
+        metadata: { appId: CONNECT_APP_ID, reason: "transaction" },
+      },
+      "transaction"
+    );
+  }
+
   const ticket = await input.store.consume(codeHash, nowIso);
   if (!ticket) {
     const existing = await input.store.find(codeHash);

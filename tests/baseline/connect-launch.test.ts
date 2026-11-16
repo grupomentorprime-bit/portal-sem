@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { buildContentSecurityPolicy } from "../../src/core/security/http-headers";
 import { allowedCumpleBase, deskOriginFromEnv } from "../../src/lib/connect/desk";
 import { desktopClick } from "../../src/lib/desktop/contract";
 import {
@@ -9,7 +11,9 @@ import {
   CONNECT_CODE_TTL_MS,
   auditCarriesSecret,
   connectLaunchForm,
+  createTransactionVerifier,
   escritorioReturnHref,
+  hashTransactionVerifier,
   evaluateConnectAccess,
   growthSessionAllowed,
   isLaunchCode,
@@ -27,6 +31,7 @@ import {
   createLaunchCode,
   createMemoryLaunchCodeStore,
   hashLaunchCode,
+  hashTransaction,
   issueLaunchCode,
   redeemLaunchCode,
 } from "../../src/lib/connect/protocol";
@@ -36,6 +41,9 @@ const PREVIOUS = "previous-exchange-secret";
 const DEST = "https://cumple.mentorprime.cl";
 const ISSUER = "https://growthos.mentorprime.cl";
 const CODE = "a".repeat(43);
+const TX = "b".repeat(43);
+const TX_HASH = createHash("sha256").update(TX).digest("hex");
+const STOLEN = "c".repeat(43);
 
 function access(overrides: Record<string, unknown> = {}) {
   return {
@@ -62,6 +70,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access(),
       store,
       audit: (event) => events.push(event),
@@ -80,8 +89,14 @@ describe("NELZURI Connect — entrada a Cumple", () => {
     assert.ok(stored);
     assert.equal(stored?.usedAt, null);
     assert.equal(JSON.stringify(stored).includes(issued.code), false);
+    assert.equal(stored?.transactionHash, TX_HASH);
+    assert.equal(JSON.stringify(stored).includes(TX), false);
     assert.equal(events[0]?.action, "connect.launch");
-    assert.equal(auditCarriesSecret(events, [issued.code, hashLaunchCode(issued.code), SECRET]), false);
+    assert.equal(auditCarriesSecret(events, [issued.code, hashLaunchCode(issued.code), TX, TX_HASH, SECRET]), false);
+
+    const verifier = createTransactionVerifier();
+    assert.equal(verifier.length, 43);
+    assert.equal(await hashTransactionVerifier(verifier), hashTransaction(verifier));
   });
 
   it("no inventa plan ni llave cuando la configuración no está", async () => {
@@ -122,6 +137,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access({ contractedApps: undefined }),
       store,
       audit: () => undefined,
@@ -149,6 +165,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access(),
       store,
       audit: () => undefined,
@@ -164,6 +181,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: "https://otro.example",
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: (ticket) => {
         seen.push(ticket.tenantId);
         return access({ tenantId: ticket.tenantId });
@@ -182,6 +200,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access(),
       store,
       audit: () => undefined,
@@ -200,6 +219,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access(),
       store,
       audit: (event) => events.push(event),
@@ -214,6 +234,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access(),
       store,
       audit: (event) => events.push(event),
@@ -229,6 +250,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
         code: issued.code,
         destinationOrigin: DEST,
         issuerOrigin: ISSUER,
+        transaction: TX,
         accessFor: (ticket) => {
           checks += 1;
           assert.equal(ticket.tenantId, "cumple");
@@ -245,6 +267,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
         code: issued.code,
         destinationOrigin: DEST,
         issuerOrigin: ISSUER,
+        transaction: TX,
         accessFor: () => access(),
         store,
         audit: (event) => events.push(event),
@@ -265,6 +288,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access(),
       store: expiredStore,
       audit: () => undefined,
@@ -279,11 +303,86 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: short.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access(),
       store: expiredStore,
       audit: () => undefined,
     });
     assert.deepEqual(expired, { ok: false, reason: "expired" });
+  });
+
+  it("el código interceptado no se canjea sin la transacción, aunque el origen coincida", async () => {
+    const store = createMemoryLaunchCodeStore();
+    const now = new Date("2026-11-16T12:00:00.000Z");
+    const issued = await issueLaunchCode({
+      now,
+      secretConfigured: true,
+      userId: "user-1",
+      tenantId: "cumple",
+      appId: "cumple",
+      issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
+      access: access(),
+      store,
+      audit: () => undefined,
+    });
+    assert.equal(issued.ok, true);
+    if (!issued.ok) return;
+
+    const intercepted = await redeemLaunchCode({
+      now,
+      secret: SECRET,
+      providedSecret: SECRET,
+      code: issued.code,
+      transaction: STOLEN,
+      destinationOrigin: DEST,
+      issuerOrigin: ISSUER,
+      accessFor: () => access(),
+      store,
+      audit: () => undefined,
+    });
+    assert.deepEqual(intercepted, { ok: false, reason: "transaction" });
+    assert.equal((await store.find(hashLaunchCode(issued.code)))?.usedAt, null);
+
+    const originAlone = readCallbackSubmission({
+      method: "POST",
+      queryCode: null,
+      bodyCode: issued.code,
+      bodyTransaction: null,
+      originHeader: ISSUER,
+      requestOrigin: DEST,
+      allowedIssuer: ISSUER,
+      spaceBaseDomain: "mentorprime.cl",
+    });
+    assert.deepEqual(originAlone, { ok: false, reason: "transaction" });
+
+    const bound = await redeemLaunchCode({
+      now,
+      secret: SECRET,
+      providedSecret: SECRET,
+      code: issued.code,
+      transaction: TX,
+      destinationOrigin: DEST,
+      issuerOrigin: ISSUER,
+      accessFor: () => access(),
+      store,
+      audit: () => undefined,
+    });
+    assert.deepEqual(bound, { ok: true, userId: "user-1", tenantId: "cumple", appId: "cumple" });
+
+    const unbound = await issueLaunchCode({
+      now,
+      secretConfigured: true,
+      userId: "user-1",
+      tenantId: "cumple",
+      appId: "cumple",
+      issuerOrigin: ISSUER,
+      transactionHash: "",
+      access: access(),
+      store,
+      audit: () => undefined,
+    });
+    assert.deepEqual(unbound, { ok: false, reason: "transaction" });
   });
 
   it("un acceso revocado no se canjea", async () => {
@@ -297,6 +396,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access(),
       store,
       audit: (event) => events.push(event),
@@ -311,6 +411,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access({ authorizedApps: [] }),
       store,
       audit: (event) => events.push(event),
@@ -326,6 +427,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access(),
       store,
       audit: () => undefined,
@@ -350,6 +452,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access(),
       store,
       audit: () => undefined,
@@ -364,6 +467,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access(),
       store,
       audit: () => undefined,
@@ -378,6 +482,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: "no-es-un-codigo",
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access(),
       store,
       audit: () => undefined,
@@ -396,6 +501,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       tenantId: "cumple",
       appId: "cumple",
       issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
       access: access(),
       store,
       audit: () => undefined,
@@ -409,6 +515,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access({ tenantId: "otra" }),
       store,
       audit: () => undefined,
@@ -421,6 +528,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       code: issued.code,
       destinationOrigin: DEST,
       issuerOrigin: ISSUER,
+      transaction: TX,
       accessFor: () => access(),
       store,
       audit: () => undefined,
@@ -493,6 +601,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       method: "POST",
       queryCode: null,
       bodyCode: CODE,
+      bodyTransaction: TX,
       originHeader: null,
       requestOrigin: DEST,
       allowedIssuer: ISSUER,
@@ -508,6 +617,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
         method: "GET",
         queryCode: "secreto",
         bodyCode: null,
+        bodyTransaction: null,
         originHeader: ISSUER,
         requestOrigin: DEST,
         allowedIssuer: ISSUER,
@@ -519,6 +629,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
         method: "POST",
         queryCode: "en-la-url",
         bodyCode: "en-el-cuerpo",
+        bodyTransaction: TX,
         originHeader: ISSUER,
         requestOrigin: DEST,
         allowedIssuer: ISSUER,
@@ -530,6 +641,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
         method: "POST",
         queryCode: null,
         bodyCode: CODE,
+        bodyTransaction: TX,
         originHeader: "https://evil.example",
         requestOrigin: DEST,
         allowedIssuer: ISSUER,
@@ -541,12 +653,13 @@ describe("NELZURI Connect — entrada a Cumple", () => {
         method: "POST",
         queryCode: null,
         bodyCode: CODE,
+        bodyTransaction: TX,
         originHeader: ISSUER,
         requestOrigin: DEST,
         allowedIssuer: ISSUER,
         spaceBaseDomain: "mentorprime.cl",
       }),
-      { ok: true, code: CODE, issuerOrigin: ISSUER, destinationOrigin: DEST }
+      { ok: true, code: CODE, transaction: TX, issuerOrigin: ISSUER, destinationOrigin: DEST }
     );
     assert.equal(productLandingUrl(DEST, "mentorprime.cl"), `${DEST}/`);
     assert.equal(
@@ -563,6 +676,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
     const form = connectLaunchForm({
       callback: `${DEST}${CONNECT_CALLBACK_PATH}`,
       code: CODE,
+      transaction: TX,
       deskOrigin: ISSUER,
     });
     assert.equal(form.ok, true);
@@ -571,11 +685,26 @@ describe("NELZURI Connect — entrada a Cumple", () => {
     assert.equal(form.action, `${DEST}${CONNECT_CALLBACK_PATH}`);
     assert.equal(form.action.includes("?"), false);
     assert.equal(form.referrerPolicy, "no-referrer");
-    assert.equal(connectLaunchForm({ callback: "https://evil.example/robar", code: CODE, deskOrigin: ISSUER }).ok, false);
+    assert.equal(form.fields.transaction, TX);
+    const localCsp = buildContentSecurityPolicy({
+      APP_URL: "http://localhost:4017",
+      NODE_ENV: "development",
+    });
+    assert.match(localCsp, /form-action[^;]*http:\/\/cumple\.localhost:4017/);
+    assert.doesNotMatch(localCsp, /form-action[^;]*\*/);
+    const publicCsp = buildContentSecurityPolicy({
+      APP_URL: "https://growthos.mentorprime.cl",
+      NODE_ENV: "production",
+    });
+    assert.match(publicCsp, /form-action[^;]*https:\/\/cumple\.mentorprime\.cl/);
+    assert.doesNotMatch(publicCsp, /form-action[^;]*https:\/\/evil\.example/);
+    assert.equal(connectLaunchForm({ callback: "https://evil.example/robar", code: CODE, transaction: TX, deskOrigin: ISSUER }).ok, false);
+    assert.equal(connectLaunchForm({ callback: `${DEST}${CONNECT_CALLBACK_PATH}`, code: CODE, transaction: "", deskOrigin: ISSUER }).ok, false);
     assert.equal(
       connectLaunchForm({
         callback: "https://cumple.evil.com/api/connect/callback",
         code: CODE,
+        transaction: TX,
         deskOrigin: ISSUER,
       }).ok,
       false
@@ -680,7 +809,10 @@ describe("NELZURI Connect — entrada a Cumple", () => {
     assert.match(exchange, /readPreviousConnectSecret/);
     assert.doesNotMatch(exchange, /setSessionCookie|cookies\.set/);
     const launch = readFileSync(resolve("src/app/api/connect/launch/route.ts"), "utf8");
+    assert.match(launch, /transactionHash/);
     assert.match(launch, /contractedApps/);
+    assert.match(callback, /bodyTransaction/);
+    assert.match(exchange, /transaction/);
     assert.doesNotMatch(launch, /resolveContractedApps/);
     const secret = readFileSync(resolve("src/lib/connect/secret.ts"), "utf8");
     assert.match(secret, /server-only/);

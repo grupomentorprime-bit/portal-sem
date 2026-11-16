@@ -53,11 +53,13 @@ export async function POST(request: Request) {
 
   const form = await request.formData().catch(() => null);
   const bodyCode = form?.get("code");
+  const bodyTransaction = form?.get("transaction");
   const base = allowedCumpleBase();
   const submission = readCallbackSubmission({
     method: "POST",
     queryCode: url.searchParams.has("code") ? (url.searchParams.get("code") ?? "") : null,
     bodyCode: typeof bodyCode === "string" ? bodyCode : null,
+    bodyTransaction: typeof bodyTransaction === "string" ? bodyTransaction : null,
     originHeader: request.headers.get("origin"),
     requestOrigin,
     allowedIssuer: deskOriginFromEnv(),
@@ -73,6 +75,7 @@ export async function POST(request: Request) {
       previousSecret: readPreviousConnectSecret(),
       providedSecret: secret ?? "",
       code: submission.code,
+      transaction: submission.transaction,
       destinationOrigin: submission.destinationOrigin,
       issuerOrigin: submission.issuerOrigin,
       accessFor: (ticket) => readConnectAccess(ticket),

@@ -24,6 +24,7 @@ export function mongoLaunchCodeStore(): LaunchCodeStore {
         appId: ticket.appId,
         destinationOrigin: ticket.destinationOrigin,
         issuerOrigin: ticket.issuerOrigin,
+        transactionHash: ticket.transactionHash,
         expiresAt: ticket.expiresAt,
         usedAt: null,
         expireAt: new Date(ticket.expiresAt),
@@ -44,6 +45,7 @@ export function mongoLaunchCodeStore(): LaunchCodeStore {
         appId: before.appId,
         destinationOrigin: before.destinationOrigin,
         issuerOrigin: before.issuerOrigin,
+        transactionHash: before.transactionHash,
         expiresAt: before.expiresAt,
         usedAt: null,
       };
@@ -59,6 +61,7 @@ export function mongoLaunchCodeStore(): LaunchCodeStore {
         appId: row.appId,
         destinationOrigin: row.destinationOrigin,
         issuerOrigin: row.issuerOrigin,
+        transactionHash: row.transactionHash,
         expiresAt: row.expiresAt,
         usedAt: row.usedAt,
       };

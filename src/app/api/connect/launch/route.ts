@@ -19,9 +19,11 @@ export async function POST(request: Request) {
   if (auth instanceof NextResponse) return auth;
 
   let appId = "";
+  let transactionHash = "";
   try {
-    const body = (await request.json()) as { appId?: unknown };
+    const body = (await request.json()) as { appId?: unknown; transactionHash?: unknown };
     appId = typeof body.appId === "string" ? body.appId : "";
+    transactionHash = typeof body.transactionHash === "string" ? body.transactionHash : "";
   } catch {
     appId = "";
   }
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
       tenantId: auth.tenantId,
       appId,
       issuerOrigin: deskOriginFromEnv(),
+      transactionHash,
       access: { ...access, contractedApps },
       store: mongoLaunchCodeStore(),
       audit: auditConnect,

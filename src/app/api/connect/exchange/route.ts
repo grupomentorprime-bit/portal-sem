@@ -15,15 +15,18 @@ export async function POST(request: Request) {
     ? header.slice(header.indexOf(" ") + 1).trim()
     : "";
   let code = "";
+  let transaction = "";
   let destinationOrigin = "";
   let issuerOrigin = "";
   try {
     const body = (await request.json()) as {
       code?: unknown;
+      transaction?: unknown;
       destinationOrigin?: unknown;
       issuerOrigin?: unknown;
     };
     code = typeof body.code === "string" ? body.code : "";
+    transaction = typeof body.transaction === "string" ? body.transaction : "";
     destinationOrigin = typeof body.destinationOrigin === "string" ? body.destinationOrigin : "";
     issuerOrigin = typeof body.issuerOrigin === "string" ? body.issuerOrigin : "";
   } catch {
@@ -37,6 +40,7 @@ export async function POST(request: Request) {
       previousSecret: readPreviousConnectSecret(),
       providedSecret,
       code,
+      transaction,
       destinationOrigin,
       issuerOrigin,
       accessFor: (ticket) => readConnectAccess(ticket),

@@ -7,6 +7,8 @@ import type { ConnectAudit } from "@/lib/connect/protocol";
 const BLOCKED_METADATA = new Set([
   "code",
   "codeHash",
+  "transaction",
+  "transactionHash",
   "secret",
   "password",
   "authorization",
