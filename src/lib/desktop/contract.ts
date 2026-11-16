@@ -1,4 +1,4 @@
-import { isCumpleLaunchCandidate } from "@/lib/connect/policy";
+import { isCumpleLaunchCandidate, isRrhhProductOrigin } from "@/lib/connect/policy";
 import { hasAppKey } from "@/lib/desktop/app-access";
 import {
   CUMPLE_SPACE_ID,
@@ -26,7 +26,7 @@ export function isHttpsEntry(url: string | null | undefined): url is string {
 
 export type DesktopClick =
   | { kind: "open"; href: string }
-  | { kind: "connect"; appId: "cumple" }
+  | { kind: "connect"; appId: "cumple" | "rrhh" }
   | { kind: "request" }
   | { kind: "unauthorized" }
   | { kind: "later" }
@@ -40,6 +40,7 @@ export function desktopClick(input: {
   authorized?: readonly MentorAppId[] | null;
   aprendeHoyEntryUrl?: string | null;
   cumpleOrigin?: string | null;
+  rrhhOrigin?: string | null;
 }): DesktopClick {
   if (!input.contracted.includes(input.appId)) return { kind: "request" };
   if (
@@ -51,7 +52,11 @@ export function desktopClick(input: {
     return { kind: "unauthorized" };
   }
   if (input.appId === "growth-os") return { kind: "open", href: "/admin" };
-  if (input.appId === "rrhh") return { kind: "later" };
+  if (input.appId === "rrhh") {
+    return isRrhhProductOrigin(input.rrhhOrigin)
+      ? { kind: "connect", appId: "rrhh" }
+      : { kind: "later" };
+  }
   if (input.appId === "aprende-hoy") {
     return isHttpsEntry(input.aprendeHoyEntryUrl)
       ? { kind: "open", href: input.aprendeHoyEntryUrl.trim() }

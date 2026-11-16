@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auditConnect } from "@/lib/connect/audit";
+import { findUserById } from "@/lib/identity/users";
 import { readConnectAccess } from "@/lib/connect/access";
 import { redeemLaunchCode } from "@/lib/connect/protocol";
 import { readConnectSecret, readPreviousConnectSecret } from "@/lib/connect/secret";
@@ -53,12 +54,15 @@ export async function POST(request: Request) {
         redeemed.reason === "bad_secret" || redeemed.reason === "unconfigured" ? 401 : 403;
       return NextResponse.json({ ok: false, reason: redeemed.reason }, { status, headers });
     }
+    const person = await findUserById(redeemed.userId);
     return NextResponse.json(
       {
         ok: true,
         userId: redeemed.userId,
         tenantId: redeemed.tenantId,
         appId: redeemed.appId,
+        email: person?.email ?? "",
+        displayName: person?.displayName ?? "",
       },
       { headers }
     );

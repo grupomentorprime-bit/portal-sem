@@ -78,6 +78,16 @@ describe("contrato del escritorio", () => {
     assert.deepEqual(desktopClick({ ...base, appId: "cumple" }), { kind: "request" });
     assert.deepEqual(desktopClick({ ...base, appId: "rrhh", contracted: ["rrhh"] }), { kind: "later" });
     assert.deepEqual(
+      desktopClick({
+        ...base,
+        appId: "rrhh",
+        contracted: ["rrhh"],
+        authorized: ["rrhh"],
+        rrhhOrigin: "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io",
+      }),
+      { kind: "connect", appId: "rrhh" }
+    );
+    assert.deepEqual(
       desktopClick({ ...base, appId: "aprende-hoy", contracted: ["aprende-hoy"], aprendeHoyEntryUrl: "http://aprende.example" }),
       { kind: "disconnected" }
     );

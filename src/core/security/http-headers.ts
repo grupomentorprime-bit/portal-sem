@@ -89,6 +89,11 @@ function cumpleFormOrigin(env: NodeJS.ProcessEnv): string | null {
   return `https://cumple.${base}`;
 }
 
+/** Origen de RR.HH. que puede recibir el formulario. Sin variable, el canónico. */
+function rrhhFormOrigin(env: NodeJS.ProcessEnv): string | null {
+  return originFromEnvUrl(env.RRHH_APP_URL?.trim() || "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io");
+}
+
 function uniqueOrigins(values: Array<string | null | undefined>): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -126,6 +131,7 @@ export function buildContentSecurityPolicy(env: NodeJS.ProcessEnv = process.env)
     ...uniqueOrigins([
       keycloakOrigin,
       cumpleFormOrigin(env),
+      rrhhFormOrigin(env),
     ]),
   ];
   const frameSrc = [

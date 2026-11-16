@@ -832,4 +832,78 @@ describe("NELZURI Connect — entrada a Cumple", () => {
     assert.match(probe, /productSessionVerdict/);
     assert.doesNotMatch(probe, /permissions|spaces|email/);
   });
+
+  it("RR.HH. se emite hacia su origen y el canje devuelve esa app", async () => {
+    const store = createMemoryLaunchCodeStore();
+    const now = new Date("2026-11-16T18:00:00.000Z");
+    const destination = "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io";
+    const issued = await issueLaunchCode({
+      now,
+      secretConfigured: true,
+      userId: "user-1",
+      tenantId: "seminario-ipn",
+      appId: "rrhh",
+      issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
+      access: access({
+        appId: "rrhh",
+        tenantId: "seminario-ipn",
+        contractedApps: ["growth-os", "rrhh"],
+        authorizedApps: ["rrhh"],
+        resolvedOrigin: destination,
+        spaceBaseDomain: null,
+      }),
+      store,
+      audit: () => undefined,
+    });
+    assert.equal(issued.ok, true);
+    if (!issued.ok) return;
+    assert.equal(issued.callback, `${destination}/api/connect/callback`);
+    const form = connectLaunchForm({
+      callback: issued.callback,
+      code: issued.code,
+      transaction: TX,
+      deskOrigin: ISSUER,
+      rrhhOrigin: destination,
+    });
+    assert.equal(form.ok, true);
+    const redeemed = await redeemLaunchCode({
+      now,
+      secret: SECRET,
+      providedSecret: SECRET,
+      code: issued.code,
+      transaction: TX,
+      destinationOrigin: destination,
+      issuerOrigin: ISSUER,
+      accessFor: () =>
+        access({
+          appId: "rrhh",
+          tenantId: "seminario-ipn",
+          contractedApps: ["growth-os", "rrhh"],
+          authorizedApps: ["rrhh"],
+          resolvedOrigin: destination,
+          spaceBaseDomain: null,
+        }),
+      store,
+      audit: () => undefined,
+    });
+    assert.deepEqual(redeemed, {
+      ok: true,
+      userId: "user-1",
+      tenantId: "seminario-ipn",
+      appId: "rrhh",
+    });
+    assert.equal(
+      evaluateConnectAccess(
+        access({
+          appId: "rrhh",
+          tenantId: "seminario-ipn",
+          authorizedApps: ["growth-os"],
+          contractedApps: ["growth-os", "rrhh"],
+          resolvedOrigin: destination,
+        })
+      ).ok,
+      false
+    );
+  });
 });

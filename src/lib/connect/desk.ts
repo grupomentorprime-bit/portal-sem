@@ -1,6 +1,12 @@
 import { PRODUCTION_CANONICAL_ORIGIN } from "@/core/identity/auth/public-origin";
 import { resolvePlatformBaseDomain } from "@/core/tenant/hosts";
-import { isDeskOrigin, normalizeOrigin, spaceBaseFromDeskOrigin } from "@/lib/connect/policy";
+import {
+  isDeskOrigin,
+  isRrhhProductOrigin,
+  normalizeOrigin,
+  RRHH_CANONICAL_ORIGIN,
+  spaceBaseFromDeskOrigin,
+} from "@/lib/connect/policy";
 
 function isPublicDesk(origin: string): boolean {
   const hostname = new URL(origin).hostname;
@@ -18,6 +24,16 @@ export function deskOriginFromEnv(
   if (published) return published;
   if (env.NODE_ENV === "production") return PRODUCTION_CANONICAL_ORIGIN;
   return origins[0] ?? "http://localhost:3000";
+}
+
+/** Origen de RR.HH. `RRHH_APP_URL` lo reemplaza. Sin variable, el canónico. */
+export function rrhhOriginFromEnv(
+  env: Record<string, string | undefined> = process.env
+): string | null {
+  const configured = env.RRHH_APP_URL?.trim();
+  const origin = normalizeOrigin(configured || RRHH_CANONICAL_ORIGIN);
+  if (!origin || !isRrhhProductOrigin(origin)) return null;
+  return origin;
 }
 
 /** Base de `cumple.{base}`: la del Espacio, o el padre del origen del escritorio. */

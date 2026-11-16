@@ -10,13 +10,14 @@ import {
   isTransactionVerifier,
   normalizeOrigin,
   type ConnectAccessInput,
+  type ConnectProductId,
 } from "@/lib/connect/policy";
 
 export type LaunchTicket = {
   codeHash: string;
   userId: string;
   tenantId: string;
-  appId: "cumple";
+  appId: ConnectProductId;
   destinationOrigin: string;
   issuerOrigin: string;
   transactionHash: string;
@@ -172,7 +173,7 @@ export async function issueLaunchCode(input: {
         action: "connect.reject",
         tenantId,
         userId: input.userId,
-        metadata: { appId: CONNECT_APP_ID, reason: "transaction" },
+        metadata: { appId: decision.appId, reason: "transaction" },
       },
       "transaction"
     );
@@ -186,7 +187,7 @@ export async function issueLaunchCode(input: {
         action: "connect.reject",
         tenantId,
         userId: input.userId,
-        metadata: { appId: CONNECT_APP_ID, reason: "no_destination" },
+        metadata: { appId: decision.appId, reason: "no_destination" },
       },
       "no_destination"
     );
@@ -198,7 +199,7 @@ export async function issueLaunchCode(input: {
     codeHash: hashLaunchCode(code),
     userId: input.userId,
     tenantId,
-    appId: CONNECT_APP_ID,
+    appId: decision.appId,
     destinationOrigin: decision.destinationOrigin,
     issuerOrigin: issuer,
     transactionHash,
@@ -209,7 +210,7 @@ export async function issueLaunchCode(input: {
     action: "connect.launch",
     tenantId,
     userId: input.userId,
-    metadata: { appId: CONNECT_APP_ID, tenantId },
+    metadata: { appId: decision.appId, tenantId },
   });
   return {
     ok: true,
@@ -231,12 +232,12 @@ export async function redeemLaunchCode(input: {
   accessFor: (ticket: {
     userId: string;
     tenantId: string;
-    appId: "cumple";
+    appId: ConnectProductId;
   }) => ConnectAccessInput | Promise<ConnectAccessInput>;
   store: LaunchCodeStore;
   audit: (event: ConnectAudit) => void;
 }): Promise<
-  { ok: true; userId: string; tenantId: string; appId: "cumple" } | { ok: false; reason: string }
+  { ok: true; userId: string; tenantId: string; appId: ConnectProductId } | { ok: false; reason: string }
 > {
   if (!input.secret) {
     return reject(
@@ -370,7 +371,7 @@ export async function redeemLaunchCode(input: {
         action: "connect.reject",
         tenantId: ticket.tenantId,
         userId: ticket.userId,
-        metadata: { appId: CONNECT_APP_ID, reason: "destination_mismatch" },
+        metadata: { appId: ticket.appId, reason: "destination_mismatch" },
       },
       "destination_mismatch"
     );
@@ -384,7 +385,7 @@ export async function redeemLaunchCode(input: {
         action: "connect.reject",
         tenantId: ticket.tenantId,
         userId: ticket.userId,
-        metadata: { appId: CONNECT_APP_ID, reason: "issuer_mismatch" },
+        metadata: { appId: ticket.appId, reason: "issuer_mismatch" },
       },
       "issuer_mismatch"
     );
@@ -402,7 +403,7 @@ export async function redeemLaunchCode(input: {
         action: "connect.revoke",
         tenantId: ticket.tenantId,
         userId: ticket.userId,
-        metadata: { appId: CONNECT_APP_ID, reason: "no_company" },
+        metadata: { appId: ticket.appId, reason: "no_company" },
       },
       "no_company"
     );
@@ -420,7 +421,7 @@ export async function redeemLaunchCode(input: {
         action: "connect.revoke",
         tenantId: ticket.tenantId,
         userId: ticket.userId,
-        metadata: { appId: CONNECT_APP_ID, reason },
+        metadata: { appId: ticket.appId, reason },
       },
       reason
     );
@@ -430,12 +431,12 @@ export async function redeemLaunchCode(input: {
     action: "connect.exchange",
     tenantId: ticket.tenantId,
     userId: ticket.userId,
-    metadata: { appId: CONNECT_APP_ID, tenantId: ticket.tenantId },
+    metadata: { appId: ticket.appId, tenantId: ticket.tenantId },
   });
   return {
     ok: true,
     userId: ticket.userId,
     tenantId: ticket.tenantId,
-    appId: CONNECT_APP_ID,
+    appId: ticket.appId,
   };
 }

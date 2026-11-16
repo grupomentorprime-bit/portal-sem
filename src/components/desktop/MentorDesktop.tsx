@@ -84,6 +84,7 @@ export interface MentorDesktopProps {
   authorizedApps?: MentorAppId[] | null;
   aprendeHoyEntryUrl: string | null;
   cumpleOrigin: string | null;
+  rrhhOrigin: string | null;
   wallpaper: WallpaperChoice;
   /** Imagen propia, si ya subió una. Sigue disponible aunque el fondo activo sea del catálogo. */
   customWallpaper?: string | null;
@@ -785,6 +786,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       authorized: props.authorizedApps ?? null,
       aprendeHoyEntryUrl: props.aprendeHoyEntryUrl,
       cumpleOrigin: props.cumpleOrigin,
+      rrhhOrigin: props.rrhhOrigin,
     });
     if (timerRef.current != null) window.clearTimeout(timerRef.current);
     if (action.kind === "connect") {
@@ -807,7 +809,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
     }, 420);
   }
 
-  async function beginConnect(appId: "cumple") {
+  async function beginConnect(appId: "cumple" | "rrhh") {
     const transaction = createTransactionVerifier();
     const transactionHash = await hashTransactionVerifier(transaction);
     const response = await fetch("/api/connect/launch", {
@@ -828,6 +830,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
             code: body.code,
             transaction,
             deskOrigin: window.location.origin,
+            rrhhOrigin: props.rrhhOrigin,
           })
         : null;
     if (!form?.ok) {
