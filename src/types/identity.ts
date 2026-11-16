@@ -114,6 +114,11 @@ export interface IdentitySession {
    * Vacío cuando la cuenta no tiene membresías activas (“sin espacio”).
    */
   tenantId: string;
+  /**
+   * Ausente = escritorio / Growth OS.
+   * `cumple` solo reconoce el host de Cumple y no abre el escritorio ni el admin.
+   */
+  audience?: "desk" | "cumple";
   ip?: string;
   userAgent?: string;
   createdAt: string;

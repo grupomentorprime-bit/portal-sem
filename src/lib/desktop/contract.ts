@@ -1,3 +1,4 @@
+import { isCumpleLaunchCandidate } from "@/lib/connect/policy";
 import { hasAppKey } from "@/lib/desktop/app-access";
 import {
   CUMPLE_SPACE_ID,
@@ -25,6 +26,7 @@ export function isHttpsEntry(url: string | null | undefined): url is string {
 
 export type DesktopClick =
   | { kind: "open"; href: string }
+  | { kind: "connect"; appId: "cumple" }
   | { kind: "request" }
   | { kind: "unauthorized" }
   | { kind: "later" }
@@ -55,8 +57,8 @@ export function desktopClick(input: {
       ? { kind: "open", href: input.aprendeHoyEntryUrl.trim() }
       : { kind: "disconnected" };
   }
-  if (input.tenantId === CUMPLE_SPACE_ID && isHttpsEntry(input.cumpleOrigin)) {
-    return { kind: "open", href: input.cumpleOrigin.trim() };
+  if (input.tenantId === CUMPLE_SPACE_ID && isCumpleLaunchCandidate(input.cumpleOrigin)) {
+    return { kind: "connect", appId: "cumple" };
   }
   return { kind: "disconnected" };
 }

@@ -29,6 +29,7 @@ import {
   type WallpaperChoice,
 } from "@/lib/desktop/catalog";
 import { canManageAppKeys, desktopVisibleApps } from "@/lib/desktop/app-access";
+import { connectLaunchForm } from "@/lib/connect/policy";
 import { desktopClick, type DesktopClick } from "@/lib/desktop/contract";
 import {
   deskIconsForDock,
@@ -693,7 +694,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
     }
   }
 
-  function openSheet(appId: MentorAppId, kind: Exclude<DesktopClick["kind"], "open">) {
+  function openSheet(appId: MentorAppId, kind: Exclude<DesktopClick["kind"], "open" | "connect">) {
     setSendingRequest(false);
     setSheet({ appId, kind });
   }
@@ -782,6 +783,10 @@ export function MentorDesktop(props: MentorDesktopProps) {
       cumpleOrigin: props.cumpleOrigin,
     });
     if (timerRef.current != null) window.clearTimeout(timerRef.current);
+    if (action.kind === "connect") {
+      void beginConnect(action.appId);
+      return;
+    }
     if (action.kind === "open") {
       if (event) beginOpen(appId, action.href, event);
       else window.location.assign(action.href);
@@ -796,6 +801,47 @@ export function MentorDesktop(props: MentorDesktopProps) {
       setShakeId(null);
       openSheet(appId, action.kind);
     }, 420);
+  }
+
+  async function beginConnect(appId: "cumple") {
+    const response = await fetch("/api/connect/launch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appId }),
+    }).catch(() => null);
+    const body = (await response?.json().catch(() => null)) as {
+      ok?: boolean;
+      callback?: string;
+      code?: string;
+      reason?: string;
+    } | null;
+    const form =
+      response?.ok && body?.ok && body.callback && body.code
+        ? connectLaunchForm({
+            callback: body.callback,
+            code: body.code,
+            deskOrigin: window.location.origin,
+          })
+        : null;
+    if (!form?.ok) {
+      const denied =
+        body?.reason === "no_key" ||
+        body?.reason === "no_plan" ||
+        body?.reason === "no_membership";
+      openSheet(appId, denied ? "unauthorized" : "disconnected");
+      return;
+    }
+    const element = document.createElement("form");
+    element.method = form.method;
+    element.action = form.action;
+    element.referrerPolicy = form.referrerPolicy;
+    const field = document.createElement("input");
+    field.type = "hidden";
+    field.name = "code";
+    field.value = form.fields.code;
+    element.append(field);
+    document.body.append(element);
+    element.submit();
   }
 
   async function submitRequest(appId: MentorAppId) {
