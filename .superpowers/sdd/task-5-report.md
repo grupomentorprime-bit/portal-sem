@@ -61,7 +61,7 @@ Because of that local runtime/browser-state issue, I could not complete the visu
 
 ## Commit
 
-- Pending while writing report
+- `b90282b feat(desktop): wire avatar pill and identity me`
 
 ## Concerns
 
