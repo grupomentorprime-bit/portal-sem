@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/core/identity";
 import { auditConnect } from "@/lib/connect/audit";
 import { readConnectAccess } from "@/lib/connect/access";
 import { issueLaunchCode } from "@/lib/connect/protocol";
 import { deskOriginFromEnv } from "@/lib/connect/desk";
 import { readConnectSecret } from "@/lib/connect/secret";
 import { mongoLaunchCodeStore } from "@/lib/connect/store";
+import { loadSessionContext } from "@/lib/identity/sessions";
 import { publicInternalError } from "@/core/security/public-error";
 
 export const dynamic = "force-dynamic";
@@ -15,31 +15,32 @@ export const dynamic = "force-dynamic";
  * este paso no abre otro proveedor ni acepta un destino elegido por el navegador.
  */
 export async function POST(request: Request) {
-  const auth = await requireAuth();
-  if (auth instanceof NextResponse) return auth;
-
-  let appId = "";
-  let transactionHash = "";
-  try {
-    const body = (await request.json()) as { appId?: unknown; transactionHash?: unknown };
-    appId = typeof body.appId === "string" ? body.appId : "";
-    transactionHash = typeof body.transactionHash === "string" ? body.transactionHash : "";
-  } catch {
-    appId = "";
+  const headers = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
+  const [session, parsed] = await Promise.all([
+    loadSessionContext(),
+    request.json().catch(() => null),
+  ]);
+  if (!session) {
+    return NextResponse.json({ ok: false, error: "No autenticado." }, { status: 401, headers });
   }
+
+  const body = parsed as { appId?: unknown; transactionHash?: unknown } | null;
+  const appId = typeof body?.appId === "string" ? body.appId : "";
+  const transactionHash = typeof body?.transactionHash === "string" ? body.transactionHash : "";
+  const tenantId = session.session.tenantId?.trim() ?? "";
 
   try {
     const access = await readConnectAccess({
-      userId: auth.user._id,
-      tenantId: auth.tenantId,
+      userId: session.user._id,
+      tenantId,
       appId,
     });
     const contractedApps = access.contractedApps;
     const issued = await issueLaunchCode({
       now: new Date(),
       secretConfigured: Boolean(readConnectSecret()),
-      userId: auth.user._id,
-      tenantId: auth.tenantId,
+      userId: session.user._id,
+      tenantId,
       appId,
       issuerOrigin: deskOriginFromEnv(),
       transactionHash,
@@ -47,7 +48,6 @@ export async function POST(request: Request) {
       store: mongoLaunchCodeStore(),
       audit: auditConnect,
     });
-    const headers = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
     if (!issued.ok) {
       const status = issued.reason === "unconfigured" ? 503 : 403;
       return NextResponse.json({ ok: false, reason: issued.reason }, { status, headers });

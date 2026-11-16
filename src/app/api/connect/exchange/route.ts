@@ -57,8 +57,10 @@ export async function POST(request: Request) {
         redeemed.reason === "bad_secret" || redeemed.reason === "unconfigured" ? 401 : 403;
       return NextResponse.json({ ok: false, reason: redeemed.reason }, { status, headers });
     }
-    const person = await findUserById(redeemed.userId);
-    const tenant = await findTenantById(await getDatabase(), redeemed.tenantId);
+    const [person, tenant] = await Promise.all([
+      findUserById(redeemed.userId),
+      findTenantById(await getDatabase(), redeemed.tenantId),
+    ]);
     const master = person ? await isDeskMaster(person, redeemed.tenantId) : false;
     return NextResponse.json(
       {

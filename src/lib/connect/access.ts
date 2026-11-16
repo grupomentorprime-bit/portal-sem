@@ -18,8 +18,13 @@ export async function readConnectAccess(input: {
   let contractedApps: ConnectAccessInput["contractedApps"] = null;
   let resolvedOrigin: string | null = null;
 
+  const [tenant, membership] = tenantId
+    ? await Promise.all([
+        findTenantById(await getDatabase(), tenantId),
+        findMembership(input.userId, tenantId),
+      ])
+    : [null, null];
   if (tenantId) {
-    const tenant = await findTenantById(await getDatabase(), tenantId);
     contractedApps = Array.isArray(tenant?.contractedApps) ? tenant.contractedApps : null;
     if (input.appId === "rrhh") {
       resolvedOrigin = rrhhOriginFromEnv();
@@ -27,8 +32,6 @@ export async function readConnectAccess(input: {
       resolvedOrigin = await resolvePublicOriginForTenant(tenantId).catch(() => null);
     }
   }
-
-  const membership = tenantId ? await findMembership(input.userId, tenantId) : null;
   return {
     appId: input.appId,
     tenantId,

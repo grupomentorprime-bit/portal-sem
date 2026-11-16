@@ -12,11 +12,6 @@ export function mongoLaunchCodeStore(): LaunchCodeStore {
     async insert(ticket) {
       const db = await getDatabase();
       const collection = db.collection<StoredTicket>(COLLECTION);
-      await collection.createIndex({ codeHash: 1 }, { unique: true, name: "connect_code_hash" });
-      await collection.createIndex(
-        { expireAt: 1 },
-        { expireAfterSeconds: 0, name: "connect_code_ttl" }
-      );
       await collection.insertOne({
         codeHash: ticket.codeHash,
         userId: ticket.userId,

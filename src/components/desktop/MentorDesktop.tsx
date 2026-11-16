@@ -293,6 +293,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const targetRef = useRef<number[]>(dockApps.map(() => 1));
   const frameRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
+  const connectingRef = useRef(false);
   const [deskSize, setDeskSize] = useState({ width: 1440, height: 900 });
 
   useEffect(() => {
@@ -311,6 +312,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   useEffect(() => {
     function releaseLaunch() {
       if (timerRef.current != null) window.clearTimeout(timerRef.current);
+      connectingRef.current = false;
       setLaunch(null);
       setPressedId(null);
       setShakeId(null);
@@ -327,6 +329,15 @@ export function MentorDesktop(props: MentorDesktopProps) {
       if (timerRef.current != null) window.clearTimeout(timerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!props.rrhhOrigin) return;
+    const link = document.createElement("link");
+    link.rel = "preconnect";
+    link.href = props.rrhhOrigin;
+    document.head.append(link);
+    return () => link.remove();
+  }, [props.rrhhOrigin]);
 
   useEffect(() => {
     function onMove(event: PointerEvent) {
@@ -751,7 +762,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }
 
   function handleApp(appId: DockAppId, event?: ReactMouseEvent<HTMLButtonElement>) {
-    if (launch) return;
+    if (launch || connectingRef.current) return;
     if (appId === "ajustes" && props.owner) {
       setSheet(null);
       setSpaceListOpen(false);
@@ -814,23 +825,17 @@ export function MentorDesktop(props: MentorDesktopProps) {
     appId: "cumple" | "rrhh",
     event?: ReactMouseEvent<HTMLButtonElement>
   ) {
+    if (connectingRef.current) return;
+    connectingRef.current = true;
     const glyph = event?.currentTarget.querySelector(".glyph");
     const rect = glyph?.getBoundingClientRect();
-    if (rect) {
-      setLaunch({
-        appId,
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      });
-    }
     const transaction = createTransactionVerifier();
     const transactionHash = await hashTransactionVerifier(transaction);
     const response = await fetch("/api/connect/launch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ appId, transactionHash }),
+      signal: AbortSignal.timeout(8_000),
     }).catch(() => null);
     const body = (await response?.json().catch(() => null)) as {
       ok?: boolean;
@@ -849,6 +854,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
           })
         : null;
     if (!form?.ok) {
+      connectingRef.current = false;
       setLaunch(null);
       const denied =
         body?.reason === "no_key" ||
@@ -856,6 +862,21 @@ export function MentorDesktop(props: MentorDesktopProps) {
         body?.reason === "no_membership";
       openSheet(appId, denied ? "unauthorized" : "disconnected");
       return;
+    }
+    if (rect) {
+      setLaunch({
+        appId,
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+      if (timerRef.current != null) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => {
+        connectingRef.current = false;
+        setLaunch(null);
+        openSheet(appId, "disconnected");
+      }, 8_000);
     }
     const element = document.createElement("form");
     element.method = form.method;

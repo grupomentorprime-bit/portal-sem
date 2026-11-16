@@ -11,6 +11,7 @@ import { CUMPLE_SPACE_ID, DESK_ENTERED_COOKIE, enteredClientId, parseWallpaper }
 import { customWallpaperUrl } from "@/lib/desktop/wallpaper-upload";
 import { parseDesktopLayout } from "@/lib/desktop/layout";
 import { desktopClients } from "@/lib/desktop/clients";
+import type { DesktopDayLine } from "@/lib/desktop/day";
 import { readDesktopDay } from "@/lib/desktop/day-read";
 import { escritorioRedirect } from "@/lib/desktop/contract";
 import { mongoAppRequestStore, readSpaceContract } from "@/lib/desktop/store";
@@ -109,14 +110,17 @@ export default async function EscritorioPage() {
 
   const dayLines = onPlatformDesk
     ? []
-    : await readDesktopDay({
-        tenantId: deskTenantId,
-        userId: session.user._id,
-        contracted: contract.contracted,
-        authorizedApps,
-        aprendeHoyEntryUrl: contract.aprendeHoyEntryUrl,
-        cumpleOrigin,
-      });
+    : await Promise.race([
+        readDesktopDay({
+          tenantId: deskTenantId,
+          userId: session.user._id,
+          contracted: contract.contracted,
+          authorizedApps,
+          aprendeHoyEntryUrl: contract.aprendeHoyEntryUrl,
+          cumpleOrigin,
+        }),
+        new Promise<DesktopDayLine[]>((resolve) => setTimeout(() => resolve([]), 400)),
+      ]);
 
   return (
     <MentorDesktop
