@@ -14,6 +14,8 @@ import { getDefaultRolePermissionTemplate } from "@/core/identity/permissions/ro
 import { granularToLegacyPermissions } from "@/core/identity/permissions/resolver";
 import { findTenantById } from "@/core/tenant/repositories";
 import { SPACE_ACCESS_REQUIRED_MESSAGE } from "@/core/identity/platform/enter-messages";
+import { migrationAuthorizedApps } from "@/lib/desktop/app-access";
+import { resolveContractedApps } from "@/lib/desktop/contract";
 
 export { SPACE_ACCESS_REQUIRED_MESSAGE };
 
@@ -86,6 +88,45 @@ async function ensureSupportRole(db: Db, tenantId: string): Promise<IdentityRole
   return role;
 }
 
+async function ensureOwnerRole(db: Db, tenantId: string): Promise<IdentityRole> {
+  const ownerId = roleIdForTenant(tenantId, ROLE_CODES.SUPER_ADMIN);
+  const existing = await db.collection<IdentityRole>("identity_roles").findOne({
+    $or: [
+      { _id: ownerId, tenantId },
+      { tenantId, code: ROLE_CODES.SUPER_ADMIN },
+    ],
+  });
+  if (existing) return existing;
+
+  const template = getTenantRolesForSync("portal").find(
+    (role) => role.code === ROLE_CODES.SUPER_ADMIN
+  );
+  if (!template) {
+    throw new PlatformEnterSpaceError(
+      "support_role_missing",
+      "No existe el rol de super administrador en este Espacio.",
+      500
+    );
+  }
+
+  const now = new Date().toISOString();
+  const permissionMap = getDefaultRolePermissionTemplate(ROLE_CODES.SUPER_ADMIN);
+  const role: IdentityRole = {
+    _id: ownerId,
+    tenantId,
+    code: ROLE_CODES.SUPER_ADMIN,
+    name: template.name,
+    description: template.description,
+    permissionIds: granularToLegacyPermissions(permissionMap),
+    permissionMap,
+    system: true,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.collection<IdentityRole>("identity_roles").insertOne(role);
+  return role;
+}
+
 /**
  * Alta explícita y mínima de acceso del operador al Espacio.
  * Crea membresía real con rol `support`. Nunca asigna `super_admin`.
@@ -119,6 +160,12 @@ export async function grantOperatorSpaceAccess(
       404
     );
   }
+  const authorizedApps = migrationAuthorizedApps(
+    resolveContractedApps({
+      tenantId,
+      contractedApps: tenant.contractedApps,
+    })
+  );
 
   const supportRole = await ensureSupportRole(db, tenantId);
   const ownerId = roleIdForTenant(tenantId, ROLE_CODES.SUPER_ADMIN);
@@ -148,6 +195,7 @@ export async function grantOperatorSpaceAccess(
       entityId: membershipId,
       metadata: {
         tenantId,
+        name: tenant.name?.trim() || tenantId,
         roleCode: ROLE_CODES.SUPPORT,
         neverOwner: true,
         ...metadata,
@@ -170,6 +218,10 @@ export async function grantOperatorSpaceAccess(
     if (existing.roleIds.length === 0) {
       $set.roleIds = [supportRole._id];
     }
+    // Solo materializa llaves si faltan: no reabre apps que el Espacio ya quitó.
+    if (existing.authorizedApps == null) {
+      $set.authorizedApps = authorizedApps;
+    }
 
     if (Object.keys($set).length > 1 || reactivated) {
       await memberships.updateOne({ _id: existing._id }, { $set });
@@ -179,6 +231,7 @@ export async function grantOperatorSpaceAccess(
       created: false,
       reactivated,
       existingRoleIds: existing.roleIds,
+      authorizedApps: existing.authorizedApps ?? authorizedApps,
     });
 
     return {
@@ -196,6 +249,7 @@ export async function grantOperatorSpaceAccess(
     userId: input.operatorUserId,
     roleIds: [supportRole._id],
     status: "active",
+    authorizedApps,
     joinedAt: now,
     invitedBy: input.operatorUserId,
     createdAt: now,
@@ -211,6 +265,115 @@ export async function grantOperatorSpaceAccess(
   return {
     membershipId: membership._id,
     roleCode: ROLE_CODES.SUPPORT,
+    created: true,
+    reactivated: false,
+  };
+}
+
+/**
+ * El superadministrador entra al Espacio como dueño de ese Espacio.
+ * El operador no usa esta vía: sigue en Soporte.
+ */
+export async function grantOwnerSpaceAccess(
+  db: Db,
+  input: {
+    tenantId: string;
+    ownerUserId: string;
+  }
+): Promise<{
+  membershipId: string;
+  roleCode: typeof ROLE_CODES.SUPER_ADMIN;
+  created: boolean;
+  reactivated: boolean;
+}> {
+  const tenantId = input.tenantId.trim();
+  if (!tenantId) {
+    throw new PlatformEnterSpaceError("space_not_found", "Espacio no encontrado.", 404);
+  }
+  const tenant = await findTenantById(db, tenantId);
+  if (!tenant) {
+    throw new PlatformEnterSpaceError("space_not_found", "Espacio no encontrado.", 404);
+  }
+  const authorizedApps = migrationAuthorizedApps(
+    resolveContractedApps({
+      tenantId,
+      contractedApps: tenant.contractedApps,
+    })
+  );
+
+  const ownerRole = await ensureOwnerRole(db, tenantId);
+  const memberships = db.collection<IdentityMembership>("identity_memberships");
+  const existing = await memberships.findOne({
+    userId: input.ownerUserId,
+    tenantId,
+  });
+  const now = new Date().toISOString();
+
+  const writeAudit = async (membershipId: string, metadata: Record<string, unknown>) => {
+    const entry: IdentityAuditEntry = {
+      _id: generateId("audit"),
+      userId: input.ownerUserId,
+      action: "platform.space.access.grant",
+      entity: "membership",
+      entityId: membershipId,
+      metadata: {
+        tenantId,
+        name: tenant.name?.trim() || tenantId,
+        roleCode: ownerRole.code,
+        ...metadata,
+      },
+      scope: "platform",
+      createdAt: now,
+    };
+    await db.collection<IdentityAuditEntry>("identity_audit").insertOne(entry);
+  };
+
+  if (existing) {
+    let reactivated = false;
+    const $set: Record<string, unknown> = { updatedAt: now };
+    if (existing.status !== "active") {
+      $set.status = "active";
+      reactivated = true;
+    }
+    if (!existing.roleIds.includes(ownerRole._id)) {
+      $set.roleIds = [...existing.roleIds, ownerRole._id];
+    }
+    if (existing.authorizedApps == null) {
+      $set.authorizedApps = authorizedApps;
+    }
+    if (Object.keys($set).length > 1 || reactivated) {
+      await memberships.updateOne({ _id: existing._id }, { $set });
+    }
+    await writeAudit(existing._id, {
+      created: false,
+      reactivated,
+      authorizedApps: existing.authorizedApps ?? authorizedApps,
+    });
+    return {
+      membershipId: existing._id,
+      roleCode: ROLE_CODES.SUPER_ADMIN,
+      created: false,
+      reactivated,
+    };
+  }
+
+  const membership: IdentityMembership = {
+    _id: generateId("mem"),
+    tenantId,
+    userId: input.ownerUserId,
+    roleIds: [ownerRole._id],
+    status: "active",
+    authorizedApps,
+    joinedAt: now,
+    invitedBy: input.ownerUserId,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await memberships.insertOne(membership);
+  await writeAudit(membership._id, { created: true, reactivated: false });
+  return {
+    membershipId: membership._id,
+    roleCode: ROLE_CODES.SUPER_ADMIN,
     created: true,
     reactivated: false,
   };

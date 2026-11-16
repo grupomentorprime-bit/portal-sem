@@ -1,3 +1,4 @@
+import { hasAppKey } from "@/lib/desktop/app-access";
 import {
   CUMPLE_SPACE_ID,
   MENTOR_APPS,
@@ -25,6 +26,7 @@ export function isHttpsEntry(url: string | null | undefined): url is string {
 export type DesktopClick =
   | { kind: "open"; href: string }
   | { kind: "request" }
+  | { kind: "unauthorized" }
   | { kind: "later" }
   | { kind: "disconnected" };
 
@@ -32,10 +34,20 @@ export function desktopClick(input: {
   appId: MentorAppId;
   tenantId: string;
   contracted: readonly MentorAppId[];
+  /** Si falta, se conserva el comportamiento previo (todo el techo). */
+  authorized?: readonly MentorAppId[] | null;
   aprendeHoyEntryUrl?: string | null;
   cumpleOrigin?: string | null;
 }): DesktopClick {
   if (!input.contracted.includes(input.appId)) return { kind: "request" };
+  if (
+    !hasAppKey(input.appId, {
+      contracted: input.contracted,
+      authorizedApps: input.authorized,
+    })
+  ) {
+    return { kind: "unauthorized" };
+  }
   if (input.appId === "growth-os") return { kind: "open", href: "/admin" };
   if (input.appId === "rrhh") return { kind: "later" };
   if (input.appId === "aprende-hoy") {
@@ -55,9 +67,9 @@ export function escritorioRedirect(input: {
   isPlatformOperator: boolean;
   hasMembership: boolean;
 }): "/admin/sin-espacio" | "/admin/portal/asuntos-estudiantiles" | "/platform" | null {
+  if (input.isPlatformOperator) return null;
   if (!input.hasSpace) return "/admin/sin-espacio";
   if (input.studentAffairs) return "/admin/portal/asuntos-estudiantiles";
-  if (input.isPlatformOperator && !input.hasMembership) return "/platform";
   return null;
 }
 

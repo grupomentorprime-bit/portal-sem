@@ -13,6 +13,8 @@ import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { resolveRequestHost } from "@/core/tenant";
 import { resolvePublicOriginForTenant } from "@/lib/portal/public-origin";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
+import { hasAppKey } from "@/lib/desktop/app-access";
+import { readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
@@ -53,6 +55,19 @@ export default async function AdminLayout({
 
   if (session && hasSpace && isNoSpaceRoute) {
     redirect("/admin");
+  }
+
+  // Growth OS exige llave en el Espacio activo (no basta ocultar el icono).
+  if (session?.membership && hasSpace && !isLoginRoute && !isNoSpaceRoute) {
+    const activeTenantId = session.session.tenantId.trim();
+    const contract = await readSpaceContract(activeTenantId);
+    const allowed = hasAppKey("growth-os", {
+      contracted: contract.contracted,
+      authorizedApps: session.membership.authorizedApps ?? null,
+    });
+    if (!allowed) {
+      redirect("/escritorio");
+    }
   }
 
   let roleLabel = "Colaborador";

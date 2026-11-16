@@ -82,6 +82,7 @@ export async function createMembership(input: {
   roleIds: string[];
   invitedBy?: string;
   status?: IdentityMembership["status"];
+  authorizedApps?: IdentityMembership["authorizedApps"];
 }): Promise<IdentityMembership> {
   const existing = await findMembershipAnyStatus(input.userId, input.tenantId);
   if (existing) {
@@ -97,6 +98,7 @@ export async function createMembership(input: {
     userId: input.userId,
     roleIds: input.roleIds,
     status: input.status ?? "active",
+    ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
     joinedAt: now,
     invitedBy: input.invitedBy,
     createdAt: now,
@@ -123,6 +125,7 @@ export async function ensureActiveMembership(input: {
   userId: string;
   roleIds: string[];
   invitedBy?: string;
+  authorizedApps?: IdentityMembership["authorizedApps"];
 }): Promise<{ membership: IdentityMembership; created: boolean; reactivated: boolean }> {
   const existing = await findMembershipAnyStatus(input.userId, input.tenantId);
   if (existing) {
@@ -136,6 +139,7 @@ export async function ensureActiveMembership(input: {
           status: "active",
           roleIds: input.roleIds,
           ...(input.invitedBy ? { invitedBy: input.invitedBy } : {}),
+          ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
           updatedAt: now,
         },
       }
@@ -155,6 +159,7 @@ export async function ensureActiveMembership(input: {
       roleIds: input.roleIds,
       invitedBy: input.invitedBy,
       status: "active",
+      authorizedApps: input.authorizedApps,
     });
     return { membership, created: true, reactivated: false };
   } catch (error) {
@@ -199,6 +204,19 @@ export async function updateMembershipStudentAffairsScope(
     { $set: { studentAffairsScope: scope, updatedAt: now } }
   );
   return db.collection<IdentityMembership>("identity_memberships").findOne({ _id: membershipId });
+}
+
+export async function updateMembershipAuthorizedApps(
+  membershipId: string,
+  authorizedApps: NonNullable<IdentityMembership["authorizedApps"]>
+): Promise<IdentityMembership | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  await db.collection<IdentityMembership>("identity_memberships").updateOne(
+    { _id: membershipId },
+    { $set: { authorizedApps, updatedAt: now } }
+  );
+  return findMembershipById(membershipId);
 }
 
 export async function updateMembershipPermissionOverrides(

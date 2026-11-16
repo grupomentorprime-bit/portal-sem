@@ -5,14 +5,25 @@ import {
   keycloakUserNeedsPassword,
   setKeycloakPasswordForInvite,
 } from "@/lib/identity/keycloak-admin";
+import { resolveInviteAuthorizedApps } from "@/lib/desktop/invite-apps";
 import { acceptInvitation, findInvitationByToken } from "@/lib/identity/invitations";
 import {
   ensureActiveMembership,
   findMembership,
   MembershipConflictError,
+  updateMembershipAuthorizedApps,
 } from "@/lib/identity/memberships";
 import { createSession, getRequestMeta, setSessionCookie } from "@/lib/identity/sessions";
 import { findUserByEmail, updateUserLastLogin } from "@/lib/identity/users";
+
+async function membershipAppsForInvite(
+  invitation: NonNullable<Awaited<ReturnType<typeof findInvitationByToken>>>
+) {
+  return resolveInviteAuthorizedApps(
+    invitation.tenantId,
+    invitation.authorizedApps !== undefined ? invitation.authorizedApps : undefined
+  );
+}
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -79,6 +90,7 @@ async function handleKeycloakAccept(
         userId: user._id,
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
+        authorizedApps: await membershipAppsForInvite(invitation),
       });
     } catch (error) {
       if (!(error instanceof MembershipConflictError)) throw error;
@@ -129,6 +141,7 @@ async function handleKeycloakAccept(
         userId: user._id,
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
+        authorizedApps: await membershipAppsForInvite(invitation),
       });
     } catch (error) {
       if (!(error instanceof MembershipConflictError)) throw error;
@@ -166,6 +179,7 @@ async function handleLocalAccept(
         userId: existing._id,
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
+        authorizedApps: await membershipAppsForInvite(invitation),
       });
     }
     await acceptInvitation(invitation._id, existing._id, invitation.tenantId);
@@ -202,6 +216,13 @@ async function handleLocalAccept(
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
 
+  const membership = await findMembership(result.user._id, invitation.tenantId);
+  if (membership) {
+    await updateMembershipAuthorizedApps(
+      membership._id,
+      await membershipAppsForInvite(invitation)
+    );
+  }
   await acceptInvitation(invitation._id, result.user._id, invitation.tenantId);
   return NextResponse.json({ ok: true, userId: result.user._id, existing: false });
 }

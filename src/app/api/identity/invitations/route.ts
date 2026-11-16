@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       displayName?: string;
       roleName?: string;
       roleCode?: string;
+      authorizedApps?: unknown;
     };
 
     const email = body.email?.trim() ?? "";
@@ -119,12 +120,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: assignCheck.error }, { status: 403 });
     }
 
+    const { resolveInviteAuthorizedApps } = await import("@/lib/desktop/invite-apps");
+    let authorizedApps;
+    try {
+      authorizedApps = await resolveInviteAuthorizedApps(ctx.tenantId, body.authorizedApps);
+    } catch (error) {
+      return NextResponse.json(
+        { ok: false, error: error instanceof Error ? error.message : "Aplicaciones no válidas." },
+        { status: 400 }
+      );
+    }
+
     const invitation = await createInvitation({
       tenantId: ctx.tenantId,
       email: normalizedEmail,
       displayName: normalizeFullName(displayName),
       roleIds: [role._id],
       invitedBy: ctx.user._id,
+      authorizedApps,
     });
 
     if (isKeycloakOnlyAuth()) {

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
+import { resolveAuthorizedApps } from "@/lib/desktop/app-access";
+import { readSpaceContract } from "@/lib/desktop/store";
 import { listMembershipsByTenant } from "@/lib/identity/memberships";
 import { listUsersByIds } from "@/lib/identity/users";
 import {
@@ -28,11 +30,12 @@ export async function GET() {
       ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
       : null;
 
-    const [memberships, invitations, audit, allRoles] = await Promise.all([
+    const [memberships, invitations, audit, allRoles, contract] = await Promise.all([
       listMembershipsByTenant(ctx.tenantId),
       listInvitationsByTenant(ctx.tenantId),
       listAuditByTenant(ctx.tenantId, 50),
       listRolesByTenant(ctx.tenantId),
+      readSpaceContract(ctx.tenantId),
     ]);
 
     const userIds = memberships.map((membership) => membership.userId);
@@ -66,6 +69,10 @@ export async function GET() {
           displayName: user?.displayName ?? "",
           status: membership.status,
           roleIds: membership.roleIds,
+          authorizedApps: resolveAuthorizedApps({
+            contracted: contract.contracted,
+            authorizedApps: membership.authorizedApps ?? null,
+          }),
           studentAffairsScope: membership.studentAffairsScope,
           roles: memberRoles.map((role) => {
             const code = getRoleCode(role);
@@ -129,6 +136,7 @@ export async function GET() {
       ok: true,
       callerRoleCode,
       assignableRoles,
+      contractedApps: contract.contracted,
       members,
       invitations: invitationsWithRoles,
       audit: audit.map((entry) => ({
