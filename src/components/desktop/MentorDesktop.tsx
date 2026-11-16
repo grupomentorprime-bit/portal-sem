@@ -987,9 +987,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
                           {active
                             ? "Espacio activo"
                             : space.needsAccess
-                              ? props.owner && space.tenantId === "adl"
-                                ? "Super administrador"
-                                : "Entrar como soporte"
+                              ? "Entrar como soporte"
                               : "Entrar"}
                         </small>
                       </span>
