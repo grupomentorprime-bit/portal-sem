@@ -3,14 +3,21 @@ import { requirePermission } from "@/core/identity";
 import { writeAudit } from "@/lib/identity/audit";
 import {
   ensureTenantRoles,
+  getCallerRoleCode,
   getRoleCode,
   listRolesByTenant,
   updateRolePermissionMap,
 } from "@/lib/identity/roles";
-import { resolveRolePermissionMap } from "@/lib/identity/permission-resolver";
+import {
+  resolvePermissionDetailsForMembership,
+  resolveRolePermissionMap,
+} from "@/lib/identity/permission-resolver";
 import { normalizePermissionMap } from "@/core/identity/permissions/resolver";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
-import { ROLE_CODES } from "@/core/identity/roles/codes";
+import {
+  assertCanWriteProfilePermissions,
+  grantablePermissionCodes,
+} from "@/lib/identity/enterprise-profiles";
 
 interface RouteContext {
   params: Promise<{ roleId: string }>;
@@ -32,6 +39,19 @@ export async function GET(_request: Request, context: RouteContext) {
 
     const code = getRoleCode(role);
     const permissionMap = resolveRolePermissionMap(role);
+    const callerRoleCode = ctx.membership
+      ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
+      : null;
+    const details = ctx.membership
+      ? await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)
+      : null;
+    const callerEffective = details?.effective ?? {};
+    const writeCheck = assertCanWriteProfilePermissions({
+      callerCode: callerRoleCode,
+      callerEffective,
+      role,
+      permissionMap,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -39,10 +59,13 @@ export async function GET(_request: Request, context: RouteContext) {
         id: role._id,
         code,
         name: role.name,
-        label: getInstitutionalRoleLabel(code ?? role.name),
+        label: code ? getInstitutionalRoleLabel(code) : role.name,
         system: role.system,
       },
       permissionMap,
+      grantable: grantablePermissionCodes({ callerEffective, role }),
+      readOnly: !writeCheck.ok,
+      readOnlyReason: writeCheck.ok ? undefined : writeCheck.error,
     });
   } catch (error) {
     console.error(error);
@@ -74,14 +97,22 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const code = getRoleCode(role);
-    if (code === ROLE_CODES.SUPER_ADMIN && ctx.permissions.includes("identity.roles.manage") === false) {
-      return NextResponse.json(
-        { ok: false, error: "No se puede modificar la plantilla del Super Admin." },
-        { status: 403 }
-      );
-    }
-
+    const callerRoleCode = ctx.membership
+      ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
+      : null;
+    const details = ctx.membership
+      ? await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)
+      : null;
     const permissionMap = normalizePermissionMap(body.permissionMap);
+    const writeCheck = assertCanWriteProfilePermissions({
+      callerCode: callerRoleCode,
+      callerEffective: details?.effective ?? {},
+      role,
+      permissionMap,
+    });
+    if (!writeCheck.ok) {
+      return NextResponse.json({ ok: false, error: writeCheck.error }, { status: 403 });
+    }
     const updated = await updateRolePermissionMap(ctx.tenantId, roleId, permissionMap);
 
     if (!updated) {

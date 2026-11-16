@@ -325,3 +325,89 @@ export async function setKeycloakPasswordForInvite(input: {
     };
   }
 }
+
+async function readKeycloakUser(
+  config: KeycloakAdminConfig,
+  token: string,
+  userId: string
+): Promise<Record<string, unknown>> {
+  const res = await keycloakFetch(
+    `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users/${encodeURIComponent(userId)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!res.ok) {
+    await res.text();
+    throw new Error("No se pudo consultar el usuario.");
+  }
+  return (await res.json()) as Record<string, unknown>;
+}
+
+/** Corta o devuelve el ingreso. Si el servicio de identidad no está configurado, no hay a quién avisar. */
+export async function setKeycloakUserEnabled(
+  email: string,
+  enabled: boolean
+): Promise<{ ok: true } | SetKeycloakPasswordError> {
+  const config = getKeycloakAdminConfig();
+  if (!config) return { ok: true };
+
+  try {
+    const token = await getAdminToken(config);
+    const userId = await findKeycloakUserId(config, token, email.toLowerCase().trim());
+    if (!userId) return { ok: true };
+    const current = await readKeycloakUser(config, token, userId);
+    const res = await keycloakFetch(
+      `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users/${encodeURIComponent(userId)}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...current, enabled }),
+      }
+    );
+    if (!res.ok) {
+      await res.text();
+      throw new Error("No se pudo actualizar el ingreso.");
+    }
+    return { ok: true };
+  } catch (error) {
+    logServerError("keycloak-admin", error);
+    return {
+      ok: false,
+      error: enabled
+        ? "No se pudo devolver el ingreso."
+        : "No se pudo cortar el ingreso.",
+      code: "keycloak_error",
+    };
+  }
+}
+
+export async function deleteKeycloakUserByEmail(
+  email: string
+): Promise<{ ok: true } | SetKeycloakPasswordError> {
+  const config = getKeycloakAdminConfig();
+  if (!config) return { ok: true };
+
+  try {
+    const token = await getAdminToken(config);
+    const userId = await findKeycloakUserId(config, token, email.toLowerCase().trim());
+    if (!userId) return { ok: true };
+    const res = await keycloakFetch(
+      `${config.baseUrl}/admin/realms/${encodeURIComponent(config.realm)}/users/${encodeURIComponent(userId)}`,
+      { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok && res.status !== 404) {
+      await res.text();
+      throw new Error("No se pudo eliminar el ingreso.");
+    }
+    return { ok: true };
+  } catch (error) {
+    logServerError("keycloak-admin", error);
+    return {
+      ok: false,
+      error: "No se pudo eliminar la cuenta del ingreso.",
+      code: "keycloak_error",
+    };
+  }
+}

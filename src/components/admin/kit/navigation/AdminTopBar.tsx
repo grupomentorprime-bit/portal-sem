@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
@@ -67,6 +68,13 @@ export function AdminTopBar({
           <ProductMark href="/admin" size="sm" />
           <span className="sr-only">{PLATFORM_DISPLAY_NAME}</span>
         </div>
+
+        <Link
+          href="/escritorio"
+          className="hidden shrink-0 text-[13px] font-medium text-[var(--gray-700)] hover:text-[var(--gray-900)] sm:inline"
+        >
+          Escritorio
+        </Link>
 
         <form
           onSubmit={onSearchSubmit}

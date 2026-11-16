@@ -15,6 +15,7 @@ import {
   mergeRolePermissionMaps,
   type PermissionMap,
 } from "@/core/identity/permissions/role-templates";
+import { classifyEnterpriseProfile } from "@/lib/identity/enterprise-profiles";
 
 export type PermissionOrigin = "role" | "override" | "denied";
 
@@ -69,7 +70,7 @@ export function resolveMembershipPermissions(input: {
   const roleMaps = input.roles.map(resolveRolePermissionMap);
   const roleBase = mergeRolePermissionMaps(roleMaps);
   const overrides = input.membership?.permissionOverrides ?? {};
-  const ceiling = getRolePermissionCeiling(input.roleCode);
+  const ceiling = permissionCeiling(input.roleCode, input.roles);
 
   const effective: PermissionMap = {};
   const resolved: ResolvedPermission[] = [];
@@ -123,6 +124,19 @@ export function granularToLegacyPermissions(effective: PermissionMap): string[] 
   }
 
   return [...legacy].sort();
+}
+
+/**
+ * Sin código oficial, el techo es el mapa del perfil personalizado del Espacio.
+ * Un rol de sistema sin código no abre permisos: sigue siendo de producto.
+ */
+function permissionCeiling(roleCode: RoleCode | null, roles: IdentityRole[]): PermissionMap {
+  if (roleCode) return getRolePermissionCeiling(roleCode);
+  const customMaps = roles
+    .filter((role) => classifyEnterpriseProfile(role) === "custom")
+    .map((role) => resolveRolePermissionMap(role));
+  if (customMaps.length === 0) return getRolePermissionCeiling(null);
+  return mergeRolePermissionMaps(customMaps);
 }
 
 export function canGrantPermissionOverride(

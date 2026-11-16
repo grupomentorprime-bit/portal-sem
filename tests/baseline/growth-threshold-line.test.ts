@@ -103,6 +103,23 @@ describe("frase de cruce", () => {
     );
   });
 
+  it("el escritorio no lee el panel", () => {
+    assert.deepEqual(
+      crossingThresholdLine({
+        redirectTo: "/escritorio?from=login",
+        hasTenant: true,
+        studentAffairs: false,
+        canSales: true,
+        attentionRows: [row],
+      }),
+      { line: "Entras a tu escritorio.", announceArrival: false }
+    );
+    assert.equal(
+      crossingNeedsPanel("/escritorio", { hasTenant: true, studentAffairs: false, canSales: true }),
+      false
+    );
+  });
+
   it("asuntos estudiantiles gana al permiso de ventas", () => {
     assert.deepEqual(
       crossingThresholdLine({

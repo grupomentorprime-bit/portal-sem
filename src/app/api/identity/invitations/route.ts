@@ -4,11 +4,16 @@ import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { createInvitation, findInvitationById, listInvitationsByTenant, revokeInvitation, serializeInvitationWithoutToken } from "@/lib/identity/invitations";
 import { sendInvitationEmail } from "@/lib/notifications/email";
 import { findMembership } from "@/lib/identity/memberships";
-import { ensureTenantRoles, findRoleByCode, findRoleByName, getCallerRoleCode, getRoleCode } from "@/lib/identity/roles";
+import { ensureTenantRoles, findRoleByCode, findRoleByName, findRolesByIds, getCallerRoleCode, getRoleCode } from "@/lib/identity/roles";
 import { writeAudit } from "@/lib/identity/audit";
 import { findUserByEmail } from "@/lib/identity/users";
 import { assertCanAssignRole, auditIamDenied } from "@/lib/identity/iam-guard";
-import { ROLE_CODES, resolveRoleCode, type RoleCode } from "@/core/identity/roles/codes";
+import {
+  assertCanAssignCustomProfile,
+  classifyEnterpriseProfile,
+} from "@/lib/identity/enterprise-profiles";
+import { resolvePermissionDetailsForMembership } from "@/lib/identity/permission-resolver";
+import { ROLE_CODES, resolveRoleCode } from "@/core/identity/roles/codes";
 import {
   isValidEmail,
   isValidFullName,
@@ -45,6 +50,8 @@ export async function POST(request: Request) {
       displayName?: string;
       roleName?: string;
       roleCode?: string;
+      roleId?: string;
+      authorizedApps?: unknown;
     };
 
     const email = body.email?.trim() ?? "";
@@ -90,21 +97,41 @@ export async function POST(request: Request) {
 
     await ensureTenantRoles(ctx.tenantId);
     const roleCode = body.roleCode ? resolveRoleCode(body.roleCode) : null;
-    const role = roleCode
-      ? await findRoleByCode(ctx.tenantId, roleCode)
-      : body.roleName
-        ? await findRoleByName(ctx.tenantId, body.roleName)
-        : await findRoleByCode(ctx.tenantId, ROLE_CODES.COMMUNICATIONS);
+    const requestedRoleId = body.roleId?.trim();
+    const role = requestedRoleId
+      ? (await findRolesByIds(ctx.tenantId, [requestedRoleId]))[0] ?? null
+      : roleCode
+        ? await findRoleByCode(ctx.tenantId, roleCode)
+        : body.roleName
+          ? await findRoleByName(ctx.tenantId, body.roleName)
+          : await findRoleByCode(ctx.tenantId, ROLE_CODES.COMMUNICATIONS);
 
-    if (!role) {
+    if (!role || role.tenantId !== ctx.tenantId) {
       return NextResponse.json({ ok: false, error: "Rol no encontrado." }, { status: 400 });
+    }
+
+    const profileKind = classifyEnterpriseProfile(role);
+    if (profileKind === "product") {
+      return NextResponse.json(
+        { ok: false, error: "Ese perfil no pertenece a la empresa." },
+        { status: 403 }
+      );
     }
 
     const callerRoleCode = ctx.membership
       ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
       : null;
     const newRoleCode = getRoleCode(role);
-    const assignCheck = assertCanAssignRole(callerRoleCode, newRoleCode);
+    const assignCheck =
+      profileKind === "custom"
+        ? assertCanAssignCustomProfile({
+            callerCode: callerRoleCode,
+            callerEffective: ctx.membership
+              ? (await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)).effective
+              : {},
+            permissionMap: role.permissionMap ?? {},
+          })
+        : assertCanAssignRole(callerRoleCode, newRoleCode);
     if (!assignCheck.ok) {
       if (!ctx.compatMode) {
         await auditIamDenied({
@@ -119,12 +146,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: assignCheck.error }, { status: 403 });
     }
 
+    const { resolveInviteAuthorizedApps } = await import("@/lib/desktop/invite-apps");
+    let authorizedApps;
+    try {
+      authorizedApps = await resolveInviteAuthorizedApps(ctx.tenantId, body.authorizedApps);
+    } catch (error) {
+      return NextResponse.json(
+        { ok: false, error: error instanceof Error ? error.message : "Aplicaciones no válidas." },
+        { status: 400 }
+      );
+    }
+
     const invitation = await createInvitation({
       tenantId: ctx.tenantId,
       email: normalizedEmail,
       displayName: normalizeFullName(displayName),
       roleIds: [role._id],
       invitedBy: ctx.user._id,
+      authorizedApps,
     });
 
     if (isKeycloakOnlyAuth()) {
@@ -145,9 +184,8 @@ export async function POST(request: Request) {
       token: invitation.token,
       expiresAt: invitation.expiresAt,
     });
-    if (!sent.ok) {
-      return NextResponse.json({ ok: false, error: sent.error }, { status: 422 });
-    }
+    const emailSent = sent.ok;
+    const deliveryError = sent.ok ? undefined : sent.error;
 
     if (!ctx.compatMode) {
       await writeAudit({
@@ -156,7 +194,13 @@ export async function POST(request: Request) {
         action: "user.invite",
         entity: "invitation",
         entityId: invitation._id,
-        metadata: { email: normalizedEmail, displayName: invitation.displayName, roleCode: newRoleCode },
+        metadata: {
+          email: normalizedEmail,
+          displayName: invitation.displayName,
+          roleCode: newRoleCode,
+          emailSent,
+          ...(deliveryError ? { deliveryError } : {}),
+        },
       });
     }
 
@@ -172,12 +216,15 @@ export async function POST(request: Request) {
         displayName: invitation.displayName,
         roleIds: invitation.roleIds,
         expiresAt: invitation.expiresAt,
-        emailSent: true,
+        emailSent,
+        ...(deliveryError ? { deliveryError } : {}),
       },
     }).catch(console.error);
 
     return NextResponse.json({
       ok: true,
+      emailSent,
+      ...(deliveryError ? { deliveryError } : {}),
       invitation: {
         id: invitation._id,
         email: invitation.email,

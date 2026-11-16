@@ -1,10 +1,10 @@
 "use client";
 
-import { ActionMenu, ActionMenuItem } from "@/components/admin/kit/actions/ActionMenu";
 import { Badge } from "@/components/ui";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { isProtectedMember } from "@/core/identity/roles/helpers";
 import { cn } from "@/lib/utils";
+import { Mail, Pencil, UserMinus } from "lucide-react";
 
 interface UserRole {
   id: string;
@@ -76,32 +76,45 @@ export function UserCmsCard({
   const usefulStatus = statusLabel(member.status);
 
   const menu = (canEditRole || canManage) ? (
-    <div className="users-cms-person-actions">
-      {actionSaving === "resend-access" ? <span className="text-xs text-muted">Enviando…</span> : null}
-      <ActionMenu label={`Acciones de ${label}`}>
-        {canEditRole ? (
-          <ActionMenuItem onClick={() => onPanelToggle?.("roles")}>Cambiar rol</ActionMenuItem>
-        ) : null}
-        {canManage ? (
-          <ActionMenuItem
-            onClick={() => {
-              if (!busy) onMemberAction(member.membershipId, "resend-access");
-            }}
-          >
-            <span data-team-resend-access>Reenviar acceso</span>
-          </ActionMenuItem>
-        ) : null}
-        {canManage ? (
-          <ActionMenuItem
-            destructive
-            onClick={() => {
-              if (!busy) onMemberAction(member.membershipId, "remove-access");
-            }}
-          >
-            <span data-team-remove>Quitar acceso</span>
-          </ActionMenuItem>
-        ) : null}
-      </ActionMenu>
+    <div className="users-cms-person-actions" aria-label={`Acciones de ${label}`}>
+      {canManage ? (
+        <button
+          type="button"
+          className="users-cms-icon-act users-cms-icon-act--send"
+          aria-label="Reenviar acceso"
+          title={actionSaving === "resend-access" ? "Enviando…" : "Reenviar acceso"}
+          data-team-resend-access
+          disabled={busy}
+          onClick={() => onMemberAction(member.membershipId, "resend-access")}
+        >
+          <Mail aria-hidden />
+        </button>
+      ) : null}
+      {canEditRole ? (
+        <button
+          type="button"
+          className={cn("users-cms-icon-act users-cms-icon-act--edit", showRoles && "is-on")}
+          aria-label="Cambiar rol"
+          title="Cambiar rol"
+          disabled={busy}
+          onClick={() => onPanelToggle?.("roles")}
+        >
+          <Pencil aria-hidden />
+        </button>
+      ) : null}
+      {canManage ? (
+        <button
+          type="button"
+          className="users-cms-icon-act users-cms-icon-act--remove"
+          aria-label="Quitar acceso"
+          title="Quitar acceso"
+          data-team-remove
+          disabled={busy}
+          onClick={() => onMemberAction(member.membershipId, "remove-access")}
+        >
+          <UserMinus aria-hidden />
+        </button>
+      ) : null}
     </div>
   ) : null;
 

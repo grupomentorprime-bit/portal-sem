@@ -115,6 +115,24 @@ export async function requirePermission(
   const ctx = await requireSpace();
   if (ctx instanceof NextResponse) return ctx;
 
+  // Llave de Growth OS: permisos growth.* no bastan sin autorización de aplicación.
+  if (typeof permission === "string" && permission.startsWith("growth.")) {
+    const { hasAppKey } = await import("@/lib/desktop/app-access");
+    const { readSpaceContract } = await import("@/lib/desktop/store");
+    const contract = await readSpaceContract(ctx.tenantId);
+    if (
+      !hasAppKey("growth-os", {
+        contracted: contract.contracted,
+        authorizedApps: ctx.membership?.authorizedApps ?? null,
+      })
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "No autorizado para Growth OS en este Espacio." },
+        { status: 403 }
+      );
+    }
+  }
+
   const result = authorize(ctx, permission);
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.error }, { status: result.status });

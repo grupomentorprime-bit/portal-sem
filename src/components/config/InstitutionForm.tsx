@@ -1,5 +1,6 @@
 "use client";
 
+import { cloneElement, isValidElement, useId, type ReactElement } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,39 +9,43 @@ import type { Institution } from "@/types/cms";
 interface InstitutionFormProps {
   value: Institution;
   onChange: (value: Institution) => void;
+  /** false: ficha del Espacio en NELZURI. El identificador lo fija la sesión al guardar. */
+  showTenant?: boolean;
+  description?: string;
+  /** false: solo los campos, sin Card (bloques NELZURI). */
+  framed?: boolean;
 }
 
-export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
+export function InstitutionForm({
+  value,
+  onChange,
+  showTenant = true,
+  description = "Identidad institucional y datos corporativos del portal.",
+  framed = true,
+}: InstitutionFormProps) {
   const update = <K extends keyof Institution>(key: K, fieldValue: Institution[K]) => {
     onChange({ ...value, [key]: fieldValue });
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Información general</CardTitle>
-        <CardDescription>
-          Identidad institucional y datos corporativos del portal.
-        </CardDescription>
-      </CardHeader>
+  const fields = (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Nombre de la institución">
+        <Input
+          value={value.name}
+          onChange={(e) => update("name", e.target.value)}
+          placeholder="Nombre de la institución"
+        />
+      </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nombre de la institución">
-          <Input
-            value={value.name}
-            onChange={(e) => update("name", e.target.value)}
-            placeholder="Nombre de la institución"
-          />
-        </Field>
+      <Field label="Nombre corto">
+        <Input
+          value={value.shortName}
+          onChange={(e) => update("shortName", e.target.value)}
+          placeholder="Sigla"
+        />
+      </Field>
 
-        <Field label="Nombre corto">
-          <Input
-            value={value.shortName}
-            onChange={(e) => update("shortName", e.target.value)}
-            placeholder="Sigla"
-          />
-        </Field>
-
+      {showTenant ? (
         <Field label="Tenant">
           <Input
             value={value.tenant}
@@ -48,32 +53,44 @@ export function InstitutionForm({ value, onChange }: InstitutionFormProps) {
             placeholder="mi-espacio"
           />
         </Field>
+      ) : null}
 
-        <Field label="Organización">
-          <Input
-            value={value.organization}
-            onChange={(e) => update("organization", e.target.value)}
-            placeholder="Organización o red"
-          />
-        </Field>
+      <Field label="Organización">
+        <Input
+          value={value.organization}
+          onChange={(e) => update("organization", e.target.value)}
+          placeholder="Organización o red"
+        />
+      </Field>
 
-        <Field label="Sitio web" className="sm:col-span-2">
-          <Input
-            type="url"
-            value={value.website}
-            onChange={(e) => update("website", e.target.value)}
-            placeholder="https://www.ejemplo.org"
-          />
-        </Field>
+      <Field label="Sitio web" className="sm:col-span-2">
+        <Input
+          type="url"
+          value={value.website}
+          onChange={(e) => update("website", e.target.value)}
+          placeholder="https://www.ejemplo.org"
+        />
+      </Field>
 
-        <Field label="Lema institucional" className="sm:col-span-2">
-          <Input
-            value={value.tagline}
-            onChange={(e) => update("tagline", e.target.value)}
-            placeholder="Lema institucional"
-          />
-        </Field>
-      </div>
+      <Field label="Lema institucional" className="sm:col-span-2">
+        <Input
+          value={value.tagline}
+          onChange={(e) => update("tagline", e.target.value)}
+          placeholder="Lema institucional"
+        />
+      </Field>
+    </div>
+  );
+
+  if (!framed) return fields;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Información general</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      {fields}
     </Card>
   );
 }
@@ -84,13 +101,17 @@ function Field({
   className,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactElement<{ id?: string }>;
   className?: string;
 }) {
+  const id = useId();
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ id?: string }>, { id })
+    : children;
   return (
     <div className={className}>
-      <Label className="mb-2 block">{label}</Label>
-      {children}
+      <Label className="mb-2 block" htmlFor={id}>{label}</Label>
+      {control}
     </div>
   );
 }

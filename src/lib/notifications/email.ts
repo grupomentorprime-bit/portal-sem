@@ -12,8 +12,8 @@ import {
   type EmailIdentity,
 } from "@/lib/notifications/identity";
 import { resolveEmailIdentityForTenant } from "@/lib/notifications/resolve-identity";
+import { publicTransactionalEmailError } from "@/lib/notifications/email-errors";
 import {
-  emailFailureMessage,
   formatFromHeader,
   getResendClient,
   mailboxForSend,
@@ -199,7 +199,7 @@ export async function sendTransactionalHtmlEmail(input: {
 
     if (error) {
       logServerError("email", error);
-      return { ok: false, error: emailFailureMessage(error) };
+      return { ok: false, error: publicTransactionalEmailError(error) };
     }
 
     return { ok: true, id: data?.id };

@@ -7,6 +7,8 @@ import {
   Building2,
   CircleHelp,
   Home,
+  Monitor,
+  Users,
   LogOut,
   Search,
   Sparkles,
@@ -58,10 +60,12 @@ export function PlatformShell({
   children,
   userName,
   roleLabel,
+  showUsers = false,
 }: {
   children: React.ReactNode;
   userName: string;
   roleLabel: string;
+  showUsers?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -69,6 +73,7 @@ export function PlatformShell({
   const onHome =
     pathname === PLATFORM_ADMIN_HOME || pathname === `${PLATFORM_ADMIN_HOME}/`;
   const onSpacesDetail = pathname.startsWith(`${PLATFORM_ADMIN_HOME}/spaces/`);
+  const onUsers = pathname.startsWith(`${PLATFORM_ADMIN_HOME}/usuarios`);
 
   const runGlobalSearch = useCallback(
     (raw: string) => {
@@ -118,6 +123,13 @@ export function PlatformShell({
             aria-label={`${PLATFORM_DISPLAY_NAME} plataforma`}
           >
             <SidebarLink
+              href="/escritorio"
+              active={false}
+              icon={<Monitor className="h-4 w-4" aria-hidden />}
+            >
+              Escritorio
+            </SidebarLink>
+            <SidebarLink
               href={PLATFORM_ADMIN_HOME}
               active={onHome}
               icon={<Home className="h-4 w-4" aria-hidden />}
@@ -131,6 +143,15 @@ export function PlatformShell({
             >
               Espacios
             </SidebarLink>
+            {showUsers ? (
+              <SidebarLink
+                href={`${PLATFORM_ADMIN_HOME}/usuarios`}
+                active={onUsers}
+                icon={<Users className="h-4 w-4" aria-hidden />}
+              >
+                Usuarios
+              </SidebarLink>
+            ) : null}
           </nav>
 
           <div className="mt-auto px-2.5 pb-3 pt-2">
@@ -201,6 +222,9 @@ export function PlatformShell({
                 className="flex min-w-0 items-center gap-3 text-sm md:hidden"
                 aria-label="Navegación móvil"
               >
+                <Link href="/escritorio" className="font-medium text-muted">
+                  Escritorio
+                </Link>
                 <Link
                   href={PLATFORM_ADMIN_HOME}
                   className={cn(
@@ -216,8 +240,22 @@ export function PlatformShell({
                 >
                   Espacios
                 </Link>
+                {showUsers ? (
+                  <Link
+                    href={`${PLATFORM_ADMIN_HOME}/usuarios`}
+                    className={cn("font-medium", onUsers ? "text-foreground" : "text-muted")}
+                  >
+                    Usuarios
+                  </Link>
+                ) : null}
               </nav>
 
+              <Link
+                href="/escritorio"
+                className="hidden shrink-0 text-[13px] font-medium text-[var(--gray-700)] hover:text-[var(--gray-900)] md:inline"
+              >
+                Escritorio
+              </Link>
               <div className="ml-auto flex shrink-0 items-center gap-2">
                 <Link
                   href="/admin/settings/help"

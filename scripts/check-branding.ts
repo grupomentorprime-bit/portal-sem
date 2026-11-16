@@ -75,6 +75,7 @@ const INFRASTRUCTURE_FILES = new Set([
 const CSS_INFRASTRUCTURE = new Set([
   "src/styles/design-tokens.css",
   "src/styles/tokens/admin-branding.css",
+  "src/styles/tokens/nelzuri.css",
 ]);
 
 /**

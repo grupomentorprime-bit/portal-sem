@@ -194,6 +194,40 @@ export async function findRoleByCode(
   return null;
 }
 
+export async function createCustomEnterpriseRole(input: {
+  tenantId: string;
+  name: string;
+  description: string;
+  permissionMap: Record<string, boolean>;
+}): Promise<IdentityRole> {
+  const { normalizePermissionMap } = await import("@/core/identity/permissions/resolver");
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  const existing = await listRolesByTenant(input.tenantId);
+  if (
+    existing.some(
+      (role) => role.name.localeCompare(input.name, "es", { sensitivity: "accent" }) === 0
+    )
+  ) {
+    throw new Error("Ya existe un perfil con ese nombre.");
+  }
+
+  const permissionMap = normalizePermissionMap(input.permissionMap);
+  const role: IdentityRole = {
+    _id: `role_custom_${crypto.randomUUID()}`,
+    tenantId: input.tenantId,
+    name: input.name,
+    description: input.description,
+    permissionIds: granularToLegacyPermissions(permissionMap),
+    permissionMap,
+    system: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.collection<IdentityRole>("identity_roles").insertOne(role);
+  return role;
+}
+
 export async function updateRolePermissionMap(
   tenantId: string,
   roleId: string,

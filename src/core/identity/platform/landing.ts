@@ -1,6 +1,7 @@
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 
 const SPACE_HOME = "/admin";
+const DESKTOP_HOME = "/escritorio";
 const NO_SPACE_PATH = "/admin/sin-espacio";
 
 function sanitizeNext(next: string | null | undefined): string | null {
@@ -13,6 +14,7 @@ function isDefaultSpaceLanding(path: string): boolean {
   const pathOnly = path.split("?")[0];
   return (
     pathOnly === SPACE_HOME ||
+    pathOnly === DESKTOP_HOME ||
     pathOnly === "/admin/config" ||
     pathOnly === NO_SPACE_PATH
   );
@@ -22,13 +24,12 @@ function isDefaultSpaceLanding(path: string): boolean {
  * Destino post-login (única función de entrada tras autenticar).
  *
  * Prioridad:
- * 1. Operador de plataforma (`platformRoles`) → `/platform`
- *    (incluso con membresías SEM/ADL; no se infiere por email/tenant/rol SEM)
- * 2. Usuario sin Espacio → `/admin/sin-espacio`
- * 3. Usuario con Espacio(s) → `/admin` (o `next` profundo no-default);
+ * 1. `next=/platform…` solo si es operador de plataforma (`platformRoles`).
+ * 2. Operador de plataforma → `/escritorio`
+ *    (incluso sin membresía; no se infiere por email/tenant/rol de un Espacio)
+ * 3. Usuario sin Espacio → `/admin/sin-espacio`
+ * 4. Usuario con Espacio(s) → `/escritorio` (o `next` profundo no-default);
  *    el Espacio activo lo resuelve `resolveActiveTenantForUser` / picker existente
- *
- * `next=/platform…` solo se honra si el usuario es operador.
  */
 export function resolvePostAuthDestination(input: {
   hasSpace: boolean;
@@ -39,12 +40,16 @@ export function resolvePostAuthDestination(input: {
   const nextPath = next?.split("?")[0] ?? "";
 
   if (nextPath.startsWith(PLATFORM_ADMIN_HOME)) {
-    return input.isPlatformOperator ? next! : input.hasSpace ? SPACE_HOME : NO_SPACE_PATH;
+    return input.isPlatformOperator ? next! : input.hasSpace ? DESKTOP_HOME : NO_SPACE_PATH;
   }
 
-  // Operador: siempre Growth OS Master, con o sin membresía de cliente.
+  if (nextPath === DESKTOP_HOME) {
+    return DESKTOP_HOME;
+  }
+
+  // Operador: la mesa. La consola solo si pidió /platform.
   if (input.isPlatformOperator) {
-    return PLATFORM_ADMIN_HOME;
+    return DESKTOP_HOME;
   }
 
   if (!input.hasSpace) {
@@ -55,5 +60,5 @@ export function resolvePostAuthDestination(input: {
     return next;
   }
 
-  return SPACE_HOME;
+  return DESKTOP_HOME;
 }

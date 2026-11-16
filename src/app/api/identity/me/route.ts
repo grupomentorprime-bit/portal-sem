@@ -8,6 +8,7 @@ import { findRolesByIds } from "@/lib/identity/roles";
 import { changeUserPassword, updateUserProfile } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
+import { normalizeAccountPhone } from "@/lib/identity/account-phone";
 
 function serializeUser(user: {
   _id: string;
@@ -17,6 +18,9 @@ function serializeUser(user: {
   phone?: string;
   timezone?: string;
   locale?: string;
+  avatarPresetId?: string;
+  avatarPhoto?: boolean;
+  avatarPhotoUpdatedAt?: string;
   lastLoginAt?: string;
 }) {
   return {
@@ -27,6 +31,9 @@ function serializeUser(user: {
     phone: user.phone ?? "",
     timezone: user.timezone ?? "America/Santiago",
     locale: user.locale ?? "es-CL",
+    avatarPresetId: user.avatarPresetId ?? null,
+    avatarPhoto: user.avatarPhoto === true,
+    avatarPhotoUpdatedAt: user.avatarPhotoUpdatedAt ?? null,
     lastLoginAt: user.lastLoginAt,
   };
 }
@@ -104,10 +111,19 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ ok: false, error: "El nombre es obligatorio." }, { status: 400 });
       }
 
+      let phone = body.phone;
+      if (body.phone !== undefined) {
+        const parsed = normalizeAccountPhone(body.phone);
+        if (!parsed.ok) {
+          return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
+        }
+        phone = parsed.phone;
+      }
+
       const user = await updateUserProfile(ctx.user._id, {
         displayName: body.displayName,
         jobTitle: body.jobTitle,
-        phone: body.phone,
+        phone,
         timezone: body.timezone,
         locale: body.locale,
       });

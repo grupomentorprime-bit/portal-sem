@@ -1,6 +1,7 @@
 import { ConfigurationHub } from "@/components/config/ConfigurationHub";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
+import { requirePageAnyPermission } from "@/lib/admin/require-page-permission";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -15,6 +16,10 @@ function ConfigLoading() {
 }
 
 export default async function AdminConfigPage() {
+  await requirePageAnyPermission(["settings.update"], {
+    nextPath: "/admin/config",
+  });
+
   const config = await getOperationalSiteConfig();
 
   if (!config) {

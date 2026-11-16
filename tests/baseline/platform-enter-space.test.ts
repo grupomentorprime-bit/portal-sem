@@ -92,7 +92,8 @@ describe("OT-GROWTH-PLATFORM-ADMIN-004 — contrato y frontera", () => {
     assert.match(panel, /SPACE_ACCESS_REQUIRED_MESSAGE|Necesitas acceso a este Espacio para entrar/);
     assert.match(panel, /Crear acceso de Soporte/);
     assert.match(panel, /window\.location\.assign/);
-    assert.match(panel, /\/admin/);
+    assert.match(panel, /\/escritorio/);
+    assert.doesNotMatch(panel, /window\.location\.assign\([^)]*\/admin/);
     assert.doesNotMatch(panel, /\?tenant=/);
     assert.doesNotMatch(panel, /impersonat|modo dios|god mode/i);
     assert.doesNotMatch(panel, /x-tenant|X-Tenant/i);

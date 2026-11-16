@@ -88,7 +88,7 @@ describe("OT-GROWTH-SAAS-005 — contratos de código", () => {
 
     const switchRoute = readSrc("src/app/api/identity/spaces/switch/route.ts");
     assert.match(switchRoute, /assertActiveMembership/);
-    assert.match(switchRoute, /redirectedTo:\s*"\/admin"/);
+    assert.match(switchRoute, /redirectedTo:\s*"\/escritorio"/);
 
     const callback = readSrc("src/app/api/identity/auth/keycloak/callback/route.ts");
     assert.match(callback, /preferredTenantId/);

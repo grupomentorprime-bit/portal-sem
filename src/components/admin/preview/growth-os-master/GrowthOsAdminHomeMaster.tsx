@@ -31,7 +31,9 @@ import {
   Users,
 } from "lucide-react";
 import { EmptyState, aek } from "@/components/admin/kit";
+import { GrowthOsWelcomeBand } from "@/components/product/GrowthOsWelcomeBand";
 import { Button } from "@/components/ui/button";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import type { AnalyticsPeriodPreset } from "@/lib/growth/analytics-period";
 import { formatRelativeTime } from "@/lib/admin/audit-labels";
 import { cn } from "@/lib/utils";
@@ -246,64 +248,6 @@ function TitleHint({ text }: { text: string }) {
   );
 }
 
-function trendPath(values: number[], width: number, height: number): { line: string; area: string } {
-  const series = values.length >= 2 ? values : [0, 0];
-  const max = Math.max(...series, 1);
-  const step = width / (series.length - 1);
-  const points = series.map((value, index) => ({
-    x: index * step,
-    y: height - 2 - (value / max) * (height - 6),
-  }));
-  let line = `M${points[0]!.x.toFixed(1)},${points[0]!.y.toFixed(1)}`;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const p0 = points[i - 1] ?? points[i]!;
-    const p1 = points[i]!;
-    const p2 = points[i + 1]!;
-    const p3 = points[i + 2] ?? p2;
-    const c1x = p1.x + (p2.x - p0.x) / 6;
-    const c1y = p1.y + (p2.y - p0.y) / 6;
-    const c2x = p2.x - (p3.x - p1.x) / 6;
-    const c2y = p2.y - (p3.y - p1.y) / 6;
-    line += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
-  }
-  return {
-    line,
-    area: `${line} L${width.toFixed(1)},${height} L0,${height} Z`,
-  };
-}
-
-function TrendSpark({ values, color, label }: { values: number[]; color: string; label: string }) {
-  const width = 92;
-  const height = 40;
-  const { line, area } = trendPath(values, width, height);
-  const gradId = `home-trend-${label.replace(/\s+/g, "-").toLowerCase()}`;
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      aria-hidden
-      className="shrink-0"
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.38" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#${gradId})`} />
-      <path
-        d={line}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function TrendDelta({ trend }: { trend?: HomeMetricTrend }) {
   const pct = trend?.deltaPct;
   if (pct == null || !Number.isFinite(pct)) {
@@ -337,47 +281,44 @@ function MetricCard({
   label,
   value,
   icon: Icon,
+  card,
   iconBg,
-  iconFg,
-  spark,
   trend,
   title,
 }: {
   label: string;
   value: number;
   icon: typeof Users;
+  card: string;
   iconBg: string;
-  iconFg: string;
-  spark: string;
   trend?: HomeMetricTrend;
   title?: string;
 }) {
   return (
     <div
-      className="relative flex min-h-[132px] flex-col rounded-[18px] border border-[var(--admin-home-border)] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_rgba(16,24,40,0.04)]"
+      className={cn(
+        "flex items-center gap-3 rounded-2xl border px-3.5 py-3 shadow-[0_8px_20px_-18px_rgba(14,79,144,0.45)]",
+        card
+      )}
       title={title}
     >
-      <div className="flex items-center gap-2.5 pr-[5.5rem]">
-        <span
-          className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px]",
-            iconBg,
-            iconFg
-          )}
-        >
-          <Icon className="h-[18px] w-[18px]" strokeWidth={2.1} aria-hidden />
+      <span
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80",
+          iconBg
+        )}
+      >
+        <Icon className="h-5 w-5" strokeWidth={2.1} aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[1.35rem] font-semibold tabular-nums leading-none tracking-[-0.04em] text-[var(--gray-900)]">
+          {formatCount(value)}
         </span>
-        <p className="text-[13px] font-medium leading-tight text-[var(--admin-home-slate)]">{label}</p>
-      </div>
-      <p className="mt-3 text-[1.85rem] font-bold tabular-nums leading-none tracking-[-0.045em] text-[var(--admin-home-ink)]">
-        {formatCount(value)}
-      </p>
-      <div className="mt-2.5 pr-[5.5rem]">
-        <TrendDelta trend={trend} />
-      </div>
-      <div className="pointer-events-none absolute bottom-3.5 right-3">
-        <TrendSpark values={trend?.series ?? []} color={spark} label={label} />
-      </div>
+        <span className="mt-1 block truncate text-[12px] text-[var(--gray-500)]">{label}</span>
+        <span className="mt-1.5 block">
+          <TrendDelta trend={trend} />
+        </span>
+      </span>
     </div>
   );
 }
@@ -607,30 +548,25 @@ export function GrowthOsAdminHomeMaster({
 
   return (
     <div className="flex flex-col gap-5" data-growth-os-home>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-[1.85rem] font-bold leading-[1.15] tracking-[-0.04em] text-[var(--admin-home-ink)] sm:text-[2rem]">
-            {greeting}, {firstName}{" "}
-            <span aria-hidden>☀️</span>
-          </h1>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-[var(--admin-home-slate)]" title={spaceName}>
-            Aquí tienes el estado de tu negocio hoy.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <HomePeriodSelect preset={periodPreset} />
-        </div>
-      </header>
+      <GrowthOsWelcomeBand
+        eyebrow={PLATFORM_DISPLAY_NAME}
+        title={
+          <>
+            {greeting}, {firstName} <span aria-hidden>👋</span>
+          </>
+        }
+        subtitle={`Aquí tienes el estado de ${spaceName}.`}
+        aside={<HomePeriodSelect preset={periodPreset} />}
+      />
 
       <section aria-label="Indicadores principales">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard
             label="Nuevos prospectos"
             value={home.metrics.nuevosProspectos}
             icon={Users}
-            iconBg="bg-[var(--admin-home-violet-bg)]"
-            iconFg="text-[var(--admin-home-violet-fg)]"
-            spark="var(--admin-home-violet-fg)"
+            card="border-[color-mix(in_srgb,var(--growth-os-primary)_16%,white)] bg-[color-mix(in_srgb,var(--growth-os-primary)_7%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-primary)_14%,white)] text-[var(--growth-os-primary)]"
             trend={home.trends?.nuevosProspectos}
             title={home.denominators.captacion}
           />
@@ -638,9 +574,8 @@ export function GrowthOsAdminHomeMaster({
             label="Oportunidades activas"
             value={home.metrics.oportunidadesActivas}
             icon={Target}
-            iconBg="bg-[var(--admin-home-blue-bg)]"
-            iconFg="text-[var(--admin-home-blue-fg)]"
-            spark="var(--admin-home-blue-fg)"
+            card="border-[color-mix(in_srgb,var(--growth-os-secondary)_22%,white)] bg-[color-mix(in_srgb,var(--growth-os-secondary)_12%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-secondary)_22%,white)] text-[var(--growth-os-primary)]"
             trend={home.trends?.oportunidadesActivas}
             title={home.denominators.stock}
           />
@@ -648,9 +583,8 @@ export function GrowthOsAdminHomeMaster({
             label="Ganadas"
             value={home.metrics.ganadas}
             icon={Trophy}
-            iconBg="bg-[var(--admin-home-green-bg)]"
-            iconFg="text-[var(--admin-home-green-fg)]"
-            spark="var(--admin-home-green-fg)"
+            card="border-[color-mix(in_srgb,var(--growth-os-success)_18%,white)] bg-[color-mix(in_srgb,var(--growth-os-success)_8%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-success)_16%,white)] text-[var(--growth-os-success)]"
             trend={home.trends?.ganadas}
             title="Oportunidades ganadas con closedAt en el período"
           />
@@ -658,9 +592,8 @@ export function GrowthOsAdminHomeMaster({
             label="Por atender"
             value={home.metrics.porAtender}
             icon={Clock}
-            iconBg="bg-[var(--admin-home-amber-bg)]"
-            iconFg="text-[var(--admin-home-amber-strong)]"
-            spark="var(--admin-home-amber-strong)"
+            card="border-[color-mix(in_srgb,var(--growth-os-light)_22%,white)] bg-[color-mix(in_srgb,var(--growth-os-light)_10%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-light)_18%,white)] text-[var(--growth-os-light)]"
             trend={home.trends?.porAtender}
             title="Vencidas, sin seguimiento o estancadas. La cola es el estado actual; no hay foto del período anterior."
           />
@@ -668,9 +601,8 @@ export function GrowthOsAdminHomeMaster({
             label="Actividad"
             value={home.metrics.actividad}
             icon={Activity}
-            iconBg="bg-[var(--admin-home-violet-bg)]"
-            iconFg="text-[var(--admin-home-violet-soft)]"
-            spark="var(--admin-home-violet-soft)"
+            card="border-[color-mix(in_srgb,var(--growth-os-accent)_16%,white)] bg-[color-mix(in_srgb,var(--growth-os-accent)_7%,white)]"
+            iconBg="bg-[color-mix(in_srgb,var(--growth-os-accent)_14%,white)] text-[var(--growth-os-accent)]"
             trend={home.trends?.actividad}
             title="Actividades del Espacio con occurredAt en el período"
           />

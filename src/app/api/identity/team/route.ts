@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/core/identity";
+import { resolveAuthorizedApps } from "@/lib/desktop/app-access";
+import { readSpaceContract } from "@/lib/desktop/store";
 import { listMembershipsByTenant } from "@/lib/identity/memberships";
 import { listUsersByIds } from "@/lib/identity/users";
 import {
@@ -16,6 +18,11 @@ import {
   getTargetRoleCode,
   shouldHideMemberFromCaller,
 } from "@/lib/identity/iam-guard";
+import {
+  assertCanAssignCustomProfile,
+  classifyEnterpriseProfile,
+} from "@/lib/identity/enterprise-profiles";
+import { resolvePermissionDetailsForMembership } from "@/lib/identity/permission-resolver";
 import type { RoleCode } from "@/core/identity/roles/codes";
 
 export async function GET() {
@@ -28,11 +35,12 @@ export async function GET() {
       ? await getCallerRoleCode(ctx.tenantId, ctx.membership.roleIds)
       : null;
 
-    const [memberships, invitations, audit, allRoles] = await Promise.all([
+    const [memberships, invitations, audit, allRoles, contract] = await Promise.all([
       listMembershipsByTenant(ctx.tenantId),
       listInvitationsByTenant(ctx.tenantId),
       listAuditByTenant(ctx.tenantId, 50),
       listRolesByTenant(ctx.tenantId),
+      readSpaceContract(ctx.tenantId),
     ]);
 
     const userIds = memberships.map((membership) => membership.userId);
@@ -64,8 +72,15 @@ export async function GET() {
           userId: membership.userId,
           email: user?.email ?? "",
           displayName: user?.displayName ?? "",
+          avatarPresetId: user?.avatarPresetId ?? null,
+          avatarPhoto: user?.avatarPhoto === true,
+          avatarPhotoUpdatedAt: user?.avatarPhotoUpdatedAt ?? null,
           status: membership.status,
           roleIds: membership.roleIds,
+          authorizedApps: resolveAuthorizedApps({
+            contracted: contract.contracted,
+            authorizedApps: membership.authorizedApps ?? null,
+          }),
           studentAffairsScope: membership.studentAffairsScope,
           roles: memberRoles.map((role) => {
             const code = getRoleCode(role);
@@ -73,7 +88,7 @@ export async function GET() {
               id: role._id,
               name: role.name,
               code: code ?? undefined,
-              label: getInstitutionalRoleLabel(code ?? role.name),
+              label: code ? getInstitutionalRoleLabel(code) : role.name,
             };
           }),
           joinedAt: membership.joinedAt,
@@ -112,7 +127,7 @@ export async function GET() {
               id: role._id,
               name: role.name,
               code: code ?? undefined,
-              label: getInstitutionalRoleLabel(code ?? role.name),
+              label: code ? getInstitutionalRoleLabel(code) : role.name,
             };
           }),
           _targetCode: targetCode,
@@ -123,12 +138,34 @@ export async function GET() {
       })
       .map(({ _targetCode: _, ...invitation }) => invitation);
 
-    const assignableRoles = buildAssignableRolesList(callerRoleCode, allRoles);
+    const callerEffective = ctx.membership
+      ? (await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)).effective
+      : {};
+    const assignableRoles = [
+      ...buildAssignableRolesList(callerRoleCode, allRoles),
+      ...allRoles
+        .filter((role) => classifyEnterpriseProfile(role) === "custom")
+        .filter((role) =>
+          assertCanAssignCustomProfile({
+            callerCode: callerRoleCode,
+            callerEffective,
+            permissionMap: role.permissionMap ?? {},
+          }).ok
+        )
+        .map((role) => ({
+          id: role._id,
+          name: role.name,
+          code: "",
+          label: role.name,
+        })),
+    ];
 
     return NextResponse.json({
       ok: true,
       callerRoleCode,
+      callerMembershipId: ctx.membership?._id ?? null,
       assignableRoles,
+      contractedApps: contract.contracted,
       members,
       invitations: invitationsWithRoles,
       audit: audit.map((entry) => ({

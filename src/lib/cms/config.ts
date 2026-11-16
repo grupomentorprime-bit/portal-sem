@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
 import { normalizeSiteConfig } from "@/lib/cms/normalize";
+import { fillBlankSeo, mergeSiteConfigPatch, type SiteConfigPatch } from "@/lib/cms/site-config-patch";
+import { validateSiteConfigUpdate, type ValidationError } from "@/lib/cms/validation";
 import { SEM_SITE_ID, SEM_TENANT_ID } from "@/core/tenant/constants";
 import { resolveRequestHost } from "@/core/tenant/hosts";
 import {
@@ -118,70 +120,112 @@ export async function getOperationalSiteConfig(): Promise<SiteConfig | null> {
   return fetchSiteConfigForRequest();
 }
 
+export type SiteConfigWriteResult =
+  | { ok: true; config: SiteConfig }
+  | { ok: false; code: "missing" }
+  | { ok: false; code: "invalid"; errors: ValidationError[] }
+  | { ok: false; code: "conflict" };
+
+function asSiteConfigUpdate(config: SiteConfig): SiteConfigUpdate {
+  const { _id, createdAt, updatedAt, ...update } = config;
+  void _id;
+  void createdAt;
+  void updatedAt;
+  return update;
+}
+
+const SITE_CONFIG_WRITE_ATTEMPTS = 3;
+
 /**
  * Actualiza site_config del Espacio indicado.
  * Exige `tenantId` explícito — no hay fallback silencioso a SEM.
+ * El cuerpo puede ser la ficha completa o solo los campos de una sección.
+ * Cada intento relee la ficha y combina el parche, así un guardado no pisa
+ * SEO, imágenes ni cambios que llegaron después de abrir el formulario.
  */
 export async function updateSiteConfig(
-  update: SiteConfigUpdate,
+  update: SiteConfigPatch,
   options: { tenantId: string }
-): Promise<SiteConfig | null> {
+): Promise<SiteConfigWriteResult> {
   const db = await getDatabase();
   const tenantId = options.tenantId?.trim();
   if (!tenantId) {
-    return null;
-  }
-
-  const existing = await getSiteConfigForTenant(tenantId);
-  if (!existing) {
-    return null;
-  }
-
-  const now = new Date().toISOString();
-  const merged = {
-    ...existing,
-    ...update,
-    _id: SITE_CONFIG_ID,
-    institution: {
-      ...existing.institution,
-      ...update.institution,
-      tenant: tenantId,
-    },
-    createdAt: existing.createdAt,
-    updatedAt: now,
-  };
-
-  const document = normalizeSiteConfig(merged);
-  if (!document) {
-    return null;
+    return { ok: false, code: "missing" };
   }
 
   const isSem = tenantId === SEM_TENANT_ID;
-  const siteId = isSem ? SEM_SITE_ID : tenantId;
+  const defaultSite = isSem ? null : await findDefaultSiteForTenant(db, tenantId);
+  const siteId = isSem
+    ? SEM_SITE_ID
+    : defaultSite?.siteId?.trim() || defaultSite?._id || tenantId;
 
-  if (isSem) {
-    await db.collection<SiteConfig>("cms_config").replaceOne(
-      { _id: SITE_CONFIG_ID },
-      {
-        ...document,
-        tenantId: SEM_TENANT_ID,
-        siteId: SEM_SITE_ID,
-      } as SiteConfig & { tenantId: string; siteId: string },
-      { upsert: true }
-    );
+  for (let attempt = 0; attempt < SITE_CONFIG_WRITE_ATTEMPTS; attempt += 1) {
+    const existing = await getSiteConfigForTenant(tenantId);
+    if (!existing) {
+      return { ok: false, code: "missing" };
+    }
+
+    const now = new Date().toISOString();
+    const merged = fillBlankSeo(mergeSiteConfigPatch(existing, update));
+    merged.institution = { ...merged.institution, tenant: tenantId };
+    merged.createdAt = existing.createdAt;
+    merged.updatedAt = now;
+
+    const document = normalizeSiteConfig(merged);
+    if (!document) {
+      return { ok: false, code: "missing" };
+    }
+
+    const errors = validateSiteConfigUpdate(asSiteConfigUpdate(document));
+    if (errors.length > 0) {
+      return { ok: false, code: "invalid", errors };
+    }
+
+    const row = await findSiteConfigBySiteId(db, siteId);
+    let wrote = false;
+    try {
+      if (!row) {
+        wrote = await mirrorLegacyConfigToSiteConfig(db, document, { tenantId, siteId });
+      } else if (row.updatedAt !== existing.updatedAt) {
+        wrote = false;
+      } else {
+        wrote = await mirrorLegacyConfigToSiteConfig(db, document, {
+          tenantId,
+          siteId,
+          expectedUpdatedAt: row.updatedAt,
+        });
+      }
+    } catch {
+      // SEM sigue en el singleton si la capa site_config aún no está reparada.
+      if (!isSem) throw new Error("No se pudo guardar la ficha del Espacio.");
+      await writeSemSingleton(db, document);
+      revalidateTag(CMS_CONFIG_TAG, "max");
+      revalidatePath("/", "layout");
+      return { ok: true, config: document };
+    }
+
+    if (!wrote) continue;
+
+    if (isSem) {
+      await writeSemSingleton(db, document);
+    }
+
+    revalidateTag(CMS_CONFIG_TAG, "max");
+    revalidatePath("/", "layout");
+    return { ok: true, config: document };
   }
 
-  try {
-    await mirrorLegacyConfigToSiteConfig(db, document, {
-      tenantId,
-      siteId,
-    });
-  } catch {
-    // La capa nueva se repara con la migración 006 / 009.
-  }
+  return { ok: false, code: "conflict" };
+}
 
-  revalidateTag(CMS_CONFIG_TAG, "max");
-  revalidatePath("/", "layout");
-
-  return document;
+async function writeSemSingleton(db: Awaited<ReturnType<typeof getDatabase>>, document: SiteConfig) {
+  await db.collection<SiteConfig>("cms_config").replaceOne(
+    { _id: SITE_CONFIG_ID },
+    {
+      ...document,
+      tenantId: SEM_TENANT_ID,
+      siteId: SEM_SITE_ID,
+    } as SiteConfig & { tenantId: string; siteId: string },
+    { upsert: true }
+  );
 }

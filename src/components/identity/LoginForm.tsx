@@ -27,13 +27,13 @@ export function LoginForm({
   if (!authReady) {
     return (
       <div className="space-y-4 text-center">
-        <p className="text-sm text-muted">
+        <p className="text-sm text-white/80">
           El servicio de autenticación no está disponible. Contacta al administrador del Espacio.
         </p>
-        <p className="text-center text-xs text-muted">
+        <p className="text-center text-xs text-white/70">
           <Link
             href="/"
-            className="font-medium text-[var(--growth-os-primary)] underline-offset-2 hover:underline"
+            className="font-medium text-white underline-offset-2 hover:underline"
           >
             Volver a Growth OS
           </Link>
@@ -89,7 +89,7 @@ export function LoginForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
+      {error ? <p className="text-sm text-red-100">{error}</p> : null}
 
       <Input
         label="Usuario"
@@ -114,10 +114,10 @@ export function LoginForm({
         {loading ? "Ingresando…" : "Ingresar"}
       </Button>
 
-      <p className="pt-1 text-center text-xs text-muted">
+      <p className="pt-1 text-center text-xs text-white/70">
         <Link
           href="/"
-          className="font-medium text-[var(--growth-os-primary)] underline-offset-2 hover:underline"
+          className="font-medium text-white underline-offset-2 hover:underline"
         >
           Volver a Growth OS
         </Link>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Montserrat, Caveat } from "next/font/google";
+import { EscritorioReturn } from "@/components/desktop/EscritorioReturn";
 import { AsesorChat } from "@/components/sites/cumple/asesor-chat";
 import { CumpleFooter } from "@/components/sites/cumple/CumpleFooter";
 import { SiteHeader } from "@/components/sites/cumple/site-header";
@@ -27,6 +28,7 @@ export function CumpleShell({ contact, children }: Pick<CodedPageViewProps, "con
       data-theme="light"
       suppressHydrationWarning
     >
+      <EscritorioReturn />
       <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       <SiteHeader />
       {children}

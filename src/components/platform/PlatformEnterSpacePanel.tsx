@@ -52,7 +52,7 @@ export function PlatformEnterSpacePanel({
       }
 
       // Switch real → backoffice del Espacio (sin bypass ni impersonación).
-      window.location.assign(data.redirectedTo || "/admin");
+      window.location.assign(data.redirectedTo || "/escritorio");
     } catch {
       setError(SPACE_ACCESS_REQUIRED_MESSAGE);
     } finally {

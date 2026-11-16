@@ -15,6 +15,7 @@ export async function createInvitation(input: {
   roleIds: string[];
   invitedBy: string;
   expiresInMinutes?: number;
+  authorizedApps?: IdentityInvitation["authorizedApps"];
 }): Promise<IdentityInvitation> {
   const db = await getDatabase();
   const email = normalizeEmail(input.email);
@@ -39,6 +40,7 @@ export async function createInvitation(input: {
     email,
     displayName,
     roleIds: input.roleIds,
+    ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
     token: generateToken(24),
     status: "pending",
     invitedBy: input.invitedBy,
