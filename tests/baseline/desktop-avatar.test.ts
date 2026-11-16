@@ -116,4 +116,14 @@ describe("avatar del escritorio", () => {
     assert.match(fileRoute, /userId/);
     assert.match(fileRoute, /listMembershipsByUser/);
   });
+
+  it("expone la UI de avatar en Mi cuenta", () => {
+    const account = readFileSync(
+      resolve(process.cwd(), "src/components/desktop/DesktopAccount.tsx"),
+      "utf8"
+    );
+    assert.match(account, /Subir foto/);
+    assert.match(account, /Usar iniciales/);
+    assert.doesNotMatch(account, /aún no está disponible/);
+  });
 });
