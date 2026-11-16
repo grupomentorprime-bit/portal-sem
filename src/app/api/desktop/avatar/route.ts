@@ -10,7 +10,6 @@ import {
 import {
   AvatarUploadError,
   deleteAvatarPhoto,
-  readAvatarPhoto,
   storeAvatarPhoto,
 } from "@/lib/desktop/avatar-file";
 

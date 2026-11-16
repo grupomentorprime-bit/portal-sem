@@ -133,6 +133,8 @@ export function DesktopAccount({
   const [avatarStatus, setAvatarStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [avatarAlert, setAvatarAlert] = useState("");
   const [avatarError, setAvatarError] = useState("");
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
+  const [avatarGalleryOpen, setAvatarGalleryOpen] = useState(false);
   const [prefsStatus, setPrefsStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [prefsAlert, setPrefsAlert] = useState("");
   const [wallStatus, setWallStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -369,10 +371,25 @@ export function DesktopAccount({
   }
 
   async function pickPreset(nextPresetId: string) {
-    if (avatarStatus === "saving" || avatarPresetId === nextPresetId) return;
+    if (avatarStatus === "saving" || (!avatarPhoto && avatarPresetId === nextPresetId)) return;
     setAvatarAlert("");
     setAvatarError("");
     setAvatarStatus("saving");
+
+    if (avatarPhoto) {
+      const cleared = await fetch("/api/desktop/avatar", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clear: "photo" }),
+      }).catch(() => null);
+      const clearedData = (await cleared?.json().catch(() => null)) as { ok?: boolean } | null;
+      if (!cleared?.ok || !clearedData?.ok) {
+        setAvatarStatus("error");
+        setAvatarError("No se pudo quitar la foto para aplicar el avatar.");
+        return;
+      }
+    }
+
     const response = await fetch("/api/desktop/avatar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -388,11 +405,12 @@ export function DesktopAccount({
       setAvatarError(data?.error || "No se pudo guardar el avatar.");
       return;
     }
+    setAvatarGalleryOpen(false);
     markAvatarSaved(
       {
         avatarPresetId: data.presetId,
-        avatarPhoto,
-        avatarPhotoUpdatedAt,
+        avatarPhoto: false,
+        avatarPhotoUpdatedAt: null,
       },
       "Avatar guardado."
     );
@@ -428,6 +446,7 @@ export function DesktopAccount({
     }
 
     setAvatarStatus("saving");
+    setAvatarGalleryOpen(false);
     const form = new FormData();
     form.set("file", file);
     const response = await fetch("/api/desktop/avatar", {
@@ -455,38 +474,13 @@ export function DesktopAccount({
     );
   }
 
-  async function removePhoto() {
-    if (!avatarPhoto || avatarStatus === "saving") return;
-    setAvatarAlert("");
-    setAvatarError("");
-    setAvatarStatus("saving");
-    const response = await fetch("/api/desktop/avatar", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clear: "photo" }),
-    }).catch(() => null);
-    const data = (await response?.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
-    if (!response?.ok || !data?.ok) {
-      setAvatarStatus("error");
-      setAvatarError(data?.error || "No se pudo quitar la foto.");
-      return;
-    }
-    markAvatarSaved(
-      {
-        avatarPresetId,
-        avatarPhoto: false,
-        avatarPhotoUpdatedAt: null,
-      },
-      "Foto quitada."
-    );
-  }
-
   async function clearAvatarToInitials() {
     if (!avatarPhoto && !avatarPresetId) return;
     if (avatarStatus === "saving") return;
     setAvatarAlert("");
     setAvatarError("");
     setAvatarStatus("saving");
+    setAvatarGalleryOpen(false);
     const response = await fetch("/api/desktop/avatar", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -544,7 +538,23 @@ export function DesktopAccount({
       >
         <header className="ajustes-head">
           <div className="ajustes-brand">
-            <DesktopAvatar view={avatarView} className="account-hero-avatar" />
+            <button
+              type="button"
+              className="account-hero-edit"
+              aria-label="Editar avatar"
+              aria-expanded={avatarEditorOpen}
+              aria-controls="account-avatar-editor"
+              disabled={loading || avatarStatus === "saving"}
+              onClick={() => {
+                setAvatarEditorOpen((open) => {
+                  if (open) setAvatarGalleryOpen(false);
+                  return !open;
+                });
+                setSection("perfil");
+              }}
+            >
+              <DesktopAvatar view={avatarView} className="account-hero-avatar" />
+            </button>
             <div>
               <p className="kicker">NELZURI</p>
               <h2 id="account-title">Mi cuenta</h2>
@@ -555,6 +565,88 @@ export function DesktopAccount({
             Cerrar
           </button>
         </header>
+
+        {avatarEditorOpen ? (
+          <section
+            id="account-avatar-editor"
+            className="avatar-editor"
+            aria-label="Editar avatar"
+          >
+            <div className="form-actions avatar-actions">
+              <label className="file-btn">
+                {avatarStatus === "saving" ? "Guardando…" : "Cambiar foto"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  onChange={(event) => void onAvatarFile(event)}
+                  disabled={avatarStatus === "saving"}
+                />
+              </label>
+              <button
+                type="button"
+                className="ghost-btn"
+                aria-expanded={avatarGalleryOpen}
+                aria-controls="account-avatar-gallery"
+                onClick={() => setAvatarGalleryOpen((open) => !open)}
+                disabled={avatarStatus === "saving"}
+              >
+                Elegir avatar
+              </button>
+              <button
+                type="button"
+                className="text-btn"
+                onClick={() => void clearAvatarToInitials()}
+                disabled={avatarStatus === "saving" || (!avatarPhoto && !avatarPresetId)}
+              >
+                Usar iniciales
+              </button>
+            </div>
+            {avatarGalleryOpen ? (
+              <div
+                id="account-avatar-gallery"
+                className="avatar-gallery"
+                role="radiogroup"
+                aria-label="Avatar listo"
+              >
+                <p className="account-note">Elige uno de la galería. Se guarda al instante.</p>
+                <div className="avatar-choices">
+                  {AVATAR_PRESETS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="radio"
+                      aria-label={item.label}
+                      aria-checked={!avatarPhoto && avatarPresetId === item.id}
+                      className={!avatarPhoto && avatarPresetId === item.id ? "is-on" : undefined}
+                      onClick={() => void pickPreset(item.id)}
+                      disabled={avatarStatus === "saving"}
+                      title={item.label}
+                    >
+                      <DesktopAvatar
+                        view={resolveDesktopAvatar({
+                          displayName,
+                          email,
+                          avatarPresetId: item.id,
+                        })}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <p className="account-note">{AVATAR_SIZE_HINT}</p>
+            {avatarError ? (
+              <p className="form-error" role="alert">
+                {avatarError}
+              </p>
+            ) : null}
+            {avatarAlert ? (
+              <p className="form-ok" role="status">
+                {avatarAlert}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
 
         <nav className="ajustes-nav" aria-label="Secciones de la cuenta">
           {ACCOUNT_SECTIONS.map((item) => (
@@ -583,83 +675,6 @@ export function DesktopAccount({
               <p className="account-meta">
                 {[roleLabel, institutionName].filter(Boolean).join(" · ") || "Tu perfil personal"}
               </p>
-              <section className="avatar-panel" aria-labelledby="account-avatar-title">
-                <div className="avatar-preview">
-                  <DesktopAvatar view={avatarView} className="account-avatar-preview" />
-                  <div>
-                    <p id="account-avatar-title" className="field-label">
-                      Avatar del escritorio
-                    </p>
-                    <p className="account-note">{AVATAR_SIZE_HINT}</p>
-                  </div>
-                </div>
-                <div className="form-actions">
-                  <label className="file-btn">
-                    {avatarStatus === "saving"
-                      ? "Guardando…"
-                      : avatarPhoto
-                        ? "Cambiar foto"
-                        : "Subir foto"}
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                      onChange={(event) => void onAvatarFile(event)}
-                      disabled={avatarStatus === "saving"}
-                    />
-                  </label>
-                  {avatarPhoto ? (
-                    <button
-                      type="button"
-                      className="text-btn"
-                      onClick={() => void removePhoto()}
-                      disabled={avatarStatus === "saving"}
-                    >
-                      Quitar foto
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="text-btn"
-                      onClick={() => void clearAvatarToInitials()}
-                    disabled={avatarStatus === "saving" || (!avatarPhoto && !avatarPresetId)}
-                  >
-                    Usar iniciales
-                  </button>
-                </div>
-                <div className="avatar-choices" role="radiogroup" aria-label="Preset de avatar">
-                  {AVATAR_PRESETS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="radio"
-                      aria-label={item.label}
-                      aria-checked={avatarPresetId === item.id}
-                      className={avatarPresetId === item.id ? "is-on" : undefined}
-                      onClick={() => void pickPreset(item.id)}
-                      disabled={avatarStatus === "saving"}
-                      title={item.label}
-                    >
-                      <DesktopAvatar
-                        view={resolveDesktopAvatar({
-                          displayName,
-                          email,
-                          avatarPresetId: item.id,
-                        })}
-                      />
-                    </button>
-                  ))}
-                </div>
-                {avatarError ? (
-                  <p className="form-error" role="alert">
-                    {avatarError}
-                  </p>
-                ) : null}
-                {avatarAlert ? (
-                  <p className="form-ok" role="status">
-                    {avatarAlert}
-                  </p>
-                ) : null}
-              </section>
               <label>
                 Nombre completo
                 <input

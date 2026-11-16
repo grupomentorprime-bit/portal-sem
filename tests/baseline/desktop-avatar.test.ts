@@ -107,6 +107,7 @@ describe("avatar del escritorio", () => {
     assert.match(route, /parseAvatarPresetId/);
     assert.match(route, /multipart\/form-data/);
     assert.match(route, /clear/);
+    assert.match(route, /requireAuth/);
     assert.match(route, /Elige un avatar válido\./);
     assert.match(route, /No se pudo actualizar el avatar\./);
 
@@ -115,8 +116,12 @@ describe("avatar del escritorio", () => {
       "utf8"
     );
     assert.match(fileRoute, /readAvatarPhoto/);
+    assert.match(fileRoute, /requireAuth/);
     assert.match(fileRoute, /userId/);
     assert.match(fileRoute, /listMembershipsByUser/);
+    assert.match(fileRoute, /hasPlatformOperatorCapability/);
+    assert.match(fileRoute, /status: 403/);
+    assert.match(fileRoute, /Cache-Control": "private/);
   });
 
   it("expone la UI de avatar en Mi cuenta", () => {
@@ -124,8 +129,15 @@ describe("avatar del escritorio", () => {
       resolve(process.cwd(), "src/components/desktop/DesktopAccount.tsx"),
       "utf8"
     );
-    assert.match(account, /Subir foto/);
+    assert.match(account, /aria-label="Editar avatar"/);
+    assert.match(account, /account-hero-edit/);
+    assert.match(account, /avatarEditorOpen/);
+    assert.match(account, /Cambiar foto/);
+    assert.match(account, /Elegir avatar/);
     assert.match(account, /Usar iniciales/);
+    assert.match(account, /avatarGalleryOpen/);
+    assert.match(account, /account-avatar-gallery/);
+    assert.doesNotMatch(account, /avatar-panel/);
     assert.doesNotMatch(account, /aún no está disponible/);
   });
 
