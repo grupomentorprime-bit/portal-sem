@@ -126,4 +126,17 @@ describe("avatar del escritorio", () => {
     assert.match(account, /Usar iniciales/);
     assert.doesNotMatch(account, /aún no está disponible/);
   });
+
+  it("usa DesktopAvatar en Ajustes dueño para la lista y la cuenta propia", () => {
+    const settings = readFileSync(
+      resolve(process.cwd(), "src/components/desktop/DesktopAjustes.tsx"),
+      "utf8"
+    );
+
+    assert.match(settings, /import\s+\{\s*DesktopAvatar\s*\}\s+from\s+"@\/components\/desktop\/DesktopAvatar"/);
+    assert.match(settings, /resolveDesktopAvatar/);
+    assert.match(settings, /<DesktopAvatar/);
+    assert.match(settings, /view=\{resolveDesktopAvatar\(\{/);
+    assert.doesNotMatch(settings, /function initials\(/);
+  });
 });
