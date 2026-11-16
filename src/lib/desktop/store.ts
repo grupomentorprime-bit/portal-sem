@@ -2,6 +2,8 @@ import "server-only";
 
 import { findTenantById } from "@/core/tenant";
 import { TENANTS_COLLECTION } from "@/core/tenant/constants";
+import type { TenantDocument } from "@/core/tenant/types";
+import type { IdentityUser } from "@/types/identity";
 import {
   parseWallpaper,
   type DesktopWallpaper,
@@ -80,7 +82,7 @@ export async function writeSpaceContract(
   }
 ): Promise<void> {
   const db = await getDatabase();
-  await db.collection(TENANTS_COLLECTION).updateOne(
+  await db.collection<TenantDocument>(TENANTS_COLLECTION).updateOne(
     { $or: [{ _id: tenantId }, { tenantId }] },
     {
       $set: {
@@ -97,7 +99,7 @@ export async function setDesktopWallpaper(
   wallpaper: WallpaperChoice
 ): Promise<void> {
   const db = await getDatabase();
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {
@@ -113,7 +115,7 @@ export async function saveCustomDesktopWallpaper(
   updatedAt: string
 ): Promise<void> {
   const db = await getDatabase();
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {
@@ -128,7 +130,7 @@ export async function saveCustomDesktopWallpaper(
 
 export async function setAvatarPreset(userId: string, presetId: string): Promise<void> {
   const db = await getDatabase();
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {
@@ -141,7 +143,7 @@ export async function setAvatarPreset(userId: string, presetId: string): Promise
 
 export async function saveAvatarPhoto(userId: string, updatedAt: string): Promise<void> {
   const db = await getDatabase();
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {
@@ -155,7 +157,7 @@ export async function saveAvatarPhoto(userId: string, updatedAt: string): Promis
 
 export async function clearAvatarPhoto(userId: string): Promise<void> {
   const db = await getDatabase();
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {
@@ -171,7 +173,7 @@ export async function clearAvatarPhoto(userId: string): Promise<void> {
 
 export async function clearDesktopAvatar(userId: string): Promise<void> {
   const db = await getDatabase();
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {
@@ -189,10 +191,10 @@ export async function clearDesktopAvatar(userId: string): Promise<void> {
 /** Borra la marca del fondo propio. Si estaba activo, vuelve a Mar. */
 export async function clearCustomDesktopWallpaper(userId: string): Promise<DesktopWallpaper> {
   const db = await getDatabase();
-  const user = await db.collection("identity_users").findOne({ _id: userId });
+  const user = await db.collection<IdentityUser>("identity_users").findOne({ _id: userId });
   const next: DesktopWallpaper =
     user?.desktopWallpaper === "custom" ? "mar" : parseWallpaper(user?.desktopWallpaper);
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {
@@ -210,7 +212,7 @@ export async function clearCustomDesktopWallpaper(userId: string): Promise<Deskt
 
 export async function setDesktopLayout(userId: string, icons: DeskIconSpot[]): Promise<void> {
   const db = await getDatabase();
-  await db.collection("identity_users").updateOne(
+  await db.collection<IdentityUser>("identity_users").updateOne(
     { _id: userId },
     {
       $set: {

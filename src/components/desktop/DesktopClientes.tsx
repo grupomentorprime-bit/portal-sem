@@ -189,7 +189,7 @@ export function DesktopClientes({
                 model={model}
                 onEnter={() => onEnter(selected.tenantId)}
                 onChanged={(patch) =>
-                  setDetail((current) => ({
+                  setDetail((current: unknown) => ({
                     ...(current && typeof current === "object" ? current : {}),
                     ...(patch && typeof patch === "object" ? patch : {}),
                   }))

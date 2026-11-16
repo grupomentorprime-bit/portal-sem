@@ -79,7 +79,7 @@ export function DeskIcon({ name }: { name: DeskIconName }) {
       </svg>
     );
   }
-  if (name === "productos" || name === "products") {
+  if (name === "productos") {
     return (
       <svg {...COMMON}>
         <rect x="4" y="4" width="7" height="7" rx="1.6" />
