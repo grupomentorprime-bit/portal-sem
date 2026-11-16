@@ -28,7 +28,8 @@ export function customAvatarUrl(userId?: string | null, version?: string | null)
 }
 
 export function desktopAvatarInitials(name: string, email: string): string {
-  const parts = (name || email).trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  const source = name.trim() || email.trim();
+  const parts = source.split(/\s+/).filter(Boolean).slice(0, 2);
   return (parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "NZ").slice(0, 2);
 }
 

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   AVATAR_PRESETS,
   customAvatarUrl,
+  desktopAvatarInitials,
   parseAvatarPresetId,
   resolveDesktopAvatar,
 } from "../../src/lib/desktop/avatar-catalog";
@@ -39,5 +40,9 @@ describe("avatar del escritorio", () => {
       avatarPresetId: "nope",
     });
     assert.deepEqual(initials, { kind: "initials", text: "AP" });
+  });
+
+  it("usa el email para iniciales si el nombre solo tiene espacios", () => {
+    assert.equal(desktopAvatarInitials("   ", "ana@ex.com"), "A");
   });
 });
