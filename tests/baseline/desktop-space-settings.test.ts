@@ -180,4 +180,27 @@ describe("ajustes de empresa y mi cuenta", () => {
     assert.match(integrations, /settings\.integrations/);
     assert.match(config, /settings\.update/);
   });
+
+  it("Ajustes NELZURI: Escape, foco y diálogos de cambios pendientes", () => {
+    const space = readFileSync(
+      resolve(process.cwd(), "src/components/desktop/DesktopSpaceAjustes.tsx"),
+      "utf8"
+    );
+    assert.match(space, /event\.key === "Escape"/);
+    assert.match(space, /requestClose/);
+    assert.match(space, /opener\?\.focus\(\)/);
+    assert.match(space, /ajustes-head \.ghost.*\?\.focus\(\)/s);
+    assert.match(space, /event\.key !== "Tab"/);
+    assert.match(space, /Hay cambios sin guardar\. ¿Salir y descartarlos\?/);
+    assert.match(space, /Hay cambios sin guardar\. ¿Cambiar de sección y descartarlos\?/);
+    assert.match(space, /sectionDirty/);
+    assert.match(space, /aria-modal="true"/);
+
+    const css = readFileSync(
+      resolve(process.cwd(), "src/components/desktop/mentor-desktop.css"),
+      "utf8"
+    );
+    assert.match(css, /\.settings-nav \.space-row:focus-visible/);
+    assert.match(css, /\.cfg-block \.ghost:focus-visible/);
+  });
 });
