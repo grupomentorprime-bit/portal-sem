@@ -44,5 +44,7 @@ yarn-error.log*
 /public/media/*
 !/public/media/.gitkeep
 /data/media/
+/data/desktop-wallpapers/
+/data/desktop-avatars/
 
 .worktrees/

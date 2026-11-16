@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import sharp from "sharp";
 import {
   AVATAR_PRESETS,
   customAvatarUrl,
@@ -44,5 +45,55 @@ describe("avatar del escritorio", () => {
 
   it("usa el email para iniciales si el nombre solo tiene espacios", () => {
     assert.equal(desktopAvatarInitials("   ", "ana@ex.com"), "A");
+  });
+
+  it("valida tipo, peso y medida mínima de la foto", () => {
+    const {
+      AVATAR_SIZE_HINT,
+      avatarFileError,
+      avatarDimensionError,
+    } = require("../../src/lib/desktop/avatar-upload");
+
+    assert.match(AVATAR_SIZE_HINT, /2 MB/);
+    assert.notEqual(avatarFileError({ type: "image/gif", size: 100 }), null);
+    assert.equal(avatarFileError({ type: "image/jpeg", size: 100 }), null);
+    assert.match(avatarDimensionError(64, 64) ?? "", /64 × 64/);
+    assert.equal(avatarDimensionError(256, 256), null);
+  });
+
+  it("guarda foto cuadrada webp y rechaza una demasiado chica", async () => {
+    require("../../scripts/_stub-server-only.cjs");
+    const {
+      storeAvatarPhoto,
+      readAvatarPhoto,
+      deleteAvatarPhoto,
+      AvatarUploadError,
+    } = await import("../../src/lib/desktop/avatar-file");
+
+    const userId = "avatar-upload-test-user";
+    await deleteAvatarPhoto(userId);
+
+    const ok = await sharp({
+      create: { width: 400, height: 300, channels: 3, background: "#224466" },
+    })
+      .jpeg()
+      .toBuffer();
+    const saved = await storeAvatarPhoto(userId, ok, "image/jpeg");
+    assert.equal(saved.savedWidth, 300);
+    assert.equal(saved.savedHeight, 300);
+    assert.ok(saved.savedWidth <= 512);
+    assert.ok(await readAvatarPhoto(userId));
+
+    const tiny = await sharp({
+      create: { width: 80, height: 80, channels: 3, background: "#224466" },
+    })
+      .jpeg()
+      .toBuffer();
+    await assert.rejects(
+      () => storeAvatarPhoto(userId, tiny, "image/jpeg"),
+      (e: unknown) => e instanceof AvatarUploadError
+    );
+
+    await deleteAvatarPhoto(userId);
   });
 });
