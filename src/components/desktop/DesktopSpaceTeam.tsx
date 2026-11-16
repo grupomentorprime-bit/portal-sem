@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { DesktopAvatar } from "@/components/desktop/DesktopAvatar";
+import { DesktopSwitchGroup, DesktopSwitchRow } from "@/components/desktop/DesktopSwitch";
 import {
   MENTOR_APPS,
+  mentorAppBlurb,
   mentorAppLabel,
   type MentorAppId,
 } from "@/lib/desktop/catalog";
@@ -87,9 +89,13 @@ function MemberDetail({
 }) {
   const currentRoleId = member.roles[0]?.id ?? "";
   const known = assignableRoles.some((role) => role.id === currentRoleId);
+  const accessOn = member.status === "active";
+  const accessBusy =
+    busyAction === `suspend:${member.membershipId}` ||
+    busyAction === `restore:${member.membershipId}`;
   return (
     <div className="team-form">
-      <button type="button" className="ghost" onClick={onBack}>
+      <button type="button" className="ghost team-back" onClick={onBack}>
         Volver a la lista
       </button>
       <div className="team-person">
@@ -133,25 +139,44 @@ function MemberDetail({
           </select>
         </label>
       ) : null}
+      <DesktopSwitchGroup
+        label="Acceso"
+        note={
+          self
+            ? "Tu acceso no se apaga desde aquí."
+            : "Si lo apagas, la persona deja de entrar a este Espacio."
+        }
+      >
+        <DesktopSwitchRow
+          title="Puede entrar"
+          detail={membershipStatusLabel(member.status)}
+          checked={accessOn}
+          disabled={self || accessBusy}
+          onChange={(next) => {
+            if (next) onRestore();
+            else onSuspend();
+          }}
+        />
+      </DesktopSwitchGroup>
       {plan.length === 0 ? (
         <p className="ajustes-wait">Sin aplicaciones contratadas: no hay llaves que repartir.</p>
       ) : (
-        <div className="team-keys-apps" role="group" aria-label={`Apps de ${member.displayName || member.email}`}>
-          {plan.map((appId) => {
-            const on = member.authorizedApps.includes(appId);
-            return (
-              <label key={appId} className={on ? "is-on" : undefined}>
-                <input
-                  type="checkbox"
-                  checked={on}
-                  disabled={savingId === member.membershipId}
-                  onChange={() => onToggleApp(appId)}
-                />
-                <span>{mentorAppLabel(appId)}</span>
-              </label>
-            );
-          })}
-        </div>
+        <DesktopSwitchGroup
+          label="Aplicaciones"
+          note="Llaves que esta persona puede abrir."
+        >
+          {plan.map((appId) => (
+            <DesktopSwitchRow
+              key={appId}
+              mark={appId}
+              title={mentorAppLabel(appId)}
+              detail={mentorAppBlurb(appId)}
+              checked={member.authorizedApps.includes(appId)}
+              disabled={savingId === member.membershipId}
+              onChange={() => onToggleApp(appId)}
+            />
+          ))}
+        </DesktopSwitchGroup>
       )}
       <div className="team-member-actions">
         <button
@@ -162,26 +187,6 @@ function MemberDetail({
         >
           Reenviar acceso
         </button>
-        {!self && member.status === "active" ? (
-          <button
-            type="button"
-            className="ghost"
-            disabled={busyAction === `suspend:${member.membershipId}`}
-            onClick={onSuspend}
-          >
-            Suspender
-          </button>
-        ) : null}
-        {!self && (member.status === "suspended" || member.status === "archived") ? (
-          <button
-            type="button"
-            className="ghost"
-            disabled={busyAction === `restore:${member.membershipId}`}
-            onClick={onRestore}
-          >
-            Reactivar
-          </button>
-        ) : null}
         {!self ? (
           <button
             type="button"
@@ -589,32 +594,13 @@ export function DesktopSpaceTeam({
 
   return (
     <div className="space-presence team-panel">
-      <div className={`space-presence-bar${onBack ? "" : " is-readonly"}`}>
-        {onBack ? (
+      {onBack ? (
+        <div className="space-presence-bar">
           <button type="button" className="ghost" onClick={onBack}>
             Volver
           </button>
-        ) : null}
-        <div>
-          <h3>Equipo</h3>
-          <p>
-            Incorpora personas, asigna roles y reparte las llaves de las aplicaciones del
-            plan.
-          </p>
         </div>
-        <button
-          type="button"
-          className="primary"
-          onClick={() => {
-            setInviteOpen((open) => !open);
-            setError("");
-            setNotice("");
-          }}
-          disabled={assignableRoles.length === 0}
-        >
-          {inviteOpen ? "Cerrar invitación" : "Agregar persona"}
-        </button>
-      </div>
+      ) : null}
 
       <div className="team-toolbar">
         <input
@@ -628,7 +614,7 @@ export function DesktopSpaceTeam({
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
         >
-          <option value="all">Todos los estados</option>
+          <option value="all">Estado</option>
           <option value="active">Activos</option>
           <option value="suspended">Suspendidos</option>
           <option value="archived">Archivados</option>
@@ -639,7 +625,7 @@ export function DesktopSpaceTeam({
           value={roleFilter}
           onChange={(event) => setRoleFilter(event.target.value)}
         >
-          <option value="all">Todos los perfiles</option>
+          <option value="all">Perfil</option>
           {profiles.map((role) => (
             <option key={role.id} value={role.id}>
               {role.label}
@@ -651,13 +637,25 @@ export function DesktopSpaceTeam({
           value={appFilter}
           onChange={(event) => setAppFilter(event.target.value)}
         >
-          <option value="all">Todas las aplicaciones</option>
+          <option value="all">App</option>
           {plan.map((appId) => (
             <option key={appId} value={appId}>
               {mentorAppLabel(appId)}
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => {
+            setInviteOpen((open) => !open);
+            setError("");
+            setNotice("");
+          }}
+          disabled={assignableRoles.length === 0}
+        >
+          {inviteOpen ? "Cerrar" : "Agregar persona"}
+        </button>
       </div>
 
       {error ? (
@@ -719,25 +717,18 @@ export function DesktopSpaceTeam({
           </div>
 
           {plan.length > 0 ? (
-            <div
-              className="team-keys-apps"
-              role="group"
-              aria-label="Aplicaciones al invitar"
-            >
-              {plan.map((appId) => {
-                const on = inviteApps.includes(appId);
-                return (
-                  <label key={appId} className={on ? "is-on" : undefined}>
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      onChange={() => toggleInviteApp(appId)}
-                    />
-                    <span>{mentorAppLabel(appId)}</span>
-                  </label>
-                );
-              })}
-            </div>
+            <DesktopSwitchGroup label="Aplicaciones" note="Llaves que recibirá al aceptar.">
+              {plan.map((appId) => (
+                <DesktopSwitchRow
+                  key={appId}
+                  mark={appId}
+                  title={mentorAppLabel(appId)}
+                  detail={mentorAppBlurb(appId)}
+                  checked={inviteApps.includes(appId)}
+                  onChange={() => toggleInviteApp(appId)}
+                />
+              ))}
+            </DesktopSwitchGroup>
           ) : (
             <p className="ajustes-wait">
               Este Espacio no tiene aplicaciones contratadas. La persona entrará sin
