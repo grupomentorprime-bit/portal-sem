@@ -89,7 +89,7 @@ export function LoginForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {error ? <p className="text-sm text-red-100">{error}</p> : null}
+      {error ? <p className="text-sm text-warning">{error}</p> : null}
 
       <Input
         label="Usuario"

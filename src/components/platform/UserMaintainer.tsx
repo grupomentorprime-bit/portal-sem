@@ -261,7 +261,7 @@ export function UserMaintainer({
             </select>
           </label>
         ) : null}
-        {error ? <p className={desk ? "form-error" : "mt-3 text-sm text-red-700"}>{error}</p> : null}
+        {error ? <p className={desk ? "form-error" : "mt-3 text-sm text-danger"}>{error}</p> : null}
         <button
           type="submit"
           className={
@@ -367,7 +367,7 @@ export function UserMaintainer({
                     ) : (
                       <button
                         type="button"
-                        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] text-violet-700 hover:bg-violet-100 disabled:cursor-default disabled:opacity-45"
+                        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] text-accent hover:bg-accent/10 disabled:cursor-default disabled:opacity-45"
                         aria-label="Reenviar acceso"
                         title={issuingId === user.id ? "Reenviando…" : "Reenviar acceso"}
                         disabled={issuingId === user.id}
