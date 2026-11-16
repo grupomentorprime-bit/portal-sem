@@ -21,6 +21,7 @@ export async function provisionRrhhCompany(input: {
     },
     body: JSON.stringify(input),
     cache: "no-store",
+    signal: AbortSignal.timeout(4_000),
   }).catch(() => null);
   return Boolean(response?.ok);
 }

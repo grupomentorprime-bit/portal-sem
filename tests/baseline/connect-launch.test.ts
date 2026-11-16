@@ -684,7 +684,7 @@ describe("NELZURI Connect — entrada a Cumple", () => {
     assert.equal(form.method, "POST");
     assert.equal(form.action, `${DEST}${CONNECT_CALLBACK_PATH}`);
     assert.equal(form.action.includes("?"), false);
-    assert.equal(form.referrerPolicy, "no-referrer");
+    assert.equal(form.referrerPolicy, "origin");
     assert.equal(form.fields.transaction, TX);
     const localCsp = buildContentSecurityPolicy({
       APP_URL: "http://localhost:4017",

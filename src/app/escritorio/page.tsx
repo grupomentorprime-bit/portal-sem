@@ -13,7 +13,6 @@ import { parseDesktopLayout } from "@/lib/desktop/layout";
 import { desktopClients } from "@/lib/desktop/clients";
 import { readDesktopDay } from "@/lib/desktop/day-read";
 import { escritorioRedirect } from "@/lib/desktop/contract";
-import { ensureClientCompany } from "@/lib/desktop/ensure-client-company";
 import { mongoAppRequestStore, readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser, updateSessionActiveTenant } from "@/lib/identity/active-space";
 import { findMembership } from "@/lib/identity/memberships";
@@ -78,14 +77,6 @@ export default async function EscritorioPage() {
   if (entered && entered !== tenantId) {
     await updateSessionActiveTenant(session.session._id, entered);
     deskTenantId = entered;
-  }
-  if (platformOwner && deskTenantId && !onPlatformDesk) {
-    await ensureClientCompany({
-      tenantId: deskTenantId,
-      userId: session.user._id,
-      email: session.user.email,
-      displayName: session.user.displayName,
-    });
   }
   const [contract, openRequests] = onPlatformDesk
     ? [{ contracted: [], aprendeHoyEntryUrl: null }, []]

@@ -234,6 +234,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const [clientesOpen, setClientesOpen] = useState(false);
   const [spaceAjustesOpen, setSpaceAjustesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [entering, setEntering] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState(
     () => props.user.displayName || props.user.email
   );
@@ -790,7 +791,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
     });
     if (timerRef.current != null) window.clearTimeout(timerRef.current);
     if (action.kind === "connect") {
-      void beginConnect(action.appId);
+      void beginConnect(action.appId, event);
       return;
     }
     if (action.kind === "open") {
@@ -809,7 +810,21 @@ export function MentorDesktop(props: MentorDesktopProps) {
     }, 420);
   }
 
-  async function beginConnect(appId: "cumple" | "rrhh") {
+  async function beginConnect(
+    appId: "cumple" | "rrhh",
+    event?: ReactMouseEvent<HTMLButtonElement>
+  ) {
+    const glyph = event?.currentTarget.querySelector(".glyph");
+    const rect = glyph?.getBoundingClientRect();
+    if (rect) {
+      setLaunch({
+        appId,
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+    }
     const transaction = createTransactionVerifier();
     const transactionHash = await hashTransactionVerifier(transaction);
     const response = await fetch("/api/connect/launch", {
@@ -834,6 +849,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
           })
         : null;
     if (!form?.ok) {
+      setLaunch(null);
       const denied =
         body?.reason === "no_key" ||
         body?.reason === "no_plan" ||
@@ -895,7 +911,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
 
   async function openClient(tenantId: string): Promise<boolean> {
     const target = props.spaces.find((space) => space.tenantId === tenantId);
-    if (props.owner || props.canReturnToPlatform || target?.needsAccess) {
+    if (target?.needsAccess) {
       const granted = await fetch(
         `/api/platform/spaces/${encodeURIComponent(tenantId)}/access`,
         { method: "POST" }
@@ -913,8 +929,13 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }
 
   async function enterClient(tenantId: string) {
+    if (entering) return;
+    setEntering(tenantId);
     const opened = await openClient(tenantId);
-    if (!opened) return;
+    if (!opened) {
+      setEntering(null);
+      return;
+    }
     writeEnteredClientCookie(tenantId);
     window.location.assign("/escritorio");
   }
@@ -1167,6 +1188,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       {clientesOpen ? (
         <DesktopClientes
           spaces={props.spaces}
+          entering={entering}
           onClose={() => setClientesOpen(false)}
           onEnter={(tenantId) => void enterClient(tenantId)}
         />

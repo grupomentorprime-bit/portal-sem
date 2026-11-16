@@ -73,7 +73,7 @@ export async function ensureClientCompany(input: {
     );
   }
 
-  await provisionRrhhCompany({
+  void provisionRrhhCompany({
     tenantId,
     companyName: tenant.name?.trim() || tenantId,
     email,

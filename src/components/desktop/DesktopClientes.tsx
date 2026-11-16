@@ -11,10 +11,12 @@ type ClientRow = { tenantId: string; name: string };
 
 export function DesktopClientes({
   spaces,
+  entering,
   onClose,
   onEnter,
 }: {
   spaces: ClientRow[];
+  entering?: string | null;
   onClose: () => void;
   onEnter: (tenantId: string) => void;
 }) {
@@ -187,6 +189,7 @@ export function DesktopClientes({
               <DesktopClientConsole
                 tenantId={selected.tenantId}
                 model={model}
+                entering={entering === selected.tenantId}
                 onEnter={() => onEnter(selected.tenantId)}
                 onChanged={(patch) =>
                   setDetail((current: unknown) => ({

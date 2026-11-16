@@ -265,7 +265,7 @@ export function connectLaunchForm(input: {
       ok: true;
       action: string;
       method: "POST";
-      referrerPolicy: "no-referrer";
+      referrerPolicy: "origin";
       fields: { code: string; transaction: string };
     }
   | { ok: false } {
@@ -288,7 +288,7 @@ export function connectLaunchForm(input: {
     ok: true,
     action: `${url.origin}${CONNECT_CALLBACK_PATH}`,
     method: "POST",
-    referrerPolicy: "no-referrer",
+    referrerPolicy: "origin",
       fields: { code: input.code, transaction },
   };
 }
