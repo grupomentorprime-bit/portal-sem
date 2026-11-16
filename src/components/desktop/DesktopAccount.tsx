@@ -632,6 +632,7 @@ export function DesktopAccount({
                       key={item.id}
                       type="button"
                       role="radio"
+                      aria-label={item.label}
                       aria-checked={avatarPresetId === item.id}
                       className={avatarPresetId === item.id ? "is-on" : undefined}
                       onClick={() => void pickPreset(item.id)}

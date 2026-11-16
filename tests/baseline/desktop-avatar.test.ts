@@ -107,6 +107,8 @@ describe("avatar del escritorio", () => {
     assert.match(route, /parseAvatarPresetId/);
     assert.match(route, /multipart\/form-data/);
     assert.match(route, /clear/);
+    assert.match(route, /Elige un avatar válido\./);
+    assert.match(route, /No se pudo actualizar el avatar\./);
 
     const fileRoute = readFileSync(
       resolve(process.cwd(), "src/app/api/desktop/avatar/file/route.ts"),
@@ -138,5 +140,36 @@ describe("avatar del escritorio", () => {
     assert.match(settings, /<DesktopAvatar/);
     assert.match(settings, /view=\{resolveDesktopAvatar\(\{/);
     assert.doesNotMatch(settings, /function initials\(/);
+  });
+
+  it("lleva avatar del escritorio al equipo del Espacio", () => {
+    const teamRoute = readFileSync(
+      resolve(process.cwd(), "src/app/api/identity/team/route.ts"),
+      "utf8"
+    );
+    assert.match(teamRoute, /avatarPresetId:\s*user\?\.avatarPresetId\s*\?\?\s*null/);
+    assert.match(teamRoute, /avatarPhoto:\s*user\?\.avatarPhoto\s*===\s*true/);
+    assert.match(teamRoute, /avatarPhotoUpdatedAt:\s*user\?\.avatarPhotoUpdatedAt\s*\?\?\s*null/);
+
+    const team = readFileSync(
+      resolve(process.cwd(), "src/components/desktop/DesktopSpaceTeam.tsx"),
+      "utf8"
+    );
+    assert.match(team, /import\s+\{\s*DesktopAvatar\s*\}\s+from\s+"@\/components\/desktop\/DesktopAvatar"/);
+    assert.match(team, /resolveDesktopAvatar/);
+    assert.match(team, /avatarPresetId\?:\s*string\s*\|\s*null/);
+    assert.match(team, /avatarPhoto\?:\s*boolean/);
+    assert.match(team, /avatarPhotoUpdatedAt\?:\s*string\s*\|\s*null/);
+    assert.match(team, /<DesktopAvatar/);
+    assert.match(team, /view=\{resolveDesktopAvatar\(\{/);
+    assert.match(team, /userId:\s*member\.userId/);
+  });
+
+  it("etiqueta cada preset por nombre", () => {
+    const account = readFileSync(
+      resolve(process.cwd(), "src/components/desktop/DesktopAccount.tsx"),
+      "utf8"
+    );
+    assert.match(account, /aria-label=\{item\.label\}/);
   });
 });

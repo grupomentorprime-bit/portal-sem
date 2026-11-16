@@ -34,7 +34,10 @@ export async function POST(request: Request) {
       ? parseAvatarPresetId(body.presetId)
       : null;
   if (!presetId) {
-    return NextResponse.json({ ok: false }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Elige un avatar válido." },
+      { status: 400 }
+    );
   }
 
   await setAvatarPreset(ctx.user._id, presetId);
@@ -50,7 +53,10 @@ export async function DELETE(request: Request) {
   } | null;
   const clear = body?.clear === undefined ? "photo" : body.clear;
   if (clear !== "photo" && clear !== "all") {
-    return NextResponse.json({ ok: false }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "No se pudo actualizar el avatar." },
+      { status: 400 }
+    );
   }
 
   await deleteAvatarPhoto(ctx.user._id);

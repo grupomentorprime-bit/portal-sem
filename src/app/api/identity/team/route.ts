@@ -67,6 +67,9 @@ export async function GET() {
           userId: membership.userId,
           email: user?.email ?? "",
           displayName: user?.displayName ?? "",
+          avatarPresetId: user?.avatarPresetId ?? null,
+          avatarPhoto: user?.avatarPhoto === true,
+          avatarPhotoUpdatedAt: user?.avatarPhotoUpdatedAt ?? null,
           status: membership.status,
           roleIds: membership.roleIds,
           authorizedApps: resolveAuthorizedApps({

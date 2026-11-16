@@ -1,16 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DesktopAvatar } from "@/components/desktop/DesktopAvatar";
 import {
   MENTOR_APPS,
   mentorAppLabel,
   type MentorAppId,
 } from "@/lib/desktop/catalog";
+import { resolveDesktopAvatar } from "@/lib/desktop/avatar-catalog";
 
 type TeamMember = {
   membershipId: string;
+  userId: string;
   displayName: string;
   email: string;
+  avatarPresetId?: string | null;
+  avatarPhoto?: boolean;
+  avatarPhotoUpdatedAt?: string | null;
   status: string;
   authorizedApps: MentorAppId[];
   roles: Array<{ label: string }>;
@@ -136,11 +142,26 @@ export function DesktopSpaceTeam({
         <ul className="team-keys">
           {members.map((member) => (
             <li key={member.membershipId}>
-              <div className="team-keys-head">
-                <strong>{member.displayName || member.email}</strong>
-                <span>
-                  {member.roles.map((role) => role.label).join(" · ") || member.status}
-                </span>
+              <div className="person">
+                <DesktopAvatar
+                  view={resolveDesktopAvatar({
+                    displayName: member.displayName,
+                    email: member.email,
+                    avatarPresetId: member.avatarPresetId,
+                    avatarPhoto: member.avatarPhoto,
+                    avatarPhotoUpdatedAt: member.avatarPhotoUpdatedAt ?? undefined,
+                    userId: member.userId,
+                  })}
+                />
+                <div className="account-copy">
+                  <div className="team-keys-head">
+                    <strong>{member.displayName || member.email}</strong>
+                    <span>
+                      {member.roles.map((role) => role.label).join(" · ") || member.status}
+                    </span>
+                  </div>
+                  <p className="account-line">{member.email}</p>
+                </div>
               </div>
               <div
                 className="team-keys-apps"
