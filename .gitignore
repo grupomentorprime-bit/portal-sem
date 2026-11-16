@@ -48,3 +48,6 @@ yarn-error.log*
 /data/desktop-avatars/
 
 .worktrees/
+
+# local SDD / superpowers artifacts (do not version)
+/.superpowers/
