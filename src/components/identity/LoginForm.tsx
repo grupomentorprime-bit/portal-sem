@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useThresholdOnAuthenticated } from "@/components/identity/ThresholdLogin";
 import { Button, Input } from "@/components/ui";
 
 /**
@@ -21,6 +22,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState(errorMessage ?? "");
   const [loading, setLoading] = useState(false);
+  const onAuthenticated = useThresholdOnAuthenticated();
 
   if (!authReady) {
     return (
@@ -58,6 +60,8 @@ export function LoginForm({
         ok?: boolean;
         error?: string;
         redirectTo?: string;
+        thresholdLine?: string;
+        thresholdArrival?: boolean;
       };
       if (!data.ok) {
         setError(data.error ?? "No se pudo iniciar sesión.");
@@ -67,6 +71,14 @@ export function LoginForm({
         data.redirectTo && data.redirectTo.startsWith("/") && !data.redirectTo.startsWith("//")
           ? data.redirectTo
           : "/admin";
+      if (onAuthenticated) {
+        await onAuthenticated({
+          redirectTo: destination,
+          thresholdLine: data.thresholdLine,
+          thresholdArrival: data.thresholdArrival,
+        });
+        return;
+      }
       window.location.assign(destination);
     } catch {
       setError("No se pudo conectar con el servidor.");

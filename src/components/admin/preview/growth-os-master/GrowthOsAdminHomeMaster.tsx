@@ -41,6 +41,7 @@ import {
 } from "./humanize-home-activity";
 import type { HomeMetricTrend } from "./home-metric-trends";
 import { HomePeriodSelect } from "./HomePeriodSelect";
+import { ThresholdArrival } from "@/components/identity/ThresholdArrival";
 import { HomeConversionFunnel } from "./HomeConversionFunnel";
 import { buildHomeFunnelFigure } from "./home-funnel-figure";
 import type {
@@ -751,15 +752,16 @@ export function GrowthOsAdminHomeMaster({
             <TitleHint text="Vencidas, sin seguimiento o estancadas." />
           </SectionTitle>
 
-          {home.attention.length === 0 ? (
-            <EmptyState
-              title="Nada pide atención ahora"
-              description="Cuando una oportunidad esté vencida, sin seguimiento o estancada, aparecerá aquí."
-              icon={<UserRound className="h-8 w-8" strokeWidth={1.5} />}
-              className="mt-4 flex-1 border-dashed bg-[var(--gray-50)] py-8 shadow-none"
-            />
-          ) : (
-            <ul className="mt-4 flex min-h-0 flex-1 flex-col divide-y divide-[var(--admin-home-divider)]">
+          <ThresholdArrival>
+            {home.attention.length === 0 ? (
+              <EmptyState
+                title="Nada pide atención ahora"
+                description="Cuando una oportunidad esté vencida, sin seguimiento o estancada, aparecerá aquí."
+                icon={<UserRound className="h-8 w-8" strokeWidth={1.5} />}
+                className="flex-1 border-dashed bg-[var(--gray-50)] py-8 shadow-none"
+              />
+            ) : (
+              <ul className="flex min-h-0 flex-1 flex-col divide-y divide-[var(--admin-home-divider)]">
               {home.attention.map((item, index) => {
                 const band = item.band ?? "";
                 const priority = PRIORITY_PILL[band] ?? {
@@ -834,8 +836,9 @@ export function GrowthOsAdminHomeMaster({
                   </li>
                 );
               })}
-            </ul>
-          )}
+              </ul>
+            )}
+          </ThresholdArrival>
         </section>
 
         <section
