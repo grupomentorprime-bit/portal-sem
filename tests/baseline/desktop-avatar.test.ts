@@ -114,5 +114,6 @@ describe("avatar del escritorio", () => {
     );
     assert.match(fileRoute, /readAvatarPhoto/);
     assert.match(fileRoute, /userId/);
+    assert.match(fileRoute, /listMembershipsByUser/);
   });
 });
