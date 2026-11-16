@@ -52,6 +52,18 @@ describe("rutas del escritorio", () => {
     assert.match(menu, /spaceSwitchLanding/);
   });
 
+  it("dueño dentro de un cliente sincroniza la cookie al cambiar de Espacio", () => {
+    const desk = read("src/components/desktop/MentorDesktop.tsx");
+    assert.match(desk, /canReturnToPlatform/);
+    assert.match(desk, /if \(props\.canReturnToPlatform\) \{\s*await enterClient\(tenantId\);/);
+    assert.match(desk, /if \(owner \|\| props\.canReturnToPlatform\) void enterClient\(tenantId\)/);
+    const menu = read("src/components/admin/AdminUserMenuPanel.tsx");
+    assert.match(menu, /syncEnteredClientCookie/);
+    const catalog = read("src/lib/desktop/catalog.ts");
+    assert.match(catalog, /function syncEnteredClientCookie/);
+    assert.match(catalog, /if \(!tenantId \|\| !readEnteredClientCookie\(\)\) return;/);
+  });
+
   it("Growth OS y Cumple ofrecen volver al escritorio", () => {
     const top = read("src/components/admin/kit/navigation/AdminTopBar.tsx");
     assert.match(top, /href="\/escritorio"/);
@@ -61,6 +73,27 @@ describe("rutas del escritorio", () => {
     const back = read("src/components/desktop/EscritorioReturn.tsx");
     assert.match(back, /\/api\/identity\/me/);
     assert.match(back, /href="\/escritorio"/);
+  });
+
+  it("identity me serializa avatar del escritorio", () => {
+    const route = read("src/app/api/identity/me/route.ts");
+    assert.match(route, /avatarPresetId:\s*user\.avatarPresetId\s*\?\?\s*null/);
+    assert.match(route, /avatarPhoto:\s*user\.avatarPhoto\s*===\s*true/);
+    assert.match(route, /avatarPhotoUpdatedAt:\s*user\.avatarPhotoUpdatedAt\s*\?\?\s*null/);
+  });
+
+  it("la barra del escritorio usa DesktopAvatar y refresca al cambiar avatar", () => {
+    const page = read("src/app/escritorio/page.tsx");
+    assert.match(page, /avatarPresetId:\s*session\.user\.avatarPresetId/);
+    assert.match(page, /avatarPhoto:\s*session\.user\.avatarPhoto\s*===\s*true/);
+    assert.match(page, /avatarPhotoUpdatedAt:\s*session\.user\.avatarPhotoUpdatedAt/);
+    assert.match(page, /id:\s*session\.user\._id/);
+
+    const desk = read("src/components/desktop/MentorDesktop.tsx");
+    assert.match(desk, /DesktopAvatar/);
+    assert.match(desk, /resolveDesktopAvatar/);
+    assert.match(desk, /onAvatarChanged=\{/);
+    assert.match(desk, /setAvatarState/);
   });
 
   it("la ficha del Espacio muestra las aplicaciones y guarda el contrato", () => {
