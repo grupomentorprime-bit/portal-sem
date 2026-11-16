@@ -9,6 +9,7 @@ import {
 } from "@/lib/desktop/catalog";
 import { resolveDesktopAvatar } from "@/lib/desktop/avatar-catalog";
 import { isValidEmail, isValidFullName } from "@/lib/validation/identity";
+import { inviteCreateFeedback } from "@/lib/desktop/invite-delivery";
 import {
   canResendInvitation,
   filterTeamDirectory,
@@ -539,10 +540,18 @@ export function DesktopSpaceTeam({
     }).catch(() => null);
     const body = (await response?.json().catch(() => null)) as {
       ok?: boolean;
+      emailSent?: boolean;
+      deliveryError?: string;
       error?: string;
     } | null;
-    if (!response?.ok || !body?.ok) {
-      setError(humanizeTeamError(body?.error, "No se pudo enviar la invitación."));
+    const feedback = inviteCreateFeedback({
+      ok: Boolean(response?.ok && body?.ok),
+      emailSent: body?.emailSent === true,
+      deliveryError: body?.deliveryError,
+      error: body?.error ?? (response ? undefined : "No se pudo crear la invitación."),
+    });
+    if (feedback.status === "not_created") {
+      setError(humanizeTeamError(feedback.message, "No se pudo crear la invitación."));
       setBusyAction(null);
       return;
     }
@@ -553,7 +562,7 @@ export function DesktopSpaceTeam({
     setInviteOpen(false);
     await load();
     setBusyAction(null);
-    setNotice("Invitación enviada. La persona recibirá un correo para unirse.");
+    setNotice(feedback.message);
   }
 
   const selectedInviteRole =

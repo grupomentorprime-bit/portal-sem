@@ -184,9 +184,8 @@ export async function POST(request: Request) {
       token: invitation.token,
       expiresAt: invitation.expiresAt,
     });
-    if (!sent.ok) {
-      return NextResponse.json({ ok: false, error: sent.error }, { status: 422 });
-    }
+    const emailSent = sent.ok;
+    const deliveryError = sent.ok ? undefined : sent.error;
 
     if (!ctx.compatMode) {
       await writeAudit({
@@ -195,7 +194,13 @@ export async function POST(request: Request) {
         action: "user.invite",
         entity: "invitation",
         entityId: invitation._id,
-        metadata: { email: normalizedEmail, displayName: invitation.displayName, roleCode: newRoleCode },
+        metadata: {
+          email: normalizedEmail,
+          displayName: invitation.displayName,
+          roleCode: newRoleCode,
+          emailSent,
+          ...(deliveryError ? { deliveryError } : {}),
+        },
       });
     }
 
@@ -211,12 +216,15 @@ export async function POST(request: Request) {
         displayName: invitation.displayName,
         roleIds: invitation.roleIds,
         expiresAt: invitation.expiresAt,
-        emailSent: true,
+        emailSent,
+        ...(deliveryError ? { deliveryError } : {}),
       },
     }).catch(console.error);
 
     return NextResponse.json({
       ok: true,
+      emailSent,
+      ...(deliveryError ? { deliveryError } : {}),
       invitation: {
         id: invitation._id,
         email: invitation.email,
