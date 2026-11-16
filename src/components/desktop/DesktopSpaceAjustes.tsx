@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DesktopSpacePresence } from "@/components/desktop/DesktopSpacePresence";
+import { DesktopSpaceProfiles } from "@/components/desktop/DesktopSpaceProfiles";
 import { DesktopSpaceTeam } from "@/components/desktop/DesktopSpaceTeam";
 import type { MentorAppId } from "@/lib/desktop/catalog";
 import {
@@ -122,7 +123,13 @@ function panelCopy(panel: SpacePanelId | null): { title: string; lead: string } 
   if (panel === "equipo") {
     return {
       title: "Equipo",
-      lead: "Personas de este cliente y apps que pueden abrir.",
+      lead: "Personas, invitaciones y llaves de este Espacio.",
+    };
+  }
+  if (panel === "roles") {
+    return {
+      title: "Perfiles",
+      lead: "Perfiles de la empresa. El plan y los permisos internos de cada aplicación no se editan aquí.",
     };
   }
   return {
@@ -359,7 +366,13 @@ export function DesktopSpaceAjustes({
                 />
               ) : null}
               {panel === "equipo" ? (
-                <DesktopSpaceTeam contractedApps={contractedApps} />
+                <DesktopSpaceTeam
+                  contractedApps={contractedApps}
+                  onDirtyChange={setSectionDirty}
+                />
+              ) : null}
+              {panel === "roles" ? (
+                <DesktopSpaceProfiles onDirtyChange={setSectionDirty} />
               ) : null}
               {!panel ? (
                 <p className="ajustes-wait">

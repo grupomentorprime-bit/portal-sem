@@ -18,6 +18,11 @@ import {
   getTargetRoleCode,
   shouldHideMemberFromCaller,
 } from "@/lib/identity/iam-guard";
+import {
+  assertCanAssignCustomProfile,
+  classifyEnterpriseProfile,
+} from "@/lib/identity/enterprise-profiles";
+import { resolvePermissionDetailsForMembership } from "@/lib/identity/permission-resolver";
 import type { RoleCode } from "@/core/identity/roles/codes";
 
 export async function GET() {
@@ -83,7 +88,7 @@ export async function GET() {
               id: role._id,
               name: role.name,
               code: code ?? undefined,
-              label: getInstitutionalRoleLabel(code ?? role.name),
+              label: code ? getInstitutionalRoleLabel(code) : role.name,
             };
           }),
           joinedAt: membership.joinedAt,
@@ -122,7 +127,7 @@ export async function GET() {
               id: role._id,
               name: role.name,
               code: code ?? undefined,
-              label: getInstitutionalRoleLabel(code ?? role.name),
+              label: code ? getInstitutionalRoleLabel(code) : role.name,
             };
           }),
           _targetCode: targetCode,
@@ -133,11 +138,32 @@ export async function GET() {
       })
       .map(({ _targetCode: _, ...invitation }) => invitation);
 
-    const assignableRoles = buildAssignableRolesList(callerRoleCode, allRoles);
+    const callerEffective = ctx.membership
+      ? (await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)).effective
+      : {};
+    const assignableRoles = [
+      ...buildAssignableRolesList(callerRoleCode, allRoles),
+      ...allRoles
+        .filter((role) => classifyEnterpriseProfile(role) === "custom")
+        .filter((role) =>
+          assertCanAssignCustomProfile({
+            callerCode: callerRoleCode,
+            callerEffective,
+            permissionMap: role.permissionMap ?? {},
+          }).ok
+        )
+        .map((role) => ({
+          id: role._id,
+          name: role.name,
+          code: "",
+          label: role.name,
+        })),
+    ];
 
     return NextResponse.json({
       ok: true,
       callerRoleCode,
+      callerMembershipId: ctx.membership?._id ?? null,
       assignableRoles,
       contractedApps: contract.contracted,
       members,

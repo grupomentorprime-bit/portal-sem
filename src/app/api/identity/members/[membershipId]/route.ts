@@ -24,6 +24,14 @@ import {
   isSystemAccountUser,
 } from "@/lib/identity/iam-guard";
 import {
+  assertCanAssignCustomProfile,
+  assertCanManageCustomMember,
+  classifyEnterpriseProfile,
+  memberIsCustomOnly,
+  unionGranted,
+} from "@/lib/identity/enterprise-profiles";
+import { resolvePermissionDetailsForMembership } from "@/lib/identity/permission-resolver";
+import {
   assertSpaceKeepsAdministrator,
   isSpaceAdministratorRole,
   LAST_SPACE_ADMIN_ERROR,
@@ -61,7 +69,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     const targetUser = await findUserById(membership.userId);
     const isSystemAccount = targetUser ? isSystemAccountUser(targetUser) : false;
 
-    const manageCheck = assertCanManageMember(callerRoleCode, targetCode, { isSystemAccount });
+    const manageCheck = memberIsCustomOnly(currentRoles)
+      ? assertCanManageCustomMember({
+          callerCode: callerRoleCode,
+          callerEffective: ctx.membership
+            ? (await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)).effective
+            : {},
+          permissionMap: unionGranted(currentRoles.map((item) => item.permissionMap)),
+          isSystemAccount,
+        })
+      : assertCanManageMember(callerRoleCode, targetCode, { isSystemAccount });
     if (!manageCheck.ok) {
       if (!ctx.compatMode) {
         await auditIamDenied({
@@ -94,8 +111,16 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ ok: false, error: "Rol no encontrado." }, { status: 400 });
     }
 
+    const profileKind = classifyEnterpriseProfile(role);
+    if (profileKind === "product") {
+      return NextResponse.json(
+        { ok: false, error: "Ese perfil no pertenece a la empresa." },
+        { status: 403 }
+      );
+    }
+
     const newRoleCode = getRoleCode(role);
-    if (newRoleCode === ROLE_CODES.SUPER_ADMIN) {
+    if (profileKind === "enterprise" && newRoleCode === ROLE_CODES.SUPER_ADMIN) {
       if (!ctx.compatMode) {
         await auditIamDenied({
           tenantId: ctx.tenantId,
@@ -113,7 +138,16 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const assignCheck = assertCanAssignRole(callerRoleCode, newRoleCode);
+    const assignCheck =
+      profileKind === "custom"
+        ? assertCanAssignCustomProfile({
+            callerCode: callerRoleCode,
+            callerEffective: ctx.membership
+              ? (await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)).effective
+              : {},
+            permissionMap: role.permissionMap ?? {},
+          })
+        : assertCanAssignRole(callerRoleCode, newRoleCode);
     if (!assignCheck.ok) {
       if (!ctx.compatMode) {
         await auditIamDenied({
@@ -227,7 +261,16 @@ export async function DELETE(request: Request, context: RouteContext) {
     const targetUser = await findUserById(membership.userId);
     const isSystemAccount = targetUser ? isSystemAccountUser(targetUser) : false;
 
-    const manageCheck = assertCanManageMember(callerRoleCode, targetCode, { isSystemAccount });
+    const manageCheck = memberIsCustomOnly(currentRoles)
+      ? assertCanManageCustomMember({
+          callerCode: callerRoleCode,
+          callerEffective: ctx.membership
+            ? (await resolvePermissionDetailsForMembership(ctx.tenantId, ctx.membership)).effective
+            : {},
+          permissionMap: unionGranted(currentRoles.map((item) => item.permissionMap)),
+          isSystemAccount,
+        })
+      : assertCanManageMember(callerRoleCode, targetCode, { isSystemAccount });
     if (!manageCheck.ok) {
       if (!ctx.compatMode) {
         await auditIamDenied({
@@ -293,9 +336,9 @@ export async function DELETE(request: Request, context: RouteContext) {
       await updateMembershipStatus(membershipId, "archived");
       await deleteUserSessions(membership.userId);
     } else if (action === "restore") {
-      if (membership.status !== "archived") {
+      if (membership.status !== "archived" && membership.status !== "suspended") {
         return NextResponse.json(
-          { ok: false, error: "Solo se pueden restaurar usuarios archivados." },
+          { ok: false, error: "Solo se pueden reactivar membresías suspendidas o archivadas." },
           { status: 400 }
         );
       }

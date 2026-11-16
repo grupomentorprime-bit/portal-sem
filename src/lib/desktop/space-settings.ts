@@ -20,7 +20,7 @@ export type SpaceSettingId =
   | "integraciones";
 
 export type SpacePresencePanelId = "empresa" | "marca" | "sitio";
-export type SpaceTeamPanelId = "equipo";
+export type SpaceTeamPanelId = "equipo" | "roles";
 export type SpacePanelId = SpacePresencePanelId | SpaceTeamPanelId;
 
 type SpaceSettingBase = {
@@ -96,10 +96,10 @@ export const SPACE_SETTING_GROUPS: SpaceSettingGroup[] = [
       },
       {
         id: "roles",
-        kind: "link",
-        href: "/admin/settings/roles",
+        kind: "panel",
+        panel: "roles",
         label: "Roles y permisos",
-        text: "Qué puede hacer cada perfil.",
+        text: "Perfiles de la empresa. No cambian el plan ni el interior de cada aplicación.",
         mark: "roles",
         tone: "mark-roles",
         requiredAny: ["identity.roles.manage"],

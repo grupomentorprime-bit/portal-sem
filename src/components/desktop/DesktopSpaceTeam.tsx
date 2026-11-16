@@ -9,6 +9,15 @@ import {
 } from "@/lib/desktop/catalog";
 import { resolveDesktopAvatar } from "@/lib/desktop/avatar-catalog";
 import { isValidEmail, isValidFullName } from "@/lib/validation/identity";
+import {
+  canResendInvitation,
+  filterTeamDirectory,
+  filterTeamInvitations,
+  invitationStatusLabel,
+  membershipStatusLabel,
+  profileOptions,
+  sameAppSet,
+} from "@/lib/desktop/team-directory";
 
 type AssignableRole = {
   id: string;
@@ -46,6 +55,147 @@ type TeamInvitation = {
   roles: TeamRole[];
 };
 
+function MemberDetail({
+  member,
+  plan,
+  assignableRoles,
+  busyAction,
+  savingId,
+  self,
+  onBack,
+  onRole,
+  onToggleApp,
+  onResend,
+  onRemove,
+  onSuspend,
+  onRestore,
+}: {
+  member: TeamMember;
+  plan: readonly MentorAppId[];
+  assignableRoles: AssignableRole[];
+  busyAction: string | null;
+  savingId: string | null;
+  self: boolean;
+  onBack: () => void;
+  onRole: (roleId: string) => void;
+  onToggleApp: (appId: MentorAppId) => void;
+  onResend: () => void;
+  onRemove: () => void;
+  onSuspend: () => void;
+  onRestore: () => void;
+}) {
+  const currentRoleId = member.roles[0]?.id ?? "";
+  const known = assignableRoles.some((role) => role.id === currentRoleId);
+  return (
+    <div className="team-form">
+      <button type="button" className="ghost" onClick={onBack}>
+        Volver a la lista
+      </button>
+      <div className="team-person">
+        <DesktopAvatar
+          view={resolveDesktopAvatar({
+            displayName: member.displayName,
+            email: member.email,
+            avatarPresetId: member.avatarPresetId,
+            avatarPhoto: member.avatarPhoto,
+            avatarPhotoUpdatedAt: member.avatarPhotoUpdatedAt ?? undefined,
+            userId: member.userId,
+          })}
+        />
+        <div className="team-person-copy">
+          <strong>{member.displayName || member.email}</strong>
+          <span>{member.email}</span>
+        </div>
+      </div>
+      <p className="team-pills">
+        <span className={`team-pill${member.status === "active" ? "" : " is-warn"}`}>
+          {membershipStatusLabel(member.status)}
+        </span>
+      </p>
+      {assignableRoles.length > 0 ? (
+        <label className="team-role">
+          <span>Perfil</span>
+          <select
+            aria-label="Perfil de la persona"
+            value={known ? currentRoleId : currentRoleId}
+            disabled={busyAction === `role:${member.membershipId}`}
+            onChange={(event) => onRole(event.target.value)}
+          >
+            {!known && currentRoleId ? (
+              <option value={currentRoleId}>{member.roles[0]?.label || "Perfil actual"}</option>
+            ) : null}
+            {assignableRoles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.label || role.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      {plan.length === 0 ? (
+        <p className="ajustes-wait">Sin aplicaciones contratadas: no hay llaves que repartir.</p>
+      ) : (
+        <div className="team-keys-apps" role="group" aria-label={`Apps de ${member.displayName || member.email}`}>
+          {plan.map((appId) => {
+            const on = member.authorizedApps.includes(appId);
+            return (
+              <label key={appId} className={on ? "is-on" : undefined}>
+                <input
+                  type="checkbox"
+                  checked={on}
+                  disabled={savingId === member.membershipId}
+                  onChange={() => onToggleApp(appId)}
+                />
+                <span>{mentorAppLabel(appId)}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+      <div className="team-member-actions">
+        <button
+          type="button"
+          className="ghost"
+          disabled={busyAction === `resend-member:${member.membershipId}`}
+          onClick={onResend}
+        >
+          Reenviar acceso
+        </button>
+        {!self && member.status === "active" ? (
+          <button
+            type="button"
+            className="ghost"
+            disabled={busyAction === `suspend:${member.membershipId}`}
+            onClick={onSuspend}
+          >
+            Suspender
+          </button>
+        ) : null}
+        {!self && (member.status === "suspended" || member.status === "archived") ? (
+          <button
+            type="button"
+            className="ghost"
+            disabled={busyAction === `restore:${member.membershipId}`}
+            onClick={onRestore}
+          >
+            Reactivar
+          </button>
+        ) : null}
+        {!self ? (
+          <button
+            type="button"
+            className="ghost is-danger"
+            disabled={busyAction === `remove:${member.membershipId}`}
+            onClick={onRemove}
+          >
+            Quitar acceso
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function humanizeTeamError(raw: unknown, fallback: string): string {
   if (typeof raw !== "string" || !raw.trim()) return fallback;
   return raw.trim();
@@ -54,9 +204,11 @@ function humanizeTeamError(raw: unknown, fallback: string): string {
 export function DesktopSpaceTeam({
   contractedApps,
   onBack,
+  onDirtyChange,
 }: {
   contractedApps: readonly MentorAppId[];
   onBack?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
   const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
@@ -74,6 +226,12 @@ export function DesktopSpaceTeam({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [appFilter, setAppFilter] = useState("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [callerMembershipId, setCallerMembershipId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const response = await fetch("/api/identity/team").catch(() => null);
@@ -82,6 +240,7 @@ export function DesktopSpaceTeam({
       members?: TeamMember[];
       invitations?: TeamInvitation[];
       assignableRoles?: AssignableRole[];
+      callerMembershipId?: string | null;
       contractedApps?: MentorAppId[];
       error?: string;
     } | null;
@@ -100,6 +259,7 @@ export function DesktopSpaceTeam({
     setInvitations(body.invitations ?? []);
     const roles = body.assignableRoles ?? [];
     setAssignableRoles(roles);
+    setCallerMembershipId(body.callerMembershipId ?? null);
     setInviteRoleId((current) => current || roles[0]?.id || "");
     setInviteApps((current) =>
       current.length > 0 ? current.filter((id) => nextPlan.includes(id)) : [...nextPlan]
@@ -161,10 +321,10 @@ export function DesktopSpaceTeam({
     setSavingId(null);
   }
 
-  async function changeRole(member: TeamMember, roleCode: string) {
-    if (!roleCode || busyAction) return;
-    const currentCode = member.roles[0]?.code;
-    if (currentCode === roleCode) return;
+  async function changeRole(member: TeamMember, roleId: string) {
+    const role = assignableRoles.find((item) => item.id === roleId);
+    if (!role || busyAction) return;
+    if (member.roles[0]?.id === role.id) return;
     setBusyAction(`role:${member.membershipId}`);
     setError("");
     setNotice("");
@@ -173,7 +333,7 @@ export function DesktopSpaceTeam({
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roleCode }),
+        body: JSON.stringify(role.code ? { roleCode: role.code } : { roleId: role.id }),
       }
     ).catch(() => null);
     const body = (await response?.json().catch(() => null)) as {
@@ -215,6 +375,34 @@ export function DesktopSpaceTeam({
     await load();
     setBusyAction(null);
     setNotice(`Se quitó el acceso de ${label}.`);
+    if (selectedId === member.membershipId) setSelectedId(null);
+  }
+
+  async function changeMembership(member: TeamMember, action: "suspend" | "restore") {
+    const label = member.displayName || member.email;
+    const verb = action === "suspend" ? "suspender" : "reactivar";
+    const ok = window.confirm(`¿Confirmas ${verb} a ${label} en este Espacio?`);
+    if (!ok || busyAction) return;
+    setBusyAction(`${action}:${member.membershipId}`);
+    setError("");
+    setNotice("");
+    const actionQuery = action === "suspend" ? "?action=suspend" : "?action=restore";
+    const response = await fetch(
+      `/api/identity/members/${encodeURIComponent(member.membershipId)}${actionQuery}`,
+      { method: "DELETE" }
+    ).catch(() => null);
+    const body = (await response?.json().catch(() => null)) as {
+      ok?: boolean;
+      error?: string;
+    } | null;
+    if (!response?.ok || !body?.ok) {
+      setError(humanizeTeamError(body?.error, "No se pudo actualizar la membresía."));
+      setBusyAction(null);
+      return;
+    }
+    await load();
+    setBusyAction(null);
+    setNotice(action === "suspend" ? `Se suspendió a ${label}.` : `Se reactivó a ${label}.`);
   }
 
   async function resendAccess(member: TeamMember) {
@@ -331,11 +519,11 @@ export function DesktopSpaceTeam({
     }
     const role =
       assignableRoles.find((item) => item.id === inviteRoleId) ?? assignableRoles[0];
-    if (!role?.code) {
+    if (!role?.id) {
       setError("No hay un rol disponible para invitar.");
       valid = false;
     }
-    if (!valid || !role?.code || busyAction) return;
+    if (!valid || !role?.id || busyAction) return;
 
     setBusyAction("invite");
     const response = await fetch("/api/identity/invitations", {
@@ -344,6 +532,7 @@ export function DesktopSpaceTeam({
       body: JSON.stringify({
         email: inviteEmail.trim(),
         displayName: inviteName.trim(),
+        roleId: role.id,
         roleCode: role.code,
         authorizedApps: inviteApps,
       }),
@@ -369,6 +558,25 @@ export function DesktopSpaceTeam({
 
   const selectedInviteRole =
     assignableRoles.find((role) => role.id === inviteRoleId) ?? assignableRoles[0];
+  const people = filterTeamDirectory(members ?? [], {
+    query,
+    status: statusFilter,
+    roleId: roleFilter,
+    appId: appFilter,
+  });
+  const visibleInvites = invitations.filter(
+    (invitation) => filterTeamInvitations([invitation], query).length > 0
+  );
+  const profiles = profileOptions(members ?? []);
+  const selected = members?.find((member) => member.membershipId === selectedId) ?? null;
+  const inviteDirty =
+    inviteOpen &&
+    Boolean(inviteName.trim() || inviteEmail.trim() || !sameAppSet(inviteApps, plan));
+
+  useEffect(() => {
+    onDirtyChange?.(inviteDirty);
+    return () => onDirtyChange?.(false);
+  }, [inviteDirty, onDirtyChange]);
 
   return (
     <div className="space-presence team-panel">
@@ -395,8 +603,52 @@ export function DesktopSpaceTeam({
           }}
           disabled={assignableRoles.length === 0}
         >
-          {inviteOpen ? "Cerrar invitación" : "Invitar persona"}
+          {inviteOpen ? "Cerrar invitación" : "Agregar persona"}
         </button>
+      </div>
+
+      <div className="team-toolbar">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Buscar por nombre o correo"
+          aria-label="Buscar personas"
+        />
+        <select
+          aria-label="Filtrar por estado"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+        >
+          <option value="all">Todos los estados</option>
+          <option value="active">Activos</option>
+          <option value="suspended">Suspendidos</option>
+          <option value="archived">Archivados</option>
+          <option value="invited">Invitados</option>
+        </select>
+        <select
+          aria-label="Filtrar por perfil"
+          value={roleFilter}
+          onChange={(event) => setRoleFilter(event.target.value)}
+        >
+          <option value="all">Todos los perfiles</option>
+          {profiles.map((role) => (
+            <option key={role.id} value={role.id}>
+              {role.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filtrar por aplicación"
+          value={appFilter}
+          onChange={(event) => setAppFilter(event.target.value)}
+        >
+          <option value="all">Todas las aplicaciones</option>
+          {plan.map((appId) => (
+            <option key={appId} value={appId}>
+              {mentorAppLabel(appId)}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error ? (
@@ -497,37 +749,43 @@ export function DesktopSpaceTeam({
         </section>
       ) : null}
 
-      {invitations.length > 0 ? (
+      {visibleInvites.length > 0 ? (
         <section className="team-section" aria-label="Invitaciones pendientes">
           <h4>Invitaciones pendientes</h4>
           <ul className="team-keys">
-            {invitations.map((invitation) => (
+            {visibleInvites.map((invitation) => (
               <li key={invitation.id}>
                 <div className="team-keys-head">
                   <strong>{invitation.displayName || invitation.email}</strong>
                   <span>
                     {invitation.roles.map((role) => role.label).join(" · ") ||
-                      invitation.status}
+                      invitationStatusLabel(invitation.status)}
                   </span>
                 </div>
                 <p className="account-line">{invitation.email}</p>
                 <div className="team-member-actions">
-                  <button
-                    type="button"
-                    className="ghost"
-                    disabled={busyAction === `resend-invite:${invitation.id}`}
-                    onClick={() => void resendInvitation(invitation)}
-                  >
-                    Reenviar
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost is-danger"
-                    disabled={busyAction === `cancel-invite:${invitation.id}`}
-                    onClick={() => void cancelInvitation(invitation)}
-                  >
-                    Cancelar
-                  </button>
+                  {canResendInvitation(invitation.status) ? (
+                    <button
+                      type="button"
+                      className="ghost"
+                      disabled={busyAction === `resend-invite:${invitation.id}`}
+                      onClick={() => void resendInvitation(invitation)}
+                    >
+                      Reenviar
+                    </button>
+                  ) : (
+                    <span className="team-pill is-warn">{invitationStatusLabel(invitation.status)}</span>
+                  )}
+                  {invitation.status === "pending" ? (
+                    <button
+                      type="button"
+                      className="ghost is-danger"
+                      disabled={busyAction === `cancel-invite:${invitation.id}`}
+                      onClick={() => void cancelInvitation(invitation)}
+                    >
+                      Cancelar
+                    </button>
+                  ) : null}
                 </div>
               </li>
             ))}
@@ -541,15 +799,20 @@ export function DesktopSpaceTeam({
         {members && members.length === 0 && !error ? (
           <p className="ajustes-wait">Todavía no hay personas en este Espacio.</p>
         ) : null}
+        {members && members.length > 0 && people.length === 0 ? (
+          <p className="ajustes-wait">No hay personas con ese criterio.</p>
+        ) : null}
 
-        {members && members.length > 0 ? (
-          <ul className="team-keys">
-            {members.map((member) => {
-              const roleCode = member.roles[0]?.code ?? "";
-              const canEditRole = assignableRoles.length > 0;
-              return (
+        {members && people.length > 0 ? (
+          <div className={`team-desk${selected ? " is-detail" : ""}`}>
+            <ul className="team-list team-list-pane">
+              {people.map((member) => (
                 <li key={member.membershipId}>
-                  <div className="person">
+                  <button
+                    type="button"
+                    className={`team-row${selected?.membershipId === member.membershipId ? " is-on" : ""}`}
+                    onClick={() => setSelectedId(member.membershipId)}
+                  >
                     <DesktopAvatar
                       view={resolveDesktopAvatar({
                         displayName: member.displayName,
@@ -560,96 +823,50 @@ export function DesktopSpaceTeam({
                         userId: member.userId,
                       })}
                     />
-                    <div className="account-copy">
-                      <div className="team-keys-head">
-                        <strong>{member.displayName || member.email}</strong>
-                        <span>
-                          {member.roles.map((role) => role.label).join(" · ") ||
-                            member.status}
+                    <span className="team-row-copy">
+                      <strong>{member.displayName || member.email}</strong>
+                      <span>{member.email}</span>
+                      <span className="team-pills">
+                        <span className="team-pill">
+                          {member.roles.map((role) => role.label).join(" · ") || "Sin perfil"}
                         </span>
-                      </div>
-                      <p className="account-line">{member.email}</p>
-                    </div>
-                  </div>
-
-                  {canEditRole ? (
-                    <label className="team-role">
-                      <span>Perfil</span>
-                      <select
-                        value={
-                          assignableRoles.some((role) => role.code === roleCode)
-                            ? roleCode
-                            : roleCode || ""
-                        }
-                        disabled={busyAction === `role:${member.membershipId}`}
-                        onChange={(event) =>
-                          void changeRole(member, event.target.value)
-                        }
-                      >
-                        {!assignableRoles.some((role) => role.code === roleCode) &&
-                        roleCode ? (
-                          <option value={roleCode}>
-                            {member.roles[0]?.label || roleCode}
-                          </option>
-                        ) : null}
-                        {assignableRoles.map((role) => (
-                          <option key={role.id} value={role.code}>
-                            {role.label || role.name}
-                          </option>
+                        <span className={`team-pill${member.status === "active" ? "" : " is-warn"}`}>
+                          {membershipStatusLabel(member.status)}
+                        </span>
+                        {member.authorizedApps.map((appId) => (
+                          <span key={appId} className="team-pill">
+                            {mentorAppLabel(appId)}
+                          </span>
                         ))}
-                      </select>
-                    </label>
-                  ) : null}
-
-                  {plan.length === 0 ? (
-                    <p className="ajustes-wait">
-                      Sin aplicaciones contratadas: no hay llaves que repartir.
-                    </p>
-                  ) : (
-                    <div
-                      className="team-keys-apps"
-                      role="group"
-                      aria-label={`Apps de ${member.displayName || member.email}`}
-                    >
-                      {plan.map((appId) => {
-                        const on = member.authorizedApps.includes(appId);
-                        return (
-                          <label key={appId} className={on ? "is-on" : undefined}>
-                            <input
-                              type="checkbox"
-                              checked={on}
-                              disabled={savingId === member.membershipId}
-                              onChange={() => void toggleApp(member, appId)}
-                            />
-                            <span>{mentorAppLabel(appId)}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <div className="team-member-actions">
-                    <button
-                      type="button"
-                      className="ghost"
-                      disabled={busyAction === `resend-member:${member.membershipId}`}
-                      onClick={() => void resendAccess(member)}
-                    >
-                      Reenviar acceso
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost is-danger"
-                      disabled={busyAction === `remove:${member.membershipId}`}
-                      onClick={() => void removeAccess(member)}
-                    >
-                      Quitar acceso
-                    </button>
-                  </div>
+                      </span>
+                    </span>
+                  </button>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+
+            <div className="team-detail">
+              {selected ? (
+                <MemberDetail
+                  member={selected}
+                  plan={plan}
+                  assignableRoles={assignableRoles}
+                  busyAction={busyAction}
+                  savingId={savingId}
+                  self={selected.membershipId === callerMembershipId}
+                  onBack={() => setSelectedId(null)}
+                  onRole={(roleId) => void changeRole(selected, roleId)}
+                  onToggleApp={(appId) => void toggleApp(selected, appId)}
+                  onResend={() => void resendAccess(selected)}
+                  onRemove={() => void removeAccess(selected)}
+                  onSuspend={() => void changeMembership(selected, "suspend")}
+                  onRestore={() => void changeMembership(selected, "restore")}
+                />
+              ) : (
+                <p className="team-note">Elige una persona para ver su ficha.</p>
+              )}
+            </div>
+          </div>
         ) : null}
       </section>
     </div>
