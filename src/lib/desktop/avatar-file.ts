@@ -109,16 +109,25 @@ export async function storeAvatarPhoto(
   const savedHeight = saved.height ?? height;
   const updatedAt = new Date().toISOString();
   const target = avatarPath(userId);
-  const temporary = `${target}.tmp`;
+  const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
 
   await mkdir(avatarDir(), { recursive: true });
   await writeFile(temporary, output);
   try {
-    await unlink(target);
-  } catch {
-    /* reemplazo del anterior */
+    try {
+      await unlink(target);
+    } catch {
+      /* reemplazo del anterior */
+    }
+    await rename(temporary, target);
+  } catch (err) {
+    try {
+      await unlink(temporary);
+    } catch {
+      /* temp ya movido o inexistente */
+    }
+    throw err;
   }
-  await rename(temporary, target);
 
   return { width, height, savedWidth, savedHeight, updatedAt };
 }
