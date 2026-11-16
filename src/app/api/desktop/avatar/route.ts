@@ -29,8 +29,11 @@ export async function POST(request: Request) {
     presetId?: unknown;
   } | null;
 
-  const presetId = parseAvatarPresetId(body?.presetId);
-  if (body?.presetId !== presetId) {
+  const presetId =
+    typeof body?.presetId === "string" && body.presetId.trim()
+      ? parseAvatarPresetId(body.presetId)
+      : null;
+  if (!presetId) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
