@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePlatformOperator } from "@/core/identity";
 import { hasPlatformOwnerCapability } from "@/core/identity/platform/capability";
+import { ensureClientCompany } from "@/lib/desktop/ensure-client-company";
 import {
   grantOperatorSpaceAccess,
   grantOwnerSpaceAccess,
@@ -22,7 +23,7 @@ export async function POST(_request: Request, context: RouteContext) {
   try {
     const { tenantId } = await context.params;
     const decoded = decodeURIComponent(tenantId);
-    const asOwner = hasPlatformOwnerCapability(ctx.user) && decoded === "adl";
+    const asOwner = hasPlatformOwnerCapability(ctx.user);
     const result = asOwner
       ? await grantOwnerSpaceAccess({
           tenantId: decoded,
@@ -32,6 +33,14 @@ export async function POST(_request: Request, context: RouteContext) {
           tenantId: decoded,
           operatorUserId: ctx.user._id,
         });
+    if (asOwner) {
+      await ensureClientCompany({
+        tenantId: decoded,
+        userId: ctx.user._id,
+        email: ctx.user.email,
+        displayName: ctx.user.displayName,
+      });
+    }
 
     return NextResponse.json({
       ok: true,

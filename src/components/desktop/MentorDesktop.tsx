@@ -895,7 +895,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
 
   async function openClient(tenantId: string): Promise<boolean> {
     const target = props.spaces.find((space) => space.tenantId === tenantId);
-    if (target?.needsAccess) {
+    if (props.owner || props.canReturnToPlatform || target?.needsAccess) {
       const granted = await fetch(
         `/api/platform/spaces/${encodeURIComponent(tenantId)}/access`,
         { method: "POST" }

@@ -13,6 +13,7 @@ import { parseDesktopLayout } from "@/lib/desktop/layout";
 import { desktopClients } from "@/lib/desktop/clients";
 import { readDesktopDay } from "@/lib/desktop/day-read";
 import { escritorioRedirect } from "@/lib/desktop/contract";
+import { ensureClientCompany } from "@/lib/desktop/ensure-client-company";
 import { mongoAppRequestStore, readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser, updateSessionActiveTenant } from "@/lib/identity/active-space";
 import { findMembership } from "@/lib/identity/memberships";
@@ -78,13 +79,20 @@ export default async function EscritorioPage() {
     await updateSessionActiveTenant(session.session._id, entered);
     deskTenantId = entered;
   }
+  if (platformOwner && deskTenantId && !onPlatformDesk) {
+    await ensureClientCompany({
+      tenantId: deskTenantId,
+      userId: session.user._id,
+      email: session.user.email,
+      displayName: session.user.displayName,
+    });
+  }
   const [contract, openRequests] = onPlatformDesk
     ? [{ contracted: [], aprendeHoyEntryUrl: null }, []]
     : await Promise.all([
         readSpaceContract(deskTenantId),
         mongoAppRequestStore().listOpen(deskTenantId),
       ]);
-
   const active = deskTenantId ? spaces.find((space) => space.tenantId === deskTenantId) : undefined;
   const cumpleOrigin =
     deskTenantId === CUMPLE_SPACE_ID
@@ -94,7 +102,7 @@ export default async function EscritorioPage() {
   let deskMembership = session.membership;
   let deskPermissions = permissions;
   if (!onPlatformDesk && deskTenantId) {
-    if (deskMembership?.tenantId !== deskTenantId) {
+    if (platformOwner || deskMembership?.tenantId !== deskTenantId) {
       deskMembership = await findMembership(session.user._id, deskTenantId);
       if (deskMembership) {
         const { resolvePermissionsForMembership } = await import(

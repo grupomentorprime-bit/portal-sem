@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { findTenantById } from "@/core/tenant";
 import { auditConnect } from "@/lib/connect/audit";
 import { findUserById } from "@/lib/identity/users";
 import { readConnectAccess } from "@/lib/connect/access";
+import { isDeskMaster } from "@/lib/desktop/ensure-client-company";
 import { redeemLaunchCode } from "@/lib/connect/protocol";
 import { readConnectSecret, readPreviousConnectSecret } from "@/lib/connect/secret";
 import { mongoLaunchCodeStore } from "@/lib/connect/store";
+import { getDatabase } from "@/lib/mongodb";
 import { publicInternalError } from "@/core/security/public-error";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +58,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, reason: redeemed.reason }, { status, headers });
     }
     const person = await findUserById(redeemed.userId);
+    const tenant = await findTenantById(await getDatabase(), redeemed.tenantId);
+    const master = person ? await isDeskMaster(person, redeemed.tenantId) : false;
     return NextResponse.json(
       {
         ok: true,
@@ -63,6 +68,8 @@ export async function POST(request: Request) {
         appId: redeemed.appId,
         email: person?.email ?? "",
         displayName: person?.displayName ?? "",
+        tenantName: tenant?.name?.trim() || redeemed.tenantId,
+        master,
       },
       { headers }
     );
