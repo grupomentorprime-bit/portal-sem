@@ -1,6 +1,6 @@
 /**
  * OT-GROWTH-SECURITY-HARDENING-002 — cabeceras HTTP reutilizables.
- * Sin `server-only`: también lo importa `next.config.ts` en build.
+ * Sin `server-only` y sin alias `@/`: también lo importa `next.config.ts` en build.
  */
 
 export const PRIVATE_CACHE_CONTROL = "no-store";
@@ -47,6 +47,48 @@ function originFromEnvUrl(raw: string | undefined): string | null {
   }
 }
 
+/**
+ * Origen de Cumple que el escritorio puede usar como action del formulario.
+ * Misma regla que Connect: `cumple.localhost` en local, `https://cumple.{base}` en público.
+ * Vive aquí porque `next.config` no resuelve `@/`.
+ */
+function cumpleFormOrigin(env: NodeJS.ProcessEnv): string | null {
+  const candidates = [env.APP_URL, env.NEXT_PUBLIC_APP_URL]
+    .map((value) => originFromEnvUrl(value))
+    .filter((origin): origin is string => Boolean(origin));
+  const published = candidates.find((origin) => {
+    const host = new URL(origin).hostname;
+    return host !== "localhost" && host !== "127.0.0.1" && host !== "::1";
+  });
+  const desk =
+    published ??
+    (env.NODE_ENV === "production" ? "https://growthos.mentorprime.cl" : candidates[0] ?? "http://localhost:3000");
+  let url: URL;
+  try {
+    url = new URL(desk);
+  } catch {
+    return null;
+  }
+  const host = url.hostname.toLowerCase();
+  const configured = (env.SPACE_BASE_DOMAIN || env.PLATFORM_BASE_DOMAIN || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\.+|\.+$/g, "");
+  let base = configured;
+  if (!base && host !== "localhost" && host !== "127.0.0.1" && host !== "::1") {
+    const parts = host.split(".");
+    if (parts.length >= 3) base = parts.slice(1).join(".");
+  }
+  if (!base) {
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    if (host !== "localhost" && host !== "127.0.0.1") return null;
+    const port = url.port ? `:${url.port}` : "";
+    return `${url.protocol}//cumple.localhost${port}`;
+  }
+  if (url.port) return null;
+  return `https://cumple.${base}`;
+}
+
 function uniqueOrigins(values: Array<string | null | undefined>): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -79,7 +121,13 @@ export function buildContentSecurityPolicy(env: NodeJS.ProcessEnv = process.env)
     "https://connect.facebook.net",
     ...(isDev ? ["ws:", "wss:"] : []),
   ];
-  const formAction = ["'self'", ...uniqueOrigins([keycloakOrigin])];
+  const formAction = [
+    "'self'",
+    ...uniqueOrigins([
+      keycloakOrigin,
+      cumpleFormOrigin(env),
+    ]),
+  ];
   const frameSrc = [
     "'self'",
     "https://www.youtube.com",

@@ -70,9 +70,10 @@ describe("rutas del escritorio", () => {
     assert.match(top, /Escritorio/);
     const shell = read("src/components/sites/cumple/CumpleShell.tsx");
     assert.match(shell, /EscritorioReturn/);
+    assert.match(shell, /escritorioReturnHref/);
     const back = read("src/components/desktop/EscritorioReturn.tsx");
-    assert.match(back, /\/api\/identity\/me/);
-    assert.match(back, /href="\/escritorio"/);
+    assert.match(back, /\/api\/connect\/session/);
+    assert.match(back, /isSafeEscritorioHref/);
   });
 
   it("identity me serializa avatar del escritorio", () => {
