@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
@@ -109,7 +109,7 @@ export async function storeAvatarPhoto(
   const savedHeight = saved.height ?? height;
   const updatedAt = new Date().toISOString();
   const target = avatarPath(userId);
-  const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+  const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
 
   await mkdir(avatarDir(), { recursive: true });
   await writeFile(temporary, output);
