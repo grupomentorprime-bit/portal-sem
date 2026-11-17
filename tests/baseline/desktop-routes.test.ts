@@ -23,6 +23,16 @@ describe("rutas del escritorio", () => {
     assert.match(src, /setDesktopWallpaper/);
   });
 
+  it("al entrar o al activar Aprende Hoy se crea el perfil master", () => {
+    const company = read("src/lib/desktop/ensure-client-company.ts");
+    assert.match(company, /provisionAprendeHoyCompany/);
+    assert.match(company, /provisionRrhhCompany/);
+    const provision = read("src/lib/connect/provision-aprende-hoy.ts");
+    assert.match(provision, /\/api\/connect\/provision/);
+    const access = read("src/app/api/platform/spaces/[tenantId]/access/route.ts");
+    assert.match(access, /ensureClientCompany/);
+  });
+
   it("el operador escribe el contrato y cierra las solicitudes nuevas", () => {
     const src = read("src/app/api/platform/spaces/[tenantId]/apps/route.ts");
     assert.match(src, /requirePlatformOperator/);
@@ -35,6 +45,9 @@ describe("rutas del escritorio", () => {
     assert.match(src, /readSpaceContract\(tenant\.tenantId\)/);
     assert.match(src, /writeSpaceContract\(tenant\.tenantId,\s*patch\)/);
     assert.match(src, /fulfillOpen\(tenant\.tenantId,\s*appId\)/);
+    assert.match(src, /provisionAprendeHoyCompany/);
+    assert.match(src, /provisionRrhhCompany/);
+    assert.match(src, /ensureDeskProduct/);
   });
 
   it("la store ignora el duplicado abierto concurrente", () => {

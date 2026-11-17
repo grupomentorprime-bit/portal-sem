@@ -3,7 +3,7 @@ export const CONNECT_CALLBACK_PATH = "/api/connect/callback";
 export const CONNECT_APP_ID = "cumple" as const;
 export const RRHH_CANONICAL_ORIGIN = "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io";
 
-export type ConnectProductId = "cumple" | "rrhh";
+export type ConnectProductId = "cumple" | "rrhh" | "aprende-hoy";
 
 export type ConnectDenyReason =
   | "unavailable"
@@ -124,7 +124,7 @@ export function isCumpleRequestHost(
  * Destino de RR.HH.: HTTPS sin puerto, o HTTP solo en localhost.
  * No acepta el host de Cumple. El servidor vuelve a fijar este origen al emitir.
  */
-export function isRrhhProductOrigin(value: string | null | undefined): value is string {
+function isStandaloneProductOrigin(value: string | null | undefined): value is string {
   const origin = normalizeOrigin(value);
   if (!origin) return false;
   const url = new URL(origin);
@@ -133,6 +133,14 @@ export function isRrhhProductOrigin(value: string | null | undefined): value is 
   if (url.protocol === "https:") return url.port === "";
   if (url.protocol !== "http:") return false;
   return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+export function isRrhhProductOrigin(value: string | null | undefined): value is string {
+  return isStandaloneProductOrigin(value);
+}
+
+export function isAprendeHoyProductOrigin(value: string | null | undefined): value is string {
+  return isStandaloneProductOrigin(value);
 }
 
 export function isCumpleLaunchCandidate(value: string | null | undefined): boolean {
@@ -169,6 +177,7 @@ export function evaluateConnectAccess(
   input: ConnectAccessInput
 ): { ok: true; appId: ConnectProductId; destinationOrigin: string } | { ok: false; reason: ConnectDenyReason } {
   if (input.appId === "rrhh") return evaluateRrhhConnectAccess(input);
+  if (input.appId === "aprende-hoy") return evaluateAprendeHoyConnectAccess(input);
   if (input.appId !== CONNECT_APP_ID) return { ok: false, reason: "unavailable" };
   const tenantId = input.tenantId.trim();
   if (!tenantId) return { ok: false, reason: "no_company" };
@@ -202,6 +211,24 @@ export function evaluateRrhhConnectAccess(
   }
   if (!isRrhhProductOrigin(input.resolvedOrigin)) return { ok: false, reason: "no_destination" };
   return { ok: true, appId: "rrhh", destinationOrigin: new URL(input.resolvedOrigin).origin };
+}
+
+/** Plan y llave de Aprende Hoy en la empresa activa. El destino no lo elige el navegador. */
+export function evaluateAprendeHoyConnectAccess(
+  input: ConnectAccessInput
+): { ok: true; appId: "aprende-hoy"; destinationOrigin: string } | { ok: false; reason: ConnectDenyReason } {
+  if (input.appId !== "aprende-hoy") return { ok: false, reason: "unavailable" };
+  const tenantId = input.tenantId.trim();
+  if (!tenantId) return { ok: false, reason: "no_company" };
+  if (!input.membershipActive) return { ok: false, reason: "no_membership" };
+  if (!Array.isArray(input.contractedApps) || !input.contractedApps.includes("aprende-hoy")) {
+    return { ok: false, reason: "no_plan" };
+  }
+  if (!Array.isArray(input.authorizedApps) || !input.authorizedApps.includes("aprende-hoy")) {
+    return { ok: false, reason: "no_key" };
+  }
+  if (!isAprendeHoyProductOrigin(input.resolvedOrigin)) return { ok: false, reason: "no_destination" };
+  return { ok: true, appId: "aprende-hoy", destinationOrigin: new URL(input.resolvedOrigin).origin };
 }
 
 export function readCallbackSubmission(input: {
@@ -260,6 +287,7 @@ export function connectLaunchForm(input: {
   transaction: string;
   deskOrigin: string;
   rrhhOrigin?: string | null;
+  aprendeHoyOrigin?: string | null;
 }):
   | {
       ok: true;
@@ -280,8 +308,16 @@ export function connectLaunchForm(input: {
   if (url.pathname !== CONNECT_CALLBACK_PATH) return { ok: false };
   if (url.search || url.hash || url.username || url.password) return { ok: false };
   const rrhh = normalizeOrigin(input.rrhhOrigin);
+  const aprende = normalizeOrigin(input.aprendeHoyOrigin);
   const allowedRrhh = Boolean(rrhh && url.origin === rrhh && isRrhhProductOrigin(url.origin));
-  if (!allowedRrhh && !isCumpleProductOrigin(url.origin, spaceBaseFromDeskOrigin(input.deskOrigin))) {
+  const allowedAprende = Boolean(
+    aprende && url.origin === aprende && isAprendeHoyProductOrigin(url.origin)
+  );
+  if (
+    !allowedRrhh &&
+    !allowedAprende &&
+    !isCumpleProductOrigin(url.origin, spaceBaseFromDeskOrigin(input.deskOrigin))
+  ) {
     return { ok: false };
   }
   return {

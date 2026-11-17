@@ -906,4 +906,66 @@ describe("NELZURI Connect — entrada a Cumple", () => {
       false
     );
   });
+
+  it("Aprende Hoy se emite hacia su origen y el canje devuelve esa app", async () => {
+    const store = createMemoryLaunchCodeStore();
+    const now = new Date("2026-11-16T18:00:00.000Z");
+    const destination = "http://localhost:3002";
+    const issued = await issueLaunchCode({
+      now,
+      secretConfigured: true,
+      userId: "user-1",
+      tenantId: "seminario-ipn",
+      appId: "aprende-hoy",
+      issuerOrigin: ISSUER,
+      transactionHash: TX_HASH,
+      access: access({
+        appId: "aprende-hoy",
+        tenantId: "seminario-ipn",
+        contractedApps: ["growth-os", "aprende-hoy"],
+        authorizedApps: ["aprende-hoy"],
+        resolvedOrigin: destination,
+        spaceBaseDomain: null,
+      }),
+      store,
+      audit: () => undefined,
+    });
+    assert.equal(issued.ok, true);
+    if (!issued.ok) return;
+    assert.equal(issued.callback, `${destination}/api/connect/callback`);
+    const form = connectLaunchForm({
+      callback: issued.callback,
+      code: issued.code,
+      transaction: TX,
+      deskOrigin: ISSUER,
+      aprendeHoyOrigin: destination,
+    });
+    assert.equal(form.ok, true);
+    const redeemed = await redeemLaunchCode({
+      now,
+      secret: SECRET,
+      providedSecret: SECRET,
+      code: issued.code,
+      transaction: TX,
+      destinationOrigin: destination,
+      issuerOrigin: ISSUER,
+      accessFor: () =>
+        access({
+          appId: "aprende-hoy",
+          tenantId: "seminario-ipn",
+          contractedApps: ["growth-os", "aprende-hoy"],
+          authorizedApps: ["aprende-hoy"],
+          resolvedOrigin: destination,
+          spaceBaseDomain: null,
+        }),
+      store,
+      audit: () => undefined,
+    });
+    assert.deepEqual(redeemed, {
+      ok: true,
+      userId: "user-1",
+      tenantId: "seminario-ipn",
+      appId: "aprende-hoy",
+    });
+  });
 });

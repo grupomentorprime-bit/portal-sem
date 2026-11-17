@@ -3,6 +3,7 @@ import "server-only";
 import { findTenantById } from "@/core/tenant";
 import { ROLE_CODES } from "@/core/identity/roles/codes";
 import { hasPlatformOwnerCapability } from "@/core/identity/platform/capability";
+import { provisionAprendeHoyCompany } from "@/lib/connect/provision-aprende-hoy";
 import { provisionRrhhCompany } from "@/lib/connect/provision-rrhh";
 import { MENTOR_APPS, type MentorAppId } from "@/lib/desktop/catalog";
 import { mongoAppRequestStore, readSpaceContract, writeSpaceContract } from "@/lib/desktop/store";
@@ -24,9 +25,43 @@ export async function isDeskMaster(user: IdentityUser, tenantId: string): Promis
   });
 }
 
+/** Deja la app en el plan y le da la llave al usuario de esa empresa. */
+export async function ensureDeskProduct(input: {
+  tenantId: string;
+  userId: string;
+  appId: MentorAppId;
+}): Promise<void> {
+  const tenantId = input.tenantId.trim();
+  if (!tenantId) return;
+  const db = await getDatabase();
+  const contract = await readSpaceContract(tenantId);
+  if (!contract.contracted.includes(input.appId)) {
+    const contractedApps = MENTOR_APPS.filter(
+      (id) => contract.contracted.includes(id) || id === input.appId
+    );
+    await writeSpaceContract(tenantId, {
+      contractedApps,
+      aprendeHoyEntryUrl: contract.aprendeHoyEntryUrl,
+    });
+    await mongoAppRequestStore().fulfillOpen(tenantId, input.appId);
+  }
+  const membership = await findMembership(input.userId, tenantId);
+  if (!membership) return;
+  const keys = membership.authorizedApps;
+  if (keys?.includes(input.appId)) return;
+  const base = keys ?? contract.contracted;
+  const authorizedApps: MentorAppId[] = MENTOR_APPS.filter(
+    (id) => base.includes(id) || id === input.appId
+  );
+  await db.collection<IdentityMembership>("identity_memberships").updateOne(
+    { _id: membership._id },
+    { $set: { authorizedApps, updatedAt: new Date().toISOString() } }
+  );
+}
+
 /**
- * Al darle acceso a un cliente: RR.HH. queda en el plan, el master tiene la llave
- * y la empresa existe con ese usuario.
+ * Al darle acceso a un cliente: RR.HH. y Aprende Hoy quedan en el plan,
+ * el master tiene las llaves y existen la empresa y el usuario master.
  */
 export async function ensureClientCompany(input: {
   tenantId: string;
@@ -42,18 +77,6 @@ export async function ensureClientCompany(input: {
   const tenant = await findTenantById(db, tenantId);
   if (!tenant) return;
 
-  const contract = await readSpaceContract(tenantId);
-  if (!contract.contracted.includes("rrhh")) {
-    const contractedApps = MENTOR_APPS.filter(
-      (id) => contract.contracted.includes(id) || id === "rrhh"
-    );
-    await writeSpaceContract(tenantId, {
-      contractedApps,
-      aprendeHoyEntryUrl: contract.aprendeHoyEntryUrl,
-    });
-    await mongoAppRequestStore().fulfillOpen(tenantId, "rrhh");
-  }
-
   await grantOwnerSpaceAccess({ tenantId, ownerUserId: input.userId }).catch((error: unknown) => {
     console.error(
       "[escritorio] no se pudo crear el usuario master del cliente.",
@@ -61,28 +84,25 @@ export async function ensureClientCompany(input: {
       error instanceof Error ? error.message : error
     );
   });
-  const membership = await findMembership(input.userId, tenantId);
-  const keys = membership?.authorizedApps;
-  if (membership && keys && !keys.includes("rrhh")) {
-    const authorizedApps: MentorAppId[] = MENTOR_APPS.filter(
-      (id) => keys.includes(id) || id === "rrhh"
-    );
-    await db.collection<IdentityMembership>("identity_memberships").updateOne(
-      { _id: membership._id },
-      { $set: { authorizedApps, updatedAt: new Date().toISOString() } }
-    );
-  }
+  await ensureDeskProduct({ tenantId, userId: input.userId, appId: "rrhh" });
+  await ensureDeskProduct({ tenantId, userId: input.userId, appId: "aprende-hoy" });
 
-  void provisionRrhhCompany({
-    tenantId,
-    companyName: tenant.name?.trim() || tenantId,
-    email,
-    displayName: input.displayName.trim() || email,
-  }).catch((error: unknown) => {
+  const companyName = tenant.name?.trim() || tenantId;
+  const displayName = input.displayName.trim() || email;
+  void provisionRrhhCompany({ tenantId, companyName, email, displayName }).catch((error: unknown) => {
     console.error(
       "[escritorio] no se pudo crear la empresa de RR.HH.",
       tenantId,
       error instanceof Error ? error.message : error
     );
   });
+  void provisionAprendeHoyCompany({ tenantId, companyName, email, displayName }).catch(
+    (error: unknown) => {
+      console.error(
+        "[escritorio] no se pudo crear el perfil de Aprende Hoy.",
+        tenantId,
+        error instanceof Error ? error.message : error
+      );
+    }
+  );
 }

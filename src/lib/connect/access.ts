@@ -2,7 +2,7 @@ import "server-only";
 
 import { findTenantById } from "@/core/tenant";
 import { CUMPLE_SPACE_ID } from "@/lib/desktop/catalog";
-import { allowedCumpleBase, rrhhOriginFromEnv } from "@/lib/connect/desk";
+import { allowedCumpleBase, aprendeHoyOriginFromEnv, rrhhOriginFromEnv } from "@/lib/connect/desk";
 import type { ConnectAccessInput } from "@/lib/connect/policy";
 import { findMembership } from "@/lib/identity/memberships";
 import { getDatabase } from "@/lib/mongodb";
@@ -28,6 +28,8 @@ export async function readConnectAccess(input: {
     contractedApps = Array.isArray(tenant?.contractedApps) ? tenant.contractedApps : null;
     if (input.appId === "rrhh") {
       resolvedOrigin = rrhhOriginFromEnv();
+    } else if (input.appId === "aprende-hoy") {
+      resolvedOrigin = aprendeHoyOriginFromEnv();
     } else if (tenantId === CUMPLE_SPACE_ID) {
       resolvedOrigin = await resolvePublicOriginForTenant(tenantId).catch(() => null);
     }

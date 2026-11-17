@@ -6,7 +6,7 @@ import {
   hasPlatformOwnerCapability,
 } from "@/core/identity/platform/capability";
 import { usesStudentAffairsFocusedShell } from "@/lib/admin/nav-access";
-import { rrhhOriginFromEnv } from "@/lib/connect/desk";
+import { aprendeHoyOriginFromEnv, rrhhOriginFromEnv } from "@/lib/connect/desk";
 import { CUMPLE_SPACE_ID, DESK_ENTERED_COOKIE, enteredClientId, parseWallpaper } from "@/lib/desktop/catalog";
 import { customWallpaperUrl } from "@/lib/desktop/wallpaper-upload";
 import { parseDesktopLayout } from "@/lib/desktop/layout";
@@ -138,6 +138,7 @@ export default async function EscritorioPage() {
       contracted={contract.contracted}
       authorizedApps={authorizedApps}
       aprendeHoyEntryUrl={contract.aprendeHoyEntryUrl}
+      aprendeHoyOrigin={aprendeHoyOriginFromEnv()}
       cumpleOrigin={cumpleOrigin}
       rrhhOrigin={rrhhOriginFromEnv()}
       wallpaper={

@@ -1,4 +1,8 @@
-import { isCumpleLaunchCandidate, isRrhhProductOrigin } from "@/lib/connect/policy";
+import {
+  isAprendeHoyProductOrigin,
+  isCumpleLaunchCandidate,
+  isRrhhProductOrigin,
+} from "@/lib/connect/policy";
 import { hasAppKey } from "@/lib/desktop/app-access";
 import {
   CUMPLE_SPACE_ID,
@@ -26,7 +30,7 @@ export function isHttpsEntry(url: string | null | undefined): url is string {
 
 export type DesktopClick =
   | { kind: "open"; href: string }
-  | { kind: "connect"; appId: "cumple" | "rrhh" }
+  | { kind: "connect"; appId: "cumple" | "rrhh" | "aprende-hoy" }
   | { kind: "request" }
   | { kind: "unauthorized" }
   | { kind: "later" }
@@ -39,6 +43,7 @@ export function desktopClick(input: {
   /** Si falta, se conserva el comportamiento previo (todo el techo). */
   authorized?: readonly MentorAppId[] | null;
   aprendeHoyEntryUrl?: string | null;
+  aprendeHoyOrigin?: string | null;
   cumpleOrigin?: string | null;
   rrhhOrigin?: string | null;
 }): DesktopClick {
@@ -58,6 +63,9 @@ export function desktopClick(input: {
       : { kind: "later" };
   }
   if (input.appId === "aprende-hoy") {
+    if (isAprendeHoyProductOrigin(input.aprendeHoyOrigin)) {
+      return { kind: "connect", appId: "aprende-hoy" };
+    }
     return isHttpsEntry(input.aprendeHoyEntryUrl)
       ? { kind: "open", href: input.aprendeHoyEntryUrl.trim() }
       : { kind: "disconnected" };

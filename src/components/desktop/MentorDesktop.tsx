@@ -83,6 +83,7 @@ export interface MentorDesktopProps {
   /** Llaves de la membresía en el Espacio activo. Ausente = legado (todo el techo). */
   authorizedApps?: MentorAppId[] | null;
   aprendeHoyEntryUrl: string | null;
+  aprendeHoyOrigin: string | null;
   cumpleOrigin: string | null;
   rrhhOrigin: string | null;
   wallpaper: WallpaperChoice;
@@ -331,13 +332,20 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }, []);
 
   useEffect(() => {
-    if (!props.rrhhOrigin) return;
-    const link = document.createElement("link");
-    link.rel = "preconnect";
-    link.href = props.rrhhOrigin;
-    document.head.append(link);
-    return () => link.remove();
-  }, [props.rrhhOrigin]);
+    const origins = [props.rrhhOrigin, props.aprendeHoyOrigin].filter(
+      (origin): origin is string => Boolean(origin)
+    );
+    const links = origins.map((origin) => {
+      const link = document.createElement("link");
+      link.rel = "preconnect";
+      link.href = origin;
+      document.head.append(link);
+      return link;
+    });
+    return () => {
+      for (const link of links) link.remove();
+    };
+  }, [props.rrhhOrigin, props.aprendeHoyOrigin]);
 
   useEffect(() => {
     function onMove(event: PointerEvent) {
@@ -797,6 +805,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       contracted: props.contracted,
       authorized: props.authorizedApps ?? null,
       aprendeHoyEntryUrl: props.aprendeHoyEntryUrl,
+      aprendeHoyOrigin: props.aprendeHoyOrigin,
       cumpleOrigin: props.cumpleOrigin,
       rrhhOrigin: props.rrhhOrigin,
     });
@@ -822,7 +831,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }
 
   async function beginConnect(
-    appId: "cumple" | "rrhh",
+    appId: "cumple" | "rrhh" | "aprende-hoy",
     event?: ReactMouseEvent<HTMLButtonElement>
   ) {
     if (connectingRef.current) return;
@@ -851,6 +860,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
             transaction,
             deskOrigin: window.location.origin,
             rrhhOrigin: props.rrhhOrigin,
+            aprendeHoyOrigin: props.aprendeHoyOrigin,
           })
         : null;
     if (!form?.ok) {
@@ -1111,7 +1121,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
                 contracted: props.contracted,
                 authorized: props.authorizedApps ?? null,
                 aprendeHoyEntryUrl: props.aprendeHoyEntryUrl,
+                aprendeHoyOrigin: props.aprendeHoyOrigin,
                 cumpleOrigin: props.cumpleOrigin,
+                rrhhOrigin: props.rrhhOrigin,
               })
             : null;
           return (
@@ -1155,7 +1167,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
                   contracted: props.contracted,
                   authorized: props.authorizedApps ?? null,
                   aprendeHoyEntryUrl: props.aprendeHoyEntryUrl,
+                  aprendeHoyOrigin: props.aprendeHoyOrigin,
                   cumpleOrigin: props.cumpleOrigin,
+                  rrhhOrigin: props.rrhhOrigin,
                 })
               : null;
             const glyphState = [

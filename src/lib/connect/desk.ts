@@ -1,6 +1,7 @@
 import { PRODUCTION_CANONICAL_ORIGIN } from "@/core/identity/auth/public-origin";
 import { resolvePlatformBaseDomain } from "@/core/tenant/hosts";
 import {
+  isAprendeHoyProductOrigin,
   isDeskOrigin,
   isRrhhProductOrigin,
   normalizeOrigin,
@@ -26,13 +27,35 @@ export function deskOriginFromEnv(
   return origins[0] ?? "http://localhost:3000";
 }
 
-/** Origen de RR.HH. `RRHH_APP_URL` lo reemplaza. Sin variable, el canónico. */
+/** En local el código se emite para este escritorio, no para el dominio publicado. */
+export function deskIssuerFromRequest(
+  request: Request,
+  env: Record<string, string | undefined> = process.env
+): string {
+  const header = normalizeOrigin(request.headers.get("origin"));
+  if (header && isDeskOrigin(header) && !isPublicDesk(header)) return header;
+  return deskOriginFromEnv(env);
+}
+
+/** Origen de RR.HH. `RRHH_APP_URL` lo reemplaza. En local, el 3001. */
 export function rrhhOriginFromEnv(
   env: Record<string, string | undefined> = process.env
 ): string | null {
   const configured = env.RRHH_APP_URL?.trim();
-  const origin = normalizeOrigin(configured || RRHH_CANONICAL_ORIGIN);
+  const fallback = env.NODE_ENV === "production" ? RRHH_CANONICAL_ORIGIN : "http://localhost:3001";
+  const origin = normalizeOrigin(configured || fallback);
   if (!origin || !isRrhhProductOrigin(origin)) return null;
+  return origin;
+}
+
+/** Origen de Aprende Hoy. `APRENDE_HOY_APP_URL` lo reemplaza. En local, el 3002. */
+export function aprendeHoyOriginFromEnv(
+  env: Record<string, string | undefined> = process.env
+): string | null {
+  const configured = env.APRENDE_HOY_APP_URL?.trim();
+  const fallback = env.NODE_ENV === "production" ? null : "http://localhost:3002";
+  const origin = normalizeOrigin(configured || fallback);
+  if (!origin || !isAprendeHoyProductOrigin(origin)) return null;
   return origin;
 }
 

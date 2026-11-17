@@ -91,7 +91,19 @@ function cumpleFormOrigin(env: NodeJS.ProcessEnv): string | null {
 
 /** Origen de RR.HH. que puede recibir el formulario. Sin variable, el canónico. */
 function rrhhFormOrigin(env: NodeJS.ProcessEnv): string | null {
-  return originFromEnvUrl(env.RRHH_APP_URL?.trim() || "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io");
+  return originFromEnvUrl(
+    env.RRHH_APP_URL?.trim() ||
+      (env.NODE_ENV === "production"
+        ? "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io"
+        : "http://localhost:3001")
+  );
+}
+
+function aprendeHoyFormOrigin(env: NodeJS.ProcessEnv): string | null {
+  return originFromEnvUrl(
+    env.APRENDE_HOY_APP_URL?.trim() ||
+      (env.NODE_ENV === "production" ? "" : "http://localhost:3002")
+  );
 }
 
 function uniqueOrigins(values: Array<string | null | undefined>): string[] {
@@ -132,6 +144,8 @@ export function buildContentSecurityPolicy(env: NodeJS.ProcessEnv = process.env)
       keycloakOrigin,
       cumpleFormOrigin(env),
       rrhhFormOrigin(env),
+      aprendeHoyFormOrigin(env),
+      ...(isDev ? ["http://localhost:3001", "http://localhost:3002"] : []),
     ]),
   ];
   const frameSrc = [

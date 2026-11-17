@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { hasPlatformOwnerCapability } from "@/core/identity/platform/capability";
 import { auditConnect } from "@/lib/connect/audit";
 import { readConnectAccess } from "@/lib/connect/access";
 import { issueLaunchCode } from "@/lib/connect/protocol";
-import { deskOriginFromEnv } from "@/lib/connect/desk";
+import { deskIssuerFromRequest } from "@/lib/connect/desk";
 import { readConnectSecret } from "@/lib/connect/secret";
 import { mongoLaunchCodeStore } from "@/lib/connect/store";
+import { ensureDeskProduct } from "@/lib/desktop/ensure-client-company";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { publicInternalError } from "@/core/security/public-error";
 
@@ -30,6 +32,16 @@ export async function POST(request: Request) {
   const tenantId = session.session.tenantId?.trim() ?? "";
 
   try {
+    if (
+      hasPlatformOwnerCapability(session.user) &&
+      (appId === "rrhh" || appId === "aprende-hoy")
+    ) {
+      await ensureDeskProduct({
+        tenantId,
+        userId: session.user._id,
+        appId: appId === "rrhh" ? "rrhh" : "aprende-hoy",
+      });
+    }
     const access = await readConnectAccess({
       userId: session.user._id,
       tenantId,
@@ -42,7 +54,7 @@ export async function POST(request: Request) {
       userId: session.user._id,
       tenantId,
       appId,
-      issuerOrigin: deskOriginFromEnv(),
+      issuerOrigin: deskIssuerFromRequest(request),
       transactionHash,
       access: { ...access, contractedApps },
       store: mongoLaunchCodeStore(),

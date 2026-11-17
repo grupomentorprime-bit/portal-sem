@@ -96,6 +96,16 @@ describe("contrato del escritorio", () => {
       { kind: "open", href: "https://aprende.example/aula" }
     );
     assert.deepEqual(
+      desktopClick({
+        ...base,
+        appId: "aprende-hoy",
+        contracted: ["aprende-hoy"],
+        authorized: ["aprende-hoy"],
+        aprendeHoyOrigin: "http://localhost:3002",
+      }),
+      { kind: "connect", appId: "aprende-hoy" }
+    );
+    assert.deepEqual(
       desktopClick({ ...base, tenantId: "cumple", appId: "cumple", contracted: ["cumple"], cumpleOrigin: "https://cumple.mentorprime.cl" }),
       { kind: "connect", appId: "cumple" }
     );
