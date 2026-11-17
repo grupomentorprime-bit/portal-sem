@@ -27,6 +27,13 @@ export const PERMISSIONS = {
   "student-affairs.checkin": "Marcar asistencia y gestionar inasistencias",
   "student-affairs.manage": "Asignar alcance de asuntos estudiantiles",
 
+  // Congreso Nacional de Varones
+  "congress.view": "Ver panel del Congreso de Varones",
+  "congress.operate": "Operar inscritos, asistencia y alojamiento del congreso",
+  "congress.payments": "Registrar pagos y abonos del congreso",
+  "congress.finance.correct": "Corregir finanzas sensibles del congreso",
+  "congress.import": "Revisar e importar nómina del congreso",
+
   // Content
   "programs.manage": "Gestionar programas",
   "news.publish": "Publicar noticias",

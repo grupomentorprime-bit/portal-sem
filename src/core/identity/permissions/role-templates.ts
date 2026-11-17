@@ -33,6 +33,8 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["portal.menus.view", true], ["portal.menus.manage", true],
     ["content.programs.manage", true], ["content.news.manage", true], ["content.events.manage", true],
     ["student_affairs.panel.view", true], ["student_affairs.scope.manage", true],
+    ["congress.view", true], ["congress.operate", true], ["congress.payments", true],
+    ["congress.finance.correct", true], ["congress.import", true],
     ["settings.institution.update", true], ["settings.integrations.manage", true], ["settings.team.manage", true],
     ["identity.roles.manage", false], ["identity.members.manage", true], ["identity.permissions.override", true],
     ["identity.audit.read", true],
@@ -57,6 +59,8 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["portal.menus.view", true], ["portal.menus.manage", true],
     ["content.programs.manage", true], ["content.news.manage", true], ["content.events.manage", true],
     ["student_affairs.panel.view", true], ["student_affairs.scope.manage", true],
+    ["congress.view", true], ["congress.operate", true], ["congress.payments", true],
+    ["congress.finance.correct", true], ["congress.import", true],
     ["settings.institution.update", true], ["settings.integrations.manage", true], ["settings.team.manage", true],
     ["identity.roles.manage", false], ["identity.members.manage", true], ["identity.permissions.override", true],
     ["identity.audit.read", true],
@@ -88,6 +92,14 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["convocations.publish", false], ["convocations.close", false], ["convocations.delete", false],
     ["participants.view", true], ["participants.update", true], ["participants.checkin", true], ["participants.export", true],
     ["student_affairs.panel.view", true], ["student_affairs.scope.manage", false],
+  ]),
+
+  [ROLE_CODES.CONGRESS_OPERATOR]: fromEntries([
+    ["congress.view", true],
+    ["congress.operate", true],
+    ["congress.payments", true],
+    ["congress.import", true],
+    ["congress.finance.correct", false],
   ]),
 
   [ROLE_CODES.COMMUNICATIONS]: fromEntries([

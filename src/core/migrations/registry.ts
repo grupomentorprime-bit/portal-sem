@@ -28,6 +28,7 @@ import { migration027StripForeignSemAssets } from "@/core/migrations/027-strip-f
 import { migration028GrowthFunnels } from "@/core/migrations/028-growth-funnels";
 import { migration030IpnChileUnits } from "@/core/migrations/030-ipn-chile-units";
 import { migration031MembershipAuthorizedApps } from "@/core/migrations/031-membership-authorized-apps";
+import { migration032CongressVaronesOps } from "@/core/migrations/032-congress-varones-ops";
 import type { MigrationDefinition } from "@/core/migrations/types";
 
 /** Registro ordenado de migraciones — añadir nuevas al final */
@@ -62,6 +63,7 @@ export const MIGRATIONS: MigrationDefinition[] = [
   migration028GrowthFunnels,
   migration030IpnChileUnits,
   migration031MembershipAuthorizedApps,
+  migration032CongressVaronesOps,
 ];
 
 export function getMigrationById(id: string): MigrationDefinition | undefined {

@@ -9,6 +9,7 @@ export type PermissionModuleId =
   | "portal"
   | "content"
   | "student_affairs"
+  | "congress"
   | "settings"
   | "identity"
   | "workflow"
@@ -146,6 +147,47 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     permissions: [
       { code: "student_affairs.panel.view", label: "Ver panel", description: "Acceder al panel de asuntos estudiantiles", module: "student_affairs", impliesLegacy: ["student-affairs.read"] },
       { code: "student_affairs.scope.manage", label: "Gestionar alcance", description: "Asignar formularios y generaciones", module: "student_affairs", impliesLegacy: ["student-affairs.manage"] },
+    ],
+  },
+  {
+    id: "congress",
+    label: "Congreso de Varones",
+    permissions: [
+      {
+        code: "congress.view",
+        label: "Ver panel",
+        description: "Ver el panel operativo del Congreso Nacional de Varones",
+        module: "congress",
+        impliesLegacy: ["congress.view"],
+      },
+      {
+        code: "congress.operate",
+        label: "Operar",
+        description: "Inscribir en puerta, marcar asistencia y asignar alojamiento",
+        module: "congress",
+        impliesLegacy: ["congress.operate"],
+      },
+      {
+        code: "congress.payments",
+        label: "Registrar pagos",
+        description: "Registrar aportes, abonos e imputaciones",
+        module: "congress",
+        impliesLegacy: ["congress.payments"],
+      },
+      {
+        code: "congress.finance.correct",
+        label: "Corregir finanzas",
+        description: "Correcciones financieras sensibles con auditoría",
+        module: "congress",
+        impliesLegacy: ["congress.finance.correct"],
+      },
+      {
+        code: "congress.import",
+        label: "Importar nómina",
+        description: "Revisar e importar la planilla del congreso",
+        module: "congress",
+        impliesLegacy: ["congress.import"],
+      },
     ],
   },
   {

@@ -3,9 +3,12 @@ import { AdminShell } from "@/components/identity/AdminShell";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 import {
+  CONGRESS_VARONES_HOME_PATH,
+  isCongressAllowedAdminPath,
   isStudentAffairsAllowedAdminPath,
   isUnitScopedAdminPathAllowed,
   STUDENT_AFFAIRS_HOME_PATH,
+  usesCongressFocusedShell,
   usesStudentAffairsFocusedShell,
 } from "@/lib/admin/nav-access";
 import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
@@ -114,6 +117,15 @@ export default async function AdminLayout({
         );
       })()
     : [];
+
+  if (
+    pathname &&
+    hasSpace &&
+    usesCongressFocusedShell(permissions, roleCodes) &&
+    !isCongressAllowedAdminPath(pathname)
+  ) {
+    redirect(CONGRESS_VARONES_HOME_PATH);
+  }
 
   if (
     pathname &&
