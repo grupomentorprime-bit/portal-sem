@@ -19,6 +19,7 @@ import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
 import { publicInternalError } from "@/core/security/public-error";
 import { normalizeChilePhone, formatChilePhoneDisplay } from "@/lib/experience/forms/phone-chile";
 import {
+  findCongressEnrolleeMatch,
   getDirectAccessibleExperienceForm,
   saveFormSubmission,
 } from "@/lib/experience/forms/repository";
@@ -27,7 +28,10 @@ import { updateRosterStudentContactFields } from "@/lib/student-affairs/roster-o
 import { resolveConfirmationEmailCta } from "@/lib/notifications/resolve-confirmation-email-cta";
 import { reportPathForSubmission } from "@/lib/cumple/informe";
 import { CUMPLE_FORM_ID } from "@/sites/cumple/site";
-
+import {
+  alreadyEnrolledMessage,
+  CONGRESS_VARONES_FORM_ID,
+} from "@/lib/experience/forms/already-enrolled";
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
@@ -248,6 +252,21 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     data = normalizeFormSubmissionData(form, data);
+
+    if (form._id === CONGRESS_VARONES_FORM_ID) {
+      const enrolled = await findCongressEnrolleeMatch(tenant, form._id, data);
+      if (enrolled) {
+        return NextResponse.json(
+          {
+            ok: false,
+            alreadyRegistered: true,
+            match: enrolled,
+            error: alreadyEnrolledMessage(enrolled),
+          },
+          { status: 409 }
+        );
+      }
+    }
 
     const result = await submitExperienceForm({
       form,

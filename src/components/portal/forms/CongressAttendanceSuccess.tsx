@@ -54,7 +54,7 @@ export function CongressAttendanceSuccess({
           Agregar a tu calendario
         </h3>
         <p className="congress-attendance-success__note">
-          21 y 22 de noviembre de 2026 · inicio 21 de noviembre a las 08:30 (Chile).
+          21 y 22 de noviembre de 2026 · inicio 21 de noviembre a las 08:00 (Chile).
         </p>
         <div className="congress-attendance-success__calendar-actions">
           <a

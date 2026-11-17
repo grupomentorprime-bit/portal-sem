@@ -42,6 +42,12 @@ export function scrollToFirstFormError(): void {
     const root = document.querySelector(".portal-experience-form");
     if (!root) return;
 
+    const summary = root.querySelector(".portal-experience-form__validation-summary");
+    if (summary) {
+      summary.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     const target =
       root.querySelector('[aria-invalid="true"]') ??
       root.querySelector('[data-form-error="true"]');

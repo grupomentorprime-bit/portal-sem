@@ -19,6 +19,7 @@ import {
   isValidChileRut,
   normalizeChileRut,
 } from "@/lib/experience/forms/rut-chile";
+import { missingFieldMessage } from "@/lib/experience/forms/already-enrolled";
 
 export type FieldErrors = Record<string, string>;
 
@@ -67,13 +68,13 @@ export function validateFormField(
   const required = rules.required ?? false;
 
   if (field.type === "checkbox") {
-    if (required && !rawValue) return "Este campo es obligatorio";
+    if (required && !rawValue) return missingFieldMessage(field.label);
     return null;
   }
 
   const str = asString(value);
 
-  if (required && !str) return "Este campo es obligatorio";
+  if (required && !str) return missingFieldMessage(field.label);
   if (!str) return null;
 
   if (rules.minLength !== undefined && str.length < rules.minLength) {

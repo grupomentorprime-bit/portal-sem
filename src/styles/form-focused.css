@@ -794,6 +794,57 @@
   .form-focused-shell--banner .form-landing__info-cards {
     padding-inline: 1rem;
   }
+
+  /* En el teléfono el renglón "3 días 15 horas…" se aprieta. Número arriba, unidad abajo. */
+  .form-focused-shell--banner .form-landing__countdown {
+    padding: 0.85rem 0.65rem 0.8rem;
+  }
+
+  .form-focused-shell--banner .form-landing__countdown-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.15rem 0.25rem;
+  }
+
+  .form-focused-shell--banner .form-landing__countdown--time .form-landing__countdown-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .form-focused-shell--banner .form-landing__countdown-unit {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.2rem;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .form-focused-shell--banner .form-landing__countdown-value {
+    font-size: 1.75rem;
+  }
+
+  .form-focused-shell--banner .form-landing__countdown-unit-label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .form-focused-shell--banner .form-landing__countdown-meta {
+    margin-top: 0.55rem;
+    padding-inline: 0.35rem;
+    font-size: 0.8125rem;
+    text-wrap: balance;
+  }
+
+  .form-focused-shell--banner .form-landing__highlight {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .form-focused-shell--banner .form-landing .form-landing__highlights,
+  .form-focused-shell--banner .form-landing .form-landing__highlights--section {
+    gap: 0.55rem;
+  }
 }
 
 .public-surface {

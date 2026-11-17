@@ -27,6 +27,8 @@ export interface AdminNavItem {
   requiredRole?: string[];
   /** En el grupo activo, no aparece en la subnav horizontal (sí cuenta para match/activo). */
   subnavHidden?: boolean;
+  /** Segunda barra, visible solo cuando este ítem está activo. */
+  children?: AdminNavItem[];
 }
 
 /**

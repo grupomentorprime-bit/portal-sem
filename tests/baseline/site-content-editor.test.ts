@@ -26,7 +26,7 @@ describe("editor de contenido del sitio", () => {
     const sitio = nav.slice(sitioStart, sitioEnd);
 
     assert.match(sitio, /id: "site-pages"/);
-    assert.match(sitio, /label: "Páginas"/);
+    assert.match(sitio, /label: "Sitio web"/);
     assert.match(sitio, /href: "\/admin\/site\/pages"/);
     assert.doesNotMatch(sitio, /href: "\/admin\/pages"/);
 

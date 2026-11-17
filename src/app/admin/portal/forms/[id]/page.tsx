@@ -5,16 +5,21 @@ import { getSessionActiveTenantId } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
 import { resolvePublishedOriginForTenant } from "@/lib/portal/public-origin";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 interface FormDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function AdminFormDetailPage({ params }: FormDetailPageProps) {
+export default async function AdminFormDetailPage({ params, searchParams }: FormDetailPageProps) {
   const { id } = await params;
+  const { tab } = await searchParams;
+  if (tab === "respuestas") {
+    redirect(`/admin/portal/forms/panel/${encodeURIComponent(id)}`);
+  }
   const [sessionTenantId, config] = await Promise.all([
     getSessionActiveTenantId(),
     getOperationalSiteConfig(),
@@ -28,7 +33,7 @@ export default async function AdminFormDetailPage({ params }: FormDetailPageProp
   const form = await getExperienceFormById(tenantId, id);
   if (!form) notFound();
 
-  const convocatoria = getConvocatoriaByFormId(id);
+  const convocatoria = getConvocatoriaByFormId(id, tenantId);
   const publishedOrigin = await resolvePublishedOriginForTenant(tenantId).catch(() => null);
   const publishedFormHref = publishedOrigin
     ? publicUrlForPath(publishedOrigin, publicFormUrl(form._id))

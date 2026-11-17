@@ -237,7 +237,7 @@ export function FormPublicExperience({
                         label={experience.counter.label}
                       />
                       <p className="form-landing__countdown-meta">
-                        Inicio: sábado 21 de noviembre · 08:30
+                        Inicio: sábado 21 de noviembre · 08:00
                       </p>
                     </>
                   ) : null}

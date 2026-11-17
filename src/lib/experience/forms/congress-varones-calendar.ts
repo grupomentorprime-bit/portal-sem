@@ -1,6 +1,6 @@
 import { QUILICURA_NAZARETH_VENUE } from "@/lib/experience/forms/quilicura-nazareth-venue";
 
-/** 3.° Congreso de Varones — inicio 21 nov 2026 08:30 Chile. */
+/** 3.° Congreso de Varones — inicio 21 nov 2026 08:00 Chile. */
 export const CONGRESS_VARONES_EVENT = {
   title: "3° Congreso de Varones — IPN Chile 2026",
   description:
@@ -12,7 +12,7 @@ export const CONGRESS_VARONES_EVENT = {
     month: 11,
     day: 21,
     hour: 8,
-    minute: 30,
+    minute: 0,
   },
   end: {
     year: 2026,

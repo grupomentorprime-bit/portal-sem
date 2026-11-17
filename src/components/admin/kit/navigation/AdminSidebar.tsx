@@ -9,7 +9,7 @@ import { NavIcon } from "@/components/admin/kit/navigation/NavIcon";
 import type { AdminShellContext } from "@/components/admin/kit/utils/types";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import type { AdminNavItem } from "@/lib/admin/institutional";
-import { filterAdminNavGroups } from "@/lib/admin/nav-access";
+import { filterAdminNavGroups, filterNavItem } from "@/lib/admin/nav-access";
 import {
   isNavGroupActive,
   isNavPlaceholder,
@@ -249,6 +249,61 @@ function SidebarNav({
         return (
           <div key={zone.id} className="flex flex-col gap-0.5">
             {zoneGroups.map((group) => {
+              if (group.id === "sitio-web") {
+                return (
+                  <div key={group.id} className="flex flex-col gap-0.5">
+                    {group.items.map((item) => {
+                      const itemActive = isSidebarItemActive(pathname, item, searchParams);
+                      const childItems = (item.children ?? []).filter(
+                        (child) =>
+                          !isNavPlaceholder(child) &&
+                          filterNavItem(child, ctx.permissions, ctx.compatMode, ctx.roleCodes)
+                      );
+                      return (
+                        <div key={item.id ?? item.href ?? item.label} className="flex flex-col gap-0.5">
+                          <SidebarLink
+                            item={item}
+                            pathname={pathname}
+                            searchParams={searchParams}
+                            collapsed={collapsed}
+                            onNavigate={onNavigate}
+                            activeOverride={itemActive}
+                          />
+                          {itemActive && !collapsed && childItems.length > 0 ? (
+                            <div
+                              className="mb-1 ml-9 flex flex-col gap-0.5 border-l border-[var(--sidebar-border)] pl-2"
+                              role="group"
+                              aria-label={item.label}
+                            >
+                              {childItems.map((child) => {
+                                const childActive = isSidebarItemActive(pathname, child, searchParams);
+                                const href = child.href as string;
+                                return (
+                                  <Link
+                                    key={child.id ?? href}
+                                    href={href}
+                                    onClick={onNavigate}
+                                    aria-current={childActive ? "page" : undefined}
+                                    className={cn(
+                                      "rounded-[8px] px-2 py-1.5 text-[12px] font-medium transition-colors duration-150",
+                                      childActive
+                                        ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)]"
+                                        : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)] hover:text-white"
+                                    )}
+                                  >
+                                    {child.label}
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
               const link = navGroupAsSidebarLink(group);
               if (!link) return null;
               return (

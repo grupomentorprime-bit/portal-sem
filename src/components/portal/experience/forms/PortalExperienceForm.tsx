@@ -51,6 +51,7 @@ export function PortalExperienceForm({
   const [validationSummary, setValidationSummary] = useState<ValidationSummaryItem[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [alreadyEnrolledMessage, setAlreadyEnrolledMessage] = useState<string | null>(null);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -129,7 +130,20 @@ export function PortalExperienceForm({
         message?: string;
         errors?: Record<string, string>;
         error?: string;
+        alreadyRegistered?: boolean;
       };
+
+      if (payload.alreadyRegistered) {
+        setErrors({});
+        setValidationSummary([]);
+        setGlobalError(null);
+        setAlreadyEnrolledMessage(
+          payload.error ??
+            payload.message ??
+            "Ya estás inscrito. No necesitas enviar el formulario otra vez."
+        );
+        return;
+      }
 
       if (!payload.ok) {
         if (payload.errors) {
@@ -174,6 +188,24 @@ export function PortalExperienceForm({
     }
     setShowSuccessOverlay(false);
   }, [onSuccessClose]);
+
+  if (alreadyEnrolledMessage) {
+    return (
+      <div className={`${formClass} portal-experience-form--submitted`}>
+        <PortalFormSuccess
+          kicker="Inscripción existente"
+          title="Ya estás inscrito"
+          message={alreadyEnrolledMessage}
+          variant="overlay"
+          className="portal-experience-form__success--registered"
+          onClose={() => setAlreadyEnrolledMessage(null)}
+          closeLabel="Volver al formulario"
+        >
+          {successExtras}
+        </PortalFormSuccess>
+      </div>
+    );
+  }
 
   if (successMessage && showSuccessOverlay) {
     return (

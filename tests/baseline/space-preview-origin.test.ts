@@ -87,6 +87,47 @@ describe("resolveSpacePreviewOrigin", () => {
     );
   });
 
+  it("ver público no abre el localhost aunque ese host esté marcado como principal", () => {
+    assert.equal(
+      resolveSpacePreviewOrigin({
+        slug: "ipn-chile",
+        primaryHost: "ipn-chile.localhost:3000",
+        requestHost: "localhost:3000",
+        env: LOCAL_ENV,
+      }),
+      "http://ipn-chile.localhost:3000"
+    );
+    assert.equal(
+      resolveSpacePreviewOrigin({
+        slug: "ipn-chile",
+        primaryHost: "ipn-chile.localhost:3000",
+        requestHost: "app.mentorprime.cl",
+        env: PUBLIC_ENV,
+      }),
+      "http://ipn-chile.localhost:3000"
+    );
+    assert.equal(
+      resolveSpacePublishedOrigin({
+        slug: "ipn-chile",
+        primaryHost: "ipn-chile.localhost:3000",
+        env: LOCAL_ENV,
+      }),
+      "https://ipn-chile.mentorprime.cl"
+    );
+    assert.equal(
+      resolveSpacePublishedOrigin({
+        slug: "ipn-chile",
+        hosts: [
+          { host: "ipn-chile.localhost:3000", isPrimary: true, kind: "platform_subdomain" },
+          { host: "ipn-chile.mentorprime.cl", kind: "platform_subdomain" },
+          { host: "iglesiaipn.cl", kind: "custom" },
+        ],
+        env: PUBLIC_ENV,
+      }),
+      "https://iglesiaipn.cl"
+    );
+  });
+
   it("la vista previa del formulario abre el sitio del Espacio, no la plataforma", () => {
     const src = readFileSync("src/components/admin/forms/FormDetailClient.tsx", "utf8");
     assert.match(src, /spacePublicHref\(publicOrigin, publicFormUrl\(form\._id\)\)/);

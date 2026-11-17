@@ -257,15 +257,33 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     id: "sitio-web",
     label: "Sitio web",
     icon: "site",
-    primaryItemId: "convocatorias-config",
+    primaryItemId: "site-pages",
     items: [
       {
         id: "site-pages",
         href: "/admin/site/pages",
-        label: "Páginas",
+        label: "Sitio web",
         icon: "site",
-        matchPrefixes: ["/admin/site/pages"],
+        matchPrefixes: ["/admin/site/pages", "/admin/site/domain", "/admin/config"],
         requiredAnyPermission: ["cms.pages.read", "cms.pages.update", "settings.update"],
+        children: [
+          {
+            id: "site-domain",
+            href: "/admin/site/domain",
+            label: "Dominio",
+            icon: "site",
+            matchPrefixes: ["/admin/site/domain"],
+            requiredAnyPermission: ["settings.update", "cms.pages.read"],
+          },
+          {
+            id: "institution-info",
+            href: "/admin/config",
+            label: "Ajustes del sitio",
+            icon: "institution",
+            matchPrefixes: ["/admin/config"],
+            requiredAnyPermission: ["settings.update"],
+          },
+        ],
       },
       {
         id: "convocatorias-config",
@@ -281,22 +299,41 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "experience.forms.read",
           "experience.forms.manage",
         ],
-      },
-      {
-        id: "site-domain",
-        href: "/admin/site/domain",
-        label: "Dominio",
-        icon: "site",
-        matchPrefixes: ["/admin/site/domain"],
-        requiredAnyPermission: ["settings.update", "cms.pages.read"],
-      },
-      {
-        id: "institution-info",
-        href: "/admin/config",
-        label: "Ajustes del sitio",
-        icon: "institution",
-        matchPrefixes: ["/admin/config"],
-        requiredAnyPermission: ["settings.update"],
+        children: [
+          {
+            id: "forms-create",
+            href: "/admin/portal/forms",
+            label: "Creación de formularios",
+            icon: "admission",
+            matchPrefixes: ["/admin/portal/forms"],
+            requiredAnyPermission: [
+              "cms.pages.read",
+              "experience.forms.read",
+              "experience.forms.manage",
+            ],
+          },
+          {
+            id: "forms-edit",
+            href: "/admin/portal/forms",
+            label: "Edición",
+            icon: "admission",
+            matchPrefixes: ["/admin/portal/forms"],
+            excludePrefixes: ["/admin/portal/forms/panel", "/admin/portal/forms/convocatorias"],
+            requiredAnyPermission: [
+              "cms.pages.read",
+              "experience.forms.read",
+              "experience.forms.manage",
+            ],
+          },
+          {
+            id: "forms-operation",
+            href: "/admin/portal/forms/panel",
+            label: "Operación",
+            icon: "admission",
+            matchPrefixes: ["/admin/portal/forms/panel"],
+            requiredAnyPermission: ["experience.forms.read", "experience.forms.manage"],
+          },
+        ],
       },
     ],
   },
@@ -450,7 +487,9 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
 ];
 
 export function getAllNavTreeItems(): AdminNavItem[] {
-  return ADMIN_NAV_GROUPS.flatMap((group) => group.items);
+  return ADMIN_NAV_GROUPS.flatMap((group) =>
+    group.items.flatMap((item) => [item, ...(item.children ?? [])])
+  );
 }
 
 /** True si la ruta pertenece a alguno de los grupos indicados. */
@@ -576,6 +615,14 @@ export function isSidebarItemActive(
     return current !== "branding";
   }
 
+  if (item.id === "site-pages") {
+    if (pathname === "/admin/site/pages" || pathname.startsWith("/admin/site/pages/")) return true;
+    if (pathname === "/admin/site/domain" || pathname.startsWith("/admin/site/domain/")) return true;
+    if (!isConfigNavPath(pathname)) return false;
+    const current = parseConfigSection(searchParams?.get("section") ?? null);
+    return current !== "branding";
+  }
+
   const configSection = getNavItemConfigSection(item);
   if (configSection !== null) {
     if (!isConfigNavPath(pathname)) return false;
@@ -585,6 +632,21 @@ export function isSidebarItemActive(
 
   if (item.id === "convocatorias-resultados") {
     return pathname.startsWith("/admin/portal/asuntos-estudiantiles");
+  }
+
+  if (item.id === "forms-create") {
+    return pathname === "/admin/portal/forms";
+  }
+
+  if (item.id === "forms-edit") {
+    if (pathname === "/admin/portal/forms") return false;
+    if (pathname.startsWith("/admin/portal/forms/panel")) return false;
+    if (pathname.startsWith("/admin/portal/forms/convocatorias")) return false;
+    return pathname.startsWith("/admin/portal/forms/");
+  }
+
+  if (item.id === "forms-operation") {
+    return pathname === "/admin/portal/forms/panel" || pathname.startsWith("/admin/portal/forms/panel/");
   }
 
   if (item.id === "convocatorias-config") {

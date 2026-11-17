@@ -156,7 +156,7 @@ function withDepartmentBrand(
       enabled: true,
       mode: "days_until",
       targetDate: "2026-11-21",
-      targetTime: "08:30",
+      targetTime: "08:00",
       label: "Faltan",
     },
     appearance: {
@@ -179,7 +179,7 @@ function withDepartmentBrand(
         id: "horario",
         icon: "clock",
         label: "Horario",
-        value: "Desde las 8:30 a. m.",
+        value: "Desde las 8:00 a. m.",
         description: "Sábado 21 de noviembre",
         order: 1,
         visible: true,
