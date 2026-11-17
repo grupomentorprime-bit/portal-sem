@@ -39,14 +39,17 @@ export async function getSiteMetadata(): Promise<Metadata> {
       const normalized = path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path || "/";
       const page = site.pages.find((item) => item.path === normalized);
       if (page) {
+        const description =
+          page.description ??
+          (typeof meta.description === "string" ? meta.description : undefined);
         return {
           ...meta,
           title: page.title,
-          description: page.description ?? meta.description,
+          description,
           openGraph: {
             ...meta.openGraph,
             title: page.title,
-            description: page.description ?? meta.description,
+            description,
           },
         };
       }
