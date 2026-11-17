@@ -35,7 +35,7 @@ describe("Formularios · submenú propio", () => {
     assert.equal(forms?.href, "/admin/portal/forms");
     assert.deepEqual(
       forms?.children?.map((child) => child.label),
-      ["Creación de formularios", "Edición", "Operación"]
+      ["Creación", "Edición", "Operación"]
     );
     assert.equal(
       forms?.children?.find((child) => child.id === "forms-operation")?.href,
@@ -47,7 +47,7 @@ describe("Formularios · submenú propio", () => {
     );
     assert.deepEqual(
       hiddenOperation?.map((child) => child.label),
-      ["Creación de formularios", "Edición"]
+      ["Creación", "Edición"]
     );
 
     const canRead = filterAdminNavGroups(FORMS, false, [])
@@ -58,7 +58,7 @@ describe("Formularios · submenú propio", () => {
     );
     assert.deepEqual(
       visible?.map((child) => child.label),
-      ["Creación de formularios", "Edición", "Operación"]
+      ["Creación", "Edición", "Operación"]
     );
   });
 

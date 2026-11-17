@@ -303,7 +303,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           {
             id: "forms-create",
             href: "/admin/portal/forms",
-            label: "Creación de formularios",
+            label: "Creación",
             icon: "admission",
             matchPrefixes: ["/admin/portal/forms"],
             requiredAnyPermission: [
