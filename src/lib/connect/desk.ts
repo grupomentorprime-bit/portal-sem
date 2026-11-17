@@ -3,6 +3,7 @@ import { resolvePlatformBaseDomain } from "@/core/tenant/hosts";
 import {
   isAprendeHoyProductOrigin,
   isDeskOrigin,
+  isPublishedDeskOrigin,
   isRrhhProductOrigin,
   normalizeOrigin,
   RRHH_CANONICAL_ORIGIN,
@@ -34,6 +35,7 @@ export function deskIssuerFromRequest(
 ): string {
   const header = normalizeOrigin(request.headers.get("origin"));
   if (header && isDeskOrigin(header) && !isPublicDesk(header)) return header;
+  if (header && isPublishedDeskOrigin(header)) return header;
   return deskOriginFromEnv(env);
 }
 

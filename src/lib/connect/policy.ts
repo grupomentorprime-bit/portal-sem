@@ -2,6 +2,15 @@ export const CONNECT_CODE_TTL_MS = 60_000;
 export const CONNECT_CALLBACK_PATH = "/api/connect/callback";
 export const CONNECT_APP_ID = "cumple" as const;
 export const RRHH_CANONICAL_ORIGIN = "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io";
+export const PUBLISHED_DESK_ORIGINS = [
+  "https://growthos.mentorprime.cl",
+  "https://app.mentorprime.cl",
+] as const;
+
+export function isPublishedDeskOrigin(value: string | null | undefined): value is string {
+  const origin = normalizeOrigin(value);
+  return Boolean(origin && (PUBLISHED_DESK_ORIGINS as readonly string[]).includes(origin));
+}
 
 export type ConnectProductId = "cumple" | "rrhh" | "aprende-hoy";
 

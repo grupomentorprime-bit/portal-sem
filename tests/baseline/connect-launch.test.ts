@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildContentSecurityPolicy } from "../../src/core/security/http-headers";
-import { allowedCumpleBase, deskOriginFromEnv } from "../../src/lib/connect/desk";
+import { allowedCumpleBase, deskIssuerFromRequest, deskOriginFromEnv } from "../../src/lib/connect/desk";
 import { desktopClick } from "../../src/lib/desktop/contract";
 import {
   CONNECT_CALLBACK_PATH,
@@ -758,6 +758,24 @@ describe("NELZURI Connect — entrada a Cumple", () => {
     );
     assert.equal(
       deskOriginFromEnv({ APP_URL: "https://localhost:3000", NODE_ENV: "production" }),
+      "https://growthos.mentorprime.cl"
+    );
+    assert.equal(
+      deskIssuerFromRequest(
+        new Request("https://growthos.mentorprime.cl/api/connect/launch", {
+          headers: { origin: "https://app.mentorprime.cl" },
+        }),
+        { APP_URL: "https://growthos.mentorprime.cl", NODE_ENV: "production" }
+      ),
+      "https://app.mentorprime.cl"
+    );
+    assert.equal(
+      deskIssuerFromRequest(
+        new Request("https://growthos.mentorprime.cl/api/connect/launch", {
+          headers: { origin: "https://evil.example" },
+        }),
+        { APP_URL: "https://growthos.mentorprime.cl", NODE_ENV: "production" }
+      ),
       "https://growthos.mentorprime.cl"
     );
   });
