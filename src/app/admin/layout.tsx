@@ -4,6 +4,7 @@ import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 import {
   isStudentAffairsAllowedAdminPath,
+  isUnitScopedAdminPathAllowed,
   STUDENT_AFFAIRS_HOME_PATH,
   usesStudentAffairsFocusedShell,
 } from "@/lib/admin/nav-access";
@@ -123,6 +124,32 @@ export default async function AdminLayout({
     redirect(STUDENT_AFFAIRS_HOME_PATH);
   }
 
+  let enabledAppIds: string[] | null = null;
+  if (session?.membership?.unitAccess?.mode === "units" && hasSpace) {
+    const { getDatabase } = await import("@/lib/mongodb");
+    const { listOrgUnits } = await import("@/core/units/repository");
+    const db = await getDatabase();
+    const allowed = new Set(session.membership.unitAccess.unitIds);
+    const units = await listOrgUnits(db, session.session.tenantId);
+    enabledAppIds = [
+      ...new Set(
+        units
+          .filter((unit) => unit.status === "active" && allowed.has(unit.unitId))
+          .flatMap((unit) => unit.enabledAppIds)
+      ),
+    ];
+  }
+
+  if (
+    pathname &&
+    hasSpace &&
+    !isLoginRoute &&
+    !isNoSpaceRoute &&
+    !isUnitScopedAdminPathAllowed(pathname, enabledAppIds)
+  ) {
+    redirect("/admin");
+  }
+
   const publicOrigin = hasSpace
     ? await resolvePublicOriginForTenant(tenantId, {
         requestHost: resolveRequestHost(requestHeaders),
@@ -173,6 +200,7 @@ export default async function AdminLayout({
         shellV2={shellV2}
         branding={branding}
         navBadges={navBadges}
+        enabledAppIds={enabledAppIds}
       >
         {children}
       </AdminShell>

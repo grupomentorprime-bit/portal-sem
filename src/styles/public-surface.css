@@ -1,0 +1,36 @@
+.public-surface {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.public-surface__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.public-vendor-credit-guarantee {
+  margin-top: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted, var(--color-muted-default));
+}
+
+.public-vendor-credit-guarantee .public-vendor-credit__link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.public-vendor-credit-guarantee .public-vendor-credit__link:hover {
+  text-decoration: underline;
+}
+
+.public-surface:has(.public-surface__content .public-vendor-credit)
+  > .public-vendor-credit-guarantee {
+  display: none;
+}

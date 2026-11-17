@@ -1,3 +1,4 @@
+import { PublicSurface } from "@/components/portal/PublicSurface";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { AcceptInviteForm } from "@/components/identity/AcceptInviteForm";
 import { getAppBaseUrl } from "@/lib/app-url";
@@ -16,6 +17,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
 
   if (!invitation) {
     return (
+      <PublicSurface>
       <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
         <div className="w-full max-w-md rounded-xl border border-border bg-background p-8 text-center shadow-sm">
           <h1 className="text-xl font-semibold">Invitación no válida</h1>
@@ -30,6 +32,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
           </a>
         </div>
       </div>
+      </PublicSurface>
     );
   }
 
@@ -37,6 +40,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const existingUser = isKeycloakOnlyAuth() ? false : Boolean(existingUserRecord);
 
   return (
+    <PublicSurface>
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <div className="w-full max-w-md rounded-xl border border-border bg-background p-8 shadow-sm">
         <div className="mb-6 text-center">
@@ -62,5 +66,6 @@ export default async function InvitePage({ params }: InvitePageProps) {
         />
       </div>
     </div>
+    </PublicSurface>
   );
 }

@@ -1,3 +1,4 @@
+import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import type { ContactInfo, SocialLinks } from "@/types/cms";
 import type { CodedSite } from "@/sites/types";
 
@@ -29,6 +30,7 @@ export function CodedSiteView({
       </nav>
       <h1 className="mt-8 text-3xl font-semibold">{page.title}</h1>
       <p className="mt-4 text-sm text-muted">{contact.email || social.instagram || ""}</p>
+      <PublicVendorCredit className="mt-16 text-sm text-muted" />
     </main>
   );
 }

@@ -229,7 +229,8 @@ function SidebarNav({
     ctx.permissions,
     ctx.compatMode,
     ctx.roleCodes,
-    ctx.navBadges
+    ctx.navBadges,
+    ctx.enabledAppIds
   );
   const groupsById = new Map(groups.map((group) => [group.id, group]));
 

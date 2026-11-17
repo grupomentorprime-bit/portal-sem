@@ -141,7 +141,7 @@ describe("diagnóstico preliminar de Cumple", () => {
     });
     const karin = result.matters.find((matter) => matter.id === "ley-karin");
     assert.equal(karin?.status, "incompleto");
-    assert.equal(karin?.status === "al_dia", false);
+    assert.equal(String(karin?.status) === "al_dia", false);
     assert.match(karin?.findings.join(" ") ?? "", /falta la respuesta/);
     assert.equal(result.priorities[0]?.id, "ley-karin");
   });
@@ -163,7 +163,10 @@ describe("diagnóstico preliminar de Cumple", () => {
     assert.equal(extra.ok, false);
 
     const reglamento = parseDiagnosticoPayload(
-      answered({ ...profile, headcount: "lt10" }, { laboral: { reglamento: "no" } })
+      answered({ ...profile, headcount: "lt10" }, { laboral: { reglamento: "no" } }) as unknown as Record<
+        string,
+        unknown
+      >
     );
     assert.equal(reglamento.ok, false);
   });

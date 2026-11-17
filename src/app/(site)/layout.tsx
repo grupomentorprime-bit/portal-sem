@@ -1,3 +1,4 @@
+import { PublicSurface } from "@/components/portal/PublicSurface";
 import { ComingSoonPage } from "@/components/sites/ComingSoonPage";
 import { CodedSiteView } from "@/components/sites/CodedSiteView";
 import { getPortalContext } from "@/lib/portal/site";
@@ -30,11 +31,11 @@ export default async function SiteLayout({
     if (pathname !== "/" && pathname !== "") {
       redirect("/");
     }
-    return children;
+    return <PublicSurface>{children}</PublicSurface>;
   }
 
   if (!ctx) {
-    return children;
+    return <PublicSurface>{children}</PublicSurface>;
   }
 
   ensureProductionCodedSites();
@@ -77,18 +78,20 @@ export default async function SiteLayout({
   });
 
   if (decision.kind === "passthrough") {
-    return children;
+    return <PublicSurface>{children}</PublicSurface>;
   }
 
   if (decision.kind === "coming-soon") {
     return (
-      <ComingSoonPage
-        model={comingSoonModel({
-          institutionName: ctx.config.institution.name,
-          contact: ctx.config.contact,
-          social: ctx.config.social,
-        })}
-      />
+      <PublicSurface>
+        <ComingSoonPage
+          model={comingSoonModel({
+            institutionName: ctx.config.institution.name,
+            contact: ctx.config.contact,
+            social: ctx.config.social,
+          })}
+        />
+      </PublicSurface>
     );
   }
 
@@ -116,22 +119,26 @@ export default async function SiteLayout({
     const PageView = getCodedPageView(ctx.tenant, decision.path);
     if (PageView) {
       return (
-        <PageView
+        <PublicSurface>
+          <PageView
+            institutionName={ctx.config.institution.name}
+            contact={ctx.config.contact}
+            social={ctx.config.social}
+          />
+        </PublicSurface>
+      );
+    }
+    return (
+      <PublicSurface>
+        <CodedSiteView
+          site={site}
+          path={decision.path}
           institutionName={ctx.config.institution.name}
           contact={ctx.config.contact}
           social={ctx.config.social}
           content={content}
         />
-      );
-    }
-    return (
-      <CodedSiteView
-        site={site}
-        path={decision.path}
-        institutionName={ctx.config.institution.name}
-        contact={ctx.config.contact}
-        social={ctx.config.social}
-      />
+      </PublicSurface>
     );
   }
 

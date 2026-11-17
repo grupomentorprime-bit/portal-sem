@@ -2,6 +2,7 @@ import "server-only";
 
 import { colorDefaults, neutralScale } from "@/design/tokens/colors";
 import { shadow } from "@/design/tokens/shadow";
+import { renderEmailBrandMark } from "@/lib/notifications/email-brand";
 
 export interface TransactionalEmailInput {
   institutionName: string;
@@ -12,6 +13,8 @@ export interface TransactionalEmailInput {
   ctaLabel?: string;
   ctaUrl?: string;
   footerNote?: string;
+  /** Logo inline (`cid:…`) del departamento. Sin esto, se muestra el nombre. */
+  logoSrc?: string;
 }
 
 const BRAND = {
@@ -72,9 +75,12 @@ export function renderTransactionalEmail(input: TransactionalEmailInput): string
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;">
             <tr>
               <td style="padding:0 0 20px;text-align:center;">
-                <div style="display:inline-block;padding:10px 18px;border-radius:999px;background:${BRAND.primaryDark};color:${BRAND.card};font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
-                  ${institution}
-                </div>
+                ${renderEmailBrandMark({
+                  name: input.institutionName,
+                  logoSrc: input.logoSrc,
+                  pillBackground: BRAND.primaryDark,
+                  pillColor: BRAND.card,
+                })}
               </td>
             </tr>
             <tr>

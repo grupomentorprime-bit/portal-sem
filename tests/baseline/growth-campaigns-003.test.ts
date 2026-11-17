@@ -103,7 +103,7 @@ function opp(partial: Partial<GrowthOportunidad> & {
       sourceCollection: "experience_form_submissions",
       sourceId: partial._id,
     },
-    createdAt: "2026-09-11T12:00:00.000Z",
+    openedAt: "2026-09-11T12:00:00.000Z",
     updatedAt: "2026-09-11T12:00:00.000Z",
     ...partial,
   };

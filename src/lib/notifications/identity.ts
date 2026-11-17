@@ -12,6 +12,11 @@ export interface EmailIdentity {
   replyTo?: string;
   /** Origen público del Site que origina el correo (sin slash final). */
   origin: string;
+  /**
+   * Dirección From. Dominio propio del Espacio si está cargado;
+   * si no, el de la plataforma. Lo asigna el resolver, no el display name.
+   */
+  mailbox?: string;
 }
 
 export interface EmailDomainHint {
@@ -19,6 +24,7 @@ export interface EmailDomainHint {
   tenantId: string;
   siteId: string;
   isPrimary?: boolean;
+  kind?: string;
 }
 
 function isLocalHostname(hostname: string): boolean {
@@ -40,7 +46,8 @@ export function originFromHost(host: string): string {
 
 /**
  * Origen del Site dueño del correo. Solo dominios de ese tenant+site.
- * No usa APP_URL ni hosts de otro Espacio.
+ * Si el Espacio tiene un dominio público, el enlace del correo usa ese
+ * aunque el host local figure como principal. No usa APP_URL ni hosts de otro Espacio.
  */
 export function pickEmailOrigin(input: {
   tenantId: string;
@@ -55,7 +62,14 @@ export function pickEmailOrigin(input: {
   const owned = input.domains.filter(
     (domain) => domain.tenantId.trim() === tenantId && domain.siteId.trim() === siteId
   );
-  const primary = owned.find((domain) => domain.isPrimary) ?? owned[0];
+  const publicHosts = owned.filter((domain) => {
+    const normalized = normalizeHost(domain.host);
+    if (!normalized) return false;
+    const hostname = (normalized.split(":")[0] ?? "").trim();
+    return hostname.length > 0 && !isLocalHostname(hostname);
+  });
+  const candidates = publicHosts.length > 0 ? publicHosts : owned;
+  const primary = candidates.find((domain) => domain.isPrimary) ?? candidates[0];
   if (primary?.host) {
     const origin = originFromHost(primary.host);
     if (origin) return origin;

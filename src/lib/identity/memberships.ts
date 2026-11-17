@@ -1,6 +1,8 @@
 import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
+import type { UnitAccess } from "@/core/units/types";
+import { grantUnitAccess } from "@/core/units/access";
 import type { IdentityMembership, StudentAffairsScope } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
 
@@ -83,6 +85,7 @@ export async function createMembership(input: {
   invitedBy?: string;
   status?: IdentityMembership["status"];
   authorizedApps?: IdentityMembership["authorizedApps"];
+  unitAccess?: UnitAccess;
 }): Promise<IdentityMembership> {
   const existing = await findMembershipAnyStatus(input.userId, input.tenantId);
   if (existing) {
@@ -101,6 +104,7 @@ export async function createMembership(input: {
     ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
     joinedAt: now,
     invitedBy: input.invitedBy,
+    ...(input.unitAccess ? { unitAccess: input.unitAccess } : {}),
     createdAt: now,
     updatedAt: now,
   };
@@ -126,12 +130,16 @@ export async function ensureActiveMembership(input: {
   roleIds: string[];
   invitedBy?: string;
   authorizedApps?: IdentityMembership["authorizedApps"];
+  unitAccess?: UnitAccess;
 }): Promise<{ membership: IdentityMembership; created: boolean; reactivated: boolean }> {
   const existing = await findMembershipAnyStatus(input.userId, input.tenantId);
   if (existing) {
     const now = new Date().toISOString();
     const wasInactive = existing.status !== "active";
     const db = await getDatabase();
+    const unitAccess = input.unitAccess
+      ? grantUnitAccess(existing.unitAccess, input.unitAccess)
+      : undefined;
     await db.collection<IdentityMembership>("identity_memberships").updateOne(
       { _id: existing._id },
       {
@@ -140,6 +148,7 @@ export async function ensureActiveMembership(input: {
           roleIds: input.roleIds,
           ...(input.invitedBy ? { invitedBy: input.invitedBy } : {}),
           ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
+          ...(unitAccess ? { unitAccess } : {}),
           updatedAt: now,
         },
       }
@@ -160,6 +169,7 @@ export async function ensureActiveMembership(input: {
       invitedBy: input.invitedBy,
       status: "active",
       authorizedApps: input.authorizedApps,
+      unitAccess: input.unitAccess,
     });
     return { membership, created: true, reactivated: false };
   } catch (error) {
@@ -274,4 +284,26 @@ export async function archiveMembershipAccess(
   membershipId: string
 ): Promise<IdentityMembership | null> {
   return updateMembershipStatus(membershipId, "archived");
+}
+
+export async function setMembershipUnitAccess(
+  membershipId: string,
+  unitAccess: UnitAccess
+): Promise<IdentityMembership | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  await db.collection<IdentityMembership>("identity_memberships").updateOne(
+    { _id: membershipId },
+    { $set: { unitAccess, updatedAt: now } }
+  );
+  return findMembershipById(membershipId);
+}
+
+export async function grantMembershipUnitAccess(
+  membershipId: string,
+  grant: UnitAccess
+): Promise<IdentityMembership | null> {
+  const existing = await findMembershipById(membershipId);
+  if (!existing) return null;
+  return setMembershipUnitAccess(membershipId, grantUnitAccess(existing.unitAccess, grant));
 }

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
+import type { UnitAccess } from "@/core/units/types";
 import type { IdentityInvitation } from "@/types/identity";
 import { generateId, generateToken } from "@/core/identity/auth/crypto";
 import { normalizeEmail } from "@/lib/validation/identity";
@@ -14,6 +15,7 @@ export async function createInvitation(input: {
   displayName: string;
   roleIds: string[];
   invitedBy: string;
+  unitAccess?: UnitAccess;
   expiresInMinutes?: number;
   authorizedApps?: IdentityInvitation["authorizedApps"];
 }): Promise<IdentityInvitation> {
@@ -41,6 +43,7 @@ export async function createInvitation(input: {
     displayName,
     roleIds: input.roleIds,
     ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
+    ...(input.unitAccess ? { unitAccess: input.unitAccess } : {}),
     token: generateToken(24),
     status: "pending",
     invitedBy: input.invitedBy,
@@ -124,6 +127,7 @@ export function serializeInvitationWithoutToken(invitation: IdentityInvitation) 
     email: invitation.email,
     displayName: invitation.displayName,
     roleIds: invitation.roleIds,
+    unitAccess: invitation.unitAccess,
     status: invitation.status,
     invitedBy: invitation.invitedBy,
     expiresAt: invitation.expiresAt,

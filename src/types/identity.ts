@@ -1,3 +1,5 @@
+import type { UnitAccess } from "@/core/units/types";
+
 /** Identity & Access Management — Growth OS */
 
 export const USER_STATUSES = ["active", "suspended", "pending"] as const;
@@ -83,6 +85,11 @@ export interface IdentityMembership {
   authorizedApps?: Array<"growth-os" | "cumple" | "aprende-hoy" | "rrhh">;
   /** Formularios y generaciones asignados (rol Asuntos Estudiantiles). */
   studentAffairsScope?: StudentAffairsScope;
+  /**
+   * Alcance dentro del Espacio. Ausente = todo el Espacio (clientes sin unidades).
+   * `tenant` = administración central. `units` = solo esas unidades.
+   */
+  unitAccess?: UnitAccess;
   /** Overrides granulares OT-IAM-002 — equivalente a user_permissions */
   permissionOverrides?: Record<string, boolean>;
   joinedAt: string;
@@ -148,6 +155,8 @@ export interface IdentityInvitation {
   roleIds: string[];
   /** Llaves a copiar en la membresía al aceptar (solo dentro del techo). */
   authorizedApps?: Array<"growth-os" | "cumple" | "aprende-hoy" | "rrhh">;
+  /** Si viene, al aceptar se autoriza ese alcance. Ausente = membresía del Espacio completo. */
+  unitAccess?: UnitAccess;
   token: string;
   status: InvitationStatus;
   invitedBy: string;

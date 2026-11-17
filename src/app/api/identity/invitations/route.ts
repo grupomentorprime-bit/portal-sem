@@ -3,7 +3,10 @@ import { requirePermission } from "@/core/identity";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import { createInvitation, findInvitationById, listInvitationsByTenant, revokeInvitation, serializeInvitationWithoutToken } from "@/lib/identity/invitations";
 import { sendInvitationEmail } from "@/lib/notifications/email";
-import { findMembership } from "@/lib/identity/memberships";
+import { findMembership, grantMembershipUnitAccess } from "@/lib/identity/memberships";
+import { isCentralUnitAdmin } from "@/core/units/access";
+import { findOrgUnit } from "@/core/units/repository";
+import { getDatabase } from "@/lib/mongodb";
 import { ensureTenantRoles, findRoleByCode, findRoleByName, findRolesByIds, getCallerRoleCode, getRoleCode } from "@/lib/identity/roles";
 import { writeAudit } from "@/lib/identity/audit";
 import { findUserByEmail } from "@/lib/identity/users";
@@ -52,6 +55,7 @@ export async function POST(request: Request) {
       roleCode?: string;
       roleId?: string;
       authorizedApps?: unknown;
+      unitId?: string;
     };
 
     const email = body.email?.trim() ?? "";
@@ -82,11 +86,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const unitId = body.unitId?.trim() || "";
+    if (unitId) {
+      if (!isCentralUnitAdmin(ctx.membership?.unitAccess)) {
+        return NextResponse.json(
+          { ok: false, error: "Solo la administración del Espacio asigna unidades." },
+          { status: 403 }
+        );
+      }
+      const unit = await findOrgUnit(await getDatabase(), ctx.tenantId, unitId);
+      if (!unit) {
+        return NextResponse.json({ ok: false, error: "Unidad no encontrada." }, { status: 404 });
+      }
+    }
+
     const normalizedEmail = normalizeEmail(email);
     const existingUser = await findUserByEmail(normalizedEmail);
     if (existingUser) {
       const activeMembership = await findMembership(existingUser._id, ctx.tenantId);
       if (activeMembership) {
+        if (unitId) {
+          await grantMembershipUnitAccess(activeMembership._id, {
+            mode: "units",
+            unitIds: [unitId],
+          });
+          return NextResponse.json({ ok: true, granted: true, membershipId: activeMembership._id });
+        }
         return NextResponse.json(
           { ok: false, error: "Este usuario ya tiene acceso al CMS." },
           { status: 409 }
@@ -164,6 +189,7 @@ export async function POST(request: Request) {
       roleIds: [role._id],
       invitedBy: ctx.user._id,
       authorizedApps,
+      ...(unitId ? { unitAccess: { mode: "units" as const, unitIds: [unitId] } } : {}),
     });
 
     if (isKeycloakOnlyAuth()) {
@@ -183,6 +209,7 @@ export async function POST(request: Request) {
       displayName: invitation.displayName,
       token: invitation.token,
       expiresAt: invitation.expiresAt,
+      unitIds: invitation.unitAccess?.mode === "units" ? invitation.unitAccess.unitIds : undefined,
     });
     const emailSent = sent.ok;
     const deliveryError = sent.ok ? undefined : sent.error;

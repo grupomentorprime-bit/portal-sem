@@ -29,6 +29,7 @@ import {
   DEFAULT_TECHNICAL_MAILBOX,
   formatFromHeader,
   parseTechnicalMailbox,
+  resolveSendingMailbox,
 } from "../../src/lib/notifications/transport";
 import { loadEnvLocal } from "../../src/core/migrations/env";
 import type { DomainDocument, SiteConfigDocument } from "../../src/core/tenant/types";
@@ -237,6 +238,30 @@ describe("OT-GROWTH-PROD-002 — identidad del Espacio", () => {
     assert.equal(originFromHost("seminarioipn.cl"), "https://seminarioipn.cl");
   });
 
+  it("si hay dominio público, el correo no usa el host local aunque sea el principal", () => {
+    assert.equal(
+      pickEmailOrigin({
+        tenantId: "ipn-chile",
+        siteId: "ipn-chile",
+        domains: [
+          {
+            host: "ipn-chile.localhost:3000",
+            tenantId: "ipn-chile",
+            siteId: "ipn-chile",
+            isPrimary: true,
+          },
+          {
+            host: "ipn-chile.mentorprime.cl",
+            tenantId: "ipn-chile",
+            siteId: "ipn-chile",
+            isPrimary: false,
+          },
+        ],
+      }),
+      "https://ipn-chile.mentorprime.cl"
+    );
+  });
+
   it("un Espacio no puede construir origen con dominios de otro", () => {
     assert.equal(
       pickEmailOrigin({
@@ -271,6 +296,112 @@ describe("OT-GROWTH-PROD-002 — identidad del Espacio", () => {
   });
 });
 
+describe("OT-GROWTH-PROD-002 — dominio del remitente", () => {
+  const env = {
+    EMAIL_FROM: "no-reply@semipn.cl",
+    SPACE_BASE_DOMAIN: "mentorprime.cl",
+  };
+
+  it("sin dominio propio, el From es Mentor Prime y no el dominio de SEM", () => {
+    const mailbox = resolveSendingMailbox({
+      tenantId: "ipn-chile",
+      siteId: "ipn-chile",
+      env,
+      domains: [
+        {
+          host: "ipn-chile.mentorprime.cl",
+          tenantId: "ipn-chile",
+          siteId: "ipn-chile",
+          kind: "platform_subdomain",
+          isPrimary: true,
+        },
+        {
+          host: "ipn-chile.localhost:3000",
+          tenantId: "ipn-chile",
+          siteId: "ipn-chile",
+          kind: "platform_subdomain",
+        },
+      ],
+    });
+
+    assert.equal(mailbox, "no-reply@mentorprime.cl");
+    assert.doesNotMatch(mailbox, /semipn/);
+  });
+
+  it("con dominio propio cargado, el From usa ese dominio", () => {
+    const mailbox = resolveSendingMailbox({
+      tenantId: "ipn-chile",
+      siteId: "ipn-chile",
+      env,
+      domains: [
+        {
+          host: "ipn-chile.mentorprime.cl",
+          tenantId: "ipn-chile",
+          siteId: "ipn-chile",
+          kind: "platform_subdomain",
+        },
+        {
+          host: "www.ipnchile.cl",
+          tenantId: "ipn-chile",
+          siteId: "ipn-chile",
+          kind: "custom",
+          isPrimary: true,
+        },
+      ],
+    });
+
+    assert.equal(mailbox, "no-reply@ipnchile.cl");
+  });
+
+  it("sin SPACE_BASE_DOMAIN el principal sigue siendo mentorprime.cl", () => {
+    const mailbox = resolveSendingMailbox({
+      tenantId: "ipn-chile",
+      siteId: "ipn-chile",
+      env: { EMAIL_FROM: "no-reply@semipn.cl" },
+      domains: [],
+    });
+
+    assert.equal(mailbox, "no-reply@mentorprime.cl");
+  });
+
+  it("un subdominio de mentorprime.cl no es dominio de cliente", () => {
+    const mailbox = resolveSendingMailbox({
+      tenantId: "ipn-chile",
+      siteId: "ipn-chile",
+      env: { EMAIL_FROM: "no-reply@semipn.cl" },
+      domains: [
+        {
+          host: "ipn-chile.mentorprime.cl",
+          tenantId: "ipn-chile",
+          siteId: "ipn-chile",
+          isPrimary: true,
+        },
+      ],
+    });
+
+    assert.equal(mailbox, "no-reply@mentorprime.cl");
+  });
+
+  it("no toma el dominio cargado de otro Espacio", () => {
+    const mailbox = resolveSendingMailbox({
+      tenantId: "ipn-chile",
+      siteId: "ipn-chile",
+      env,
+      domains: [
+        {
+          host: "seminarioipn.cl",
+          tenantId: SEM_TENANT_ID,
+          siteId: SEM_SITE_ID,
+          kind: "custom",
+          isPrimary: true,
+        },
+      ],
+    });
+
+    assert.equal(mailbox, "no-reply@mentorprime.cl");
+  });
+});
+
 describe("OT-GROWTH-PROD-002 — copy de motor sin cliente hardcodeado", () => {
   it("plantillas y transporte no contienen copy legado de producto", () => {
     for (const file of NOTIFICATION_FILES) {
@@ -295,11 +426,12 @@ describe("OT-GROWTH-PROD-002 — copy de motor sin cliente hardcodeado", () => {
     assert.doesNotMatch(invitation, /Invitación al CMS/);
     assert.doesNotMatch(invitation, /getAppBaseUrl/);
     assert.match(invitation, /formatFromHeader/);
-    assert.match(invitation, /mailboxForSend/);
+    assert.match(invitation, /resolveSendingMailbox/);
 
     const envExample = readSrc(".env.example");
     assert.doesNotMatch(envExample, /Portal SEM/);
-    assert.match(envExample, /buzón técnico/);
+    assert.match(envExample, /SPACE_BASE_DOMAIN/);
+    assert.doesNotMatch(envExample, /semipn\.cl/);
   });
 
   it("envíos resuelven identidad por tenantId, no por Host de request", () => {

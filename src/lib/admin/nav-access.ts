@@ -3,6 +3,7 @@ import { ADMIN_PRIMARY_NAV } from "@/lib/admin/institutional";
 import { ROLE_CODES, type RoleCode } from "@/core/identity/roles/codes";
 import {
   ADMIN_SIDEBAR_SUPPLEMENTAL,
+  adminPathMatchesNavGroups,
   buildAdminNavGroups,
   getAllNavTreeItems,
   type AdminNavGroup,
@@ -169,12 +170,54 @@ export function filterAdminNav(
   });
 }
 
+const UNIT_SHELL_PATHS = [
+  "/admin/settings/profile",
+  "/admin/settings/help",
+  "/admin/settings/notifications",
+] as const;
+
+/**
+ * null = administración del Espacio, sin recorte de aplicaciones.
+ * Un arreglo limita el admin a Inicio y a las aplicaciones habilitadas en sus unidades.
+ */
+export function isUnitScopedAdminPathAllowed(
+  pathname: string,
+  enabledAppIds: readonly string[] | null
+): boolean {
+  if (enabledAppIds == null) return true;
+  if (!pathname || pathname === "/admin/login") return true;
+  if (pathname === "/admin" || pathname === "/admin/") return true;
+  if (
+    UNIT_SHELL_PATHS.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    )
+  ) {
+    return true;
+  }
+  return adminPathMatchesNavGroups(pathname, enabledAppIds);
+}
+
+function restrictGroupsToEnabledApps(
+  groups: AdminNavGroup[],
+  enabledAppIds: readonly string[] | null | undefined
+): AdminNavGroup[] {
+  if (enabledAppIds == null) return groups;
+  const allowed = new Set<string>(["dashboard", ...enabledAppIds]);
+  return groups
+    .filter((group) => allowed.has(group.id))
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.href !== "/admin/settings/units"),
+    }));
+}
+
 /** Árbol de navegación V2 filtrado por IAM. */
 export function filterAdminNavGroups(
   permissions: string[],
   compatMode: boolean,
   roleCodes: string[] = [],
-  navBadges?: Record<string, number>
+  navBadges?: Record<string, number>,
+  enabledAppIds?: readonly string[] | null
 ): AdminNavGroup[] {
   const focusedShell = usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes);
 
@@ -184,5 +227,5 @@ export function filterAdminNavGroups(
     return true;
   });
 
-  return buildAdminNavGroups(visibleItems, navBadges);
+  return restrictGroupsToEnabledApps(buildAdminNavGroups(visibleItems, navBadges), enabledAppIds);
 }

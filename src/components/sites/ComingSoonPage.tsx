@@ -1,3 +1,4 @@
+import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import type { ComingSoonLine, ComingSoonModel } from "@/sites/public-decision";
 
 const CHANNELS = ["Correo", "Teléfono", "WhatsApp", "Horario"];
@@ -175,6 +176,7 @@ export function ComingSoonPage({ model }: { model: ComingSoonModel }) {
           </div>
         </div>
       </div>
+      <PublicVendorCredit className="coming-soon-vendor" />
     </main>
   );
 }

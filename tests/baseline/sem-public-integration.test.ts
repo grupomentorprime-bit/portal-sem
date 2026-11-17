@@ -42,7 +42,10 @@ function pageCreate(slug: string) {
     tenant: SEM_TENANT_ID,
     title: "Página",
     slug,
+    description: "Página de prueba",
     template: "institutional",
+    seo: {},
+    blocks: [],
   });
 }
 
@@ -82,7 +85,9 @@ describe("SEM — slugs CMS y rutas reservadas", () => {
     assert.equal(parsePublicCmsSegments(["ingresar"]).ok, false);
     assert.equal(parsePublicCmsSegments(["programas", "g-2024"]).ok, false);
     assert.equal(parsePublicCmsSegments(["admision", "2027"]).ok, false);
-    assert.equal(parsePublicCmsSegments(["..", "admin"]).reason, "invalid");
+    const dotted = parsePublicCmsSegments(["..", "admin"]);
+    assert.equal(dotted.ok, false);
+    if (!dotted.ok) assert.equal(dotted.reason, "invalid");
     assert.equal(isReservedPublicPath("/programas"), true);
     assert.equal(isDisallowedCmsSlug("/el-sem/historia"), false);
     assert.equal(isDisallowedCmsSlug("/admision"), false);
@@ -275,8 +280,10 @@ describe("SEM — cohortes, pie y admisión", () => {
 
   it("la home publicada no pasa por el fallback y la campaña vive en /admision/2027", () => {
     const home = readFileSync(resolve("src/core/portal/renderer/load-page.ts"), "utf8");
+    const compose = readFileSync(resolve("src/core/portal/renderer/public-home.ts"), "utf8");
     assert.match(home, /published\?\.blocks\?\.length/);
-    assert.match(home, /applySemPublicHome/);
+    assert.match(home, /composeStoredPublicHome/);
+    assert.match(compose, /applySemPublicHome/);
 
     const admission = readFileSync(resolve("src/app/(site)/admision/page.tsx"), "utf8");
     const campaign = readFileSync(resolve("src/app/(site)/admision/2027/page.tsx"), "utf8");

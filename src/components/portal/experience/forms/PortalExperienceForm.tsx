@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { executeExperienceAction } from "@/core/experience/actions";
 import { validateFormSubmission, normalizeFormSubmissionData } from "@/core/experience/forms/validation";
 import {
@@ -23,6 +23,10 @@ interface PortalExperienceFormProps {
   title?: string;
   description?: string;
   submitLabel?: string;
+  successMessage?: string;
+  successTitle?: string;
+  /** Contenido extra bajo el mensaje de gracias (mapa, programa, calendario). */
+  successExtras?: ReactNode;
   variant?: "inline" | "modal";
   className?: string;
   onSuccessClose?: () => void;
@@ -34,6 +38,9 @@ export function PortalExperienceForm({
   title,
   description,
   submitLabel,
+  successMessage: successMessageOverride,
+  successTitle,
+  successExtras,
   variant = "inline",
   className,
   onSuccessClose,
@@ -137,8 +144,9 @@ export function PortalExperienceForm({
       const message =
         payload.message ??
         form.postSubmit?.message ??
-        form.successMessage ??
-        "Formulario enviado correctamente.";
+        (successMessageOverride?.trim() ||
+          form.successMessage ||
+          "Formulario enviado correctamente.");
 
       if (form.postSubmit?.type === "message") {
         setSuccessMessage(message);
@@ -171,10 +179,13 @@ export function PortalExperienceForm({
     return (
       <div className={`${formClass} portal-experience-form--submitted`}>
         <PortalFormSuccess
+          title={successTitle}
           message={successMessage}
-          onClose={handleDismissSuccess}
+          onClose={successExtras ? undefined : handleDismissSuccess}
           variant="overlay"
-        />
+        >
+          {successExtras}
+        </PortalFormSuccess>
       </div>
     );
   }
@@ -182,7 +193,14 @@ export function PortalExperienceForm({
   if (successMessage) {
     return (
       <div className={`${formClass} portal-experience-form--submitted`}>
-        <PortalFormSuccess message={successMessage} onClose={onSuccessClose} variant="inline" />
+        <PortalFormSuccess
+          title={successTitle}
+          message={successMessage}
+          onClose={successExtras ? undefined : onSuccessClose}
+          variant="inline"
+        >
+          {successExtras}
+        </PortalFormSuccess>
       </div>
     );
   }

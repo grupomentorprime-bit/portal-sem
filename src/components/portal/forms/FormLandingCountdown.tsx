@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  chileCalendarDaysUntil,
   formatChileEventDateTime,
   normalizeChileEventTime,
   resolveChileEventStartMs,
+  splitEventCountdown,
 } from "@/lib/experience/forms/convocatoria-event-datetime";
 
 interface CountdownParts {
@@ -17,19 +17,7 @@ interface CountdownParts {
 }
 
 function getCountdownParts(targetMs: number): CountdownParts {
-  const total = targetMs - Date.now();
-
-  if (!Number.isFinite(targetMs) || total <= 0) {
-    return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
-  }
-
-  return {
-    total,
-    days: chileCalendarDaysUntil(targetMs),
-    hours: Math.floor((total / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((total / (1000 * 60)) % 60),
-    seconds: Math.floor((total / 1000) % 60),
-  };
+  return splitEventCountdown(targetMs);
 }
 
 function pad(value: number): string {
@@ -102,12 +90,13 @@ export function FormLandingCountdown({ targetDate, targetTime, label }: FormLand
       role="timer"
       aria-live="polite"
       aria-label={ariaLabel}
+      suppressHydrationWarning
     >
       {label ? <p className="form-landing__countdown-eyebrow">{label}</p> : null}
       <div className="form-landing__countdown-grid">
         {units.map((unit) => (
           <div key={unit.label} className="form-landing__countdown-unit">
-            <span className="form-landing__countdown-value" aria-hidden="true">
+            <span className="form-landing__countdown-value" aria-hidden="true" suppressHydrationWarning>
               {unit.padValue ? pad(unit.value) : String(unit.value)}
             </span>
             <span className="form-landing__countdown-unit-label">{unit.label}</span>

@@ -6,6 +6,7 @@ export const EXPERIENCE_FORM_FIELD_TYPES = [
   "text",
   "email",
   "phone",
+  "rut",
   "number",
   "textarea",
   "select",

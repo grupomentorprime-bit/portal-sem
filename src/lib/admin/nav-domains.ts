@@ -356,6 +356,14 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/settings/team", "/admin/settings/users"],
         requiredAnyPermission: ["settings.team"],
       },
+      {
+        id: "nav-unidades",
+        href: "/admin/settings/units",
+        label: "Unidades",
+        icon: "institution",
+        matchPrefixes: ["/admin/settings/units"],
+        requiredAnyPermission: ["settings.team"],
+      },
     ],
   },
   {
@@ -443,6 +451,18 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
 
 export function getAllNavTreeItems(): AdminNavItem[] {
   return ADMIN_NAV_GROUPS.flatMap((group) => group.items);
+}
+
+/** True si la ruta pertenece a alguno de los grupos indicados. */
+export function adminPathMatchesNavGroups(
+  pathname: string,
+  groupIds: readonly string[]
+): boolean {
+  const allowed = new Set(groupIds);
+  return ADMIN_NAV_GROUPS.some((group) => {
+    if (!allowed.has(group.id)) return false;
+    return group.items.some((item) => isNavActive(pathname, item));
+  });
 }
 
 export function buildAdminNavGroups(

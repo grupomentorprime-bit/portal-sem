@@ -90,7 +90,7 @@ export async function connectCustomDomain(
   options?: {
     cnameTarget?: string;
     resolveCname?: (hostname: string) => Promise<string[]>;
-    env?: NodeJS.ProcessEnv;
+    env?: NodeJS.ProcessEnv | Record<string, string | undefined>;
     fetchImpl?: typeof fetch;
   }
 ): Promise<CustomDomainConnection & { certificate: string | null }> {

@@ -20,7 +20,7 @@ function readSrc(relativePath: string): string {
 
 describe("OT-GROWTH-UX-SPACE-CREATION-001 — Crear Espacio horizontal", () => {
   it("categorías base amplias (sin rubros específicos)", () => {
-    const labels = SPACE_ORGANIZATION_TYPES.map((t) => t.label);
+    const labels: string[] = SPACE_ORGANIZATION_TYPES.map((t) => t.label);
     assert.deepEqual(labels, [
       "Empresa",
       "Educación",

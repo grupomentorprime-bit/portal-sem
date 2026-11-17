@@ -1,8 +1,11 @@
-import { formatFromHeader, getTechnicalMailbox } from "../src/lib/notifications/transport";
+import { formatFromHeader, resolveSendingMailbox } from "../src/lib/notifications/transport";
 
 async function main() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = formatFromHeader("Growth OS", getTechnicalMailbox());
+  const from = formatFromHeader(
+    "Growth OS",
+    resolveSendingMailbox({ tenantId: "", siteId: "", domains: [] })
+  );
   const to = process.argv[2]?.trim() || "marco@semipn.cl";
 
   if (!apiKey) {

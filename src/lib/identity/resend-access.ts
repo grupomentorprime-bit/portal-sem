@@ -7,6 +7,7 @@ import {
   findInvitationById,
   renewInvitationToken,
 } from "@/lib/identity/invitations";
+import { unitIdsFromAccess } from "@/lib/notifications/email-brand";
 import { sendAccessReminderEmail, sendInvitationEmail } from "@/lib/notifications/email";
 import { normalizeEmail } from "@/lib/validation/identity";
 
@@ -21,6 +22,7 @@ async function deliverInvitationEmail(input: {
   token: string;
   expiresAt: string;
   message: string;
+  unitIds?: string[];
 }): Promise<SendResult> {
   const sent = await sendInvitationEmail({
     tenantId: input.tenantId,
@@ -28,6 +30,7 @@ async function deliverInvitationEmail(input: {
     displayName: input.displayName || input.email,
     token: input.token,
     expiresAt: input.expiresAt,
+    unitIds: input.unitIds,
   });
   if (!sent.ok) return { ok: false, error: sent.error, status: 422 };
   return { ok: true, email: input.email, message: input.message };
@@ -61,6 +64,7 @@ export async function resendPendingInvitationEmail(input: {
     displayName: renewed.displayName,
     token: renewed.token,
     expiresAt: renewed.expiresAt,
+    unitIds: unitIdsFromAccess(renewed.unitAccess),
     message: `Reenviamos la invitación corporativa a ${renewed.email}. El enlace anterior ya no sirve.`,
   });
 }
@@ -74,6 +78,7 @@ export async function resendMemberAccessEmail(input: {
   displayName: string;
   roleIds: string[];
   invitedBy: string;
+  unitIds?: string[];
 }): Promise<SendResult> {
   const email = normalizeEmail(input.email);
   if (!email) {
@@ -88,6 +93,7 @@ export async function resendMemberAccessEmail(input: {
       tenantId: input.tenantId,
       to: email,
       displayName,
+      unitIds: input.unitIds,
     });
     if (!sent.ok) return { ok: false, error: sent.error, status: 422 };
     return {
@@ -108,6 +114,9 @@ export async function resendMemberAccessEmail(input: {
         displayName,
         roleIds: input.roleIds,
         invitedBy: input.invitedBy,
+        ...(input.unitIds?.length
+          ? { unitAccess: { mode: "units" as const, unitIds: input.unitIds } }
+          : {}),
       });
     } catch (error) {
       const pending = await findPendingInvitationByEmail(input.tenantId, email);
@@ -128,6 +137,7 @@ export async function resendMemberAccessEmail(input: {
     displayName: invitation.displayName,
     token: invitation.token,
     expiresAt: invitation.expiresAt,
+    unitIds: unitIdsFromAccess(invitation.unitAccess) ?? input.unitIds,
     message: `Enviamos el correo corporativo para crear la contraseña a ${invitation.email}.`,
   });
 }

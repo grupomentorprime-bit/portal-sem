@@ -28,9 +28,10 @@ describe("OAuth — origen público del callback", () => {
   };
 
   function restore() {
+    const env = process.env as Record<string, string | undefined>;
     for (const key of Object.keys(prev) as Array<keyof typeof prev>) {
-      if (prev[key] === undefined) delete process.env[key];
-      else process.env[key] = prev[key];
+      if (prev[key] === undefined) delete env[key];
+      else env[key] = prev[key];
     }
   }
 
@@ -61,7 +62,7 @@ describe("OAuth — origen público del callback", () => {
   });
 
   it("en producción, sin host público, el origen canónico no es localhost", () => {
-    process.env.NODE_ENV = "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     process.env.APP_URL = "https://localhost:3000";
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
     try {
@@ -87,7 +88,7 @@ describe("OAuth — origen público del callback", () => {
   });
 
   it("redirect_uri loopback de Keycloak se reescribe en producción", () => {
-    process.env.NODE_ENV = "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     process.env.APP_URL = "https://localhost:3000";
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
     process.env.KEYCLOAK_REDIRECT_URI =
@@ -103,7 +104,7 @@ describe("OAuth — origen público del callback", () => {
   });
 
   it("en local el loopback se conserva", () => {
-    process.env.NODE_ENV = "test";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "test";
     process.env.APP_URL = "http://localhost:3000";
     delete process.env.KEYCLOAK_REDIRECT_URI;
     try {
@@ -121,7 +122,7 @@ describe("OAuth — origen público del callback", () => {
   });
 
   it("el gate de /admin en producción no redirige a localhost", () => {
-    process.env.NODE_ENV = "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     process.env.APP_URL = "https://localhost:3000";
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
     try {

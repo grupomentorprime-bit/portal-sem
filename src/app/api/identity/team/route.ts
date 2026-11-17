@@ -24,6 +24,7 @@ import {
 } from "@/lib/identity/enterprise-profiles";
 import { resolvePermissionDetailsForMembership } from "@/lib/identity/permission-resolver";
 import type { RoleCode } from "@/core/identity/roles/codes";
+import { invitationVisibleTo, memberVisibleTo } from "@/core/units/access";
 
 export async function GET() {
   try {
@@ -82,6 +83,7 @@ export async function GET() {
             authorizedApps: membership.authorizedApps ?? null,
           }),
           studentAffairsScope: membership.studentAffairsScope,
+          unitAccess: membership.unitAccess,
           roles: memberRoles.map((role) => {
             const code = getRoleCode(role);
             return {
@@ -98,6 +100,7 @@ export async function GET() {
         };
       })
       .filter((member) => {
+        if (!memberVisibleTo(ctx.membership?.unitAccess, member.unitAccess)) return false;
         return !shouldHideMemberFromCaller(
           callerRoleCode,
           member._targetCode as RoleCode | null,
@@ -119,6 +122,7 @@ export async function GET() {
           email: invitation.email,
           displayName: invitation.displayName || invitation.email,
           status: invitation.status,
+          unitAccess: invitation.unitAccess,
           expiresAt: invitation.expiresAt,
           createdAt: invitation.createdAt,
           roles: invitationRoles.map((role) => {
@@ -134,6 +138,7 @@ export async function GET() {
         };
       })
       .filter((invitation) => {
+        if (!invitationVisibleTo(ctx.membership?.unitAccess, invitation.unitAccess)) return false;
         return !shouldHideMemberFromCaller(callerRoleCode, invitation._targetCode as RoleCode | null);
       })
       .map(({ _targetCode: _, ...invitation }) => invitation);
@@ -168,7 +173,7 @@ export async function GET() {
       contractedApps: contract.contracted,
       members,
       invitations: invitationsWithRoles,
-      audit: audit.map((entry) => ({
+      audit: (ctx.membership?.unitAccess?.mode === "units" ? [] : audit).map((entry) => ({
         id: entry._id,
         action: entry.action,
         entity: entry.entity,

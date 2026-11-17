@@ -3,6 +3,7 @@ import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import { bulkMediaAction, getMediaById } from "@/lib/cms/media";
 import { validateBulkAction } from "@/lib/cms/media-validation";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { assertReadableUnitDocument } from "@/core/units/media-scope";
 import type { MediaBulkAction } from "@/types/media";
 
 export async function POST(request: Request) {
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
       if (!asset) {
         return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
       }
+      const hidden = await assertReadableUnitDocument(tenantCheck.tenant, asset.unitId);
+      if (hidden) return hidden;
     }
 
     const affected = await bulkMediaAction(body);

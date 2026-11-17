@@ -10,6 +10,8 @@ import { acceptInvitation, findInvitationByToken } from "@/lib/identity/invitati
 import {
   ensureActiveMembership,
   findMembership,
+  findMembershipAnyStatus,
+  grantMembershipUnitAccess,
   MembershipConflictError,
   updateMembershipAuthorizedApps,
 } from "@/lib/identity/memberships";
@@ -95,6 +97,9 @@ async function handleKeycloakAccept(
 
     const active = await findMembership(user._id, invitation.tenantId);
     if (active) {
+      if (invitation.unitAccess) {
+        await grantMembershipUnitAccess(active._id, invitation.unitAccess);
+      }
       await acceptInvitation(invitation._id, user._id, invitation.tenantId);
       return NextResponse.json({
         ok: true,
@@ -111,6 +116,7 @@ async function handleKeycloakAccept(
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
         authorizedApps: await membershipAppsForInvite(invitation),
+        unitAccess: invitation.unitAccess,
       });
     } catch (error) {
       if (!(error instanceof MembershipConflictError)) throw error;
@@ -162,6 +168,7 @@ async function handleKeycloakAccept(
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
         authorizedApps: await membershipAppsForInvite(invitation),
+        unitAccess: invitation.unitAccess,
       });
     } catch (error) {
       if (!(error instanceof MembershipConflictError)) throw error;
@@ -200,7 +207,10 @@ async function handleLocalAccept(
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
         authorizedApps: await membershipAppsForInvite(invitation),
+        unitAccess: invitation.unitAccess,
       });
+    } else if (invitation.unitAccess) {
+      await grantMembershipUnitAccess(active._id, invitation.unitAccess);
     }
     await acceptInvitation(invitation._id, existing._id, invitation.tenantId);
 
@@ -242,6 +252,12 @@ async function handleLocalAccept(
       membership._id,
       await membershipAppsForInvite(invitation)
     );
+  }
+  if (invitation.unitAccess) {
+    const unitMembership = await findMembershipAnyStatus(result.user._id, invitation.tenantId);
+    if (unitMembership) {
+      await grantMembershipUnitAccess(unitMembership._id, invitation.unitAccess);
+    }
   }
   await acceptInvitation(invitation._id, result.user._id, invitation.tenantId);
   return NextResponse.json({ ok: true, userId: result.user._id, existing: false });

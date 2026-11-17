@@ -4,7 +4,7 @@
  */
 
 import {
-  PLATFORM_CREDITS,
+  VENDOR_CREDIT_LINE,
   rewriteLegacyPlatformProductName,
 } from "@/core/branding/display";
 import { isSemTenant } from "@/core/tenant/is-sem";
@@ -127,7 +127,7 @@ export const SEM_FOOTER_SOCIAL_DEFAULTS = {
 
 export const SEM_FOOTER_LEGAL: FooterLegalContent = {
   copyrightSuffix: "Todos los derechos reservados.",
-  credits: `Desarrollado por Grupo Mentor Prime · ${PLATFORM_CREDITS}`,
+  credits: VENDOR_CREDIT_LINE,
   adminLabel: "Administración",
   adminHref: "/admin/config",
 };
@@ -152,7 +152,7 @@ export const PLATFORM_FOOTER_INSTITUTION: FooterInstitutionContent = {
 
 export const PLATFORM_FOOTER_LEGAL: FooterLegalContent = {
   copyrightSuffix: "Todos los derechos reservados.",
-  credits: PLATFORM_CREDITS,
+  credits: VENDOR_CREDIT_LINE,
   adminLabel: "Administración",
   adminHref: "/admin/config",
 };

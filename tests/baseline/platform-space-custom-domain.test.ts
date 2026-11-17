@@ -325,7 +325,7 @@ async function seedSpace(db: Db): Promise<void> {
     createdAt: at,
     updatedAt: at,
   };
-  await db.collection(TENANTS_COLLECTION).replaceOne({ _id: TENANT_ID }, tenant, { upsert: true });
-  await db.collection(SITES_COLLECTION).replaceOne({ _id: SITE_ID }, site, { upsert: true });
-  await db.collection(DOMAINS_COLLECTION).replaceOne({ _id: domain._id }, domain, { upsert: true });
+  await db.collection<TenantDocument>(TENANTS_COLLECTION).replaceOne({ _id: TENANT_ID }, tenant, { upsert: true });
+  await db.collection<SiteDocument>(SITES_COLLECTION).replaceOne({ _id: SITE_ID }, site, { upsert: true });
+  await db.collection<DomainDocument>(DOMAINS_COLLECTION).replaceOne({ _id: domain._id }, domain, { upsert: true });
 }

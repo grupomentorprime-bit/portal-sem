@@ -112,6 +112,26 @@ export function resolveChileEventStartMs(
   return parsed.getTime();
 }
 
+/** Parte el tiempo que falta en días, horas, minutos y segundos de un mismo intervalo. */
+export function splitEventCountdown(
+  targetMs: number,
+  nowMs = Date.now()
+): { total: number; days: number; hours: number; minutes: number; seconds: number } {
+  const total = targetMs - nowMs;
+  if (!Number.isFinite(targetMs) || total <= 0) {
+    return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  const totalSeconds = Math.floor(total / 1000);
+  return {
+    total,
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+  };
+}
+
 /** Días de calendario en Chile entre hoy y la fecha del evento (sin contar la hora). */
 export function chileCalendarDaysUntil(targetMs: number, nowMs = Date.now()): number {
   const fmt = new Intl.DateTimeFormat("en-CA", {

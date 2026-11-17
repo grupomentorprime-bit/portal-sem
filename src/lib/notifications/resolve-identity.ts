@@ -12,6 +12,7 @@ import {
   type EmailDomainHint,
   type EmailIdentity,
 } from "@/lib/notifications/identity";
+import { resolveSendingMailbox } from "@/lib/notifications/transport";
 
 /**
  * Identidad del Espacio que origina el correo.
@@ -36,6 +37,7 @@ export async function resolveEmailIdentityForTenant(
       tenantId: row.tenantId,
       siteId: row.siteId,
       isPrimary: row.isPrimary,
+      kind: row.kind,
     }));
   }
 
@@ -46,10 +48,19 @@ export async function resolveEmailIdentityForTenant(
     website: config?.institution.website,
   });
 
-  return resolveEmailIdentity({
+  const identity = resolveEmailIdentity({
     config,
     tenantId: trimmed,
     siteId,
     origin,
   });
+
+  return {
+    ...identity,
+    mailbox: resolveSendingMailbox({
+      tenantId: identity.tenantId,
+      siteId: identity.siteId,
+      domains,
+    }),
+  };
 }

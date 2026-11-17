@@ -46,6 +46,8 @@ const INFO_ICONS: Record<FormExperienceInfoIcon, typeof Calendar> = {
 interface FormPublicExperienceProps {
   experience: ExperienceFormExperience;
   breadcrumb?: ReactNode;
+  /** Contenido entre los datos del evento y la tarjeta del formulario. */
+  beforeForm?: ReactNode;
   children: ReactNode;
 }
 
@@ -85,6 +87,7 @@ function isBlockEnabled(experience: ExperienceFormExperience, type: FormExperien
 export function FormPublicExperience({
   experience,
   breadcrumb,
+  beforeForm,
   children,
 }: FormPublicExperienceProps) {
   const landing = toFormLandingConfig(experience);
@@ -187,6 +190,61 @@ export function FormPublicExperience({
           return breadcrumb && !showBreadcrumbInHero ? (
             <div className="form-landing__breadcrumb-only">{breadcrumb}</div>
           ) : null;
+        }
+        if (experience.hero.mediaPresentation === "banner" && experience.hero.mediaUrl) {
+          return (
+            <>
+              <section
+                className="form-landing__hero form-landing__hero--banner"
+                aria-labelledby="form-landing-headline"
+              >
+                <h1 id="form-landing-headline" className="sr-only">
+                  {experience.hero.headline}
+                </h1>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={experience.hero.mediaUrl}
+                  alt="Departamento Nacional de Varones, IPN Chile 2026. «Y les dijo: Venid en pos de mí, y os haré pescadores de hombres.» Mateo 4:19. 21 y 22 de noviembre."
+                  width={1024}
+                  height={341}
+                  className="form-landing__hero-banner"
+                  decoding="async"
+                  fetchPriority="high"
+                />
+              </section>
+              {experience.hero.eyebrow ||
+              experience.hero.subheadline ||
+              experience.hero.motivational ||
+              showHeroCountdown ? (
+                <div className="form-landing__banner-bridge">
+                  {experience.hero.eyebrow ? (
+                    <p className="form-landing__eyebrow">{experience.hero.eyebrow}</p>
+                  ) : null}
+                  {experience.hero.subheadline ? (
+                    <p className="form-landing__banner-context">{experience.hero.subheadline}</p>
+                  ) : null}
+                  {experience.hero.motivational ? (
+                    <blockquote className="form-landing__motivational">
+                      <Sparkles className="form-landing__motivational-icon" aria-hidden="true" />
+                      <p>{experience.hero.motivational}</p>
+                    </blockquote>
+                  ) : null}
+                  {showHeroCountdown && experience.counter.targetDate ? (
+                    <>
+                      <FormLandingCountdown
+                        targetDate={experience.counter.targetDate}
+                        targetTime={experience.counter.targetTime}
+                        label={experience.counter.label}
+                      />
+                      <p className="form-landing__countdown-meta">
+                        Inicio: sábado 21 de noviembre · 08:30
+                      </p>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+            </>
+          );
         }
         return (
           <section
@@ -323,6 +381,7 @@ export function FormPublicExperience({
             className="form-landing__form-section"
             aria-label="Formulario"
           >
+            {beforeForm}
             <div className="form-landing__form-card">{children}</div>
           </section>
         );

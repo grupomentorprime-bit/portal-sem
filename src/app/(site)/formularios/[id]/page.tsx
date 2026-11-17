@@ -2,6 +2,7 @@ import { PortalBreadcrumb } from "@/components/portal/layout";
 import { PortalExperienceForm } from "@/components/portal/experience/forms";
 import { PortalConvocatoriaExperienceForm } from "@/components/portal/experience/forms/PortalConvocatoriaExperienceForm";
 import { FormPublicExperience, FormUnavailableState } from "@/components/portal/forms";
+import { CongressAttendanceSuccess } from "@/components/portal/forms/CongressAttendanceSuccess";
 import {
   getConvocatoriaByFormId,
   getActiveConvocatoria,
@@ -114,6 +115,97 @@ function formUnavailabilityDescription(
   }
 }
 
+const VARONES_ATTENDANCE_FORM_ID = "ipn-asistencia-congreso-varones-2026";
+const VARONES_CONGRESS_BANNER = "/branding/ipn-chile/congreso-varones-2026.jpg";
+
+/** Portada del congreso: el banner lleva título, cita y fecha. */
+function withDepartmentBrand(
+  id: string,
+  experience: ExperienceFormExperience
+): ExperienceFormExperience {
+  if (id !== VARONES_ATTENDANCE_FORM_ID) return experience;
+  return {
+    ...experience,
+    hero: {
+      ...experience.hero,
+      eyebrow: "Confirmación de asistencia",
+      headline: "3° Congreso de Varones",
+      subheadline:
+        "Celebramos juntos el 3.º Congreso de Varones. Confirma tu asistencia para preparar el encuentro.",
+      motivational: "¡Nos encantará verte! Tu presencia fortalece este congreso.",
+      mediaUrl: VARONES_CONGRESS_BANNER,
+      mediaPresentation: "banner",
+      overlayOpacity: 0,
+      height: "compact",
+      showBreadcrumb: false,
+      secondaryCtas: [],
+    },
+    formShell: {
+      ...experience.formShell,
+      overline: "Tu respuesta",
+      title: "Confirma tu asistencia",
+      description: "Zona, iglesia y contacto. El correo es opcional.",
+      submitLabel: "Confirmar asistencia",
+      successMessage:
+        "Gracias por confirmar tu asistencia. Te esperamos el 21 y 22 de noviembre.",
+      confirmationEmailCtaLabel: "Descargar el programa",
+    },
+    counter: {
+      ...experience.counter,
+      enabled: true,
+      mode: "days_until",
+      targetDate: "2026-11-21",
+      targetTime: "08:30",
+      label: "Faltan",
+    },
+    appearance: {
+      ...experience.appearance,
+      primaryColor: "#09121c",
+      borderRadius: "soft",
+      shadow: "soft",
+    },
+    infoCards: [
+      {
+        id: "fecha",
+        icon: "calendar",
+        label: "Fecha",
+        value: "Sábado 21 y domingo 22 de noviembre",
+        description: "2026",
+        order: 0,
+        visible: true,
+      },
+      {
+        id: "horario",
+        icon: "clock",
+        label: "Horario",
+        value: "Desde las 8:30 a. m.",
+        description: "Sábado 21 de noviembre",
+        order: 1,
+        visible: true,
+      },
+      {
+        id: "traer",
+        icon: "clipboard-check",
+        label: "Traer",
+        value: "Gorro, instrumentos, protector solar, agua, equipo de sonido y saco de dormir",
+        order: 2,
+        visible: true,
+      },
+      {
+        id: "para-quien",
+        icon: "users",
+        label: "Para quién",
+        value: "Varones de IPN Chile",
+        order: 3,
+        visible: true,
+      },
+    ],
+    blocks: experience.blocks.map((block) =>
+      block.type === "counter" ? { ...block, enabled: false } : block
+    ),
+  };
+}
+
 export default async function FormularioPublicPage({ params }: FormularioPageProps) {
   const { id } = await params;
   const ctx = await getActivePortal();
@@ -125,9 +217,12 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
   }
 
   const storedForm = await getExperienceFormById(ctx.tenant, id);
-  const experience = withholdUnvalidatedFormContact(
-    await getFormExperience(ctx.tenant, id, storedForm?.name),
-    ctx.tenant
+  const experience = withDepartmentBrand(
+    id,
+    withholdUnvalidatedFormContact(
+      await getFormExperience(ctx.tenant, id, storedForm?.name),
+      ctx.tenant
+    )
   );
   const landing = toFormLandingConfig(experience);
   const unavailability = getExperienceFormUnavailabilityReason(storedForm);
@@ -179,6 +274,8 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
   const convocatoria = getConvocatoriaByFormId(id, ctx.tenant);
   const shell = experience.formShell;
 
+  const isVaronesAttendance = id === VARONES_ATTENDANCE_FORM_ID;
+
   return (
     <FormPublicExperience experience={experience} breadcrumb={breadcrumb}>
       {convocatoria ? (
@@ -202,6 +299,16 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
           title={shell.title ?? form.name}
           description={shell.description ?? form.description}
           submitLabel={shell.submitLabel}
+          successMessage={isVaronesAttendance ? shell.successMessage : undefined}
+          successTitle={isVaronesAttendance ? "¡Gracias!" : undefined}
+          successExtras={
+            isVaronesAttendance ? (
+              <CongressAttendanceSuccess
+                programDownloadUrl={shell.confirmationEmailCtaUrl}
+                programDownloadLabel={shell.confirmationEmailCtaLabel}
+              />
+            ) : undefined
+          }
         />
       )}
     </FormPublicExperience>

@@ -18,6 +18,7 @@ export interface AdminShellV2Context {
   roleCodes: string[];
   branding: AdminTenantBranding;
   navBadges?: Record<string, number>;
+  enabledAppIds?: string[] | null;
 }
 
 export interface ModuleHeaderProps {
