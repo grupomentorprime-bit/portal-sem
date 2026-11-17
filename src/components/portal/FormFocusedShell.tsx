@@ -1,8 +1,10 @@
+import type { CSSProperties } from "react";
 import { PortalBrandMark } from "@/components/portal/PortalBrandMark";
 import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import { PortalExperienceProvider } from "@/components/portal/PortalExperienceProvider";
 import { ExperienceActionProvider } from "@/components/portal/experience/ExperienceActionProvider";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding";
+import { ipnDepartmentColors } from "@/design/tokens/colors";
 import { DEFAULT_PORTAL_CURSOR } from "@/lib/portal/cursor-defaults";
 import { getPortalContext } from "@/lib/portal/site";
 
@@ -27,10 +29,29 @@ export async function FormFocusedShell({
 }: FormFocusedShellProps) {
   const ctx = await getPortalContext();
   const year = new Date().getFullYear();
+  const corporate = tone === "corporate" || Boolean(brandLogo);
+  const corporateStyle = corporate
+    ? ({
+        "--dept-navy": ipnDepartmentColors.navy,
+        "--dept-gold": ipnDepartmentColors.gold,
+        "--dept-gray": ipnDepartmentColors.gray,
+        "--dept-ink": ipnDepartmentColors.ink,
+        "--dept-soft": ipnDepartmentColors.soft,
+        "--dept-cream": ipnDepartmentColors.cream,
+        "--dept-cream-from": ipnDepartmentColors.creamFrom,
+        "--dept-cream-to": ipnDepartmentColors.creamTo,
+        "--dept-navy-mid": ipnDepartmentColors.navyMid,
+      } as CSSProperties)
+    : undefined;
 
   if (!ctx) {
     return (
-      <div className="form-focused-shell">
+      <div
+        className={["form-focused-shell", corporate ? "form-focused-shell--corporate" : ""]
+          .filter(Boolean)
+          .join(" ")}
+        style={corporateStyle}
+      >
         <main className="form-focused-shell__main" suppressHydrationWarning>
           {children}
         </main>
@@ -47,7 +68,6 @@ export async function FormFocusedShell({
   const copyrightSuffix =
     config.portalCopy?.footerCopyrightSuffix?.trim() || "Todos los derechos reservados.";
 
-  const corporate = tone === "corporate" || Boolean(brandLogo);
   const shellClassName = [
     "form-focused-shell",
     corporate ? "form-focused-shell--corporate" : "",
@@ -60,7 +80,7 @@ export async function FormFocusedShell({
   return (
     <PortalExperienceProvider cursor={config.portalExperience?.cursor ?? DEFAULT_PORTAL_CURSOR}>
       <ExperienceActionProvider>
-        <div className={shellClassName}>
+        <div className={shellClassName} style={corporateStyle}>
           {showBrandHeader ? (
             <header className="form-focused-shell__header">
               <div

@@ -4,6 +4,15 @@
 
 .form-focused-shell {
   --form-focused-header-h: 3.75rem;
+  --dept-navy: var(--color-primary);
+  --dept-gold: var(--color-secondary);
+  --dept-gray: var(--color-border);
+  --dept-ink: var(--color-muted);
+  --dept-soft: var(--color-background);
+  --dept-cream: var(--color-background);
+  --dept-cream-from: var(--color-background);
+  --dept-cream-to: color-mix(in srgb, var(--color-secondary) 22%, white);
+  --dept-navy-mid: color-mix(in srgb, var(--color-primary) 78%, white);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -206,20 +215,15 @@
 }
 
 /**
- * Manual corporativo departamentos IPN:
- * azul noche #09121c · oro #cba45e · gris #cdcdc5
+ * Manual corporativo departamentos IPN.
+ * Los --dept-* los inyecta FormFocusedShell desde tokens (sin hex aquí).
  * Dirección visual: editorial limpio (sin cajitas ni violeta del portal).
  */
 .form-focused-shell--corporate {
-  --dept-navy: #09121c;
-  --dept-gold: #cba45e;
-  --dept-gray: #cdcdc5;
-  --dept-ink: #3d4654;
-  --dept-soft: #f7f8fa;
-  --fl-hero-from: #09121c;
-  --fl-hero-mid: #09121c;
-  --fl-hero-to: #09121c;
-  --fl-accent: #cba45e;
+  --fl-hero-from: var(--dept-navy);
+  --fl-hero-mid: var(--dept-navy);
+  --fl-hero-to: var(--dept-navy);
+  --fl-accent: var(--dept-gold);
 }
 
 .form-focused-shell--corporate .form-focused-shell__header {
@@ -292,7 +296,7 @@
   text-align: left;
   border: 1px solid color-mix(in srgb, var(--dept-gold) 55%, white);
   border-radius: 0.9rem;
-  background: linear-gradient(135deg, #fff9f0 0%, #f6ead4 100%);
+  background: linear-gradient(135deg, var(--dept-cream-from) 0%, var(--dept-cream-to) 100%);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--dept-navy) 8%, transparent);
   backdrop-filter: none;
 }
@@ -428,7 +432,7 @@
   display: flex;
   grid-area: icon;
   border-radius: 0.65rem;
-  background: linear-gradient(135deg, var(--dept-navy), #1b3f66);
+  background: linear-gradient(135deg, var(--dept-navy), var(--dept-navy-mid));
   color: var(--dept-gold);
 }
 
@@ -591,7 +595,7 @@
 
 .form-focused-shell--corporate .form-landing__subheadline,
 .form-focused-shell--corporate .form-landing__motivational p {
-  color: #f4f1ea;
+  color: var(--dept-cream);
 }
 
 .form-focused-shell--corporate .form-landing__motivational {
@@ -621,7 +625,7 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--dept-gold, #cba45e);
+  color: var(--dept-gold);
 }
 
 .congress-venue__name {
@@ -629,14 +633,14 @@
   font-size: 1.0625rem;
   font-weight: 600;
   line-height: 1.35;
-  color: var(--dept-navy, #09121c);
+  color: var(--dept-navy);
 }
 
 .congress-venue__address {
   margin: 0.2rem 0 0;
   font-size: 0.875rem;
   line-height: 1.45;
-  color: var(--dept-ink, #3d4654);
+  color: var(--dept-ink);
 }
 
 .congress-venue__map {
@@ -644,9 +648,9 @@
   height: 16rem;
   margin-top: 0.85rem;
   overflow: hidden;
-  border: 1px solid var(--dept-gray, #cdcdc5);
+  border: 1px solid var(--dept-gray);
   border-radius: 0.75rem;
-  background: var(--dept-soft, #f7f8fa);
+  background: var(--dept-soft);
 }
 
 .congress-venue__map iframe {
@@ -663,7 +667,7 @@
   margin-top: 0.75rem;
   min-height: 2.5rem;
   padding: 0 1.1rem;
-  background: var(--dept-navy, #09121c);
+  background: var(--dept-navy);
   color: #fff;
   border-radius: 0.625rem;
   font-size: 0.875rem;
@@ -674,8 +678,8 @@
 }
 
 .congress-venue__directions:hover {
-  background: var(--dept-gold, #cba45e);
-  color: var(--dept-navy, #09121c);
+  background: var(--dept-gold);
+  color: var(--dept-navy);
 }
 
 .congress-attendance-success {
@@ -688,7 +692,7 @@
 
 .congress-attendance-success__block {
   padding-top: 1.25rem;
-  border-top: 1px solid var(--dept-gray, #cdcdc5);
+  border-top: 1px solid var(--dept-gray);
 }
 
 .congress-attendance-success__map-head {
@@ -701,7 +705,7 @@
 .congress-attendance-success__icon {
   width: 1.1rem;
   height: 1.1rem;
-  color: var(--dept-gold, #cba45e);
+  color: var(--dept-gold);
 }
 
 .congress-attendance-success__heading {
@@ -710,14 +714,14 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--dept-gold, #cba45e);
+  color: var(--dept-gold);
 }
 
 .congress-attendance-success__note {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: var(--dept-ink, #3d4654);
+  color: var(--dept-ink);
 }
 
 .congress-attendance-success__calendar-actions {
@@ -735,7 +739,7 @@
   min-height: 2.75rem;
   padding: 0 1rem;
   border-radius: 0.625rem;
-  background: var(--dept-navy, #09121c);
+  background: var(--dept-navy);
   color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -750,20 +754,20 @@
 }
 
 .congress-attendance-success__button:hover {
-  background: var(--dept-gold, #cba45e);
-  color: var(--dept-navy, #09121c);
+  background: var(--dept-gold);
+  color: var(--dept-navy);
 }
 
 .congress-attendance-success__button--secondary {
   background: #fff;
-  color: var(--dept-navy, #09121c);
-  border: 1px solid var(--dept-navy, #09121c);
+  color: var(--dept-navy);
+  border: 1px solid var(--dept-navy);
 }
 
 .congress-attendance-success__button--secondary:hover {
-  background: var(--dept-soft, #f7f8fa);
-  color: var(--dept-navy, #09121c);
-  border-color: var(--dept-gold, #cba45e);
+  background: var(--dept-soft);
+  color: var(--dept-navy);
+  border-color: var(--dept-gold);
 }
 
 .form-focused-shell--banner .portal-experience-form__success-title {

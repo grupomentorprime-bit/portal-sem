@@ -300,7 +300,7 @@ export function UnitsSettingsClient() {
         <p className="text-sm text-muted">Este Espacio todavía no tiene unidades.</p>
       )}
 
-      {error ? <p className="text-sm text-red-600 lg:col-span-2">{error}</p> : null}
+      {error ? <p className="text-sm text-danger lg:col-span-2">{error}</p> : null}
     </div>
   );
 }

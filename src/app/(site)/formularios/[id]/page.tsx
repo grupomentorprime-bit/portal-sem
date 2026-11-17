@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin/forms-center";
 import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experience";
 import { isSemTenant } from "@/core/tenant/is-sem";
+import { ipnDepartmentColors } from "@/design/tokens/colors";
 import { SEM_CONTACT_PUBLISHED } from "@/lib/portal/sem-identity-v7";
 import { getActivePortal } from "@/lib/portal/site";
 import type { ExperienceFormExperience } from "@/types/experience-form-experience";
@@ -160,7 +161,7 @@ function withDepartmentBrand(
     },
     appearance: {
       ...experience.appearance,
-      primaryColor: "#09121c",
+      primaryColor: ipnDepartmentColors.navy,
       borderRadius: "soft",
       shadow: "soft",
     },

@@ -47,6 +47,19 @@ export const semSiteBrandColors = {
   foreground: "#141F29",
 } as const;
 
+/** Manual de departamentos IPN — congreso y formularios enfocados. */
+export const ipnDepartmentColors = {
+  navy: "#09121c",
+  navyMid: "#1b3f66",
+  gold: "#cba45e",
+  gray: "#cdcdc5",
+  ink: "#3d4654",
+  soft: "#f7f8fa",
+  cream: "#f4f1ea",
+  creamFrom: "#fff9f0",
+  creamTo: "#f6ead4",
+} as const;
+
 /** Pack bootstrap ADL (dato T002) — combinación distinta de SEM */
 export const adlSiteBrandColors = {
   primary: "#18B981",
