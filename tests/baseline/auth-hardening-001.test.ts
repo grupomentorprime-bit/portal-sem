@@ -20,8 +20,9 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — login UI Auth Code + PKCE", () => {
   it("LoginForm pide usuario y contraseña y los valida en el servidor", () => {
     const form = readSrc("src/components/identity/LoginForm.tsx");
     const page = readSrc("src/app/login/page.tsx");
-    assert.match(form, /Usuario/);
+    assert.match(form, /Nombre de usuario/);
     assert.match(form, /Contraseña/);
+    assert.match(form, /Iniciar sesión/);
     assert.match(form, /type="password"/);
     assert.match(form, /\/api\/identity\/auth\/keycloak\/session/);
     assert.doesNotMatch(form, /href=\{loginHref\}/);
