@@ -260,6 +260,14 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
     primaryItemId: "convocatorias-config",
     items: [
       {
+        id: "site-pages",
+        href: "/admin/site/pages",
+        label: "Páginas",
+        icon: "site",
+        matchPrefixes: ["/admin/site/pages"],
+        requiredAnyPermission: ["cms.pages.read", "cms.pages.update", "settings.update"],
+      },
+      {
         id: "convocatorias-config",
         href: "/admin/portal/forms",
         label: "Formularios",

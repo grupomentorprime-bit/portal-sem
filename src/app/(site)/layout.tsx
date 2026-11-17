@@ -3,6 +3,7 @@ import { CodedSiteView } from "@/components/sites/CodedSiteView";
 import { getPortalContext } from "@/lib/portal/site";
 import { getCodedPageView } from "@/sites/page-views";
 import { ensureProductionCodedSites } from "@/sites/production";
+import { resolvePageContent } from "@/sites/content/overlay";
 import { comingSoonModel, decidePublicSite } from "@/sites/public-decision";
 import { getCodedSite } from "@/sites/registry";
 import {
@@ -98,6 +99,20 @@ export default async function SiteLayout({
   if (decision.kind === "page" && site) {
     const { registerProductionPageViews } = await import("@/sites/production-views");
     registerProductionPageViews();
+    const page = site.pages.find((item) => item.path === decision.path);
+    let content = resolvePageContent(page, undefined);
+    if (page?.slots?.length) {
+      try {
+        const { getSitePageContent } = await import("@/sites/content/store");
+        const stored = await getSitePageContent(ctx.tenant, decision.path);
+        content = resolvePageContent(page, stored?.values);
+      } catch (error) {
+        console.error(
+          "[coded-site] no se pudo leer el contenido de la página",
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
     const PageView = getCodedPageView(ctx.tenant, decision.path);
     if (PageView) {
       return (
@@ -105,6 +120,7 @@ export default async function SiteLayout({
           institutionName={ctx.config.institution.name}
           contact={ctx.config.contact}
           social={ctx.config.social}
+          content={content}
         />
       );
     }

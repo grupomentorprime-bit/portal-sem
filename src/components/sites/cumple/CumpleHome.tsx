@@ -14,6 +14,11 @@ import {
   tesis,
   valorHero,
 } from "@/sites/cumple/content";
+import {
+  slotAnimationEnabled,
+  slotImage,
+  slotText,
+} from "@/sites/content/overlay";
 import type { CodedPageViewProps } from "@/sites/page-views";
 
 const rail = ["bg-cviolet", "bg-caccent", "bg-ccyan"];
@@ -120,9 +125,24 @@ function DashboardMockup() {
   );
 }
 
-export function CumpleHome({ contact }: CodedPageViewProps) {
+const HERO_IMAGE = {
+  src: "/hero-asesora.png",
+  alt: "Asesora de cumplimiento revisando el estado en una tablet",
+};
+
+export function CumpleHome({ contact, content }: CodedPageViewProps) {
+  const kicker = slotText(content, "hero.kicker", "Cumplimiento empresarial");
+  const lead = slotText(
+    content,
+    "hero.lead",
+    "Mentor Cumple identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su cumplimiento."
+  );
+  const quote = slotText(content, "hero.quote", "¡Antes de que sea urgente!");
+  const image = slotImage(content, "hero.image", HERO_IMAGE);
+  const motion = slotAnimationEnabled(content, "hero.animation", true);
+
   return (
-    <CumpleShell contact={contact}>
+    <CumpleShell contact={contact} motion={motion}>
       <main>
         <section className="relative overflow-x-hidden bg-[#071a45] text-white">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(640px_420px_at_72%_40%,rgba(61,107,255,0.42),transparent_68%)]" />
@@ -131,14 +151,13 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
           <div className="relative z-10 mx-auto grid w-full max-w-6xl items-end gap-6 px-6 pt-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)] lg:gap-2 lg:pt-8">
             <div className="rise min-w-0 pb-5 lg:pb-6">
               <p className="font-cdisplay text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-                Cumplimiento empresarial
+                {kicker}
               </p>
               <h1 className="mt-3 max-w-xl font-cdisplay text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-[2.75rem]">
                 No descubra lo que falta durante <span className="grad-text">una fiscalización.</span>
               </h1>
               <p className="mt-4 max-w-lg text-base leading-7 text-white/80 sm:text-lg sm:leading-8">
-                Mentor Cumple identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su
-                cumplimiento.
+                {lead}
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <a href="#evaluar" className="glow-btn inline-flex justify-center rounded-full px-6 py-3.5 text-sm font-bold text-white">
@@ -159,7 +178,7 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
                 <EstadoCard />
                 <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-md">
                   <img
-                    src="/hero-asesora.png"
+                    src={image.src}
                     alt=""
                     width={715}
                     height={1042}
@@ -179,15 +198,15 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
                   <EstadoCard />
                 </div>
                 <img
-                  src="/hero-asesora.png"
-                  alt="Asesora de cumplimiento revisando el estado en una tablet"
+                  src={image.src}
+                  alt={image.alt}
                   width={715}
                   height={1042}
                   fetchPriority="high"
                   className="absolute bottom-0 right-[-0.75rem] z-20 h-full w-auto max-w-[18.5rem] object-contain object-bottom drop-shadow-[0_28px_40px_rgba(0,0,0,0.4)] xl:right-[-1.25rem] xl:max-w-[20.5rem]"
                 />
                 <p className="font-chand absolute right-[7.5rem] top-6 z-30 max-w-[11rem] -rotate-6 text-[1.4rem] font-bold leading-6 text-ccyan drop-shadow-[0_2px_8px_rgba(7,26,69,0.45)] xl:right-[9.5rem] xl:top-4 xl:text-[1.55rem]">
-                  ¡Antes de que sea urgente!
+                  {quote}
                 </p>
               </div>
             </div>
@@ -273,8 +292,8 @@ export function CumpleHome({ contact }: CodedPageViewProps) {
             <div className="relative mx-auto w-full max-w-sm">
               <div className="pointer-events-none absolute inset-x-8 bottom-0 h-40 rounded-full bg-[#3d6bff]/20 blur-3xl" />
               <img
-                src="/hero-asesora.png"
-                alt="Asesora de cumplimiento"
+                src={image.src}
+                alt={image.alt}
                 width={715}
                 height={1042}
                 className="relative mx-auto h-auto w-[min(100%,18rem)] drop-shadow-[0_28px_40px_rgba(0,0,0,0.2)]"

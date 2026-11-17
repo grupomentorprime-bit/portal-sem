@@ -18,11 +18,43 @@ export interface CodedSiteFormDeclaration {
   fields: ExperienceFormField[];
 }
 
+export type SiteContentSlotType = "text" | "image" | "animation";
+
+export type SiteContentValue =
+  | { type: "text"; value: string }
+  | { type: "image"; src: string; alt: string; mediaId?: string }
+  | { type: "animation"; enabled: boolean };
+
+export type SiteContentSlotDef =
+  | {
+      id: string;
+      label: string;
+      type: "text";
+      default: string;
+      multiline?: boolean;
+      description?: string;
+    }
+  | {
+      id: string;
+      label: string;
+      type: "image";
+      default: { src: string; alt: string };
+      description?: string;
+    }
+  | {
+      id: string;
+      label: string;
+      type: "animation";
+      default: boolean;
+      description?: string;
+    };
+
 export interface CodedSitePage {
   path: string;
   title: string;
   navLabel: string;
   description?: string;
+  slots?: SiteContentSlotDef[];
 }
 
 export interface CodedSite {
