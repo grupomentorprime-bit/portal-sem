@@ -77,6 +77,14 @@ describe("editor de contenido del sitio", () => {
     const layout = readSrc("src/app/(site)/layout.tsx");
     assert.match(layout, /resolvePageContent/);
     assert.match(layout, /getSitePageContent/);
+
+    const pageViewBlock = layout.match(/<PageView[\s\S]*?\/>/)?.[0] ?? "";
+    assert.match(pageViewBlock, /content=\{content\}/);
+    const codedBlock = layout.match(/<CodedSiteView[\s\S]*?\/>/)?.[0] ?? "";
+    assert.match(codedBlock, /content=\{content\}/);
+
+    const codedView = readSrc("src/components/sites/CodedSiteView.tsx");
+    assert.match(codedView, /content\?:/);
   });
 
   it("el metadata del sitio de código usa el título de la página", () => {

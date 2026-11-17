@@ -1,6 +1,6 @@
 import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import type { ContactInfo, SocialLinks } from "@/types/cms";
-import type { CodedSite } from "@/sites/types";
+import type { CodedSite, SiteContentValue } from "@/sites/types";
 
 export function CodedSiteView({
   site,
@@ -14,6 +14,7 @@ export function CodedSiteView({
   institutionName: string;
   contact: ContactInfo;
   social: SocialLinks;
+  content?: Record<string, SiteContentValue>;
 }) {
   const page = site.pages.find((item) => item.path === path);
   if (!page) return null;
