@@ -4,12 +4,8 @@ import { resolve } from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { isRetiredSiteAdminPath } from "../../src/lib/admin/retired-site-admin";
 import { getAllNavTreeItems } from "../../src/lib/admin/nav-domains";
-import {
-  ADL_TENANT_ID,
-} from "../../src/core/tenant/constants";
 import { clearCodedSites, getCodedSite } from "../../src/sites/registry";
 import { ensureProductionCodedSites } from "../../src/sites/production";
-import { FORMACION_TENANT_ID } from "../../src/sites/formacion/site";
 import { CUMPLE_TENANT_ID } from "../../src/sites/cumple/site";
 
 const root = process.cwd();
@@ -57,20 +53,18 @@ describe("editor de contenido del sitio", () => {
     assert.match(client, /MediaField/);
     assert.match(client, /Switch/);
     assert.match(client, /\/api\/site\/pages/);
+    assert.match(client, /\/admin\/config\?section=contact/);
+    assert.match(client, /\/admin\/config\?section=branding/);
+    assert.match(client, /\/api\/site\/public-content/);
   });
 
-  it("producción registra Formación, ADL y Cumple", () => {
+  it("producción solo registra Cumple como sitio de este repositorio", () => {
     ensureProductionCodedSites();
     assert.equal(getCodedSite(CUMPLE_TENANT_ID)?.tenantId, "cumple");
-    assert.equal(getCodedSite(FORMACION_TENANT_ID)?.tenantId, FORMACION_TENANT_ID);
-    assert.equal(getCodedSite(ADL_TENANT_ID)?.tenantId, ADL_TENANT_ID);
-    assert.equal(FORMACION_TENANT_ID, "mentor-prime-capacitacion");
+    assert.equal(getCodedSite("mentor-prime-capacitacion"), undefined);
+    assert.equal(getCodedSite("adl"), undefined);
 
-    const formacion = getCodedSite(FORMACION_TENANT_ID);
-    const adl = getCodedSite(ADL_TENANT_ID);
     const cumple = getCodedSite(CUMPLE_TENANT_ID);
-    assert.ok(formacion?.pages.some((page) => page.path === "/" && (page.slots?.length ?? 0) > 0));
-    assert.ok(adl?.pages.some((page) => page.path === "/" && (page.slots?.length ?? 0) > 0));
     assert.ok(cumple?.pages.some((page) => page.path === "/" && (page.slots?.length ?? 0) > 0));
   });
 
@@ -85,7 +79,7 @@ describe("editor de contenido del sitio", () => {
     assert.match(layout, /getSitePageContent/);
   });
 
-  it("el metadata de Formación y ADL usa el título de la página de código", () => {
+  it("el metadata del sitio de código usa el título de la página", () => {
     const meta = readSrc("src/lib/cms/metadata.ts");
     assert.match(meta, /getCodedSite/);
     assert.match(meta, /page\.title/);

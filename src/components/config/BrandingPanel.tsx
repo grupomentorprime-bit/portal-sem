@@ -4,7 +4,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { ColorPicker } from "@/components/config/ColorPicker";
 import { HeroPortalPanel } from "@/components/config/HeroPortalPanel";
 import { HomeHeroPhotosField } from "@/components/config/HomeHeroPhotosField";
-import { LogoUploader, FaviconUploader } from "@/components/config/ImageUploader";
+import { FaviconUploader, HeroUploader, LogoUploader } from "@/components/config/ImageUploader";
 import { isSemTenant } from "@/core/tenant/is-sem";
 import type { Branding } from "@/types/cms";
 import type { HeroPortalConfig } from "@/types/hero-portal";
@@ -74,6 +74,13 @@ export function BrandingPanel({
             onChange={(v) => update("faviconMediaId", v)}
             tenant={tenant}
           />
+          {includePortalHero ? (
+            <HeroUploader
+              value={value.heroMediaId ?? ""}
+              onChange={(v) => update("heroMediaId", v)}
+              tenant={tenant}
+            />
+          ) : null}
         </div>
       </Card>
 

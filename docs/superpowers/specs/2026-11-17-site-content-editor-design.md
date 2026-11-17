@@ -13,7 +13,7 @@ Cada espacio (Formación, ADL, Cumple) publica un sitio en código. El admin no 
 
 | Espacio | tenantId | Origen visual |
 |---|---|---|
-| Mentor Formación | `mentor-prime-capacitacion` | Portado de `mentor-prime` `/formacion` |
+| Mentor Formación | `mentor-prime-capacitacion` | Repo externo `Mentorprime-formacion`; Growth solo entrega contacto e imágenes |
 | Academia ADL | `adl` | Landing de código |
 | Mentor Cumple | `cumple` | Sitio ya registrado; el home usa el overlay |
 
