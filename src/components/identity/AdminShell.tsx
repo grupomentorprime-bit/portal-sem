@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { AdminChromeProvider } from "@/components/admin/AdminChromeContext";
 import { AdminInstitutionalHeader } from "@/components/admin/AdminInstitutionalHeader";
+import { HelpAskHost } from "@/components/admin/HelpAsk";
 import { ToastProvider } from "@/components/admin/kit/states/Toast";
 import { AdminShellV2 } from "@/components/admin/shell-v2/AdminShellV2";
 import type { AdminTenantBranding } from "@/components/admin/shell-v2/types";
@@ -68,5 +69,9 @@ export function AdminShell({
     </AdminChromeProvider>
   );
 
-  return <ToastProvider>{shell}</ToastProvider>;
+  return (
+    <ToastProvider>
+      <HelpAskHost>{shell}</HelpAskHost>
+    </ToastProvider>
+  );
 }

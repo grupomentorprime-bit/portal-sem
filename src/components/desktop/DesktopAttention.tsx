@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   approvalLabel,
   formatAttentionWhen,
   groupAttentionOrgs,
+  priorityLabel,
   statusLabel,
   type PublicAttentionCase,
 } from "@/lib/desktop/attention";
+import { filterDeskCases, findHelpOrigin, formatHelpOrigin } from "@/lib/desktop/help-origins";
 
 type AreaOption = { id: string; name: string; description: string; active: boolean };
 type Colleague = { userId: string; displayName: string; allAreas: boolean; areaIds: string[] };
@@ -23,6 +25,8 @@ type ChatRow = {
   at: string;
   unread: boolean;
   online: boolean;
+  origin?: string;
+  area?: string;
 };
 
 function byRecent(a: PublicAttentionCase, b: PublicAttentionCase): number {
@@ -57,6 +61,13 @@ export function DesktopAttention({
   const [selectedTenantId, setSelectedTenantId] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
+  const [companyId, setCompanyId] = useState("");
+  const [originId, setOriginId] = useState("");
+  const [statusId, setStatusId] = useState("");
+  const [priorityId, setPriorityId] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [queue, setQueue] = useState("unassigned");
+  const [companies, setCompanies] = useState<Array<{ tenantId: string; name: string }>>([]);
   const [composing, setComposing] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -65,7 +76,7 @@ export function DesktopAttention({
   const liveClient = channel === "envivo" && mode === "client";
 
   useEffect(() => {
-    function onKey(event: KeyboardEvent) {
+    function onKey(event: globalThis.KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
@@ -86,6 +97,7 @@ export function DesktopAttention({
             areas?: AreaOption[];
             cases?: PublicAttentionCase[];
             colleagues?: Colleague[];
+            companies?: Array<{ tenantId: string; name: string }>;
           } | null;
           const presence = (await presenceResponse.json().catch(() => null)) as {
             ok?: boolean;
@@ -100,6 +112,7 @@ export function DesktopAttention({
           setAreas(attention.areas ?? []);
           setCases(attention.cases ?? []);
           setColleagues(attention.colleagues ?? []);
+          setCompanies(attention.companies ?? []);
           if (presenceResponse.ok && presence?.ok) {
             setStaffOnline(presence.staffOnline === true);
             setOnlineOrgs(presence.online ?? []);
@@ -123,14 +136,29 @@ export function DesktopAttention({
 
   const onlineIds = useMemo(() => new Set(onlineOrgs.map((org) => org.tenantId)), [onlineOrgs]);
 
-  const rows = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase("es");
+  const listed = useMemo(() => {
+    if (mode !== "panel" || channel !== "mensajes") return cases;
+    return filterDeskCases(cases, {
+      query,
+      tenantId: companyId,
+      originId,
+      status: statusId,
+      priority: priorityId,
+      assigneeUserId: assigneeId,
+      unassigned: queue === "unassigned",
+      noFirstReply: queue === "waiting",
+    });
+  }, [assigneeId, cases, channel, companyId, mode, originId, priorityId, query, queue, statusId]);
+
+  const rows = useMemo((): ChatRow[] => {
+    const source = mode === "panel" && channel === "mensajes" ? listed : cases;
+    const needle = mode === "panel" && channel === "mensajes" ? "" : query.trim().toLocaleLowerCase("es");
     const matches = (title: string, preview: string) =>
       !needle || title.toLocaleLowerCase("es").includes(needle) || preview.toLocaleLowerCase("es").includes(needle);
 
     if (channel === "envivo" && mode === "panel") {
       return onlineOrgs.flatMap((org) => {
-        const related = cases.filter((item) => item.tenantId === org.tenantId).sort(byRecent);
+        const related = source.filter((item) => item.tenantId === org.tenantId).sort(byRecent);
         const preview = org.names.length > 0 ? `${org.names.join(", ")} en línea` : "En el escritorio";
         if (!matches(org.company, preview)) return [];
         return [
@@ -149,12 +177,12 @@ export function DesktopAttention({
     }
 
     if (mode === "client") {
-      return cases
+      return source
         .slice()
         .sort(byRecent)
         .flatMap((item) => {
-          const preview = item.messages.at(-1)?.body || item.areaName;
-          if (!matches(item.subject, preview)) return [];
+          const preview = `${item.code} · ${item.messages.at(-1)?.body || item.areaName}`;
+          if (!matches(item.subject, preview) && !matches(item.code, item.company)) return [];
           return [
             {
               key: item.id,
@@ -170,7 +198,28 @@ export function DesktopAttention({
         });
     }
 
-    return groupAttentionOrgs(cases).flatMap((org) => {
+    if (mode === "panel" && channel === "mensajes" && queue === "unassigned") {
+      return source
+        .slice()
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0))
+        .map(
+          (item) =>
+            ({
+              key: item.id,
+              tenantId: item.tenantId,
+              caseId: item.id,
+              title: `${item.code} · ${item.subject}`,
+              preview: item.company,
+              at: item.createdAt,
+              unread: item.unread || item.awaitingFirstReply,
+              online: onlineIds.has(item.tenantId),
+              origin: item.helpPlace || "Origen no registrado",
+              area: item.areaName,
+            }) satisfies ChatRow
+        );
+    }
+
+    return groupAttentionOrgs(source).flatMap((org) => {
       if (!matches(org.company, org.preview)) return [];
       const chosen = pickCase(org.cases);
       return [
@@ -186,7 +235,7 @@ export function DesktopAttention({
         } satisfies ChatRow,
       ];
     });
-  }, [cases, channel, mode, onlineIds, onlineOrgs, query, staffOnline]);
+  }, [cases, channel, listed, mode, onlineIds, onlineOrgs, query, queue, staffOnline]);
 
   const selected = cases.find((item) => item.id === selectedId) ?? null;
   const orgCases = selected
@@ -242,7 +291,7 @@ export function DesktopAttention({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveClient, liveCase?.id, liveCase?.unread]);
 
-  const title = channel === "envivo" ? "Chat en vivo" : "Mensajes";
+  const title = channel === "envivo" ? "Chat en vivo" : "Atención al Cliente";
   const defaultArea = areas.find((area) => area.id === "general" && area.active)?.id ?? areas.find((area) => area.active)?.id ?? "";
 
   return (
@@ -263,7 +312,7 @@ export function DesktopAttention({
                 <header className="attn-inbox-head">
                   <div>
                     <h2 id="attention-title">{title}</h2>
-                    <p>{channel === "envivo" ? "Quien está en el escritorio" : "Conversaciones"}</p>
+                    <p>{channel === "envivo" ? "Quien está en el escritorio" : mode === "client" ? "Mis tickets" : "Bandeja"}</p>
                   </div>
                   <button type="button" className="ghost" onClick={onClose}>
                     Cerrar
@@ -273,7 +322,7 @@ export function DesktopAttention({
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder={mode === "panel" ? "Buscar…" : "Buscar conversación…"}
+                    placeholder={mode === "panel" ? "Buscar correlativo…" : "Buscar ticket…"}
                     aria-label="Buscar"
                   />
                   {mode === "client" && channel === "mensajes" ? (
@@ -285,15 +334,72 @@ export function DesktopAttention({
                         setSelectedId("");
                       }}
                     >
-                      Nuevo
+                      Nuevo ticket
+                    </button>
+                  ) : null}
+                  {mode === "panel" && channel === "mensajes" ? (
+                    <button
+                      type="button"
+                      className="primary attn-new"
+                      onClick={() => {
+                        setComposing(true);
+                        setSelectedId("");
+                      }}
+                    >
+                      Nuevo ticket
                     </button>
                   ) : null}
                 </div>
+                {mode === "panel" && channel === "mensajes" ? (
+                  <div className="attn-inbox-tools">
+                    <select aria-label="Empresa" value={companyId} onChange={(event) => setCompanyId(event.target.value)}>
+                      <option value="">Empresa</option>
+                      {companies.map((company) => (
+                        <option key={company.tenantId} value={company.tenantId}>
+                          {company.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select aria-label="Origen" value={originId} onChange={(event) => setOriginId(event.target.value)}>
+                      <option value="">Origen</option>
+                      <option value="growth-os.admision.editar-formulario">Editar formulario</option>
+                      <option value="growth-os.admision.editar-formulario.guardar">Guardar formulario</option>
+                      <option value="growth-os.admision.editar-formulario.publicar">Publicar formulario</option>
+                      <option value="growth-os.admision.formularios">Formularios</option>
+                      <option value="escritorio.atencion.nuevo-ticket">Escritorio</option>
+                      <option value="web.publica.pedir-ayuda">Web pública</option>
+                    </select>
+                    <select aria-label="Estado" value={statusId} onChange={(event) => setStatusId(event.target.value)}>
+                      <option value="">Estado</option>
+                      <option value="pendiente">Pendiente</option>
+                      <option value="abierto">En gestión</option>
+                      <option value="resuelto">Resuelto</option>
+                    </select>
+                    <select aria-label="Prioridad" value={priorityId} onChange={(event) => setPriorityId(event.target.value)}>
+                      <option value="">Prioridad</option>
+                      <option value="normal">Normal</option>
+                      <option value="alta">Alta</option>
+                    </select>
+                    <select aria-label="Responsable" value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}>
+                      <option value="">Responsable</option>
+                      {colleagues.map((person) => (
+                        <option key={person.userId} value={person.userId}>
+                          {person.displayName}
+                        </option>
+                      ))}
+                    </select>
+                    <select aria-label="Cola" value={queue} onChange={(event) => setQueue(event.target.value)}>
+                      <option value="">Cola</option>
+                      <option value="unassigned">Sin asignar</option>
+                      <option value="waiting">Sin primera respuesta</option>
+                    </select>
+                  </div>
+                ) : null}
                 {rows.length === 0 ? (
                   <p className="attn-placeholder">
                     {channel === "envivo"
                       ? "Nadie está en el escritorio ahora."
-                      : "No hay conversaciones."}
+                      : "No hay tickets."}
                   </p>
                 ) : (
                   <ul className="attn-org-list">
@@ -301,7 +407,11 @@ export function DesktopAttention({
                       <li key={row.key}>
                         <button
                           type="button"
-                          className={row.key === (mode === "client" ? selectedId : selectedTenantId) && !composing ? "is-active" : undefined}
+                          className={
+                            row.key === (mode === "client" || row.origin ? selectedId : selectedTenantId) && !composing
+                              ? "is-active"
+                              : undefined
+                          }
                           onClick={() => void openRow(row)}
                         >
                           <span className="attn-org-mark" aria-hidden="true">
@@ -314,9 +424,12 @@ export function DesktopAttention({
                               {row.unread ? <i className="attn-dot" /> : null}
                             </strong>
                             <small>{row.preview}</small>
+                            {row.origin ? <small>Origen: {row.origin}</small> : null}
+                            {row.area ? <small>Área: {row.area}</small> : null}
                           </span>
                           {row.at ? (
                             <span className="attn-org-meta">
+                              {row.origin ? <span>Ingreso</span> : null}
                               <time dateTime={row.at}>{formatAttentionWhen(row.at)}</time>
                             </span>
                           ) : null}
@@ -339,8 +452,10 @@ export function DesktopAttention({
                   onPost={post}
                   onClose={onClose}
                 />
-              ) : composing && mode === "client" ? (
+              ) : composing && channel === "mensajes" ? (
                 <Compose
+                  mode={mode}
+                  companies={companies}
                   areas={areas.filter((area) => area.active)}
                   defaultArea={defaultArea}
                   sending={sending}
@@ -351,6 +466,7 @@ export function DesktopAttention({
                   item={threadCase}
                   orgCases={mode === "panel" ? orgCases : [threadCase]}
                   mode={mode}
+                  areas={areas.filter((area) => area.active)}
                   online={mode === "panel" ? onlineIds.has(threadCase.tenantId) : staffOnline}
                   colleagues={colleagues}
                   sending={sending}
@@ -367,7 +483,7 @@ export function DesktopAttention({
                   <p>
                     {channel === "envivo" && selectedTenantId
                       ? "Está en línea. La conversación aparece cuando escriba."
-                      : "Elige una conversación."}
+                      : "Elige un ticket."}
                   </p>
                   {liveClient ? null : (
                     <button type="button" className="ghost attn-stage-close" onClick={onClose}>
@@ -409,7 +525,7 @@ function LiveClient({
             Nelzuri
             {staffOnline ? <i className="attn-live-dot" title="En línea" /> : null}
           </h3>
-          <p>{staffOnline ? "En línea" : "No hay nadie en línea. El mensaje queda en Mensajes."}</p>
+          <p>{staffOnline ? "En línea" : "No hay nadie en línea. El mensaje queda en Atención al Cliente."}</p>
         </div>
         <button type="button" className="ghost attn-close" onClick={onClose} aria-label="Cerrar">
           ✕
@@ -419,46 +535,91 @@ function LiveClient({
       {item && item.status !== "resuelto" ? (
         <Composer sending={sending} onSend={(body) => onPost({ action: "message", caseId: item.id, body })} />
       ) : (
-        <Compose areas={areas} defaultArea={defaultArea} sending={sending} onSubmit={onPost} />
+        <Compose mode="client" companies={[]} areas={areas} defaultArea={defaultArea} sending={sending} onSubmit={onPost} />
       )}
     </div>
   );
 }
 
 function Compose({
+  mode,
+  companies,
   areas,
   defaultArea,
   sending,
   onSubmit,
 }: {
+  mode: "panel" | "client";
+  companies: Array<{ tenantId: string; name: string }>;
   areas: AreaOption[];
   defaultArea: string;
   sending: boolean;
   onSubmit: (payload: Record<string, unknown>) => Promise<boolean>;
 }) {
+  const origin = findHelpOrigin("escritorio.atencion.nuevo-ticket");
+  const [openedAt] = useState(() => new Date().toISOString());
   const [areaId, setAreaId] = useState(defaultArea);
+  const [tenantId, setTenantId] = useState(companies[0]?.tenantId ?? "");
   const [body, setBody] = useState("");
+  const [whereNote, setWhereNote] = useState("");
+  const [attachment, setAttachment] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     if (!areaId && defaultArea) setAreaId(defaultArea);
   }, [areaId, defaultArea]);
+
+  useEffect(() => {
+    if (!tenantId && companies[0]) setTenantId(companies[0].tenantId);
+  }, [companies, tenantId]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void onSubmit({
       action: "open",
       areaId,
+      tenantId: mode === "panel" ? tenantId : "",
       subject: subjectFrom(body),
       body,
-      contextNote: "",
-      productId: "",
+      originId: "escritorio.atencion.nuevo-ticket",
+      capturedAt: openedAt,
+      whereNote,
+      attachment,
       priority: "normal",
     });
   }
 
+  function onFile(file: File | undefined) {
+    if (!file) {
+      setAttachment(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAttachment({ name: file.name, mediaType: file.type, dataUrl: reader.result });
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <form className="attn-compose" onSubmit={submit}>
-      <h2>Nueva conversación</h2>
+      <h2>Nuevo ticket</h2>
+      <p className="lead">
+        Origen: {origin ? formatHelpOrigin(origin) : "Origen no registrado"} · {formatAttentionWhen(openedAt)}
+      </p>
+      {mode === "panel" ? (
+        <label>
+          Empresa
+          <select value={tenantId} onChange={(event) => setTenantId(event.target.value)} required aria-label="Empresa del ticket">
+            {companies.map((company) => (
+              <option key={company.tenantId} value={company.tenantId}>
+                {company.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       <label>
         Área
         <select value={areaId} onChange={(event) => setAreaId(event.target.value)} required aria-label="Área">
@@ -469,6 +630,14 @@ function Compose({
           ))}
         </select>
       </label>
+      <label>
+        Dónde ocurrió
+        <input value={whereNote} maxLength={200} onChange={(event) => setWhereNote(event.target.value)} placeholder="Opcional" aria-label="Dónde ocurrió" />
+      </label>
+      <label>
+        Captura
+        <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="Captura" onChange={(event) => onFile(event.target.files?.[0])} />
+      </label>
       <div className="attn-composer">
         <ComposerFields body={body} sending={sending} onChange={setBody} />
       </div>
@@ -476,10 +645,15 @@ function Compose({
   );
 }
 
+function milestoneAt(item: PublicAttentionCase, kind: PublicAttentionCase["events"][number]["kind"]): string {
+  return item.events.find((entry) => entry.kind === kind)?.at ?? "";
+}
+
 function Thread({
   item,
   orgCases,
   mode,
+  areas,
   online,
   colleagues,
   sending,
@@ -490,6 +664,7 @@ function Thread({
   item: PublicAttentionCase;
   orgCases: PublicAttentionCase[];
   mode: "panel" | "client";
+  areas: AreaOption[];
   online: boolean;
   colleagues: Colleague[];
   sending: boolean;
@@ -514,9 +689,46 @@ function Thread({
             {online ? <i className="attn-live-dot" title="En línea" /> : null}
           </h3>
           <p>
-            {online ? "En línea" : "Sin conexión"}
-            {mode === "panel" ? ` · ${item.areaName}` : ""}
+            {item.code} · {item.nextStepLabel}
           </p>
+          <p>Origen: {item.helpPlace || "Origen no registrado"}</p>
+          <p>Área: {item.areaName}</p>
+          {mode === "panel" ? (
+            <p>
+              {item.location?.label ?? "No está disponible"}
+              {item.location?.place ? ` ${item.location.place}` : ""}
+              {item.location?.state === "last" && item.location.at ? ` · ${formatAttentionWhen(item.location.at)}` : ""}
+            </p>
+          ) : null}
+          {item.whereNote ? <p>Dónde ocurrió: {item.whereNote}</p> : null}
+          <ol className="attn-milestones" aria-label="Hitos">
+            <li>
+              <span>Recepción</span>
+              <time dateTime={milestoneAt(item, "recepcion") || item.createdAt}>
+                {formatAttentionWhen(milestoneAt(item, "recepcion") || item.createdAt)}
+              </time>
+            </li>
+            <li>
+              <span>Asignación</span>
+              {milestoneAt(item, "asignado") ? (
+                <time dateTime={milestoneAt(item, "asignado")}>{formatAttentionWhen(milestoneAt(item, "asignado"))}</time>
+              ) : (
+                <span>Sin asignar</span>
+              )}
+            </li>
+            <li>
+              <span>Primera respuesta humana</span>
+              {milestoneAt(item, "primera_respuesta") ? (
+                <time dateTime={milestoneAt(item, "primera_respuesta")}>
+                  {formatAttentionWhen(milestoneAt(item, "primera_respuesta"))}
+                </time>
+              ) : (
+                <span>Pendiente</span>
+              )}
+            </li>
+          </ol>
+          {item.awaitingFirstReply && mode === "panel" ? <p>Primera respuesta pendiente.</p> : null}
+          {!item.assigneeUserId && item.status !== "resuelto" && mode === "panel" ? <p>Sin asignar.</p> : null}
         </div>
         <div className="attn-stage-actions">
           {mode === "panel" && item.status !== "resuelto" ? (
@@ -532,6 +744,29 @@ function Thread({
           ) : (
             <span className={`attn-status-pill is-${item.status}`}>{statusLabel(item.status)}</span>
           )}
+          {mode === "panel" && item.status !== "resuelto" ? (
+            <select
+              aria-label="Prioridad"
+              value={item.priority}
+              onChange={(event) => void onPost({ action: "priority", caseId: item.id, priority: event.target.value })}
+            >
+              <option value="normal">{priorityLabel("normal")}</option>
+              <option value="alta">{priorityLabel("alta")}</option>
+            </select>
+          ) : null}
+          {mode === "panel" && item.status !== "resuelto" ? (
+            <select
+              aria-label="Área"
+              value={item.areaId}
+              onChange={(event) => void onPost({ action: "area", caseId: item.id, areaId: event.target.value })}
+            >
+              {areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
           {mode === "panel" && item.status !== "resuelto" ? (
             <select
               aria-label="Asignar"
@@ -593,10 +828,47 @@ function Thread({
           </div>
         </div>
       ) : null}
+      {mode === "panel" && item.events.length > 0 ? (
+        <ol className="attn-log">
+          {item.events.map((entry) => (
+            <li key={entry.id}>
+              <small>
+                {entry.actorName} · {formatAttentionWhen(entry.at)}
+              </small>
+              <p>{entry.detail}</p>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {item.attachmentDataUrl ? (
+        <p>
+          <a href={item.attachmentDataUrl} target="_blank" rel="noreferrer">
+            {item.attachmentName || "Captura"}
+          </a>
+        </p>
+      ) : null}
       {item.status === "resuelto" ? (
-        <p className="lead">Esta conversación está cerrada.</p>
+        mode === "panel" ? (
+          <button type="button" className="primary" disabled={sending} onClick={() => void onPost({ action: "reopen", caseId: item.id })}>
+            Reabrir
+          </button>
+        ) : (
+          <p className="lead">Este ticket está resuelto.</p>
+        )
       ) : (
-        <Composer sending={sending} onSend={(body) => onPost({ action: "message", caseId: item.id, body })} />
+        <>
+          {mode === "panel" ? (
+            <button
+              type="button"
+              className="ghost"
+              disabled={sending}
+              onClick={() => void onPost({ action: "request-info", caseId: item.id, body: "¿Puedes contarnos un poco más?" })}
+            >
+              Pedir información
+            </button>
+          ) : null}
+          <Composer sending={sending} onSend={(body) => onPost({ action: "message", caseId: item.id, body })} />
+        </>
       )}
     </div>
   );
@@ -607,16 +879,22 @@ function Bubbles({ item, mine }: { item: PublicAttentionCase; mine: "staff" | "c
     <div className="attn-thread-pane">
       {item.messages.length === 0 ? <p className="lead">Todavía no hay mensajes.</p> : null}
       <ol className="attn-log">
-        {item.messages.map((message) => (
-          <li key={message.id} className={message.role === mine ? "is-mine" : "is-theirs"}>
-            <div>
-              <small>
-                {message.label} · {formatAttentionWhen(message.at)}
-              </small>
+        {item.messages.map((message) =>
+          message.role === "system" ? (
+            <li key={message.id} className="is-system">
               <p>{message.body}</p>
-            </div>
-          </li>
-        ))}
+            </li>
+          ) : (
+            <li key={message.id} className={message.role === mine ? "is-mine" : "is-theirs"}>
+              <div>
+                <small>
+                  {message.label} · {formatAttentionWhen(message.at)}
+                </small>
+                <p>{message.body}</p>
+              </div>
+            </li>
+          )
+        )}
       </ol>
     </div>
   );
@@ -655,7 +933,7 @@ function ComposerFields({
   onChange: (value: string) => void;
   submitLabel?: string;
 }) {
-  function onKey(event: KeyboardEvent<HTMLTextAreaElement>) {
+  function onKey(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();

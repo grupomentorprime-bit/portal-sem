@@ -28,7 +28,8 @@ export default async function SiteLayout({
   const ctx = await getPortalContext();
 
   if (shouldEnterPlatformHome(host, Boolean(ctx))) {
-    if (pathname !== "/" && pathname !== "") {
+    const path = pathname.split("?")[0].replace(/\/$/, "") || "/";
+    if (path !== "/" && path !== "/ayuda") {
       redirect("/");
     }
     return <PublicSurface>{children}</PublicSurface>;

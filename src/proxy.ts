@@ -46,7 +46,7 @@ export function proxy(request: NextRequest) {
   const host = resolveRequestHost(request.headers);
 
   if (isPlatformOriginHost(host) && !isPlatformProductPath(pathname)) {
-    if (pathname === "/") {
+    if (pathname === "/" || pathname === "/ayuda") {
       return continueWithPathname(request);
     }
     return withPrivateCacheControl(

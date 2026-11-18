@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PublicHelpDock } from "@/components/help/PublicHelpForm";
 import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 
 /**
@@ -10,6 +11,7 @@ export function PublicSurface({ children }: { children: ReactNode }) {
   return (
     <div className="public-surface">
       <div className="public-surface__content">{children}</div>
+      <PublicHelpDock />
       <footer className="public-vendor-credit-guarantee" aria-label="Crédito">
         <PublicVendorCredit />
       </footer>

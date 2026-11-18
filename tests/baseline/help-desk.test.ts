@@ -20,6 +20,7 @@ import {
   filterDeskCases,
   followVisitorTicket,
   formatCorrelative,
+  formatHelpOrigin,
   freezeHelpOrigin,
   helpLocationFromOrigin,
   linkVisitorCompany,
@@ -362,5 +363,61 @@ describe("Atención al Cliente", () => {
     if (!frozen.ok) return;
     assert.equal(frozen.helpFrom.action, "Publicar formulario");
     assert.equal(frozen.helpFrom.screen, "Editar formulario");
+    assert.equal(
+      formatHelpOrigin(frozen.helpFrom),
+      "Aplicación · Growth OS → Admisión → Editar formulario → Publicar formulario"
+    );
+  });
+
+  it("confirma la solicitud y separa recepción, asignación y primera respuesta", () => {
+    const opened = openHelpTicket({
+      areas: DEFAULT_ATTENTION_AREAS,
+      actor: client(),
+      tenantId: "sem",
+      areaId: "tecnico",
+      subject: "No me deja guardar",
+      body: "No me deja guardar",
+      originId: "growth-os.admision.editar-formulario.guardar",
+      capturedAt: OPENED,
+      correlative: "AC-00011",
+      id: "case-recibo",
+      messageId: "m1",
+      eventId: "e1",
+      now: SENT,
+    });
+    assert.equal(opened.ok, true);
+    if (!opened.ok) return;
+    assert.equal(opened.case.events[0]?.kind, "recepcion");
+    assert.equal(opened.case.helpFrom?.action, "Guardar");
+    assert.equal(opened.case.helpFrom?.at, OPENED);
+    const receipt = opened.case.messages.at(-1);
+    assert.equal(receipt?.role, "system");
+    assert.match(receipt?.body ?? "", /Solicitud recibida/);
+    assert.match(receipt?.body ?? "", /AC-00011/);
+    assert.equal(filterDeskCases([opened.case], { unassigned: true, noFirstReply: true }).length, 1);
+
+    const assigned = assignAttentionCase(opened.case, {
+      actor: staff(),
+      assignee: colleague(),
+      id: "e2",
+      now: "2026-11-18T15:11:00.000Z",
+    });
+    assert.equal(assigned.ok, true);
+    if (!assigned.ok) return;
+    assert.equal(assigned.case.events.some((entry) => entry.kind === "asignado"), true);
+    assert.equal(assigned.case.messages.some((message) => message.role === "staff"), false);
+    assert.equal(filterDeskCases([assigned.case], { noFirstReply: true }).length, 1);
+    assert.equal(assigned.case.helpFrom?.screen, "Editar formulario");
+
+    const replied = appendCaseMessage(assigned.case, {
+      actor: staff(),
+      body: "Ya lo estoy mirando.",
+      id: "m9",
+      now: LATER,
+    });
+    assert.equal(replied.ok, true);
+    if (!replied.ok) return;
+    assert.equal(replied.case.events.some((entry) => entry.kind === "primera_respuesta"), true);
+    assert.equal(filterDeskCases([replied.case], { noFirstReply: true }).length, 0);
   });
 });

@@ -11,7 +11,7 @@ describe("buscador del escritorio", () => {
   it("sin texto muestra las aplicaciones de esa mesa y ninguna organización", () => {
     assert.deepEqual(
       desktopSearch({ query: "", owner: false, spaces }).map((hit) => hit.title),
-      ["Growth OS", "Cumple", "Aprende Hoy", "RR.HH.", "Mensajes", "Chat en vivo"]
+      ["Growth OS", "Cumple", "Aprende Hoy", "RR.HH.", "Atención al Cliente", "Chat en vivo"]
     );
     assert.deepEqual(
       desktopSearch({ query: "   ", owner: true, spaces }).map((hit) => hit.id),

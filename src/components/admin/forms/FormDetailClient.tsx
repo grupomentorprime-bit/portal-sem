@@ -28,6 +28,7 @@ import { FormExperienceEditor } from "@/components/admin/forms/FormExperienceEdi
 import { FormSimpleVisualEditor } from "@/components/admin/forms/FormSimpleVisualEditor";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { spacePublicHref, useSpacePublicOrigin } from "@/components/admin/SpacePublicOrigin";
+import { useHelpAsk } from "@/components/admin/HelpAsk";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,7 @@ export function FormDetailClient({
   tenantId,
   publishedFormHref,
 }: FormDetailClientProps) {
+  const { ask } = useHelpAsk();
   const router = useRouter();
   const searchParams = useSearchParams();
   const publicOrigin = useSpacePublicOrigin();
@@ -376,6 +378,25 @@ export function FormDetailClient({
               </>
             ) : (
               <>
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              className="admin-form-detail__btn"
+              onClick={() => ask("growth-os.admision.editar-formulario")}
+            >
+              <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              Pedir ayuda
+            </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  className="admin-form-detail__btn"
+                  onClick={() => ask("growth-os.admision.editar-formulario.guardar")}
+                >
+                  Ayuda al guardar
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -393,6 +414,15 @@ export function FormDetailClient({
                   loading={publishing}
                 >
                   {isPublished ? "Actualizar publicación" : "Publicar"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  className="admin-form-detail__btn"
+                  onClick={() => ask("growth-os.admision.editar-formulario.publicar")}
+                >
+                  Ayuda al publicar
                 </Button>
                 <Button
                   variant="ghost"

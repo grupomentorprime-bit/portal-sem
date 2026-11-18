@@ -32,6 +32,7 @@ import {
   spacePublicHref,
   useSpacePublicOrigin,
 } from "@/components/admin/SpacePublicOrigin";
+import { useHelpAsk } from "@/components/admin/HelpAsk";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -170,6 +171,7 @@ export function FormsCenterClient({
   scope = "all",
 }: FormsCenterClientProps) {
   const publicOrigin = useSpacePublicOrigin();
+  const { ask } = useHelpAsk();
   const isConvocatoriasScope = scope === "convocatorias";
   const router = useRouter();
   const [forms, setForms] = useState(initialForms);
@@ -582,6 +584,9 @@ export function FormsCenterClient({
       description="Crea, publica y archiva los formularios del sitio."
       actions={
         <>
+          <Button type="button" variant="outline" size="sm" onClick={() => ask("growth-os.admision.formularios")}>
+            Pedir ayuda
+          </Button>
           <Button
             type="button"
             variant="ghost"

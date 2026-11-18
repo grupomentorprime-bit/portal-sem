@@ -66,6 +66,8 @@ describe("OT-GROWTH-TEST-001 — gate admin sin sesión", () => {
     const programas = proxy(makeRequest("/programas"));
     assert.equal(programas.status, 307);
     assert.equal(new URL(programas.headers.get("location")!).pathname, "/");
+    const ayuda = proxy(makeRequest("/ayuda"));
+    assert.equal(ayuda.status, 200);
   });
 
   it("marca focused en /formularios/[id] del Espacio sin redirigir a login", () => {

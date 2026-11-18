@@ -262,6 +262,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const [chat, setChat] = useState<null | "mensajes" | "envivo">(null);
   const [liveDot, setLiveDot] = useState(false);
   const [attentionUnread, setAttentionUnread] = useState(Boolean(props.attentionUnread));
+  const [attentionCount, setAttentionCount] = useState(props.attentionCount ?? 0);
   const [spaceAjustesOpen, setSpaceAjustesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [entering, setEntering] = useState<string | null>(null);
@@ -592,7 +593,8 @@ export function MentorDesktop(props: MentorDesktopProps) {
 
   useEffect(() => {
     setAttentionUnread(Boolean(props.attentionUnread));
-  }, [props.attentionUnread]);
+    setAttentionCount(props.attentionCount ?? 0);
+  }, [props.attentionCount, props.attentionUnread]);
 
   useEffect(() => {
     let timer = 0;
@@ -607,6 +609,17 @@ export function MentorDesktop(props: MentorDesktopProps) {
           } | null;
           if (!response.ok || !body?.ok) return;
           setLiveDot(props.attentionStaff ? (body.online?.length ?? 0) > 0 : body.staffOnline === true);
+        })
+        .catch(() => undefined);
+      void fetch("/api/desktop/attention")
+        .then(async (response) => {
+          const attention = (await response.json().catch(() => null)) as {
+            ok?: boolean;
+            badge?: { count?: number; unread?: boolean };
+          } | null;
+          if (!response.ok || !attention?.ok || !attention.badge) return;
+          setAttentionCount(attention.badge.count ?? 0);
+          if (!props.attentionStaff) setAttentionUnread(Boolean(attention.badge.unread));
         })
         .catch(() => undefined);
     };
@@ -842,7 +855,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       return liveDot ? <em className="attn-dot" aria-label="Alguien en línea" /> : null;
     }
     if (appId !== "mensajes") return null;
-    const count = props.attentionCount ?? 0;
+    const count = attentionCount;
     if (props.attentionStaff && count > 0) {
       return <em className="attn-count">{count > 99 ? "99+" : count}</em>;
     }
@@ -1411,7 +1424,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
               </button>
             </div>
             {sheet.kind === "request" && sheetRequested ? (
-              <p className="sent">Queda registrada para este Espacio. Puedes seguirla en Mensajes.</p>
+              <p className="sent">Queda registrada para este Espacio. Puedes seguirla en Atención al Cliente.</p>
             ) : null}
           </div>
         ) : null}

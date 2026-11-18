@@ -124,7 +124,7 @@ export function mentorAppBlurb(appId: MentorAppId): string {
 
 export function dockAppLabel(appId: DockAppId): string {
   if (appId === "ajustes") return "Ajustes";
-  if (appId === "mensajes") return "Mensajes";
+  if (appId === "mensajes") return "Atención al Cliente";
   if (appId === "envivo") return "Chat en vivo";
   if (appId === "clientes") return "Clientes";
   return LABELS[appId];
@@ -133,8 +133,8 @@ export function dockAppLabel(appId: DockAppId): string {
 export function dockAppBlurb(appId: DockAppId, owner = false): string {
   if (appId === "mensajes") {
     return owner
-      ? "Conversaciones con cada cliente. Se responden cuando entres."
-      : "Conversación de esta empresa con Nelzuri.";
+      ? "Casos de cada empresa. Se responden cuando entres."
+      : "Casos de esta empresa con Nelzuri.";
   }
   if (appId === "envivo") {
     return owner

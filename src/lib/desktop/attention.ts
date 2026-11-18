@@ -1,4 +1,5 @@
 import { isMentorAppId, mentorAppLabel, type MentorAppId } from "@/lib/desktop/catalog";
+import { formatHelpOrigin } from "@/lib/desktop/help-origins";
 
 /**
  * Presencia real llega en la etapa siguiente.
@@ -87,7 +88,7 @@ export interface AttentionMessage {
   at: string;
   authorUserId: string;
   authorName: string;
-  role: "client" | "staff";
+  role: "client" | "staff" | "system";
   body: string;
 }
 
@@ -98,8 +99,10 @@ export interface AttentionEvent {
   actorName?: string;
   kind:
     | "creado"
+    | "recepcion"
     | "asignado"
     | "transferido"
+    | "primera_respuesta"
     | "estado"
     | "prioridad"
     | "aprobacion"
@@ -214,8 +217,8 @@ export interface PublicAttentionCase {
   createdAt: string;
   updatedAt: string;
   commercial: PublicCommercial | null;
-  messages: Array<{ id: string; at: string; role: "client" | "staff"; label: string; body: string }>;
-  events: Array<{ id: string; at: string; detail: string; actorName: string }>;
+  messages: Array<{ id: string; at: string; role: "client" | "staff" | "system"; label: string; body: string }>;
+  events: Array<{ id: string; at: string; detail: string; actorName: string; kind: AttentionEvent["kind"] }>;
   originId: string;
   helpFromLabel: string;
   helpPlace: string;
@@ -569,11 +572,7 @@ export function presentAttentionCase(
   if (!canSeeAttentionCase(actor, item)) return null;
   const staff = actor.kind === "staff";
   const step = caseNextStep(item);
-  const helpPlace = item.helpFrom
-    ? [item.helpFrom.siteOrApp, item.helpFrom.module, item.helpFrom.screen, item.helpFrom.action]
-        .filter(Boolean)
-        .join(" · ")
-    : "";
+  const helpPlace = item.helpFrom ? formatHelpOrigin(item.helpFrom) : "";
   return {
     id: item.id,
     code: item.correlative?.trim() || caseCode(item.id),
@@ -605,10 +604,11 @@ export function presentAttentionCase(
       id: entry.id,
       at: entry.at,
       detail: entry.detail,
+      kind: entry.kind,
       actorName: entry.actorName?.trim() || (entry.actorUserId === "legacy" ? "Registro" : "NELZURI"),
     })),
     originId: item.helpFrom?.originId ?? "",
-    helpFromLabel: item.helpFrom ? "Pidió ayuda desde" : "Origen no registrado",
+    helpFromLabel: item.helpFrom ? "Origen" : "Origen no registrado",
     helpPlace,
     helpAt: item.helpFrom?.at ?? null,
     nextStep: step,
@@ -690,7 +690,8 @@ export function openAttentionCase(input: {
     now: input.now,
     eventId: input.eventId,
     actorUserId: input.actor.userId,
-    eventDetail: "Abrió el caso.",
+    eventDetail: input.helpFrom ? "Recepción." : "Abrió el caso.",
+    eventKind: input.helpFrom ? "recepcion" : "creado",
     actorName: authorName,
   });
   const role = staffOpening ? "staff" : "client";
@@ -704,6 +705,18 @@ export function openAttentionCase(input: {
       body,
     }),
   ];
+  if (correlative && !staffOpening) {
+    created.messages.push(
+      message({
+        id: `${input.messageId}:recibo`,
+        at: input.now,
+        authorUserId: "nelzuri",
+        authorName: "Nelzuri",
+        role: "system",
+        body: `Solicitud recibida. ${correlative}`,
+      })
+    );
+  }
   created.clientReadAt = role === "client" ? input.now : undefined;
   created.correlative = correlative || undefined;
   created.helpFrom = input.helpFrom ?? null;
@@ -789,6 +802,11 @@ export function appendCaseMessage(
   if (!body) return { ok: false, reason: "empty" };
   if (body.length > MAX_BODY) return { ok: false, reason: "long" };
   const role = input.actor.kind === "staff" ? "staff" : "client";
+  const authorName = input.actor.displayName.trim() || (role === "staff" ? "Nelzuri" : "Cliente");
+  const firstHumanReply =
+    role === "staff" &&
+    !item.messages.some((row) => row.role === "staff") &&
+    !item.events.some((row) => row.kind === "primera_respuesta");
   const next: AttentionCase = {
     ...item,
     waitingOn: role === "staff" ? "cliente" : "nelzuri",
@@ -799,11 +817,24 @@ export function appendCaseMessage(
         id: input.id,
         at: input.now,
         authorUserId: input.actor.userId,
-        authorName: input.actor.displayName.trim() || (role === "staff" ? "Nelzuri" : "Cliente"),
+        authorName,
         role,
         body,
       }),
     ],
+    events: firstHumanReply
+      ? [
+          ...item.events,
+          event(
+            `${input.id}:respuesta`,
+            input.now,
+            input.actor.userId,
+            "primera_respuesta",
+            "Primera respuesta humana.",
+            authorName
+          ),
+        ]
+      : item.events,
   };
   return { ok: true, case: markCaseRead(next, input.actor, input.now) };
 }
@@ -845,6 +876,37 @@ export function assignAttentionCase(
       status: nextId && item.status === "pendiente" ? "abierto" : !nextId && item.status === "abierto" ? "pendiente" : item.status,
       updatedAt: input.now,
       events: [...item.events, event(input.id, input.now, input.actor.userId, kind, detail, input.actor.displayName)],
+    },
+  };
+}
+
+export function setAttentionArea(
+  item: AttentionCase,
+  input: {
+    actor: AttentionActor;
+    areaId: string;
+    areas: readonly AttentionArea[];
+    id: string;
+    now: string;
+  }
+): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "closed" | "area" } {
+  if (input.actor.kind !== "staff" || !canSeeAttentionCase(input.actor, item)) {
+    return { ok: false, reason: "forbidden" };
+  }
+  if (item.status === "resuelto") return { ok: false, reason: "closed" };
+  const area = input.areas.find((row) => row.id === input.areaId && row.active);
+  if (!area) return { ok: false, reason: "area" };
+  if (area.id === item.areaId) return { ok: true, case: item };
+  return {
+    ok: true,
+    case: {
+      ...item,
+      areaId: area.id,
+      updatedAt: input.now,
+      events: [
+        ...item.events,
+        event(input.id, input.now, input.actor.userId, "estado", `Área: ${area.name}.`, input.actor.displayName),
+      ],
     },
   };
 }
@@ -1077,6 +1139,7 @@ function baseCase(input: {
   eventId: string;
   actorUserId: string;
   eventDetail: string;
+  eventKind?: AttentionEvent["kind"];
   actorName?: string;
 }): AttentionCase {
   return {
@@ -1095,7 +1158,16 @@ function baseCase(input: {
     contextNote: input.contextNote,
     commercial: input.commercial,
     messages: [],
-    events: [event(input.eventId, input.now, input.actorUserId, "creado", input.eventDetail, input.actorName)],
+    events: [
+      event(
+        input.eventId,
+        input.now,
+        input.actorUserId,
+        input.eventKind ?? "creado",
+        input.eventDetail,
+        input.actorName
+      ),
+    ],
     createdAt: input.now,
     updatedAt: input.now,
   };

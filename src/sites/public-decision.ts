@@ -18,6 +18,10 @@ function isDirectFormPath(pathname: string): boolean {
   return path === "/formularios" || path.startsWith("/formularios/");
 }
 
+function isHelpPath(pathname: string): boolean {
+  return normalizePublicPath(pathname) === "/ayuda";
+}
+
 export function decidePublicSite(input: {
   hasTenant: boolean;
   sitePublished: boolean;
@@ -26,7 +30,7 @@ export function decidePublicSite(input: {
   registeredPaths: string[];
 }): PublicSiteDecision {
   if (!input.hasTenant) return { kind: "platform" };
-  if (isDirectFormPath(input.pathname)) return { kind: "passthrough" };
+  if (isDirectFormPath(input.pathname) || isHelpPath(input.pathname)) return { kind: "passthrough" };
   if (!input.sitePublished || !input.hasSiteModule) return { kind: "coming-soon" };
 
   const path = normalizePublicPath(input.pathname);

@@ -50,6 +50,16 @@ describe("decidePublicSite", () => {
     assert.equal(
       decidePublicSite({
         hasTenant: true,
+        sitePublished: true,
+        hasSiteModule: true,
+        pathname: "/ayuda",
+        registeredPaths: ["/"],
+      }).kind,
+      "passthrough"
+    );
+    assert.equal(
+      decidePublicSite({
+        hasTenant: true,
         sitePublished: false,
         hasSiteModule: false,
         pathname: "/",

@@ -38,6 +38,11 @@ export interface HelpLocation {
   seenAt: string;
 }
 
+/**
+ * Orígenes que Pedir ayuda puede congelar.
+ * Otra aplicación se incorpora agregando aquí su canal, módulo, pantalla y acción,
+ * y llamando a `useHelpAsk().ask(id)` dentro del escritorio de Growth OS.
+ */
 export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "growth-os.admision.editar-formulario",
@@ -54,6 +59,14 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
     module: "Admisión",
     screen: "Editar formulario",
     action: "Publicar formulario",
+  },
+  {
+    id: "growth-os.admision.editar-formulario.guardar",
+    channel: "aplicacion",
+    siteOrApp: "Growth OS",
+    module: "Admisión",
+    screen: "Editar formulario",
+    action: "Guardar",
   },
   {
     id: "growth-os.admision.formularios",
@@ -126,12 +139,35 @@ export function helpPlace(parts: {
   return [parts.siteOrApp, parts.module, parts.screen, parts.action].filter(Boolean).join(" · ");
 }
 
+export function helpChannelLabel(channel: string): string {
+  if (channel === "aplicacion") return "Aplicación";
+  if (channel === "escritorio") return "Escritorio Empresarial";
+  if (channel === "web") return "Web";
+  return channel.trim();
+}
+
+/** Canal y, cuando existe, aplicación o sitio, módulo, pantalla y acción. */
+export function formatHelpOrigin(from: {
+  channel: string;
+  siteOrApp: string;
+  module: string;
+  screen: string;
+  action?: string | null;
+}): string {
+  const head = helpChannelLabel(from.channel);
+  const trail = [from.siteOrApp, from.module, from.screen, from.action]
+    .map((part) => part?.trim() ?? "")
+    .filter((part, index) => part && !(index === 0 && part === head));
+  return trail.length > 0 ? `${head} · ${trail.join(" → ")}` : head;
+}
+
 /** Solo nombres registrados. Ignora el texto que la persona esté editando. */
 export function helpLocationFromOrigin(input: {
   originId: string;
   tenantId: string;
   userId: string;
   seenAt: string;
+  [extra: string]: unknown;
 }): { ok: true; location: HelpLocation } | { ok: false; reason: "origin" } {
   const frozen = freezeHelpOrigin(input.originId, input.seenAt);
   if (!frozen.ok) return frozen;

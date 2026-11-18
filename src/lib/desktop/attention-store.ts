@@ -15,11 +15,13 @@ import {
   type LegacyAttentionThread,
 } from "@/lib/desktop/attention";
 import type { MentorAppId } from "@/lib/desktop/catalog";
+import { formatCorrelative, type HelpLocation } from "@/lib/desktop/help-origins";
 import { getDatabase } from "@/lib/mongodb";
 
 const CASES = "attention_cases";
 const CONFIG = "attention_config";
 const THREADS = "attention_threads";
+const LOCATIONS = "attention_locations";
 
 interface ConfigDoc {
   _id: "config";
@@ -37,6 +39,10 @@ async function casesCollection() {
   const db = await getDatabase();
   const collection = db.collection<AttentionCase & { _id: string }>(CASES);
   await collection.createIndex({ tenantId: 1, updatedAt: -1 }, { name: "attention_by_tenant" });
+  await collection.createIndex(
+    { correlative: 1 },
+    { name: "attention_correlative", unique: true, sparse: true }
+  );
   return collection;
 }
 
@@ -79,6 +85,48 @@ export async function saveAttentionGrant(userId: string, areaIds: string[]): Pro
 export async function saveAttentionCase(item: AttentionCase): Promise<void> {
   const collection = await casesCollection();
   await collection.replaceOne({ _id: item.id }, item, { upsert: true });
+}
+
+export async function takeCorrelative(): Promise<string> {
+  const db = await getDatabase();
+  const doc = await db
+    .collection<{ _id: string; seq: number }>(CONFIG)
+    .findOneAndUpdate({ _id: "correlative" }, { $inc: { seq: 1 } }, { upsert: true, returnDocument: "after" });
+  const seq = doc?.seq;
+  if (!seq || !Number.isInteger(seq) || seq <= 0) {
+    throw new Error("attention_correlative_failed");
+  }
+  return formatCorrelative(seq);
+}
+
+export async function findAttentionCaseByCorrelative(code: string): Promise<AttentionCase | null> {
+  const correlative = code.trim().toUpperCase();
+  if (!correlative) return null;
+  const collection = await casesCollection();
+  const doc = await collection.findOne({ correlative });
+  return doc ? withoutId(doc) : null;
+}
+
+export async function saveHelpLocation(location: HelpLocation): Promise<void> {
+  const db = await getDatabase();
+  const _id = `${location.tenantId}:${location.userId}`;
+  await db.collection<HelpLocation & { _id: string }>(LOCATIONS).updateOne(
+    { _id },
+    { $set: location },
+    { upsert: true }
+  );
+}
+
+export async function readHelpLocation(tenantId: string, userId: string): Promise<HelpLocation | null> {
+  if (!tenantId || !userId) return null;
+  const db = await getDatabase();
+  const doc = await db.collection<HelpLocation & { _id: string }>(LOCATIONS).findOne({
+    _id: `${tenantId}:${userId}`,
+  });
+  if (!doc) return null;
+  const { _id, ...location } = doc;
+  void _id;
+  return location;
 }
 
 export async function findAttentionCase(id: string): Promise<AttentionCase | null> {
