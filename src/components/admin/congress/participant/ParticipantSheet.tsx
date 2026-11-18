@@ -24,6 +24,8 @@ import {
   lodgingLabel,
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
+import { remainingBalanceClp } from "@/core/congress/charges";
+import { occupiedBedsForNight } from "@/core/congress/lodging";
 import { cn } from "@/lib/utils";
 
 type SheetTab = "asistencia" | "alimentacion" | "alojamiento";
@@ -94,7 +96,6 @@ export function ParticipantSheet({
   busy,
 }: Props) {
   const [tab, setTab] = useState<SheetTab>("asistencia");
-  const [reason, setReason] = useState("");
   const [payAmount, setPayAmount] = useState(String(CONGRESS_CONTRIBUTION_CLP));
   const [payerName, setPayerName] = useState("");
   const [receiptRef, setReceiptRef] = useState("");
@@ -107,14 +108,29 @@ export function ParticipantSheet({
   useEffect(() => {
     if (!registration || !open) return;
     setTab("asistencia");
-    setReason("");
-    setPayAmount(String(CONGRESS_CONTRIBUTION_CLP));
     setPayerName(registration.identity.fullName);
     setReceiptRef("");
     setHomeId("");
     setNight(NIGHT_BOTH);
     setExpectedPreset(expectedPresetFromReg(registration));
   }, [open, registration?._id]);
+
+  useEffect(() => {
+    if (!registration || !open) return;
+    const balance = remainingBalanceClp(registration);
+    setPayAmount(
+      String(
+        balance > 0
+          ? balance
+          : registration.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP
+      )
+    );
+  }, [
+    open,
+    registration?._id,
+    registration?.allocatedPaidClp,
+    registration?.chargeAmountClp,
+  ]);
 
   const lodging = useMemo(
     () =>
@@ -132,6 +148,38 @@ export function ParticipantSheet({
           )
         : [],
     [assignments, registration]
+  );
+
+  const activeAssignments = useMemo(
+    () =>
+      assignments.filter(
+        (a) =>
+          a.status === "assigned" || a.status === "confirmed" || Boolean(a.confirmed)
+      ),
+    [assignments]
+  );
+
+  const homeAvailability = useMemo(() => {
+    const fri = CONGRESS_NIGHTS[0];
+    const sat = CONGRESS_NIGHTS[1];
+    return homes.map((home) => {
+      const friCap = home.capacityByNight[fri] ?? 0;
+      const satCap = home.capacityByNight[sat] ?? 0;
+      const friFree = Math.max(
+        0,
+        friCap - occupiedBedsForNight(activeAssignments, home._id, fri)
+      );
+      const satFree = Math.max(
+        0,
+        satCap - occupiedBedsForNight(activeAssignments, home._id, sat)
+      );
+      return { home, friCap, satCap, friFree, satFree };
+    });
+  }, [activeAssignments, homes]);
+
+  const selectedHomeAvailability = useMemo(
+    () => homeAvailability.find((row) => row.home._id === homeId) ?? null,
+    [homeAvailability, homeId]
   );
 
   const title = registration?.identity.fullName ?? "Participante";
@@ -228,9 +276,7 @@ export function ParticipantSheet({
                         <p className="text-xs text-muted">
                           {present === true
                             ? `Presente${markedAt ? ` · ${formatMarkedAtSantiago(markedAt)}` : ""}`
-                            : present === false
-                              ? "Ausente"
-                              : "Sin marcar"}
+                            : "Sin llegada"}
                         </p>
                         {operate ? (
                           <div className="mt-2 flex flex-wrap gap-1">
@@ -248,14 +294,9 @@ export function ParticipantSheet({
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={busy || !reason.trim()}
+                              disabled={busy}
                               onClick={() =>
-                                void onPatchAttendance(
-                                  registration._id,
-                                  day,
-                                  false,
-                                  reason.trim()
-                                )
+                                void onPatchAttendance(registration._id, day, false)
                               }
                             >
                               Ausente
@@ -263,17 +304,12 @@ export function ParticipantSheet({
                             <Button
                               size="sm"
                               variant="ghost"
-                              disabled={busy || !reason.trim()}
+                              disabled={busy}
                               onClick={() =>
-                                void onPatchAttendance(
-                                  registration._id,
-                                  day,
-                                  null,
-                                  reason.trim()
-                                )
+                                void onPatchAttendance(registration._id, day, null)
                               }
                             >
-                              Limpiar
+                              Sin marcar
                             </Button>
                           </div>
                         ) : null}
@@ -281,15 +317,6 @@ export function ParticipantSheet({
                     );
                   })}
                 </div>
-
-                {operate ? (
-                  <Input
-                    label="Motivo (obligatorio para corregir o limpiar)"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Ej. marcada por error"
-                  />
-                ) : null}
 
                 {(registration.attendanceHistory ?? []).length > 0 ? (
                   <div className="space-y-1">
@@ -302,11 +329,7 @@ export function ParticipantSheet({
                           <li key={`${h.at}-${idx}`}>
                             {formatDateTimeSantiago(h.at)} ·{" "}
                             {h.day === "saturday" ? "Sáb" : "Dom"} →{" "}
-                            {h.nextPresent === true
-                              ? "Presente"
-                              : h.nextPresent === false
-                                ? "Ausente"
-                                : "Sin marcar"}
+                            {h.nextPresent === true ? "Presente" : "Sin llegada"}
                             {h.reason ? ` · ${h.reason}` : ""}
                           </li>
                         ))}
@@ -452,7 +475,21 @@ export function ParticipantSheet({
                       onChange={(e) => setHomeId(e.target.value)}
                       options={[
                         { value: "", label: "Seleccionar hogar…" },
-                        ...homes.map((h) => ({ value: h._id, label: h.name })),
+                        ...homeAvailability.map(
+                          ({ home, friFree, satFree, friCap, satCap }) => {
+                            const freeLabel =
+                              night === NIGHT_BOTH
+                                ? `libres vie ${friFree}/${friCap} · sáb ${satFree}/${satCap}`
+                                : night === CONGRESS_NIGHTS[0]
+                                  ? `libres ${friFree}/${friCap}`
+                                  : `libres ${satFree}/${satCap}`;
+                            const care = home.notes?.trim() ? " · cuidados" : "";
+                            return {
+                              value: home._id,
+                              label: `${home.name} · ${freeLabel}${care}`,
+                            };
+                          }
+                        ),
                       ]}
                     />
                     <Select
@@ -470,14 +507,50 @@ export function ParticipantSheet({
                         })),
                       ]}
                     />
+                    {selectedHomeAvailability ? (
+                      <div className="sm:col-span-2 rounded-md border border-[color-mix(in_srgb,var(--color-warning)_30%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-warning)_8%,white)] px-3 py-2 text-xs text-foreground">
+                        <p className="font-semibold">
+                          {selectedHomeAvailability.home.name}
+                        </p>
+                        <p className="mt-0.5 text-muted">
+                          Cupos libres: vie {selectedHomeAvailability.friFree}/
+                          {selectedHomeAvailability.friCap} · sáb{" "}
+                          {selectedHomeAvailability.satFree}/
+                          {selectedHomeAvailability.satCap}
+                          {selectedHomeAvailability.home.address
+                            ? ` · ${selectedHomeAvailability.home.address}`
+                            : ""}
+                        </p>
+                        {selectedHomeAvailability.home.notes?.trim() ? (
+                          <p className="mt-1">
+                            <span className="font-semibold">Cuidados: </span>
+                            {selectedHomeAvailability.home.notes}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-muted">
+                            Sin notas de cuidado registradas para este hogar.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                     <div className="sm:col-span-2 space-y-2">
                       <p className="text-xs text-muted">
                         Si elige ambos días, se asigna una cama por cada noche en el mismo
-                        hogar.
+                        hogar. Revise cuidados (p. ej. sin segundo piso) antes de asignar.
                       </p>
                       <Button
                         size="sm"
-                        disabled={busy || !homeId}
+                        disabled={
+                          busy ||
+                          !homeId ||
+                          !selectedHomeAvailability ||
+                          (night === NIGHT_BOTH
+                            ? selectedHomeAvailability.friFree < 1 ||
+                              selectedHomeAvailability.satFree < 1
+                            : night === CONGRESS_NIGHTS[0]
+                              ? selectedHomeAvailability.friFree < 1
+                              : selectedHomeAvailability.satFree < 1)
+                        }
                         onClick={() => {
                           const nights =
                             night === NIGHT_BOTH

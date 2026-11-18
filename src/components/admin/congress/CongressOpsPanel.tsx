@@ -11,6 +11,7 @@ import {
   Timeline,
 } from "@/components/admin/kit";
 import { SummaryView } from "@/components/admin/congress/summary/SummaryView";
+import { LodgingOpsView } from "@/components/admin/congress/lodging/LodgingOpsView";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { useToast } from "@/components/admin/kit/states/Toast";
 import { Button } from "@/components/ui/button";
@@ -117,12 +118,6 @@ export function CongressOpsPanel() {
   const [voidReason, setVoidReason] = useState("");
   const [voidingId, setVoidingId] = useState<string | null>(null);
 
-  const [homeForm, setHomeForm] = useState({
-    name: "",
-    contactName: "",
-    capFri: "0",
-    capSat: "0",
-  });
   const [homeSaving, setHomeSaving] = useState(false);
 
   const [auditEntries, setAuditEntries] = useState<CongressAuditEntry[]>([]);
@@ -283,7 +278,7 @@ export function CongressOpsPanel() {
         push({ title: present === true ? "Llegada registrada" : "Asistencia actualizada", tone: "success" });
       }
     } catch {
-      push({ title: "Error de red", tone: "danger" });
+      push({ title: "Error de red", tone: "error" });
     } finally {
       setArrivalSavingId(null);
       setSheetBusy(false);
@@ -327,7 +322,7 @@ export function CongressOpsPanel() {
       void loadRegistrations();
       push({ title: "Participante creado", tone: "success" });
     } catch {
-      push({ title: "Error de red", tone: "danger" });
+      push({ title: "Error de red", tone: "error" });
     } finally {
       setDoorSaving(false);
     }
@@ -524,20 +519,27 @@ export function CongressOpsPanel() {
     }
   };
 
-  const createHome = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!homeForm.name.trim()) return;
+  const createHome = async (input: {
+    name: string;
+    contactName?: string;
+    address?: string;
+    notes?: string;
+    capFri: number;
+    capSat: number;
+  }) => {
     setHomeSaving(true);
     try {
       const res = await fetch("/api/congress/lodging/homes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: homeForm.name.trim(),
-          contactName: homeForm.contactName.trim() || undefined,
+          name: input.name,
+          contactName: input.contactName,
+          address: input.address,
+          notes: input.notes,
           capacityByNight: {
-            [CONGRESS_NIGHTS[0]]: Number(homeForm.capFri) || 0,
-            [CONGRESS_NIGHTS[1]]: Number(homeForm.capSat) || 0,
+            [CONGRESS_NIGHTS[0]]: input.capFri,
+            [CONGRESS_NIGHTS[1]]: input.capSat,
           },
         }),
       });
@@ -546,9 +548,8 @@ export function CongressOpsPanel() {
         push({ title: data.error ?? "No se pudo crear el hogar", tone: "warning" });
         return;
       }
-      setHomeForm({ name: "", contactName: "", capFri: "0", capSat: "0" });
       void loadSummary();
-      push({ title: "Hogar creado", tone: "success" });
+      push({ title: "Hogar registrado con cupos", tone: "success" });
     } finally {
       setHomeSaving(false);
     }
@@ -679,6 +680,7 @@ export function CongressOpsPanel() {
             onOpenNew={() => setNewOpen(true)}
             onOpenParticipant={setSelectedId}
             onRegisterArrival={(id, day) => void patchAttendance(id, day, true)}
+            onRevertArrival={(id, day) => void patchAttendance(id, day, null)}
             arrivalSavingId={arrivalSavingId}
           />
         </TabsContent>
@@ -872,45 +874,16 @@ export function CongressOpsPanel() {
         </TabsContent>
 
         <TabsContent value="alojamiento">
-          <AlertBanner variant="info" className="mb-4">
-            Las solicitudes de iglesia no son camas asignadas. Gestione asignaciones desde la
-            ficha del participante en Recepción.
-          </AlertBanner>
-          <Section title="Hogares">
-            <form onSubmit={createHome} className="mb-4 grid max-w-xl gap-2 sm:grid-cols-2">
-              <Input
-                label="Nombre"
-                value={homeForm.name}
-                onChange={(e) => setHomeForm((f) => ({ ...f, name: e.target.value }))}
-              />
-              <Input
-                label="Contacto"
-                value={homeForm.contactName}
-                onChange={(e) => setHomeForm((f) => ({ ...f, contactName: e.target.value }))}
-              />
-              <Input
-                label="Cupo vie"
-                value={homeForm.capFri}
-                onChange={(e) => setHomeForm((f) => ({ ...f, capFri: e.target.value }))}
-              />
-              <Input
-                label="Cupo sáb"
-                value={homeForm.capSat}
-                onChange={(e) => setHomeForm((f) => ({ ...f, capSat: e.target.value }))}
-              />
-              <Button type="submit" size="sm" loading={homeSaving}>
-                Crear hogar
-              </Button>
-            </form>
-            <ul className="space-y-1 text-sm">
-              {homes.map((h) => (
-                <li key={h._id} className="rounded-md border border-border bg-white px-3 py-2">
-                  {h.name} · vie {h.capacityByNight["2026-11-20"] ?? 0} · sáb{" "}
-                  {h.capacityByNight["2026-11-21"] ?? 0}
-                </li>
-              ))}
-            </ul>
-          </Section>
+          <LodgingOpsView
+            homes={homes}
+            assignments={assignments}
+            registrations={registrations}
+            churchRequestedBeds={summary?.lodging.requestedBeds ?? 0}
+            operate={capabilities.operate}
+            homeSaving={homeSaving}
+            onCreateHome={createHome}
+            onOpenParticipant={setSelectedId}
+          />
         </TabsContent>
 
         <TabsContent value="reportes">

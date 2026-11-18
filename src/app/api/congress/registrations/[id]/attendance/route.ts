@@ -47,13 +47,6 @@ export async function PATCH(
       actorUserId: ctx.user._id,
     });
 
-    if (!result.ok) {
-      return NextResponse.json(
-        { ok: false, error: "Se requiere motivo para corregir o limpiar la marcación." },
-        { status: 400 }
-      );
-    }
-
     if (result.idempotent) {
       return NextResponse.json({
         ok: true,

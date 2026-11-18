@@ -19,6 +19,7 @@ function congressForm(): ExperienceFormDefinition {
     successMessage: "Gracias.",
     errorMessage: "No se pudo registrar.",
     destination: "attendance_confirmation",
+    postSubmit: { type: "message", message: "Gracias." },
     active: true,
     visible: true,
     createdAt: now,

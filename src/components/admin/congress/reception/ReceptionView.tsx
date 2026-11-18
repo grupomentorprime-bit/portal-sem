@@ -16,12 +16,14 @@ import type {
   CongressLodgingAssignment,
   CongressRegistration,
 } from "@/core/congress/types";
+import { matchesPersonSearch } from "@/lib/experience/forms/person-search";
 import { cn } from "@/lib/utils";
 import {
   attendanceCellText,
   contributionLabel,
   formatZoneLabel,
   journeyDayLabel,
+  journeyDayShortLabel,
   lodgingLabel,
   lodgingPendingReasonLabel,
   resolveRegistrationLodging,
@@ -62,6 +64,7 @@ type Props = {
   onOpenNew: () => void;
   onOpenParticipant: (id: string) => void;
   onRegisterArrival: (id: string, day: CongressAttendanceDay) => void;
+  onRevertArrival: (id: string, day: CongressAttendanceDay) => void;
   arrivalSavingId: string | null;
 };
 
@@ -88,6 +91,7 @@ export function ReceptionView({
   onOpenNew,
   onOpenParticipant,
   onRegisterArrival,
+  onRevertArrival,
   arrivalSavingId,
 }: Props) {
   const receptionZones = useMemo(() => {
@@ -116,22 +120,22 @@ export function ReceptionView({
   }, [churchOptions, registrations, zoneFilter]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = search.trim();
     return registrations.filter((reg) => {
       if (zoneFilter && reg.zoneId !== zoneFilter) return false;
       if (churchFilter && reg.churchName !== churchFilter) return false;
       if (q) {
-        const hay = [
-          reg.identity.fullName,
-          reg.identity.rut,
-          reg.identity.phone,
-          reg.identity.email,
-          reg.churchName,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(q)) return false;
+        if (
+          !matchesPersonSearch(q, [
+            reg.identity.fullName,
+            reg.identity.rut,
+            reg.identity.phone,
+            reg.identity.email,
+            reg.churchName,
+          ])
+        ) {
+          return false;
+        }
       }
       if (quickFilter === "no_arrival") {
         if (reg.attendance[journeyDay] === true) return false;
@@ -309,11 +313,27 @@ export function ReceptionView({
                         <p>{reg.churchName}</p>
                         <p className="text-xs text-muted">{formatZoneLabel(reg.zoneId)}</p>
                       </td>
-                      <td className="px-3 py-2.5">
-                        <AttendanceBadge {...sat} />
+                      <td
+                        className="px-3 py-2.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <AttendanceBadge
+                          {...sat}
+                          canRevert={operate && sat.present}
+                          reverting={arrivalSavingId === `${reg._id}:saturday`}
+                          onRevert={() => onRevertArrival(reg._id, "saturday")}
+                        />
                       </td>
-                      <td className="px-3 py-2.5">
-                        <AttendanceBadge {...sun} />
+                      <td
+                        className="px-3 py-2.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <AttendanceBadge
+                          {...sun}
+                          canRevert={operate && sun.present}
+                          reverting={arrivalSavingId === `${reg._id}:sunday`}
+                          onRevert={() => onRevertArrival(reg._id, "sunday")}
+                        />
                       </td>
                       <td className="px-3 py-2.5">{contributionLabel(reg)}</td>
                       <td className="px-3 py-2.5">
@@ -326,9 +346,22 @@ export function ReceptionView({
                       </td>
                       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                         {arrived ? (
-                          <span className="text-xs text-muted">
-                            Llegó {arrival.time ? `· ${arrival.time}` : ""}
-                          </span>
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-xs text-muted">
+                              Llegó · {journeyDayShortLabel(journeyDay)}
+                              {arrival.time ? ` · ${arrival.time}` : ""}
+                            </span>
+                            {operate ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
+                                onClick={() => onRevertArrival(reg._id, journeyDay)}
+                              >
+                                Dejar sin marcar
+                              </Button>
+                            ) : null}
+                          </div>
                         ) : operate ? (
                           <Button
                             size="sm"
@@ -336,7 +369,7 @@ export function ReceptionView({
                             loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
                             onClick={() => onRegisterArrival(reg._id, journeyDay)}
                           >
-                            Registrar llegada ({journeyDay === "saturday" ? "Sáb" : "Dom"})
+                            Registrar llegada · {journeyDayShortLabel(journeyDay)}
                           </Button>
                         ) : (
                           "—"
@@ -353,11 +386,15 @@ export function ReceptionView({
             {filtered.map((reg) => {
               const lodging = resolveRegistrationLodging(reg, assignments);
               const arrival = attendanceCellText(reg, journeyDay);
+              const arrivedMobile = reg.attendance[journeyDay] === true;
               return (
-                <li key={reg._id}>
+                <li
+                  key={reg._id}
+                  className="rounded-lg border border-border bg-white px-3 py-3"
+                >
                   <button
                     type="button"
-                    className="w-full rounded-lg border border-border bg-white px-3 py-3 text-left"
+                    className="w-full text-left"
                     onClick={() => onOpenParticipant(reg._id)}
                   >
                     <p className="font-semibold text-foreground">{reg.identity.fullName}</p>
@@ -365,6 +402,29 @@ export function ReceptionView({
                       {arrival.text} · {contributionLabel(reg)} · {lodgingLabel(lodging)}
                     </p>
                   </button>
+                  {operate ? (
+                    arrivedMobile ? (
+                      <Button
+                        className="mt-2"
+                        size="sm"
+                        variant="outline"
+                        loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
+                        onClick={() => onRevertArrival(reg._id, journeyDay)}
+                      >
+                        Dejar sin marcar
+                      </Button>
+                    ) : (
+                      <Button
+                        className="mt-2"
+                        size="sm"
+                        variant="outline"
+                        loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
+                        onClick={() => onRegisterArrival(reg._id, journeyDay)}
+                      >
+                        Registrar llegada · {journeyDayShortLabel(journeyDay)}
+                      </Button>
+                    )
+                  ) : null}
                 </li>
               );
             })}
@@ -378,21 +438,40 @@ export function ReceptionView({
 function AttendanceBadge({
   text,
   present,
+  canRevert,
+  reverting,
+  onRevert,
 }: {
   text: string;
   present: boolean;
   time: string | null;
+  canRevert?: boolean;
+  reverting?: boolean;
+  onRevert?: () => void;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm">
-      <span
-        className={cn(
-          "inline-block h-2 w-2 rounded-full",
-          present ? "bg-emerald-600" : "bg-border"
-        )}
-        aria-hidden
-      />
-      {text}
-    </span>
+    <div className="flex flex-col items-start gap-1">
+      <span className="inline-flex items-center gap-1.5 text-sm">
+        <span
+          className={cn(
+            "inline-block h-2 w-2 rounded-full",
+            present ? "bg-[var(--growth-os-success)]" : "bg-border"
+          )}
+          aria-hidden
+        />
+        {text}
+      </span>
+      {canRevert && onRevert ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-xs"
+          loading={reverting}
+          onClick={onRevert}
+        >
+          Dejar sin marcar
+        </Button>
+      ) : null}
+    </div>
   );
 }

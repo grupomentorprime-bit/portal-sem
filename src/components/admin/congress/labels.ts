@@ -161,10 +161,13 @@ export function attendanceCellText(
       time,
     };
   }
-  if (value === false) return { text: "Ausente", present: false, time: null };
-  return { text: "Sin marcar", present: false, time: null };
+  return { text: "Sin llegada", present: false, time: null };
 }
 
 export function journeyDayLabel(day: CongressAttendanceDay): string {
   return day === "saturday" ? "Sábado 21" : "Domingo 22";
+}
+
+export function journeyDayShortLabel(day: CongressAttendanceDay): string {
+  return day === "saturday" ? "Sáb" : "Dom";
 }

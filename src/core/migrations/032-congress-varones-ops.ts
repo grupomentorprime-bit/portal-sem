@@ -20,7 +20,7 @@ export const migration032CongressVaronesOps: MigrationDefinition = {
 
     const eventCol = db.collection(CONGRESS_COLLECTIONS.events);
     const eventResult = await eventCol.updateOne(
-      { _id: CONGRESS_EVENT_ID },
+      { _id: CONGRESS_EVENT_ID } as Record<string, string>,
       {
         $setOnInsert: {
           _id: CONGRESS_EVENT_ID,

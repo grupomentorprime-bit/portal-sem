@@ -17,6 +17,8 @@ Convertir el panel operativo del Congreso Nacional de Varones 2026 en una herram
 | Necesidad de alojamiento | `lodgingNeed`: `unknown` \| `none` \| `requested`; UI distingue sin asignar / asignado / confirmado; sin estados contradictorios |
 | Pestañas | Recepción (inicio); sin pestaña Asistencia; mantener Resumen, Aportes, Alojamiento, Reportes, Historial, Importación |
 | Días previstos | `expectedDays`; presentación: sábado / domingo / ambos / por confirmar; independientes de asistencia |
+| Confirmación de llegada | Por día (sábado y domingo independientes); unos llegan solo sábado, otros solo domingo, o ambos |
+| Copy asistencia | No presente ese día → **Sin llegada** (no “Ausente”); acción tabla con día explícito: `Registrar llegada · Sáb/Dom` o `Llegó · Sáb/Dom · HH:MM` |
 | Indicadores del día | Sobre **todo** el evento; contador de resultados filtrados aparte |
 | Finanzas UI | Derivadas del motor existente; saldo 0 ≠ “Pagado” automático |
 | Aporte $17.000 | Único por persona y cubre ambos días; independiente del día de llegada |
@@ -86,13 +88,24 @@ Regla concreta:
 
 En tabla, columnas Sábado/Domingo muestran **asistencia efectiva** (texto + indicador + hora si aplica). Los días previstos se ven en ficha y, si cabe, como dato secundario — nunca como si fueran llegada.
 
+Etiquetas de asistencia efectiva:
+
+| Estado | Texto UI |
+|--------|----------|
+| `attendance[día] === true` | **Presente** (+ hora `America/Santiago` si hay `markedAt`) |
+| cualquier otro (`false` / `null`) | **Sin llegada** |
+
+No usar “Ausente” ni “Sin marcar” en recepción/tabla. En ficha, el botón de corrección que setea `present: false` puede seguir llamándose “Ausente” (acción), pero el estado mostrado es **Sin llegada**.
+
 ### Tabla (desktop)
 
 Columnas: Participante · Iglesia / zona · Sábado · Domingo · Alimentación · Alojamiento · Acción
 
 - Nombre destacado; teléfono secundario. RUT/correo/origen solo en ficha.
 - Zona UI: “Zona 7”, nunca `zona-7`.
-- Asistencia: texto + indicador. Si presente: hora en `America/Santiago`. Acción “Registrar llegada (Sáb/Dom)” solo si aún no está presente ese día; si ya llegó, mostrar hora (sin re-marcar desde la tabla).
+- Asistencia: texto + indicador según tabla de etiquetas. Acción ligada a la **jornada seleccionada**:
+  - si aún no presente ese día → botón **Registrar llegada · Sáb** o **· Dom**;
+  - si ya llegó → texto **Llegó · Sáb · HH:MM** (o Dom); sin re-marcar desde la tabla (correcciones en ficha / revertir con motivo).
 - Alimentación: etiqueta del § finanzas.
 - Alojamiento: etiqueta del § alojamiento (cinco estados separados).
 - Acción independiente de pago/alojamiento.

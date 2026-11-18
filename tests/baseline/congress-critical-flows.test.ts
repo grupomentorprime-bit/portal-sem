@@ -23,13 +23,6 @@ function reg(
     source: "door",
     zoneId: "zona-1",
     churchName: "Prueba",
-    identity: {
-      fullName: "Participante",
-      rut: null,
-      email: null,
-      phone: null,
-      status: "provisional",
-    },
     attendance: emptyAttendance(),
     chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
     allocatedPaidClp: 0,

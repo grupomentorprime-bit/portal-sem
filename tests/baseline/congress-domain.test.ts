@@ -37,13 +37,6 @@ function reg(
     source: "import",
     zoneId: "zona-1",
     churchName: "Prueba",
-    identity: {
-      fullName: "Juan Pérez",
-      rut: null,
-      email: null,
-      phone: null,
-      status: "provisional",
-    },
     attendance: emptyAttendance(),
     chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
     allocatedPaidClp: 0,
@@ -202,7 +195,7 @@ describe("congress domain attendance", () => {
     assert.equal(second.attendanceHistory.length, first.attendanceHistory.length);
   });
 
-  it("exige motivo para limpiar o corregir marcación", () => {
+  it("permite desmarcar sin motivo y conserva historial", () => {
     const marked = applyAttendanceChange({
       attendance: { saturday: null, sunday: null },
       attendanceMeta: {},
@@ -214,23 +207,12 @@ describe("congress domain attendance", () => {
     });
     assert.equal(marked.ok, true);
     if (!marked.ok) return;
-    const clearNoReason = applyAttendanceChange({
-      attendance: marked.attendance,
-      attendanceMeta: marked.attendanceMeta,
-      attendanceHistory: marked.attendanceHistory,
-      day: "saturday",
-      present: null,
-      nowIso: "2026-11-21T13:00:00.000Z",
-      actorUserId: "u1",
-    });
-    assert.equal(clearNoReason.ok, false);
     const clear = applyAttendanceChange({
       attendance: marked.attendance,
       attendanceMeta: marked.attendanceMeta,
       attendanceHistory: marked.attendanceHistory,
       day: "saturday",
       present: null,
-      reason: "Error de operador",
       nowIso: "2026-11-21T13:00:00.000Z",
       actorUserId: "u1",
     });

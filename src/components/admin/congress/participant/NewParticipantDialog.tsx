@@ -5,6 +5,10 @@ import { Dialog } from "@/components/admin/kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import {
+  foldPersonSearchText,
+  matchesPersonSearch,
+} from "@/lib/experience/forms/person-search";
 import { isValidChileRut } from "@/lib/experience/forms/rut-chile";
 import { CONGRESS_ZONES } from "@/core/congress/constants";
 import type { CongressRegistration } from "@/core/congress/types";
@@ -60,16 +64,18 @@ export function NewParticipantDialog({
   const [localError, setLocalError] = useState<string | null>(null);
 
   const matches = useMemo(() => {
-    const q = matchQuery.trim().toLowerCase();
+    const q = matchQuery.trim();
     if (q.length < 2) return [];
     return registrations
-      .filter((r) => {
-        const hay = [r.identity.fullName, r.identity.rut, r.identity.phone]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return hay.includes(q);
-      })
+      .filter((r) =>
+        matchesPersonSearch(q, [
+          r.identity.fullName,
+          r.identity.rut,
+          r.identity.phone,
+          r.identity.email,
+          r.churchName,
+        ])
+      )
       .slice(0, 5);
   }, [matchQuery, registrations]);
 
@@ -146,8 +152,9 @@ export function NewParticipantDialog({
       const name = churchNewName.trim();
       if (!name) return null;
       // Reutilizar si ya existe en la misma zona (case-insensitive).
+      const folded = foldPersonSearchText(name);
       const existing = churchesInZone.find(
-        (c) => c.toLowerCase() === name.toLowerCase()
+        (c) => foldPersonSearchText(c) === folded
       );
       return existing ?? name;
     }
@@ -343,7 +350,9 @@ export function NewParticipantDialog({
           />
         </div>
 
-        {localError ? <p className="text-sm text-amber-700">{localError}</p> : null}
+        {localError ? (
+          <p className="text-sm text-[var(--color-warning)]">{localError}</p>
+        ) : null}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={handleClose} disabled={saving}>

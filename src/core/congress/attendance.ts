@@ -44,19 +44,17 @@ export type ApplyAttendanceChangeInput = {
   actorUserId: string;
 };
 
-export type ApplyAttendanceChangeResult =
-  | {
-      ok: true;
-      attendance: CongressAttendanceDays;
-      attendanceMeta: CongressAttendanceMeta;
-      attendanceHistory: CongressAttendanceHistoryEntry[];
-      idempotent?: boolean;
-    }
-  | { ok: false; error: "reason_required" };
+export type ApplyAttendanceChangeResult = {
+  ok: true;
+  attendance: CongressAttendanceDays;
+  attendanceMeta: CongressAttendanceMeta;
+  attendanceHistory: CongressAttendanceHistoryEntry[];
+  idempotent?: boolean;
+};
 
 /**
  * Primera hora inmutable ante reintentos present=true.
- * Corrección/limpieza exige motivo; el historial previo se conserva.
+ * Marcar/desmarcar sin exigir motivo; el historial previo se conserva.
  */
 export function applyAttendanceChange(
   input: ApplyAttendanceChangeInput
@@ -78,13 +76,15 @@ export function applyAttendanceChange(
     };
   }
 
-  // Única transición sin motivo: primera llegada (null → true).
-  const isFirstArrival = present === true && previousPresent === null;
-  if (!isFirstArrival) {
-    const reason = String(input.reason ?? "").trim();
-    if (!reason) {
-      return { ok: false, error: "reason_required" };
-    }
+  // Sin cambio real (p. ej. limpiar cuando ya está sin marcar).
+  if (present === previousPresent) {
+    return {
+      ok: true,
+      attendance: input.attendance,
+      attendanceMeta: meta,
+      attendanceHistory: history,
+      idempotent: true,
+    };
   }
 
   const attendance = setAttendanceDay(input.attendance, day, present);
@@ -97,12 +97,13 @@ export function applyAttendanceChange(
     meta[metaKey] = null;
   }
 
+  const reasonTrimmed = String(input.reason ?? "").trim();
   history.push({
     day,
     previousPresent,
     nextPresent: present,
     previousMarkedAt,
-    reason: isFirstArrival ? null : String(input.reason ?? "").trim(),
+    reason: reasonTrimmed || null,
     at: nowIso,
     actorUserId,
   });
