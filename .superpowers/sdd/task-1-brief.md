@@ -1,101 +1,99 @@
-﻿### Task 1: Predicado `isGroupPaymentSelectable`
+﻿### Task 1: Dominio — folio puro + tipo
 
 **Files:**
-- Modify: `src/core/congress/finance-status.ts`
-- Test: `tests/baseline/congress-reception-labels.test.ts`
+- Modify: `src/core/congress/types.ts`
+- Modify: `src/core/congress/constants.ts`
+- Create: `src/core/congress/payment-folio.ts`
+- Create: `tests/baseline/congress-payment-folio.test.ts`
 
 **Interfaces:**
-- Consumes: `deriveContributionStatus(reg)`
-- Produces: `isGroupPaymentSelectable(reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">): boolean` — `true` solo si status === `"pending"`
+- Produces:
+  - `CONGRESS_PAYMENT_FOLIO_YEAR = 2026`
+  - `CONGRESS_COLLECTIONS.sequences = "congress_sequences"`
+  - `formatPaymentFolio(seq: number, year?: number): string` → `CV-2026-00042`
+  - `paymentReceiptFilename(folio: string): string` → `comprobante-ingreso-CV-2026-00042.pdf`
+  - `CongressPayment.folio?: string | null`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Test fallido — formato y filename**
 
-En `tests/baseline/congress-reception-labels.test.ts`, añadir import y bloque:
+Crear `tests/baseline/congress-payment-folio.test.ts`:
 
 ```ts
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
-  deriveContributionStatus,
-  isGroupPaymentSelectable,
-} from "../../src/core/congress/finance-status";
+  formatPaymentFolio,
+  paymentReceiptFilename,
+} from "../../src/core/congress/payment-folio";
 
-describe("group payment selectable", () => {
-  const base = {
-    chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
-    needsReview: false,
-  };
+describe("congress payment folio", () => {
+  it("formatea CV-YYYY-##### con padding", () => {
+    assert.equal(formatPaymentFolio(42), "CV-2026-00042");
+    assert.equal(formatPaymentFolio(1, 2026), "CV-2026-00001");
+  });
 
-  it("solo pending es seleccionable en pago grupal", () => {
+  it("rechaza secuencia no positiva", () => {
+    assert.throws(() => formatPaymentFolio(0));
+    assert.throws(() => formatPaymentFolio(-1));
+  });
+
+  it("arma nombre de archivo estable", () => {
     assert.equal(
-      isGroupPaymentSelectable({ ...base, allocatedPaidClp: 0 }),
-      true
-    );
-    assert.equal(
-      isGroupPaymentSelectable({
-        ...base,
-        allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
-      }),
-      false
-    );
-    assert.equal(
-      isGroupPaymentSelectable({
-        ...base,
-        allocatedPaidClp: 5000,
-      }),
-      false
-    );
-    assert.equal(
-      isGroupPaymentSelectable({
-        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
-        allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
-        needsReview: true,
-      }),
-      false
-    );
-    assert.equal(
-      isGroupPaymentSelectable({
-        chargeAmountClp: null,
-        allocatedPaidClp: 0,
-        needsReview: false,
-      }),
-      false
+      paymentReceiptFilename("CV-2026-00042"),
+      "comprobante-ingreso-CV-2026-00042.pdf"
     );
   });
 });
 ```
 
-Actualizar el import existente de `deriveContributionStatus` para incluir `isGroupPaymentSelectable` (un solo import desde ese módulo).
+- [ ] **Step 2: Correr test — debe fallar**
 
-- [ ] **Step 2: Run test to verify it fails**
+Run: `npx tsx --test tests/baseline/congress-payment-folio.test.ts`  
+Expected: FAIL (módulo / exports ausentes)
 
-Run: `npx tsx --test tests/baseline/congress-reception-labels.test.ts`
+- [ ] **Step 3: Implementar constantes, tipo y helpers**
 
-Expected: FAIL — `isGroupPaymentSelectable` is not exported / not a function.
-
-- [ ] **Step 3: Write minimal implementation**
-
-En `src/core/congress/finance-status.ts`, después de `contributionStatusHasBalance`:
+En `constants.ts`:
 
 ```ts
-/** Pago grupal: solo pendientes sin imputar (monto completo, sin abonos). */
-export function isGroupPaymentSelectable(
-  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
-): boolean {
-  return deriveContributionStatus(reg) === "pending";
+/** Año fijo del folio de comprobantes del Congreso 2026. */
+export const CONGRESS_PAYMENT_FOLIO_YEAR = 2026;
+```
+
+En `CONGRESS_COLLECTIONS`:
+
+```ts
+  sequences: "congress_sequences",
+```
+
+En `CongressPayment` (`types.ts`):
+
+```ts
+  /** Folio correlativo CV-YYYY-#####. Requerido en pagos nuevos. */
+  folio?: string | null;
+```
+
+Crear `payment-folio.ts`:
+
+```ts
+import { CONGRESS_PAYMENT_FOLIO_YEAR } from "@/core/congress/constants";
+
+export function formatPaymentFolio(
+  seq: number,
+  year: number = CONGRESS_PAYMENT_FOLIO_YEAR
+): string {
+  if (!Number.isInteger(seq) || seq <= 0) {
+    throw new Error("invalid_folio_sequence");
+  }
+  return `CV-${year}-${String(seq).padStart(5, "0")}`;
+}
+
+export function paymentReceiptFilename(folio: string): string {
+  return `comprobante-ingreso-${folio}.pdf`;
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 4: Correr test — debe pasar**
 
-Run: `npx tsx --test tests/baseline/congress-reception-labels.test.ts`
-
-Expected: PASS (todos los `describe` del archivo).
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/core/congress/finance-status.ts tests/baseline/congress-reception-labels.test.ts
-git commit -m "feat(congreso): predicado de selección para pago grupal sin duplicar."
-```
-
----
-
+Run: `npx tsx --test tests/baseline/congress-payment-folio.test.ts`  
+Expected: PASS

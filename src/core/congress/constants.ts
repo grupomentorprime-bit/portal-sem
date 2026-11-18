@@ -3,6 +3,9 @@ import { CONGRESS_VARONES_FORM_ID } from "@/lib/experience/forms/already-enrolle
 /** Evento operativo del 3.° Congreso Nacional de Varones (Quilicura). */
 export const CONGRESS_EVENT_ID = "ipn-congreso-varones-2026";
 
+/** Año fijo del folio de comprobantes del Congreso 2026. */
+export const CONGRESS_PAYMENT_FOLIO_YEAR = 2026;
+
 export const CONGRESS_FORM_ID = CONGRESS_VARONES_FORM_ID;
 
 /**
@@ -38,4 +41,5 @@ export const CONGRESS_COLLECTIONS = {
   importBatches: "congress_import_batches",
   audit: "congress_audit",
   events: "congress_events",
+  sequences: "congress_sequences",
 } as const;

@@ -129,6 +129,7 @@ type Props = {
     zoneId: string;
     churchBaseKey: string;
   }) => void;
+  onDownloadReceipt?: (payment: CongressPayment) => void;
 };
 
 export function CashBoxView({
@@ -150,6 +151,7 @@ export function CashBoxView({
   statusFilter,
   onStatusFilterChange,
   onOpenGroupPayment,
+  onDownloadReceipt,
 }: Props) {
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
 
@@ -514,16 +516,27 @@ export function CashBoxView({
                   </span>
                   <span className="text-muted">{p.status}</span>
                 </div>
-                {p.status === "posted" && canVoid ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    loading={voidingId === p._id}
-                    onClick={() => void onVoid(p._id)}
-                  >
-                    Anular
-                  </Button>
-                ) : null}
+                <div className="flex flex-wrap gap-1">
+                  {onDownloadReceipt ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onDownloadReceipt(p)}
+                    >
+                      Comprobante
+                    </Button>
+                  ) : null}
+                  {p.status === "posted" && canVoid ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      loading={voidingId === p._id}
+                      onClick={() => void onVoid(p._id)}
+                    >
+                      Anular
+                    </Button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>

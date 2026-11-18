@@ -1,114 +1,89 @@
-﻿### Task 2: UI lista grupal — deshabilitar y etiquetar
+﻿### Task 2: Repositorio — secuencia atómica + folio al crear + ensure
 
 **Files:**
-- Modify: `src/components/admin/congress/CongressOpsPanel.tsx` (bloque ~527–547 y ~975–1002)
+- Modify: `src/lib/congress/repository.ts`
+- (sin test de integración Mongo en baseline; dominio cubierto en Task 1)
 
 **Interfaces:**
-- Consumes: `isGroupPaymentSelectable`, `deriveContributionStatus`, `contributionStatusLabel` (o `contributionLabel`)
-- Produces: checkboxes disabled cuando no seleccionable; monto/preview solo sobre IDs seleccionables
+- Consumes: `formatPaymentFolio`, `CONGRESS_COLLECTIONS.sequences`, `CONGRESS_EVENT_ID`, `CONGRESS_PAYMENT_FOLIO_YEAR`
+- Produces:
+  - `allocateNextPaymentFolio(tenantId: string): Promise<string>`
+  - `ensureCongressPaymentFolio(input: { tenantId; paymentId }): Promise<{ ok: true; payment } | { ok: false; error }>`
+  - `recordCongressPayment` → `payment.folio` siempre presente en éxito
 
-- [ ] **Step 1: Ampliar imports**
+- [ ] **Step 1: Añadir allocateNextPaymentFolio**
 
-En `CongressOpsPanel.tsx`:
+En `repository.ts`, tras imports existentes:
 
-1. Desde `@/core/congress/finance-status` importar `isGroupPaymentSelectable` y `deriveContributionStatus`.
-2. Desde `@/components/admin/congress/labels` añadir `contributionStatusLabel` al import existente (`formatClp`, `formatZoneLabel`, …).
+```ts
+import { formatPaymentFolio } from "@/core/congress/payment-folio";
+import { CONGRESS_PAYMENT_FOLIO_YEAR } from "@/core/congress/constants";
+```
 
-- [ ] **Step 2: Filtrar selección y monto**
+```ts
+function paymentFolioSequenceId(tenantId: string, eventId = CONGRESS_EVENT_ID) {
+  return `${tenantId}:${eventId}:payment-folio`;
+}
 
-Tras `groupCandidates`, asegurar que `groupSelected` no contenga no-seleccionables al calcular monto/preview. Reemplazar el cálculo actual por:
-
-```tsx
-  const groupSelectableIds = useMemo(() => {
-    const set = new Set(
-      groupCandidates.filter(isGroupPaymentSelectable).map((r) => r._id)
+export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
+  const db = await getDatabase();
+  const doc = await db
+    .collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences)
+    .findOneAndUpdate(
+      { _id: paymentFolioSequenceId(tenantId) },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: "after" }
     );
-    return set;
-  }, [groupCandidates]);
-
-  const groupSelectedActive = useMemo(
-    () => groupSelected.filter((id) => groupSelectableIds.has(id)),
-    [groupSelected, groupSelectableIds]
-  );
-
-  const groupAmount = groupSelectedActive.length * CONGRESS_CONTRIBUTION_CLP;
-
-  const groupPreview = useMemo(() => {
-    if (!groupAmount || groupSelectedActive.length === 0) return [];
-    return groupSelectedActive.map((id) => ({
-      registrationId: id,
-      amountClp: CONGRESS_CONTRIBUTION_CLP,
-    }));
-  }, [groupAmount, groupSelectedActive]);
+  const seq = doc?.seq;
+  if (!seq || !Number.isInteger(seq) || seq <= 0) {
+    throw new Error("folio_sequence_failed");
+  }
+  return formatPaymentFolio(seq, CONGRESS_PAYMENT_FOLIO_YEAR);
+}
 ```
 
-En el display de monto total, usar `groupSelectedActive.length` (no `groupSelected.length`) para el texto `N × …`.
+Nota: el driver Mongo puede devolver el documento en `doc` o `doc.value` según versión — usar el patrón ya existente en este repo para `findOneAndUpdate` (ver `updateCongressRegistration` en el mismo archivo) y adaptar.
 
-- [ ] **Step 3: Render de filas con disabled + etiqueta**
+In this repo, `updateCongressRegistration` uses:
+```ts
+return result ? normalizeCongressRegistration(result) : null;
+```
+So treat `findOneAndUpdate` return as the document directly (not `.value`).
 
-Reemplazar el `map` de `groupCandidates` por:
+- [ ] **Step 2: Asignar folio en recordCongressPayment antes de insertOne**
 
-```tsx
-                {groupCandidates.map((r) => {
-                  const selectable = isGroupPaymentSelectable(r);
-                  const checked = selectable && groupSelected.includes(r._id);
-                  const roles = registrationRoleBadges(r);
-                  const status = deriveContributionStatus(r);
-                  return (
-                    <label
-                      key={r._id}
-                      className={`flex items-center gap-2 text-sm ${
-                        selectable ? "" : "text-muted"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={!selectable}
-                        onChange={() => {
-                          if (!selectable) return;
-                          setGroupSelected((prev) =>
-                            checked
-                              ? prev.filter((id) => id !== r._id)
-                              : [...prev, r._id]
-                          );
-                        }}
-                      />
-                      <span>
-                        {registrationDisplayName(r)}
-                        {roles.length ? (
-                          <span className="text-xs text-muted">
-                            {" "}
-                            · {roles.join(" · ")}
-                          </span>
-                        ) : null}
-                        {!selectable ? (
-                          <span className="text-xs text-muted">
-                            {" "}
-                            · {contributionStatusLabel(status, r)}
-                          </span>
-                        ) : null}
-                      </span>
-                    </label>
-                  );
-                })}
+Dentro de `recordCongressPayment`, **después** de `allocatePayment` OK, asignar folio **antes** del loop de updates a registrations:
+
+```ts
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  let folio: string;
+  try {
+    folio = await allocateNextPaymentFolio(input.tenantId);
+  } catch {
+    return { ok: false, error: "folio_sequence_failed" };
+  }
+
+  const paymentWithFolio: CongressPayment = { ...result.payment, folio };
 ```
 
-Mantener la nota existente de efectivo + transferencia sin cambios.
+Usar `paymentWithFolio` en el `insertOne` y en el return. El loop de `updatedRegistrations` sigue igual.
 
-- [ ] **Step 4: Sanity check TypeScript / lint del archivo tocado**
+Si el loop de registrations falla (`concurrent_payment`), el folio queda “consumido” (hueco en secuencia) — aceptable (no reutilizar).
 
-Run: `npx tsc --noEmit -p tsconfig.json`  
-(o el check que use el repo si `tsc` es pesado: al menos abrir el panel y confirmar que no hay errores de import).
+- [ ] **Step 3: ensureCongressPaymentFolio**
 
-Expected: sin errores nuevos en `CongressOpsPanel.tsx` / `finance-status.ts`.
+Implement idempotent ensure for legacy payments without folio. Prefer a clean race-safe version:
 
-- [ ] **Step 5: Commit**
+1. find payment; if missing → not_found; if has folio → return it
+2. allocateNextPaymentFolio
+3. findOneAndUpdate only when folio is null/missing/empty; returnDocument after
+4. if update lost race, findOne again and return existing folio if present; else folio_sequence_failed
 
-```bash
-git add src/components/admin/congress/CongressOpsPanel.tsx
-git commit -m "feat(congreso): bloquea en pago grupal a quienes ya estánaron."
-```
+Do not leave dead unreachable branches (the plan's sample had a redundant `if (payment?.folio)` inside `if (!payment?.folio)` — clean that up).
 
----
+- [ ] **Step 4: Smoke / typecheck**
 
+Prefer focused check: ensure repository.ts typechecks. If full `npx tsc --noEmit -p tsconfig.json` is too noisy/slow, at least confirm no TS errors in the edited file via reading lints / compiling if feasible. Report what you ran.

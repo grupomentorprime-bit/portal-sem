@@ -1,45 +1,56 @@
-﻿### Task 3: Verificación manual (navegador)
+﻿### Task 3: API ensure-folio
 
-**Files:** ninguna (solo checklist)
+**Files:**
+- Create: `src/app/api/congress/payments/[id]/ensure-folio/route.ts`
 
-- [ ] **Step 1: Arrancar o usar el panel**
+**Interfaces:**
+- Consumes: `requireCongressPayments` (misma barra que crear pagos; quien descarga necesita poder asegurar folio)
+- Produces: `POST` → `{ ok: true, payment }` | errores 404/500
 
-Abrir `/admin/portal/congreso-varones` → pestaña **Aportes y pagos** → **Pago grupal**.
+- [ ] **Step 1: Crear route**
 
-- [ ] **Step 2: Casos de la spec**
+```ts
+import { NextResponse } from "next/server";
+import { requireCongressPayments } from "@/app/api/congress/guard";
+import { ensureCongressPaymentFolio } from "@/lib/congress/repository";
 
-1. Zona/iglesia con varios pendientes: marcar 3, guardar → un ingreso; esos 3 muestran **Pagado** y checkbox disabled.
-2. Segundo ingreso con los que faltan → OK; monto `N × $17.000 = $…` en negrita.
-3. Pagar uno desde ficha individual → en grupal aparece **Pagado**, no seleccionable.
-4. Confirmar que la nota de efectivo/transferencia sigue visible.
-5. Confirmar que no hay campo de monto editable por persona.
+export async function POST(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const ctx = await requireCongressPayments();
+    if (ctx instanceof NextResponse) return ctx;
 
-- [ ] **Step 3: Re-run unit tests**
+    const { id } = await context.params;
+    const result = await ensureCongressPaymentFolio({
+      tenantId: ctx.tenantId,
+      paymentId: id,
+    });
 
-Run: `npm run test:baseline -- tests/baseline/congress-reception-labels.test.ts`
+    if (!result.ok) {
+      const status = result.error === "not_found" ? 404 : 500;
+      return NextResponse.json({ ok: false, error: result.error }, { status });
+    }
 
-Expected: PASS.
-
-- [ ] **Step 4: Commit vacío no requerido** — si hubo ajustes menores de copy/UI tras la prueba, commitearlos:
-
-```bash
-git add -p
-git commit -m "fix(congreso): ajustes UI pago grupal tras verificación."
+    return NextResponse.json({ ok: true, payment: result.payment });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ ok: false, error: "Error interno." }, { status: 500 });
+  }
+}
 ```
 
-Si no hubo cambios, no crear commit vacío.
+- [ ] **Step 2: Verificar que POST /payments ya devuelve `payment` completo**
 
----
+No cambiar contrato salvo confirmar que `payment.folio` viaja en la respuesta existente:
 
-## Spec coverage (self-review)
+```ts
+return NextResponse.json({
+  ok: true,
+  payment: result.payment,
+  updatedRegistrations: result.updated,
+});
+```
 
-| Spec requirement | Task |
-|------------------|------|
-| Solo monto completo $17.000 | Task 2 (preview/amount) |
-| Varios ingresos grupales en el tiempo | Ya soportado; UI no bloquea segundos POSTs (Task 2+3) |
-| Pagado visible + disabled + etiqueta | Task 2 |
-| Individual o grupal → mismo tratamiento | `paid` vía `deriveContributionStatus` (Task 1+2) |
-| Efectivo + transferencia = dos registros | Nota UI existente; Task 3 confirma |
-| Sin cambio API | Ninguna task toca API |
-| `partial` / verification / no_charge no seleccionables | Task 1 predicado + Task 2 |
-| Monto `N × unit = total` negrita | Ya en panel; Task 2 usa `groupSelectedActive` |
+If the audit wants folio metadata, add `folio: result.payment.folio` in `metadata` (optional, recommended). Match style of sibling route `payments/[id]/void/route.ts` for params Promise pattern.

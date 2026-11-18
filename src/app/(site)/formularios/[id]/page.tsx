@@ -150,7 +150,8 @@ function withDepartmentBrand(
       submitLabel: "Confirmar asistencia",
       successMessage:
         "Gracias por confirmar tu asistencia. Te esperamos el 21 y 22 de noviembre.",
-      confirmationEmailCtaLabel: "Descargar el programa",
+      confirmationEmailCtaUrl: "/documentos/Triptico-Congreso-Varones-2026.pdf",
+      confirmationEmailCtaLabel: "Descargar el tríptico",
     },
     counter: {
       ...experience.counter,

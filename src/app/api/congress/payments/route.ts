@@ -97,6 +97,7 @@ export async function POST(request: Request) {
         unallocatedClp: result.payment.unallocatedClp,
         method: result.payment.method,
         paidOn: result.payment.paidOn,
+        folio: result.payment.folio,
         allocations: result.payment.allocations,
       },
     });
