@@ -28,3 +28,10 @@ export function deriveContributionStatus(
 export function contributionStatusHasBalance(status: ContributionStatus): boolean {
   return status === "pending" || status === "partial" || status === "needs_verification";
 }
+
+/** Pago grupal: solo pendientes sin imputar (monto completo, sin abonos). */
+export function isGroupPaymentSelectable(
+  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
+): boolean {
+  return deriveContributionStatus(reg) === "pending";
+}
