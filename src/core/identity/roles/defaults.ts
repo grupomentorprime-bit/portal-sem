@@ -164,6 +164,7 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
       "congress.operate",
       "congress.payments",
       "congress.import",
+      "congress.finance.correct",
     ],
     system: true,
   },

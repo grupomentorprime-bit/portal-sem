@@ -68,6 +68,21 @@ export async function findPendingInvitationByEmail(
   });
 }
 
+/** Invitaciones pendientes vigentes para un correo (cualquier Espacio). */
+export async function findPendingInvitationsByEmail(
+  email: string
+): Promise<IdentityInvitation[]> {
+  const db = await getDatabase();
+  return db
+    .collection<IdentityInvitation>("identity_invitations")
+    .find({
+      email: normalizeEmail(email),
+      status: "pending",
+      expiresAt: { $gt: new Date().toISOString() },
+    })
+    .toArray();
+}
+
 export async function listInvitationsByTenant(
   tenantId: string
 ): Promise<IdentityInvitation[]> {
