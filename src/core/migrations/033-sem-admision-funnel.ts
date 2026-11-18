@@ -27,7 +27,7 @@ export const migration033SemAdmisionFunnel: MigrationDefinition = {
     let remapped = 0;
     let unknownOpenRemaps = 0;
     for (const item of plan) {
-      await db.collection(GROWTH_OPORTUNIDADES_COLLECTION).updateOne(
+      await db.collection<{ _id: string }>(GROWTH_OPORTUNIDADES_COLLECTION).updateOne(
         { tenantId: SEM_TENANT_ID, _id: item.id },
         { $set: { status: item.to } }
       );

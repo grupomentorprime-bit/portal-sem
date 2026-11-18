@@ -9,24 +9,34 @@ import { ADL_TENANT_ID, SEM_TENANT_ID } from "../../src/core/tenant/constants";
 
 describe("cola ventas por prioridad comercial", () => {
   it("ordena overdue antes que unfollowed y current", () => {
-    const sorted = sortVentasQueueByPriority([
+    const sorted = sortVentasQueueByPriority<
+      { id: string; priorityRank: number; priorityKey: number | null; updatedAt: string }
+    >([
       { id: "c", priorityRank: 3, priorityKey: null, updatedAt: "2026-11-01T00:00:00.000Z" },
       { id: "a", priorityRank: 0, priorityKey: 1, updatedAt: "2026-11-01T00:00:00.000Z" },
       { id: "b", priorityRank: 1, priorityKey: 2, updatedAt: "2026-11-01T00:00:00.000Z" },
-    ] as any);
+    ]);
 
-    assert.deepEqual(sorted.map((item) => item.id), ["a", "b", "c"]);
+    assert.deepEqual(
+      sorted.map((item) => item.id),
+      ["a", "b", "c"]
+    );
   });
 
   it("cola filtra solo oportunidades abiertas", () => {
-    const visible = filterVentasColaItems([
+    const visible = filterVentasColaItems<
+      { id: string; status: string }
+    >([
       { id: "a", status: "interes" },
       { id: "b", status: "contactado" },
       { id: "c", status: "won" },
       { id: "d", status: "archived" },
-    ] as any);
+    ]);
 
-    assert.deepEqual(visible.map((item) => item.id), ["a", "b"]);
+    assert.deepEqual(
+      visible.map((item) => item.id),
+      ["a", "b"]
+    );
   });
 
   it("parsea la vista de ventas con cola como default", async () => {

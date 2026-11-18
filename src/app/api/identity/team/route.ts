@@ -84,7 +84,6 @@ export async function GET() {
             authorizedApps: membership.authorizedApps ?? null,
           }),
           studentAffairsScope: membership.studentAffairsScope,
-          unitAccess: membership.unitAccess,
           roles: memberRoles.map((role) => {
             const code = getRoleCode(role);
             return {

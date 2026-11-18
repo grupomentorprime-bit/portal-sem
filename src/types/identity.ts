@@ -1,5 +1,7 @@
 import type { UnitAccess } from "@/core/units/types";
 
+export type { UnitAccess };
+
 /** Identity & Access Management — Growth OS */
 
 export const USER_STATUSES = ["active", "suspended", "pending"] as const;
@@ -65,15 +67,6 @@ export interface IdentityCredential {
   updatedAt: string;
 }
 
-/**
- * Alcance dentro del Espacio.
- * Ausente: el miembro ve todo el Espacio.
- * `tenant`: administración central. `units`: solo las unidades listadas.
- */
-export type UnitAccess =
-  | { mode: "tenant" }
-  | { mode: "units"; unitIds: string[] };
-
 /** Alcance operativo para encargadas de asuntos estudiantiles. */
 export interface StudentAffairsScope {
   formIds: string[];
@@ -96,11 +89,6 @@ export interface IdentityMembership {
   unitAccess?: UnitAccess;
   /** Formularios y generaciones asignados (rol Asuntos Estudiantiles). */
   studentAffairsScope?: StudentAffairsScope;
-  /**
-   * Alcance dentro del Espacio. Ausente = todo el Espacio (clientes sin unidades).
-   * `tenant` = administración central. `units` = solo esas unidades.
-   */
-  unitAccess?: UnitAccess;
   /** Overrides granulares OT-IAM-002 — equivalente a user_permissions */
   permissionOverrides?: Record<string, boolean>;
   joinedAt: string;

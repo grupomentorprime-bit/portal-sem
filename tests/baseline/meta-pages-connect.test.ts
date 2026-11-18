@@ -47,7 +47,7 @@ describe("conexión Instagram y Facebook", () => {
     const config = getMetaPagesPublicConfig({
       META_APP_ID: "123456",
       META_APP_SECRET: "secret",
-    } as NodeJS.ProcessEnv);
+    } as unknown as NodeJS.ProcessEnv);
     assert.equal(config.ready, false);
     assert.deepEqual(config.missing, ["META_PAGES_CONFIG_ID"]);
   });
