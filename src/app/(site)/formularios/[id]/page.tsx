@@ -21,6 +21,10 @@ import {
   getDirectAccessibleExperienceForm,
   getExperienceFormById,
 } from "@/lib/experience/forms/repository";
+import {
+  CONGRESS_VARONES_PROGRAM_LABEL,
+  CONGRESS_VARONES_PROGRAM_PATH,
+} from "@/lib/experience/forms/already-enrolled";
 import { getExperienceFormUnavailabilityReason } from "@/lib/experience/forms/status";
 import type { FormExperienceStateKey } from "@/types/experience-form-experience";
 import type { Metadata } from "next";
@@ -150,7 +154,8 @@ function withDepartmentBrand(
       submitLabel: "Confirmar asistencia",
       successMessage:
         "Gracias por confirmar tu asistencia. Te esperamos el 21 y 22 de noviembre.",
-      confirmationEmailCtaLabel: "Descargar el programa",
+      confirmationEmailCtaUrl: CONGRESS_VARONES_PROGRAM_PATH,
+      confirmationEmailCtaLabel: CONGRESS_VARONES_PROGRAM_LABEL,
     },
     counter: {
       ...experience.counter,
