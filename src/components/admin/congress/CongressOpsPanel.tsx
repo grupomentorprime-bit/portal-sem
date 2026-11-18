@@ -639,6 +639,14 @@ export function CongressOpsPanel() {
     [groupBalanceRows]
   );
 
+  const groupSplitSumClp = useMemo(
+    () => (groupCashClp ?? 0) + (groupTransferClp ?? 0),
+    [groupCashClp, groupTransferClp]
+  );
+
+  const groupSplitCuadra =
+    groupSaldoTotal > 0 && groupSplitSumClp === groupSaldoTotal;
+
   const groupSplitCashAlloc = useMemo(() => {
     if (!groupSplitRecaudacion) return [];
     const amount = groupCashClp ?? 0;
@@ -731,10 +739,10 @@ export function CongressOpsPanel() {
         });
         return;
       }
-      if (cash + transfer > groupSaldoTotal) {
+      if (cash + transfer !== groupSaldoTotal) {
         push({
-          title: "La recaudación supera el saldo del grupo",
-          description: `Máximo ${formatClp(groupSaldoTotal)}.`,
+          title: "La recaudación debe cuadrar con el saldo marcado",
+          description: `Efectivo + transferencia = ${formatClp(cash + transfer)}; saldo de los seleccionados = ${formatClp(groupSaldoTotal)}. Marque más hermanos o ajuste los montos.`,
           tone: "warning",
         });
         return;
@@ -1214,9 +1222,17 @@ export function CongressOpsPanel() {
                     value={groupTransferClp}
                     onValueChange={setGroupTransferClp}
                   />
-                  <p className="sm:col-span-2 text-xs text-muted">
-                    Suma ≤ saldo del grupo ({formatClp(groupSaldoTotal)}). Un
-                    Guardar registra hasta dos ingresos.
+                  <p
+                    className={`sm:col-span-2 text-xs ${
+                      groupSplitCuadra ? "text-muted" : "font-medium text-warning"
+                    }`}
+                  >
+                    Debe cuadrar exacto: Ef + Tr ={" "}
+                    {formatClp(groupSplitSumClp)} · saldo marcado{" "}
+                    {formatClp(groupSaldoTotal)}
+                    {groupSplitCuadra
+                      ? " · OK. Un Guardar registra hasta dos ingresos."
+                      : " · Ajuste montos o marque otro hermano."}
                   </p>
                 </div>
               ) : null}
@@ -1337,14 +1353,18 @@ export function CongressOpsPanel() {
                   </ul>
                 </div>
               ) : null}
-              <Button type="submit" size="sm" loading={paymentSaving}>
+              <Button
+                type="submit"
+                size="sm"
+                loading={paymentSaving}
+                disabled={groupSplitRecaudacion && !groupSplitCuadra}
+              >
                 <CreditCard className="mr-2 h-4 w-4" />
                 Guardar pago grupal
               </Button>
               <p className="text-xs text-muted">
-                Por defecto un solo tipo de pago. Si el líder trae efectivo y
-                transferencia, active Partir recaudación: un Guardar genera
-                ambos ingresos.
+                Con Partir recaudación, efectivo + transferencia debe igualar el
+                saldo de los hermanos marcados (ni más ni menos).
               </p>
             </form>
           </Section>
