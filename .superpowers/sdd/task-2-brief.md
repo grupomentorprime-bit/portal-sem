@@ -1,48 +1,91 @@
-﻿### Task 2: Lectura por Espacio
+﻿### Task 2: Reglas de subida y archivo en disco
 
 **Files:**
-- Create: `src/lib/growth/conversion-analytics-read.ts`
-- Test: `tests/baseline/growth-conversion-analytics.test.ts` (guarda de fuente; la funciÃ³n pura ya cubre el cÃ¡lculo)
+- Create: `src/lib/desktop/avatar-upload.ts`
+- Create: `src/lib/desktop/avatar-file.ts`
+- Modify: `.gitignore` (añadir `/data/desktop-avatars/`)
+- Modify: `tests/baseline/desktop-avatar.test.ts`
 
 **Interfaces:**
-- Consumes: `buildConversionAnalytics` y sus tipos de entrada. `getDatabase` (`src/lib/mongodb.ts`). Colecciones `GROWTH_OPORTUNIDADES_COLLECTION`, `GROWTH_ACTIVIDADES_COLLECTION`, `GROWTH_FUNNELS_COLLECTION`, `GROWTH_CAMPAIGNS_COLLECTION`. `listMembershipsByTenant`, `listUsersByIds`. `resolveAnalyticsPeriod`. `getExperienceFormById`, el mismo uso que `resolveFormNames` en `analytics-read.ts`.
-- Produces: `getConversionAnalytics(tenantId: string, query: ResolveAnalyticsPeriodInput): Promise<{ ok: true; data: ConversionAnalyticsResponse } | { ok: false; error: string; status: 400 }>`.
+- Consumes: nada del Task 1 salvo paths de test
+- Produces: `AVATAR_SIZE_HINT`, `avatarFileError`, `avatarDimensionError`, `storeAvatarPhoto`, `readAvatarPhoto`, `deleteAvatarPhoto`, `AvatarUploadError`
 
-- [ ] **Step 1: Write the failing source guard**
+- [ ] **Step 1: Extend failing tests**
 
-En el test de fase 3, leer `conversion-analytics-read.ts` y afirmar: filtra `tenantId`; kinds limitados a `opportunity_opened`, `opportunity_transitioned`, `opportunity_assigned`; no contiene `insert`, `update`, `delete`, `aggregate` de escritura, `029`, `lossReason`, ni `deriveCampaignMetrics`. Afirmar que `analytics-read.ts` y `analytics-aggregate.ts` no importan `conversion-analytics`.
+Añadir al mismo archivo de test:
 
-- [ ] **Step 2: Run test to verify it fails**
+```ts
+it("valida tipo, peso y medida mínima de la foto", () => {
+  const {
+    AVATAR_SIZE_HINT,
+    avatarFileError,
+    avatarDimensionError,
+  } = require("../../src/lib/desktop/avatar-upload");
+  assert.match(AVATAR_SIZE_HINT, /2 MB/);
+  assert.notEqual(avatarFileError({ type: "image/gif", size: 100 }), null);
+  assert.equal(avatarFileError({ type: "image/jpeg", size: 100 }), null);
+  assert.match(avatarDimensionError(64, 64) ?? "", /64 × 64/);
+  assert.equal(avatarDimensionError(256, 256), null);
+});
 
-Run: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
+it("guarda foto cuadrada webp y rechaza una demasiado chica", async () => {
+  require("../../scripts/_stub-server-only.cjs");
+  const { storeAvatarPhoto, readAvatarPhoto, deleteAvatarPhoto, AvatarUploadError } =
+    await import("../../src/lib/desktop/avatar-file");
+  const userId = "avatar-upload-test-user";
+  await deleteAvatarPhoto(userId);
 
-Expected: FAIL al leer un archivo que no existe.
+  const ok = await sharp({
+    create: { width: 400, height: 300, channels: 3, background: "#224466" },
+  }).jpeg().toBuffer();
+  const saved = await storeAvatarPhoto(userId, ok, "image/jpeg");
+  assert.equal(saved.savedWidth, 400); // o el lado del cuadrado resultante ≤ 512
+  assert.ok(saved.savedWidth <= 512);
+  assert.ok(await readAvatarPhoto(userId));
 
-- [ ] **Step 3: Write minimal implementation**
+  const tiny = await sharp({
+    create: { width: 80, height: 80, channels: 3, background: "#224466" },
+  }).jpeg().toBuffer();
+  await assert.rejects(
+    () => storeAvatarPhoto(userId, tiny, "image/jpeg"),
+    (e: unknown) => e instanceof AvatarUploadError
+  );
 
-`conversion-analytics-read.ts` con `import "server-only"`. Si `resolveAnalyticsPeriod` falla, devolver `{ ok: false, error, status: 400 }`. Si no:
+  await deleteAvatarPhoto(userId);
+});
+```
 
-1. `find` de oportunidades `{ tenantId }`.
-2. `find` de actividades `{ tenantId, kind: { $in: ["opportunity_opened", "opportunity_transitioned", "opportunity_assigned"] } }`. El historial anterior al perÃ­odo hace falta para permanencia y atribuciÃ³n; no recortar por `occurredAt` en Mongo.
-3. `find` de embudos y campaÃ±as `{ tenantId }`.
-4. MembresÃ­as del Espacio de cualquier estado. `active: membership.status === "active"`. Label: `displayName` o email. La vigencia la resuelve el nÃºcleo puro.
-5. Nombres de formulario solo para los `origin.formId` de esas oportunidades.
-6. `readAt = new Date().toISOString()` y llamar a `buildConversionAnalytics`. Proyectar al tipo de entrada; no pasar el documento crudo de mÃ¡s.
+Importar `sharp` en el test. Ajustar aserción de `savedWidth`: tras crop cuadrado de 400×300 el lado es 300 (min edge) o el resultado de `cover` 300 — documentar en implementación: `resize({ width: 512, height: 512, fit: "cover" })` sobre el min-edge ≥ 128; para 400×300 cover a cuadrado usa el menor lado → 300×300.
 
-No crear colecciÃ³n ni Ã­ndice.
+- [ ] **Step 2: Run to verify fail**
 
-- [ ] **Step 4: Run test to verify it passes**
+Run: `node --import tsx --test tests/baseline/desktop-avatar.test.ts`  
+Expected: FAIL missing modules
 
-Run: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
+- [ ] **Step 3: Implement upload rules + file store**
 
-Expected: PASS.
+`avatar-upload.ts`: constantes `AVATAR_MAX_BYTES = 2 * 1024 * 1024`, `AVATAR_MIN_EDGE = 128`, `AVATAR_MAX_EDGE = 512`, `AVATAR_TYPES`, hint y errores como wallpaper-upload.
+
+`avatar-file.ts` (`server-only`): espejo de `wallpaper-file.ts` pero:
+
+```ts
+.resize({ width: AVATAR_MAX_EDGE, height: AVATAR_MAX_EDGE, fit: "cover" })
+.webp({ quality: 82 })
+```
+
+Dir: `data/desktop-avatars`. Hash sha256 del `userId` → `{hash}.webp`.
+
+Añadir `/data/desktop-avatars/` a `.gitignore`.
+
+- [ ] **Step 4: Run tests**
+
+Expected: PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/growth/conversion-analytics-read.ts tests/baseline/growth-conversion-analytics.test.ts
-git commit -m "feat: leer analÃ­tica de conversiÃ³n del Espacio sin materializarla"
+git add src/lib/desktop/avatar-upload.ts src/lib/desktop/avatar-file.ts .gitignore tests/baseline/desktop-avatar.test.ts
+git commit -m "feat(desktop): guardar y validar foto de avatar"
 ```
 
 ---
-

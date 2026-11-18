@@ -348,6 +348,14 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         matchPrefixes: ["/admin/settings/team", "/admin/settings/users"],
         requiredAnyPermission: ["settings.team"],
       },
+      {
+        id: "nav-unidades",
+        href: "/admin/settings/units",
+        label: "Unidades",
+        icon: "institution",
+        matchPrefixes: ["/admin/settings/units"],
+        requiredAnyPermission: ["settings.team"],
+      },
     ],
   },
   {

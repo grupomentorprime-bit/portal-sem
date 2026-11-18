@@ -1,4 +1,3 @@
-import { PlatformPublicLanding } from "@/components/platform/PlatformPublicLanding";
 import { PortalHome } from "@/components/portal/PortalHome";
 import { PortalContainer, PortalSection } from "@/components/portal/layout";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
@@ -6,13 +5,14 @@ import { isSemTenant } from "@/core/tenant/is-sem";
 import { loadHomePage } from "@/core/portal";
 import { getPortalContext } from "@/lib/portal/site";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { consolidatePageSeo, seoToMetadata, buildRenderContext, preparePageBlocks } from "@/core/portal";
 
 export default async function HomePage() {
   const ctx = await getPortalContext();
 
   if (!ctx) {
-    return <PlatformPublicLanding />;
+    redirect("/escritorio");
   }
 
   const { institution } = ctx.config;

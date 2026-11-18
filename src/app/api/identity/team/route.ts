@@ -76,6 +76,7 @@ export async function GET() {
           avatarPhoto: user?.avatarPhoto === true,
           avatarPhotoUpdatedAt: user?.avatarPhotoUpdatedAt ?? null,
           status: membership.status,
+          unitAccess: membership.unitAccess,
           roleIds: membership.roleIds,
           authorizedApps: resolveAuthorizedApps({
             contracted: contract.contracted,

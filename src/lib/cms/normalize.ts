@@ -34,6 +34,7 @@ function normalizeContact(
     phone: raw.contact?.phone ?? legacy.phone ?? defaults.phone,
     whatsapp: raw.contact?.whatsapp ?? legacy.whatsapp ?? defaults.whatsapp,
     address: raw.contact?.address ?? defaults.address,
+    region: raw.contact?.region ?? defaults.region ?? "",
     city: raw.contact?.city ?? defaults.city,
     country: raw.contact?.country ?? defaults.country,
     hours: raw.contact?.hours ?? defaults.hours ?? "",

@@ -1,38 +1,110 @@
-# Task 1 — Núcleo puro y pruebas de aceptación
+# Task 1 Report: Catálogo y resolución
 
-Status: DONE_WITH_CONCERNS (decisiones de interpretación abajo)
+## Status
+
+DONE
+
+## TDD Evidence
+
+### RED (Step 2)
+
+Command:
+
+```
+node --import tsx --test tests/baseline/desktop-avatar.test.ts
+```
+
+Result: exit code 1
+
+```
+Error: Cannot find module '../../src/lib/desktop/avatar-catalog'
+  code: 'MODULE_NOT_FOUND'
+```
+
+### GREEN (Step 4)
+
+Command:
+
+```
+node --import tsx --test tests/baseline/desktop-avatar.test.ts
+```
+
+Result: exit code 0
+
+```
+▶ avatar del escritorio
+  ✔ resuelve foto, preset e iniciales en ese orden (2.1695ms)
+✔ avatar del escritorio (2.8199ms)
+ℹ tests 1 | pass 1 | fail 0
+```
+
+## Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/lib/desktop/avatar-catalog.ts` | Catalog, parsers, URL builders, resolver, initials |
+| `tests/baseline/desktop-avatar.test.ts` | Baseline test for photo → preset → initials priority |
+| `public/desktop/avatars/aurora.svg` | Preset (#5b8def) |
+| `public/desktop/avatars/bosque.svg` | Preset (#2f9e6b) |
+| `public/desktop/avatars/cobalto.svg` | Preset (#2f5bff) |
+| `public/desktop/avatars/coral.svg` | Preset (#e11d48) |
+| `public/desktop/avatars/lima.svg` | Preset (#84cc16) |
+| `public/desktop/avatars/noche.svg` | Preset (#0b1e5d) |
+| `public/desktop/avatars/arena.svg` | Preset (#d97706) |
+| `public/desktop/avatars/violeta.svg` | Preset (#7c3aed) |
+
+## Public API (`avatar-catalog.ts`)
+
+- `AVATAR_PRESETS` — 8 entries with `id` + Spanish `label`
+- `AvatarPresetId` — union type from preset ids
+- `parseAvatarPresetId(raw)` — validates string against catalog
+- `avatarPresetSrc(id)` — `/desktop/avatars/{id}.svg`
+- `customAvatarUrl(userId?, version?)` — `/api/desktop/avatar/file?v=…` (+ optional `userId`)
+- `desktopAvatarInitials(name, email)` — up to 2 initials, fallback `NZ`
+- `DesktopAvatarView` — discriminated union `photo` | `preset` | `initials`
+- `resolveDesktopAvatar(input)` — priority: photo → preset → initials
 
 ## Commit
-- `37696a0` feat: calcular analítica de conversión desde el núcleo Growth (rama `feat/branding-admin-wip`)
 
-## Archivos (solo estos tres en el commit)
-- `src/lib/growth/conversion-analytics.ts` (nuevo): `buildConversionAnalytics`, constantes `CONVERSION_DENOMINATORS`, `CONVERSION_RATE_NOTE`, `CONVERSION_LOSS_REASONS_NOTE`, todos los tipos del brief más `ConversionMovementRow`, `ConversionDwellRow`, `ConversionCycleStat`, `ConversionAnalyticsResponse`, y `medianOf`.
-- `src/lib/growth/index.ts`: reexporta función, constantes y tipos. El diff de este archivo contenía solo mis líneas.
-- `tests/baseline/growth-conversion-analytics.test.ts` (nuevo): 19 pruebas, cubren los 9 puntos del brief.
+- **SHA:** `499ec72`
+- **Subject:** `feat(desktop): catálogo y resolución de avatar`
+- **Branch:** `feat/escritorio-mentor-prime`
 
-## Evidencia TDD
-- RED: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts` → falló con `Cannot find module '../../src/lib/growth/conversion-analytics'` (`MODULE_NOT_FOUND`). Falla por módulo inexistente, como se esperaba.
-- GREEN: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts tests/baseline/growth-analytics-003.test.ts` → tests 45, pass 45, fail 0.
-- `npx tsc --noEmit -p .` sin errores.
+## Self-Review
 
-## Forma de la respuesta (para tareas 2 y 3)
-- `movement`: `{ byFunnel: [{ funnelKey, funnelLabel, stages: ConversionMovementRow[] }], ilegible }`. Fila: `key` (etapa de salida), `label`, `advance`, `lost`, `won`, `handedOff`, `archived`, `opportunities` (distintas).
-- `dwell`: `{ byFunnel: [{ funnelKey, funnelLabel, stages: { key, label, medianMs, count, inProgress }[] }] }`.
-- `cycle`: `{ won: { medianMs, count }, lost: { medianMs, count } }`.
-- `losses.byExitStage`: `key` es `funnelKey:fromState` (las etapas de embudos distintos no se mezclan), `label` es la etiqueta de etapa.
-- Embudo sin `funnelKey`: clave `sin-embudo`, label «Sin embudo». `funnelLabel` de un embudo con clave es la clave, porque `ConversionFunnelInput` no trae nombre.
-- Campaña no registrada: key `campana-no-registrada`.
+1. **Brief compliance:** Implementation matches the brief verbatim (catalog order, resolver logic, URL encoding, initials algorithm).
+2. **Resolution order:** Test confirms `avatarPhoto` wins over valid `avatarPresetId`, and unknown preset falls through to initials (`AP` for "Ana Pérez").
+3. **Scope:** No API routes, UI, or upload logic — only pure module + static SVG assets as specified.
+4. **SVG assets:** Not exercised by the baseline test; each file follows the brief template with the specified fill color. Paths align with `avatarPresetSrc`.
+5. **Concerns:** None. Baseline does not assert `src` on preset results or file existence; acceptable for Task 1 scope.
 
-## Decisiones donde el brief no es literal (revisar)
-1. Un resultado (`won`/`lost`/`handed_off`) sin `closedAt` queda fuera de la cohorte entera (numerador y denominador), porque el contrato dice «fuera de tasas» y «no altera la tasa». Sigue contando en captación.
-2. Actividades cuya `oportunidadId` no corresponde a una oportunidad del Espacio en la entrada se ignoran (también para `movimientoIlegible`).
-3. Historial incompleto, además de las causas del contrato: la `fromState` de una transición no coincide con la etapa anterior del recorrido (cadena rota), transición sin `occurredAt` válido, y no poder determinar la primera etapa (sin `payload.status` en la apertura ni transiciones). Una oportunidad sin ninguna actividad de apertura/transición cae en este cubo.
-4. `historialIncompleto`, `sinFechaApertura` y `sinFechaCierre` cuentan sobre todas las oportunidades del Espacio, no solo las del período.
-5. La etapa de un intervalo de permanencia que es un resultado no se mide. Si el `status` no es resultado y no hay `closedAt`, el intervalo cuenta en «en curso».
+## Out of Scope (future tasks)
 
-## Autorrevisión
-- Aislamiento por `tenantId` en oportunidades, actividades, embudos y campañas. No hay campo de motivo en la entrada. `lossReasonKey` no aparece en el archivo de producción (lo verifica un test).
-- Atribución de cierre con `closureOwnerUserId` del brief: nunca usa `ownerUserId` actual ni asignaciones posteriores. «Sin responsable» (abiertas) y «Sin atribución de responsable» (cierres) son filas distintas.
-- Archivadas: suman en captación y `archivedNow` (subconjunto, no corte extra); fuera de cohorte.
-- No se tocaron otros archivos, migración 029, git config, ni datos. Sin push.
-- Los archivos nuevos se guardaron con LF; git avisa que los convertirá a CRLF (comportamiento del repo en Windows).
+- Avatar file API endpoint
+- UI for preset/photo selection
+- Upload pipeline
+
+## Review fix — whitespace `displayName` initials
+
+**Finding:** `(name || email).trim()` treated whitespace-only `displayName` as truthy, then trim yielded empty source → fallback `NZ` instead of email.
+
+**Change:** `desktopAvatarInitials` uses `name.trim() || email.trim()` before splitting; baseline test asserts `"   "` + `ana@ex.com` → `A`.
+
+**Commit:** `3a0d906` — `fix(desktop): iniciales usan email si el nombre está vacío`
+
+### Test output (`node --import tsx --test tests/baseline/desktop-avatar.test.ts`)
+
+```
+▶ avatar del escritorio
+  ✔ resuelve foto, preset e iniciales en ese orden (1.9228ms)
+  ✔ usa el email para iniciales si el nombre solo tiene espacios (0.1109ms)
+✔ avatar del escritorio (2.6668ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 294.6077
+```

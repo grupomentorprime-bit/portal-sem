@@ -25,7 +25,7 @@ export function ContactoPage({ contact, social }: Pick<CodedPageViewProps, "cont
   const phone = text(contact.phone);
   const whatsapp = text(contact.whatsapp);
   const address = text(contact.address);
-  const place = [text(contact.city), text(contact.country)].filter(Boolean).join(", ");
+  const place = [text(contact.city), text(contact.region), text(contact.country)].filter(Boolean).join(", ");
   const hours = text(contact.hours);
 
   const rows: Row[] = [];

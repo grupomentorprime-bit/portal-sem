@@ -27,17 +27,14 @@ export function LoginForm({
   if (!authReady) {
     return (
       <div className="space-y-4 text-center">
-        <p className="text-sm text-white/80">
+        <p className="text-[13px] text-[#1c1c1c]">
           El servicio de autenticación no está disponible. Contacta al administrador del Espacio.
         </p>
-        <p className="text-center text-xs text-white/70">
-          <Link
-            href="/"
-            className="font-medium text-white underline-offset-2 hover:underline"
-          >
-            Volver a Growth OS
+        <div className="login-actions">
+          <Link href="/" className="login-back">
+            Volver
           </Link>
-        </p>
+        </div>
       </div>
     );
   }
@@ -89,10 +86,10 @@ export function LoginForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {error ? <p className="text-sm text-red-100">{error}</p> : null}
+      {error ? <p className="text-[13px] text-[#9b1c1c]">{error}</p> : null}
 
       <Input
-        label="Usuario"
+        label="Nombre de usuario"
         name="username"
         type="text"
         autoComplete="username"
@@ -110,18 +107,14 @@ export function LoginForm({
         required
       />
 
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Ingresando…" : "Ingresar"}
-      </Button>
-
-      <p className="pt-1 text-center text-xs text-white/70">
-        <Link
-          href="/"
-          className="font-medium text-white underline-offset-2 hover:underline"
-        >
-          Volver a Growth OS
+      <div className="login-actions">
+        <Button type="submit" loading={loading} disabled={loading} className="login-submit">
+          Iniciar sesión
+        </Button>
+        <Link href="/" className="login-back">
+          Volver
         </Link>
-      </p>
+      </div>
     </form>
   );
 }

@@ -1,47 +1,60 @@
-# Task 2 — Lectura por Espacio
+# Task 2 Report: Reglas de subida y archivo en disco
 
-Status: DONE
+## Status
 
-## Archivos
-- Creado: `src/lib/growth/conversion-analytics-read.ts`
-- Modificado: `tests/baseline/growth-conversion-analytics.test.ts` (describe "conversion-analytics-read — guarda de fuente", 5 tests)
+DONE
 
-## RED
-`npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
+## Commits
 
-```
-✖ conversion-analytics-read — guarda de fuente
-  Error: ENOENT: no such file or directory, open '...\src\lib\growth\conversion-analytics-read.ts'
-ℹ tests 20 / pass 20 / fail 0   (la suite de guarda falla al leer el archivo inexistente)
-```
+- `0b2d56b` — feat(desktop): guardar y validar foto de avatar
 
-## GREEN
-Mismo comando tras implementar:
+## Test summary
 
-```
-✔ conversion-analytics-read — guarda de fuente
-  ✔ es server-only y filtra por tenantId
-  ✔ lee solo los kinds de movimiento necesarios
-  ✔ no escribe, no migra y no toca métricas de campaña
-  ✔ la analítica previa no importa conversion-analytics
-  ✔ la lectura server-only no se reexporta desde el índice de Growth
-ℹ tests 25 / pass 25 / fail 0
+`node --import tsx --test tests/baseline/desktop-avatar.test.ts` — 4 passed, 0 failed (GREEN).
+
+## RED evidence
+
+Initial run failed as expected because the new avatar modules did not exist yet:
+
+```text
+Error: Cannot find module '../../src/lib/desktop/avatar-upload'
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '.../src/lib/desktop/avatar-file'
 ```
 
-`tsc --noEmit` no reporta errores en archivos `conversion-analytics*`.
+## GREEN evidence
 
-## Implementación
-`getConversionAnalytics(tenantId, query)` devuelve `{ ok:true, data }` o `{ ok:false, error, status:400 }`.
-1. `resolveAnalyticsPeriod`; si falla, 400.
-2. `find { tenantId }` de todas las oportunidades (sin recorte por período).
-3. `find { tenantId, kind: { $in: [opened, transitioned, assigned] } }` de actividades, sin recorte por `occurredAt`.
-4. Embudos: `createMongoGrowthFunnelDirectory(db).listFunnels(tenantId)` (`find { tenantId }`), y etapas desde la definición de workflow vía `getDefinition` + `stagesFromDefinition`. Se usa `createMongo…` y no `openGrowthFunnelDirectory` porque este último ejecuta `ensureGrowthFunnelIndexes` (crearía índices).
-5. Campañas `find { tenantId }`.
-6. Membresías de cualquier estado (`listMembershipsByTenant`) + `listUsersByIds`; `active = status === "active"`; label = `displayName` o email (o userId como último recurso).
-7. Nombres de formulario solo de `origin.formId` de esas oportunidades (`resolveFormNames`, mismo patrón que `analytics-read.ts`).
-8. `readAt = new Date().toISOString()`; proyección explícita a los tipos de entrada; `buildConversionAnalytics`.
+The focused test file now passes:
 
-## Notas / desvíos
-- El brief decía "no importar conversion-analytics" para `analytics-read.ts` y `analytics-aggregate.ts`: cumple. Pero `src/lib/growth/index.ts` (Task 1) ya reexporta el núcleo puro `./conversion-analytics`; mi guarda del índice se acotó a `conversion-analytics-read` (el módulo server-only), que no se reexporta.
-- Las etapas de embudo se leen desde `workflow_definitions` a través del directorio de embudos (no listado en el brief, pero necesario para `ConversionFunnelInput.stages`). Solo lectura.
-- No se tocó migración 029, datos de producción, ni se creó colección/índice.
+```text
+✔ resuelve foto, preset e iniciales en ese orden
+✔ usa el email para iniciales si el nombre solo tiene espacios
+✔ valida tipo, peso y medida mínima de la foto
+✔ guarda foto cuadrada webp y rechaza una demasiado chica
+```
+
+## Files changed
+
+- `src/lib/desktop/avatar-upload.ts`
+- `src/lib/desktop/avatar-file.ts`
+- `tests/baseline/desktop-avatar.test.ts`
+- `.gitignore`
+
+## Concerns
+
+None. Lint diagnostics for the touched files were clean.
+
+## Review fix: temp único (Important)
+
+**Change:** `storeAvatarPhoto` now writes to `${target}.${process.pid}.${Date.now()}.tmp` instead of a fixed `${target}.tmp`, avoiding collisions on concurrent saves. On failure after `writeFile`, the temp file is unlinked before rethrowing.
+
+**Commit:** `cee6f68` — fix(desktop): temp único al guardar foto de avatar
+
+**Tests:** `node --import tsx --test tests/baseline/desktop-avatar.test.ts` — 4 passed, 0 failed (GREEN).
+
+## Re-fix: temp UUID (same-ms collision)
+
+**Change:** Temp path now uses `randomUUID()` from `node:crypto` instead of `Date.now()`, so concurrent saves in the same millisecond cannot collide on the temp filename.
+
+**Commit:** `0210913` — fix(desktop): temp UUID al guardar avatar
+
+**Tests:** `node --import tsx --test tests/baseline/desktop-avatar.test.ts` — 4 passed, 0 failed (GREEN).

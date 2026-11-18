@@ -64,6 +64,7 @@ export function comingSoonModel(input: {
     line("Teléfono", contact.phone, contact.phone.trim() ? `tel:${contact.phone.trim()}` : undefined),
     line("WhatsApp", contact.whatsapp),
     line("Dirección", contact.address),
+    line("Región", contact.region ?? ""),
     line("Ciudad", contact.city),
     line("País", contact.country),
     line("Horario", contact.hours),

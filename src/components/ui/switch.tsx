@@ -40,16 +40,16 @@ export function Switch({
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-[var(--transition-fast)]",
+          "relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200",
           focusRing,
           disabledStyles,
-          checked ? "bg-primary" : "bg-gray-200"
+          checked ? "bg-[#34C759]" : "bg-[#E5E5EA]"
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow-[var(--shadow-sm)] transition-transform duration-[var(--transition-fast)]",
-            checked && "translate-x-5"
+            "absolute top-[2px] left-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_3px_8px_rgba(0,0,0,.15)] transition-transform duration-200",
+            checked && "translate-x-[20px]"
           )}
         />
       </button>

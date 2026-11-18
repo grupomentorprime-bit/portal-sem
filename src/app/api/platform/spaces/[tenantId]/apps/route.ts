@@ -6,6 +6,7 @@ import {
   parseContractPatch,
   resolveContractedApps,
 } from "@/lib/desktop/contract";
+import { noteCommercialActivation } from "@/lib/desktop/attention-store";
 import {
   mongoAppRequestStore,
   readSpaceContract,
@@ -44,6 +45,12 @@ export async function POST(request: Request, { params }: RouteParams) {
   const store = mongoAppRequestStore();
   for (const appId of newlyContracted(before.contracted, patch.contractedApps)) {
     await store.fulfillOpen(tenant.tenantId, appId);
+    await noteCommercialActivation({
+      tenantId: tenant.tenantId,
+      appId,
+      actorUserId: ctx.user._id,
+      actorName: ctx.user.displayName,
+    }).catch(() => null);
   }
 
   const appsChanged = before.contracted.join(",") !== patch.contractedApps.join(",");

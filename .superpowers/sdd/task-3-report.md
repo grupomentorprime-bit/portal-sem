@@ -62,3 +62,18 @@ Also checked IDE diagnostics on the edited files: no linter errors found.
 - Hardened `GET /api/desktop/avatar/file` so a viewer can only read another user's avatar when they are the same user, a platform operator/owner, or share at least one tenant through `listMembershipsByUser`.
 - Added a smoke assertion in `tests/baseline/desktop-avatar.test.ts` that the file route mentions `listMembershipsByUser`.
 - Verified with `node --import tsx --test tests/baseline/desktop-avatar.test.ts` and IDE diagnostics on the edited files.
+
+## Preset null guard (Important finding)
+
+- Fixed JSON `POST` on `src/app/api/desktop/avatar/route.ts`: require a non-empty `presetId` string and a known preset from `parseAvatarPresetId`; otherwise `400` without calling `setAvatarPreset`.
+- Root cause: `{ presetId: null }` passed the old `body.presetId !== presetId` check because both sides were `null`.
+- Verified: `npx tsx --test tests/baseline/desktop-avatar.test.ts` — 5 pass, 0 fail.
+- Commit: `fix(desktop): rechazar presetId nulo en avatar` (see SHA below).
+
+## Status (post-fix)
+
+DONE
+
+## SHA (post-fix)
+
+`7340f42`

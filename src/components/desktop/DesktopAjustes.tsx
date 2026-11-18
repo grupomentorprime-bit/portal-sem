@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DesktopAttentionSettings } from "@/components/desktop/DesktopAttentionSettings";
 import { DesktopAvatar } from "@/components/desktop/DesktopAvatar";
 import { DeskIcon, activityTone, productTone, type DeskIconName } from "@/components/desktop/DeskIcon";
 import { resolveDesktopAvatar } from "@/lib/desktop/avatar-catalog";
@@ -818,6 +819,8 @@ function OwnerDesk({
   desk: DeskSnapshot | null;
   deskError: string;
 }) {
+  if (section === "atencion") return <DesktopAttentionSettings />;
+
   if (section === "plataforma") {
     return (
       <div className="desk-users owner-pane">

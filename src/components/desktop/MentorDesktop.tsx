@@ -45,6 +45,7 @@ import {
   type DeskIconSpot,
 } from "@/lib/desktop/layout";
 import { DesktopAccount } from "@/components/desktop/DesktopAccount";
+import { DesktopAttention } from "@/components/desktop/DesktopAttention";
 import { DesktopAjustes } from "@/components/desktop/DesktopAjustes";
 import { DesktopAvatar } from "@/components/desktop/DesktopAvatar";
 import { DesktopClientes } from "@/components/desktop/DesktopClientes";
@@ -89,6 +90,12 @@ export interface MentorDesktopProps {
   dayLines?: DesktopDayLine[];
   /** Dueño del ecosistema: Ajustes controla el acceso total y aparece Clientes. */
   owner?: boolean;
+  /** Dueño u operador: el panel de casos, no la bandeja del cliente. */
+  attentionStaff?: boolean;
+  /** Casos sin asignar o con respuesta sin leer. */
+  attentionCount?: number;
+  /** El cliente tiene una respuesta de Nelzuri sin abrir. */
+  attentionUnread?: boolean;
   /** El dueño abrió el escritorio de un cliente y puede volver a la plataforma. */
   canReturnToPlatform?: boolean;
   /** Permisos del Espacio activo. Filtran Ajustes de empresa. */
@@ -134,6 +141,7 @@ function toneClass(appId: DockAppId): string {
   if (appId === "growth-os") return "g-growth";
   if (appId === "cumple") return "g-cumple";
   if (appId === "aprende-hoy") return "g-aprende";
+  if (appId === "atencion") return "g-atencion";
   if (appId === "clientes") return "g-clientes";
   if (appId === "ajustes") return "g-ajustes";
   return "g-rrhh";
@@ -144,6 +152,14 @@ function glyphClass(appId: DockAppId): string {
 }
 
 function renderGlyph(appId: DockAppId) {
+  if (appId === "atencion") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" aria-hidden="true">
+        <path d="M5 16.5V7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6A2.5 2.5 0 0 1 16.5 16H12l-4.5 3.5V16H7.5A2.5 2.5 0 0 1 5 13.5" strokeLinejoin="round" />
+        <path d="M8.5 9.5h7M8.5 12.5h4" />
+      </svg>
+    );
+  }
   if (appId === "clientes") {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" aria-hidden="true">
@@ -226,6 +242,8 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const [spaceListOpen, setSpaceListOpen] = useState(false);
   const [ajustesOpen, setAjustesOpen] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(false);
+  const [attentionOpen, setAttentionOpen] = useState(false);
+  const [attentionUnread, setAttentionUnread] = useState(Boolean(props.attentionUnread));
   const [spaceAjustesOpen, setSpaceAjustesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [displayName, setDisplayName] = useState(
@@ -249,22 +267,28 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const canRequestPlan = canManageAppKeys(props.permissions ?? []);
   const dockApps = useMemo<DockAppId[]>(() => {
     if (owner) return desktopDock(true);
-    return desktopVisibleApps({
-      contracted: props.contracted,
-      authorizedApps: props.authorizedApps ?? null,
-      canRequestPlan,
-    });
+    return [
+      ...desktopVisibleApps({
+        contracted: props.contracted,
+        authorizedApps: props.authorizedApps ?? null,
+        canRequestPlan,
+      }),
+      "atencion",
+    ];
   }, [owner, props.contracted, props.authorizedApps, canRequestPlan]);
   const [icons, setIcons] = useState<DeskIconSpot[]>(() =>
     deskIconsForDock(
       props.layout,
       owner
         ? desktopDock(true)
-        : desktopVisibleApps({
-            contracted: props.contracted,
-            authorizedApps: props.authorizedApps ?? null,
-            canRequestPlan: canManageAppKeys(props.permissions ?? []),
-          })
+        : [
+            ...desktopVisibleApps({
+              contracted: props.contracted,
+              authorizedApps: props.authorizedApps ?? null,
+              canRequestPlan: canManageAppKeys(props.permissions ?? []),
+            }),
+            "atencion",
+          ]
     )
   );
   const [ghost, setGhost] = useState<{ appId: DockAppId } | null>(null);
@@ -528,6 +552,10 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }, [props.user.displayName, props.user.email]);
 
   useEffect(() => {
+    setAttentionUnread(Boolean(props.attentionUnread));
+  }, [props.attentionUnread]);
+
+  useEffect(() => {
     setAvatarState({
       avatarPresetId: props.user.avatarPresetId ?? null,
       avatarPhoto: props.user.avatarPhoto === true,
@@ -730,6 +758,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   function closeWindows() {
     setAjustesOpen(false);
     setClientesOpen(false);
+    setAttentionOpen(false);
     setSpaceAjustesOpen(false);
     setAccountOpen(false);
   }
@@ -739,16 +768,39 @@ export function MentorDesktop(props: MentorDesktopProps) {
     setSpaceListOpen(false);
     setAjustesOpen(false);
     setClientesOpen(false);
+    setAttentionOpen(false);
     setSpaceAjustesOpen(false);
     setAccountOpen((open) => !open);
   }
 
+  function attentionMark(appId: DockAppId) {
+    if (appId !== "atencion") return null;
+    const count = props.attentionCount ?? 0;
+    if (props.attentionStaff && count > 0) {
+      return <em className="attn-count">{count > 99 ? "99+" : count}</em>;
+    }
+    if (!props.attentionStaff && attentionUnread) return <em className="attn-dot" aria-label="Mensaje nuevo" />;
+    return null;
+  }
+
   function handleApp(appId: DockAppId, event?: ReactMouseEvent<HTMLButtonElement>) {
     if (launch) return;
+    if (appId === "atencion") {
+      if (!props.attentionStaff) setAttentionUnread(false);
+      setSheet(null);
+      setSpaceListOpen(false);
+      setAjustesOpen(false);
+      setClientesOpen(false);
+      setSpaceAjustesOpen(false);
+      setAccountOpen(false);
+      setAttentionOpen((open) => !open);
+      return;
+    }
     if (appId === "ajustes" && props.owner) {
       setSheet(null);
       setSpaceListOpen(false);
       setClientesOpen(false);
+      setAttentionOpen(false);
       setSpaceAjustesOpen(false);
       setAccountOpen(false);
       setAjustesOpen((open) => !open);
@@ -758,6 +810,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       setSheet(null);
       setSpaceListOpen(false);
       setAjustesOpen(false);
+      setAttentionOpen(false);
       setSpaceAjustesOpen(false);
       setAccountOpen(false);
       setClientesOpen((open) => !open);
@@ -768,6 +821,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       setSheet(null);
       setSpaceListOpen(false);
       setAccountOpen(false);
+      setAttentionOpen(false);
       setSpaceAjustesOpen((open) => !open);
       return;
     }
@@ -890,7 +944,8 @@ export function MentorDesktop(props: MentorDesktopProps) {
         onError={() => setImageBroken(true)}
       />
 
-      <div className="bar">
+      {/* Proton Pass escribe data-protonpass-form en esta barra antes de hidratar. */}
+      <div className="bar" suppressHydrationWarning>
         <div className="brand">
           <span className="brand-lockup">
             <img
@@ -1031,6 +1086,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
               <span className={glyphClass(icon.appId)}>
                 {renderGlyph(icon.appId)}
                 {action?.kind === "request" ? renderLock() : null}
+                {attentionMark(icon.appId)}
               </span>
               <small>{dockAppLabel(icon.appId)}</small>
             </button>
@@ -1080,6 +1136,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
                 <span className={glyphState}>
                   {renderGlyph(appId)}
                   {action?.kind === "request" ? renderLock() : null}
+                  {attentionMark(appId)}
                 </span>
                 <small>{dockAppLabel(appId)}</small>
               </button>
@@ -1103,6 +1160,13 @@ export function MentorDesktop(props: MentorDesktopProps) {
 
       {ajustesOpen ? (
         <DesktopAjustes self={props.user} onClose={() => setAjustesOpen(false)} />
+      ) : null}
+      {attentionOpen ? (
+        <DesktopAttention
+          mode={props.attentionStaff ? "panel" : "client"}
+          selfId={props.user.id}
+          onClose={() => setAttentionOpen(false)}
+        />
       ) : null}
       {clientesOpen ? (
         <DesktopClientes
@@ -1189,7 +1253,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
               </button>
             </div>
             {sheet.kind === "request" && sheetRequested ? (
-              <p className="sent">Queda registrada para este Espacio.</p>
+              <p className="sent">Queda registrada para este Espacio. Puedes seguirla en Atención.</p>
             ) : null}
           </div>
         ) : null}

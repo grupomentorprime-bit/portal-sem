@@ -7,6 +7,7 @@ export type DeskIconName =
   | "seguridad"
   | "legales"
   | "actividad"
+  | "atencion"
   | "growth-os"
   | "cumple"
   | "aprende-hoy"
@@ -79,7 +80,7 @@ export function DeskIcon({ name }: { name: DeskIconName }) {
       </svg>
     );
   }
-  if (name === "productos" || name === "products") {
+  if (name === "productos") {
     return (
       <svg {...COMMON}>
         <rect x="4" y="4" width="7" height="7" rx="1.6" />
@@ -119,6 +120,14 @@ export function DeskIcon({ name }: { name: DeskIconName }) {
       <svg {...COMMON}>
         <circle cx="12" cy="12" r="8" />
         <path d="M12 8v4l3 2" />
+      </svg>
+    );
+  }
+  if (name === "atencion") {
+    return (
+      <svg {...COMMON}>
+        <path d="M5 16.5V7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6A2.5 2.5 0 0 1 16.5 16H12l-4.5 3.5V16H7.5A2.5 2.5 0 0 1 5 13.5" strokeLinejoin="round" />
+        <path d="M8.5 9.5h7M8.5 12.5h4" />
       </svg>
     );
   }

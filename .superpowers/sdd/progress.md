@@ -1,41 +1,26 @@
-# Laboral RRHH editorial SDD
+# Escritorio Mentor Prime SDD
 
-Started: 2026-10-02
-Branch: feat/sitio-en-codigo
-Plan: docs/superpowers/plans/2026-10-02-cumple-laboral-rrhh-editorial.md
+Started: 2026-11-11
+Branch: feat/escritorio-mentor-prime
+Plan: docs/superpowers/plans/2026-11-11-escritorio-mentor-prime.md
+Base: d96ef84
+Workspace: .worktrees/escritorio-mentor-prime
+Note: baseline on this base has 12 pre-existing failures. Judge each task by its own tests.
 
+Task 1: complete (commits d96ef84..11552ca). Reviewer Important on escritorioRedirect order declined: spec lists sin Espacio first; student-affairs is only computed with a membership. Deep-link landing is Task 3, not this function.
 
-Task 1: complete (uncommitted tests, review clean)
+Task 2: complete (commits 11552ca..15bd51b, review clean). Minor for final review: full baseline not re-run; task test only.
 
-Task 2: complete (uncommitted materias.ts, review clean, visual OK)
+Task 3: complete (commits 15bd51b..c5101f5, review clean). Minor for final review: not every default next path has its own assertion; they share isDefaultSpaceLanding.
 
-Final review: Ready to merge this feature (Minor: more legal-guardrail asserts optional)
-All tasks complete.
+Task 4: complete (commits c5101f5..b4fba65, review clean).
 
-Finish choice: 3 keep branch as-is
+Task 5: complete (commits b4fba65..9d09042). Fixes: canonical tenant id on the operator route; duplicate key 11000 does not 500. Declined on recommendation: wallpaper POST stays 400 for unknown values (plan route); session tenant id is already the space id the rest of the admin uses; non-https Aprende Hoy URLs stay stored and desktopClick treats them as disconnected.
 
+Task 6: complete (commits 9d09042..8c37f8d). Spec match. Declined on recommendation: the source-string test is the plan's gate; a React behavior harness is out of this task. Minor for final review: MentorDesktop has no behavioral test. Browser check skipped because port 3000 is the other checkout.
 
-# Conversion Engine fase 3 SDD
+Task 7: complete (commits 8c37f8d..3e367c8, review clean). Browser check skipped for the same reason.
 
-Started: 2026-10-19
-Branch: feat/branding-admin-wip
-Plan: docs/superpowers/plans/2026-10-19-conversion-engine-fase-3.md
-Base: 9fd0967a3eb4d80ca4ea4de957d9b807ff0b9993
+Task 8: complete (commits 3e367c8..d699477, review clean). Minor for final review: SpaceAppsPanel test is a source-string check.
 
-Task 1: complete (commits 9fd0967..37696a0, review clean)
-
-Minors for final review:
-- Extra incomplete-history causes beyond the spec list
-- Quality buckets sinFechaApertura/sinFechaCierre/historialIncompleto are all-time, not period-scoped
-- Cohort excludes result statuses without closedAt
-- Funnel labels are the funnel key (input type has no name)
-- Stage rows sorted by count/label, not funnel stage order
-- ISO string compare can misorder mixed timestamp formats
-- First membership row wins if duplicates; empty active label becomes no vigente
-- Quality test asserts 3 of 6 buckets; no boundary tests
-- Loss exit rows keyed funnelKey:fromState
-Task 2: complete (commits 37696a0..ad31623, review clean)
-
-Task 3: complete (commits ad31623..f3549ce, review clean after fixes)
-Final review: Ready
-
+Final review (d96ef84..d699477): not a merge blocker. Declined on recommendation: escritorioRedirect matches the spec. Login still sends every operator to /platform (landing.ts). The desk page only sends an operator without a membership to /platform; an operator already inside a space sees that space's desk (spec, Puerta). No space still wins first, including an operator with no space. Minor kept: concurrent duplicate insert can return already:false.

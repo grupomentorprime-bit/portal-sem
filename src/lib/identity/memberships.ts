@@ -1,7 +1,8 @@
 import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
-import type { IdentityMembership, StudentAffairsScope } from "@/types/identity";
+import { grantUnitAccess } from "@/core/units/access";
+import type { IdentityMembership, StudentAffairsScope, UnitAccess } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
 
 export class MembershipConflictError extends Error {
@@ -274,4 +275,26 @@ export async function archiveMembershipAccess(
   membershipId: string
 ): Promise<IdentityMembership | null> {
   return updateMembershipStatus(membershipId, "archived");
+}
+
+export async function setMembershipUnitAccess(
+  membershipId: string,
+  unitAccess: UnitAccess
+): Promise<IdentityMembership | null> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  await db.collection<IdentityMembership>("identity_memberships").updateOne(
+    { _id: membershipId },
+    { $set: { unitAccess, updatedAt: now } }
+  );
+  return findMembershipById(membershipId);
+}
+
+export async function grantMembershipUnitAccess(
+  membershipId: string,
+  grant: UnitAccess
+): Promise<IdentityMembership | null> {
+  const existing = await findMembershipById(membershipId);
+  if (!existing) return null;
+  return setMembershipUnitAccess(membershipId, grantUnitAccess(existing.unitAccess, grant));
 }

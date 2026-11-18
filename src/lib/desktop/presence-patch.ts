@@ -1,8 +1,8 @@
 import type { SiteConfigPatch } from "@/lib/cms/site-config-patch";
-import type { ContactInfo, Institution, SiteConfig } from "@/types/cms";
+import type { ContactInfo, Institution, SiteConfig, SocialLinks } from "@/types/cms";
 import type { SpacePresencePanelId } from "@/lib/desktop/space-settings";
 
-export type EmpresaBlockId = "general" | "contacto" | "ubicacion";
+export type EmpresaBlockId = "general" | "contacto" | "ubicacion" | "redes";
 
 export const EMPRESA_BLOCKS: {
   id: EmpresaBlockId;
@@ -17,7 +17,7 @@ export const EMPRESA_BLOCKS: {
   {
     id: "contacto",
     title: "Contacto institucional",
-    lead: "Canales públicos para hablar con la organización.",
+    lead: "Correo, teléfono y WhatsApp para atender a las personas.",
   },
   {
     id: "ubicacion",
@@ -25,6 +25,26 @@ export const EMPRESA_BLOCKS: {
     lead: "Dirección y lugar donde opera el Espacio.",
   },
 ];
+
+const REDES_BLOCK = {
+  id: "redes",
+  title: "Redes sociales",
+  lead: "Perfiles oficiales. También son canales de atención.",
+} as const;
+
+/** Mi empresa conserva ficha y lugar. Canales concentra contacto y redes de atención. */
+export function presenceBlocks(panel: SpacePresencePanelId): {
+  id: EmpresaBlockId;
+  title: string;
+  lead: string;
+}[] {
+  if (panel === "canales") {
+    const contacto = EMPRESA_BLOCKS.find((block) => block.id === "contacto");
+    return contacto ? [contacto, REDES_BLOCK] : [REDES_BLOCK];
+  }
+  if (panel === "empresa") return EMPRESA_BLOCKS.filter((block) => block.id !== "contacto");
+  return [];
+}
 
 const GENERAL_KEYS = [
   "name",
@@ -36,7 +56,16 @@ const GENERAL_KEYS = [
 
 const CONTACTO_KEYS = ["email", "phone", "whatsapp", "hours"] as const satisfies readonly (keyof ContactInfo)[];
 
-const UBICACION_KEYS = ["address", "city", "country"] as const satisfies readonly (keyof ContactInfo)[];
+const REDES_KEYS = [
+  "facebook",
+  "instagram",
+  "youtube",
+  "linkedin",
+  "tiktok",
+  "spotify",
+] as const satisfies readonly (keyof SocialLinks)[];
+
+const UBICACION_KEYS = ["address", "region", "city", "country"] as const satisfies readonly (keyof ContactInfo)[];
 
 function changedKeys<T extends object, K extends keyof T>(
   baseline: T,
@@ -80,8 +109,12 @@ export function empresaBlockPatch(
     const contact = changedKeys(baseline.contact, current.contact, CONTACTO_KEYS);
     return contact ? { contact } : {};
   }
-  const contact = changedKeys(baseline.contact, current.contact, UBICACION_KEYS);
-  return contact ? { contact } : {};
+  if (block === "ubicacion") {
+    const contact = changedKeys(baseline.contact, current.contact, UBICACION_KEYS);
+    return contact ? { contact } : {};
+  }
+  const social = changedKeys(baseline.social, current.social, REDES_KEYS);
+  return social ? { social } : {};
 }
 
 export function empresaBlockDirty(

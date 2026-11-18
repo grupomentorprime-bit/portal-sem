@@ -245,10 +245,13 @@ describe("OT-GROWTH-MESSAGING-005 — UI humana", () => {
     assert.match(ui, /GROWTH_CHANNELS_PAUSE_LABEL/);
     assert.match(ui, /GROWTH_CHANNELS_RESUME_LABEL/);
     assert.match(ui, /GROWTH_CHANNELS_COMING_SOON/);
-    assert.match(ui, /Instagram/);
-    assert.match(ui, /Facebook/);
     assert.match(ui, /Chat del sitio/);
     assert.match(ui, /Correo/);
+    const pages = readSrc("src/components/admin/MetaPagesChannels.tsx");
+    assert.match(pages, /Instagram/);
+    assert.match(pages, /Facebook/);
+    assert.match(pages, /Aún no recibe en Mensajes/);
+    assert.doesNotMatch(pages, /accessToken/);
     assert.match(ui, /href="\/admin\/mensajes"/);
 
     assert.equal(GROWTH_CHANNELS_PAGE_TITLE, "Canales");

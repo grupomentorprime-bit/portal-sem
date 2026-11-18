@@ -132,6 +132,12 @@ function panelCopy(panel: SpacePanelId | null): { title: string; lead: string } 
       lead: "Perfiles de la empresa. El plan y los permisos internos de cada aplicación no se editan aquí.",
     };
   }
+  if (panel === "canales") {
+    return {
+      title: "Canales",
+      lead: "Contactos y redes con los que se atiende en este Espacio.",
+    };
+  }
   return {
     title: "Ajustes",
     lead: "Solo de este cliente. Las cuentas del administrador de la plataforma no están aquí.",
@@ -197,10 +203,11 @@ export function DesktopSpaceAjustes({
   const [error, setError] = useState("");
   const [panel, setPanel] = useState<SpacePanelId | null>(null);
   const [sectionDirty, setSectionDirty] = useState(false);
+  const [canConnectChannels, setCanConnectChannels] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const presencePanel =
-    panel === "empresa" || panel === "marca" || panel === "sitio"
+    panel === "empresa" || panel === "marca" || panel === "sitio" || panel === "canales"
       ? (panel as SpacePresencePanelId)
       : null;
   const heading = panelCopy(panel);
@@ -287,6 +294,7 @@ export function DesktopSpaceAjustes({
           return;
         }
         setError("");
+        setCanConnectChannels((body.permissions ?? []).includes("settings.integrations"));
         const nextGroups = filterSpaceSettingGroups(
           body.permissions ?? [],
           undefined,
@@ -363,6 +371,8 @@ export function DesktopSpaceAjustes({
                 <DesktopSpacePresence
                   panel={presencePanel}
                   onDirtyChange={setSectionDirty}
+                  growthOs={contractedApps.includes("growth-os")}
+                  canConnectChannels={canConnectChannels}
                 />
               ) : null}
               {panel === "equipo" ? (

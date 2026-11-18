@@ -55,6 +55,7 @@ export function createDefaultSiteConfig(): SiteConfig {
       phone: "",
       whatsapp: "",
       address: "",
+      region: "",
       city: "",
       country: "",
       hours: "",

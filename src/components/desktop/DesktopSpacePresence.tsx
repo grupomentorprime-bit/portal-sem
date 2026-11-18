@@ -1,19 +1,67 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { NetworkTile, type NetworkId } from "@/components/brand/NetworkMark";
 import { BrandingPanel } from "@/components/config/BrandingPanel";
 import { ContactForm } from "@/components/config/ContactForm";
 import { InstitutionForm } from "@/components/config/InstitutionForm";
+import { SocialLinksForm } from "@/components/config/SocialLinksForm";
 import {
   displayValue,
-  EMPRESA_BLOCKS,
   empresaBlockDirty,
   empresaBlockPatch,
+  presenceBlocks,
   presenceConfigPatch,
   type EmpresaBlockId,
 } from "@/lib/desktop/presence-patch";
 import type { SpacePresencePanelId } from "@/lib/desktop/space-settings";
-import type { SiteConfig } from "@/types/cms";
+import { chileRegionForCity, isChileCountry } from "@/lib/geo/chile-locations";
+import type { SiteConfig, SocialLinks } from "@/types/cms";
+
+const SOCIAL_ROWS: { key: keyof SocialLinks; label: string; network: NetworkId }[] = [
+  { key: "facebook", label: "Facebook", network: "facebook" },
+  { key: "instagram", label: "Instagram", network: "instagram" },
+  { key: "youtube", label: "YouTube", network: "youtube" },
+  { key: "linkedin", label: "LinkedIn", network: "linkedin" },
+  { key: "tiktok", label: "TikTok", network: "tiktok" },
+  { key: "spotify", label: "Spotify", network: "spotify" },
+];
+
+const GROWTH_NETWORKS: {
+  id: NetworkId;
+  label: string;
+  text: string;
+  href?: string;
+}[] = [
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    text: "Canal activo. Se autoriza con Meta.",
+    href: "/admin/settings/channels",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    text: "Se autoriza con la página de Facebook.",
+    href: "/admin/settings/channels#instagram",
+  },
+  {
+    id: "facebook",
+    label: "Facebook",
+    text: "Messenger de la misma página.",
+    href: "/admin/settings/channels#instagram",
+  },
+  {
+    id: "chat",
+    label: "Chat del sitio",
+    text: "Atención en el portal. Aún sin conector.",
+  },
+  {
+    id: "email",
+    label: "Correo",
+    text: "Bandeja de atención. Aún sin conector.",
+  },
+];
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -30,6 +78,10 @@ const COPY: Record<SpacePresencePanelId, { title: string; lead: string }> = {
     title: "Sitio web",
     lead: "Presencia pública de este Espacio. Se administra con la aplicación del plan.",
   },
+  canales: {
+    title: "Canales",
+    lead: "Contactos y redes con los que se atiende en este Espacio.",
+  },
 };
 
 const SITE_LINKS = [
@@ -45,10 +97,23 @@ const SITE_LINKS = [
   },
 ] as const;
 
-function ReadRow({ label, value }: { label: string; value: string }) {
+function ReadRow({
+  label,
+  value,
+  network,
+}: {
+  label: string;
+  value: string;
+  network?: NetworkId;
+}) {
   return (
     <div className="cfg-read-row">
-      <dt>{label}</dt>
+      <dt>
+        {network ? (
+          <NetworkTile id={network} className="h-[22px] w-[22px] rounded-[7px]" />
+        ) : null}
+        {label}
+      </dt>
       <dd>{value}</dd>
     </div>
   );
@@ -57,9 +122,15 @@ function ReadRow({ label, value }: { label: string; value: string }) {
 export function DesktopSpacePresence({
   panel,
   onDirtyChange,
+  growthOs = false,
+  canConnectChannels = false,
 }: {
   panel: SpacePresencePanelId;
   onDirtyChange?: (dirty: boolean) => void;
+  /** El plan del Espacio incluye Growth OS. */
+  growthOs?: boolean;
+  /** Quien mira puede abrir la conexión de canales. */
+  canConnectChannels?: boolean;
 }) {
   const [config, setConfig] = useState<SiteConfig | null>(null);
   const [baseline, setBaseline] = useState<SiteConfig | null>(null);
@@ -70,7 +141,8 @@ export function DesktopSpacePresence({
   const [saveError, setSaveError] = useState("");
   const [blockMessage, setBlockMessage] = useState("");
   const copy = COPY[panel];
-  const canEditEmpresa = panel === "empresa";
+  const blocks = presenceBlocks(panel);
+  const canEditEmpresa = blocks.length > 0;
   const canEditMarca = panel === "marca";
 
   useEffect(() => {
@@ -274,9 +346,9 @@ export function DesktopSpacePresence({
       {blockMessage ? <p className="form-ok" role="status">{blockMessage}</p> : null}
       {!config && !loadError ? <p className="ajustes-wait">Cargando ficha…</p> : null}
 
-      {config && panel === "empresa" ? (
+      {config && canEditEmpresa ? (
         <div className="cfg-blocks" role="list">
-          {EMPRESA_BLOCKS.map((block) => {
+          {blocks.map((block) => {
             const isEditing = editingBlock === block.id;
             const source = isEditing && draft ? draft : config;
             return (
@@ -356,6 +428,16 @@ export function DesktopSpacePresence({
                         }}
                       />
                     ) : null}
+                    {block.id === "redes" ? (
+                      <SocialLinksForm
+                        value={source.social}
+                        framed={false}
+                        onChange={(social) => {
+                          setDraft((prev) => (prev ? { ...prev, social } : prev));
+                          setSaveStatus("idle");
+                        }}
+                      />
+                    ) : null}
                   </div>
                 ) : (
                   <dl className="cfg-read">
@@ -394,11 +476,32 @@ export function DesktopSpacePresence({
                         />
                       </>
                     ) : null}
+                    {block.id === "redes" ? (
+                      <>
+                        {SOCIAL_ROWS.map((row) => (
+                          <ReadRow
+                            key={row.key}
+                            label={row.label}
+                            network={row.network}
+                            value={displayValue(source.social[row.key])}
+                          />
+                        ))}
+                      </>
+                    ) : null}
                     {block.id === "ubicacion" ? (
                       <>
                         <ReadRow
                           label="Dirección"
                           value={displayValue(source.contact.address)}
+                        />
+                        <ReadRow
+                          label="Región"
+                          value={displayValue(
+                            source.contact.region ||
+                              (isChileCountry(source.contact.country)
+                                ? chileRegionForCity(source.contact.city)
+                                : "")
+                          )}
                         />
                         <ReadRow label="Ciudad" value={displayValue(source.contact.city)} />
                         <ReadRow label="País" value={displayValue(source.contact.country)} />
@@ -409,6 +512,51 @@ export function DesktopSpacePresence({
               </section>
             );
           })}
+        </div>
+      ) : null}
+
+      {panel === "canales" && growthOs ? (
+        <div className="space-presence-forms">
+          <div className="space-site-card">
+            <p className="space-site-kicker">Growth OS</p>
+            <strong>Conectar las redes</strong>
+            <p>
+              WhatsApp, Instagram y Facebook se autorizan en Growth OS. El chat
+              del sitio y el correo todavía no tienen conector.
+            </p>
+          </div>
+          {canConnectChannels ? (
+            <ul className="space-site-links">
+              {GROWTH_NETWORKS.map((item) => (
+                <li key={item.id}>
+                  {item.href ? (
+                    <a href={item.href} className="space-row is-network">
+                      <NetworkTile id={item.id} className="h-9 w-9 rounded-[11px]" />
+                      <span className="space-copy">
+                        <strong>{item.label}</strong>
+                        <span>{item.text}</span>
+                      </span>
+                      <span className="space-go" aria-hidden="true">
+                        →
+                      </span>
+                    </a>
+                  ) : (
+                    <div className="space-row is-network is-soon" aria-disabled="true">
+                      <NetworkTile id={item.id} className="h-9 w-9 rounded-[11px]" />
+                      <span className="space-copy">
+                        <strong>{item.label}</strong>
+                        <span>{item.text}</span>
+                      </span>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="ajustes-wait">
+              Hace falta permiso de integraciones para abrir esa conexión.
+            </p>
+          )}
         </div>
       ) : null}
 

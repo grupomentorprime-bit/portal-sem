@@ -13,6 +13,7 @@ export interface AppRequestStore {
   insertOpen(row: AppRequest): Promise<void>;
   fulfillOpen(tenantId: string, appId: MentorAppId): Promise<void>;
   listOpen(tenantId: string): Promise<AppRequest[]>;
+  listAllOpen(): Promise<AppRequest[]>;
 }
 
 export function createMemoryAppRequestStore(): AppRequestStore {
@@ -33,6 +34,9 @@ export function createMemoryAppRequestStore(): AppRequestStore {
     },
     async listOpen(tenantId) {
       return rows.filter((row) => row.tenantId === tenantId && row.status === "open");
+    },
+    async listAllOpen() {
+      return rows.filter((row) => row.status === "open");
     },
   };
 }

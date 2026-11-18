@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DesktopSwitchGroup, DesktopSwitchRow } from "@/components/desktop/DesktopSwitch";
 
 type ProfileKind = "enterprise" | "custom" | "product";
 type ProfileRow = {
@@ -312,26 +313,25 @@ export function DesktopSpaceProfiles({
                 ) : null}
                 <div className="team-permissions">
                   {modules.map((module) => (
-                    <fieldset key={module.id}>
-                      <legend>{module.label}</legend>
+                    <DesktopSwitchGroup key={module.id} label={module.label}>
                       {module.permissions.map((permission) => {
                         const allowed = grantableSet.has(permission.code);
                         return (
-                          <label key={permission.code}>
-                            <input
-                              type="checkbox"
-                              checked={draft[permission.code] === true}
+                          <DesktopSwitchRow
+                            key={permission.code}
+                            title={permission.label}
+                            detail={
+                              !allowed
+                                ? "Fuera de tu alcance"
+                                : permission.description || undefined
+                            }
+                            checked={draft[permission.code] === true}
                             disabled={readOnly || saving || !allowed}
                             onChange={() => toggle(permission.code)}
                           />
-                          <span>
-                            {permission.label}
-                            {!allowed ? <small>Fuera de tu alcance</small> : null}
-                          </span>
-                          </label>
                         );
                       })}
-                    </fieldset>
+                    </DesktopSwitchGroup>
                   ))}
                 </div>
                 <div className="team-actions">

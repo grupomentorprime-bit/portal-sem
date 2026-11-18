@@ -42,6 +42,14 @@ describe("ajustes de empresa y mi cuenta", () => {
     assert.equal(personas.items[0]?.kind, "panel");
     assert.equal(personas.items[0]?.panel, "equipo");
     assert.equal(spaceSettingHref(personas.items[0]!), null);
+
+    const conexion = SPACE_SETTING_GROUPS.find((group) => group.title === "Conexión");
+    assert.ok(conexion);
+    const canales = conexion.items.find((item) => item.id === "canales");
+    assert.equal(canales?.kind, "panel");
+    assert.equal(canales?.panel, "canales");
+    assert.equal(spaceSettingHref(canales!), null);
+    assert.equal(canales?.requiredAny.includes("settings.update"), true);
   });
 
   it("filtra por permisos y plan del Espacio", () => {
@@ -124,7 +132,7 @@ describe("ajustes de empresa y mi cuenta", () => {
     assert.match(presence, /includePortalHero=\{false\}/);
     assert.match(presence, /showTenant=\{false\}/);
     assert.match(presence, /empresaBlockPatch/);
-    assert.match(presence, /EMPRESA_BLOCKS/);
+    assert.match(presence, /presenceBlocks/);
     assert.match(presence, /cfg-blocks/);
     assert.match(presence, /beginEdit/);
     assert.match(presence, /scope="contact"/);
@@ -140,6 +148,10 @@ describe("ajustes de empresa y mi cuenta", () => {
     assert.match(blocks, /Ubicación/);
     assert.match(presence, /\/admin\/site\/domain/);
     assert.match(presence, /\/admin\/portal\/forms/);
+    assert.match(presence, /growthOs/);
+    assert.match(presence, /\/admin\/settings\/channels/);
+    assert.match(presence, /NetworkTile/);
+    assert.match(presence, /Conectar las redes/);
     assert.doesNotMatch(presence, /withSeoFallbacks/);
     assert.doesNotMatch(presence, /seo: config\.seo/);
     assert.doesNotMatch(presence, /\/admin\/config/);
@@ -148,6 +160,8 @@ describe("ajustes de empresa y mi cuenta", () => {
       resolve(process.cwd(), "src/components/desktop/DesktopSpaceAjustes.tsx"),
       "utf8"
     );
+    assert.match(space, /canConnectChannels/);
+    assert.match(space, /growth-os/);
     assert.match(space, /settings-surface/);
     assert.match(space, /settings-nav/);
     assert.doesNotMatch(space, /space-board/);
@@ -157,7 +171,9 @@ describe("ajustes de empresa y mi cuenta", () => {
       "utf8"
     );
     assert.doesNotMatch(settings, /href:\s*"\/admin\/config"/);
+    assert.doesNotMatch(settings, /\/admin\/settings\/channels/);
     assert.match(settings, /panel:\s*"sitio"/);
+    assert.match(settings, /panel:\s*"canales"/);
     assert.match(settings, /requiresApp:\s*"growth-os"/);
   });
 
