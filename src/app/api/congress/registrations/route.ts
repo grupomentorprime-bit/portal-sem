@@ -8,7 +8,11 @@ export async function GET(request: Request) {
     const ctx = await requireCongressView();
     if (ctx instanceof NextResponse) return ctx;
 
-    await syncCongressFormSubmissions(ctx.tenantId);
+    try {
+      await syncCongressFormSubmissions(ctx.tenantId);
+    } catch (syncError) {
+      console.error("congress sync (registrations):", syncError);
+    }
 
     const url = new URL(request.url);
     const items = await listCongressRegistrations(ctx.tenantId, {

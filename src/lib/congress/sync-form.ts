@@ -16,7 +16,7 @@ import type { ExperienceFormSubmission } from "@/types/experience-forms";
 
 /**
  * Enlaza respuestas del formulario público como inscripciones `source=form`.
- * No copia la respuesta ni crea duplicados por submissionId.
+ * No copia la respuesta ni crea duplicados por submissionId ni por RUT.
  * No fusiona por nombre con otras fuentes.
  */
 export async function syncCongressFormSubmissions(tenantId: string): Promise<{
@@ -33,14 +33,14 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
   let skipped = 0;
 
   for (const submission of submissions) {
-    const existing = await db
+    const existingBySubmission = await db
       .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
       .findOne({
         tenantId,
         eventId: CONGRESS_EVENT_ID,
         submissionId: submission._id,
       });
-    if (existing) {
+    if (existingBySubmission) {
       skipped += 1;
       continue;
     }
@@ -53,6 +53,33 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
     if (!fullName) {
       skipped += 1;
       continue;
+    }
+
+    // Misma persona ya inscrita (otra fuente / sync previo): enlazar sin duplicar.
+    if (identity.rut) {
+      const existingByRut = await db
+        .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+        .findOne({
+          tenantId,
+          eventId: CONGRESS_EVENT_ID,
+          "identity.rut": identity.rut,
+        });
+      if (existingByRut) {
+        if (!existingByRut.submissionId) {
+          await db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations).updateOne(
+            { _id: existingByRut._id },
+            {
+              $set: {
+                submissionId: submission._id,
+                updatedAt: new Date().toISOString(),
+              },
+              $inc: { version: 1 },
+            }
+          );
+        }
+        skipped += 1;
+        continue;
+      }
     }
 
     const reg = buildRegistrationDraft({
@@ -69,8 +96,21 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
       needsReview: !identity.rut,
     });
 
-    await insertCongressRegistration(reg);
-    linked += 1;
+    try {
+      await insertCongressRegistration(reg);
+      linked += 1;
+    } catch (error) {
+      // Carrera o índice único: no tumbar summary/listados.
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? (error as { code?: number }).code
+          : undefined;
+      if (code === 11000) {
+        skipped += 1;
+        continue;
+      }
+      throw error;
+    }
   }
 
   return { linked, skipped };

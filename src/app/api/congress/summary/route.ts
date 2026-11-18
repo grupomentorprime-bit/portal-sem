@@ -9,7 +9,12 @@ export async function GET() {
     const ctx = await requireCongressView();
     if (ctx instanceof NextResponse) return ctx;
 
-    await syncCongressFormSubmissions(ctx.tenantId);
+    try {
+      await syncCongressFormSubmissions(ctx.tenantId);
+    } catch (syncError) {
+      // La sincronización no debe tumbar el resumen operativo.
+      console.error("congress sync (summary):", syncError);
+    }
     const summary = await buildCongressSummary(ctx.tenantId);
 
     return NextResponse.json({
