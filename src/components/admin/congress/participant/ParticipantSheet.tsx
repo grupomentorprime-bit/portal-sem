@@ -12,6 +12,7 @@ import type {
   CongressLodgingAssignment,
   CongressLodgingHome,
   CongressLodgingNeed,
+  CongressPayment,
   CongressPaymentMethod,
   CongressRegistration,
 } from "@/core/congress/types";
@@ -72,6 +73,9 @@ type Props = {
     paidOn: string;
     receiptRef?: string;
   }) => Promise<void>;
+  payments: CongressPayment[];
+  lastReceiptPayment?: CongressPayment | null;
+  onDownloadReceipt: (payment: CongressPayment) => void;
   onChargeChange: (input: {
     registrationId: string;
     action: "exempt" | "restore";
@@ -110,6 +114,9 @@ export function ParticipantSheet({
   onPatchAttendance,
   onPatchRegistration,
   onIndividualPayment,
+  payments,
+  lastReceiptPayment,
+  onDownloadReceipt,
   onChargeChange,
   onAssignBed,
   onAssignmentAction,
@@ -222,6 +229,26 @@ export function ParticipantSheet({
     () => homeAvailability.find((row) => row.home._id === homeId) ?? null,
     [homeAvailability, homeId]
   );
+
+  const relatedPayments = useMemo(
+    () =>
+      registration
+        ? payments.filter((payment) =>
+            payment.allocations.some(
+              (allocation) => allocation.registrationId === registration._id
+            )
+          )
+        : [],
+    [payments, registration]
+  );
+
+  const lastReceiptBelongsToRegistration =
+    Boolean(registration) &&
+    Boolean(
+      lastReceiptPayment?.allocations.some(
+        (allocation) => allocation.registrationId === registration?._id
+      )
+    );
 
   const title = registration
     ? registrationDisplayName(registration)
@@ -519,6 +546,55 @@ export function ParticipantSheet({
                         Registrar pago
                       </Button>
                     </div>
+                  </div>
+                ) : null}
+                {lastReceiptPayment && lastReceiptBelongsToRegistration ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onDownloadReceipt(lastReceiptPayment)}
+                  >
+                    Descargar comprobante
+                  </Button>
+                ) : null}
+                {relatedPayments.length > 0 ? (
+                  <div className="space-y-2 rounded-md border border-border p-3">
+                    <p className="text-xs font-semibold uppercase text-muted">
+                      Comprobantes
+                    </p>
+                    <ul className="space-y-2">
+                      {relatedPayments.map((payment) => {
+                        const allocation = payment.allocations.find(
+                          (row) => row.registrationId === registration._id
+                        );
+                        return (
+                          <li
+                            key={payment._id}
+                            className="flex flex-wrap items-center justify-between gap-2"
+                          >
+                            <div>
+                              <p className="font-medium">
+                                {payment.folio ?? "Sin folio"} ·{" "}
+                                {formatClp(allocation?.amountClp ?? payment.amountClp)}
+                              </p>
+                              <p className="text-xs text-muted">
+                                {payment.paidOn ?? payment.createdAt.slice(0, 10)} ·{" "}
+                                {payment.status}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onDownloadReceipt(payment)}
+                            >
+                              Comprobante
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 ) : null}
                 {operate ? (

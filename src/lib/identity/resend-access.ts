@@ -7,7 +7,7 @@ import {
   findInvitationById,
   renewInvitationToken,
 } from "@/lib/identity/invitations";
-import { unitIdsFromAccess } from "@/lib/notifications/email-brand";
+import { unitIdsForDepartmentEmail } from "@/lib/identity/invite-department";
 import { sendAccessReminderEmail, sendInvitationEmail } from "@/lib/notifications/email";
 import { normalizeEmail } from "@/lib/validation/identity";
 
@@ -58,13 +58,20 @@ export async function resendPendingInvitationEmail(input: {
     return { ok: false, error: "No se pudo renovar el enlace de acceso.", status: 409 };
   }
 
+  const unitIds = await unitIdsForDepartmentEmail({
+    tenantId: input.tenantId,
+    roleIds: renewed.roleIds,
+    unitAccess: renewed.unitAccess,
+    invitationId: renewed._id,
+  });
+
   return deliverInvitationEmail({
     tenantId: input.tenantId,
     email: renewed.email,
     displayName: renewed.displayName,
     token: renewed.token,
     expiresAt: renewed.expiresAt,
-    unitIds: unitIdsFromAccess(renewed.unitAccess),
+    unitIds,
     message: `Reenviamos la invitación corporativa a ${renewed.email}. El enlace anterior ya no sirve.`,
   });
 }
@@ -87,13 +94,20 @@ export async function resendMemberAccessEmail(input: {
 
   const displayName = input.displayName.trim() || email;
   const needsPassword = isKeycloakOnlyAuth();
+  const unitIds =
+    input.unitIds?.length
+      ? input.unitIds
+      : await unitIdsForDepartmentEmail({
+          tenantId: input.tenantId,
+          roleIds: input.roleIds,
+        });
 
   if (!needsPassword) {
     const sent = await sendAccessReminderEmail({
       tenantId: input.tenantId,
       to: email,
       displayName,
-      unitIds: input.unitIds,
+      unitIds,
     });
     if (!sent.ok) return { ok: false, error: sent.error, status: 422 };
     return {
@@ -114,8 +128,8 @@ export async function resendMemberAccessEmail(input: {
         displayName,
         roleIds: input.roleIds,
         invitedBy: input.invitedBy,
-        ...(input.unitIds?.length
-          ? { unitAccess: { mode: "units" as const, unitIds: input.unitIds } }
+        ...(unitIds?.length
+          ? { unitAccess: { mode: "units" as const, unitIds } }
           : {}),
       });
     } catch (error) {
@@ -137,7 +151,13 @@ export async function resendMemberAccessEmail(input: {
     displayName: invitation.displayName,
     token: invitation.token,
     expiresAt: invitation.expiresAt,
-    unitIds: unitIdsFromAccess(invitation.unitAccess) ?? input.unitIds,
+    unitIds:
+      (await unitIdsForDepartmentEmail({
+        tenantId: input.tenantId,
+        roleIds: invitation.roleIds,
+        unitAccess: invitation.unitAccess,
+        invitationId: invitation._id,
+      })) ?? unitIds,
     message: `Enviamos el correo corporativo para crear la contraseña a ${invitation.email}.`,
   });
 }

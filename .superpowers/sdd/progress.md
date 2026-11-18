@@ -127,3 +127,81 @@ Task 2: complete (uncommitted, recaudado alineado)
 Task 3: complete (uncommitted, d�a condicional + zona|iglesia 2 cols)
 Task 4: complete (uncommitted, movimientos columnas; domain tests 8/8; browser blocked on login)
 Final review (inline): Spec UX covered in CashBoxView.tsx. Tokens warning/success/primary (no hardcoded amber/violet) to match kit. Minors: browser smoke pendiente usuario.
+
+# Pago grupal seleccion pagados SDD
+
+Started: 2026-11-18
+Branch: feat/congreso-varones-2026-ops
+Plan: docs/superpowers/plans/2026-11-18-pago-grupal-seleccion-pagados.md
+Base: 97cb343462ef5965fd6f971a8e1c471be91c5764
+Constraint: sin Co-authored-by trailer; sin PR salvo pedido del usuario
+
+Task 1: complete (commits 97cb343..58ef68d, review inline — subagents unavailable)
+Task 2: complete (commits 58ef68d..167dee9, review inline — subagents unavailable)
+
+# Invitación Varones asunto bienvenida SDD
+
+Started: 2026-11-18
+Branch: feat/congreso-varones-2026-ops
+Plan: docs/superpowers/plans/2026-11-18-invitacion-varones-asunto-bienvenida.md
+Base: 167dee954f91aca0a99af3cb9b44b1fc4b6c6c36
+Constraint: sin git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"/PR salvo pedido del usuario; reviews via uncommitted diffs
+
+Task 3: complete (unit tests 5/5; browser smoke pendiente usuario)
+Final review (inline, subagents unavailable): Spec covered for group selection. Minors: browser smoke pendiente.
+
+# Invitación Varones asunto bienvenida SDD
+
+Started: 2026-11-18
+Branch: feat/congreso-varones-2026-ops
+Plan: docs/superpowers/plans/2026-11-18-invitacion-varones-asunto-bienvenida.md
+Base: 167dee954f91aca0a99af3cb9b44b1fc4b6c6c36
+Constraint: sin git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"/PR salvo pedido del usuario; reviews via uncommitted diffs
+
+Task 1: complete (uncommitted, unit-email-brand 8/8 pass, review inline — subagents unavailable)
+Final review (inline): Spec covered. Subject only; recovery/space invitacion intactos. Ready.
+Finish choice: 3 keep branch as-is
+
+# Congreso Varones Exento + Drilldown SDD
+
+Started: 2026-11-18
+Branch: feat/congreso-varones-2026-ops
+Plan: docs/superpowers/plans/2026-11-18-congreso-varones-exento-drilldown.md
+Base HEAD: 167dee954f91aca0a99af3cb9b44b1fc4b6c6c36
+Constraint: sin git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"/PR salvo pedido del usuario; reviews via uncommitted diffs
+Task 1: complete (uncommitted, congress-charge 4/4, review inline — subagents usage-limited)
+Task 2: complete (uncommitted, selectable saldo>0 + Exento label)
+Task 3: complete (uncommitted, PATCH .../charge)
+Task 4: complete (uncommitted, ParticipantSheet + panel patchCharge)
+Task 5: complete (uncommitted, CashBox drill-down + group amount by remaining)
+Domain tests: charge+labels+cash-box 17/17 pass
+
+# Pago grupal recaudacion partida SDD
+
+Started: 2026-11-18
+Branch: feat/congreso-varones-2026-ops
+Plan: docs/superpowers/plans/2026-11-18-pago-grupal-recaudacion-partida.md
+Base: f9861f112afea07cf069c748a8bacec5b45bcfd8
+Constraint: sin Co-authored-by; sin PR salvo pedido
+
+Task 1: complete (commits f9861f1..3db7b11, inline)
+Task 2+3: complete (UI+dual POST, inline — subagents unavailable)
+Task 4: unit tests pass; browser smoke pendiente usuario
+
+# Congreso Varones Comprobante PDF Ingreso SDD
+
+Started: 2026-11-18
+Branch: feat/congreso-varones-2026-ops
+Plan: docs/superpowers/plans/2026-11-18-congreso-varones-comprobante-ingreso-pdf.md
+Base HEAD: d6a39b91bcb17e64e3590be52909856d00033b58
+Constraint: sin git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"/PR salvo pedido del usuario; reviews via uncommitted diffs; omitir pasos commit del plan
+
+Task 1: complete (uncommitted, congress-payment-folio 3/3, review clean)
+Task 2: complete (uncommitted, repo folio+ensure, review clean)
+Task 3: complete (uncommitted, ensure-folio route + audit folio, review clean)
+Task 4: complete (uncommitted, download-payment-receipt-pdf, review clean)
+Task 5: complete (uncommitted, UI CTA+CashBox+Sheet, review clean; browser smoke pendiente)
+Minors for final review:
+- PDF footer 'recaudacion' without accent vs plan
+- browser smoke pendiente usuario
+

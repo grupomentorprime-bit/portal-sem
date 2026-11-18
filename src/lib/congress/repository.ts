@@ -4,10 +4,16 @@ import { generateId } from "@/core/identity/auth/crypto";
 import {
   CONGRESS_COLLECTIONS,
   CONGRESS_EVENT_ID,
+  CONGRESS_PAYMENT_FOLIO_YEAR,
 } from "@/core/congress/constants";
 import { emptyAttendance } from "@/core/congress/attendance";
 import { buildChargeAmountClp } from "@/core/congress/charges";
 import { emptyExpectedDays, parseExpectedDayLabel } from "@/core/congress/expected-days";
+import {
+  countsAsPendingVerification,
+  registrationOriginBucket,
+} from "@/core/congress/form-engagement";
+import { formatPaymentFolio } from "@/core/congress/payment-folio";
 import { allocatePayment, voidPayment } from "@/core/congress/payments";
 import type {
   CongressAttendanceDays,
@@ -45,6 +51,26 @@ export function normalizeCongressRegistration(
 
 function eventFilter(tenantId: string, eventId = CONGRESS_EVENT_ID) {
   return { tenantId, eventId };
+}
+
+function paymentFolioSequenceId(tenantId: string, eventId = CONGRESS_EVENT_ID) {
+  return `${tenantId}:${eventId}:payment-folio`;
+}
+
+export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
+  const db = await getDatabase();
+  const doc = await db
+    .collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences)
+    .findOneAndUpdate(
+      { _id: paymentFolioSequenceId(tenantId) },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: "after" }
+    );
+  const seq = doc?.seq;
+  if (!seq || !Number.isInteger(seq) || seq <= 0) {
+    throw new Error("folio_sequence_failed");
+  }
+  return formatPaymentFolio(seq, CONGRESS_PAYMENT_FOLIO_YEAR);
 }
 
 export async function listCongressRegistrations(
@@ -222,6 +248,15 @@ export async function recordCongressPayment(input: {
     return { ok: false, error: result.error };
   }
 
+  let folio: string;
+  try {
+    folio = await allocateNextPaymentFolio(input.tenantId);
+  } catch {
+    return { ok: false, error: "folio_sequence_failed" };
+  }
+
+  const paymentWithFolio: CongressPayment = { ...result.payment, folio };
+
   const applied: Array<{ id: string; previousPaid: number; previousVersion: number }> = [];
   for (const updated of result.updatedRegistrations) {
     const original = registrations.find((r) => r._id === updated._id);
@@ -268,8 +303,41 @@ export async function recordCongressPayment(input: {
     });
   }
 
-  await db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments).insertOne(result.payment);
-  return { ok: true, payment: result.payment, updated: result.updatedRegistrations };
+  await db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments).insertOne(paymentWithFolio);
+  return { ok: true, payment: paymentWithFolio, updated: result.updatedRegistrations };
+}
+
+export async function ensureCongressPaymentFolio(input: {
+  tenantId: string;
+  paymentId: string;
+}): Promise<{ ok: true; payment: CongressPayment } | { ok: false; error: string }> {
+  const db = await getDatabase();
+  const payments = db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments);
+  const filter = { ...eventFilter(input.tenantId), _id: input.paymentId };
+  const payment = await payments.findOne(filter);
+  if (!payment) return { ok: false, error: "not_found" };
+  if (payment.folio) return { ok: true, payment };
+
+  let folio: string;
+  try {
+    folio = await allocateNextPaymentFolio(input.tenantId);
+  } catch {
+    return { ok: false, error: "folio_sequence_failed" };
+  }
+
+  const updated = await payments.findOneAndUpdate(
+    {
+      ...filter,
+      $or: [{ folio: null }, { folio: { $exists: false } }, { folio: "" }],
+    },
+    { $set: { folio } },
+    { returnDocument: "after" }
+  );
+  if (updated) return { ok: true, payment: updated };
+
+  const racedPayment = await payments.findOne(filter);
+  if (racedPayment?.folio) return { ok: true, payment: racedPayment };
+  return { ok: false, error: "folio_sequence_failed" };
 }
 
 export async function listCongressPayments(tenantId: string): Promise<CongressPayment[]> {
@@ -428,7 +496,7 @@ export async function buildCongressSummary(tenantId: string) {
     (a) => a.status === "assigned" || a.status === "confirmed" || (a.status == null && a.confirmed !== false)
   );
 
-  const bySource = { form: 0, import: 0, door: 0 };
+  const bySource = { form: 0, updated: 0, import: 0, door: 0 };
   const attendanceSaturday = { present: 0, absent: 0, unmarked: 0 };
   const attendanceSunday = { present: 0, absent: 0, unmarked: 0 };
   const receptionSaturday = { expected: 0, present: 0, pendingArrival: 0 };
@@ -438,7 +506,7 @@ export async function buildCongressSummary(tenantId: string) {
   let needsReviewCount = 0;
 
   for (const reg of registrations) {
-    bySource[reg.source] += 1;
+    bySource[registrationOriginBucket(reg)] += 1;
     if (reg.attendance.saturday === true) attendanceSaturday.present += 1;
     else if (reg.attendance.saturday === false) attendanceSaturday.absent += 1;
     else attendanceSaturday.unmarked += 1;
@@ -460,7 +528,7 @@ export async function buildCongressSummary(tenantId: string) {
 
     if (reg.chargeAmountClp != null) totalChargeClp += reg.chargeAmountClp;
     totalPaidClp += reg.allocatedPaidClp;
-    if (reg.needsReview) needsReviewCount += 1;
+    if (countsAsPendingVerification(reg)) needsReviewCount += 1;
   }
 
   return {

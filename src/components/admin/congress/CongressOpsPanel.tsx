@@ -61,6 +61,7 @@ import {
 import { NewParticipantDialog } from "@/components/admin/congress/participant/NewParticipantDialog";
 import { ParticipantSheet } from "@/components/admin/congress/participant/ParticipantSheet";
 import { ReportsView } from "@/components/admin/congress/reports/ReportsView";
+import { downloadCongressPaymentReceiptPdf } from "@/lib/congress/download-payment-receipt-pdf";
 
 type TabId =
   | "recepcion"
@@ -139,6 +140,8 @@ export function CongressOpsPanel() {
   const [groupCashClp, setGroupCashClp] = useState<number | null>(null);
   const [groupTransferClp, setGroupTransferClp] = useState<number | null>(null);
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const [lastReceiptPayment, setLastReceiptPayment] =
+    useState<CongressPayment | null>(null);
   const [voidReason, setVoidReason] = useState("");
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [cashMethodFilter, setCashMethodFilter] = useState<CashMethodKey | "all">(
@@ -254,6 +257,10 @@ export function CongressOpsPanel() {
     if (activeTab === "historial") void loadAudit();
   }, [activeTab, loadPayments, loadAudit]);
 
+  useDeferredEffect(() => {
+    if (selectedId && capabilities.payments) void loadPayments();
+  }, [selectedId, capabilities.payments, loadPayments]);
+
   const dayKpis = useMemo(() => {
     const empty = { expected: 0, present: 0, pendingArrival: 0 };
     if (!summary) return empty;
@@ -275,6 +282,54 @@ export function CongressOpsPanel() {
       next[idx] = reg;
       return next;
     });
+  };
+
+  const upsertPayment = (payment: CongressPayment) => {
+    setPayments((prev) => [
+      payment,
+      ...prev.filter((p) => p._id !== payment._id),
+    ]);
+  };
+
+  const downloadPaymentReceipt = async (payment: CongressPayment) => {
+    try {
+      let current = payment;
+      if (!current.folio) {
+        const res = await fetch(
+          `/api/congress/payments/${encodeURIComponent(current._id)}/ensure-folio`,
+          { method: "POST" }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok || !data.payment?.folio) {
+          push({ title: "No se pudo asignar folio", tone: "error" });
+          return;
+        }
+        current = data.payment as CongressPayment;
+        setPayments((prev) =>
+          prev.map((p) => (p._id === current._id ? current : p))
+        );
+        setLastReceiptPayment((prev) =>
+          prev?._id === current._id ? current : prev
+        );
+      }
+
+      const participantNames: Record<string, string> = {};
+      let zoneLabel: string | null = null;
+      for (const row of current.allocations) {
+        const reg = registrations.find((r) => r._id === row.registrationId);
+        if (!reg) continue;
+        participantNames[row.registrationId] = reg.identity.fullName;
+        if (!zoneLabel && reg.zoneId) zoneLabel = formatZoneLabel(reg.zoneId);
+      }
+
+      await downloadCongressPaymentReceiptPdf({
+        payment: current,
+        participantNames,
+        zoneLabel,
+      });
+    } catch {
+      push({ title: "No se pudo generar el PDF", tone: "error" });
+    }
   };
 
   const patchAttendance = async (
@@ -479,6 +534,11 @@ export function CongressOpsPanel() {
           tone: "warning",
         });
         return;
+      }
+      if (data.payment) {
+        const payment = data.payment as CongressPayment;
+        setLastReceiptPayment(payment);
+        upsertPayment(payment);
       }
       push({ title: "Pago registrado", tone: "success" });
       void loadRegistrations();
@@ -716,6 +776,7 @@ export function CongressOpsPanel() {
     return {
       ok: res.ok && Boolean(data.ok),
       error: data.error as string | undefined,
+      payment: data.payment as CongressPayment | undefined,
     };
   };
 
@@ -784,6 +845,7 @@ export function CongressOpsPanel() {
         }
 
         const done: string[] = [];
+        let lastPayment: CongressPayment | null = null;
         for (const leg of legs) {
           const result = await postGroupPayment(leg);
           if (!result.ok) {
@@ -800,9 +862,14 @@ export function CongressOpsPanel() {
             void loadSummary();
             return;
           }
+          if (result.payment) {
+            lastPayment = result.payment;
+            upsertPayment(result.payment);
+          }
           done.push(leg.label);
         }
 
+        if (lastPayment) setLastReceiptPayment(lastPayment);
         push({
           title:
             done.length > 1
@@ -845,6 +912,10 @@ export function CongressOpsPanel() {
           tone: "warning",
         });
         return;
+      }
+      if (result.payment) {
+        setLastReceiptPayment(result.payment);
+        upsertPayment(result.payment);
       }
       push({ title: "Pago grupal registrado", tone: "success" });
       setGroupSelected([]);
@@ -1375,6 +1446,16 @@ export function CongressOpsPanel() {
                 <CreditCard className="mr-2 h-4 w-4" />
                 Guardar pago grupal
               </Button>
+              {lastReceiptPayment ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void downloadPaymentReceipt(lastReceiptPayment)}
+                >
+                  Descargar comprobante
+                </Button>
+              ) : null}
               <p className="text-xs text-muted">
                 Con Partir recaudación, efectivo + transferencia debe igualar el
                 saldo de los hermanos marcados (ni más ni menos).
@@ -1420,6 +1501,7 @@ export function CongressOpsPanel() {
                 );
                 setActiveTab("aportes");
               }}
+              onDownloadReceipt={(payment) => void downloadPaymentReceipt(payment)}
             />
           )}
         </TabsContent>
@@ -1516,6 +1598,9 @@ export function CongressOpsPanel() {
         onPatchAttendance={patchAttendance}
         onPatchRegistration={patchRegistration}
         onIndividualPayment={individualPayment}
+        payments={payments}
+        lastReceiptPayment={lastReceiptPayment}
+        onDownloadReceipt={(payment) => void downloadPaymentReceipt(payment)}
         onChargeChange={patchCharge}
         onAssignBed={assignBed}
         onAssignmentAction={assignmentAction}

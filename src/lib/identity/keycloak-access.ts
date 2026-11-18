@@ -4,8 +4,10 @@ import { getDatabase } from "@/lib/mongodb";
 import type { IdentityMembership, IdentityUser } from "@/types/identity";
 import {
   acceptInvitation,
+  findLatestInvitationDisplayName,
   findPendingInvitationByEmail,
 } from "@/lib/identity/invitations";
+import { resolveLoginDisplayName } from "@/lib/identity/login-display-name";
 import {
   createMembership,
   ensureActiveMembership,
@@ -52,10 +54,21 @@ export async function upsertUserFromKeycloak(
   const invitation = await findPendingInvitationByEmail(tenantId, email);
   let user = await findUserByEmail(email);
 
-  const displayName =
-    claims.displayName ||
-    invitation?.displayName?.trim() ||
-    email;
+  const identityName = claims.displayName.trim();
+  const currentName = user?.displayName?.trim() || "";
+  let invitationName = invitation?.displayName?.trim() || "";
+  const copiedFromIdentity =
+    !currentName || currentName.toLowerCase() === email || currentName === identityName;
+  if (!invitationName && copiedFromIdentity) {
+    invitationName = await findLatestInvitationDisplayName(tenantId, email);
+  }
+
+  const displayName = resolveLoginDisplayName({
+    email,
+    identityName,
+    invitationName,
+    currentName,
+  });
 
   if (!user) {
     user = await createUser({

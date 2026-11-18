@@ -100,6 +100,11 @@ export function SummaryView({
     return counts;
   }, [assignments, registrations]);
 
+  const rosterCount =
+    (registrationsBySource.import ?? 0) + (registrationsBySource.updated ?? 0);
+  const newBeyondRoster =
+    (registrationsBySource.form ?? 0) + (registrationsBySource.door ?? 0);
+
   if (loading) return <LoadingState variant="cards" />;
   if (error) return <AlertBanner variant="warning">{error}</AlertBanner>;
 
@@ -114,6 +119,12 @@ export function SummaryView({
             <p className="text-xs text-muted">Inscritos</p>
             <p className="text-2xl font-semibold tabular-nums text-foreground">
               {registrationsTotal}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              {rosterCount} nómina
+              {newBeyondRoster > 0
+                ? ` · +${newBeyondRoster} nuevas`
+                : " · sin altas fuera de nómina"}
             </p>
           </div>
           <div>
@@ -229,9 +240,13 @@ export function SummaryView({
           </div>
         </Section>
 
-        <Section title="Origen de inscripciones">
+        <Section
+          title="Origen de inscripciones"
+          description="Formulario = alta nueva · Actualizada = nómina que ya envió el form."
+        >
           <div className="rounded-md border border-border bg-white px-3">
             <StatRow label="Formulario" value={registrationsBySource.form ?? 0} />
+            <StatRow label="Actualizada" value={registrationsBySource.updated ?? 0} />
             <StatRow label="Importación" value={registrationsBySource.import ?? 0} />
             <StatRow label="Puerta" value={registrationsBySource.door ?? 0} />
           </div>

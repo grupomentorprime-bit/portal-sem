@@ -52,6 +52,7 @@ export function registerNotificationHandlers(): void {
       const token = invitation.token;
 
       const { sendInvitationEmail } = await import("@/lib/notifications/email");
+      const { unitIdsForDepartmentEmail } = await import("@/lib/identity/invite-department");
 
       const result = await sendInvitationEmail({
         to: email,
@@ -59,8 +60,12 @@ export function registerNotificationHandlers(): void {
         token,
         tenantId: event.tenantId,
         expiresAt,
-        unitIds:
-          invitation.unitAccess?.mode === "units" ? [...invitation.unitAccess.unitIds] : undefined,
+        unitIds: await unitIdsForDepartmentEmail({
+          tenantId: event.tenantId,
+          roleIds: invitation.roleIds,
+          unitAccess: invitation.unitAccess,
+          invitationId: invitation._id,
+        }),
       });
 
       if (!result.ok) {

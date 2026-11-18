@@ -115,6 +115,8 @@ export interface CongressPayment {
   /** Día del pago YYYY-MM-DD (America/Santiago). Ausente = legacy. */
   paidOn?: string;
   receiptRef?: string | null;
+  /** Folio correlativo CV-YYYY-#####. Requerido en pagos nuevos. */
+  folio?: string | null;
   note?: string | null;
   allocations: CongressPaymentAllocation[];
   /** Monto del pago no imputado a participantes. */

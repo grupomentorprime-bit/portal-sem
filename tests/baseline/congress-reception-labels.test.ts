@@ -7,6 +7,10 @@ import {
   isGroupPaymentSelectable,
 } from "../../src/core/congress/finance-status";
 import {
+  countsAsPendingVerification,
+  registrationOriginBucket,
+} from "../../src/core/congress/form-engagement";
+import {
   assertLodgingNeedAllowed,
   isLodgingPending,
   resolveLodgingUiState,
@@ -48,6 +52,62 @@ describe("finance status", () => {
       }),
       "no_charge"
     );
+  });
+
+  it("la nómina sin formulario no queda por verificar hasta completar o actualizar", () => {
+    const charge = {
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      needsReview: true,
+    };
+    assert.equal(countsAsPendingVerification({ ...charge, source: "import" }), false);
+    assert.equal(
+      deriveContributionStatus({ ...charge, source: "import" }),
+      "pending"
+    );
+    assert.equal(
+      countsAsPendingVerification({
+        ...charge,
+        source: "import",
+        submissionId: "sub-1",
+      }),
+      true
+    );
+    assert.equal(
+      deriveContributionStatus({
+        ...charge,
+        source: "import",
+        submissionId: "sub-1",
+      }),
+      "needs_verification"
+    );
+    assert.equal(
+      countsAsPendingVerification({ ...charge, source: "form", submissionId: "sub-2" }),
+      true
+    );
+    assert.equal(
+      countsAsPendingVerification({
+        needsReview: false,
+        source: "form",
+        submissionId: "sub-3",
+      }),
+      false
+    );
+  });
+});
+
+describe("origen de inscripciones", () => {
+  it("separa formulario nuevo, ficha actualizada y nómina sin tocar", () => {
+    assert.equal(
+      registrationOriginBucket({ source: "form", submissionId: "sub-1" }),
+      "form"
+    );
+    assert.equal(
+      registrationOriginBucket({ source: "import", submissionId: "sub-2" }),
+      "updated"
+    );
+    assert.equal(registrationOriginBucket({ source: "import" }), "import");
+    assert.equal(registrationOriginBucket({ source: "door" }), "door");
   });
 });
 

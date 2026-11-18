@@ -17,6 +17,7 @@ import { escritorioRedirect } from "@/lib/desktop/contract";
 import { mongoAppRequestStore, readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser, updateSessionActiveTenant } from "@/lib/identity/active-space";
 import { findMembership } from "@/lib/identity/memberships";
+import { activeDepartmentName } from "@/lib/identity/place-context";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { resolvePublicOriginForTenant } from "@/lib/portal/public-origin";
@@ -35,10 +36,11 @@ export default async function EscritorioPage() {
   const hasSpace = Boolean(hasMembership && tenantId);
   let studentAffairs = false;
   let permissions: string[] = [];
+  let roleCodes: string[] = [];
 
   if (session.membership && tenantId) {
     const roles = await findRolesByIds(tenantId, session.membership.roleIds);
-    const roleCodes = roles.map((role) => getRoleCode(role)).filter(Boolean) as string[];
+    roleCodes = roles.map((role) => getRoleCode(role)).filter(Boolean) as string[];
     const { resolvePermissionsForMembership } = await import("@/lib/identity/permission-resolver");
     permissions = await resolvePermissionsForMembership(tenantId, session.membership);
     studentAffairs = usesStudentAffairsFocusedShell(permissions, false, roleCodes);
@@ -108,6 +110,20 @@ export default async function EscritorioPage() {
     authorizedApps = deskMembership?.authorizedApps ?? null;
   }
 
+  let departmentName = "";
+  if (!onPlatformDesk && deskTenantId) {
+    let placeRoleCodes = roleCodes;
+    if (deskMembership && deskMembership.tenantId !== tenantId) {
+      const roles = await findRolesByIds(deskTenantId, deskMembership.roleIds);
+      placeRoleCodes = roles.map((role) => getRoleCode(role)).filter(Boolean) as string[];
+    }
+    departmentName = await activeDepartmentName({
+      tenantId: deskTenantId,
+      roleCodes: placeRoleCodes,
+      unitAccess: deskMembership?.unitAccess,
+    });
+  }
+
   const dayLines = onPlatformDesk
     ? []
     : await Promise.race([
@@ -124,7 +140,9 @@ export default async function EscritorioPage() {
 
   return (
     <MentorDesktop
-      spaceName={active?.name?.trim() || (operator ? "Elige un cliente" : "Espacio")}
+      spaceName={
+        departmentName || active?.name?.trim() || (operator ? "Elige un cliente" : "Espacio")
+      }
       spaces={spaces}
       activeTenantId={deskTenantId}
       user={{

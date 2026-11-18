@@ -66,6 +66,7 @@ export function InviteUserWizard({
     if (!selectedRole?.code) return;
 
     setSubmitting(true);
+    setSuccess(false);
     try {
       await onSubmit({
         email: email.trim(),
@@ -77,6 +78,8 @@ export function InviteUserWizard({
       setRoleId(assignableRoles[0]?.id ?? "");
       setSuccess(true);
       onSuccess?.();
+    } catch {
+      setSuccess(false);
     } finally {
       setSubmitting(false);
     }

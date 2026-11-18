@@ -8,7 +8,7 @@ import {
 import { listMembershipsByUser } from "@/lib/identity/memberships";
 import { resendMemberAccessEmail } from "@/lib/identity/resend-access";
 import { findUserByEmail } from "@/lib/identity/users";
-import { unitIdsFromAccess } from "@/lib/notifications/email-brand";
+import { unitIdsForDepartmentEmail } from "@/lib/identity/invite-department";
 import { sendInvitationEmail } from "@/lib/notifications/email";
 import { isValidEmail, normalizeEmail } from "@/lib/validation/identity";
 
@@ -55,7 +55,12 @@ export async function requestAccessLink(input: {
           displayName: renewed.displayName || renewed.email,
           token: renewed.token,
           expiresAt: renewed.expiresAt,
-          unitIds: unitIdsFromAccess(renewed.unitAccess),
+          unitIds: await unitIdsForDepartmentEmail({
+            tenantId: renewed.tenantId,
+            roleIds: renewed.roleIds,
+            unitAccess: renewed.unitAccess,
+            invitationId: renewed._id,
+          }),
         });
       }
       return { ok: true, message: ACCESS_LINK_GENERIC_MESSAGE };

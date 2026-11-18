@@ -19,6 +19,7 @@ import { PLATFORM_OPERATOR_NAME } from "@/core/legal/platform";
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { PlatformNeutralTheme } from "@/components/product";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 import { cn } from "@/lib/utils";
 
 const PLATFORM_SEARCH_EVENT = "platform:spaces-search";
@@ -74,6 +75,7 @@ export function PlatformShell({
     pathname === PLATFORM_ADMIN_HOME || pathname === `${PLATFORM_ADMIN_HOME}/`;
   const onSpacesDetail = pathname.startsWith(`${PLATFORM_ADMIN_HOME}/spaces/`);
   const onUsers = pathname.startsWith(`${PLATFORM_ADMIN_HOME}/usuarios`);
+  const shortName = firstNameFromDisplayName(userName) || userName;
 
   const runGlobalSearch = useCallback(
     (raw: string) => {
@@ -268,12 +270,13 @@ export function PlatformShell({
                 <button
                   type="button"
                   className="inline-flex items-center gap-2 rounded-full py-0.5 pl-0.5 pr-2"
-                  aria-label="Cuenta"
+                  aria-label={userName}
+                  title={userName}
                 >
                   <AdminUserAvatar name={userName} size="sm" />
                   <span className="hidden min-w-0 text-left sm:block">
                     <span className="block max-w-[9rem] truncate text-[13px] font-semibold leading-tight tracking-tight text-[var(--gray-900)] lg:max-w-[14rem]">
-                      {userName}
+                      {shortName}
                     </span>
                     <span className="block truncate text-[11px] leading-tight text-[var(--gray-500)]">
                       {roleLabel}
