@@ -99,7 +99,7 @@ export const ROLE_PERMISSION_TEMPLATES: Record<RoleCode, PermissionMap> = {
     ["congress.operate", true],
     ["congress.payments", true],
     ["congress.import", true],
-    ["congress.finance.correct", false],
+    ["congress.finance.correct", true],
   ]),
 
   [ROLE_CODES.COMMUNICATIONS]: fromEntries([

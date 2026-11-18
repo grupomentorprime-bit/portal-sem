@@ -61,6 +61,7 @@ export function renderInvitationEmail(input: {
     input.identity,
     `/invite/${encodeURIComponent(input.token)}`
   );
+  const loginUrl = emailAbsoluteUrl(input.identity, GROWTH_LOGIN_PATH);
   const expiresLabel = new Date(input.expiresAt).toLocaleString("es-CL", {
     dateStyle: "short",
     timeStyle: "short",
@@ -83,8 +84,12 @@ export function renderInvitationEmail(input: {
     ${renderSteps([
       "Abre el enlace de invitación.",
       "Define tu contraseña de acceso.",
-      "Entra al centro de administración con tu correo y la contraseña que creaste.",
+      `Entra en ${loginUrl} con tu correo y la contraseña que creaste.`,
     ])}
+    <p style="margin:16px 0 0;">
+      Acceso al sistema (login):
+      <a href="${escapeHtml(loginUrl)}" style="color:inherit;font-weight:600;">${escapeHtml(loginUrl)}</a>
+    </p>
   `;
 
   const html = renderTransactionalEmail({

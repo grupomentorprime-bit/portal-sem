@@ -40,6 +40,16 @@ export interface CongressRegistration {
   expectedDays?: CongressAttendanceDays;
   /** Necesidad de alojamiento; default operativo unknown. */
   lodgingNeed?: "unknown" | "none" | "requested";
+  /**
+   * Líder del grupo de la iglesia (máx. 1 por iglesia+zona).
+   * Puede coincidir con el jefe zonal.
+   */
+  isChurchGroupLeader?: boolean;
+  /**
+   * Jefe zonal (máx. 1 por zona).
+   * Puede coincidir con el líder de una iglesia.
+   */
+  isZoneLeader?: boolean;
   attendance: CongressAttendanceDays;
   /** Primera hora de llegada por día (ISO servidor); no se sobrescribe. */
   attendanceMeta?: {
@@ -76,6 +86,8 @@ export interface CongressPaymentAllocation {
 
 export type CongressPaymentStatus = "posted" | "voided";
 
+export type CongressPaymentMethod = "cash" | "transfer" | "other";
+
 export interface CongressPayment {
   _id: string;
   tenantId: string;
@@ -85,6 +97,10 @@ export interface CongressPayment {
   payerName: string;
   churchName?: string | null;
   amountClp: number;
+  /** Medio de pago. Ausente = legacy (caja: Sin clasificar). */
+  method?: CongressPaymentMethod;
+  /** Día del pago YYYY-MM-DD (America/Santiago). Ausente = legacy. */
+  paidOn?: string;
   receiptRef?: string | null;
   note?: string | null;
   allocations: CongressPaymentAllocation[];
@@ -142,6 +158,31 @@ export interface CongressChurchLodgingRequest {
   requestedBeds: number;
   source: "excel" | "manual";
   note?: string | null;
+  createdAt: string;
+}
+
+/** Catálogo de ILEUs del evento (nómina / alta). No implica alojamiento. */
+export interface CongressChurch {
+  _id: string;
+  tenantId: string;
+  eventId: string;
+  zoneId: string;
+  churchName: string;
+  source: "import" | "manual";
+  importBatchId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CongressImportBatch {
+  _id: string;
+  tenantId: string;
+  eventId: string;
+  fileName: string;
+  actorUserId: string;
+  createdCount: number;
+  churchCount: number;
+  skipCount: number;
   createdAt: string;
 }
 

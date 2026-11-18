@@ -9,13 +9,13 @@ import {
 } from "../../src/lib/admin/nav-access";
 
 describe("congress operator access", () => {
-  it("el operador tiene congreso y no finanzas sensibles ni AE", () => {
+  it("el operador tiene control completo del congreso incluyendo finanzas", () => {
     const map = ROLE_PERMISSION_TEMPLATES[ROLE_CODES.CONGRESS_OPERATOR];
     assert.equal(map["congress.view"], true);
     assert.equal(map["congress.operate"], true);
     assert.equal(map["congress.payments"], true);
     assert.equal(map["congress.import"], true);
-    assert.equal(map["congress.finance.correct"], false);
+    assert.equal(map["congress.finance.correct"], true);
     assert.equal(map["student_affairs.panel.view"], false);
     assert.equal(map["growth.sales.view"], false);
   });

@@ -1,6 +1,10 @@
 import { CONGRESS_CONTRIBUTION_CLP } from "@/core/congress/constants";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
 import {
+  displayBrotherName,
+  hasBrotherOrTitlePrefix,
+} from "@/core/congress/brother-name";
+import {
   expectedDaysLabelEs,
   labelExpectedDays,
 } from "@/core/congress/expected-days";
@@ -13,12 +17,50 @@ import {
   type LodgingUiState,
 } from "@/core/congress/lodging-status";
 import { remainingBalanceClp } from "@/core/congress/charges";
+import type { CashMethodKey } from "@/core/congress/cash-box";
 import type {
   CongressAttendanceDays,
   CongressLodgingAssignment,
   CongressLodgingNeed,
+  CongressPaymentMethod,
   CongressRegistration,
 } from "@/core/congress/types";
+
+export function registrationDisplayName(
+  reg: Pick<CongressRegistration, "identity">
+): string {
+  return displayBrotherName(reg.identity.fullName);
+}
+
+export function registrationNeedsHnoPrefix(
+  reg: Pick<CongressRegistration, "identity">
+): boolean {
+  return !hasBrotherOrTitlePrefix(reg.identity.fullName);
+}
+
+export function registrationRoleBadges(
+  reg: Pick<CongressRegistration, "isChurchGroupLeader" | "isZoneLeader">
+): string[] {
+  const badges: string[] = [];
+  if (reg.isChurchGroupLeader) badges.push("Líder grupo");
+  if (reg.isZoneLeader) badges.push("Jefe zonal");
+  return badges;
+}
+
+export function paymentMethodLabel(
+  method: CashMethodKey | CongressPaymentMethod | null | undefined
+): string {
+  switch (method) {
+    case "cash":
+      return "Efectivo";
+    case "transfer":
+      return "Transferencia";
+    case "other":
+      return "Otro";
+    default:
+      return "Sin clasificar";
+  }
+}
 
 export function formatZoneLabel(zoneId: string): string {
   const match = zoneId.trim().match(/^zona-(\d+)$/i);
@@ -40,6 +82,19 @@ export function formatClp(value: number): string {
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+/** Entero CLP desde texto con `$`, puntos u otros no-dígitos. Vacío → 0. */
+export function parseClpInput(text: string): number {
+  const digits = text.replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits);
+}
+
+/** Texto para input editable; 0/null/undefined → "". */
+export function formatClpInput(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value) || value <= 0) return "";
+  return formatClp(Math.trunc(value));
 }
 
 export function formatLodgingNightLabel(night: string): string {

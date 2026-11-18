@@ -23,6 +23,7 @@ export function previewCongressWorkbook(buffer: ArrayBuffer | Buffer): CongressI
   const peopleRows: CongressImportSheetRow[] = [];
   let declaredZones: ReturnType<typeof parseLodgingSummaryGrid>["declaredZones"] = [];
   const lodgingRequests: CongressImportChurchLodgingRequest[] = [];
+  const churches: Array<{ zoneId: string; churchName: string }> = [];
 
   for (const sheetName of workbook.SheetNames) {
     const sheet = workbook.Sheets[sheetName];
@@ -38,6 +39,7 @@ export function previewCongressWorkbook(buffer: ArrayBuffer | Buffer): CongressI
       const parsed = parseZoneSheetGrid(zoneId, sheetName, grid);
       peopleRows.push(...parsed.peopleRows);
       lodgingRequests.push(...parsed.lodgingRequests);
+      churches.push(...parsed.churches);
       continue;
     }
 
@@ -52,5 +54,6 @@ export function previewCongressWorkbook(buffer: ArrayBuffer | Buffer): CongressI
     peopleRows,
     declaredZones,
     lodgingRequests,
+    churches,
   });
 }

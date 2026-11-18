@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireCongressOperate } from "@/app/api/congress/guard";
+import { ensureHnoPrefix } from "@/core/congress/brother-name";
 import {
   assertLodgingNeedAllowed,
   isActiveLodgingAssignment,
 } from "@/core/congress/lodging-status";
 import type { CongressAttendanceDays, CongressLodgingNeed } from "@/core/congress/types";
+import { enforceLeadershipUniqueness } from "@/lib/congress/leadership";
 import {
   appendCongressAudit,
   getCongressRegistration,
@@ -70,8 +72,33 @@ export async function PATCH(
       patch.lodgingNeed = lodgingNeed;
     }
 
+    if (typeof body.isChurchGroupLeader === "boolean") {
+      patch.isChurchGroupLeader = body.isChurchGroupLeader;
+    }
+    if (typeof body.isZoneLeader === "boolean") {
+      patch.isZoneLeader = body.isZoneLeader;
+    }
+
+    if (body.ensureHnoPrefix === true) {
+      patch.identity = {
+        ...current.identity,
+        fullName: ensureHnoPrefix(current.identity.fullName),
+      };
+    }
+
     if (Object.keys(patch).length === 0) {
       return NextResponse.json({ ok: false, error: "Sin cambios." }, { status: 400 });
+    }
+
+    if (patch.isChurchGroupLeader === true || patch.isZoneLeader === true) {
+      await enforceLeadershipUniqueness({
+        tenantId: ctx.tenantId,
+        registration: current,
+        patch: {
+          isChurchGroupLeader: patch.isChurchGroupLeader,
+          isZoneLeader: patch.isZoneLeader,
+        },
+      });
     }
 
     const updated = await updateCongressRegistration(

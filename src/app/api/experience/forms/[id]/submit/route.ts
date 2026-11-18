@@ -32,6 +32,9 @@ import {
   alreadyEnrolledMessage,
   CONGRESS_VARONES_FORM_ID,
 } from "@/lib/experience/forms/already-enrolled";
+import { isCongressRegistrationClaimable } from "@/core/congress/claim";
+import { claimCongressRegistrationFromForm } from "@/lib/congress/claim-registration";
+import { getCongressRegistration } from "@/lib/congress/repository";
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
@@ -254,6 +257,21 @@ export async function POST(request: Request, { params }: RouteParams) {
     data = normalizeFormSubmissionData(form, data);
 
     if (form._id === CONGRESS_VARONES_FORM_ID) {
+      const registrationId = String(data.registrationId ?? "").trim();
+      if (registrationId) {
+        const existingReg = await getCongressRegistration(tenant, registrationId);
+        if (!existingReg || !isCongressRegistrationClaimable(existingReg)) {
+          return NextResponse.json(
+            {
+              ok: false,
+              alreadyRegistered: true,
+              error: alreadyEnrolledMessage("rut"),
+            },
+            { status: 409 }
+          );
+        }
+      }
+
       const enrolled = await findCongressEnrolleeMatch(tenant, form._id, data);
       if (enrolled) {
         return NextResponse.json(
@@ -283,6 +301,31 @@ export async function POST(request: Request, { params }: RouteParams) {
         },
         { status: 422 }
       );
+    }
+
+    if (form._id === CONGRESS_VARONES_FORM_ID) {
+      const registrationId = String(data.registrationId ?? "").trim();
+      if (registrationId && result.submissionId) {
+        const claimed = await claimCongressRegistrationFromForm({
+          tenantId: tenant,
+          registrationId,
+          submissionId: result.submissionId,
+          data,
+        });
+        if (!claimed.ok) {
+          return NextResponse.json(
+            {
+              ok: false,
+              alreadyRegistered: true,
+              error:
+                claimed.error === "rut_conflict"
+                  ? alreadyEnrolledMessage("rut")
+                  : alreadyEnrolledMessage("rut"),
+            },
+            { status: 409 }
+          );
+        }
+      }
     }
 
     if (convocatoria && data.registrationMode === "manual") {

@@ -1,5 +1,6 @@
 import { PortalBreadcrumb } from "@/components/portal/layout";
 import { PortalExperienceForm } from "@/components/portal/experience/forms";
+import { PortalCongressExperienceForm } from "@/components/portal/experience/forms/PortalCongressExperienceForm";
 import { PortalConvocatoriaExperienceForm } from "@/components/portal/experience/forms/PortalConvocatoriaExperienceForm";
 import { FormPublicExperience, FormUnavailableState } from "@/components/portal/forms";
 import { CongressAttendanceSuccess } from "@/components/portal/forms/CongressAttendanceSuccess";
@@ -279,7 +280,26 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
 
   return (
     <FormPublicExperience experience={experience} breadcrumb={breadcrumb}>
-      {convocatoria ? (
+      {isVaronesAttendance ? (
+        <PortalCongressExperienceForm
+          form={form}
+          overline={shell.overline}
+          title={shell.title}
+          description={
+            shell.description ??
+            "Busca tu nombre en la nómina. Si no apareces, regístrate y completa tus datos."
+          }
+          submitLabel={shell.submitLabel}
+          successMessage={shell.successMessage}
+          successTitle="¡Gracias!"
+          successExtras={
+            <CongressAttendanceSuccess
+              programDownloadUrl={shell.confirmationEmailCtaUrl}
+              programDownloadLabel={shell.confirmationEmailCtaLabel}
+            />
+          }
+        />
+      ) : convocatoria ? (
         <PortalConvocatoriaExperienceForm
           form={form}
           convocatoriaSlug={convocatoria.slug}
@@ -300,16 +320,6 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
           title={shell.title ?? form.name}
           description={shell.description ?? form.description}
           submitLabel={shell.submitLabel}
-          successMessage={isVaronesAttendance ? shell.successMessage : undefined}
-          successTitle={isVaronesAttendance ? "¡Gracias!" : undefined}
-          successExtras={
-            isVaronesAttendance ? (
-              <CongressAttendanceSuccess
-                programDownloadUrl={shell.confirmationEmailCtaUrl}
-                programDownloadLabel={shell.confirmationEmailCtaLabel}
-              />
-            ) : undefined
-          }
         />
       )}
     </FormPublicExperience>

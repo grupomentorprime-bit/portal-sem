@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dialog } from "@/components/admin/kit";
+import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -11,20 +12,27 @@ import type {
   CongressLodgingAssignment,
   CongressLodgingHome,
   CongressLodgingNeed,
+  CongressPaymentMethod,
   CongressRegistration,
 } from "@/core/congress/types";
 import {
   contributionLabel,
   expectedDaysText,
   formatClp,
+  formatClpInput,
   formatDateTimeSantiago,
   formatLodgingNightLabel,
   formatMarkedAtSantiago,
   formatZoneLabel,
   lodgingLabel,
+  registrationDisplayName,
+  registrationNeedsHnoPrefix,
+  registrationRoleBadges,
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
+import { Checkbox } from "@/components/ui/checkbox";
 import { remainingBalanceClp } from "@/core/congress/charges";
+import { todayPaidOnSantiago } from "@/core/congress/payment-dates";
 import { occupiedBedsForNight } from "@/core/congress/lodging";
 import { cn } from "@/lib/utils";
 
@@ -50,12 +58,17 @@ type Props = {
     patch: {
       expectedDays?: { saturday: boolean | null; sunday: boolean | null };
       lodgingNeed?: CongressLodgingNeed;
+      isChurchGroupLeader?: boolean;
+      isZoneLeader?: boolean;
+      ensureHnoPrefix?: boolean;
     }
   ) => Promise<void>;
   onIndividualPayment: (input: {
     registrationId: string;
     amountClp: number;
     payerName: string;
+    method: CongressPaymentMethod;
+    paidOn: string;
     receiptRef?: string;
   }) => Promise<void>;
   onAssignBed: (input: {
@@ -96,8 +109,10 @@ export function ParticipantSheet({
   busy,
 }: Props) {
   const [tab, setTab] = useState<SheetTab>("asistencia");
-  const [payAmount, setPayAmount] = useState(String(CONGRESS_CONTRIBUTION_CLP));
+  const [payAmount, setPayAmount] = useState<number | null>(CONGRESS_CONTRIBUTION_CLP);
   const [payerName, setPayerName] = useState("");
+  const [payMethod, setPayMethod] = useState<CongressPaymentMethod>("cash");
+  const [paidOn, setPaidOn] = useState(todayPaidOnSantiago());
   const [receiptRef, setReceiptRef] = useState("");
   const [homeId, setHomeId] = useState("");
   const [night, setNight] = useState<string>(NIGHT_BOTH);
@@ -109,6 +124,8 @@ export function ParticipantSheet({
     if (!registration || !open) return;
     setTab("asistencia");
     setPayerName(registration.identity.fullName);
+    setPayMethod("cash");
+    setPaidOn(todayPaidOnSantiago());
     setReceiptRef("");
     setHomeId("");
     setNight(NIGHT_BOTH);
@@ -119,11 +136,9 @@ export function ParticipantSheet({
     if (!registration || !open) return;
     const balance = remainingBalanceClp(registration);
     setPayAmount(
-      String(
-        balance > 0
-          ? balance
-          : registration.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP
-      )
+      balance > 0
+        ? balance
+        : registration.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP
     );
   }, [
     open,
@@ -177,14 +192,38 @@ export function ParticipantSheet({
     });
   }, [activeAssignments, homes]);
 
+  const homeOptionsForNight = useMemo(() => {
+    const freeForNight = (row: (typeof homeAvailability)[number]) => {
+      if (night === NIGHT_BOTH) return Math.min(row.friFree, row.satFree);
+      if (night === CONGRESS_NIGHTS[0]) return row.friFree;
+      return row.satFree;
+    };
+    return [...homeAvailability].sort((a, b) => {
+      const aFree = freeForNight(a);
+      const bFree = freeForNight(b);
+      const aOk = aFree > 0;
+      const bOk = bFree > 0;
+      if (aOk !== bOk) return aOk ? -1 : 1;
+      if (bFree !== aFree) return bFree - aFree;
+      return a.home.name.localeCompare(b.home.name, "es");
+    });
+  }, [homeAvailability, night]);
+
   const selectedHomeAvailability = useMemo(
     () => homeAvailability.find((row) => row.home._id === homeId) ?? null,
     [homeAvailability, homeId]
   );
 
-  const title = registration?.identity.fullName ?? "Participante";
+  const title = registration
+    ? registrationDisplayName(registration)
+    : "Participante";
+  const roleBadges = registration ? registrationRoleBadges(registration) : [];
   const description = registration
-    ? `${registration.churchName} · ${formatZoneLabel(registration.zoneId)}`
+    ? [
+        registration.churchName,
+        formatZoneLabel(registration.zoneId),
+        ...roleBadges,
+      ].join(" · ")
     : undefined;
 
   const tabs: { id: SheetTab; label: string }[] = [
@@ -226,6 +265,60 @@ export function ParticipantSheet({
           <div className="max-h-[min(60vh,32rem)] overflow-y-auto pr-1">
             {tab === "asistencia" ? (
               <div className="space-y-3">
+                {operate ? (
+                  <div className="space-y-2 rounded-md border border-border bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      Nombre y roles
+                    </p>
+                    <p className="text-sm text-foreground">
+                      {registrationDisplayName(registration)}
+                    </p>
+                    {registrationNeedsHnoPrefix(registration) ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() =>
+                          void onPatchRegistration(registration._id, {
+                            ensureHnoPrefix: true,
+                          })
+                        }
+                      >
+                        Agregar prefijo Hno
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-muted">
+                        Nombre con Hno (pastor también se muestra como Hno).
+                      </p>
+                    )}
+                    <Checkbox
+                      label="Líder del grupo (iglesia)"
+                      description="Solo uno por iglesia. Puede ser también jefe zonal."
+                      checked={registration.isChurchGroupLeader === true}
+                      disabled={busy}
+                      onChange={(e) =>
+                        void onPatchRegistration(registration._id, {
+                          isChurchGroupLeader: e.target.checked,
+                        })
+                      }
+                    />
+                    <Checkbox
+                      label="Jefe zonal"
+                      description="Solo uno por zona. Puede ser también líder de iglesia."
+                      checked={registration.isZoneLeader === true}
+                      disabled={busy}
+                      onChange={(e) =>
+                        void onPatchRegistration(registration._id, {
+                          isZoneLeader: e.target.checked,
+                        })
+                      }
+                    />
+                  </div>
+                ) : roleBadges.length > 0 ? (
+                  <p className="text-xs text-muted">{roleBadges.join(" · ")}</p>
+                ) : null}
+
                 <div className="flex flex-wrap items-end gap-3">
                   <p className="text-muted">
                     Previsto: {expectedDaysText(registration.expectedDays)}
@@ -364,12 +457,29 @@ export function ParticipantSheet({
                       onChange={(e) => setPayerName(e.target.value)}
                       placeholder={registration.identity.fullName}
                     />
-                    <Input
+                    <ClpAmountInput
                       label="Monto"
-                      inputMode="numeric"
                       value={payAmount}
-                      onChange={(e) => setPayAmount(e.target.value)}
-                      placeholder={String(CONGRESS_CONTRIBUTION_CLP)}
+                      onValueChange={setPayAmount}
+                      placeholder={formatClpInput(CONGRESS_CONTRIBUTION_CLP)}
+                    />
+                    <Select
+                      label="Tipo"
+                      value={payMethod}
+                      onChange={(e) =>
+                        setPayMethod(e.target.value as CongressPaymentMethod)
+                      }
+                      options={[
+                        { value: "cash", label: "Efectivo" },
+                        { value: "transfer", label: "Transferencia" },
+                        { value: "other", label: "Otro" },
+                      ]}
+                    />
+                    <Input
+                      label="Fecha de pago"
+                      type="date"
+                      value={paidOn}
+                      onChange={(e) => setPaidOn(e.target.value)}
                     />
                     <Input
                       className="sm:col-span-2"
@@ -382,13 +492,15 @@ export function ParticipantSheet({
                         size="sm"
                         disabled={busy}
                         onClick={() => {
-                          const amount = Number(payAmount.replace(/\D/g, ""));
+                          const amount = payAmount ?? 0;
                           if (!amount) return;
                           void onIndividualPayment({
                             registrationId: registration._id,
                             amountClp: amount,
                             payerName:
                               payerName.trim() || registration.identity.fullName,
+                            method: payMethod,
+                            paidOn,
                             receiptRef: receiptRef.trim() || undefined,
                           }).then(() => {
                             setReceiptRef("");
@@ -475,8 +587,14 @@ export function ParticipantSheet({
                       onChange={(e) => setHomeId(e.target.value)}
                       options={[
                         { value: "", label: "Seleccionar hogar…" },
-                        ...homeAvailability.map(
+                        ...homeOptionsForNight.map(
                           ({ home, friFree, satFree, friCap, satCap }) => {
+                            const freeForNight =
+                              night === NIGHT_BOTH
+                                ? Math.min(friFree, satFree)
+                                : night === CONGRESS_NIGHTS[0]
+                                  ? friFree
+                                  : satFree;
                             const freeLabel =
                               night === NIGHT_BOTH
                                 ? `libres vie ${friFree}/${friCap} · sáb ${satFree}/${satCap}`
@@ -484,9 +602,13 @@ export function ParticipantSheet({
                                   ? `libres ${friFree}/${friCap}`
                                   : `libres ${satFree}/${satCap}`;
                             const care = home.notes?.trim() ? " · cuidados" : "";
+                            const full = freeForNight < 1;
                             return {
                               value: home._id,
-                              label: `${home.name} · ${freeLabel}${care}`,
+                              label: full
+                                ? `${home.name} · sin cupo · ${freeLabel}${care}`
+                                : `${home.name} · ${freeLabel}${care}`,
+                              disabled: full,
                             };
                           }
                         ),
