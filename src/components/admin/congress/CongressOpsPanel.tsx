@@ -1210,7 +1210,13 @@ export function CongressOpsPanel() {
                 Partir recaudación (efectivo + transferencia)
               </label>
               {groupSplitRecaudacion ? (
-                <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-2">
+                <div
+                  className={`grid gap-2 rounded-md border p-3 sm:grid-cols-2 ${
+                    groupSplitCuadra
+                      ? "border-border"
+                      : "border-danger/50 bg-danger/5"
+                  }`}
+                >
                   <p className="sm:col-span-2 text-sm font-medium">Recaudación</p>
                   <ClpAmountInput
                     label="Efectivo (CLP)"
@@ -1222,18 +1228,25 @@ export function CongressOpsPanel() {
                     value={groupTransferClp}
                     onValueChange={setGroupTransferClp}
                   />
-                  <p
-                    className={`sm:col-span-2 text-xs ${
-                      groupSplitCuadra ? "text-muted" : "font-medium text-warning"
-                    }`}
-                  >
-                    Debe cuadrar exacto: Ef + Tr ={" "}
-                    {formatClp(groupSplitSumClp)} · saldo marcado{" "}
-                    {formatClp(groupSaldoTotal)}
-                    {groupSplitCuadra
-                      ? " · OK. Un Guardar registra hasta dos ingresos."
-                      : " · Ajuste montos o marque otro hermano."}
-                  </p>
+                  {groupSplitCuadra ? (
+                    <p className="sm:col-span-2 text-xs text-muted">
+                      Cuadra: {formatClp(groupSplitSumClp)}. Un Guardar registra
+                      hasta dos ingresos.
+                    </p>
+                  ) : (
+                    <div className="sm:col-span-2">
+                      <AlertBanner
+                        variant="error"
+                        title="Recaudación no cuadra"
+                        compact
+                      >
+                        Efectivo + transferencia = {formatClp(groupSplitSumClp)};
+                        saldo de los marcados = {formatClp(groupSaldoTotal)}. Debe
+                        ser exacto (ni más ni menos). Ajuste montos o marque otro
+                        hermano. No se puede guardar.
+                      </AlertBanner>
+                    </div>
+                  )}
                 </div>
               ) : null}
               {!groupSplitRecaudacion ? (
