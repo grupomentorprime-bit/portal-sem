@@ -44,7 +44,7 @@ export function invitationEmailVoice(spaceName: string, departmentName?: string)
   if (department) {
     return {
       label: department,
-      subject: `Invitación — ${department}`,
+      subject: `Bienvenido a la plataforma del ${department}`,
       preview: `Crea tu contraseña para acceder al ${department}.`,
       lead: `Te invitaron a administrar el ${department}.`,
     };
