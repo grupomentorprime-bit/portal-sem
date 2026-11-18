@@ -16,6 +16,7 @@ import {
   aek,
 } from "@/components/admin/kit";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
+import { OpportunityViewSwitch } from "@/components/admin/growth/OpportunityViewSwitch";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -304,6 +305,7 @@ export function ActividadFeedClient({
         className="mx-auto w-full max-w-2xl space-y-6"
         data-actividad-feed
       >
+        <OpportunityViewSwitch current="actividad" />
         <nav
           className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Filtros de actividad"

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useState, useTransition, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock,
@@ -10,9 +10,6 @@ import {
   ChevronRight,
   Clock,
   Handshake,
-  LayoutGrid,
-  List,
-  ListOrdered,
   MoreHorizontal,
   UserRound,
 } from "lucide-react";
@@ -22,14 +19,17 @@ import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog"
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { isGrowthFunnelResultKey } from "@/core/growth/funnel-types";
 import {
-  GROWTH_BAND_FILTER_OPTIONS,
   GROWTH_NEXT_ACTION_FILTER_OPTIONS,
   growthPriorityBandLabel,
   GROWTH_NO_NEXT_ACTION_LABEL,
   GROWTH_OPPORTUNITY_TYPE_FILTER_OPTIONS,
+  GROWTH_VENTAS_EMPTY_DESCRIPTION,
+  GROWTH_VENTAS_EMPTY_TITLE,
   GROWTH_VENTAS_LAST_ACTIVITY_LABEL,
+  GROWTH_VENTAS_NO_MATCH_DESCRIPTION,
+  GROWTH_VENTAS_NO_MATCH_TITLE,
+  GROWTH_VENTAS_PAGE_TITLE,
   GROWTH_NEXT_ACTION_SECTION_LABEL,
-  growthVentasPageCopy,
 } from "@/lib/growth/labels";
 import type { GrowthPriorityBand } from "@/core/growth/priority";
 import type {
@@ -38,22 +38,16 @@ import type {
   GrowthVentasQueueItemView,
   GrowthVentasStatusOption,
 } from "@/lib/growth/ventas-view";
-import type { GrowthVentasVista } from "@/lib/growth/ventas-vista";
-import { filterVentasColaItems } from "@/lib/growth/ventas-board";
+import type { VentasAttentionCounts } from "@/lib/growth/ventas-attention";
 import { kanbanColumnWidth } from "@/lib/growth/kanban-column-width";
 import { cn } from "@/lib/utils";
+import { OpportunityQueueDesk } from "./OpportunityQueueDesk";
+import { OpportunityViewSwitch } from "./OpportunityViewSwitch";
 import { OwnerSelect } from "./OwnerSelect";
 
-export interface VentasAttentionCounts {
-  overdue: number;
-  unfollowed: number;
-  stale: number;
-  /** null = sin permiso de vista de Espacio (no se muestra). */
-  unassigned: number | null;
-}
+export type { VentasAttentionCounts };
 
 export interface VentasListClientProps {
-  copy: ReturnType<typeof growthVentasPageCopy>;
   items: GrowthVentasQueueItemView[];
   funnels: GrowthVentasFunnelOption[];
   lanes: GrowthVentasBoardLane[];
@@ -65,7 +59,7 @@ export interface VentasListClientProps {
   nextAction: string;
   band: string;
   mine: boolean;
-  vista: GrowthVentasVista;
+  vista: "cola" | "lista" | "kanban";
   attention: VentasAttentionCounts;
   canOperate: boolean;
   members: Array<{ userId: string; label: string }>;
@@ -100,7 +94,12 @@ function FilterPill({
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 appearance-none rounded-xl border border-[var(--admin-border-subtle)] bg-white pl-3 pr-8 text-[13px] text-foreground shadow-sm outline-none"
+        className={cn(
+          "h-10 appearance-none rounded-xl border bg-white pl-3 pr-8 text-[13px] text-foreground shadow-sm outline-none focus-visible:border-[var(--growth-os-primary)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--growth-os-primary)_28%,transparent)]",
+          value
+            ? "border-[var(--growth-os-primary)] bg-[color-mix(in_srgb,var(--growth-os-primary)_6%,white)]"
+            : "border-[var(--admin-border-subtle)]"
+        )}
       >
         {options.map((option) => (
           <option key={option.value || "all"} value={option.value}>
@@ -185,7 +184,6 @@ async function requestOpportunityTransition(
 }
 
 export function VentasListClient({
-  copy,
   items,
   funnels,
   lanes,
@@ -204,8 +202,32 @@ export function VentasListClient({
 }: VentasListClientProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const refreshPending = useRef(false);
   const [moving, setMoving] = useState(false);
   const [moveError, setMoveError] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<Record<string, { status: string; label: string }>>({});
+  const liveItems = items.map((item) => {
+    const place = placed[item.id];
+    if (!place || item.status === place.status) return item;
+    return relocateQueueItem(item, place.status, place.label, lanes);
+  });
+
+  useEffect(() => {
+    setPlaced((current) => {
+      let changed = false;
+      const next: typeof current = {};
+      for (const [id, place] of Object.entries(current)) {
+        const item = items.find((entry) => entry.id === id);
+        if (!item || item.status === place.status) {
+          changed = true;
+          continue;
+        }
+        next[id] = place;
+      }
+      return changed ? next : current;
+    });
+    refreshPending.current = false;
+  }, [items]);
   const { confirm, dialog } = useConfirmDialog();
 
   const pushFilters = useCallback(
@@ -217,7 +239,7 @@ export function VentasListClient({
       nextAction?: string;
       band?: string;
       mine?: boolean;
-      vista?: GrowthVentasVista;
+      vista?: "cola" | "lista" | "kanban";
     }) => {
       const params = new URLSearchParams();
       const nextQ = next.q ?? q;
@@ -235,7 +257,8 @@ export function VentasListClient({
       if (nextNext) params.set("nextAction", nextNext);
       if (nextBand) params.set("banda", nextBand);
       if (nextMine) params.set("mias", "1");
-      if (nextVista !== "cola") params.set("vista", nextVista);
+      if (nextVista === "lista") params.set("vista", "lista");
+      if (nextVista === "kanban") params.set("vista", "kanban");
       const qs = params.toString();
       startTransition(() => {
         router.push(qs ? `/admin/ventas?${qs}` : "/admin/ventas");
@@ -245,45 +268,73 @@ export function VentasListClient({
   );
 
   const move = useCallback(
-    (id: string, toState: string, label: string) => {
-      void (async () => {
-        if (isGrowthFunnelResultKey(toState)) {
-          const ok = await confirm({
-            title: `Marcar como ${label}`,
-            description:
-              "La oportunidad se cierra. Queda en el historial y se quita la próxima acción.",
-            confirmLabel: label,
-            destructive: toState === "lost" || toState === "archived",
+    async (id: string, toState: string, label: string): Promise<boolean> => {
+      if (isGrowthFunnelResultKey(toState)) {
+        const ok = await confirm({
+          title: `Marcar como ${label}`,
+          description:
+            "La oportunidad se cierra. Queda en el historial y se quita la próxima acción.",
+          confirmLabel: label,
+          destructive: toState === "lost" || toState === "archived",
+        });
+        if (!ok) return false;
+      }
+      setMoveError(null);
+      setPlaced((current) => ({ ...current, [id]: { status: toState, label } }));
+      setMoving(true);
+      try {
+        const result = await requestOpportunityTransition(id, toState);
+        if (!result.ok) {
+          setPlaced((current) => {
+            const next = { ...current };
+            delete next[id];
+            return next;
           });
-          if (!ok) return;
+          setMoveError(result.error);
+          return false;
         }
-        setMoveError(null);
-        setMoving(true);
-        try {
-          const result = await requestOpportunityTransition(id, toState);
-          if (!result.ok) setMoveError(result.error);
-          router.refresh();
-        } finally {
-          setMoving(false);
+        if (!refreshPending.current) {
+          refreshPending.current = true;
+          startTransition(() => {
+            router.refresh();
+          });
         }
-      })();
+        return true;
+      } finally {
+        setMoving(false);
+      }
     },
-    [confirm, router]
+    [confirm, router, startTransition]
   );
 
   const hasFilters = Boolean(q || status || type || nextAction || funnel || band || mine);
-  const isListView = vista === "cola" || vista === "lista";
-  const queueItems = vista === "cola" ? filterVentasColaItems(items) : items;
   const isEmpty = items.length === 0;
-  const isListEmpty = queueItems.length === 0;
-  const isTrueEmpty = (isListView ? isListEmpty : isEmpty) && !hasFilters;
+  const isTrueEmpty = isEmpty && !hasFilters;
   const attentionChips = [
-    { key: "overdue", label: "Vencidas", count: attention.overdue },
-    { key: "unfollowed", label: "Sin seguimiento", count: attention.unfollowed },
-    { key: "stale", label: "Estancadas", count: attention.stale },
-    ...(attention.unassigned != null
-      ? [{ key: "unassigned", label: "Sin responsable", count: attention.unassigned }]
-      : []),
+    {
+      key: "overdue",
+      label: "Vencidas",
+      count: attention.overdue,
+      title: "Abiertas con próxima acción anterior a hoy, según los filtros activos",
+    },
+    {
+      key: "unfollowed",
+      label: "Sin seguimiento",
+      count: attention.unfollowed,
+      title: "Abiertas sin próxima acción, según los filtros activos",
+    },
+    {
+      key: "stale",
+      label: "Estancadas",
+      count: attention.stale,
+      title: "Abiertas sin movimiento reciente, según los filtros activos",
+    },
+    {
+      key: "unassigned",
+      label: "Sin responsable",
+      count: attention.unassigned,
+      title: "Abiertas sin responsable, según los filtros activos",
+    },
   ] as const;
   const knownStatus = statusOptions.some((option) => option.value === status);
   const statusChoices = !status || knownStatus
@@ -291,9 +342,17 @@ export function VentasListClient({
     : [{ value: status, label: status }, ...statusOptions];
   const activeFunnels = funnels.filter((item) => item.status === "active");
   const singleFunnelKey = activeFunnels.length === 1 ? activeFunnels[0].key : "";
+  const selectedKey = funnel || singleFunnelKey;
+  const selectedFunnel = funnels.find((item) => item.key === selectedKey);
+  const heading =
+    selectedFunnel && (funnel || activeFunnels.length === 1)
+      ? selectedFunnel.name.replace(/\s+\(archivado\)$/, "")
+      : GROWTH_VENTAS_PAGE_TITLE;
 
   const filterBar = (
     <div
+      // Proton Pass escribe data-protonpass-form en este contenedor antes de hidratar.
+      suppressHydrationWarning
       className={cn(
         "flex flex-wrap items-center gap-2",
         isTrueEmpty && "opacity-90"
@@ -303,7 +362,7 @@ export function VentasListClient({
         placeholder="Buscar por empresa, persona u oportunidad…"
         value={q}
         onChange={(value) => pushFilters({ q: value })}
-        className="w-full shrink-0 sm:w-[28rem]"
+        className="w-full min-w-[14rem] flex-1 sm:max-w-md"
       />
       <FilterPill
         label="Filtrar por estado"
@@ -318,12 +377,6 @@ export function VentasListClient({
         options={[{ value: "", label: "Todos los tipos" }, ...GROWTH_OPPORTUNITY_TYPE_FILTER_OPTIONS]}
       />
       <FilterPill
-        label="Filtrar por prioridad"
-        value={band}
-        onChange={(value) => pushFilters({ band: value })}
-        options={[{ value: "", label: "Todas las prioridades" }, ...GROWTH_BAND_FILTER_OPTIONS]}
-      />
-      <FilterPill
         label="Filtrar por próxima acción"
         value={nextAction}
         onChange={(value) => pushFilters({ nextAction: value })}
@@ -336,8 +389,14 @@ export function VentasListClient({
           size="sm"
           className="h-10 shrink-0 rounded-xl"
           onClick={() =>
-            startTransition(() => {
-              router.push("/admin/ventas");
+            pushFilters({
+              q: "",
+              status: "",
+              type: "",
+              funnel: "",
+              nextAction: "",
+              band: "",
+              mine: false,
             })
           }
         >
@@ -351,135 +410,91 @@ export function VentasListClient({
     <AdminModulePage
       breadcrumbs={[
         { label: "Inicio", href: "/admin" },
-        { label: copy.title },
+        { label: GROWTH_VENTAS_PAGE_TITLE },
       ]}
-      title={copy.title}
+      title={GROWTH_VENTAS_PAGE_TITLE}
       hideTitle
     >
       {dialog}
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-[1.7rem] font-bold tracking-tight text-foreground">
-            {copy.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted">{copy.description}</p>
+      <header className="mb-3 flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+            <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">{heading}</h1>
+            <label className="relative flex h-9 w-full items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] bg-white py-1 pl-2.5 pr-8 text-sm sm:w-auto">
+              <span className="shrink-0 text-xs text-muted">Embudo</span>
+              <select
+                aria-label="Embudo activo"
+                className="min-w-0 flex-1 appearance-none truncate bg-transparent font-medium text-foreground outline-none focus-visible:outline-none sm:w-48 sm:flex-none"
+                value={funnel || singleFunnelKey}
+                onChange={(event) => pushFilters({ funnel: event.target.value === singleFunnelKey ? "" : event.target.value })}
+              >
+                {activeFunnels.length !== 1 ? <option value="">Todos los embudos</option> : null}
+                {funnels.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 h-4 w-4 text-muted" aria-hidden />
+            </label>
+          </div>
+          <OpportunityViewSwitch
+            current={vista}
+            onSelect={(next) => pushFilters({ vista: next })}
+          />
         </div>
-        <label className="relative inline-flex h-10 max-w-full items-center gap-1.5 rounded-xl border border-[var(--admin-border-subtle)] bg-white pl-3 pr-9 text-sm shadow-sm">
-          <span className="shrink-0 text-muted">Embudo:</span>
-          <select
-            aria-label="Embudo activo"
-            className="max-w-[16rem] appearance-none truncate bg-transparent font-semibold text-foreground outline-none"
-            value={funnel || singleFunnelKey}
-            onChange={(event) => pushFilters({ funnel: event.target.value === singleFunnelKey ? "" : event.target.value })}
+        <div className="flex flex-wrap items-center gap-1.5" aria-label="Atención comercial">
+          {attentionChips.map((chip) => {
+            const active = band === chip.key;
+            const alert = chip.key === "overdue" && chip.count > 0;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                aria-pressed={active}
+                title={chip.title}
+                onClick={() => pushFilters({ band: active ? "" : chip.key })}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg border bg-white px-2.5 text-[13px] font-medium transition",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--growth-os-primary)]",
+                  active
+                    ? "border-[var(--growth-os-primary)] bg-[color-mix(in_srgb,var(--growth-os-primary)_8%,white)] text-foreground"
+                    : "border-[var(--admin-border-subtle)] text-foreground hover:border-[color-mix(in_srgb,var(--growth-os-primary)_35%,var(--admin-border-subtle))]",
+                  alert && !active && "border-[color-mix(in_srgb,var(--color-danger)_40%,var(--admin-border-subtle))]"
+                )}
+              >
+                <span className={cn(alert && "text-destructive")}>{chip.label}</span>
+                <span
+                  className={cn(
+                    "min-w-[1.25rem] text-center text-[13px] font-semibold tabular-nums",
+                    alert ? "text-destructive" : "text-foreground"
+                  )}
+                >
+                  {chip.count}
+                </span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            aria-pressed={mine}
+            title="Solo oportunidades de las que eres responsable o tienes la próxima acción"
+            onClick={() => pushFilters({ mine: !mine })}
+            className={cn(
+              "inline-flex h-8 items-center gap-1.5 rounded-lg border bg-white px-2.5 text-[13px] font-medium transition",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--growth-os-primary)]",
+              mine
+                ? "border-[var(--growth-os-primary)] bg-[color-mix(in_srgb,var(--growth-os-primary)_8%,white)] text-foreground"
+                : "border-[var(--admin-border-subtle)] text-foreground hover:border-[color-mix(in_srgb,var(--growth-os-primary)_35%,var(--admin-border-subtle))]"
+            )}
           >
-            {activeFunnels.length !== 1 ? <option value="">Todos los embudos</option> : null}
-            {funnels.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4 text-muted" aria-hidden />
-        </label>
+            <UserRound className="h-3.5 w-3.5 text-[var(--growth-os-primary)]" aria-hidden />
+            Mías
+          </button>
+        </div>
       </header>
 
-      <div
-        className="mb-4 flex flex-wrap items-center gap-2"
-        aria-label="Atención comercial"
-      >
-        {attentionChips.map((chip) => {
-          const active = band === chip.key;
-          return (
-            <button
-              key={chip.key}
-              type="button"
-              aria-pressed={active}
-              onClick={() => pushFilters({ band: active ? "" : chip.key })}
-              className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition",
-                active
-                  ? "border-[var(--growth-os-primary)] bg-[color-mix(in_srgb,var(--growth-os-primary)_12%,white)] text-foreground"
-                  : "border-[var(--admin-border-subtle)] bg-white text-muted hover:text-foreground"
-              )}
-            >
-              <span>{chip.label}</span>
-              <span className="tabular-nums text-foreground">{chip.count}</span>
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          aria-pressed={mine}
-          onClick={() => pushFilters({ mine: !mine })}
-          className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition",
-            mine
-              ? "border-[var(--growth-os-primary)] bg-[color-mix(in_srgb,var(--growth-os-primary)_12%,white)] text-foreground"
-              : "border-[var(--admin-border-subtle)] bg-white text-muted hover:text-foreground"
-          )}
-        >
-          Mías
-        </button>
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div
-          className="inline-flex rounded-xl bg-white p-1 shadow-sm ring-1 ring-[var(--admin-border-subtle)]"
-          role="group"
-          aria-label="Vista de oportunidades"
-        >
-          <button
-            type="button"
-            aria-pressed={vista === "cola"}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
-              vista === "cola"
-                ? "bg-[var(--growth-os-primary)] text-white"
-                : "text-muted hover:text-foreground"
-            )}
-            onClick={() => pushFilters({ vista: "cola" })}
-          >
-            <ListOrdered className="h-3.5 w-3.5" aria-hidden />
-            Cola
-          </button>
-          <button
-            type="button"
-            aria-pressed={vista === "kanban"}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
-              vista === "kanban"
-                ? "bg-[var(--growth-os-primary)] text-white"
-                : "text-muted hover:text-foreground"
-            )}
-            onClick={() => pushFilters({ vista: "kanban" })}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
-            Kanban
-          </button>
-          <button
-            type="button"
-            aria-pressed={vista === "lista"}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition",
-              vista === "lista"
-                ? "bg-[var(--growth-os-primary)] text-white"
-                : "text-muted hover:text-foreground"
-            )}
-            onClick={() => pushFilters({ vista: "lista" })}
-          >
-            <List className="h-3.5 w-3.5" aria-hidden />
-            Lista
-          </button>
-        </div>
-        <Link
-          href="/admin/actividad"
-          className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
-        >
-          Actividad
-        </Link>
-      </div>
-
-      <div className="mb-5">{filterBar}</div>
+      <div className="mb-3">{filterBar}</div>
 
       {moveError ? (
         <p
@@ -489,26 +504,92 @@ export function VentasListClient({
           {moveError}
         </p>
       ) : null}
-      {isListView && isListEmpty ? (
+      {vista === "cola" && isEmpty ? (
         <EmptyState
-          title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
-          description={hasFilters ? copy.noMatchDescription : copy.emptyDescription}
+          title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
+          description={
+            hasFilters ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION : GROWTH_VENTAS_EMPTY_DESCRIPTION
+          }
           icon={<Handshake className="h-8 w-8" />}
         />
       ) : null}
-      {isListView && !isListEmpty ? (
-        <VentasQueueList
-          items={queueItems}
-          vista={vista}
+      {vista === "cola" && !isEmpty ? (
+        <OpportunityQueueDesk
+          items={liveItems}
           canOperate={canOperate}
+          members={members}
           pending={pending || moving}
           onMove={move}
         />
       ) : null}
+      {vista === "lista" && isEmpty ? (
+        <EmptyState
+          title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
+          description={
+            hasFilters ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION : GROWTH_VENTAS_EMPTY_DESCRIPTION
+          }
+          icon={<Handshake className="h-8 w-8" />}
+        />
+      ) : null}
+      {vista === "lista" && !isEmpty ? (
+        <ul className={cn("flex flex-col gap-3", (pending || moving) && "opacity-70 transition-opacity")}>
+          {liveItems.map((item) => (
+            <li key={item.id} className={cn(rowClass, "px-4 py-4")}>
+              <Link
+                href={`/admin/ventas/${encodeURIComponent(item.id)}`}
+                className="flex items-start gap-4 no-underline"
+              >
+                <div className="min-w-0 flex-1 space-y-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[15px] font-semibold tracking-tight text-foreground">
+                      {item.personaDisplayName}
+                    </p>
+                    <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
+                  </div>
+
+                  <div>
+                    <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
+                    <p
+                      className={cn(
+                        "text-[17px] font-semibold tracking-tight",
+                        item.hasNextAction ? "text-foreground" : "text-muted"
+                      )}
+                    >
+                      {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
+                    </p>
+                  </div>
+
+                  <p className="text-sm text-muted">
+                    {item.originLabel}
+                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+                    {item.typeLabel}
+                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+                    {item.funnelName}
+                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+                    {item.stageLabel}
+                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+                    {item.priorityBand ? growthPriorityBandLabel(item.priorityBand) : item.statusLabel}
+                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+                    {item.ownerLabel ?? "Sin responsable"}
+                    <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
+                    {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
+                  </p>
+                </div>
+                <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted" />
+              </Link>
+              <OpportunityMoveControl
+                item={item}
+                canOperate={canOperate}
+                pending={pending || moving}
+                onMove={move}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {vista === "kanban" ? (
         <KanbanBoard
-          copy={copy}
-          items={items}
+          items={liveItems}
           lanes={lanes}
           canOperate={canOperate}
           members={members}
@@ -523,141 +604,36 @@ export function VentasListClient({
   );
 }
 
-function VentasQueueList({
-  items,
-  vista,
-  canOperate,
-  pending,
-  onMove,
-}: {
-  items: GrowthVentasQueueItemView[];
-  vista: Extract<GrowthVentasVista, "cola" | "lista">;
-  canOperate: boolean;
-  pending: boolean;
-  onMove: (id: string, toState: string, label: string) => void;
-}) {
-  return (
-    <ul className={cn("flex flex-col gap-3", pending && "opacity-70 transition-opacity")}>
-      {items.map((item) => (
-        <li key={item.id} className={cn(rowClass, "px-4 py-4")}>
-          <Link
-            href={`/admin/ventas/${encodeURIComponent(item.id)}`}
-            className="flex items-start gap-4 no-underline"
-          >
-            {vista === "cola" ? <ColaRowBody item={item} /> : <ListaRowBody item={item} />}
-            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted" />
-          </Link>
-          <OpportunityMoveControl
-            item={item}
-            canOperate={canOperate}
-            pending={pending}
-            onMove={onMove}
-          />
-        </li>
-      ))}
-    </ul>
+function relocateQueueItem(
+  item: GrowthVentasQueueItemView,
+  toState: string,
+  label: string,
+  lanes: GrowthVentasBoardLane[]
+): GrowthVentasQueueItemView {
+  const columns = lanes.find((lane) => lane.funnelKey === item.funnelKey)?.columns ?? [];
+  const results = item.availableTransitions.filter((transition) =>
+    isGrowthFunnelResultKey(transition.toState)
   );
-}
-
-function ColaRowBody({ item }: { item: GrowthVentasQueueItemView }) {
-  return (
-    <div className="min-w-0 flex-1 space-y-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[15px] font-semibold tracking-tight text-foreground">
-          {item.personaDisplayName}
-        </p>
-        <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
-        {item.priorityBand ? (
-          <span
-            className={cn(
-              "inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-              BAND_PILL[item.priorityBand]
-            )}
-          >
-            {growthPriorityBandLabel(item.priorityBand)}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="grid gap-2 text-sm sm:grid-cols-3">
-        <div className="min-w-0">
-          <p className={cn(aek.label, "mb-1")}>Etapa</p>
-          <p className="truncate text-foreground">{item.stageLabel}</p>
-        </div>
-        <div className="min-w-0">
-          <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-          <p
-            className={cn(
-              "truncate font-medium",
-              item.hasNextAction ? "text-foreground" : "text-muted"
-            )}
-            title={item.hasNextAction ? item.nextActionLabel : undefined}
-          >
-            {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
-          </p>
-        </div>
-        <div className="min-w-0">
-          <p className={cn(aek.label, "mb-1")}>Responsable</p>
-          <p className={cn("truncate", item.ownerLabel ? "text-foreground" : "text-muted")}>
-            {item.ownerLabel ?? "Sin responsable"}
-          </p>
-        </div>
-      </div>
-
-      <p className="text-sm text-muted">
-        {item.funnelName}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {item.typeLabel}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
-      </p>
-    </div>
-  );
-}
-
-function ListaRowBody({ item }: { item: GrowthVentasQueueItemView }) {
-  return (
-    <div className="min-w-0 flex-1 space-y-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[15px] font-semibold tracking-tight text-foreground">
-          {item.personaDisplayName}
-        </p>
-        <StatusBadge tone={statusTone(item.status)} label={item.statusLabel} />
-      </div>
-
-      <div>
-        <p className={cn(aek.label, "mb-1")}>{GROWTH_NEXT_ACTION_SECTION_LABEL}</p>
-        <p
-          className={cn(
-            "text-[17px] font-semibold tracking-tight",
-            item.hasNextAction ? "text-foreground" : "text-muted"
-          )}
-        >
-          {item.hasNextAction ? item.nextActionLabel : GROWTH_NO_NEXT_ACTION_LABEL}
-        </p>
-      </div>
-
-      <p className="text-sm text-muted">
-        {item.originLabel}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {item.typeLabel}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {item.funnelName}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {item.stageLabel}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {item.priorityBand ? growthPriorityBandLabel(item.priorityBand) : item.statusLabel}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {item.ownerLabel ?? "Sin responsable"}
-        <span className="mx-1.5 text-[var(--admin-border-subtle)]">·</span>
-        {GROWTH_VENTAS_LAST_ACTIVITY_LABEL}: {item.lastActivityLabel}
-      </p>
-    </div>
-  );
+  const stageMoves = columns
+    .filter((column) => column.active && column.key !== toState)
+    .map((column) => ({
+      id: `${toState}__${column.key}`,
+      toState: column.key,
+      label: column.label,
+    }));
+  return {
+    ...item,
+    status: toState,
+    statusLabel: label,
+    stageLabel: label,
+    availableTransitions: [
+      ...stageMoves,
+      ...results.filter((transition) => transition.toState !== toState),
+    ],
+  };
 }
 
 function KanbanBoard({
-  copy,
   items,
   lanes,
   canOperate,
@@ -668,7 +644,6 @@ function KanbanBoard({
   onMove,
   onReject,
 }: {
-  copy: ReturnType<typeof growthVentasPageCopy>;
   items: GrowthVentasQueueItemView[];
   lanes: GrowthVentasBoardLane[];
   canOperate: boolean;
@@ -683,8 +658,10 @@ function KanbanBoard({
   if (lanes.length === 0) {
     return (
       <EmptyState
-        title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
-        description={hasFilters ? copy.noMatchDescription : copy.emptyDescription}
+        title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
+        description={
+          hasFilters ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION : GROWTH_VENTAS_EMPTY_DESCRIPTION
+        }
         icon={<Handshake className="h-8 w-8" />}
       />
     );
@@ -700,10 +677,10 @@ function KanbanBoard({
       `}</style>
       {isEmpty ? (
         <EmptyState
-          title={hasFilters ? copy.noMatchTitle : copy.emptyTitle}
+          title={hasFilters ? GROWTH_VENTAS_NO_MATCH_TITLE : GROWTH_VENTAS_EMPTY_TITLE}
           description={
             hasFilters
-              ? copy.noMatchDescription
+              ? GROWTH_VENTAS_NO_MATCH_DESCRIPTION
               : "El tablero muestra las etapas del embudo. Las oportunidades aparecerán en su columna."
           }
           icon={<Handshake className="h-8 w-8" />}
@@ -757,7 +734,7 @@ function KanbanBoard({
                         event.dataTransfer.getData("text/opportunity-id") ||
                         event.dataTransfer.getData("text/plain");
                       const item = items.find((entry) => entry.id === id);
-                      if (!item || !canOperate || item.status === column.key) return;
+                      if (!item || !canOperate || pending || item.status === column.key) return;
                       if (item.funnelKey !== lane.funnelKey) {
                         onReject("Una oportunidad no cambia de embudo.");
                         return;
@@ -802,7 +779,7 @@ function KanbanBoard({
                     </h3>
                     {cards.length === 0 ? (
                       <p className="flex flex-1 items-center justify-center px-2 py-4 text-center text-xs text-muted">
-                        {copy.columnEmptyLabel}
+                        Sin oportunidades
                       </p>
                     ) : (
                       <ul className="flex flex-col gap-1.5">
@@ -964,6 +941,7 @@ function KanbanCard({
         <div className="min-w-0 flex-1">
           <Link
             href={`/admin/ventas/${encodeURIComponent(item.id)}`}
+            draggable={false}
             title={item.personaDisplayName}
             className="block truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground"
           >
@@ -1095,5 +1073,3 @@ function OpportunityMoveControl({
     </form>
   );
 }
-
-

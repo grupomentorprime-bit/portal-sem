@@ -31,6 +31,8 @@ export interface GrowthVentasQueueItemView {
   }>;
   nextActionLabel: string;
   hasNextAction: boolean;
+  /** Día o instante de la próxima acción, si existe. */
+  nextActionDueAt?: string;
   lastActivityLabel: string;
   lastActivityAt?: string;
   openedAt: string;

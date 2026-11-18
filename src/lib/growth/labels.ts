@@ -208,7 +208,7 @@ export const GROWTH_VENTAS_NO_MATCH_DESCRIPTION =
   "Prueba con otro nombre o quita los filtros.";
 export const GROWTH_VENTAS_PAGE_TITLE = "Ventas";
 export const GROWTH_VENTAS_PAGE_DESCRIPTION =
-  "Oportunidades del Espacio activo.";
+  "Gestiona oportunidades, seguimientos y próximas acciones del Espacio.";
 export const GROWTH_VENTAS_OPERATE_TITLE = "Oportunidad";
 export const GROWTH_VENTAS_LAST_ACTIVITY_LABEL = "Última actividad";
 export const GROWTH_VENTAS_FOLLOW_UP_LABEL = "Registrar seguimiento";
@@ -222,7 +222,7 @@ export const GROWTH_VENTAS_REGISTER_CONTACT_LABEL = "Registrar contacto";
 export const GROWTH_VENTAS_NOTE_KIND_LABEL = "Nota";
 export const GROWTH_VENTAS_CONTACT_KIND_LABEL = "Contacto";
 export const GROWTH_VENTAS_FOLLOW_UP_PLACEHOLDER =
-  "Conversé con María. Quiere matricularse la próxima semana.";
+  "Qué ocurrió y qué quedó pendiente.";
 
 export function growthVentasPageCopy(tenantId: string): {
   title: string;

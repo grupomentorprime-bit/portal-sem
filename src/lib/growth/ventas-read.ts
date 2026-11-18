@@ -52,11 +52,13 @@ import {
   toActivityView,
   toOportunidadDetailView,
 } from "./persona-view";
+import { countVentasAttention, matchesVentasBand } from "./ventas-attention";
 import {
   growthVentasBoardLanes,
   growthVentasStatusOptions,
   sortVentasQueueByPriority,
 } from "./ventas-board";
+import type { VentasAttentionCounts } from "./ventas-attention";
 import type {
   GrowthVentasBoardLane,
   GrowthVentasFunnelOption,
@@ -87,6 +89,8 @@ export interface GrowthVentasListFilters {
 
 export interface GrowthVentasQueueRead {
   items: GrowthVentasQueueItemView[];
+  /** Misma población que `items`, antes de aplicar el filtro de banda. */
+  attention: VentasAttentionCounts;
   funnels: GrowthVentasFunnelOption[];
   lanes: GrowthVentasBoardLane[];
   statusOptions: GrowthVentasStatusOption[];
@@ -148,6 +152,7 @@ function presentQueueItem(
     availableTransitions: availableGrowthFunnelTransitions(stages, oportunidad.status),
     nextActionLabel: oportunidad.nextAction?.summary ?? GROWTH_NO_NEXT_ACTION_LABEL,
     hasNextAction: Boolean(oportunidad.nextAction),
+    nextActionDueAt: oportunidad.nextAction?.dueAt,
     lastActivityLabel: last
       ? last.summary || growthActivityKindLabel(last.kind)
       : "Sin actividad",
@@ -282,14 +287,17 @@ export async function readGrowthVentasBoard(
     )
   );
 
-  const band = filters.band?.trim();
-  const visible = items.filter((item) => {
-    if (!band) return true;
-    if (band === "unassigned") return !item.ownerUserId && item.priorityBand != null;
-    return item.priorityBand === band;
-  });
+  const band = filters.band?.trim() ?? "";
+  const visible = items.filter((item) => matchesVentasBand(item, band));
 
-  return presentBoard(tenantId, funnels, stagesByFunnel, funnelFilter, visible);
+  return presentBoard(
+    tenantId,
+    funnels,
+    stagesByFunnel,
+    funnelFilter,
+    visible,
+    countVentasAttention(items)
+  );
 }
 
 export async function listGrowthVentasQueue(
@@ -321,10 +329,12 @@ function presentBoard(
   funnels: GrowthFunnel[],
   stagesByFunnel: Map<string, GrowthFunnelStage[]>,
   funnelFilter: string | undefined,
-  items: GrowthVentasQueueItemView[]
+  items: GrowthVentasQueueItemView[],
+  attention: VentasAttentionCounts = countVentasAttention(items)
 ): GrowthVentasQueueRead {
   return {
     items,
+    attention,
     funnels: presentFunnels(funnels),
     lanes: growthVentasBoardLanes(tenantId, funnels, stagesByFunnel, funnelFilter, items),
     statusOptions: growthVentasStatusOptions(

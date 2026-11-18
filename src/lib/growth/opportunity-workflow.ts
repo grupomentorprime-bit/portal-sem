@@ -11,6 +11,12 @@ import {
   isGrowthOpportunityFinalStatus,
   type GrowthOpportunityWorkflowPort,
 } from "@/core/growth";
+import { growthOpportunityDefinitionKey } from "@/core/growth/funnel-types";
+import {
+  GROWTH_OPORTUNIDADES_COLLECTION,
+  type GrowthOportunidad,
+} from "@/core/growth/types";
+import { getDatabase } from "@/lib/mongodb";
 import {
   ensureSystemDefinitions,
   findDefinitionByKey,
@@ -22,6 +28,7 @@ import {
   getInstanceById,
   updateInstanceState,
 } from "@/lib/workflow/instances";
+import type { WorkflowInstance } from "@/types/workflow";
 
 const SYSTEM_ACTOR = "growth-ingest";
 
@@ -89,7 +96,9 @@ export function createMongoGrowthOpportunityWorkflow(): GrowthOpportunityWorkflo
       metadata,
       performedBy,
     }) {
-      const instance = await getInstanceById(instanceId, tenantId);
+      const instance =
+        (await getInstanceById(instanceId, tenantId)) ??
+        (await repairMissingOpportunityInstance(tenantId, instanceId));
       if (!instance || instance.status !== "active") {
         throw new Error("Instancia de workflow no encontrada o inactiva.");
       }
@@ -150,4 +159,39 @@ export function createMongoGrowthOpportunityWorkflow(): GrowthOpportunityWorkflo
       };
     },
   };
+}
+
+/**
+ * Oportunidades de captura pueden guardar un id de instancia que nunca se creó.
+ * La primera transición abre la instancia real en la etapa actual del embudo.
+ */
+async function repairMissingOpportunityInstance(
+  tenantId: string,
+  staleInstanceId: string
+): Promise<WorkflowInstance | null> {
+  const db = await getDatabase();
+  const oportunidad = await db
+    .collection<GrowthOportunidad>(GROWTH_OPORTUNIDADES_COLLECTION)
+    .findOne({ tenantId, workflowInstanceId: staleInstanceId });
+  if (!oportunidad || isGrowthOpportunityFinalStatus(oportunidad.status)) return null;
+
+  const linked = await findInstanceByEntity(
+    tenantId,
+    GROWTH_OPPORTUNITY_ENTITY_TYPE,
+    oportunidad._id
+  );
+  if (linked) return linked;
+
+  const definitionKey = growthOpportunityDefinitionKey(oportunidad.funnelKey || "default");
+  const definition = await findDefinitionByKey(tenantId, definitionKey);
+  if (!definition) return null;
+  const known = definition.states.some((state) => state.key === oportunidad.status);
+  return createInstance({
+    tenantId,
+    entityType: GROWTH_OPPORTUNITY_ENTITY_TYPE,
+    entityId: oportunidad._id,
+    definitionId: definition._id,
+    definitionKey: definition.key,
+    currentState: known ? oportunidad.status : definition.initialState,
+  });
 }

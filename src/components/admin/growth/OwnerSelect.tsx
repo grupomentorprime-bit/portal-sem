@@ -9,12 +9,16 @@ export function OwnerSelect({
   members,
   disabled,
   showLabel = true,
+  onAssigned,
+  className,
 }: {
   opportunityId: string;
   ownerUserId?: string;
   members: Array<{ userId: string; label: string }>;
   disabled?: boolean;
   showLabel?: boolean;
+  onAssigned?: () => void;
+  className?: string;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +30,7 @@ export function OwnerSelect({
       {showLabel ? <span className="mb-1 block text-muted">Responsable</span> : null}
       <select
         aria-label="Responsable"
-        className="w-full rounded-[var(--radius-md)] border border-[var(--admin-border-subtle)] bg-white px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:bg-[var(--admin-surface-muted)]"
+        className={`w-full rounded-[var(--radius-md)] border border-[var(--admin-border-subtle)] bg-white px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:bg-[var(--admin-surface-muted)] ${className ?? ""}`}
         value={ownerUserId ?? ""}
         disabled={disabled || pending}
         onChange={(event) => {
@@ -48,6 +52,7 @@ export function OwnerSelect({
                 setError(data.error ?? "No se pudo asignar.");
               } else {
                 router.refresh();
+                onAssigned?.();
               }
             } finally {
               setPending(false);

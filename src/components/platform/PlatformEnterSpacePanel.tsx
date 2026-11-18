@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui";
+import { spaceEntryDestination } from "@/lib/identity/space-entry";
 import { SPACE_ACCESS_REQUIRED_MESSAGE } from "@/lib/platform/enter-space-messages";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +39,6 @@ export function PlatformEnterSpacePanel({
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
-        redirectedTo?: string;
       };
 
       if (!res.ok || !data.ok) {
@@ -51,8 +51,11 @@ export function PlatformEnterSpacePanel({
         return;
       }
 
-      // Switch real → backoffice del Espacio (sin bypass ni impersonación).
-      window.location.assign(data.redirectedTo || "/escritorio");
+      const destination = spaceEntryDestination({
+        pathname: window.location.pathname,
+        spaceChanges: true,
+      });
+      if (destination) window.location.assign(destination);
     } catch {
       setError(SPACE_ACCESS_REQUIRED_MESSAGE);
     } finally {

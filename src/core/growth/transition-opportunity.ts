@@ -82,6 +82,7 @@ export async function transitionGrowthOpportunity(
   const updated: GrowthOportunidad = {
     ...existing,
     status: toState,
+    workflowInstanceId: wfResult.instanceId,
     updatedAt: now,
     ...(closedAt ? { closedAt } : {}),
     ...(toState === "handed_off" && input.handoff

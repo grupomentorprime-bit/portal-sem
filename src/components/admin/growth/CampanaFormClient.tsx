@@ -2,12 +2,9 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
 import type { GrowthOpportunityStatus } from "@/core/growth/types";
-import {
-  AlertBanner,
-  StatusBadge,
-  aek,
-} from "@/components/admin/kit";
+import { AlertBanner, aek } from "@/components/admin/kit";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +73,32 @@ const STEPS = [
   CAMPAIGN_STEP_3_TITLE,
   CAMPAIGN_STEP_4_TITLE,
 ] as const;
+
+const STEP_META = [
+  {
+    title: CAMPAIGN_STEP_1_TITLE,
+    short: "Objetivo",
+    hint: "Un nombre claro y un objetivo breve. Las fechas son opcionales.",
+  },
+  {
+    title: CAMPAIGN_STEP_2_TITLE,
+    short: "Origen",
+    hint: "Elige si las personas llegan por un formulario o si solo las acompañarás.",
+  },
+  {
+    title: CAMPAIGN_STEP_3_TITLE,
+    short: "Seguimiento",
+    hint: "Puedes acotar a quién acompañar y conectar una automatización.",
+  },
+  {
+    title: CAMPAIGN_STEP_4_TITLE,
+    short: "Revisión",
+    hint: "Confirma los datos antes de guardar el borrador o activar la campaña.",
+  },
+] as const;
+
+const fieldControl =
+  "h-10 w-full rounded-[12px] border border-[var(--gray-300)] bg-white px-3 text-sm text-foreground outline-none transition-[border-color,box-shadow] duration-[var(--transition-fast)] focus:border-primary focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] disabled:cursor-not-allowed disabled:bg-[var(--gray-50)]";
 
 const CHANNEL_OPTIONS = [
   { value: "whatsapp", label: "WhatsApp" },
@@ -397,47 +420,80 @@ export function CampanaFormClient({
           ? CAMPAIGN_WIZARD_TITLE_CREATE
           : CAMPAIGN_WIZARD_TITLE_EDIT
       }
-      description={STEPS[step]}
+      description={`Paso ${step + 1} de ${STEPS.length}`}
     >
-      <div
-        className="mx-auto w-full max-w-2xl space-y-5"
-        data-campana-wizard
-      >
-        <nav aria-label="Pasos" className="flex flex-col gap-2">
-          <ol className="flex gap-1.5 overflow-x-auto pb-1">
-            {STEPS.map((label, index) => {
+      <div className="w-full max-w-3xl space-y-6" data-campana-wizard>
+        <nav aria-label="Pasos">
+          <ol className="grid grid-cols-4">
+            {STEP_META.map((meta, index) => {
               const active = index === step;
               const done = index < step;
               return (
-                <li key={label} className="min-w-0 flex-1">
+                <li key={meta.title} className="min-w-0">
                   <button
                     type="button"
-                    disabled={pending}
+                    title={meta.title}
+                    aria-current={active ? "step" : undefined}
                     onClick={() => {
-                      if (index < step) {
-                        setError(null);
-                        setStep(index);
-                      }
+                      if (pending || index >= step) return;
+                      setError(null);
+                      setStep(index);
                     }}
                     className={cn(
-                      "w-full rounded-[var(--radius-md)] border px-2 py-2 text-left transition",
-                      active
-                        ? "border-[color-mix(in_srgb,var(--color-primary)_35%,var(--admin-border-subtle))] bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]"
-                        : done
-                          ? "border-[var(--admin-border-subtle)] bg-[var(--admin-surface)]"
-                          : "border-transparent bg-transparent opacity-70"
+                      "flex w-full flex-col items-center gap-2 rounded-[var(--radius-md)] py-1 text-center",
+                      index < step && !pending && "cursor-pointer",
+                      index > step && "cursor-default"
                     )}
+                    tabIndex={index > step ? -1 : 0}
+                    aria-disabled={index > step || pending || undefined}
                   >
-                    <span className={cn(aek.label, "block")}>
-                      Paso {index + 1}
+                    <span className="flex w-full items-center">
+                      <span
+                        className={cn(
+                          "h-0.5 flex-1 rounded-full",
+                          index === 0
+                            ? "bg-transparent"
+                            : done || active
+                              ? "bg-primary"
+                              : "bg-[var(--admin-border-subtle)]"
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                          active &&
+                            "bg-primary text-text-inverse shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
+                          done && "bg-primary text-text-inverse",
+                          !active &&
+                            !done &&
+                            "border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] text-muted"
+                        )}
+                      >
+                        {done ? (
+                          <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
+                      <span
+                        className={cn(
+                          "h-0.5 flex-1 rounded-full",
+                          index === STEP_META.length - 1
+                            ? "bg-transparent"
+                            : index < step
+                              ? "bg-primary"
+                              : "bg-[var(--admin-border-subtle)]"
+                        )}
+                      />
                     </span>
+                    <span className="sr-only">{meta.title}</span>
                     <span
                       className={cn(
-                        "mt-0.5 block truncate text-xs font-medium sm:text-sm",
+                        "px-1 text-xs font-medium leading-tight sm:text-sm",
                         active ? "text-foreground" : "text-muted"
                       )}
                     >
-                      {label}
+                      {meta.short}
                     </span>
                   </button>
                 </li>
@@ -452,51 +508,60 @@ export function CampanaFormClient({
           </AlertBanner>
         ) : null}
 
-        <div className={cn(aek.surface, "space-y-5 p-4 sm:p-5")}>
+        <div className={cn(aek.surface, "space-y-6 p-5 sm:p-6")}>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              {STEP_META[step].title}
+            </h2>
+            <p className="mt-1 text-sm text-muted">{STEP_META[step].hint}</p>
+          </div>
+
           {step === 0 ? (
-            <div className="space-y-4">
-              <h2 className="text-base font-semibold tracking-tight">
-                {CAMPAIGN_STEP_1_TITLE}
-              </h2>
-              <div className="space-y-2">
-                <Label htmlFor="campaign-name">Nombre de la campaña</Label>
-                <Input
-                  id="campaign-name"
-                  value={name}
-                  disabled={!canManage || pending}
-                  placeholder="Ej. Matrículas 2027"
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="campaign-objective">Objetivo</Label>
+            <div className="space-y-5">
+              <Input
+                id="campaign-name"
+                label="Nombre de la campaña"
+                helper="Así aparecerá en el listado."
+                value={name}
+                disabled={!canManage || pending}
+                placeholder="Ej. Matrículas 2027"
+                onChange={(e) => setName(e.target.value)}
+              />
+              <div className="space-y-1.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <Label htmlFor="campaign-objective">Objetivo</Label>
+                  <span className="text-xs tabular-nums text-muted">
+                    {objective.length}/200
+                  </span>
+                </div>
                 <Textarea
                   id="campaign-objective"
                   value={objective}
                   disabled={!canManage || pending}
                   maxLength={200}
+                  rows={4}
                   placeholder="Qué quieres lograr con esta campaña"
                   onChange={(e) => setObjective(e.target.value)}
+                  className="min-h-[7.5rem] resize-y"
                 />
-                <p className="text-xs text-muted">
-                  {objective.length}/200
-                </p>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="campaign-start">Inicio (opcional)</Label>
+              <div className="rounded-[var(--radius-lg)] border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-muted)] p-4">
+                <p className="text-sm font-semibold text-foreground">Vigencia</p>
+                <p className="mt-0.5 text-xs text-muted">
+                  Opcional. Sin fechas, la campaña queda abierta.
+                </p>
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
                   <Input
                     id="campaign-start"
+                    label="Inicio"
                     type="datetime-local"
                     value={startAt}
                     disabled={!canManage || pending}
                     onChange={(e) => setStartAt(e.target.value)}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="campaign-end">Fin (opcional)</Label>
                   <Input
                     id="campaign-end"
+                    label="Fin"
                     type="datetime-local"
                     value={endAt}
                     disabled={!canManage || pending}
@@ -509,9 +574,6 @@ export function CampanaFormClient({
 
           {step === 1 ? (
             <div className="space-y-4">
-              <h2 className="text-base font-semibold tracking-tight">
-                {CAMPAIGN_STEP_2_TITLE}
-              </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 <SourceChoice
                   selected={sourceKind === "form"}
@@ -536,7 +598,7 @@ export function CampanaFormClient({
                   ) : (
                     <select
                       id="campaign-form"
-                      className="w-full rounded-md border border-[var(--admin-border-subtle)] bg-background px-3 py-2 text-sm"
+                      className={fieldControl}
                       value={formId}
                       disabled={!canManage || pending}
                       onChange={(e) => setFormId(e.target.value)}
@@ -560,9 +622,6 @@ export function CampanaFormClient({
 
           {step === 2 ? (
             <div className="space-y-4">
-              <h2 className="text-base font-semibold tracking-tight">
-                {CAMPAIGN_STEP_3_TITLE}
-              </h2>
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-medium text-foreground">
@@ -584,7 +643,7 @@ export function CampanaFormClient({
                   </Button>
                 </div>
                 {audienceRows.length === 0 ? (
-                  <p className="text-sm text-muted">
+                  <p className="rounded-[var(--radius-md)] border border-dashed border-[var(--admin-border-subtle)] px-4 py-3 text-sm text-muted">
                     Sin filtros. Se acompañará según la fuente de la campaña.
                   </p>
                 ) : (
@@ -625,7 +684,7 @@ export function CampanaFormClient({
                 ) : (
                   <select
                     id="campaign-auto"
-                    className="w-full rounded-md border border-[var(--admin-border-subtle)] bg-background px-3 py-2 text-sm"
+                    className={fieldControl}
                     value={automationId}
                     disabled={!canManage || pending}
                     onChange={(e) => setAutomationId(e.target.value)}
@@ -643,10 +702,7 @@ export function CampanaFormClient({
           ) : null}
 
           {step === 3 ? (
-            <div className="space-y-5">
-              <h2 className="text-base font-semibold tracking-tight">
-                {CAMPAIGN_STEP_4_TITLE}
-              </h2>
+            <div className="space-y-3">
               <ReviewBlock title="Qué quieres lograr">
                 <p className="font-medium text-foreground">{name.trim()}</p>
                 <p className="mt-1 text-sm text-muted">{objective.trim()}</p>
@@ -695,7 +751,7 @@ export function CampanaFormClient({
             </div>
           ) : null}
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--admin-border-subtle)] pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--admin-border-subtle)] pt-5">
             <div>
               {step > 0 ? (
                 <Button
@@ -771,21 +827,28 @@ function SourceChoice({
     <button
       type="button"
       disabled={disabled}
+      aria-pressed={selected}
       onClick={onSelect}
       className={cn(
-        "rounded-[var(--radius-lg)] border px-4 py-3 text-left transition",
+        "flex items-start gap-3 rounded-[var(--radius-lg)] border px-4 py-4 text-left transition",
         selected
-          ? "border-[color-mix(in_srgb,var(--color-primary)_40%,var(--admin-border-subtle))] bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]"
-          : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] hover:border-[color-mix(in_srgb,var(--color-primary)_20%,var(--admin-border-subtle))]"
+          ? "border-primary bg-[color-mix(in_srgb,var(--color-primary)_8%,white)]"
+          : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] hover:border-[color-mix(in_srgb,var(--color-primary)_35%,var(--admin-border-subtle))]"
       )}
     >
-      <div className="flex items-center justify-between gap-2">
+      <span
+        className={cn(
+          "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+          selected ? "border-primary" : "border-[var(--gray-300)]"
+        )}
+        aria-hidden
+      >
+        {selected ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
+      </span>
+      <span className="min-w-0">
         <p className="text-sm font-semibold text-foreground">{title}</p>
-        {selected ? (
-          <StatusBadge tone="active" label="Elegido" />
-        ) : null}
-      </div>
-      <p className="mt-1 text-sm text-muted">{description}</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted">{description}</p>
+      </span>
     </button>
   );
 }
@@ -798,9 +861,9 @@ function ReviewBlock({
   children: ReactNode;
 }) {
   return (
-    <section>
+    <section className="rounded-[var(--radius-md)] bg-[var(--admin-surface-muted)] px-4 py-3">
       <h3 className={aek.label}>{title}</h3>
-      <div className="mt-1.5">{children}</div>
+      <div className="mt-2">{children}</div>
     </section>
   );
 }
@@ -823,7 +886,7 @@ function AudienceRowEditor({
       <div className="min-w-0 flex-1 space-y-2">
         <Label>Condición</Label>
         <select
-          className="w-full rounded-md border border-[var(--admin-border-subtle)] bg-background px-3 py-2 text-sm"
+          className={fieldControl}
           value={row.kind}
           disabled={disabled}
           onChange={(e) =>
@@ -847,7 +910,7 @@ function AudienceRowEditor({
         <div className="min-w-0 flex-1 space-y-2">
           <Label>Estado</Label>
           <select
-            className="w-full rounded-md border border-[var(--admin-border-subtle)] bg-background px-3 py-2 text-sm"
+            className={fieldControl}
             value={row.value}
             disabled={disabled}
             onChange={(e) => onChange({ ...row, value: e.target.value })}
@@ -866,7 +929,7 @@ function AudienceRowEditor({
         <div className="min-w-0 flex-1 space-y-2">
           <Label>Tipo</Label>
           <select
-            className="w-full rounded-md border border-[var(--admin-border-subtle)] bg-background px-3 py-2 text-sm"
+            className={fieldControl}
             value={row.value}
             disabled={disabled}
             onChange={(e) => onChange({ ...row, value: e.target.value })}
@@ -885,7 +948,7 @@ function AudienceRowEditor({
         <div className="min-w-0 flex-1 space-y-2">
           <Label>Canal</Label>
           <select
-            className="w-full rounded-md border border-[var(--admin-border-subtle)] bg-background px-3 py-2 text-sm"
+            className={fieldControl}
             value={row.value}
             disabled={disabled}
             onChange={(e) => onChange({ ...row, value: e.target.value })}
@@ -907,7 +970,7 @@ function AudienceRowEditor({
             <p className="text-sm text-muted">{CAMPAIGN_FORMS_EMPTY}</p>
           ) : (
             <select
-              className="w-full rounded-md border border-[var(--admin-border-subtle)] bg-background px-3 py-2 text-sm"
+              className={fieldControl}
               value={row.value}
               disabled={disabled}
               onChange={(e) => onChange({ ...row, value: e.target.value })}

@@ -16,10 +16,9 @@ import {
   Users,
 } from "lucide-react";
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
+import { spaceEntryDestination } from "@/lib/identity/space-entry";
 import { cn } from "@/lib/utils";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
-import { spaceSwitchLanding, syncEnteredClientCookie } from "@/lib/desktop/catalog";
-import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 
 export interface AdminSpaceSummary {
   tenantId: string;
@@ -69,11 +68,20 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
   }
 
   async function switchSpace(tenantId: string) {
-    if (!tenantId || tenantId === user?.activeTenantId) {
+    if (!tenantId) {
       setOpen(false);
       return;
     }
     setOpen(false);
+    const spaceChanges = tenantId !== user?.activeTenantId;
+    const destination = spaceEntryDestination({
+      pathname: window.location.pathname,
+      spaceChanges,
+    });
+    if (!spaceChanges) {
+      if (destination) window.location.assign(destination);
+      return;
+    }
     const res = await fetch("/api/identity/spaces/switch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -81,10 +89,7 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
     });
     const data = await res.json().catch(() => ({ ok: false }));
     if (!data.ok) return;
-    // Si vino desde la mesa de un cliente, la cookie sigue al Espacio nuevo.
-    syncEnteredClientCookie(tenantId);
-    // Contrato UX: al cambiar de Espacio, volver a Inicio.
-    window.location.assign(spaceSwitchLanding(window.location.pathname));
+    if (destination) window.location.assign(destination);
   }
 
   if (!user) {
@@ -96,7 +101,6 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
   }
 
   const label = user.displayName || user.email;
-  const shortLabel = firstNameFromDisplayName(label) || label;
   const subtitle = user.roleLabel ?? "Colaborador";
   const institution = user.institutionName;
 
@@ -113,12 +117,11 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
         )}
         aria-expanded={open}
         aria-haspopup="menu"
-        title={label}
       >
         <AdminUserAvatar name={label} size="sm" />
         <span className="hidden min-w-0 text-left sm:block">
           <span className="block max-w-[9rem] truncate text-sm font-semibold text-foreground">
-            {shortLabel}
+            {label}
           </span>
           <span className="block max-w-[9rem] truncate text-xs text-muted">{subtitle}</span>
         </span>

@@ -1,9 +1,6 @@
 import { VentasListClient } from "@/components/admin/growth/VentasListClient";
 import { can } from "@/core/identity/policies/engine";
-import { readCommercialPanel } from "@/lib/growth/commercial-read";
-import { growthVentasPageCopy } from "@/lib/growth/labels";
 import { readGrowthVentasBoard } from "@/lib/growth/ventas-read";
-import { parseGrowthVentasVista } from "@/lib/growth/ventas-vista";
 import { listGrowthSpaceMembers } from "@/lib/growth/space-members";
 import { ensureCumpleGrowthAssessmentPort } from "@/sites/cumple/growth-assessment";
 import { loadSessionContext } from "@/lib/identity/sessions";
@@ -65,12 +62,13 @@ export default async function AdminVentasPage({ searchParams }: PageProps) {
   const funnel = params.funnel?.trim() ?? "";
   const band = params.banda?.trim() ?? "";
   const mine = params.mias === "1" || params.mias === "true";
-  const vista = parseGrowthVentasVista(params.vista);
+  const rawVista = params.vista?.trim() ?? "";
+  const vista =
+    rawVista === "lista" ? "lista" : rawVista === "kanban" ? "kanban" : "cola";
   const userId = session.user._id;
-  const canViewSpace = can(authCtx, "growth.sales.view");
   ensureCumpleGrowthAssessmentPort();
 
-  const [board, panel] = await Promise.all([
+  const [board, members] = await Promise.all([
     readGrowthVentasBoard(tenantId, {
       q: q || undefined,
       status: status || undefined,
@@ -81,14 +79,11 @@ export default async function AdminVentasPage({ searchParams }: PageProps) {
       mine,
       userId,
     }),
-    readCommercialPanel(tenantId, userId, canViewSpace),
+    listGrowthSpaceMembers(tenantId),
   ]);
-  const members = await listGrowthSpaceMembers(tenantId);
-  const copy = growthVentasPageCopy(tenantId);
 
   return (
     <VentasListClient
-      copy={copy}
       items={board.items}
       funnels={board.funnels}
       lanes={board.lanes}
@@ -101,12 +96,7 @@ export default async function AdminVentasPage({ searchParams }: PageProps) {
       band={band}
       mine={mine}
       vista={vista}
-      attention={{
-        overdue: panel.overdue,
-        unfollowed: panel.unfollowed,
-        stale: panel.stale,
-        unassigned: panel.scope === "space" ? panel.unassigned : null,
-      }}
+      attention={board.attention}
       canOperate={can(authCtx, "growth.sales.operate")}
       members={members}
     />

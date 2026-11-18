@@ -32,10 +32,8 @@ describe("OT-GROWTH-SALES-001A — copy y proyección humana", () => {
     assert.equal(GROWTH_VENTAS_SAVE_NOTE_LABEL, "Guardar nota");
     assert.equal(GROWTH_VENTAS_REGISTER_CONTACT_LABEL, "Registrar contacto");
     assert.equal(GROWTH_TIMELINE_SECTION_LABEL, "Qué ha pasado");
-    assert.match(
-      GROWTH_VENTAS_FOLLOW_UP_PLACEHOLDER,
-      /Conversé con María/
-    );
+    assert.match(GROWTH_VENTAS_FOLLOW_UP_PLACEHOLDER, /Qué ocurrió/);
+    assert.doesNotMatch(GROWTH_VENTAS_FOLLOW_UP_PLACEHOLDER, /María|ejemplo/i);
   });
 
   it("origen portal-admision se humaniza en presentación", () => {
