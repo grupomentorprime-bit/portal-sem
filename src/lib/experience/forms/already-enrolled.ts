@@ -3,6 +3,10 @@ import { normalizeChileRut } from "@/lib/experience/forms/rut-chile";
 /** Confirmación de asistencia del 3.° Congreso de Varones. */
 export const CONGRESS_VARONES_FORM_ID = "ipn-asistencia-congreso-varones-2026";
 
+/** Tríptico público: descarga en pantalla y adjunto del correo. */
+export const CONGRESS_VARONES_PROGRAM_PATH = "/documentos/Triptico-Congreso-Varones-2026.pdf";
+export const CONGRESS_VARONES_PROGRAM_LABEL = "Descargar el tríptico";
+
 export type EnrolleeMatch = "rut" | "email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -21,10 +25,11 @@ export function enrolleeIdentity(data: Record<string, unknown>): EnrolleeIdentit
 }
 
 export function alreadyEnrolledMessage(match: EnrolleeMatch): string {
+  const download = "Descarga el tríptico en esta misma pantalla.";
   if (match === "email") {
-    return "Ya estás inscrito en el 3° Congreso de Varones. Este correo ya tiene una inscripción y no necesitas enviar el formulario otra vez.";
+    return `Ya estás inscrito en el 3° Congreso de Varones. Este correo ya tiene una inscripción y no necesitas enviar el formulario otra vez. ${download}`;
   }
-  return "Ya estás inscrito en el 3° Congreso de Varones. Este RUT ya tiene una inscripción y no necesitas enviar el formulario otra vez.";
+  return `Ya estás inscrito en el 3° Congreso de Varones. Este RUT ya tiene una inscripción y no necesitas enviar el formulario otra vez. ${download}`;
 }
 
 export function missingFieldMessage(label: string): string {
