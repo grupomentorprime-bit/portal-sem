@@ -156,6 +156,18 @@ export const PORTAL_TENANT_ROLES: RoleTemplate[] = [
     system: true,
   },
   {
+    code: ROLE_CODES.CONGRESS_OPERATOR,
+    name: "Congress Operator",
+    description: "Operador del Congreso Nacional de Varones — sin AE ni Growth",
+    permissionIds: [
+      "congress.view",
+      "congress.operate",
+      "congress.payments",
+      "congress.import",
+    ],
+    system: true,
+  },
+  {
     code: ROLE_CODES.COMMUNICATIONS,
     name: "Communications",
     description: "Comunicaciones y contenido editorial",

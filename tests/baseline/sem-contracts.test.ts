@@ -47,18 +47,19 @@ describe("OT-GROWTH-TEST-001 — contratos SEM a preservar", () => {
     }
   });
 
-  it("roles portal SEM: 8 códigos estables", () => {
+  it("roles portal SEM: 9 códigos estables", () => {
     assert.deepEqual(PORTAL_ROLE_CODES, [
       ROLE_CODES.SUPER_ADMIN,
       ROLE_CODES.INSTITUTION_ADMIN,
       ROLE_CODES.SUPPORT,
       ROLE_CODES.ADMISSIONS,
       ROLE_CODES.STUDENT_AFFAIRS,
+      ROLE_CODES.CONGRESS_OPERATOR,
       ROLE_CODES.COMMUNICATIONS,
       ROLE_CODES.REVIEWER,
       ROLE_CODES.GUEST,
     ]);
-    assert.equal(getTenantRolesForSync("portal").length, 8);
+    assert.equal(getTenantRolesForSync("portal").length, 9);
     assert.equal(resolveRoleCode("Tenant Owner"), ROLE_CODES.SUPER_ADMIN);
   });
 
