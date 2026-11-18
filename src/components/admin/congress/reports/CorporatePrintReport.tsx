@@ -68,13 +68,13 @@ export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
   const breakZones = report.kind === "roster" || report.kind === "church-leaders";
 
   return (
-    <article className="congress-print-report bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200">
+    <article className="congress-print-report bg-white text-gray-900 shadow-sm ring-1 ring-gray-200">
       <style>{`
-        .congress-print-report { color: #18181b; background: #fff; }
+        .congress-print-report { color: var(--gray-900); background: #fff; }
         .congress-print-report table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .congress-print-report th,
-        .congress-print-report td { border: 1px solid #e4e4e7; padding: 5px 7px; vertical-align: top; text-align: left; }
-        .congress-print-report th { background: #f4f4f5; font-weight: 650; }
+        .congress-print-report td { border: 1px solid var(--gray-200); padding: 5px 7px; vertical-align: top; text-align: left; }
+        .congress-print-report th { background: var(--gray-50); font-weight: 650; }
         .congress-print-report .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .congress-print-report h2, .congress-print-report h3 { break-after: avoid; page-break-after: avoid; }
         .congress-print-report tr, .congress-print-report .ops-church { break-inside: avoid; page-break-inside: avoid; }
@@ -84,7 +84,7 @@ export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
           .congress-print-report, .congress-print-report * { visibility: visible; }
           .congress-print-report {
             position: absolute; left: 0; top: 0; width: 100%;
-            color: #18181b; background: #fff; box-shadow: none;
+            color: var(--gray-900); background: #fff; box-shadow: none;
           }
           .congress-print-no-print { display: none !important; }
           .ops-zone-break { break-before: page; page-break-before: always; }
@@ -93,7 +93,7 @@ export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
         }
       `}</style>
 
-      <div className="congress-print-no-print flex flex-wrap items-center gap-2 border-b border-zinc-200 px-6 py-4">
+      <div className="congress-print-no-print flex flex-wrap items-center gap-2 border-b border-gray-200 px-6 py-4">
         <Button type="button" size="sm" variant="outline" onClick={onBack}>
           Volver
         </Button>
@@ -105,26 +105,26 @@ export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
         </Button>
       </div>
 
-      <header className="border-b-2 border-violet-800 px-6 py-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-800">
+      <header className="border-b-2 border-primary px-6 py-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
           IPN Chile · Iglesia Pentecostal Nazareth
         </p>
         <h1 className="mt-1 text-xl font-semibold tracking-tight">
           3.° Congreso de Varones 2026
         </h1>
-        <p className="text-sm text-zinc-600">Quilicura · 21 y 22 de noviembre</p>
+        <p className="text-sm text-gray-600">Quilicura · 21 y 22 de noviembre</p>
         <div className="mt-2">
           <ReportVendorCredit />
         </div>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
               {meta.code}
             </p>
             <h2 className="text-lg font-semibold">{meta.title}</h2>
-            <p className="mt-1 max-w-2xl text-sm text-zinc-600">{meta.lead}</p>
+            <p className="mt-1 max-w-2xl text-sm text-gray-600">{meta.lead}</p>
           </div>
-          <p className="text-xs text-zinc-500">Emitido: {generated}</p>
+          <p className="text-xs text-gray-500">Emitido: {generated}</p>
         </div>
       </header>
 
@@ -149,7 +149,7 @@ export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
         ) : null}
       </div>
 
-      <footer className="space-y-1 border-t border-zinc-200 px-6 py-3 text-[11px] text-zinc-500">
+      <footer className="space-y-1 border-t border-gray-200 px-6 py-3 text-[11px] text-gray-500">
         <p>{meta.code} · {meta.title} · datos vigentes al momento de emisión · {generated}</p>
         <ReportVendorCredit repeatOnPrint />
       </footer>
@@ -159,10 +159,10 @@ export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
 
 function Kpis({ items }: { items: Array<{ label: string; value: string }> }) {
   return (
-    <dl className="grid grid-cols-2 gap-px overflow-hidden border border-zinc-200 bg-zinc-200 sm:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-px overflow-hidden border border-gray-200 bg-gray-200 sm:grid-cols-4">
       {items.map((item) => (
         <div key={item.label} className="bg-white px-3 py-2">
-          <dt className="text-[11px] uppercase tracking-wide text-zinc-500">{item.label}</dt>
+          <dt className="text-[11px] uppercase tracking-wide text-gray-500">{item.label}</dt>
           <dd className="mt-0.5 text-sm font-semibold tabular-nums">{item.value}</dd>
         </div>
       ))}
@@ -185,7 +185,7 @@ function FinanceBody({ report }: { report: Extract<OpsReport, { kind: "finance" 
           },
         ]}
       />
-      <p className="text-xs text-zinc-600">
+      <p className="text-xs text-gray-600">
         Pagados {close.countsByStatus.paid} · Abonos {close.countsByStatus.partial} · Pendientes{" "}
         {close.countsByStatus.pending} · Por verificar {close.countsByStatus.needs_verification} ·
         Sin cargo {close.countsByStatus.no_charge}
@@ -505,7 +505,7 @@ function ZoneLeadersBody({ report }: { report: Extract<OpsReport, { kind: "zone-
         return (
           <section key={zone.zoneId} className="ops-zone">
             <h2 className="text-base font-semibold">{zone.zoneLabel}</h2>
-            <p className="mb-2 text-sm text-zinc-700">
+            <p className="mb-2 text-sm text-gray-700">
               Jefe zonal: {chief?.name ?? "Sin jefe zonal"}
               {chief ? ` · ${chief.phone} · ${chief.churchLabel}` : ""}
               {zone.zoneLeaders.length > 1
@@ -624,12 +624,12 @@ function ZoneHeading({
     <div className="mb-2">
       <h2 className="text-base font-semibold">
         {zone.zoneLabel}
-        <span className="ml-2 text-sm font-normal text-zinc-600">
+        <span className="ml-2 text-sm font-normal text-gray-600">
           {zone.memberCount} {zone.memberCount === 1 ? "hermano" : "hermanos"}
           {extra ? ` · ${extra}` : ""}
         </span>
       </h2>
-      {showChief ? <p className="text-sm text-zinc-600">Jefe zonal: {chief}</p> : null}
+      {showChief ? <p className="text-sm text-gray-600">Jefe zonal: {chief}</p> : null}
     </div>
   );
 }
@@ -638,7 +638,7 @@ function ChurchHeading({ church }: { church: ChurchBlock }) {
   return (
     <h3 className="mb-1 text-sm font-semibold">
       {church.label}
-      <span className="ml-2 font-normal text-zinc-600">
+      <span className="ml-2 font-normal text-gray-600">
         Líder: {leaderNames(church.leaders)}
         {church.leaders[0] ? ` · ${church.leaders[0].phone}` : ""} · {church.memberCount}{" "}
         {church.memberCount === 1 ? "hermano" : "hermanos"}
@@ -718,5 +718,5 @@ function formatDay(value: string): string {
 }
 
 function Empty({ children }: { children: string }) {
-  return <p className="text-sm text-zinc-500">{children}</p>;
+  return <p className="text-sm text-gray-500">{children}</p>;
 }

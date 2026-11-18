@@ -26,7 +26,7 @@ export function ReportVendorCredit({ repeatOnPrint = false }: ReportVendorCredit
               right: 12mm;
               z-index: 2;
               background: #fff;
-              color: #3f3f46;
+              color: var(--gray-700);
               text-align: center;
               font-size: 9px;
               line-height: 1.3;
@@ -34,12 +34,12 @@ export function ReportVendorCredit({ repeatOnPrint = false }: ReportVendorCredit
           }
         `}</style>
       ) : null}
-      <p className="report-vendor-credit text-[11px] text-zinc-600">
+      <p className="report-vendor-credit text-[11px] text-gray-600">
         <a
           href={VENDOR_CREDIT_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-medium text-zinc-800 underline-offset-2 hover:underline"
+          className="font-medium text-gray-800 underline-offset-2 hover:underline"
         >
           {VENDOR_CREDIT_LABEL}
         </a>

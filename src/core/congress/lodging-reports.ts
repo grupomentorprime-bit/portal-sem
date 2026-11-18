@@ -4,7 +4,9 @@ import {
   buildLodgingHomesReport,
   isActiveLodgingAssignment,
   labelLodgingNights,
+  lodgingHomeNumberById,
   type LodgingHomesReport,
+  type LodgingHomesReportGuest,
 } from "@/core/congress/lodging-homes-report";
 import {
   isLodgingPending,
@@ -17,7 +19,7 @@ import type {
   CongressRegistration,
 } from "@/core/congress/types";
 
-export type LodgingReportKind = "homes" | "capacity" | "pending";
+export type LodgingReportKind = "briefing" | "homes" | "capacity" | "pending";
 
 export type LodgingReportInput = {
   homes: CongressLodgingHome[];
@@ -30,6 +32,7 @@ export type LodgingHomesCatalogReport = LodgingHomesReport & { kind: "homes" };
 
 export type LodgingCapacityHome = {
   homeId: string;
+  homeNumber: number;
   name: string;
   hostName: string;
   hostPhone: string;
@@ -71,7 +74,41 @@ export type LodgingPendingReport = {
   people: LodgingPendingPerson[];
 };
 
+export type LodgingBriefingHome = {
+  homeId: string;
+  homeNumber: number;
+  name: string;
+  hostPhone: string;
+  address: string | null;
+  notes: string | null;
+  fridayCapacity: number;
+  fridayUsed: number;
+  fridayFree: number;
+  saturdayCapacity: number;
+  saturdayUsed: number;
+  saturdayFree: number;
+  guestCount: number;
+  guests: LodgingHomesReportGuest[];
+};
+
+export type LodgingBriefingReport = {
+  kind: "briefing";
+  generatedAtIso: string;
+  homeCount: number;
+  guestCount: number;
+  fridayCapacity: number;
+  fridayUsed: number;
+  fridayFree: number;
+  saturdayCapacity: number;
+  saturdayUsed: number;
+  saturdayFree: number;
+  pendingCount: number;
+  homes: LodgingBriefingHome[];
+  pending: LodgingPendingPerson[];
+};
+
 export type LodgingCatalogReport =
+  | LodgingBriefingReport
   | LodgingHomesCatalogReport
   | LodgingCapacityReport
   | LodgingPendingReport;
@@ -104,8 +141,9 @@ function usedOn(homeId: string, night: CongressNight, assignments: CongressLodgi
 }
 
 export function buildLodgingCapacityReport(input: LodgingReportInput): LodgingCapacityReport {
+  const numbers = lodgingHomeNumberById(input.homes);
   const homes = [...input.homes]
-    .sort((a, b) => a.name.localeCompare(b.name, "es"))
+    .sort((a, b) => (numbers.get(a._id) ?? 0) - (numbers.get(b._id) ?? 0))
     .map((home) => {
       const host = hostContact(home);
       const fridayCapacity = home.capacityByNight[FRIDAY] ?? 0;
@@ -114,6 +152,7 @@ export function buildLodgingCapacityReport(input: LodgingReportInput): LodgingCa
       const saturdayUsed = usedOn(home._id, SATURDAY, input.assignments);
       return {
         homeId: home._id,
+        homeNumber: numbers.get(home._id) ?? 0,
         name: home.name,
         hostName: host.hostName,
         hostPhone: host.hostPhone,
@@ -147,7 +186,8 @@ export function buildLodgingCapacityReport(input: LodgingReportInput): LodgingCa
 function placementDetail(
   registrationId: string,
   homes: CongressLodgingHome[],
-  assignments: CongressLodgingAssignment[]
+  assignments: CongressLodgingAssignment[],
+  numbers: Map<string, number>
 ): string {
   const homeById = new Map(homes.map((home) => [home._id, home]));
   const byHome = new Map<string, Set<CongressNight>>();
@@ -166,23 +206,29 @@ function placementDetail(
   const parts = [...byHome.entries()].map(([homeId, nights]) => {
     const home = homeById.get(homeId);
     const name = home?.name?.trim() || "Hogar no encontrado";
+    const number = numbers.get(homeId);
     const ordered = CONGRESS_NIGHTS.filter((night) => nights.has(night));
-    return `${name} · ${labelLodgingNights(ordered)}`;
+    const where = number ? `Hogar N° ${number} · ${name}` : name;
+    return {
+      homeNumber: number ?? 999,
+      label: `${where} · ${labelLodgingNights(ordered)}`,
+    };
   });
-  parts.sort((a, b) => a.localeCompare(b, "es"));
-  return `Asignado, falta confirmar · ${parts.join("; ")}`;
+  parts.sort((a, b) => a.homeNumber - b.homeNumber || a.label.localeCompare(b.label, "es"));
+  return `Asignado, falta confirmar · ${parts.map((part) => part.label).join("; ")}`;
 }
 
 function pendingCopy(
   reason: LodgingPendingReason | undefined,
   registrationId: string,
   homes: CongressLodgingHome[],
-  assignments: CongressLodgingAssignment[]
+  assignments: CongressLodgingAssignment[],
+  numbers: Map<string, number>
 ): { statusLabel: string; detail: string } {
   if (reason === "unconfirmed") {
     return {
       statusLabel: "Asignado",
-      detail: placementDetail(registrationId, homes, assignments),
+      detail: placementDetail(registrationId, homes, assignments, numbers),
     };
   }
   if (reason === "unassigned") {
@@ -192,6 +238,7 @@ function pendingCopy(
 }
 
 export function buildLodgingPendingReport(input: LodgingReportInput): LodgingPendingReport {
+  const numbers = lodgingHomeNumberById(input.homes);
   const people: LodgingPendingPerson[] = [];
   for (const registration of input.registrations) {
     const active = input.assignments.find(
@@ -203,7 +250,13 @@ export function buildLodgingPendingReport(input: LodgingReportInput): LodgingPen
       assignment: active ?? null,
     });
     if (!isLodgingPending(state)) continue;
-    const copy = pendingCopy(state.pendingReason, registration._id, input.homes, input.assignments);
+    const copy = pendingCopy(
+      state.pendingReason,
+      registration._id,
+      input.homes,
+      input.assignments,
+      numbers
+    );
     people.push({
       registrationId: registration._id,
       fullName: displayBrotherName(registration.identity.fullName),
@@ -225,10 +278,62 @@ export function buildLodgingPendingReport(input: LodgingReportInput): LodgingPen
   return { kind: "pending", generatedAtIso: input.generatedAtIso, people };
 }
 
+export function buildLodgingBriefingReport(input: LodgingReportInput): LodgingBriefingReport {
+  const numbers = lodgingHomeNumberById(input.homes);
+  const occupied = new Map(buildLodgingHomesReport(input).homes.map((home) => [home.homeId, home]));
+  const pending = buildLodgingPendingReport(input);
+  const homes: LodgingBriefingHome[] = [...input.homes]
+    .sort((a, b) => (numbers.get(a._id) ?? 0) - (numbers.get(b._id) ?? 0))
+    .map((home) => {
+      const detail = occupied.get(home._id);
+      const host = hostContact(home);
+      const fridayCapacity = home.capacityByNight[FRIDAY] ?? 0;
+      const saturdayCapacity = home.capacityByNight[SATURDAY] ?? 0;
+      const fridayUsed = usedOn(home._id, FRIDAY, input.assignments);
+      const saturdayUsed = usedOn(home._id, SATURDAY, input.assignments);
+      return {
+        homeId: home._id,
+        homeNumber: numbers.get(home._id) ?? 0,
+        name: home.name,
+        hostPhone: host.hostPhone,
+        address: home.address?.trim() ? home.address.trim() : null,
+        notes: home.notes?.trim() ? home.notes.trim() : null,
+        fridayCapacity,
+        fridayUsed,
+        fridayFree: fridayCapacity - fridayUsed,
+        saturdayCapacity,
+        saturdayUsed,
+        saturdayFree: saturdayCapacity - saturdayUsed,
+        guestCount: detail?.guestCount ?? 0,
+        guests: detail?.guests ?? [],
+      };
+    });
+
+  const sum = (pick: (row: LodgingBriefingHome) => number) =>
+    homes.reduce((total, row) => total + pick(row), 0);
+
+  return {
+    kind: "briefing",
+    generatedAtIso: input.generatedAtIso,
+    homeCount: homes.length,
+    guestCount: sum((row) => row.guestCount),
+    fridayCapacity: sum((row) => row.fridayCapacity),
+    fridayUsed: sum((row) => row.fridayUsed),
+    fridayFree: sum((row) => row.fridayFree),
+    saturdayCapacity: sum((row) => row.saturdayCapacity),
+    saturdayUsed: sum((row) => row.saturdayUsed),
+    saturdayFree: sum((row) => row.saturdayFree),
+    pendingCount: pending.people.length,
+    homes,
+    pending: pending.people,
+  };
+}
+
 export function buildLodgingCatalogReport(
   kind: LodgingReportKind,
   input: LodgingReportInput
 ): LodgingCatalogReport {
+  if (kind === "briefing") return buildLodgingBriefingReport(input);
   if (kind === "homes") {
     return { kind: "homes", ...buildLodgingHomesReport(input) };
   }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildLodgingBriefingReport,
   buildLodgingCapacityReport,
   buildLodgingPendingReport,
 } from "../../src/core/congress/lodging-reports";
@@ -118,12 +119,14 @@ describe("buildLodgingCapacityReport", () => {
 
     assert.equal(report.homeCount, 2);
     assert.equal(report.homes[0]?.name, "Casa Alfa");
+    assert.equal(report.homes[0]?.homeNumber, 1);
     assert.equal(report.homes[0]?.address, "Calle 1");
     assert.equal(report.homes[0]?.fridayUsed, 2);
     assert.equal(report.homes[0]?.fridayFree, 0);
     assert.equal(report.homes[0]?.saturdayUsed, 0);
     assert.equal(report.homes[0]?.saturdayFree, 3);
     assert.equal(report.homes[1]?.name, "Casa Beta");
+    assert.equal(report.homes[1]?.homeNumber, 2);
     assert.equal(report.homes[1]?.hostPhone, "987654321");
     assert.equal(report.homes[1]?.saturdayUsed, 0);
     assert.equal(report.fridayCapacity, 3);
@@ -187,8 +190,65 @@ describe("buildLodgingPendingReport", () => {
     assert.equal(byName.get("Hno Pedro Solicita")?.statusLabel, "Sin asignar");
     assert.equal(byName.get("Hno Pedro Solicita")?.detail, "Pidió cama y aún no tiene hogar");
     assert.equal(byName.get("Hno Ana Duda")?.statusLabel, "Por confirmar");
-    assert.equal(byName.get("Hno Luis Asignado")?.detail, "Asignado, falta confirmar · Casa Alfa · Sábado 21");
+    assert.equal(
+      byName.get("Hno Luis Asignado")?.detail,
+      "Asignado, falta confirmar · Hogar N° 1 · Casa Alfa · Sábado 21"
+    );
     assert.equal(byName.get("Hno Cancelado")?.statusLabel, "Sin asignar");
     assert.equal(byName.get("Hno Zoe")?.churchZoneLabel, "IPN NORTE · Zona 10");
+  });
+});
+
+describe("buildLodgingBriefingReport", () => {
+  it("numera todos los hogares por nombre y conserva ese número aunque uno esté vacío", () => {
+    const report = buildLodgingBriefingReport({
+      homes: [
+        home({ _id: "h-z", name: "Casa Zeta", contactPhone: "111", address: "Sur 9" }),
+        home({ _id: "h-m", name: "Casa Media", notes: "Sin llave" }),
+        home({
+          _id: "h-a",
+          name: "Casa Alfa",
+          contactPhone: "999",
+          capacityByNight: { "2026-11-20": 2, "2026-11-21": 2 },
+        }),
+      ],
+      assignments: [
+        asg({
+          _id: "a1",
+          homeId: "h-a",
+          registrationId: "r1",
+          night: "2026-11-20",
+          status: "confirmed",
+        }),
+        asg({
+          _id: "a2",
+          homeId: "h-z",
+          registrationId: "r2",
+          night: "2026-11-21",
+          status: "confirmed",
+        }),
+      ],
+      registrations: [
+        reg({ _id: "r1", fullName: "Ana Pérez", lodgingNeed: "requested" }),
+        reg({ _id: "r2", fullName: "Bruno Díaz", lodgingNeed: "requested" }),
+        reg({ _id: "r3", fullName: "Sin cama", lodgingNeed: "requested" }),
+      ],
+      generatedAtIso: "2026-11-17T15:00:00.000Z",
+    });
+
+    assert.deepEqual(
+      report.homes.map((row) => [row.homeNumber, row.name, row.guestCount]),
+      [
+        [1, "Casa Alfa", 1],
+        [2, "Casa Media", 0],
+        [3, "Casa Zeta", 1],
+      ]
+    );
+    assert.equal(report.homes[1]?.notes, "Sin llave");
+    assert.equal(report.homes[0]?.guests[0]?.fullName, "Hno Ana Pérez");
+    assert.equal(report.guestCount, 2);
+    assert.equal(report.pendingCount, 1);
+    assert.equal(report.pending[0]?.fullName, "Hno Sin cama");
+    assert.equal(report.homes[2]?.homeNumber, 3);
   });
 });

@@ -118,8 +118,15 @@ const CATALOG: Array<{
   {
     title: "Alojamiento",
     description:
-      "Hogares, cupos y quién aún no tiene cama. Se arman con los hogares y las asignaciones vigentes.",
+      "Hogares, cupos, el informe para quien informa el alojamiento y quién aún no tiene cama.",
     items: [
+      {
+        family: "lodging",
+        kind: "briefing",
+        code: "ALJ-04",
+        label: "Informe consolidado",
+        hint: "Para quien informa el alojamiento: número de hogar, cupos, huéspedes y pendientes.",
+      },
       {
         family: "lodging",
         kind: "homes",

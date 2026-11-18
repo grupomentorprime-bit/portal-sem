@@ -191,4 +191,39 @@ describe("buildLodgingHomesReport", () => {
     assert.equal(report.homes[0]?.hostName, "Sin registrar");
     assert.equal(report.homes[0]?.hostPhone, "—");
   });
+
+  it("reserva el número del hogar vacío que queda en el medio del orden", () => {
+    const report = buildLodgingHomesReport({
+      homes: [
+        home({ _id: "h-z", name: "Casa Zeta" }),
+        home({ _id: "h-m", name: "Casa Media" }),
+        home({ _id: "h-a", name: "Casa Alfa" }),
+      ],
+      assignments: [
+        asg({
+          _id: "a1",
+          homeId: "h-a",
+          registrationId: "r1",
+          night: "2026-11-20",
+          status: "assigned",
+        }),
+        asg({
+          _id: "a2",
+          homeId: "h-z",
+          registrationId: "r2",
+          night: "2026-11-21",
+          status: "assigned",
+        }),
+      ],
+      registrations: [reg({ _id: "r1", fullName: "Ana" }), reg({ _id: "r2", fullName: "Zoe" })],
+      generatedAtIso: "2026-11-17T15:00:00.000Z",
+    });
+    assert.deepEqual(
+      report.homes.map((row) => [row.homeNumber, row.name]),
+      [
+        [1, "Casa Alfa"],
+        [3, "Casa Zeta"],
+      ]
+    );
+  });
 });

@@ -48,6 +48,16 @@ export type LodgingHomesReport = {
   homes: LodgingHomesReportHome[];
 };
 
+/** Número estable 1…N de cada hogar, por nombre de familia. El mismo en todos los informes. */
+export function lodgingHomeNumberById(homes: readonly CongressLodgingHome[]): Map<string, number> {
+  const ordered = [...homes].sort(
+    (a, b) => a.name.localeCompare(b.name, "es") || a._id.localeCompare(b._id)
+  );
+  const numbers = new Map<string, number>();
+  ordered.forEach((home, index) => numbers.set(home._id, index + 1));
+  return numbers;
+}
+
 export function isActiveLodgingAssignment(a: CongressLodgingAssignment): boolean {
   if (a.status === "cancelled") return false;
   return a.status === "assigned" || a.status === "confirmed" || Boolean(a.confirmed);
@@ -77,6 +87,7 @@ export function buildLodgingHomesReport(input: {
 }): LodgingHomesReport {
   const regById = new Map(input.registrations.map((r) => [r._id, r]));
   const homeById = new Map(input.homes.map((h) => [h._id, h]));
+  const homeNumbers = lodgingHomeNumberById(input.homes);
 
   type Acc = {
     nights: Set<CongressNight>;
@@ -127,7 +138,7 @@ export function buildLodgingHomesReport(input: {
     const host = hostContactFromHome(h);
     homesOut.push({
       homeId,
-      homeNumber: 0,
+      homeNumber: homeNumbers.get(homeId) ?? 0,
       name: h.name,
       hostName: host.hostName,
       hostPhone: host.hostPhone,
@@ -140,10 +151,7 @@ export function buildLodgingHomesReport(input: {
     });
   }
 
-  homesOut.sort((a, b) => a.name.localeCompare(b.name, "es"));
-  homesOut.forEach((h, i) => {
-    h.homeNumber = i + 1;
-  });
+  homesOut.sort((a, b) => a.homeNumber - b.homeNumber || a.name.localeCompare(b.name, "es"));
 
   return { generatedAtIso: input.generatedAtIso, homes: homesOut };
 }

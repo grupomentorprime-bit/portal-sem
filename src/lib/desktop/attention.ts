@@ -95,6 +95,7 @@ export interface AttentionEvent {
   id: string;
   at: string;
   actorUserId: string;
+  actorName?: string;
   kind:
     | "creado"
     | "asignado"
@@ -104,6 +105,22 @@ export interface AttentionEvent {
     | "aprobacion"
     | "activacion";
   detail: string;
+}
+
+export interface HelpFrom {
+  originId: string;
+  channel: string;
+  siteOrApp: string;
+  module: string;
+  screen: string;
+  action: string | null;
+  at: string;
+}
+
+export interface HelpAttachment {
+  name: string;
+  mediaType: string;
+  dataUrl: string;
 }
 
 export interface CommercialRecord {
@@ -130,6 +147,16 @@ export interface AttentionCase {
   assigneeName: string | null;
   contextNote: string;
   commercial: CommercialRecord | null;
+  correlative?: string;
+  helpFrom?: HelpFrom | null;
+  whereNote?: string;
+  attachment?: HelpAttachment | null;
+  waitingOn?: "nelzuri" | "cliente";
+  sharedWithCompany?: boolean;
+  readAtByUser?: Record<string, string>;
+  visitorEmail?: string;
+  contactCodeHash?: string;
+  contactVerifiedAt?: string | null;
   messages: AttentionMessage[];
   events: AttentionEvent[];
   clientReadAt?: string;
@@ -188,7 +215,24 @@ export interface PublicAttentionCase {
   updatedAt: string;
   commercial: PublicCommercial | null;
   messages: Array<{ id: string; at: string; role: "client" | "staff"; label: string; body: string }>;
-  events: Array<{ id: string; at: string; detail: string }>;
+  events: Array<{ id: string; at: string; detail: string; actorName: string }>;
+  originId: string;
+  helpFromLabel: string;
+  helpPlace: string;
+  helpAt: string | null;
+  nextStep: "nelzuri" | "cliente" | "resuelto";
+  nextStepLabel: string;
+  whereNote: string;
+  attachmentName: string | null;
+  attachmentDataUrl: string | null;
+  awaitingFirstReply: boolean;
+  contactVerified: boolean;
+  location: {
+    state: "now" | "last" | "unavailable";
+    label: string;
+    place: string;
+    at: string | null;
+  } | null;
 }
 
 export interface LegacyAttentionThread {
@@ -343,7 +387,7 @@ export function canSeeAttentionCase(actor: AttentionActor, item: AttentionCase):
     return actor.allAreas || actor.areaIds.includes(item.areaId);
   }
   if (!actor.tenantId || actor.tenantId !== item.tenantId) return false;
-  if (actor.orgWide) return true;
+  if (actor.orgWide || item.sharedWithCompany) return true;
   if (item.requesterUserId === actor.userId) return true;
   return item.participantUserIds.includes(actor.userId);
 }
@@ -357,14 +401,28 @@ export function caseIsUnread(item: AttentionCase, actor: AttentionActor): boolea
   if (!last) return false;
   const mine = actor.kind === "staff" ? "staff" : "client";
   if (last.role === mine) return false;
-  const readAt = actor.kind === "staff" ? item.staffReadAt : item.clientReadAt;
+  const personal = item.readAtByUser?.[actor.userId];
+  const readAt = personal ?? (actor.kind === "client" ? item.clientReadAt : undefined);
   if (!readAt) return true;
   return last.at > readAt;
 }
 
 export function markCaseRead(item: AttentionCase, actor: AttentionActor, now: string): AttentionCase {
-  if (actor.kind === "staff") return { ...item, staffReadAt: now };
-  return { ...item, clientReadAt: now };
+  const readAtByUser = { ...(item.readAtByUser ?? {}), [actor.userId]: now };
+  if (actor.kind === "staff") return { ...item, staffReadAt: now, readAtByUser };
+  return { ...item, clientReadAt: now, readAtByUser };
+}
+
+export function caseNextStep(item: Pick<AttentionCase, "status" | "waitingOn">): "nelzuri" | "cliente" | "resuelto" {
+  if (item.status === "resuelto") return "resuelto";
+  if (item.waitingOn === "cliente") return "cliente";
+  return "nelzuri";
+}
+
+export function nextStepLabel(step: "nelzuri" | "cliente" | "resuelto"): string {
+  if (step === "resuelto") return "Resuelto";
+  if (step === "cliente") return "Le toca al cliente";
+  return "Le toca a NELZURI";
 }
 
 export function attentionBadge(
@@ -502,13 +560,23 @@ export function visibleAttentionCases(
 export function presentAttentionCase(
   item: AttentionCase,
   actor: AttentionActor,
-  input: { company: string; areaName: string }
+  input: {
+    company: string;
+    areaName: string;
+    location?: PublicAttentionCase["location"];
+  }
 ): PublicAttentionCase | null {
   if (!canSeeAttentionCase(actor, item)) return null;
   const staff = actor.kind === "staff";
+  const step = caseNextStep(item);
+  const helpPlace = item.helpFrom
+    ? [item.helpFrom.siteOrApp, item.helpFrom.module, item.helpFrom.screen, item.helpFrom.action]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
   return {
     id: item.id,
-    code: caseCode(item.id),
+    code: item.correlative?.trim() || caseCode(item.id),
     tenantId: item.tenantId,
     company: input.company,
     areaId: item.areaId,
@@ -533,7 +601,26 @@ export function presentAttentionCase(
       label: message.authorName.trim() || (message.role === "staff" ? "Nelzuri" : "Cliente"),
       body: message.body,
     })),
-    events: item.events.map((entry) => ({ id: entry.id, at: entry.at, detail: entry.detail })),
+    events: item.events.map((entry) => ({
+      id: entry.id,
+      at: entry.at,
+      detail: entry.detail,
+      actorName: entry.actorName?.trim() || (entry.actorUserId === "legacy" ? "Registro" : "NELZURI"),
+    })),
+    originId: item.helpFrom?.originId ?? "",
+    helpFromLabel: item.helpFrom ? "Pidió ayuda desde" : "Origen no registrado",
+    helpPlace,
+    helpAt: item.helpFrom?.at ?? null,
+    nextStep: step,
+    nextStepLabel: nextStepLabel(step),
+    whereNote: item.whereNote ?? "",
+    attachmentName: item.attachment?.name ?? null,
+    attachmentDataUrl: item.attachment?.dataUrl ?? null,
+    awaitingFirstReply: item.status !== "resuelto" && !item.messages.some((row) => row.role === "staff"),
+    contactVerified: Boolean(item.contactVerifiedAt),
+    location: staff
+      ? input.location ?? { state: "unavailable", label: "No está disponible", place: "", at: null }
+      : null,
   };
 }
 
@@ -547,12 +634,24 @@ export function openAttentionCase(input: {
   contextNote?: string;
   priority?: string;
   productId?: string | null;
+  forCompany?: boolean;
+  visitor?: boolean;
+  correlative?: string;
+  helpFrom?: HelpFrom | null;
+  whereNote?: string;
+  attachment?: HelpAttachment | null;
   id: string;
   messageId: string;
   eventId: string;
   now: string;
-}): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "area" | "subject" | "empty" | "long" | "note" | "product" | "priority" } {
-  if (input.actor.kind !== "client" || input.actor.tenantId !== input.tenantId) {
+}): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "area" | "subject" | "empty" | "long" | "note" | "product" | "priority" | "origin" | "attachment" } {
+  const staffOpening = input.forCompany === true;
+  const visitor = input.visitor === true;
+  if (visitor) {
+    if (input.tenantId.trim()) return { ok: false, reason: "forbidden" };
+  } else if (staffOpening) {
+    if (input.actor.kind !== "staff" || !input.tenantId.trim()) return { ok: false, reason: "forbidden" };
+  } else if (input.actor.kind !== "client" || input.actor.tenantId !== input.tenantId) {
     return { ok: false, reason: "forbidden" };
   }
   const area = input.areas.find((item) => item.id === input.areaId && item.active);
@@ -564,6 +663,10 @@ export function openAttentionCase(input: {
   if (body.length > MAX_BODY) return { ok: false, reason: "long" };
   const contextNote = (input.contextNote ?? "").trim();
   if (contextNote.length > MAX_NOTE) return { ok: false, reason: "note" };
+  const whereNote = (input.whereNote ?? "").trim();
+  if (whereNote.length > 200) return { ok: false, reason: "note" };
+  const correlative = input.correlative?.trim() ?? "";
+  if (correlative && !/^AC-\d{5,}$/.test(correlative)) return { ok: false, reason: "origin" };
   const priority = input.priority?.trim() || "normal";
   if (!isCasePriority(priority)) return { ok: false, reason: "priority" };
   const productRaw = input.productId?.trim() || "";
@@ -572,7 +675,7 @@ export function openAttentionCase(input: {
     if (!isMentorAppId(productRaw)) return { ok: false, reason: "product" };
     productId = productRaw;
   }
-  const authorName = input.actor.displayName.trim() || "Cliente";
+  const authorName = input.actor.displayName.trim() || (staffOpening ? "Nelzuri" : "Cliente");
   const created = baseCase({
     id: input.id,
     tenantId: input.tenantId,
@@ -588,18 +691,27 @@ export function openAttentionCase(input: {
     eventId: input.eventId,
     actorUserId: input.actor.userId,
     eventDetail: "Abrió el caso.",
+    actorName: authorName,
   });
+  const role = staffOpening ? "staff" : "client";
   created.messages = [
     message({
       id: input.messageId,
       at: input.now,
       authorUserId: input.actor.userId,
       authorName,
-      role: "client",
+      role,
       body,
     }),
   ];
-  created.clientReadAt = input.now;
+  created.clientReadAt = role === "client" ? input.now : undefined;
+  created.correlative = correlative || undefined;
+  created.helpFrom = input.helpFrom ?? null;
+  created.whereNote = whereNote;
+  created.attachment = input.attachment ?? null;
+  created.waitingOn = staffOpening ? "cliente" : "nelzuri";
+  created.sharedWithCompany = staffOpening;
+  created.readAtByUser = role === "client" ? { [input.actor.userId]: input.now } : {};
   return { ok: true, case: created };
 }
 
@@ -679,6 +791,7 @@ export function appendCaseMessage(
   const role = input.actor.kind === "staff" ? "staff" : "client";
   const next: AttentionCase = {
     ...item,
+    waitingOn: role === "staff" ? "cliente" : "nelzuri",
     updatedAt: input.now,
     messages: [
       ...item.messages,
@@ -731,7 +844,7 @@ export function assignAttentionCase(
       assigneeName: input.assignee?.displayName ?? null,
       status: nextId && item.status === "pendiente" ? "abierto" : !nextId && item.status === "abierto" ? "pendiente" : item.status,
       updatedAt: input.now,
-      events: [...item.events, event(input.id, input.now, input.actor.userId, kind, detail)],
+      events: [...item.events, event(input.id, input.now, input.actor.userId, kind, detail, input.actor.displayName)],
     },
   };
 }
@@ -749,11 +862,19 @@ export function setAttentionStatus(
     case: {
       ...item,
       status: input.status,
+      waitingOn: input.status === "resuelto" ? item.waitingOn : "nelzuri",
       resolvedAt: input.status === "resuelto" ? input.now : undefined,
       updatedAt: input.now,
       events: [
         ...item.events,
-        event(input.id, input.now, input.actor.userId, "estado", `Estado: ${statusLabel(input.status)}.`),
+        event(
+          input.id,
+          input.now,
+          input.actor.userId,
+          "estado",
+          `Estado: ${statusLabel(input.status)}.`,
+          input.actor.displayName
+        ),
       ],
     },
   };
@@ -956,6 +1077,7 @@ function baseCase(input: {
   eventId: string;
   actorUserId: string;
   eventDetail: string;
+  actorName?: string;
 }): AttentionCase {
   return {
     id: input.id,
@@ -973,7 +1095,7 @@ function baseCase(input: {
     contextNote: input.contextNote,
     commercial: input.commercial,
     messages: [],
-    events: [event(input.eventId, input.now, input.actorUserId, "creado", input.eventDetail)],
+    events: [event(input.eventId, input.now, input.actorUserId, "creado", input.eventDetail, input.actorName)],
     createdAt: input.now,
     updatedAt: input.now,
   };
@@ -983,14 +1105,48 @@ function message(input: AttentionMessage): AttentionMessage {
   return input;
 }
 
+export function askCaseInformation(
+  item: AttentionCase,
+  input: { actor: AttentionActor; body: string; id: string; eventId: string; now: string }
+): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "closed" | "empty" | "long" } {
+  const sent = appendCaseMessage(item, input);
+  if (!sent.ok) return sent;
+  const author = input.actor.displayName.trim() || "Nelzuri";
+  return {
+    ok: true,
+    case: {
+      ...sent.case,
+      waitingOn: "cliente",
+      events: [
+        ...sent.case.events,
+        event(input.eventId, input.now, input.actor.userId, "estado", "Pidió información.", author),
+      ],
+    },
+  };
+}
+
+export function reopenAttentionCase(
+  item: AttentionCase,
+  input: { actor: AttentionActor; id: string; now: string }
+): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "status" } {
+  if (input.actor.kind !== "staff" || !canSeeAttentionCase(input.actor, item)) {
+    return { ok: false, reason: "forbidden" };
+  }
+  if (item.status !== "resuelto") return { ok: false, reason: "status" };
+  const reopened = setAttentionStatus(item, { ...input, status: "pendiente" });
+  if (!reopened.ok) return { ok: false, reason: "forbidden" };
+  return reopened;
+}
+
 function event(
   id: string,
   at: string,
   actorUserId: string,
   kind: AttentionEvent["kind"],
-  detail: string
+  detail: string,
+  actorName = ""
 ): AttentionEvent {
-  return { id, at, actorUserId, kind, detail };
+  return { id, at, actorUserId, kind, detail, ...(actorName.trim() ? { actorName: actorName.trim() } : {}) };
 }
 
 function byRecent<T extends { updatedAt: string; subject: string }>(a: T, b: T): number {
