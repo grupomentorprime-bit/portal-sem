@@ -13,7 +13,7 @@ import { SummaryView } from "@/components/admin/congress/summary/SummaryView";
 import { LodgingOpsView } from "@/components/admin/congress/lodging/LodgingOpsView";
 import { CashBoxView } from "@/components/admin/congress/cash/CashBoxView";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
-import { useToast } from "@/components/admin/kit/states/Toast";
+import { ToastProvider, useToast } from "@/components/admin/kit/states/Toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -96,6 +96,14 @@ interface CongressSummary {
 }
 
 export function CongressOpsPanel() {
+  return (
+    <ToastProvider>
+      <CongressOpsPanelInner />
+    </ToastProvider>
+  );
+}
+
+function CongressOpsPanelInner() {
   const { push } = useToast();
   const [activeTab, setActiveTab] = useState<TabId>("recepcion");
   const [summary, setSummary] = useState<CongressSummary | null>(null);
@@ -278,8 +286,15 @@ export function CongressOpsPanel() {
     setRegistrations((prev) => {
       const idx = prev.findIndex((r) => r._id === reg._id);
       if (idx < 0) return [reg, ...prev];
+      const prevReg = prev[idx];
       const next = [...prev];
-      next[idx] = reg;
+      next[idx] = {
+        ...reg,
+        formSubmittedAt:
+          reg.formSubmittedAt !== undefined
+            ? reg.formSubmittedAt
+            : prevReg.formSubmittedAt ?? null,
+      };
       return next;
     });
   };
@@ -362,7 +377,10 @@ export function CongressOpsPanel() {
       if (data.registration) upsertRegistration(data.registration);
       void loadSummary();
       if (!data.idempotent) {
-        push({ title: present === true ? "Llegada registrada" : "Asistencia actualizada", tone: "success" });
+        push({
+          title: present === true ? "Llegada registrada" : "Asistencia actualizada",
+          tone: "success",
+        });
       }
     } catch {
       push({ title: "Error de red", tone: "error" });

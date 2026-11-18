@@ -1,159 +1,111 @@
-﻿# Task 2 review package (uncommitted) — repository.ts only
- src/lib/congress/repository.ts | 68 ++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 66 insertions(+), 2 deletions(-)
-diff --git a/src/lib/congress/repository.ts b/src/lib/congress/repository.ts
-index cde94ac..b8572e7 100644
---- a/src/lib/congress/repository.ts
-+++ b/src/lib/congress/repository.ts
-@@ -1,20 +1,22 @@
- import "server-only";
+﻿# Task 2 review package (uncommitted)
+# Scope: form-submitted-at loader + registrations route
+
+## Stat
+ M src/app/api/congress/registrations/route.ts
+?? src/lib/congress/form-submitted-at.ts
+
+## Diff route
+
+diff --git a/src/app/api/congress/registrations/route.ts b/src/app/api/congress/registrations/route.ts
+index 752590f..8e738e1 100644
+--- a/src/app/api/congress/registrations/route.ts
++++ b/src/app/api/congress/registrations/route.ts
+@@ -1,16 +1,18 @@
+ import { NextResponse } from "next/server";
+ import { CONGRESS_ZONES } from "@/core/congress/constants";
+ import { requireCongressView } from "@/app/api/congress/guard";
+ import { listCongressChurches } from "@/lib/congress/churches";
+ import { listCongressRegistrations } from "@/lib/congress/repository";
+ import { syncCongressFormSubmissions } from "@/lib/congress/sync-form";
++import { loadFormSubmittedAtBySubmissionIds } from "@/lib/congress/form-submitted-at";
++import { withFormSubmittedAt } from "@/core/congress/form-engagement";
  
- import { generateId } from "@/core/identity/auth/crypto";
- import {
-   CONGRESS_COLLECTIONS,
-   CONGRESS_EVENT_ID,
-+  CONGRESS_PAYMENT_FOLIO_YEAR,
- } from "@/core/congress/constants";
- import { emptyAttendance } from "@/core/congress/attendance";
- import { buildChargeAmountClp } from "@/core/congress/charges";
- import { emptyExpectedDays, parseExpectedDayLabel } from "@/core/congress/expected-days";
-+import { formatPaymentFolio } from "@/core/congress/payment-folio";
- import { allocatePayment, voidPayment } from "@/core/congress/payments";
- import type {
-   CongressAttendanceDays,
-   CongressAuditEntry,
-   CongressChurchLodgingRequest,
-   CongressLodgingAssignment,
-   CongressLodgingHome,
-   CongressLodgingNeed,
-   CongressPayment,
-   CongressPaymentAllocation,
-@@ -40,20 +42,40 @@ export function normalizeCongressRegistration(
-     isZoneLeader: reg.isZoneLeader === true,
-     attendanceMeta: reg.attendanceMeta ?? {},
-     attendanceHistory: reg.attendanceHistory ?? [],
-   };
- }
+ export async function GET(request: Request) {
+   try {
+     const ctx = await requireCongressView();
+     if (ctx instanceof NextResponse) return ctx;
  
- function eventFilter(tenantId: string, eventId = CONGRESS_EVENT_ID) {
-   return { tenantId, eventId };
- }
+     try {
+       await syncCongressFormSubmissions(ctx.tenantId);
+     } catch (syncError) {
+       console.error("congress sync (registrations):", syncError);
+@@ -58,21 +60,27 @@ export async function GET(request: Request) {
+     };
+     for (const reg of all) addChurch(reg.zoneId, reg.churchName);
+     for (const row of catalog) addChurch(row.zoneId, row.churchName);
+     for (const zone of Object.keys(churchesByZone)) {
+       churchesByZone[zone].sort((a, b) => a.localeCompare(b, "es"));
+     }
+     const churches = [...new Set(Object.values(churchesByZone).flat())].sort((a, b) =>
+       a.localeCompare(b, "es")
+     );
  
-+function paymentFolioSequenceId(tenantId: string, eventId = CONGRESS_EVENT_ID) {
-+  return `${tenantId}:${eventId}:payment-folio`;
-+}
-+
-+export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
-+  const db = await getDatabase();
-+  const doc = await db
-+    .collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences)
-+    .findOneAndUpdate(
-+      { _id: paymentFolioSequenceId(tenantId) },
-+      { $inc: { seq: 1 } },
-+      { upsert: true, returnDocument: "after" }
++    const submittedAtMap = await loadFormSubmittedAtBySubmissionIds(
++      ctx.tenantId,
++      items.map((r) => r.submissionId).filter((id): id is string => Boolean(id))
 +    );
-+  const seq = doc?.seq;
-+  if (!seq || !Number.isInteger(seq) || seq <= 0) {
-+    throw new Error("folio_sequence_failed");
-+  }
-+  return formatPaymentFolio(seq, CONGRESS_PAYMENT_FOLIO_YEAR);
-+}
++    const enriched = withFormSubmittedAt(items, submittedAtMap);
 +
- export async function listCongressRegistrations(
-   tenantId: string,
-   opts: { q?: string; zoneId?: string; churchName?: string } = {}
- ): Promise<CongressRegistration[]> {
-   const db = await getDatabase();
-   const filter: Record<string, unknown> = eventFilter(tenantId);
-   if (opts.zoneId?.trim()) filter.zoneId = opts.zoneId.trim();
-   if (opts.churchName?.trim()) {
-     filter.churchName = { $regex: opts.churchName.trim(), $options: "i" };
-   }
-@@ -215,20 +237,29 @@ export async function recordCongressPayment(input: {
-     allocations: input.allocations,
-     createdByUserId: input.createdByUserId,
-     createdAt: now,
-     registrations,
-   });
- 
-   if (!result.ok) {
-     return { ok: false, error: result.error };
-   }
- 
-+  let folio: string;
-+  try {
-+    folio = await allocateNextPaymentFolio(input.tenantId);
-+  } catch {
-+    return { ok: false, error: "folio_sequence_failed" };
-+  }
-+
-+  const paymentWithFolio: CongressPayment = { ...result.payment, folio };
-+
-   const applied: Array<{ id: string; previousPaid: number; previousVersion: number }> = [];
-   for (const updated of result.updatedRegistrations) {
-     const original = registrations.find((r) => r._id === updated._id);
-     if (!original) {
-       return { ok: false, error: "unknown_registration" };
-     }
-     const write = await db
-       .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
-       .updateOne(
-         {
-@@ -261,22 +292,55 @@ export async function recordCongressPayment(input: {
-       }
-       return { ok: false, error: "concurrent_payment" };
-     }
-     applied.push({
-       id: updated._id,
-       previousPaid: original.allocatedPaidClp,
-       previousVersion: original.version,
+     return NextResponse.json({
+       ok: true,
+-      items,
+-      registrations: items,
++      items: enriched,
++      registrations: enriched,
+       filterOptions: { zones, churches, churchesByZone },
      });
+   } catch (error) {
+     console.error(error);
+     return NextResponse.json({ ok: false, error: "Error interno." }, { status: 500 });
    }
- 
--  await db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments).insertOne(result.payment);
--  return { ok: true, payment: result.payment, updated: result.updatedRegistrations };
-+  await db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments).insertOne(paymentWithFolio);
-+  return { ok: true, payment: paymentWithFolio, updated: result.updatedRegistrations };
-+}
-+
-+export async function ensureCongressPaymentFolio(input: {
-+  tenantId: string;
-+  paymentId: string;
-+}): Promise<{ ok: true; payment: CongressPayment } | { ok: false; error: string }> {
-+  const db = await getDatabase();
-+  const payments = db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments);
-+  const filter = { ...eventFilter(input.tenantId), _id: input.paymentId };
-+  const payment = await payments.findOne(filter);
-+  if (!payment) return { ok: false, error: "not_found" };
-+  if (payment.folio) return { ok: true, payment };
-+
-+  let folio: string;
-+  try {
-+    folio = await allocateNextPaymentFolio(input.tenantId);
-+  } catch {
-+    return { ok: false, error: "folio_sequence_failed" };
-+  }
-+
-+  const updated = await payments.findOneAndUpdate(
-+    {
-+      ...filter,
-+      $or: [{ folio: null }, { folio: { $exists: false } }, { folio: "" }],
-+    },
-+    { $set: { folio } },
-+    { returnDocument: "after" }
-+  );
-+  if (updated) return { ok: true, payment: updated };
-+
-+  const racedPayment = await payments.findOne(filter);
-+  if (racedPayment?.folio) return { ok: true, payment: racedPayment };
-+  return { ok: false, error: "folio_sequence_failed" };
  }
- 
- export async function listCongressPayments(tenantId: string): Promise<CongressPayment[]> {
-   const db = await getDatabase();
-   return db
-     .collection<CongressPayment>(CONGRESS_COLLECTIONS.payments)
-     .find(eventFilter(tenantId))
-     .sort({ createdAt: -1 })
-     .toArray();
- }
+
+## New file form-submitted-at.ts
+
+import "server-only";
+
+import { ObjectId } from "mongodb";
+import { getDatabase } from "@/lib/mongodb";
+
+const SUBMISSIONS = "experience_form_submissions";
+
+/**
+ * Map submissionId (string) → createdAt ISO del envío.
+ * IDs inválidos o sin documento se omiten del mapa.
+ */
+export async function loadFormSubmittedAtBySubmissionIds(
+  tenantId: string,
+  submissionIds: string[]
+): Promise<Map<string, string>> {
+  const unique = [...new Set(submissionIds.map((id) => id.trim()).filter(Boolean))];
+  const objectIds: ObjectId[] = [];
+  const idByHex = new Map<string, string>();
+  for (const id of unique) {
+    try {
+      const oid = new ObjectId(id);
+      objectIds.push(oid);
+      idByHex.set(oid.toHexString(), id);
+    } catch {
+      // skip non-ObjectId strings
+    }
+  }
+  const out = new Map<string, string>();
+  if (objectIds.length === 0) return out;
+
+  const db = await getDatabase();
+  const rows = await db
+    .collection<{ _id: ObjectId; createdAt?: string }>(SUBMISSIONS)
+    .find(
+      { tenant: tenantId, _id: { $in: objectIds } },
+      { projection: { createdAt: 1 } }
+    )
+    .toArray();
+
+  for (const row of rows) {
+    const key = idByHex.get(row._id.toHexString());
+    const createdAt = typeof row.createdAt === "string" ? row.createdAt : null;
+    if (key && createdAt) out.set(key, createdAt);
+  }
+  return out;
+}

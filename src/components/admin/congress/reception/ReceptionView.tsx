@@ -8,9 +8,18 @@ import { Select } from "@/components/ui/select";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
 import { CONGRESS_ZONES } from "@/core/congress/constants";
 import {
+  mergeCongressChurchOptions,
+  sameCongressChurch,
+} from "@/core/congress/church-name";
+import {
+  compareByRegistrationEntryNumber,
+  registrationEntryNumber,
+} from "@/core/congress/entry-order";
+import {
   contributionStatusHasBalance,
   deriveContributionStatus,
 } from "@/core/congress/finance-status";
+import { formSubmissionDisplay } from "@/core/congress/form-engagement";
 import { isLodgingPending } from "@/core/congress/lodging-status";
 import type {
   CongressLodgingAssignment,
@@ -21,6 +30,7 @@ import { cn } from "@/lib/utils";
 import {
   attendanceCellText,
   contributionLabel,
+  formatDateTimeSantiago,
   formatZoneLabel,
   journeyDayLabel,
   journeyDayShortLabel,
@@ -111,21 +121,26 @@ export function ReceptionView({
   }, [zoneOptions]);
 
   const churchesForZone = useMemo(() => {
-    if (!zoneFilter) return churchOptions;
-    const names = new Set(
-      registrations
-        .filter((r) => r.zoneId === zoneFilter)
-        .map((r) => r.churchName)
-        .filter(Boolean)
-    );
-    return churchOptions.filter((c) => names.has(c));
+    const source = zoneFilter
+      ? registrations
+          .filter((r) => r.zoneId === zoneFilter)
+          .map((r) => r.churchName)
+          .filter(Boolean)
+      : churchOptions;
+    const merged = mergeCongressChurchOptions([
+      ...source,
+      ...(zoneFilter ? [] : churchOptions),
+    ]).map((o) => o.label);
+    return merged;
   }, [churchOptions, registrations, zoneFilter]);
 
   const filtered = useMemo(() => {
     const q = search.trim();
-    return registrations.filter((reg) => {
+    const rows = registrations.filter((reg) => {
       if (zoneFilter && reg.zoneId !== zoneFilter) return false;
-      if (churchFilter && reg.churchName !== churchFilter) return false;
+      if (churchFilter && !sameCongressChurch(reg.churchName, churchFilter)) {
+        return false;
+      }
       if (q) {
         if (
           !matchesPersonSearch(q, [
@@ -151,6 +166,8 @@ export function ReceptionView({
       }
       return true;
     });
+    rows.sort(compareByRegistrationEntryNumber);
+    return rows;
   }, [
     assignments,
     churchFilter,
@@ -281,6 +298,12 @@ export function ReceptionView({
             <table className="min-w-[64rem] w-full text-left text-sm">
               <thead className="border-b border-border bg-background-soft text-xs uppercase tracking-wide text-muted">
                 <tr>
+                  <th
+                    className="w-16 px-3 py-2 text-right font-semibold"
+                    title="Correlativo de ficha"
+                  >
+                    N°
+                  </th>
                   <th className="px-3 py-2 font-semibold">Participante</th>
                   <th className="px-3 py-2 font-semibold">Iglesia / zona</th>
                   <th className="px-3 py-2 font-semibold">Sábado</th>
@@ -289,6 +312,7 @@ export function ReceptionView({
                     Alimentación
                   </th>
                   <th className="px-3 py-2 font-semibold">Alojamiento</th>
+                  <th className="px-3 py-2 font-semibold">Formulario</th>
                   <th className="px-3 py-2 font-semibold">Acción</th>
                 </tr>
               </thead>
@@ -299,12 +323,17 @@ export function ReceptionView({
                   const lodging = resolveRegistrationLodging(reg, assignments);
                   const arrived = reg.attendance[journeyDay] === true;
                   const arrival = attendanceCellText(reg, journeyDay);
+                  const entryNumber = registrationEntryNumber(reg);
+                  const form = formSubmissionDisplay(reg);
                   return (
                     <tr
                       key={reg._id}
                       className="cursor-pointer border-b border-border/70 hover:bg-background-soft/80"
                       onClick={() => onOpenParticipant(reg._id)}
                     >
+                      <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                        {entryNumber ?? "—"}
+                      </td>
                       <td className="px-3 py-2.5">
                         <p className="font-semibold text-foreground">
                           {registrationDisplayName(reg)}
@@ -319,27 +348,11 @@ export function ReceptionView({
                         <p>{reg.churchName}</p>
                         <p className="text-xs text-muted">{formatZoneLabel(reg.zoneId)}</p>
                       </td>
-                      <td
-                        className="px-3 py-2.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <AttendanceBadge
-                          {...sat}
-                          canRevert={operate && sat.present}
-                          reverting={arrivalSavingId === `${reg._id}:saturday`}
-                          onRevert={() => onRevertArrival(reg._id, "saturday")}
-                        />
+                      <td className="px-3 py-2.5">
+                        <AttendanceBadge {...sat} />
                       </td>
-                      <td
-                        className="px-3 py-2.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <AttendanceBadge
-                          {...sun}
-                          canRevert={operate && sun.present}
-                          reverting={arrivalSavingId === `${reg._id}:sunday`}
-                          onRevert={() => onRevertArrival(reg._id, "sunday")}
-                        />
+                      <td className="px-3 py-2.5">
+                        <AttendanceBadge {...sun} />
                       </td>
                       <td className="px-3 py-2.5">{contributionLabel(reg)}</td>
                       <td className="px-3 py-2.5">
@@ -349,6 +362,16 @@ export function ReceptionView({
                             {lodgingPendingReasonLabel(lodging.pendingReason)}
                           </p>
                         ) : null}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {form.at && form.label ? (
+                          <>
+                            <p>{formatDateTimeSantiago(form.at)}</p>
+                            <p className="text-xs text-muted">{form.label}</p>
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                         {arrived ? (
@@ -393,6 +416,8 @@ export function ReceptionView({
               const lodging = resolveRegistrationLodging(reg, assignments);
               const arrival = attendanceCellText(reg, journeyDay);
               const arrivedMobile = reg.attendance[journeyDay] === true;
+              const entryNumber = registrationEntryNumber(reg);
+              const form = formSubmissionDisplay(reg);
               return (
                 <li
                   key={reg._id}
@@ -404,7 +429,15 @@ export function ReceptionView({
                     onClick={() => onOpenParticipant(reg._id)}
                   >
                     <p className="font-semibold text-foreground">
+                      <span className="mr-2 tabular-nums text-muted">
+                        {entryNumber ?? "—"}
+                      </span>
                       {registrationDisplayName(reg)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {form.at && form.label
+                        ? `${form.label} · ${formatDateTimeSantiago(form.at)}`
+                        : "Sin formulario"}
                     </p>
                     <p className="mt-1 text-xs text-muted">
                       {arrival.text} · {contributionLabel(reg)} · {lodgingLabel(lodging)}
@@ -449,40 +482,21 @@ export function ReceptionView({
 function AttendanceBadge({
   text,
   present,
-  canRevert,
-  reverting,
-  onRevert,
 }: {
   text: string;
   present: boolean;
   time: string | null;
-  canRevert?: boolean;
-  reverting?: boolean;
-  onRevert?: () => void;
 }) {
   return (
-    <div className="flex flex-col items-start gap-1">
-      <span className="inline-flex items-center gap-1.5 text-sm">
-        <span
-          className={cn(
-            "inline-block h-2 w-2 rounded-full",
-            present ? "bg-[var(--growth-os-success)]" : "bg-border"
-          )}
-          aria-hidden
-        />
-        {text}
-      </span>
-      {canRevert && onRevert ? (
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 px-2 text-xs"
-          loading={reverting}
-          onClick={onRevert}
-        >
-          Dejar sin marcar
-        </Button>
-      ) : null}
-    </div>
+    <span className="inline-flex items-center gap-1.5 text-sm">
+      <span
+        className={cn(
+          "inline-block h-2 w-2 rounded-full",
+          present ? "bg-[var(--growth-os-success)]" : "bg-border"
+        )}
+        aria-hidden
+      />
+      {text}
+    </span>
   );
 }

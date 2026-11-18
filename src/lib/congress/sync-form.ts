@@ -34,12 +34,15 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
   let skipped = 0;
 
   for (const submission of submissions) {
+    // En runtime _id es ObjectId; guardamos siempre string.
+    const submissionIdStr = String(submission._id);
     const existingBySubmission = await db
       .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
       .findOne({
         tenantId,
         eventId: CONGRESS_EVENT_ID,
-        submissionId: submission._id,
+        // Incluye filas antiguas que guardaron el ObjectId crudo.
+        submissionId: { $in: [submissionIdStr, submission._id] as string[] },
       });
     if (existingBySubmission) {
       skipped += 1;
@@ -77,7 +80,7 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
             { _id: existingByRut._id },
             {
               $set: {
-                submissionId: submission._id,
+                submissionId: submissionIdStr,
                 updatedAt: new Date().toISOString(),
               },
               $inc: { version: 1 },
@@ -99,7 +102,7 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
       email: identity.email,
       phone: String(data.phone ?? data.telefono ?? "").trim() || null,
       identityStatus: identity.rut ? "verified" : "provisional",
-      submissionId: submission._id,
+      submissionId: submissionIdStr,
       needsReview: !identity.rut,
     });
 

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { CONGRESS_ZONES } from "@/core/congress/constants";
 import { requireCongressView } from "@/app/api/congress/guard";
+import { mergeCongressChurchOptions } from "@/core/congress/church-name";
 import { listCongressChurches } from "@/lib/congress/churches";
-import { listCongressRegistrations } from "@/lib/congress/repository";
+import {
+  backfillRegistrationEntryNumbers,
+  listCongressRegistrations,
+} from "@/lib/congress/repository";
 import { syncCongressFormSubmissions } from "@/lib/congress/sync-form";
+import { loadFormSubmittedAtBySubmissionIds } from "@/lib/congress/form-submitted-at";
+import { withFormSubmittedAt } from "@/core/congress/form-engagement";
 
 export async function GET(request: Request) {
   try {
@@ -14,6 +20,12 @@ export async function GET(request: Request) {
       await syncCongressFormSubmissions(ctx.tenantId);
     } catch (syncError) {
       console.error("congress sync (registrations):", syncError);
+    }
+
+    try {
+      await backfillRegistrationEntryNumbers(ctx.tenantId);
+    } catch (entryError) {
+      console.error("congress entry numbers (registrations):", entryError);
     }
 
     const url = new URL(request.url);
@@ -47,28 +59,37 @@ export async function GET(request: Request) {
         };
       });
 
-    const churchesByZone: Record<string, string[]> = {};
+    const churchesByZoneRaw: Record<string, string[]> = {};
     const addChurch = (zone: string, church: string) => {
       const z = zone.trim();
       const c = church.trim();
       if (!z || !c) return;
-      const list = churchesByZone[z] ?? [];
-      if (!list.includes(c)) list.push(c);
-      churchesByZone[z] = list;
+      const list = churchesByZoneRaw[z] ?? [];
+      list.push(c);
+      churchesByZoneRaw[z] = list;
     };
     for (const reg of all) addChurch(reg.zoneId, reg.churchName);
     for (const row of catalog) addChurch(row.zoneId, row.churchName);
-    for (const zone of Object.keys(churchesByZone)) {
-      churchesByZone[zone].sort((a, b) => a.localeCompare(b, "es"));
+    const churchesByZone: Record<string, string[]> = {};
+    for (const zone of Object.keys(churchesByZoneRaw)) {
+      churchesByZone[zone] = mergeCongressChurchOptions(
+        churchesByZoneRaw[zone] ?? []
+      ).map((o) => o.label);
     }
-    const churches = [...new Set(Object.values(churchesByZone).flat())].sort((a, b) =>
-      a.localeCompare(b, "es")
+    const churches = mergeCongressChurchOptions(
+      Object.values(churchesByZoneRaw).flat()
+    ).map((o) => o.label);
+
+    const submittedAtMap = await loadFormSubmittedAtBySubmissionIds(
+      ctx.tenantId,
+      items.map((r) => r.submissionId)
     );
+    const enriched = withFormSubmittedAt(items, submittedAtMap);
 
     return NextResponse.json({
       ok: true,
-      items,
-      registrations: items,
+      items: enriched,
+      registrations: enriched,
       filterOptions: { zones, churches, churchesByZone },
     });
   } catch (error) {

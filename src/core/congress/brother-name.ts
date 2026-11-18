@@ -1,9 +1,21 @@
 const TITLE_PREFIX_RE =
-  /^(?:hno\.?|hermano|pastor(?:a)?|pte\.?|presidente)\s+/i;
+  /^(?:hno\.?|hermano|pastor(?:a)?|pte\.?|presidente|di[aá]cono)\.?\s+/i;
 
 /** True si el nombre ya empieza con Hno / Hermano / Pastor / etc. */
 export function hasBrotherOrTitlePrefix(fullName: string): boolean {
   return TITLE_PREFIX_RE.test(fullName.trim());
+}
+
+/** Clave plegada para detectar la misma persona (sin título ni acentos). */
+export function foldCongressPersonName(fullName: string): string {
+  return fullName
+    .trim()
+    .replace(TITLE_PREFIX_RE, "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**

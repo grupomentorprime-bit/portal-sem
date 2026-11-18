@@ -1,70 +1,167 @@
-﻿# Task 1 review package (uncommitted)
-# Files:
- src/core/congress/constants.ts | 4 ++++
- src/core/congress/types.ts     | 2 ++
- 2 files changed, 6 insertions(+)
+﻿# Task 1 review package (uncommitted — no commits by plan constraint)
+# Base HEAD: 700fa7013d6946013512b51f0824684506ac6ce6
+# Scope: only Task 1 files
 
-# Diff:
-diff --git a/src/core/congress/constants.ts b/src/core/congress/constants.ts
-index 7452f63..d9b9318 100644
---- a/src/core/congress/constants.ts
-+++ b/src/core/congress/constants.ts
-@@ -1,15 +1,18 @@
- import { CONGRESS_VARONES_FORM_ID } from "@/lib/experience/forms/already-enrolled";
- 
- /** Evento operativo del 3.° Congreso Nacional de Varones (Quilicura). */
- export const CONGRESS_EVENT_ID = "ipn-congreso-varones-2026";
- 
-+/** Año fijo del folio de comprobantes del Congreso 2026. */
-+export const CONGRESS_PAYMENT_FOLIO_YEAR = 2026;
-+
- export const CONGRESS_FORM_ID = CONGRESS_VARONES_FORM_ID;
- 
- /**
-  * Aporte fijo de alimentación por participante identificado (CLP).
-  * Cubre ambos días del congreso; no depende del día de llegada ni de los días previstos.
+## Files
+ src/core/congress/form-engagement.ts | 20 ++++++++++++++++++++
+ src/core/congress/types.ts           |  5 +++++
+ 2 files changed, 25 insertions(+)
+
+## Diff
+
+diff --git a/src/core/congress/form-engagement.ts b/src/core/congress/form-engagement.ts
+index 43023bc..324dbfe 100644
+--- a/src/core/congress/form-engagement.ts
++++ b/src/core/congress/form-engagement.ts
+@@ -22,10 +22,30 @@ export function registrationOriginBucket(
+  * sin envío, no entra.
   */
- export const CONGRESS_CONTRIBUTION_CLP = 17_000;
- 
- /** Noches configurables de alojamiento (ISO date). */
- export const CONGRESS_NIGHTS = ["2026-11-20", "2026-11-21"] as const;
-@@ -31,11 +34,12 @@ export const CONGRESS_ZONES = CONGRESS_ZONE_NUMBERS.map((n) => ({
- export const CONGRESS_COLLECTIONS = {
-   registrations: "congress_registrations",
-   payments: "congress_payments",
-   homes: "congress_lodging_homes",
-   assignments: "congress_lodging_assignments",
-   churchRequests: "congress_lodging_church_requests",
-   churches: "congress_churches",
-   importBatches: "congress_import_batches",
-   audit: "congress_audit",
-   events: "congress_events",
-+  sequences: "congress_sequences",
- } as const;
+ export function countsAsPendingVerification(
+   reg: Pick<CongressRegistration, "needsReview"> &
+     Partial<Pick<CongressRegistration, "source" | "submissionId">>
+ ): boolean {
+   if (!reg.needsReview) return false;
+   if (reg.source === "import" && !reg.submissionId) return false;
+   return true;
+ }
++
++export function formSubmissionDisplay(
++  reg: Pick<CongressRegistration, "source" | "formSubmittedAt">
++): { label: "Formulario" | "Actualización" | null; at: string | null } {
++  const at = reg.formSubmittedAt?.trim() ? reg.formSubmittedAt.trim() : null;
++  if (!at) return { label: null, at: null };
++  if (reg.source === "form") return { label: "Formulario", at };
++  return { label: "Actualización", at };
++}
++
++export function withFormSubmittedAt(
++  regs: CongressRegistration[],
++  submittedAtBySubmissionId: ReadonlyMap<string, string>
++): CongressRegistration[] {
++  return regs.map((reg) => {
++    const sid = reg.submissionId?.trim() || "";
++    const at = sid ? submittedAtBySubmissionId.get(sid) ?? null : null;
++    return { ...reg, formSubmittedAt: at };
++  });
++}
 diff --git a/src/core/congress/types.ts b/src/core/congress/types.ts
-index 0cb0854..8c4d541 100644
+index 8c4d541..1df9aa1 100644
 --- a/src/core/congress/types.ts
 +++ b/src/core/congress/types.ts
-@@ -108,20 +108,22 @@ export interface CongressPayment {
-   /** Individuo o iglesia / grupo. */
-   payerType: "individual" | "church" | "other";
-   payerName: string;
-   churchName?: string | null;
-   amountClp: number;
-   /** Medio de pago. Ausente = legacy (caja: Sin clasificar). */
-   method?: CongressPaymentMethod;
-   /** Día del pago YYYY-MM-DD (America/Santiago). Ausente = legacy. */
-   paidOn?: string;
-   receiptRef?: string | null;
-+  /** Folio correlativo CV-YYYY-#####. Requerido en pagos nuevos. */
-+  folio?: string | null;
-   note?: string | null;
-   allocations: CongressPaymentAllocation[];
-   /** Monto del pago no imputado a participantes. */
-   unallocatedClp: number;
-   status: CongressPaymentStatus;
-   voidedAt?: string | null;
-   voidedByUserId?: string | null;
-   voidReason?: string | null;
-   /** Copia de imputaciones al anular (el movimiento original se conserva). */
-   voidedAllocations?: CongressPaymentAllocation[] | null;
+@@ -20,20 +20,25 @@ export interface CongressRegistrationIdentity {
+   status: CongressIdentityStatus;
+ }
+ 
+ export interface CongressRegistration {
+   _id: string;
+   tenantId: string;
+   eventId: string;
+   source: CongressRegistrationSource;
+   /** Enlace a experience_form_submissions._id cuando source=form. */
+   submissionId?: string | null;
++  /**
++   * Hora del envío del formulario público (ISO).
++   * Solo enriquecimiento de API al listar; no se persiste en la inscripción.
++   */
++  formSubmittedAt?: string | null;
+   /** Fila de importación confirmada (nunca auto-merge). */
+   importRowId?: string | null;
+   /** Huella del lote de importación que creó/vinculó esta ficha. */
+   importBatchId?: string | null;
+   zoneId: string;
+   churchName: string;
+   identity: CongressRegistrationIdentity;
+   /** Día previsto declarado en Excel; no es asistencia efectiva. */
+   expectedDayLabel?: string | null;
+   /** Días previstos operativos; independientes de asistencia real. */
+
+## New file: tests/baseline/congress-form-submitted-at.test.ts
+
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+  formSubmissionDisplay,
+  withFormSubmittedAt,
+} from "../../src/core/congress/form-engagement";
+import type { CongressRegistration } from "../../src/core/congress/types";
+
+function base(
+  partial: Partial<CongressRegistration> &
+    Pick<CongressRegistration, "source">
+): Pick<CongressRegistration, "source" | "submissionId" | "formSubmittedAt"> {
+  return {
+    source: partial.source,
+    submissionId: partial.submissionId ?? null,
+    formSubmittedAt: partial.formSubmittedAt ?? null,
+  };
+}
+
+describe("formSubmissionDisplay", () => {
+  it("Formulario cuando source=form y hay hora", () => {
+    assert.deepEqual(
+      formSubmissionDisplay(
+        base({ source: "form", formSubmittedAt: "2026-11-10T18:00:00.000Z" })
+      ),
+      { label: "Formulario", at: "2026-11-10T18:00:00.000Z" }
+    );
+  });
+
+  it("Actualización cuando hay hora y source no es form", () => {
+    assert.deepEqual(
+      formSubmissionDisplay(
+        base({
+          source: "import",
+          submissionId: "sub1",
+          formSubmittedAt: "2026-11-11T12:00:00.000Z",
+        })
+      ),
+      { label: "Actualización", at: "2026-11-11T12:00:00.000Z" }
+    );
+    assert.deepEqual(
+      formSubmissionDisplay(
+        base({ source: "door", formSubmittedAt: "2026-11-11T12:00:00.000Z" })
+      ),
+      { label: "Actualización", at: "2026-11-11T12:00:00.000Z" }
+    );
+  });
+
+  it("sin etiqueta si no hay hora", () => {
+    assert.deepEqual(formSubmissionDisplay(base({ source: "import" })), {
+      label: null,
+      at: null,
+    });
+    assert.deepEqual(
+      formSubmissionDisplay(
+        base({ source: "form", formSubmittedAt: null })
+      ),
+      { label: null, at: null }
+    );
+  });
+});
+
+describe("withFormSubmittedAt", () => {
+  it("adjunta createdAt del envío por submissionId", () => {
+    const regs = [
+      {
+        _id: "a",
+        source: "form" as const,
+        submissionId: "sub-a",
+      },
+      {
+        _id: "b",
+        source: "import" as const,
+        submissionId: null,
+      },
+      {
+        _id: "c",
+        source: "import" as const,
+        submissionId: "missing",
+      },
+    ] as CongressRegistration[];
+    const map = new Map([["sub-a", "2026-11-10T18:00:00.000Z"]]);
+    const out = withFormSubmittedAt(regs, map);
+    assert.equal(out[0].formSubmittedAt, "2026-11-10T18:00:00.000Z");
+    assert.equal(out[1].formSubmittedAt, null);
+    assert.equal(out[2].formSubmittedAt, null);
+  });
+});

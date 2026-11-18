@@ -8,6 +8,8 @@ import {
 } from "@/core/congress/constants";
 import { emptyAttendance } from "@/core/congress/attendance";
 import { buildChargeAmountClp } from "@/core/congress/charges";
+import { formatCongressChurchLabel } from "@/core/congress/church-name";
+import { compareRegistrationsForEntryBackfill } from "@/core/congress/entry-order";
 import { emptyExpectedDays, parseExpectedDayLabel } from "@/core/congress/expected-days";
 import {
   countsAsPendingVerification,
@@ -55,6 +57,95 @@ function eventFilter(tenantId: string, eventId = CONGRESS_EVENT_ID) {
 
 function paymentFolioSequenceId(tenantId: string, eventId = CONGRESS_EVENT_ID) {
   return `${tenantId}:${eventId}:payment-folio`;
+}
+
+function registrationEntrySequenceId(
+  tenantId: string,
+  eventId = CONGRESS_EVENT_ID
+) {
+  return `${tenantId}:${eventId}:registration-entry`;
+}
+
+/** Correlativo de ficha nueva (1, 2, 3…). */
+export async function allocateNextRegistrationEntryNumber(
+  tenantId: string
+): Promise<number> {
+  const db = await getDatabase();
+  const doc = await db
+    .collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences)
+    .findOneAndUpdate(
+      { _id: registrationEntrySequenceId(tenantId) },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: "after" }
+    );
+  const seq = doc?.seq;
+  if (!seq || !Number.isInteger(seq) || seq <= 0) {
+    throw new Error("entry_number_sequence_failed");
+  }
+  return seq;
+}
+
+async function setRegistrationEntrySequence(
+  tenantId: string,
+  seq: number
+): Promise<void> {
+  if (!Number.isInteger(seq) || seq < 0) {
+    throw new Error("entry_number_sequence_invalid");
+  }
+  const db = await getDatabase();
+  await db.collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences).updateOne(
+    { _id: registrationEntrySequenceId(tenantId) },
+    { $set: { seq } },
+    { upsert: true }
+  );
+}
+
+/**
+ * Asigna correlativo a fichas que aún no lo tienen.
+ * No renumera las que ya tienen. Solo altas nuevas piden el siguiente.
+ */
+export async function backfillRegistrationEntryNumbers(
+  tenantId: string
+): Promise<{ assigned: number; maxEntryNumber: number }> {
+  const db = await getDatabase();
+  const col = db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations);
+  const rows = await col.find(eventFilter(tenantId)).toArray();
+
+  let maxEntryNumber = 0;
+  const missing: CongressRegistration[] = [];
+  for (const row of rows) {
+    const n = row.entryNumber;
+    if (typeof n === "number" && Number.isInteger(n) && n > 0) {
+      if (n > maxEntryNumber) maxEntryNumber = n;
+    } else {
+      missing.push(row);
+    }
+  }
+
+  missing.sort(compareRegistrationsForEntryBackfill);
+
+  let assigned = 0;
+  let next = maxEntryNumber;
+  for (const row of missing) {
+    next += 1;
+    await col.updateOne(
+      { _id: row._id, tenantId, eventId: CONGRESS_EVENT_ID },
+      {
+        $set: {
+          entryNumber: next,
+          updatedAt: new Date().toISOString(),
+        },
+        $inc: { version: 1 },
+      }
+    );
+    assigned += 1;
+  }
+
+  if (next > maxEntryNumber) {
+    maxEntryNumber = next;
+  }
+  await setRegistrationEntrySequence(tenantId, maxEntryNumber);
+  return { assigned, maxEntryNumber };
 }
 
 export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
@@ -116,8 +207,20 @@ export async function insertCongressRegistration(
   reg: CongressRegistration
 ): Promise<CongressRegistration> {
   const db = await getDatabase();
-  await db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations).insertOne(reg);
-  return reg;
+  const hasNumber =
+    typeof reg.entryNumber === "number" &&
+    Number.isInteger(reg.entryNumber) &&
+    reg.entryNumber > 0;
+  const withNumber: CongressRegistration = hasNumber
+    ? reg
+    : {
+        ...reg,
+        entryNumber: await allocateNextRegistrationEntryNumber(reg.tenantId),
+      };
+  await db
+    .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+    .insertOne(withNumber);
+  return withNumber;
 }
 
 export async function updateCongressRegistration(
@@ -178,7 +281,9 @@ export function buildRegistrationDraft(input: {
     submissionId: input.submissionId ?? null,
     importRowId: input.importRowId ?? null,
     zoneId: input.zoneId,
-    churchName: input.churchName.trim(),
+    churchName: formatCongressChurchLabel(
+      input.churchName.trim() || "Sin iglesia"
+    ),
     identity: {
       fullName,
       rut: input.rut ?? null,

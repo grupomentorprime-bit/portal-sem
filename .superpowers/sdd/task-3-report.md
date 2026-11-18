@@ -1,41 +1,18 @@
-# Task 3: API ensure-folio — Report
+# Task 3 report
 
-## Status
-**Complete**
+**Status:** DONE (sin commit; browser smoke omitido)
 
-## Changes
+## Cambios
+- `CongressOpsPanel.tsx`: `upsertRegistration` conserva `formSubmittedAt` previo si la respuesta no lo trae (según brief). WIP de ToastProvider / CongressOpsPanelInner intacto.
+- `ReceptionView.tsx`: imports `formSubmissionDisplay` / `formatDateTimeSantiago`; `<th>` Formulario entre Alojamiento y Acción; `const form = formSubmissionDisplay(reg)` calculado una vez por fila (desktop y móvil, sin IIFE); celda desktop (fecha + etiqueta, o "—"); móvil línea bajo el nombre ("Formulario · fecha" / "Sin formulario"). WIP de columna N°, `entryNumbersForDay`, `compareByEntryOrder` intacto.
+- `ParticipantSheet.tsx`: import `formSubmissionDisplay` (`formatDateTimeSantiago` ya importado); `formDisplay` calculado una vez; línea tras el bloque nombre/roles y antes de "Previsto:".
 
-| File | Action |
-|------|--------|
-| `src/app/api/congress/payments/[id]/ensure-folio/route.ts` | Created POST handler |
-| `src/app/api/congress/payments/route.ts` | Added `folio` to `payment.record` audit metadata |
+## Verificación
+- `npx tsx --test tests/baseline/congress-form-submitted-at.test.ts`: 4/4 PASS.
+- `npx tsc --noEmit`: sin errores en los archivos tocados.
+- Smoke en navegador (Step 4): no realizado (requiere login admin).
 
-## Implementation
-
-- **Guard:** `requireCongressPayments()` (same bar as creating payments / download use case).
-- **Handler:** Calls `ensureCongressPaymentFolio({ tenantId, paymentId })`.
-- **Responses:**
-  - Success: `{ ok: true, payment }` (200)
-  - `not_found` → 404
-  - Other errors (e.g. `folio_sequence_failed`) → 500
-  - Uncaught → 500 `{ ok: false, error: "Error interno." }`
-- **Params:** `context.params` awaited as `Promise<{ id: string }>` (matches `void/route.ts`).
-
-## Verification
-
-- ESLint: no issues on touched files.
-- `tsc --noEmit`: exit 0 (no errors on new/changed paths).
-
-## Commits
-None (per task instructions).
-
-## Concerns / follow-ups
-
-- No automated API test for this route yet; manual or integration test recommended before release.
-- Clients must send auth/cookies expected by `requireCongressPayments`.
-
-## Brief checklist
-
-- [x] Step 1: Create route
-- [x] Step 2: Confirm POST `/payments` returns full `payment` (unchanged contract; `payment.folio` included when set at record time)
-- [x] Optional: `folio` in `payment.record` audit metadata
+## Notas
+- La tabla mantiene `min-w-[64rem]`; con la columna extra hay scroll horizontal algo antes (no ajustado).
+- Línea de ficha visible en ambos modos (operate o solo lectura).
+- No se hizo commit.

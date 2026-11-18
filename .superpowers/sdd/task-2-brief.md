@@ -1,89 +1,100 @@
-﻿### Task 2: Repositorio — secuencia atómica + folio al crear + ensure
+﻿### Task 2: Cargar horas de envío y enriquecer GET listado
 
 **Files:**
-- Modify: `src/lib/congress/repository.ts`
-- (sin test de integración Mongo en baseline; dominio cubierto en Task 1)
+- Create: `src/lib/congress/form-submitted-at.ts`
+- Modify: `src/app/api/congress/registrations/route.ts`
 
 **Interfaces:**
-- Consumes: `formatPaymentFolio`, `CONGRESS_COLLECTIONS.sequences`, `CONGRESS_EVENT_ID`, `CONGRESS_PAYMENT_FOLIO_YEAR`
-- Produces:
-  - `allocateNextPaymentFolio(tenantId: string): Promise<string>`
-  - `ensureCongressPaymentFolio(input: { tenantId; paymentId }): Promise<{ ok: true; payment } | { ok: false; error }>`
-  - `recordCongressPayment` → `payment.folio` siempre presente en éxito
+- Consumes: `withFormSubmittedAt` (Task 1)
+- Produces: `loadFormSubmittedAtBySubmissionIds(tenantId, submissionIds: string[]): Promise<Map<string, string>>`
+- GET JSON: cada ítem de `items` / `registrations` incluye `formSubmittedAt: string | null`
 
-- [ ] **Step 1: Añadir allocateNextPaymentFolio**
+- [ ] **Step 1: Implementar loader**
 
-En `repository.ts`, tras imports existentes:
+Crear `src/lib/congress/form-submitted-at.ts`:
 
 ```ts
-import { formatPaymentFolio } from "@/core/congress/payment-folio";
-import { CONGRESS_PAYMENT_FOLIO_YEAR } from "@/core/congress/constants";
-```
+import "server-only";
 
-```ts
-function paymentFolioSequenceId(tenantId: string, eventId = CONGRESS_EVENT_ID) {
-  return `${tenantId}:${eventId}:payment-folio`;
-}
+import { ObjectId } from "mongodb";
+import { getDatabase } from "@/lib/mongodb";
 
-export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
+const SUBMISSIONS = "experience_form_submissions";
+
+/**
+ * Map submissionId (string) → createdAt ISO del envío.
+ * IDs inválidos o sin documento se omiten del mapa.
+ */
+export async function loadFormSubmittedAtBySubmissionIds(
+  tenantId: string,
+  submissionIds: string[]
+): Promise<Map<string, string>> {
+  const unique = [...new Set(submissionIds.map((id) => id.trim()).filter(Boolean))];
+  const objectIds: ObjectId[] = [];
+  const idByHex = new Map<string, string>();
+  for (const id of unique) {
+    try {
+      const oid = new ObjectId(id);
+      objectIds.push(oid);
+      idByHex.set(oid.toHexString(), id);
+    } catch {
+      // skip non-ObjectId strings
+    }
+  }
+  const out = new Map<string, string>();
+  if (objectIds.length === 0) return out;
+
   const db = await getDatabase();
-  const doc = await db
-    .collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences)
-    .findOneAndUpdate(
-      { _id: paymentFolioSequenceId(tenantId) },
-      { $inc: { seq: 1 } },
-      { upsert: true, returnDocument: "after" }
-    );
-  const seq = doc?.seq;
-  if (!seq || !Number.isInteger(seq) || seq <= 0) {
-    throw new Error("folio_sequence_failed");
+  const rows = await db
+    .collection<{ _id: ObjectId; createdAt?: string }>(SUBMISSIONS)
+    .find(
+      { tenant: tenantId, _id: { $in: objectIds } },
+      { projection: { createdAt: 1 } }
+    )
+    .toArray();
+
+  for (const row of rows) {
+    const key = idByHex.get(row._id.toHexString());
+    const createdAt = typeof row.createdAt === "string" ? row.createdAt : null;
+    if (key && createdAt) out.set(key, createdAt);
   }
-  return formatPaymentFolio(seq, CONGRESS_PAYMENT_FOLIO_YEAR);
+  return out;
 }
 ```
 
-Nota: el driver Mongo puede devolver el documento en `doc` o `doc.value` según versión — usar el patrón ya existente en este repo para `findOneAndUpdate` (ver `updateCongressRegistration` en el mismo archivo) y adaptar.
+- [ ] **Step 2: Enriquecer route**
 
-In this repo, `updateCongressRegistration` uses:
-```ts
-return result ? normalizeCongressRegistration(result) : null;
-```
-So treat `findOneAndUpdate` return as the document directly (not `.value`).
-
-- [ ] **Step 2: Asignar folio en recordCongressPayment antes de insertOne**
-
-Dentro de `recordCongressPayment`, **después** de `allocatePayment` OK, asignar folio **antes** del loop de updates a registrations:
+En `src/app/api/congress/registrations/route.ts`, tras obtener `items`:
 
 ```ts
-  if (!result.ok) {
-    return { ok: false, error: result.error };
-  }
+import { loadFormSubmittedAtBySubmissionIds } from "@/lib/congress/form-submitted-at";
+import { withFormSubmittedAt } from "@/core/congress/form-engagement";
 
-  let folio: string;
-  try {
-    folio = await allocateNextPaymentFolio(input.tenantId);
-  } catch {
-    return { ok: false, error: "folio_sequence_failed" };
-  }
+// ... sync + listCongressRegistrations como hoy ...
 
-  const paymentWithFolio: CongressPayment = { ...result.payment, folio };
+const submittedAtMap = await loadFormSubmittedAtBySubmissionIds(
+  ctx.tenantId,
+  items.map((r) => r.submissionId).filter((id): id is string => Boolean(id))
+);
+const enriched = withFormSubmittedAt(items, submittedAtMap);
+
+// Usar enriched en la respuesta:
+return NextResponse.json({
+  ok: true,
+  items: enriched,
+  registrations: enriched,
+  filterOptions: { zones, churches, churchesByZone },
+});
 ```
 
-Usar `paymentWithFolio` en el `insertOne` y en el return. El loop de `updatedRegistrations` sigue igual.
+No tocar el sync existente ni los `filterOptions`.
 
-Si el loop de registrations falla (`concurrent_payment`), el folio queda “consumido” (hueco en secuencia) — aceptable (no reutilizar).
+- [ ] **Step 3: Verificación manual rápida (dev)**
 
-- [ ] **Step 3: ensureCongressPaymentFolio**
+Con el panel abierto, `GET /api/congress/registrations` debe devolver `formSubmittedAt` ISO en filas con `submissionId`, y `null` en import/puerta sin envío.  
+Expected: JSON con el campo; sin errores 500.
 
-Implement idempotent ensure for legacy payments without folio. Prefer a clean race-safe version:
+- [ ] **Step 4: Commit** — omitir salvo pedido explícito.
 
-1. find payment; if missing → not_found; if has folio → return it
-2. allocateNextPaymentFolio
-3. findOneAndUpdate only when folio is null/missing/empty; returnDocument after
-4. if update lost race, findOne again and return existing folio if present; else folio_sequence_failed
+---
 
-Do not leave dead unreachable branches (the plan's sample had a redundant `if (payment?.folio)` inside `if (!payment?.folio)` — clean that up).
-
-- [ ] **Step 4: Smoke / typecheck**
-
-Prefer focused check: ensure repository.ts typechecks. If full `npx tsc --noEmit -p tsconfig.json` is too noisy/slow, at least confirm no TS errors in the edited file via reading lints / compiling if feasible. Report what you ran.

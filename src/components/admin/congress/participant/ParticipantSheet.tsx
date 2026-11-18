@@ -34,6 +34,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { isExplicitlyExempt } from "@/core/congress/charge";
 import { remainingBalanceClp } from "@/core/congress/charges";
+import { formSubmissionDisplay } from "@/core/congress/form-engagement";
 import { todayPaidOnSantiago } from "@/core/congress/payment-dates";
 import { occupiedBedsForNight } from "@/core/congress/lodging";
 import { cn } from "@/lib/utils";
@@ -254,6 +255,7 @@ export function ParticipantSheet({
     ? registrationDisplayName(registration)
     : "Participante";
   const roleBadges = registration ? registrationRoleBadges(registration) : [];
+  const formDisplay = registration ? formSubmissionDisplay(registration) : null;
   const description = registration
     ? [
         registration.churchName,
@@ -354,6 +356,12 @@ export function ParticipantSheet({
                 ) : roleBadges.length > 0 ? (
                   <p className="text-xs text-muted">{roleBadges.join(" · ")}</p>
                 ) : null}
+
+                <p className="text-xs text-muted">
+                  {formDisplay?.at && formDisplay.label
+                    ? `${formDisplay.label} · ${formatDateTimeSantiago(formDisplay.at)}`
+                    : "Sin formulario"}
+                </p>
 
                 <div className="flex flex-wrap items-end gap-3">
                   <p className="text-muted">

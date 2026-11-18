@@ -1,89 +1,67 @@
-# Task 1 Report: Dominio — folio puro + tipo
+# Task 1 Report: Dominio puro — tipo, etiqueta y merge
 
 ## Status
 
 **DONE**
 
-## Scope
+## Commits
 
-Pure domain helpers for congress payment receipt folios, year constant, sequences collection name on `CONGRESS_COLLECTIONS`, and optional `folio` on `CongressPayment`. No Mongo sequence wiring, migrations, or PDF UI (later tasks).
+None (per global plan constraints).
 
-## Files changed
+## TDD
 
-| Action | Path |
-|--------|------|
-| Create | `tests/baseline/congress-payment-folio.test.ts` |
-| Create | `src/core/congress/payment-folio.ts` |
-| Modify | `src/core/congress/constants.ts` |
-| Modify | `src/core/congress/types.ts` |
+1. Created `tests/baseline/congress-form-submitted-at.test.ts` verbatim from brief.
+2. Ran tests — 4 failures (`formSubmissionDisplay` / `withFormSubmittedAt` not exported).
+3. Implemented type field and helpers per brief.
+4. Re-ran tests — 4/4 pass.
 
-## Implementation summary
-
-### `constants.ts`
-
-- Added `CONGRESS_PAYMENT_FOLIO_YEAR = 2026` with JSDoc (Spanish, per brief).
-- Added `sequences: "congress_sequences"` to `CONGRESS_COLLECTIONS`.
-
-### `types.ts`
-
-- Added `folio?: string | null` on `CongressPayment` with brief JSDoc, placed after `receiptRef`.
-
-### `payment-folio.ts`
-
-- `formatPaymentFolio(seq, year?)` — default year from `CONGRESS_PAYMENT_FOLIO_YEAR`; validates positive integer; throws `Error("invalid_folio_sequence")` otherwise; returns `CV-{year}-{5-digit}`.
-- `paymentReceiptFilename(folio)` — returns `comprobante-ingreso-{folio}.pdf`.
-
-## TDD evidence
-
-### RED — Step 2 (module absent)
-
-**Command:**
-
-```text
-npx tsx --test tests/baseline/congress-payment-folio.test.ts
+```
+npx tsx --test tests/baseline/congress-form-submitted-at.test.ts
+ℹ pass 4, fail 0
 ```
 
-**Result:** exit code 1
+## Changes
 
-```text
-Error: Cannot find module '../../src/core/congress/payment-folio'
-...
-ℹ pass 0
-ℹ fail 1
-```
+### `src/core/congress/types.ts`
 
-### GREEN — Step 4 (after implementation)
+- Added optional `formSubmittedAt?: string | null` on `CongressRegistration` after `submissionId`, with JSDoc noting API-only enrichment (not persisted).
 
-**Command:**
+### `src/core/congress/form-engagement.ts`
 
-```text
-npx tsx --test tests/baseline/congress-payment-folio.test.ts
-```
+- `formSubmissionDisplay(reg)` — returns `{ label, at }`:
+  - No trimmed non-empty `formSubmittedAt` → `{ label: null, at: null }`.
+  - `source === "form"` → `"Formulario"`.
+  - Otherwise → `"Actualización"`.
+- `withFormSubmittedAt(regs, map)` — maps each registration, setting `formSubmittedAt` from map by trimmed `submissionId`, or `null` when no id or no map entry.
 
-**Result:** exit code 0
+### `tests/baseline/congress-form-submitted-at.test.ts`
 
-```text
-▶ congress payment folio
-  ✔ formatea CV-YYYY-##### con padding
-  ✔ rechaza secuencia no positiva
-  ✔ arma nombre de archivo estable
-✔ congress payment folio
-ℹ tests 3
-ℹ pass 3
-ℹ fail 0
-```
+- New baseline suite covering display labels (form / actualización / sin hora) and merge behavior.
 
 ## Self-review
 
-- Matches task brief verbatim (no extra exports, validators, or runtime DB usage).
-- Test file mirrors brief exactly (relative import to `payment-folio`; `@/` import in source matches other congress modules).
-- Linter: no issues on touched source files.
-- `folio` remains optional on the type for legacy payments; enforcement is deferred to later tasks.
-
-## Commits
-
-None (per project constraint for this workstream).
+- Matches brief verbatim; no unrelated files touched.
+- Aligns with existing `form-engagement.ts` patterns (`Pick<CongressRegistration, ...>`, Spanish labels consistent with file comments).
+- `withFormSubmittedAt` returns new objects via spread (immutable merge).
+- Linter: no issues on modified files.
 
 ## Concerns
 
 None.
+
+## Out of scope (later tasks)
+
+- Mongo/API wiring to populate `formSubmittedAt` when listing.
+- UI (ReceptionView, CongressOpsPanel).
+## Final-review fix
+
+**Problem:** `submissionId` can be a Mongo ObjectId at runtime (`sync-form.ts` wrote `submission._id` raw), so `id.trim()` / `reg.submissionId?.trim()` crashed GET `/api/congress/registrations`.
+
+**Changes**
+- `src/core/congress/form-engagement.ts`: new pure `submissionIdKey(value: unknown): string | null` (string -> trim; object -> toHexString/String(); null/empty/`[object Object]`/invalid -> null). `withFormSubmittedAt` uses it.
+- `src/lib/congress/form-submitted-at.ts`: loader takes `readonly unknown[]` and normalizes with `submissionIdKey`; map keys remain strings.
+- `src/lib/congress/sync-form.ts`: writes `String(submission._id)` (both insert and link-by-RUT update); the dedupe lookup uses `$in: [string, rawId]` so legacy ObjectId rows still match (no duplicates).
+- `src/app/api/congress/registrations/route.ts`: passes `items.map(r => r.submissionId)` directly (loader coerces).
+- `tests/baseline/congress-form-submitted-at.test.ts`: added ObjectId-like / toString-only / padded / `{}` / number cases and `submissionIdKey` tests.
+
+**Test output** (`npx tsx --test tests/baseline/congress-form-submitted-at.test.ts`): tests 6, pass 6, fail 0. `tsc --noEmit` reports no errors in touched files. No commit made; ReceptionView untouched.

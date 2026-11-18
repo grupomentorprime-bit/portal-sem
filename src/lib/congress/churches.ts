@@ -1,7 +1,10 @@
 import "server-only";
 
 import { generateId } from "@/core/identity/auth/crypto";
-import { foldCongressChurchBase } from "@/core/congress/church-name";
+import {
+  foldCongressChurchBase,
+  formatCongressChurchLabel,
+} from "@/core/congress/church-name";
 import {
   CONGRESS_COLLECTIONS,
   CONGRESS_EVENT_ID,
@@ -35,7 +38,7 @@ export async function upsertCongressChurches(input: {
 
   let upserted = 0;
   for (const church of input.churches) {
-    const churchName = church.churchName.trim();
+    const churchName = formatCongressChurchLabel(church.churchName.trim());
     const zoneId = church.zoneId.trim();
     if (!churchName || !zoneId) continue;
     const key = foldChurchKey(zoneId, churchName);

@@ -205,3 +205,23 @@ Minors for final review:
 - PDF footer 'recaudacion' without accent vs plan
 - browser smoke pendiente usuario
 
+
+# Congreso Varones Fecha Formulario SDD
+
+Started: 2026-11-18
+Branch: master (in-place; sin commit salvo pedido)
+Plan: docs/superpowers/plans/2026-11-18-congreso-varones-fecha-formulario.md
+Base HEAD: 700fa7013d6946013512b51f0824684506ac6ce6
+Constraint: sin git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"; reviews via uncommitted diffs; preservar WIP entry-order en ReceptionView/CongressOpsPanel
+
+Task 1: complete (uncommitted, congress-form-submitted-at 4/4, review clean)
+
+Task 2: complete (uncommitted, loader+route, review clean; manual GET smoke pendiente)
+
+Task 3: complete (uncommitted, UI+upsert, review clean; browser smoke pendiente)
+Minors for final review:
+- browser smoke pendiente usuario
+- tabla min-w puede scroll antes con columna extra
+
+Final review: Critical ObjectId trim crash fixed; re-review Ready. Domain tests 6/6. Browser smoke pendiente.
+

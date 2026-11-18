@@ -27,6 +27,11 @@ export interface CongressRegistration {
   source: CongressRegistrationSource;
   /** Enlace a experience_form_submissions._id cuando source=form. */
   submissionId?: string | null;
+  /**
+   * Hora del envío del formulario público (ISO).
+   * Solo enriquecimiento de API al listar; no se persiste en la inscripción.
+   */
+  formSubmittedAt?: string | null;
   /** Fila de importación confirmada (nunca auto-merge). */
   importRowId?: string | null;
   /** Huella del lote de importación que creó/vinculó esta ficha. */
@@ -51,6 +56,11 @@ export interface CongressRegistration {
    */
   isZoneLeader?: boolean;
   attendance: CongressAttendanceDays;
+  /**
+   * Correlativo de ficha (1, 2, 3…).
+   * Se asigna al crear; no cambia si la persona ya existía.
+   */
+  entryNumber?: number | null;
   /** Primera hora de llegada por día (ISO servidor); no se sobrescribe. */
   attendanceMeta?: {
     saturdayMarkedAt?: string | null;
