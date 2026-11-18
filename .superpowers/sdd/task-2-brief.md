@@ -1,47 +1,113 @@
-﻿### Task 2: Lectura por Espacio
+﻿### Task 2: UI lista grupal — deshabilitar y etiquetar
 
 **Files:**
-- Create: `src/lib/growth/conversion-analytics-read.ts`
-- Test: `tests/baseline/growth-conversion-analytics.test.ts` (guarda de fuente; la funciÃ³n pura ya cubre el cÃ¡lculo)
+- Modify: `src/components/admin/congress/CongressOpsPanel.tsx` (bloque ~527–547 y ~975–1002)
 
 **Interfaces:**
-- Consumes: `buildConversionAnalytics` y sus tipos de entrada. `getDatabase` (`src/lib/mongodb.ts`). Colecciones `GROWTH_OPORTUNIDADES_COLLECTION`, `GROWTH_ACTIVIDADES_COLLECTION`, `GROWTH_FUNNELS_COLLECTION`, `GROWTH_CAMPAIGNS_COLLECTION`. `listMembershipsByTenant`, `listUsersByIds`. `resolveAnalyticsPeriod`. `getExperienceFormById`, el mismo uso que `resolveFormNames` en `analytics-read.ts`.
-- Produces: `getConversionAnalytics(tenantId: string, query: ResolveAnalyticsPeriodInput): Promise<{ ok: true; data: ConversionAnalyticsResponse } | { ok: false; error: string; status: 400 }>`.
+- Consumes: `isGroupPaymentSelectable`, `deriveContributionStatus`, `contributionStatusLabel` (o `contributionLabel`)
+- Produces: checkboxes disabled cuando no seleccionable; monto/preview solo sobre IDs seleccionables
 
-- [ ] **Step 1: Write the failing source guard**
+- [ ] **Step 1: Ampliar imports**
 
-En el test de fase 3, leer `conversion-analytics-read.ts` y afirmar: filtra `tenantId`; kinds limitados a `opportunity_opened`, `opportunity_transitioned`, `opportunity_assigned`; no contiene `insert`, `update`, `delete`, `aggregate` de escritura, `029`, `lossReason`, ni `deriveCampaignMetrics`. Afirmar que `analytics-read.ts` y `analytics-aggregate.ts` no importan `conversion-analytics`.
+En `CongressOpsPanel.tsx`:
 
-- [ ] **Step 2: Run test to verify it fails**
+1. Desde `@/core/congress/finance-status` importar `isGroupPaymentSelectable` y `deriveContributionStatus`.
+2. Desde `@/components/admin/congress/labels` añadir `contributionStatusLabel` al import existente (`formatClp`, `formatZoneLabel`, …).
 
-Run: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
+- [ ] **Step 2: Filtrar selección y monto**
 
-Expected: FAIL al leer un archivo que no existe.
+Tras `groupCandidates`, asegurar que `groupSelected` no contenga no-seleccionables al calcular monto/preview. Reemplazar el cálculo actual por:
 
-- [ ] **Step 3: Write minimal implementation**
+```tsx
+  const groupSelectableIds = useMemo(() => {
+    const set = new Set(
+      groupCandidates.filter(isGroupPaymentSelectable).map((r) => r._id)
+    );
+    return set;
+  }, [groupCandidates]);
 
-`conversion-analytics-read.ts` con `import "server-only"`. Si `resolveAnalyticsPeriod` falla, devolver `{ ok: false, error, status: 400 }`. Si no:
+  const groupSelectedActive = useMemo(
+    () => groupSelected.filter((id) => groupSelectableIds.has(id)),
+    [groupSelected, groupSelectableIds]
+  );
 
-1. `find` de oportunidades `{ tenantId }`.
-2. `find` de actividades `{ tenantId, kind: { $in: ["opportunity_opened", "opportunity_transitioned", "opportunity_assigned"] } }`. El historial anterior al perÃ­odo hace falta para permanencia y atribuciÃ³n; no recortar por `occurredAt` en Mongo.
-3. `find` de embudos y campaÃ±as `{ tenantId }`.
-4. MembresÃ­as del Espacio de cualquier estado. `active: membership.status === "active"`. Label: `displayName` o email. La vigencia la resuelve el nÃºcleo puro.
-5. Nombres de formulario solo para los `origin.formId` de esas oportunidades.
-6. `readAt = new Date().toISOString()` y llamar a `buildConversionAnalytics`. Proyectar al tipo de entrada; no pasar el documento crudo de mÃ¡s.
+  const groupAmount = groupSelectedActive.length * CONGRESS_CONTRIBUTION_CLP;
 
-No crear colecciÃ³n ni Ã­ndice.
+  const groupPreview = useMemo(() => {
+    if (!groupAmount || groupSelectedActive.length === 0) return [];
+    return groupSelectedActive.map((id) => ({
+      registrationId: id,
+      amountClp: CONGRESS_CONTRIBUTION_CLP,
+    }));
+  }, [groupAmount, groupSelectedActive]);
+```
 
-- [ ] **Step 4: Run test to verify it passes**
+En el display de monto total, usar `groupSelectedActive.length` (no `groupSelected.length`) para el texto `N × …`.
 
-Run: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
+- [ ] **Step 3: Render de filas con disabled + etiqueta**
 
-Expected: PASS.
+Reemplazar el `map` de `groupCandidates` por:
+
+```tsx
+                {groupCandidates.map((r) => {
+                  const selectable = isGroupPaymentSelectable(r);
+                  const checked = selectable && groupSelected.includes(r._id);
+                  const roles = registrationRoleBadges(r);
+                  const status = deriveContributionStatus(r);
+                  return (
+                    <label
+                      key={r._id}
+                      className={`flex items-center gap-2 text-sm ${
+                        selectable ? "" : "text-muted"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={!selectable}
+                        onChange={() => {
+                          if (!selectable) return;
+                          setGroupSelected((prev) =>
+                            checked
+                              ? prev.filter((id) => id !== r._id)
+                              : [...prev, r._id]
+                          );
+                        }}
+                      />
+                      <span>
+                        {registrationDisplayName(r)}
+                        {roles.length ? (
+                          <span className="text-xs text-muted">
+                            {" "}
+                            · {roles.join(" · ")}
+                          </span>
+                        ) : null}
+                        {!selectable ? (
+                          <span className="text-xs text-muted">
+                            {" "}
+                            · {contributionStatusLabel(status, r)}
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
+                  );
+                })}
+```
+
+Mantener la nota existente de efectivo + transferencia sin cambios.
+
+- [ ] **Step 4: Sanity check TypeScript / lint del archivo tocado**
+
+Run: `npx tsc --noEmit -p tsconfig.json`  
+(o el check que use el repo si `tsc` es pesado: al menos abrir el panel y confirmar que no hay errores de import).
+
+Expected: sin errores nuevos en `CongressOpsPanel.tsx` / `finance-status.ts`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/growth/conversion-analytics-read.ts tests/baseline/growth-conversion-analytics.test.ts
-git commit -m "feat: leer analÃ­tica de conversiÃ³n del Espacio sin materializarla"
+git add src/components/admin/congress/CongressOpsPanel.tsx
+git commit -m "feat(congreso): bloquea en pago grupal a quienes ya estánaron."
 ```
 
 ---

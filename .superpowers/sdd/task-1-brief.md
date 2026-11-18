@@ -1,159 +1,101 @@
-﻿### Task 1: Dominio — reclamable + búsqueda (directa + fuzzy)
+﻿### Task 1: Predicado `isGroupPaymentSelectable`
 
 **Files:**
-- Create: `src/core/congress/claim.ts`
-- Create: `tests/baseline/congress-nomina-claim.test.ts`
+- Modify: `src/core/congress/finance-status.ts`
+- Test: `tests/baseline/congress-reception-labels.test.ts`
 
 **Interfaces:**
-- Produces:
-  - `isCongressRegistrationClaimable(reg): boolean`
-  - `toPublicCongressRosterHit(reg): { registrationId; fullName; churchName; zoneId }`
-  - `searchClaimableCongressRegistrations(regs, query, limit?): { matches; suggestions; hasMore; suggestionsHasMore }`
+- Consumes: `deriveContributionStatus(reg)`
+- Produces: `isGroupPaymentSelectable(reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">): boolean` — `true` solo si status === `"pending"`
 
-- [ ] **Step 1: Test fallido — claimable y búsqueda**
+- [ ] **Step 1: Write the failing test**
+
+En `tests/baseline/congress-reception-labels.test.ts`, añadir import y bloque:
 
 ```ts
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 import {
-  isCongressRegistrationClaimable,
-  searchClaimableCongressRegistrations,
-} from "../../src/core/congress/claim";
-import type { CongressRegistration } from "../../src/core/congress/types";
+  deriveContributionStatus,
+  isGroupPaymentSelectable,
+} from "../../src/core/congress/finance-status";
 
-function stub(
-  partial: Partial<CongressRegistration> & { _id: string; fullName: string }
-): CongressRegistration {
-  const { fullName, identity, ...rest } = partial;
-  return {
-    tenantId: "t1",
-    eventId: "ipn-congreso-varones-2026",
-    source: "import",
-    submissionId: null,
-    importRowId: null,
-    zoneId: "zona-1",
-    churchName: "Quilicura",
-    expectedDays: { saturday: true, sunday: true },
-    lodgingNeed: "unknown",
-    attendance: { saturday: null, sunday: null },
-    chargeAmountClp: 17000,
-    allocatedPaidClp: 0,
-    needsReview: true,
-    version: 1,
-    createdAt: "2026-11-17T00:00:00.000Z",
-    updatedAt: "2026-11-17T00:00:00.000Z",
-    ...rest,
-    _id: partial._id,
-    identity: {
-      fullName,
-      rut: identity?.rut ?? null,
-      email: identity?.email ?? null,
-      phone: identity?.phone ?? null,
-      status: identity?.status ?? "provisional",
-    },
+describe("group payment selectable", () => {
+  const base = {
+    chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+    needsReview: false,
   };
-}
 
-describe("congress nomina claim search", () => {
-  it("solo stubs import sin submissionId son reclamables", () => {
+  it("solo pending es seleccionable en pago grupal", () => {
     assert.equal(
-      isCongressRegistrationClaimable(
-        stub({ _id: "a", fullName: "Hno David Orellana", source: "import", submissionId: null })
-      ),
+      isGroupPaymentSelectable({ ...base, allocatedPaidClp: 0 }),
       true
     );
     assert.equal(
-      isCongressRegistrationClaimable(
-        stub({
-          _id: "b",
-          fullName: "Hno David Orellana",
-          source: "import",
-          submissionId: "sub1",
-        })
-      ),
+      isGroupPaymentSelectable({
+        ...base,
+        allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
+      }),
       false
     );
     assert.equal(
-      isCongressRegistrationClaimable(
-        stub({ _id: "c", fullName: "Nuevo", source: "form", submissionId: null })
-      ),
+      isGroupPaymentSelectable({
+        ...base,
+        allocatedPaidClp: 5000,
+      }),
       false
     );
-  });
-
-  it("match directo ignora tildes y sugiere con typo", () => {
-    const regs = [
-      stub({ _id: "1", fullName: "Hno Patricio Ravello", churchName: "Quilicura", zoneId: "zona-1" }),
-      stub({ _id: "2", fullName: "Hno Pedro González", churchName: "Quilicura", zoneId: "zona-1" }),
-    ];
-    const accent = searchClaimableCongressRegistrations(regs, "patricio ravello");
-    assert.equal(accent.matches.length, 1);
-    assert.equal(accent.matches[0]._id, "1");
-
-    const typo = searchClaimableCongressRegistrations(regs, "patricio ravelo");
-    const hitIds = [...typo.matches, ...typo.suggestions].map((r) => r._id);
-    assert.ok(hitIds.includes("1"));
+    assert.equal(
+      isGroupPaymentSelectable({
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
+        needsReview: true,
+      }),
+      false
+    );
+    assert.equal(
+      isGroupPaymentSelectable({
+        chargeAmountClp: null,
+        allocatedPaidClp: 0,
+        needsReview: false,
+      }),
+      false
+    );
   });
 });
 ```
 
-- [ ] **Step 2: Correr test (debe fallar)**
+Actualizar el import existente de `deriveContributionStatus` para incluir `isGroupPaymentSelectable` (un solo import desde ese módulo).
 
-Run: `npx tsx --test tests/baseline/congress-nomina-claim.test.ts`  
-Expected: FAIL (módulo / exports ausentes)
+- [ ] **Step 2: Run test to verify it fails**
 
-- [ ] **Step 3: Implementar `claim.ts`**
+Run: `npx tsx --test tests/baseline/congress-reception-labels.test.ts`
+
+Expected: FAIL — `isGroupPaymentSelectable` is not exported / not a function.
+
+- [ ] **Step 3: Write minimal implementation**
+
+En `src/core/congress/finance-status.ts`, después de `contributionStatusHasBalance`:
 
 ```ts
-import {
-  collectPersonSearchSuggestions,
-  matchesPersonSearch,
-} from "@/lib/experience/forms/person-search";
-import type { CongressRegistration } from "@/core/congress/types";
-
-export function isCongressRegistrationClaimable(reg: CongressRegistration): boolean {
-  return reg.source === "import" && !reg.submissionId;
-}
-
-export function toPublicCongressRosterHit(reg: CongressRegistration) {
-  return {
-    registrationId: reg._id,
-    fullName: reg.identity.fullName,
-    churchName: reg.churchName,
-    zoneId: reg.zoneId,
-  };
-}
-
-export function searchClaimableCongressRegistrations(
-  registrations: CongressRegistration[],
-  query: string,
-  limit = 40
-) {
-  const claimable = registrations.filter(isCongressRegistrationClaimable);
-  const fields = (r: CongressRegistration) => [r.identity.fullName, r.churchName];
-  const matches = claimable.filter((r) => matchesPersonSearch(query, fields(r)));
-  const matchIds = new Set(matches.map((r) => r._id));
-  const suggestions = collectPersonSearchSuggestions(
-    query,
-    claimable.filter((r) => !matchIds.has(r._id)),
-    fields,
-    8
-  );
-  return {
-    matches: matches.slice(0, limit),
-    suggestions: suggestions.items,
-    hasMore: matches.length > limit,
-    suggestionsHasMore: suggestions.hasMore,
-  };
+/** Pago grupal: solo pendientes sin imputar (monto completo, sin abonos). */
+export function isGroupPaymentSelectable(
+  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
+): boolean {
+  return deriveContributionStatus(reg) === "pending";
 }
 ```
 
-- [ ] **Step 4: Correr test (debe pasar)**
+- [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx tsx --test tests/baseline/congress-nomina-claim.test.ts`  
-Expected: PASS
+Run: `npx tsx --test tests/baseline/congress-reception-labels.test.ts`
 
-- [ ] **Step 5: Sin git commit** — marcar task hecha.
+Expected: PASS (todos los `describe` del archivo).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/core/congress/finance-status.ts tests/baseline/congress-reception-labels.test.ts
+git commit -m "feat(congreso): predicado de selección para pago grupal sin duplicar."
+```
 
 ---
 
