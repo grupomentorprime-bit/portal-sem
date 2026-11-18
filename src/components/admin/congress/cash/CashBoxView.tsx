@@ -20,6 +20,7 @@ import {
   breakdownContributionsByZone,
   breakdownPaymentsByPaidOn,
   normalizePaymentMethod,
+  reconcilePostedAllocationsWithCollected,
   summarizeCashBox,
   summarizeContributionClose,
   type CashMethodKey,
@@ -172,6 +173,11 @@ export function CashBoxView({
     [registrations]
   );
 
+  const reconcile = useMemo(
+    () => reconcilePostedAllocationsWithCollected(payments, registrations),
+    [payments, registrations]
+  );
+
   const byDay = useMemo(
     () => breakdownPaymentsByPaidOn(payments, filters),
     [payments, filters]
@@ -240,6 +246,26 @@ export function CashBoxView({
               count={close.countsByStatus.needs_verification}
             />
             <StatusChip label="Sin cargo" count={close.countsByStatus.no_charge} />
+          </div>
+          <div
+            className={cn(
+              "mt-4 rounded-md border px-3 py-2 text-sm",
+              reconcile.deltaClp === 0
+                ? "border-success/30 bg-success/10"
+                : "border-warning/40 bg-warning/10"
+            )}
+          >
+            <p className="font-medium text-foreground">
+              Cuadre movimientos ↔ fichas
+              {reconcile.deltaClp === 0 ? " · OK" : " · Descuadre"}
+            </p>
+            <p className="mt-0.5 text-xs text-muted">
+              Imputado en movimientos {formatClp(reconcile.movementsAllocatedClp)} ·
+              Cobrado en fichas {formatClp(reconcile.collectedClp)}
+              {reconcile.deltaClp !== 0
+                ? ` · Δ ${formatClp(reconcile.deltaClp)}`
+                : ""}
+            </p>
           </div>
         </div>
       </Section>

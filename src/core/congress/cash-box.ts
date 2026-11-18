@@ -86,6 +86,35 @@ export function summarizeCashBox(
   return { rows, totalsClp };
 }
 
+/**
+ * Cuadre universo: suma imputada en movimientos posted vs cobrado en fichas.
+ * deltaClp = movimientosAllocatedClp - collectedClp (0 = cuadra).
+ */
+export function reconcilePostedAllocationsWithCollected(
+  payments: Array<Pick<CongressPayment, "status" | "amountClp" | "unallocatedClp">>,
+  registrations: Array<
+    Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
+  >
+): {
+  movementsAllocatedClp: number;
+  collectedClp: number;
+  deltaClp: number;
+} {
+  let movementsAllocatedClp = 0;
+  for (const p of payments) {
+    if (p.status !== "posted") continue;
+    const amount = Math.trunc(p.amountClp);
+    const unalloc = Math.max(0, Math.trunc(p.unallocatedClp));
+    movementsAllocatedClp += Math.max(0, amount - unalloc);
+  }
+  const { collectedClp } = summarizeContributionClose(registrations);
+  return {
+    movementsAllocatedClp,
+    collectedClp,
+    deltaClp: movementsAllocatedClp - collectedClp,
+  };
+}
+
 export function summarizeContributionClose(
   registrations: Array<
     Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
