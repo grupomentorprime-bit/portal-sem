@@ -81,6 +81,7 @@ const CSS_INFRASTRUCTURE = new Set([
 /**
  * Rutas bajo src/ exceptuadas:
  * - emails HTML, SVG, confetti, error API (colores técnicamente inevitables)
+ * - marcas de redes y switch nativo (colores de terceros / sistema)
  * - sitios públicos en código (`src/sites` + UI/CSS del espacio): identidad propia,
  *   no la paleta Master Growth OS (ver docs/design/BRANDING-SYSTEM.md)
  * - escritorio Nelzuri: vidrio sobre el fondo, no la paleta del admin
@@ -90,6 +91,8 @@ const EXEMPT_PREFIXES = [
   "src/components/portal/experience/forms/AttendanceTeacherIcon.tsx",
   "src/lib/experience/forms/celebration.ts",
   "src/app/api/cms/media/stream/route.ts",
+  "src/components/brand/NetworkMark.tsx",
+  "src/components/ui/switch.tsx",
   "src/components/sites/",
   "src/styles/sites/",
   "src/sites/",
