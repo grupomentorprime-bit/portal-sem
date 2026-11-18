@@ -55,6 +55,21 @@ export async function createInvitation(input: {
   return invitation;
 }
 
+/** Nombre más reciente escrito al invitar a este correo en el Espacio. */
+export async function findLatestInvitationDisplayName(
+  tenantId: string,
+  email: string
+): Promise<string> {
+  const db = await getDatabase();
+  const row = await db
+    .collection<IdentityInvitation>("identity_invitations")
+    .find({ tenantId, email: normalizeEmail(email) })
+    .sort({ createdAt: -1 })
+    .limit(1)
+    .next();
+  return row?.displayName?.trim() || "";
+}
+
 export async function findPendingInvitationByEmail(
   tenantId: string,
   email: string
@@ -170,6 +185,18 @@ export async function renewInvitationToken(
       },
     },
     { returnDocument: "after" }
+  );
+}
+
+export async function setInvitationUnitAccess(
+  invitationId: string,
+  tenantId: string,
+  unitAccess: UnitAccess
+): Promise<void> {
+  const db = await getDatabase();
+  await db.collection<IdentityInvitation>("identity_invitations").updateOne(
+    { _id: invitationId, tenantId },
+    { $set: { unitAccess } }
   );
 }
 

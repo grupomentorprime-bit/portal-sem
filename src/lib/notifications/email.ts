@@ -27,6 +27,7 @@ import {
   formatFromHeader,
   getResendClient,
   resolveSendingMailbox,
+  serializeResendAttachments,
 } from "@/lib/notifications/transport";
 
 export type { EmailIdentity } from "@/lib/notifications/identity";
@@ -326,6 +327,8 @@ export async function sendTransactionalHtmlEmail(input: {
     ...(department?.attachment ?? []).filter((attachment) => !seenIds.has(attachment.contentId)),
   ];
 
+  const resendAttachments = serializeResendAttachments(attachments);
+
   try {
     const { data, error } = await resend.emails.send(
       {
@@ -334,13 +337,9 @@ export async function sendTransactionalHtmlEmail(input: {
         subject: input.subject,
         html,
         ...(input.identity.replyTo ? { replyTo: input.identity.replyTo } : {}),
-        attachments: attachments.map((attachment) => ({
-          filename: attachment.filename,
-          content: attachment.content,
-          ...(attachment.contentId ? { contentId: attachment.contentId } : {}),
-        })),
+        ...(resendAttachments ? { attachments: resendAttachments } : {}),
       },
-      { signal: AbortSignal.timeout(6_000) } as { headers?: HeadersInit }
+      { signal: AbortSignal.timeout(15_000) } as { headers?: HeadersInit }
     );
 
     if (error) {

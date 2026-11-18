@@ -28,6 +28,7 @@ import {
   type MentorAppId,
   type WallpaperChoice,
 } from "@/lib/desktop/catalog";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 import { canManageAppKeys, desktopVisibleApps } from "@/lib/desktop/app-access";
 import {
   connectLaunchForm,
@@ -1050,13 +1051,13 @@ export function MentorDesktop(props: MentorDesktopProps) {
           <button
             type="button"
             className="who"
-            title={props.user.email}
+            title={displayName}
             aria-haspopup="dialog"
             aria-expanded={accountOpen}
             onClick={openAccount}
           >
             <DesktopAvatar view={avatarView} />
-            <span>{displayName}</span>
+            <span>{firstNameFromDisplayName(displayName) || displayName}</span>
           </button>
           <span className="meta-actions">
             {owner || companySettings ? (

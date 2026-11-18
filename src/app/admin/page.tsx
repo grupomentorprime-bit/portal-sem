@@ -11,6 +11,7 @@ import {
   type AnalyticsPeriodPreset,
 } from "@/lib/growth/analytics-period";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
+import { activeDepartmentName } from "@/lib/identity/place-context";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import {
@@ -69,7 +70,15 @@ export default async function AdminHomePage({ searchParams }: PageProps) {
 
   const spaces = session ? await listAvailableSpacesForUser(session.user._id) : [];
   const activeSpace = spaces.find((s) => s.tenantId === tenantId);
+  const departmentName = tenantId
+    ? await activeDepartmentName({
+        tenantId,
+        roleCodes,
+        unitAccess: session?.membership?.unitAccess,
+      })
+    : "";
   const spaceName =
+    departmentName ||
     activeSpace?.name?.trim() ||
     displayInstitutionName(config?.institution.name, PLATFORM_SPACE_FALLBACK);
 

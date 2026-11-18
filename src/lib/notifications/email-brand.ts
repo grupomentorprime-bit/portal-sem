@@ -1,4 +1,5 @@
-import { IPN_CHILE_VARONES } from "@/core/units/ipn-chile";
+import { ROLE_CODES } from "@/core/identity/roles/codes";
+import { IPN_CHILE_TENANT_ID, IPN_CHILE_VARONES } from "@/core/units/ipn-chile";
 
 export interface DepartmentEmailBrand {
   name: string;
@@ -10,6 +11,20 @@ export interface DepartmentEmailBrand {
 }
 
 const VARONES_CONTENT_ID = "varones-nacional";
+
+/**
+ * Unidad que lleva la marca del departamento.
+ * Hoy: Operador Congreso Varones en el Espacio IPN Chile.
+ * Otra unidad, u otro rol, no cambia el correo del Espacio.
+ */
+export function departmentUnitIdForRole(
+  tenantId: string,
+  roleCode: string | null | undefined
+): string {
+  if (tenantId !== IPN_CHILE_TENANT_ID) return "";
+  if (roleCode !== ROLE_CODES.CONGRESS_OPERATOR) return "";
+  return IPN_CHILE_VARONES.unitId;
+}
 
 /**
  * Marca del departamento cuando la invitación es de esa unidad.

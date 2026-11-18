@@ -8,6 +8,7 @@ import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import {
   departmentEmailBrand,
+  departmentUnitIdForRole,
   ensureDepartmentLogo,
   invitationEmailVoice,
   recoveryEmailVoice,
@@ -25,6 +26,16 @@ describe("correo del departamento", () => {
       existsSync(resolve(process.cwd(), "public", brand.logoFile)),
       true
     );
+  });
+
+  it("el operador del congreso de IPN Chile usa la unidad de Varones", () => {
+    assert.equal(
+      departmentUnitIdForRole("ipn-chile", "congress_operator"),
+      "departamento-nacional-de-varones"
+    );
+    assert.equal(departmentUnitIdForRole("ipn-chile", "institution_admin"), "");
+    assert.equal(departmentUnitIdForRole("otro-espacio", "congress_operator"), "");
+    assert.equal(departmentUnitIdForRole("ipn-chile", null), "");
   });
 
   it("otra unidad o el Espacio completo no toman la marca de Varones", () => {

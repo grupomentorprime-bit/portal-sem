@@ -20,6 +20,7 @@ import { hasPlatformOperatorCapability } from "@/core/identity/platform/capabili
 import { hasAppKey } from "@/lib/desktop/app-access";
 import { readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
+import { activeDepartmentName } from "@/lib/identity/place-context";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { headers } from "next/headers";
@@ -95,12 +96,24 @@ export default async function AdminLayout({
   const compatMode = false;
   const shellV2 = isAdminShellV2Enabled();
   const brandingBase = buildAdminTenantBranding(config);
+  const departmentName = hasSpace
+    ? await activeDepartmentName({
+        tenantId: session!.session.tenantId,
+        roleCodes,
+        unitAccess: session?.membership?.unitAccess,
+      })
+    : "";
   const spaceDisplayName =
+    departmentName ||
     activeSpace?.name?.trim() ||
     config?.institution.name?.trim() ||
     "";
   const branding = spaceDisplayName
-    ? { ...brandingBase, institutionName: spaceDisplayName }
+    ? {
+        ...brandingBase,
+        institutionName: spaceDisplayName,
+        ...(departmentName ? { institutionShortName: departmentName } : {}),
+      }
     : brandingBase;
   const tenant = session?.session.tenantId?.trim() || config?.institution.tenant || "default";
   const tenantId = session?.session.tenantId?.trim() || tenant;
@@ -196,10 +209,7 @@ export default async function AdminLayout({
                 displayName: session.user.displayName,
                 email: session.user.email,
                 roleLabel,
-                institutionName:
-                  activeSpace?.name?.trim() ||
-                  config?.institution.name?.trim() ||
-                  branding.institutionName,
+                institutionName: spaceDisplayName || branding.institutionName,
                 activeTenantId: session.session.tenantId || null,
                 spaces: spaces.map((s) => ({ tenantId: s.tenantId, name: s.name })),
                 canOpenPlatform: hasPlatformOperatorCapability(session.user),

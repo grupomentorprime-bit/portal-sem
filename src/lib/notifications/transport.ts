@@ -165,3 +165,24 @@ export function formatFromHeader(displayName: string, mailbox: string): string {
   const escaped = name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   return `"${escaped}" <${address}>`;
 }
+
+export type ResendAttachmentInput = {
+  filename: string;
+  content: Buffer;
+  contentId?: string;
+};
+
+/**
+ * Resend serializa el body con JSON.stringify. Un Buffer se convierte en
+ * `{ type: "Buffer", data: [...] }` y el API lo rechaza. Hay que mandar base64.
+ */
+export function serializeResendAttachments(
+  attachments: ResendAttachmentInput[] | undefined
+): Array<{ filename: string; content: string; contentId?: string }> | undefined {
+  if (!attachments?.length) return undefined;
+  return attachments.map((attachment) => ({
+    filename: attachment.filename,
+    content: attachment.content.toString("base64"),
+    ...(attachment.contentId ? { contentId: attachment.contentId } : {}),
+  }));
+}

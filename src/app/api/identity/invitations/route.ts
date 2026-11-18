@@ -17,12 +17,26 @@ import {
 } from "@/lib/identity/enterprise-profiles";
 import { resolvePermissionDetailsForMembership } from "@/lib/identity/permission-resolver";
 import { ROLE_CODES, resolveRoleCode } from "@/core/identity/roles/codes";
+import { departmentUnitIdForRole } from "@/lib/notifications/email-brand";
 import {
   isValidEmail,
   isValidFullName,
   normalizeEmail,
   normalizeFullName,
 } from "@/lib/validation/identity";
+
+/** Operador Congreso Varones queda en la unidad del departamento. */
+async function resolveInviteUnitId(input: {
+  tenantId: string;
+  roleCode: string | null;
+  requestedUnitId: string;
+}): Promise<string> {
+  if (input.requestedUnitId) return input.requestedUnitId;
+  const implied = departmentUnitIdForRole(input.tenantId, input.roleCode);
+  if (!implied) return "";
+  const unit = await findOrgUnit(await getDatabase(), input.tenantId, implied);
+  return unit ? implied : "";
+}
 
 export async function GET() {
   try {
@@ -182,6 +196,20 @@ export async function POST(request: Request) {
       );
     }
 
+    const inviteUnitId = await resolveInviteUnitId({
+      tenantId: ctx.tenantId,
+      roleCode: newRoleCode,
+      requestedUnitId: unitId,
+    });
+    if (inviteUnitId && inviteUnitId !== unitId) {
+      if (!isCentralUnitAdmin(ctx.membership?.unitAccess)) {
+        return NextResponse.json(
+          { ok: false, error: "Solo la administración del Espacio asigna unidades." },
+          { status: 403 }
+        );
+      }
+    }
+
     const invitation = await createInvitation({
       tenantId: ctx.tenantId,
       email: normalizedEmail,
@@ -189,7 +217,9 @@ export async function POST(request: Request) {
       roleIds: [role._id],
       invitedBy: ctx.user._id,
       authorizedApps,
-      ...(unitId ? { unitAccess: { mode: "units" as const, unitIds: [unitId] } } : {}),
+      ...(inviteUnitId
+        ? { unitAccess: { mode: "units" as const, unitIds: [inviteUnitId] } }
+        : {}),
     });
 
     if (isKeycloakOnlyAuth()) {

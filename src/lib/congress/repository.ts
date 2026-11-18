@@ -9,6 +9,10 @@ import {
 import { emptyAttendance } from "@/core/congress/attendance";
 import { buildChargeAmountClp } from "@/core/congress/charges";
 import { emptyExpectedDays, parseExpectedDayLabel } from "@/core/congress/expected-days";
+import {
+  countsAsPendingVerification,
+  registrationOriginBucket,
+} from "@/core/congress/form-engagement";
 import { formatPaymentFolio } from "@/core/congress/payment-folio";
 import { allocatePayment, voidPayment } from "@/core/congress/payments";
 import type {
@@ -492,7 +496,7 @@ export async function buildCongressSummary(tenantId: string) {
     (a) => a.status === "assigned" || a.status === "confirmed" || (a.status == null && a.confirmed !== false)
   );
 
-  const bySource = { form: 0, import: 0, door: 0 };
+  const bySource = { form: 0, updated: 0, import: 0, door: 0 };
   const attendanceSaturday = { present: 0, absent: 0, unmarked: 0 };
   const attendanceSunday = { present: 0, absent: 0, unmarked: 0 };
   const receptionSaturday = { expected: 0, present: 0, pendingArrival: 0 };
@@ -502,7 +506,7 @@ export async function buildCongressSummary(tenantId: string) {
   let needsReviewCount = 0;
 
   for (const reg of registrations) {
-    bySource[reg.source] += 1;
+    bySource[registrationOriginBucket(reg)] += 1;
     if (reg.attendance.saturday === true) attendanceSaturday.present += 1;
     else if (reg.attendance.saturday === false) attendanceSaturday.absent += 1;
     else attendanceSaturday.unmarked += 1;
@@ -524,7 +528,7 @@ export async function buildCongressSummary(tenantId: string) {
 
     if (reg.chargeAmountClp != null) totalChargeClp += reg.chargeAmountClp;
     totalPaidClp += reg.allocatedPaidClp;
-    if (reg.needsReview) needsReviewCount += 1;
+    if (countsAsPendingVerification(reg)) needsReviewCount += 1;
   }
 
   return {

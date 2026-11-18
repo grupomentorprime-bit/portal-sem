@@ -1,5 +1,12 @@
 import { remainingBalanceClp } from "@/core/congress/charges";
+import { countsAsPendingVerification } from "@/core/congress/form-engagement";
 import type { CongressRegistration } from "@/core/congress/types";
+
+type ContributionReg = Pick<
+  CongressRegistration,
+  "chargeAmountClp" | "allocatedPaidClp" | "needsReview"
+> &
+  Partial<Pick<CongressRegistration, "source" | "submissionId">>;
 
 export type ContributionStatus =
   | "no_charge"
@@ -12,16 +19,14 @@ export type ContributionStatus =
  * Deriva el estado de alimentación/aporte del motor existente.
  * Saldo 0 con needsReview no es "Pagado".
  */
-export function deriveContributionStatus(
-  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
-): ContributionStatus {
+export function deriveContributionStatus(reg: ContributionReg): ContributionStatus {
   if (reg.chargeAmountClp == null) return "no_charge";
-  if (reg.needsReview) return "needs_verification";
+  if (countsAsPendingVerification(reg)) return "needs_verification";
   const paid = Math.max(0, Math.trunc(reg.allocatedPaidClp));
   const charge = Math.trunc(reg.chargeAmountClp);
   if (paid <= 0) return "pending";
   if (paid < charge) return "partial";
-  if (remainingBalanceClp(reg) === 0 && !reg.needsReview) return "paid";
+  if (remainingBalanceClp(reg) === 0 && !countsAsPendingVerification(reg)) return "paid";
   return "needs_verification";
 }
 

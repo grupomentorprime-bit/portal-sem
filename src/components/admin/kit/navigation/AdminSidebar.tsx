@@ -19,6 +19,7 @@ import {
   type AdminNavGroup,
 } from "@/lib/admin/nav-domains";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 import { cn } from "@/lib/utils";
 
 export interface AdminSidebarProps extends AdminShellContext {
@@ -88,7 +89,7 @@ function SidebarBrand({
               {PLATFORM_DISPLAY_NAME}
             </span>
             {spaceName ? (
-              <span className="mt-0.5 block truncate text-[11px] leading-snug text-[var(--growth-os-on-ink-muted)]">
+              <span className="mt-0.5 block text-[11px] leading-snug text-[var(--growth-os-on-ink-muted)]">
                 {spaceName}
               </span>
             ) : null}
@@ -130,7 +131,7 @@ function SidebarFooter({
   return (
     <div className="mt-auto px-2.5 pb-3 pt-2">
       <div className="overflow-hidden rounded-2xl bg-[var(--growth-os-primary)] px-3.5 py-3.5">
-        <p className="truncate text-[13px] font-semibold text-white">{spaceLabel}</p>
+        <p className="text-[13px] font-semibold leading-snug text-white">{spaceLabel}</p>
         <p className="mt-1 text-[12px] leading-snug text-white/75">Plan Pro</p>
         <Link
           href="/admin/settings/team"
@@ -352,6 +353,7 @@ function SidebarProfileMenu({
   if (!user) return null;
 
   const label = user.displayName || user.email;
+  const shortLabel = firstNameFromDisplayName(label) || label;
   const role = user.roleLabel ?? "Colaborador";
 
   async function handleLogout() {
@@ -371,7 +373,7 @@ function SidebarProfileMenu({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        title={collapsed ? label : undefined}
+        title={label}
         aria-expanded={open}
         aria-haspopup="menu"
         className={cn(
@@ -382,7 +384,7 @@ function SidebarProfileMenu({
         <AdminUserAvatar name={label} size="sm" />
         {!collapsed ? (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[var(--gray-900)]">{label}</p>
+            <p className="truncate text-sm font-semibold text-[var(--gray-900)]">{shortLabel}</p>
             <p className="truncate text-xs text-[var(--gray-500)]">{role}</p>
           </div>
         ) : null}

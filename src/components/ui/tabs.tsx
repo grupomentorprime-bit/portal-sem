@@ -82,8 +82,8 @@ export function TabsTrigger({ value, children, className }: TabsTriggerProps) {
         "rounded-[var(--radius-sm)] px-4 py-2 text-sm font-medium transition-colors duration-[var(--transition-fast)]",
         focusRing,
         isActive
-          ? "bg-background text-foreground shadow-[var(--shadow-sm)]"
-          : "text-muted hover:text-foreground",
+          ? "bg-primary/10 font-semibold text-primary shadow-[var(--shadow-sm)] ring-1 ring-inset ring-primary/40"
+          : "text-muted hover:bg-background/80 hover:text-foreground",
         className
       )}
     >

@@ -23,6 +23,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { ProductMark } from "@/components/product";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 import { cn } from "@/lib/utils";
 import {
   GROWTH_OS_MASTER_NAV,
@@ -80,6 +81,7 @@ export function GrowthOsAdminMasterShell({
   const [query, setQuery] = useState("");
   const spaceInitial =
     (spaceShortName || spaceName).trim().charAt(0).toUpperCase() || "E";
+  const shortUserName = firstNameFromDisplayName(userName) || userName;
 
   function onSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -204,11 +206,11 @@ export function GrowthOsAdminMasterShell({
                 <span className="hidden rounded-full border border-[var(--color-border-default)] bg-[var(--gray-50)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--gray-500)] sm:inline">
                   Maqueta
                 </span>
-                <div className="inline-flex items-center gap-2 rounded-[12px] py-0.5 pl-0.5 pr-2">
+                <div className="inline-flex items-center gap-2 rounded-[12px] py-0.5 pl-0.5 pr-2" title={userName}>
                   <AdminUserAvatar name={userName} size="sm" />
                   <span className="hidden min-w-0 text-left sm:block">
                     <span className="block max-w-[12rem] truncate text-[13px] font-semibold tracking-tight text-[var(--gray-900)] lg:max-w-[16rem]">
-                      {userName}
+                      {shortUserName}
                     </span>
                     <span className="block truncate text-[12px] text-[var(--gray-500)]">
                       {roleLabel}
