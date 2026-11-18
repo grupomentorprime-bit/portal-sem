@@ -47,10 +47,13 @@ import {
   registrationDisplayName,
   registrationRoleBadges,
 } from "@/components/admin/congress/labels";
+import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
+import { remainingBalanceClp } from "@/core/congress/charges";
 import {
   deriveContributionStatus,
   isGroupPaymentSelectable,
 } from "@/core/congress/finance-status";
+import { distributeProportional } from "@/core/congress/payment-distribute";
 import {
   ReceptionView,
   type ReceptionQuickFilter,
@@ -132,6 +135,9 @@ export function CongressOpsPanel() {
   const [groupPayer, setGroupPayer] = useState("");
   const [groupMethod, setGroupMethod] = useState<CongressPaymentMethod>("cash");
   const [groupPaidOn, setGroupPaidOn] = useState(todayPaidOnSantiago());
+  const [groupSplitRecaudacion, setGroupSplitRecaudacion] = useState(false);
+  const [groupCashClp, setGroupCashClp] = useState<number | null>(null);
+  const [groupTransferClp, setGroupTransferClp] = useState<number | null>(null);
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [voidingId, setVoidingId] = useState<string | null>(null);
@@ -598,15 +604,62 @@ export function CongressOpsPanel() {
     [groupSelected, groupSelectableIds]
   );
 
-  const groupAmount = groupSelectedActive.length * CONGRESS_CONTRIBUTION_CLP;
-
   const groupPreview = useMemo(() => {
-    if (!groupAmount || groupSelectedActive.length === 0) return [];
-    return groupSelectedActive.map((id) => ({
-      registrationId: id,
-      amountClp: CONGRESS_CONTRIBUTION_CLP,
-    }));
-  }, [groupAmount, groupSelectedActive]);
+    if (groupSelectedActive.length === 0) return [];
+    const byId = new Map(registrations.map((r) => [r._id, r]));
+    return groupSelectedActive
+      .map((id) => {
+        const reg = byId.get(id);
+        const amountClp = reg ? remainingBalanceClp(reg) : 0;
+        return { registrationId: id, amountClp };
+      })
+      .filter((row) => row.amountClp > 0);
+  }, [groupSelectedActive, registrations]);
+
+  const groupAmount = useMemo(
+    () => groupPreview.reduce((sum, row) => sum + row.amountClp, 0),
+    [groupPreview]
+  );
+
+  const groupBalanceRows = useMemo(() => {
+    const byId = new Map(registrations.map((r) => [r._id, r]));
+    return groupSelectedActive
+      .map((id) => {
+        const reg = byId.get(id);
+        return {
+          registrationId: id,
+          balanceClp: reg ? remainingBalanceClp(reg) : 0,
+        };
+      })
+      .filter((r) => r.balanceClp > 0);
+  }, [groupSelectedActive, registrations]);
+
+  const groupSaldoTotal = useMemo(
+    () => groupBalanceRows.reduce((s, r) => s + r.balanceClp, 0),
+    [groupBalanceRows]
+  );
+
+  const groupSplitCashAlloc = useMemo(() => {
+    if (!groupSplitRecaudacion) return [];
+    const amount = groupCashClp ?? 0;
+    if (amount <= 0) return [];
+    try {
+      return distributeProportional(groupBalanceRows, amount);
+    } catch {
+      return [];
+    }
+  }, [groupSplitRecaudacion, groupCashClp, groupBalanceRows]);
+
+  const groupSplitTransferAlloc = useMemo(() => {
+    if (!groupSplitRecaudacion) return [];
+    const amount = groupTransferClp ?? 0;
+    if (amount <= 0) return [];
+    try {
+      return distributeProportional(groupBalanceRows, amount);
+    } catch {
+      return [];
+    }
+  }, [groupSplitRecaudacion, groupTransferClp, groupBalanceRows]);
 
   const voidPayment = async (paymentId: string) => {
     if (voidReason.trim().length < 5) {
@@ -633,10 +686,137 @@ export function CongressOpsPanel() {
     }
   };
 
+  const postGroupPayment = async (input: {
+    amountClp: number;
+    method: CongressPaymentMethod;
+    allocations: Array<{ registrationId: string; amountClp: number }>;
+  }) => {
+    const res = await fetch("/api/congress/payments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payerType: "church",
+        payerName: groupPayer.trim(),
+        churchName: groupChurchLabel || undefined,
+        amountClp: input.amountClp,
+        method: input.method,
+        paidOn: groupPaidOn,
+        allocations: input.allocations,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return {
+      ok: res.ok && Boolean(data.ok),
+      error: data.error as string | undefined,
+    };
+  };
+
   const submitGroupPayment = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!groupPayer.trim() || groupSelectedActive.length === 0) {
+      push({
+        title: "Complete pagador y seleccione al menos un participante",
+        tone: "warning",
+      });
+      return;
+    }
+
+    if (groupSplitRecaudacion) {
+      const cash = groupCashClp ?? 0;
+      const transfer = groupTransferClp ?? 0;
+      if (cash < 0 || transfer < 0 || (cash <= 0 && transfer <= 0)) {
+        push({
+          title: "Indique al menos un monto en recaudación",
+          tone: "warning",
+        });
+        return;
+      }
+      if (cash + transfer > groupSaldoTotal) {
+        push({
+          title: "La recaudación supera el saldo del grupo",
+          description: `Máximo ${formatClp(groupSaldoTotal)}.`,
+          tone: "warning",
+        });
+        return;
+      }
+      if (
+        (cash > 0 && groupSplitCashAlloc.length === 0) ||
+        (transfer > 0 && groupSplitTransferAlloc.length === 0)
+      ) {
+        push({
+          title: "No se pudo repartir la recaudación",
+          tone: "warning",
+        });
+        return;
+      }
+
+      setPaymentSaving(true);
+      try {
+        const legs: Array<{
+          label: string;
+          method: CongressPaymentMethod;
+          amountClp: number;
+          allocations: Array<{ registrationId: string; amountClp: number }>;
+        }> = [];
+        if (cash > 0) {
+          legs.push({
+            label: "Efectivo",
+            method: "cash",
+            amountClp: cash,
+            allocations: groupSplitCashAlloc,
+          });
+        }
+        if (transfer > 0) {
+          legs.push({
+            label: "Transferencia",
+            method: "transfer",
+            amountClp: transfer,
+            allocations: groupSplitTransferAlloc,
+          });
+        }
+
+        const done: string[] = [];
+        for (const leg of legs) {
+          const result = await postGroupPayment(leg);
+          if (!result.ok) {
+            push({
+              title: `No se registró: ${leg.label}`,
+              description:
+                done.length > 0
+                  ? `Ya quedó registrado: ${done.join(", ")}. Reintente el tramo faltante.`
+                  : (result.error ?? "Error del servidor."),
+              tone: "warning",
+            });
+            void loadPayments();
+            void loadRegistrations();
+            void loadSummary();
+            return;
+          }
+          done.push(leg.label);
+        }
+
+        push({
+          title:
+            done.length > 1
+              ? "Recaudación partida registrada"
+              : "Pago grupal registrado",
+          tone: "success",
+        });
+        setGroupSelected([]);
+        setGroupCashClp(null);
+        setGroupTransferClp(null);
+        setGroupSplitRecaudacion(false);
+        void loadPayments();
+        void loadRegistrations();
+        void loadSummary();
+      } finally {
+        setPaymentSaving(false);
+      }
+      return;
+    }
+
     const amount = groupAmount;
-    if (!groupPayer.trim() || !amount || groupPreview.length === 0) {
+    if (!amount || groupPreview.length === 0) {
       push({
         title: "Complete pagador y seleccione al menos un participante",
         tone: "warning",
@@ -645,24 +825,15 @@ export function CongressOpsPanel() {
     }
     setPaymentSaving(true);
     try {
-      const res = await fetch("/api/congress/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payerType: "church",
-          payerName: groupPayer.trim(),
-          churchName: groupChurchLabel || undefined,
-          amountClp: amount,
-          method: groupMethod,
-          paidOn: groupPaidOn,
-          allocations: groupPreview,
-        }),
+      const result = await postGroupPayment({
+        amountClp: amount,
+        method: groupMethod,
+        allocations: groupPreview,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
+      if (!result.ok) {
         push({
           title: "Pago grupal no registrado",
-          description: data.error ?? "Error del servidor.",
+          description: result.error ?? "Error del servidor.",
           tone: "warning",
         });
         return;
@@ -1000,12 +1171,12 @@ export function CongressOpsPanel() {
                   Monto total (CLP)
                 </p>
                 <p className="rounded-md border border-border bg-background-soft px-3 py-2 text-sm tabular-nums text-foreground">
-                  {groupSelectedActive.length === 0 ? (
+                  {groupPreview.length === 0 ? (
                     "Seleccione participantes…"
                   ) : (
                     <>
-                      {groupSelectedActive.length} ×{" "}
-                      {formatClp(CONGRESS_CONTRIBUTION_CLP)} ={" "}
+                      {groupPreview.length} persona
+                      {groupPreview.length === 1 ? "" : "s"} · saldo{" "}
                       <span className="font-bold">
                         {formatClp(groupAmount)}
                       </span>
@@ -1013,21 +1184,56 @@ export function CongressOpsPanel() {
                   )}
                 </p>
                 <p className="mt-1 text-xs text-muted">
-                  Se calcula solo al marcar personas (sin editar).
+                  Se calcula con el saldo pendiente de cada persona (sin editar).
                 </p>
               </div>
-              <Select
-                label="Tipo"
-                value={groupMethod}
-                onChange={(e) =>
-                  setGroupMethod(e.target.value as CongressPaymentMethod)
-                }
-                options={[
-                  { value: "cash", label: "Efectivo" },
-                  { value: "transfer", label: "Transferencia" },
-                  { value: "other", label: "Otro" },
-                ]}
-              />
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={groupSplitRecaudacion}
+                  onChange={(e) => {
+                    setGroupSplitRecaudacion(e.target.checked);
+                    if (!e.target.checked) {
+                      setGroupCashClp(null);
+                      setGroupTransferClp(null);
+                    }
+                  }}
+                />
+                Partir recaudación (efectivo + transferencia)
+              </label>
+              {groupSplitRecaudacion ? (
+                <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-2">
+                  <p className="sm:col-span-2 text-sm font-medium">Recaudación</p>
+                  <ClpAmountInput
+                    label="Efectivo (CLP)"
+                    value={groupCashClp}
+                    onValueChange={setGroupCashClp}
+                  />
+                  <ClpAmountInput
+                    label="Transferencia (CLP)"
+                    value={groupTransferClp}
+                    onValueChange={setGroupTransferClp}
+                  />
+                  <p className="sm:col-span-2 text-xs text-muted">
+                    Suma ≤ saldo del grupo ({formatClp(groupSaldoTotal)}). Un
+                    Guardar registra hasta dos ingresos.
+                  </p>
+                </div>
+              ) : null}
+              {!groupSplitRecaudacion ? (
+                <Select
+                  label="Tipo"
+                  value={groupMethod}
+                  onChange={(e) =>
+                    setGroupMethod(e.target.value as CongressPaymentMethod)
+                  }
+                  options={[
+                    { value: "cash", label: "Efectivo" },
+                    { value: "transfer", label: "Transferencia" },
+                    { value: "other", label: "Otro" },
+                  ]}
+                />
+              ) : null}
               <Input
                 label="Fecha de pago"
                 type="date"
@@ -1082,12 +1288,43 @@ export function CongressOpsPanel() {
                   <p className="text-xs text-muted">Sin participantes en esa iglesia.</p>
                 ) : null}
               </div>
-              {groupPreview.length > 0 ? (
+              {groupSplitRecaudacion && groupBalanceRows.length > 0 ? (
+                <div className="rounded-md border border-border bg-white p-3 text-sm">
+                  <p className="mb-2 font-medium">Distribución prevista</p>
+                  <ul className="space-y-1">
+                    {groupBalanceRows.map((row) => {
+                      const reg = registrations.find(
+                        (r) => r._id === row.registrationId
+                      );
+                      const cash =
+                        groupSplitCashAlloc.find(
+                          (a) => a.registrationId === row.registrationId
+                        )?.amountClp ?? 0;
+                      const transfer =
+                        groupSplitTransferAlloc.find(
+                          (a) => a.registrationId === row.registrationId
+                        )?.amountClp ?? 0;
+                      return (
+                        <li key={row.registrationId}>
+                          {reg
+                            ? registrationDisplayName(reg)
+                            : row.registrationId}
+                          : Ef {formatClp(cash)} · Tr {formatClp(transfer)} ·
+                          Total {formatClp(cash + transfer)}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : null}
+              {!groupSplitRecaudacion && groupPreview.length > 0 ? (
                 <div className="rounded-md border border-border bg-white p-3 text-sm">
                   <p className="mb-2 font-medium">Distribución prevista</p>
                   <ul className="space-y-1">
                     {groupPreview.map((row) => {
-                      const reg = registrations.find((r) => r._id === row.registrationId);
+                      const reg = registrations.find(
+                        (r) => r._id === row.registrationId
+                      );
                       return (
                         <li key={row.registrationId}>
                           {reg
@@ -1105,8 +1342,9 @@ export function CongressOpsPanel() {
                 Guardar pago grupal
               </Button>
               <p className="text-xs text-muted">
-                Si pagan parte en efectivo y parte por transferencia, registre dos
-                pagos grupales (uno por tipo).
+                Por defecto un solo tipo de pago. Si el líder trae efectivo y
+                transferencia, active Partir recaudación: un Guardar genera
+                ambos ingresos.
               </p>
             </form>
           </Section>
