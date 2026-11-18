@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { findTenantById } from "@/core/tenant";
 import { requirePlatformOperator } from "@/core/identity/middleware/guards";
+import { provisionAprendeHoyCompany } from "@/lib/connect/provision-aprende-hoy";
+import { provisionRrhhCompany } from "@/lib/connect/provision-rrhh";
 import {
   newlyContracted,
   parseContractPatch,
   resolveContractedApps,
 } from "@/lib/desktop/contract";
 import { noteCommercialActivation } from "@/lib/desktop/attention-store";
+import { ensureDeskProduct } from "@/lib/desktop/ensure-client-company";
 import {
   mongoAppRequestStore,
   readSpaceContract,
@@ -43,7 +46,8 @@ export async function POST(request: Request, { params }: RouteParams) {
   await writeSpaceContract(tenant.tenantId, patch);
 
   const store = mongoAppRequestStore();
-  for (const appId of newlyContracted(before.contracted, patch.contractedApps)) {
+  const added = newlyContracted(before.contracted, patch.contractedApps);
+  for (const appId of added) {
     await store.fulfillOpen(tenant.tenantId, appId);
     await noteCommercialActivation({
       tenantId: tenant.tenantId,
@@ -51,6 +55,45 @@ export async function POST(request: Request, { params }: RouteParams) {
       actorUserId: ctx.user._id,
       actorName: ctx.user.displayName,
     }).catch(() => null);
+    if (appId === "rrhh" || appId === "aprende-hoy") {
+      await ensureDeskProduct({
+        tenantId: tenant.tenantId,
+        userId: ctx.user._id,
+        appId,
+      });
+    }
+  }
+
+  const companyName = tenant.name?.trim() || tenant.tenantId;
+  const email = ctx.user.email.trim().toLowerCase();
+  const displayName = ctx.user.displayName.trim() || email;
+  if (added.includes("rrhh")) {
+    void provisionRrhhCompany({
+      tenantId: tenant.tenantId,
+      companyName,
+      email,
+      displayName,
+    }).catch((error: unknown) => {
+      console.error(
+        "[escritorio] no se pudo crear la empresa de RR.HH.",
+        tenant.tenantId,
+        error instanceof Error ? error.message : error
+      );
+    });
+  }
+  if (added.includes("aprende-hoy")) {
+    void provisionAprendeHoyCompany({
+      tenantId: tenant.tenantId,
+      companyName,
+      email,
+      displayName,
+    }).catch((error: unknown) => {
+      console.error(
+        "[escritorio] no se pudo crear el perfil de Aprende Hoy.",
+        tenant.tenantId,
+        error instanceof Error ? error.message : error
+      );
+    });
   }
 
   const appsChanged = before.contracted.join(",") !== patch.contractedApps.join(",");

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Button } from "@/components/ui";
 
 interface UnitApp {
   id: string;
@@ -155,81 +154,59 @@ export function UnitsSettingsClient() {
     ? members.filter((member) => memberSeesUnit(member, selected.unitId))
     : [];
 
-  const fieldClass =
-    "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--growth-os-primary)]";
-
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="space-y-4">
-        <div className="overflow-hidden rounded-2xl border border-border bg-background">
-          {units.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-muted">Todavía no hay departamentos.</p>
-          ) : (
-            units.map((unit) => {
-              const active = unit.unitId === selectedId;
-              return (
-                <button
-                  key={unit.unitId}
-                  type="button"
-                  onClick={() => setSelectedId(unit.unitId)}
-                  className={`block w-full border-b border-border px-4 py-3 text-left last:border-b-0 ${
-                    active ? "bg-[color-mix(in_srgb,var(--growth-os-primary)_8%,white)]" : "hover:bg-background-muted"
-                  }`}
-                >
-                  <span className="block text-sm font-semibold text-foreground">{unit.name}</span>
-                  <span className="mt-0.5 block text-xs text-muted">{KIND_LABELS[unit.kind]}</span>
-                </button>
-              );
-            })
-          )}
-        </div>
+    <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="space-y-3">
+        {units.map((unit) => (
+          <button
+            key={unit.unitId}
+            type="button"
+            onClick={() => setSelectedId(unit.unitId)}
+            className={`block w-full rounded-xl border px-3 py-2 text-left text-sm ${
+              unit.unitId === selectedId ? "border-foreground bg-background" : "border-border"
+            }`}
+          >
+            <span className="block font-medium">{unit.name}</span>
+            <span className="text-xs text-muted">{KIND_LABELS[unit.kind]}</span>
+          </button>
+        ))}
         {central ? (
-          <form onSubmit={createUnit} className="space-y-3 rounded-2xl border border-border bg-background p-4">
-            <p className="text-sm font-semibold text-foreground">Nuevo departamento</p>
-            <label className="block space-y-1">
-              <span className="text-xs font-medium text-muted">Nombre</span>
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Ej. Dorcas"
-                className={fieldClass}
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="text-xs font-medium text-muted">Tipo</span>
-              <select
-                value={kind}
-                onChange={(event) => setKind(event.target.value as OrgUnit["kind"])}
-                className={fieldClass}
-              >
-                {Object.entries(KIND_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button type="submit" size="sm">
+          <form onSubmit={createUnit} className="space-y-2 rounded-xl border border-dashed border-border p-3">
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Nueva unidad"
+              className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+            />
+            <select
+              value={kind}
+              onChange={(event) => setKind(event.target.value as OrgUnit["kind"])}
+              className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+            >
+              {Object.entries(KIND_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="text-sm font-medium underline">
               Agregar
-            </Button>
+            </button>
           </form>
         ) : null}
-      </aside>
+      </div>
 
       {selected ? (
-        <section className="space-y-8 rounded-2xl border border-border bg-background p-5 sm:p-6">
+        <section className="space-y-6">
           <header>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              {KIND_LABELS[selected.kind]}
-            </p>
-            <h2 className="mt-1 text-xl font-semibold text-foreground">{selected.name}</h2>
-            <p className="mt-1 text-sm text-muted">
-              Quien pertenece a este departamento no ve los demás, salvo que se le autorice.
+            <h2 className="text-lg font-semibold">{selected.name}</h2>
+            <p className="text-sm text-muted">
+              {KIND_LABELS[selected.kind]}. Las personas de esta unidad no ven las demás si no se les autoriza.
             </p>
           </header>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Aplicaciones</h3>
+            <h3 className="mb-2 text-sm font-semibold">Aplicaciones</h3>
             <div className="flex flex-wrap gap-2">
               {apps.map((app) => {
                 const enabled = selected.enabledAppIds.includes(app.id);
@@ -244,10 +221,8 @@ export function UnitsSettingsClient() {
                         : [...selected.enabledAppIds, app.id];
                       void saveApps(next);
                     }}
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                      enabled
-                        ? "bg-[var(--growth-os-primary)] text-white"
-                        : "border border-border bg-background text-muted hover:text-foreground"
+                    className={`rounded-full border px-3 py-1 text-xs ${
+                      enabled ? "border-foreground bg-foreground text-background" : "border-border"
                     }`}
                   >
                     {app.label}
@@ -258,26 +233,21 @@ export function UnitsSettingsClient() {
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Personas</h3>
-            <ul className="divide-y divide-border rounded-xl border border-border">
+            <h3 className="mb-2 text-sm font-semibold">Personas y responsables</h3>
+            <ul className="space-y-2">
               {unitMembers.map((member) => {
                 const responsible = selected.responsibleUserIds.includes(member.userId);
                 const centralMember = !member.unitAccess || member.unitAccess.mode === "tenant";
                 return (
-                  <li
-                    key={member.membershipId}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 text-sm"
-                  >
-                    <span className="font-medium text-foreground">{member.displayName || member.email}</span>
-                    <span className="text-xs text-muted">
-                      {centralMember ? "Administración del Espacio" : "Del departamento"}
-                      {responsible ? " · Responsable" : ""}
-                    </span>
+                  <li key={member.membershipId} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-medium">{member.displayName || member.email}</span>
+                    <span className="text-muted">{centralMember ? "Administración del Espacio" : "Unidad"}</span>
+                    {responsible ? <span className="text-xs">Responsable</span> : null}
                     {central ? (
-                      <span className="ml-auto flex flex-wrap gap-2">
+                      <>
                         <button
                           type="button"
-                          className="text-xs font-medium text-[var(--growth-os-primary)]"
+                          className="text-xs underline"
                           onClick={() =>
                             void memberAction(
                               member.membershipId,
@@ -290,33 +260,33 @@ export function UnitsSettingsClient() {
                         {centralMember ? null : (
                           <button
                             type="button"
-                            className="text-xs font-medium text-muted"
+                            className="text-xs underline"
                             onClick={() => void memberAction(member.membershipId, "revoke")}
                           >
-                            Quitar
+                            Quitar de la unidad
                           </button>
                         )}
-                      </span>
+                      </>
                     ) : null}
                   </li>
                 );
               })}
             </ul>
             {central ? (
-              <div className="mt-4 space-y-3">
+              <>
                 <MemberGrant
                   members={members.filter((member) => !memberSeesUnit(member, selected.unitId))}
                   onGrant={(membershipId) => void memberAction(membershipId, "grant")}
                 />
                 <UnitInvite unitId={selected.unitId} onDone={() => void load()} onError={setError} />
-              </div>
+              </>
             ) : null}
           </div>
 
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-foreground">Documentos</h3>
+            <h3 className="mb-2 text-sm font-semibold">Documentos</h3>
             {documents.length === 0 ? (
-              <p className="text-sm text-muted">Todavía no hay documentos en este departamento.</p>
+              <p className="text-sm text-muted">Todavía no hay documentos marcados en esta unidad.</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {documents.map((document) => (
@@ -327,12 +297,10 @@ export function UnitsSettingsClient() {
           </div>
         </section>
       ) : (
-        <p className="rounded-2xl border border-border bg-background px-5 py-8 text-sm text-muted">
-          Elige un departamento o crea el primero.
-        </p>
+        <p className="text-sm text-muted">Este Espacio todavía no tiene unidades.</p>
       )}
 
-      {error ? <p className="text-sm text-[#9b1c1c] lg:col-span-2">{error}</p> : null}
+      {error ? <p className="text-sm text-danger lg:col-span-2">{error}</p> : null}
     </div>
   );
 }
@@ -373,23 +341,22 @@ function UnitInvite({
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
+    <form onSubmit={submit} className="mt-3 flex flex-wrap items-center gap-2">
       <input
         value={displayName}
         onChange={(event) => setDisplayName(event.target.value)}
         placeholder="Nombre y apellido"
-        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+        className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
       />
       <input
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        type="email"
         placeholder="Correo"
-        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+        className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
       />
-      <Button type="submit" size="sm" variant="outline">
-        Invitar
-      </Button>
+      <button type="submit" className="text-sm underline">
+        Invitar a esta unidad
+      </button>
     </form>
   );
 }
@@ -405,7 +372,7 @@ function MemberGrant({
   if (members.length === 0) return null;
   return (
     <form
-      className="flex flex-wrap items-center gap-2"
+      className="mt-3 flex flex-wrap items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (membershipId) onGrant(membershipId);
@@ -414,7 +381,7 @@ function MemberGrant({
       <select
         value={membershipId}
         onChange={(event) => setMembershipId(event.target.value)}
-        className="h-10 min-w-[16rem] rounded-lg border border-border bg-background px-3 text-sm"
+        className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
       >
         <option value="">Agregar persona del Espacio</option>
         {members.map((member) => (
@@ -423,9 +390,9 @@ function MemberGrant({
           </option>
         ))}
       </select>
-      <Button type="submit" size="sm" variant="outline">
+      <button type="submit" className="text-sm underline">
         Autorizar
-      </Button>
+      </button>
     </form>
   );
 }

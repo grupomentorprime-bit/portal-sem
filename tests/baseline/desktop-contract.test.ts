@@ -78,6 +78,16 @@ describe("contrato del escritorio", () => {
     assert.deepEqual(desktopClick({ ...base, appId: "cumple" }), { kind: "request" });
     assert.deepEqual(desktopClick({ ...base, appId: "rrhh", contracted: ["rrhh"] }), { kind: "later" });
     assert.deepEqual(
+      desktopClick({
+        ...base,
+        appId: "rrhh",
+        contracted: ["rrhh"],
+        authorized: ["rrhh"],
+        rrhhOrigin: "https://rrhh-dev-xltxcc-f041cc-212-47-70-32.sslip.io",
+      }),
+      { kind: "connect", appId: "rrhh" }
+    );
+    assert.deepEqual(
       desktopClick({ ...base, appId: "aprende-hoy", contracted: ["aprende-hoy"], aprendeHoyEntryUrl: "http://aprende.example" }),
       { kind: "disconnected" }
     );
@@ -86,8 +96,18 @@ describe("contrato del escritorio", () => {
       { kind: "open", href: "https://aprende.example/aula" }
     );
     assert.deepEqual(
+      desktopClick({
+        ...base,
+        appId: "aprende-hoy",
+        contracted: ["aprende-hoy"],
+        authorized: ["aprende-hoy"],
+        aprendeHoyOrigin: "http://localhost:3002",
+      }),
+      { kind: "connect", appId: "aprende-hoy" }
+    );
+    assert.deepEqual(
       desktopClick({ ...base, tenantId: "cumple", appId: "cumple", contracted: ["cumple"], cumpleOrigin: "https://cumple.mentorprime.cl" }),
-      { kind: "open", href: "https://cumple.mentorprime.cl" }
+      { kind: "connect", appId: "cumple" }
     );
     assert.deepEqual(
       desktopClick({ ...base, tenantId: "otro", appId: "cumple", contracted: ["cumple"], cumpleOrigin: "https://otro.example" }),

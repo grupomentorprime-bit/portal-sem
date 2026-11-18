@@ -7,7 +7,7 @@ export default function UnidadesPage() {
   return (
     <AdminPageFrame
       title="Unidades"
-      description="Departamentos de este Espacio. La administración central los supervisa."
+      description="Departamentos, áreas y sedes de este Espacio. La administración central las supervisa. Cada unidad conserva sus personas, documentos y aplicaciones."
       actions={<></>}
     >
       <UnitsSettingsClient />

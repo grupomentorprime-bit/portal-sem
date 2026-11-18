@@ -1,91 +1,89 @@
-﻿### Task 2: Reglas de subida y archivo en disco
+﻿### Task 2: Repositorio — secuencia atómica + folio al crear + ensure
 
 **Files:**
-- Create: `src/lib/desktop/avatar-upload.ts`
-- Create: `src/lib/desktop/avatar-file.ts`
-- Modify: `.gitignore` (añadir `/data/desktop-avatars/`)
-- Modify: `tests/baseline/desktop-avatar.test.ts`
+- Modify: `src/lib/congress/repository.ts`
+- (sin test de integración Mongo en baseline; dominio cubierto en Task 1)
 
 **Interfaces:**
-- Consumes: nada del Task 1 salvo paths de test
-- Produces: `AVATAR_SIZE_HINT`, `avatarFileError`, `avatarDimensionError`, `storeAvatarPhoto`, `readAvatarPhoto`, `deleteAvatarPhoto`, `AvatarUploadError`
+- Consumes: `formatPaymentFolio`, `CONGRESS_COLLECTIONS.sequences`, `CONGRESS_EVENT_ID`, `CONGRESS_PAYMENT_FOLIO_YEAR`
+- Produces:
+  - `allocateNextPaymentFolio(tenantId: string): Promise<string>`
+  - `ensureCongressPaymentFolio(input: { tenantId; paymentId }): Promise<{ ok: true; payment } | { ok: false; error }>`
+  - `recordCongressPayment` → `payment.folio` siempre presente en éxito
 
-- [ ] **Step 1: Extend failing tests**
+- [ ] **Step 1: Añadir allocateNextPaymentFolio**
 
-Añadir al mismo archivo de test:
-
-```ts
-it("valida tipo, peso y medida mínima de la foto", () => {
-  const {
-    AVATAR_SIZE_HINT,
-    avatarFileError,
-    avatarDimensionError,
-  } = require("../../src/lib/desktop/avatar-upload");
-  assert.match(AVATAR_SIZE_HINT, /2 MB/);
-  assert.notEqual(avatarFileError({ type: "image/gif", size: 100 }), null);
-  assert.equal(avatarFileError({ type: "image/jpeg", size: 100 }), null);
-  assert.match(avatarDimensionError(64, 64) ?? "", /64 × 64/);
-  assert.equal(avatarDimensionError(256, 256), null);
-});
-
-it("guarda foto cuadrada webp y rechaza una demasiado chica", async () => {
-  require("../../scripts/_stub-server-only.cjs");
-  const { storeAvatarPhoto, readAvatarPhoto, deleteAvatarPhoto, AvatarUploadError } =
-    await import("../../src/lib/desktop/avatar-file");
-  const userId = "avatar-upload-test-user";
-  await deleteAvatarPhoto(userId);
-
-  const ok = await sharp({
-    create: { width: 400, height: 300, channels: 3, background: "#224466" },
-  }).jpeg().toBuffer();
-  const saved = await storeAvatarPhoto(userId, ok, "image/jpeg");
-  assert.equal(saved.savedWidth, 400); // o el lado del cuadrado resultante ≤ 512
-  assert.ok(saved.savedWidth <= 512);
-  assert.ok(await readAvatarPhoto(userId));
-
-  const tiny = await sharp({
-    create: { width: 80, height: 80, channels: 3, background: "#224466" },
-  }).jpeg().toBuffer();
-  await assert.rejects(
-    () => storeAvatarPhoto(userId, tiny, "image/jpeg"),
-    (e: unknown) => e instanceof AvatarUploadError
-  );
-
-  await deleteAvatarPhoto(userId);
-});
-```
-
-Importar `sharp` en el test. Ajustar aserción de `savedWidth`: tras crop cuadrado de 400×300 el lado es 300 (min edge) o el resultado de `cover` 300 — documentar en implementación: `resize({ width: 512, height: 512, fit: "cover" })` sobre el min-edge ≥ 128; para 400×300 cover a cuadrado usa el menor lado → 300×300.
-
-- [ ] **Step 2: Run to verify fail**
-
-Run: `node --import tsx --test tests/baseline/desktop-avatar.test.ts`  
-Expected: FAIL missing modules
-
-- [ ] **Step 3: Implement upload rules + file store**
-
-`avatar-upload.ts`: constantes `AVATAR_MAX_BYTES = 2 * 1024 * 1024`, `AVATAR_MIN_EDGE = 128`, `AVATAR_MAX_EDGE = 512`, `AVATAR_TYPES`, hint y errores como wallpaper-upload.
-
-`avatar-file.ts` (`server-only`): espejo de `wallpaper-file.ts` pero:
+En `repository.ts`, tras imports existentes:
 
 ```ts
-.resize({ width: AVATAR_MAX_EDGE, height: AVATAR_MAX_EDGE, fit: "cover" })
-.webp({ quality: 82 })
+import { formatPaymentFolio } from "@/core/congress/payment-folio";
+import { CONGRESS_PAYMENT_FOLIO_YEAR } from "@/core/congress/constants";
 ```
 
-Dir: `data/desktop-avatars`. Hash sha256 del `userId` → `{hash}.webp`.
+```ts
+function paymentFolioSequenceId(tenantId: string, eventId = CONGRESS_EVENT_ID) {
+  return `${tenantId}:${eventId}:payment-folio`;
+}
 
-Añadir `/data/desktop-avatars/` a `.gitignore`.
-
-- [ ] **Step 4: Run tests**
-
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/lib/desktop/avatar-upload.ts src/lib/desktop/avatar-file.ts .gitignore tests/baseline/desktop-avatar.test.ts
-git commit -m "feat(desktop): guardar y validar foto de avatar"
+export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
+  const db = await getDatabase();
+  const doc = await db
+    .collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences)
+    .findOneAndUpdate(
+      { _id: paymentFolioSequenceId(tenantId) },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: "after" }
+    );
+  const seq = doc?.seq;
+  if (!seq || !Number.isInteger(seq) || seq <= 0) {
+    throw new Error("folio_sequence_failed");
+  }
+  return formatPaymentFolio(seq, CONGRESS_PAYMENT_FOLIO_YEAR);
+}
 ```
 
----
+Nota: el driver Mongo puede devolver el documento en `doc` o `doc.value` según versión — usar el patrón ya existente en este repo para `findOneAndUpdate` (ver `updateCongressRegistration` en el mismo archivo) y adaptar.
+
+In this repo, `updateCongressRegistration` uses:
+```ts
+return result ? normalizeCongressRegistration(result) : null;
+```
+So treat `findOneAndUpdate` return as the document directly (not `.value`).
+
+- [ ] **Step 2: Asignar folio en recordCongressPayment antes de insertOne**
+
+Dentro de `recordCongressPayment`, **después** de `allocatePayment` OK, asignar folio **antes** del loop de updates a registrations:
+
+```ts
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  let folio: string;
+  try {
+    folio = await allocateNextPaymentFolio(input.tenantId);
+  } catch {
+    return { ok: false, error: "folio_sequence_failed" };
+  }
+
+  const paymentWithFolio: CongressPayment = { ...result.payment, folio };
+```
+
+Usar `paymentWithFolio` en el `insertOne` y en el return. El loop de `updatedRegistrations` sigue igual.
+
+Si el loop de registrations falla (`concurrent_payment`), el folio queda “consumido” (hueco en secuencia) — aceptable (no reutilizar).
+
+- [ ] **Step 3: ensureCongressPaymentFolio**
+
+Implement idempotent ensure for legacy payments without folio. Prefer a clean race-safe version:
+
+1. find payment; if missing → not_found; if has folio → return it
+2. allocateNextPaymentFolio
+3. findOneAndUpdate only when folio is null/missing/empty; returnDocument after
+4. if update lost race, findOne again and return existing folio if present; else folio_sequence_failed
+
+Do not leave dead unreachable branches (the plan's sample had a redundant `if (payment?.folio)` inside `if (!payment?.folio)` — clean that up).
+
+- [ ] **Step 4: Smoke / typecheck**
+
+Prefer focused check: ensure repository.ts typechecks. If full `npx tsc --noEmit -p tsconfig.json` is too noisy/slow, at least confirm no TS errors in the edited file via reading lints / compiling if feasible. Report what you ran.

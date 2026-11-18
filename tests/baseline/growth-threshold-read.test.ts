@@ -65,8 +65,9 @@ describe("puerta del umbral", () => {
 
   it("el formulario espera el callback y si no hay provider navega solo", () => {
     const form = readSrc("src/components/identity/LoginForm.tsx");
-    assert.match(form, /Usuario/);
+    assert.match(form, /Nombre de usuario/);
     assert.match(form, /Contraseña/);
+    assert.match(form, /Iniciar sesión/);
     assert.match(form, /type="password"/);
     assert.match(form, /\/api\/identity\/auth\/keycloak\/session/);
     assert.match(form, /useThresholdOnAuthenticated/);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
-import { replaceMediaFile } from "@/lib/cms/media";
+import { getMediaById, replaceMediaFile } from "@/lib/cms/media";
+import { assertReadableUnitDocument } from "@/core/units/media-scope";
 import { writeMediaAudit } from "@/lib/cms/media-audit";
 import { validateMediaUpload } from "@/lib/cms/media-validation";
 import { buildOptimizationSummary } from "@/lib/cms/media-optimization";
@@ -23,6 +24,12 @@ export async function POST(request: Request, { params }: RouteParams) {
     if (!tenantCheck.ok) return tenantGuardResponse(tenantCheck);
 
     const { id } = await params;
+    const existing = await getMediaById(id, tenantCheck.tenant);
+    if (!existing) {
+      return NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 });
+    }
+    const hidden = await assertReadableUnitDocument(tenantCheck.tenant, existing.unitId);
+    if (hidden) return hidden;
     const formData = await request.formData();
     const file = formData.get("file");
 

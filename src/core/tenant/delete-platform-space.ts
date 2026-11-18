@@ -69,6 +69,7 @@ const TENANT_SCOPED: TenantScopedCollection[] = [
   { name: SITE_CONFIG_COLLECTION, field: "tenantId" },
   { name: "cms_menus", field: "tenant" },
   { name: "cms_pages", field: "tenant" },
+  { name: "site_page_content", field: "tenantId" },
   { name: "cms_media", field: "tenant" },
   { name: "cms_templates", field: "tenant" },
   { name: "identity_roles", field: "tenantId" },

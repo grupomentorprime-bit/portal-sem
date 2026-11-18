@@ -8,13 +8,18 @@ describe("consulta de contraseña al reenviar acceso", () => {
     assert.equal(needsPassword, true);
   });
 
-  it("sigue con el enlace de acceso si la consulta no responde", async () => {
-    const needsPassword = await accessPasswordCheck(new Promise<boolean>(() => {}), 30);
+  it("mantiene el enlace de acceso si Keycloak confirma la contraseña", async () => {
+    const needsPassword = await accessPasswordCheck(Promise.resolve(false), 200);
     assert.equal(needsPassword, false);
   });
 
-  it("sigue con el enlace de acceso si la consulta falla", async () => {
+  it("incluye el enlace para crear la contraseña si la consulta no responde", async () => {
+    const needsPassword = await accessPasswordCheck(new Promise<boolean>(() => {}), 30);
+    assert.equal(needsPassword, true);
+  });
+
+  it("incluye el enlace para crear la contraseña si la consulta falla", async () => {
     const needsPassword = await accessPasswordCheck(Promise.reject(new Error("red")), 200);
-    assert.equal(needsPassword, false);
+    assert.equal(needsPassword, true);
   });
 });

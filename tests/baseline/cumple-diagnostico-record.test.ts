@@ -239,7 +239,15 @@ describe("registro del diagnóstico CUMPLE", () => {
 
   it("el envío rechaza respuestas ausentes antes de persistir", async () => {
     const { submitExperienceForm } = await import("../../src/core/experience/forms/engine");
-    const form = { ...cumpleSite.forms[0], tenant: "cumple" };
+    const form = {
+      ...cumpleSite.forms[0],
+      tenant: "cumple",
+      postSubmit: { type: "message" as const, message: "Gracias." },
+      active: true,
+      visible: true,
+      createdAt: "2026-10-16T12:00:00.000Z",
+      updatedAt: "2026-10-16T12:00:00.000Z",
+    };
     let saved = 0;
     const result = await submitExperienceForm({
       form,

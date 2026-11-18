@@ -19,20 +19,40 @@ export async function getSiteMetadata(): Promise<Metadata> {
     const meta = await buildSiteMetadata(ctx.config);
     ensureProductionCodedSites();
     const site = getCodedSite(ctx.tenantId);
-    if (site && ctx.tenantId === CUMPLE_TENANT_ID) {
+    if (site) {
       const headerList = await headers();
       const pathname = headerList.get("x-pathname") ?? "/";
-      const seo = resolveCumpleSeo(pathname);
-      return {
-        ...meta,
-        title: seo.title,
-        description: seo.description,
-        openGraph: {
-          ...meta.openGraph,
+      if (ctx.tenantId === CUMPLE_TENANT_ID) {
+        const seo = resolveCumpleSeo(pathname);
+        return {
+          ...meta,
           title: seo.title,
           description: seo.description,
-        },
-      };
+          openGraph: {
+            ...meta.openGraph,
+            title: seo.title,
+            description: seo.description,
+          },
+        };
+      }
+      const path = pathname.split("?")[0]?.split("#")[0] ?? "/";
+      const normalized = path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path || "/";
+      const page = site.pages.find((item) => item.path === normalized);
+      if (page) {
+        const description =
+          page.description ??
+          (typeof meta.description === "string" ? meta.description : undefined);
+        return {
+          ...meta,
+          title: page.title,
+          description,
+          openGraph: {
+            ...meta.openGraph,
+            title: page.title,
+            description,
+          },
+        };
+      }
     }
     return meta;
   }

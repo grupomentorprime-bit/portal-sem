@@ -11,6 +11,7 @@ import { writeMediaAudit } from "@/lib/cms/media-audit";
 import { validateMediaUpdate } from "@/lib/cms/media-validation";
 import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import { requirePermission } from "@/core/identity";
+import { assertReadableUnitDocument, mediaUploadUnitId } from "@/core/units/media-scope";
 import type { CmsMediaUpdate } from "@/types/media";
 
 interface RouteParams {
@@ -28,6 +29,8 @@ async function loadMediaForActiveTenant(id: string) {
       error: NextResponse.json({ ok: false, error: "No encontrado." }, { status: 404 }),
     } as const;
   }
+  const hidden = await assertReadableUnitDocument(tenantCheck.tenant, media.unitId);
+  if (hidden) return { error: hidden } as const;
   return { media, tenantId: tenantCheck.tenant } as const;
 }
 
@@ -67,6 +70,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const errors = validateMediaUpdate(body);
     if (errors.length > 0) {
       return NextResponse.json({ ok: false, errors }, { status: 400 });
+    }
+    if (body.unitId !== undefined) {
+      const moved = await mediaUploadUnitId(tenantId, body.unitId);
+      if (!moved.ok) return moved.response;
+      body.unitId = moved.unitId;
     }
 
     if (body.restore) {

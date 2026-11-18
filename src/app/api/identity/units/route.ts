@@ -4,21 +4,8 @@ import { isCentralUnitAdmin } from "@/core/units/access";
 import { UNIT_APP_CATALOG, normalizeEnabledAppIds } from "@/core/units/apps";
 import { insertOrgUnit, listOrgUnits } from "@/core/units/repository";
 import { UNIT_KINDS, type UnitKind } from "@/core/units/types";
+import { normalizeSpaceSlug } from "@/core/tenant/create-platform-space";
 import { getDatabase } from "@/lib/mongodb";
-
-function unitIdFromName(raw: string): string | null {
-  const slug = raw
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  if (!slug || slug.length < 2 || slug.length > 64) return null;
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null;
-  return slug;
-}
 
 export async function GET() {
   try {
@@ -63,7 +50,7 @@ export async function POST(request: Request) {
       enabledAppIds?: string[];
     };
     const name = body.name?.trim() ?? "";
-    const unitId = unitIdFromName(name);
+    const unitId = normalizeSpaceSlug(name);
     if (!name || !unitId) {
       return NextResponse.json({ ok: false, error: "Indica el nombre de la unidad." }, { status: 400 });
     }

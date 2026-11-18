@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ProductMark, PlatformNeutralTheme } from "@/components/product";
 import { Button } from "@/components/ui/button";
+import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import {
   PLATFORM_LEGAL_ROUTES,
@@ -214,6 +215,7 @@ export function PlatformPublicLanding() {
                 {PLATFORM_SUPPORT_EMAIL}
               </a>
             </div>
+            <PublicVendorCredit className="text-sm text-muted" />
           </div>
         </footer>
       </div>

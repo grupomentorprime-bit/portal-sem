@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
     root: path.join(process.cwd()),
   },
   // Windows: Playwright/scripts suelen usar 127.0.0.1; sin esto Next bloquea /_next/* en dev.
-  allowedDevOrigins: ["127.0.0.1"],
+  allowedDevOrigins: ["127.0.0.1", "localhost", "cumple.localhost"],
   poweredByHeader: false,
   images: {
     localPatterns: [

@@ -1,14 +1,13 @@
 import "server-only";
 
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
-import { accessPasswordCheck } from "@/lib/identity/access-password-check";
-import { keycloakUserNeedsPassword } from "@/lib/identity/keycloak-admin";
 import {
   createInvitation,
   findPendingInvitationByEmail,
   findInvitationById,
   renewInvitationToken,
 } from "@/lib/identity/invitations";
+import { unitIdsForDepartmentEmail } from "@/lib/identity/invite-department";
 import { sendAccessReminderEmail, sendInvitationEmail } from "@/lib/notifications/email";
 import { normalizeEmail } from "@/lib/validation/identity";
 
@@ -23,6 +22,7 @@ async function deliverInvitationEmail(input: {
   token: string;
   expiresAt: string;
   message: string;
+  unitIds?: string[];
 }): Promise<SendResult> {
   const sent = await sendInvitationEmail({
     tenantId: input.tenantId,
@@ -30,6 +30,7 @@ async function deliverInvitationEmail(input: {
     displayName: input.displayName || input.email,
     token: input.token,
     expiresAt: input.expiresAt,
+    unitIds: input.unitIds,
   });
   if (!sent.ok) return { ok: false, error: sent.error, status: 422 };
   return { ok: true, email: input.email, message: input.message };
@@ -57,19 +58,26 @@ export async function resendPendingInvitationEmail(input: {
     return { ok: false, error: "No se pudo renovar el enlace de acceso.", status: 409 };
   }
 
+  const unitIds = await unitIdsForDepartmentEmail({
+    tenantId: input.tenantId,
+    roleIds: renewed.roleIds,
+    unitAccess: renewed.unitAccess,
+    invitationId: renewed._id,
+  });
+
   return deliverInvitationEmail({
     tenantId: input.tenantId,
     email: renewed.email,
     displayName: renewed.displayName,
     token: renewed.token,
     expiresAt: renewed.expiresAt,
+    unitIds,
     message: `Reenviamos la invitación corporativa a ${renewed.email}. El enlace anterior ya no sirve.`,
   });
 }
 
 /**
- * Persona del Equipo: correo corporativo para entrar.
- * Si todavía no tiene contraseña, el correo incluye el enlace para crearla.
+ * Persona del Equipo: correo con el enlace para crear o renovar la contraseña.
  */
 export async function resendMemberAccessEmail(input: {
   tenantId: string;
@@ -77,6 +85,7 @@ export async function resendMemberAccessEmail(input: {
   displayName: string;
   roleIds: string[];
   invitedBy: string;
+  unitIds?: string[];
 }): Promise<SendResult> {
   const email = normalizeEmail(input.email);
   if (!email) {
@@ -84,15 +93,21 @@ export async function resendMemberAccessEmail(input: {
   }
 
   const displayName = input.displayName.trim() || email;
-  const needsPassword = isKeycloakOnlyAuth()
-    ? await accessPasswordCheck(keycloakUserNeedsPassword(email))
-    : false;
+  const needsPassword = isKeycloakOnlyAuth();
+  const unitIds =
+    input.unitIds?.length
+      ? input.unitIds
+      : await unitIdsForDepartmentEmail({
+          tenantId: input.tenantId,
+          roleIds: input.roleIds,
+        });
 
   if (!needsPassword) {
     const sent = await sendAccessReminderEmail({
       tenantId: input.tenantId,
       to: email,
       displayName,
+      unitIds,
     });
     if (!sent.ok) return { ok: false, error: sent.error, status: 422 };
     return {
@@ -113,6 +128,9 @@ export async function resendMemberAccessEmail(input: {
         displayName,
         roleIds: input.roleIds,
         invitedBy: input.invitedBy,
+        ...(unitIds?.length
+          ? { unitAccess: { mode: "units" as const, unitIds } }
+          : {}),
       });
     } catch (error) {
       const pending = await findPendingInvitationByEmail(input.tenantId, email);
@@ -133,6 +151,13 @@ export async function resendMemberAccessEmail(input: {
     displayName: invitation.displayName,
     token: invitation.token,
     expiresAt: invitation.expiresAt,
+    unitIds:
+      (await unitIdsForDepartmentEmail({
+        tenantId: input.tenantId,
+        roleIds: invitation.roleIds,
+        unitAccess: invitation.unitAccess,
+        invitationId: invitation._id,
+      })) ?? unitIds,
     message: `Enviamos el correo corporativo para crear la contraseña a ${invitation.email}.`,
   });
 }

@@ -4,7 +4,7 @@
 
 import { isSemTenant } from "@/core/tenant/is-sem";
 import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
-import type { ExperienceFormDefinition } from "@/types/experience-forms";
+import type { ExperienceFormDefinition, ExperienceFormField } from "@/types/experience-forms";
 import {
   isExperienceFormPrivate,
   isPrivateExperienceFormId,
@@ -372,6 +372,17 @@ export function absenceReviewStatusLabel(status?: string): string {
 
 export function formatSubmissionProgram(value: unknown): string {
   return formatGenerationDisplay(value);
+}
+
+/** Muestra la etiqueta de una opción (p. ej. zona-7 → Zona 7) o el texto tal cual. */
+export function formatSubmissionAnswer(
+  value: unknown,
+  field?: Pick<ExperienceFormField, "options"> | null
+): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "—";
+  const option = field?.options?.find((item) => item.value === raw);
+  return option?.label ?? raw;
 }
 
 export function formatSubmissionPhone(value: unknown): string {

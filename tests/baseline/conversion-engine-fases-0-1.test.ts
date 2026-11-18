@@ -304,7 +304,13 @@ describe("conversion engine fases 0 y 1", () => {
             toState: input.toState,
             actorUserId: input.actor.userId,
           });
-          if (!result.ok) return { ok: false, reason: result.reason, error: result.error };
+          if (!result.ok) {
+            return {
+              ok: false,
+              reason: result.reason,
+              error: "error" in result ? result.error : undefined,
+            };
+          }
           return {
             ok: true,
             oportunidad: result.oportunidad,

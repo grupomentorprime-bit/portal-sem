@@ -11,6 +11,7 @@ import type { SiteConfig } from "../../src/types/cms";
 function baseConfig(): SiteConfig {
   return {
     _id: "site",
+    schemaVersion: 2,
     institution: {
       name: "Seminario",
       shortName: "SEM",
@@ -54,6 +55,11 @@ function baseConfig(): SiteConfig {
       events: false,
       academicAgenda: false,
       institutionalNotices: false,
+      store: false,
+      library: false,
+      forms: false,
+      applications: false,
+      onlinePayments: false,
     },
     sitePublished: false,
     portalCopy: {} as SiteConfig["portalCopy"],

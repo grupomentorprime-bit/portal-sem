@@ -44,7 +44,7 @@ export async function listMaintainedUsers(): Promise<MaintainedUserRow[]> {
   const db = await getDatabase();
   const [users, memberships, roles, spaces] = await Promise.all([
     db
-      .collection("identity_users")
+      .collection<IdentityUser>("identity_users")
       .find(
         {},
         {
@@ -167,7 +167,7 @@ export async function createMaintainedUser(input: {
         input.profile === PLATFORM_ROLE_CODES.OWNER
           ? PLATFORM_ROLE_CODES.OWNER
           : PLATFORM_ROLE_CODES.OPERATOR;
-      await db.collection("identity_users").updateOne(
+      await db.collection<IdentityUser>("identity_users").updateOne(
         { _id: user._id },
         { $set: { platformRoles: [platformRole], updatedAt: now } }
       );
@@ -187,7 +187,7 @@ export async function createMaintainedUser(input: {
   } catch (error) {
     await db.collection("identity_memberships").deleteMany({ userId: user._id });
     await db.collection("identity_credentials").deleteMany({ userId: user._id });
-    await db.collection("identity_users").deleteOne({ _id: user._id });
+    await db.collection<IdentityUser>("identity_users").deleteOne({ _id: user._id });
     throw error instanceof Error ? error : new Error("No se pudo crear el usuario.");
   }
 

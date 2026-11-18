@@ -205,7 +205,7 @@ describe("ajustes de empresa y mi cuenta", () => {
     assert.match(space, /event\.key === "Escape"/);
     assert.match(space, /requestClose/);
     assert.match(space, /opener\?\.focus\(\)/);
-    assert.match(space, /ajustes-head \.ghost.*\?\.focus\(\)/s);
+    assert.match(space, /ajustes-head \.ghost[\s\S]*\?\.focus\(\)/);
     assert.match(space, /event\.key !== "Tab"/);
     assert.match(space, /Hay cambios sin guardar\. ¿Salir y descartarlos\?/);
     assert.match(space, /Hay cambios sin guardar\. ¿Cambiar de sección y descartarlos\?/);

@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { ExperienceFormSubmissionsTable } from "@/components/admin/forms/ExperienceFormSubmissionsTable";
-import type { ExperienceFormSubmission } from "@/types/experience-forms";
+import type { ExperienceFormField, ExperienceFormSubmission } from "@/types/experience-forms";
 
 interface FormSubmissionsPanelProps {
   formId: string;
+  fields?: ExperienceFormField[];
 }
 
-export function FormSubmissionsPanel({ formId }: FormSubmissionsPanelProps) {
+export function FormSubmissionsPanel({ formId, fields }: FormSubmissionsPanelProps) {
   const [submissions, setSubmissions] = useState<ExperienceFormSubmission[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export function FormSubmissionsPanel({ formId }: FormSubmissionsPanelProps) {
   return (
     <ExperienceFormSubmissionsTable
       formId={formId}
+      fields={fields}
       submissions={submissions}
       total={total}
       loading={loading}

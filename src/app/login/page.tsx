@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/identity/LoginForm";
+import { PublicSurface } from "@/components/portal/PublicSurface";
 import { ThresholdLogin } from "@/components/identity/ThresholdLogin";
 import { loginErrorMessage } from "@/components/identity/login-errors";
 import { PlatformNeutralTheme } from "@/components/product";
@@ -59,14 +60,16 @@ export default async function GrowthLoginPage({
   }
 
   return (
-    <PlatformNeutralTheme>
-      <ThresholdLogin line={line}>
-        <LoginForm
-          next={next}
-          authReady={isKeycloakEnabled()}
-          errorMessage={loginErrorMessage(params.error)}
-        />
-      </ThresholdLogin>
+    <PlatformNeutralTheme className="flex min-h-screen flex-col">
+      <PublicSurface>
+        <ThresholdLogin line={line}>
+          <LoginForm
+            next={next}
+            authReady={isKeycloakEnabled()}
+            errorMessage={loginErrorMessage(params.error)}
+          />
+        </ThresholdLogin>
+      </PublicSurface>
     </PlatformNeutralTheme>
   );
 }

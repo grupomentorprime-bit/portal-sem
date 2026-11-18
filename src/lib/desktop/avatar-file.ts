@@ -68,7 +68,7 @@ export async function storeAvatarPhoto(
     throw new AvatarUploadError(`La imagen pesa demasiado. ${AVATAR_SIZE_HINT}`);
   }
 
-  let meta: sharp.Metadata;
+  let meta: Awaited<ReturnType<ReturnType<typeof sharp>["metadata"]>>;
   try {
     meta = await sharp(buffer, { failOn: "none" }).rotate().metadata();
   } catch {

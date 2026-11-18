@@ -1,5 +1,13 @@
 /** Mensajes públicos de Resend / correo transaccional. Sin detalles internos. */
-export function publicTransactionalEmailError(error: { name?: string }): string {
+export function publicTransactionalEmailError(error: {
+  name?: string;
+  message?: string;
+}): string {
+  const detail = error.message ?? "";
+  if (/testing emails|verify a domain/i.test(detail)) {
+    return "El remitente del correo no está configurado.";
+  }
+
   switch (error.name) {
     case "missing_api_key":
     case "invalid_api_key":

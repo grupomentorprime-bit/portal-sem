@@ -21,11 +21,13 @@ import {
 export function DesktopClientConsole({
   tenantId,
   model,
+  entering,
   onEnter,
   onChanged,
 }: {
   tenantId: string;
   model: ClientConsoleModel;
+  entering?: boolean;
   onEnter: () => void;
   onChanged: (space: unknown) => void;
 }) {
@@ -244,8 +246,8 @@ export function DesktopClientConsole({
 
       {error ? <p className="form-error">{error}</p> : null}
       </div>
-      <button type="button" className="primary console-enter" onClick={onEnter}>
-        Entrar a su escritorio
+      <button type="button" className="primary console-enter" disabled={entering} onClick={onEnter}>
+        {entering ? "Entrando…" : "Entrar a su escritorio"}
       </button>
     </div>
   );

@@ -12,6 +12,11 @@ export const PLATFORM_SPACE_FALLBACK = "tu Espacio";
 /** Crédito de plataforma cuando el Site no define uno propio. */
 export const PLATFORM_CREDITS = PLATFORM_DISPLAY_NAME;
 
+/** Marca pública obligatoria en superficies del portal. */
+export const VENDOR_CREDIT_LABEL = "Creado por Mentor Prime Consultores";
+export const VENDOR_CREDIT_URL = "https://mentorprime.cl/";
+export const VENDOR_CREDIT_LINE = VENDOR_CREDIT_LABEL;
+
 /**
  * Reescribe nombres de producto heredados en copy de plataforma (créditos, fallbacks).
  * No usar sobre contenido T001 ni sobre copy del adapter Aprende Hoy.

@@ -68,7 +68,7 @@ export async function storeCustomWallpaper(
     throw new WallpaperUploadError(`La imagen pesa demasiado. ${WALLPAPER_SIZE_HINT}`);
   }
 
-  let meta: sharp.Metadata;
+  let meta: Awaited<ReturnType<ReturnType<typeof sharp>["metadata"]>>;
   try {
     meta = await sharp(buffer, { failOn: "none" }).rotate().metadata();
   } catch {

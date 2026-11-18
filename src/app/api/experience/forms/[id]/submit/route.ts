@@ -19,17 +19,54 @@ import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
 import { publicInternalError } from "@/core/security/public-error";
 import { normalizeChilePhone, formatChilePhoneDisplay } from "@/lib/experience/forms/phone-chile";
 import {
+  findCongressEnrolleeMatch,
   getDirectAccessibleExperienceForm,
   saveFormSubmission,
 } from "@/lib/experience/forms/repository";
+import { sendCongressConfirmationEmail } from "@/lib/notifications/congress-confirmation-email";
 import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
 import { updateRosterStudentContactFields } from "@/lib/student-affairs/roster-outreach";
 import { resolveConfirmationEmailCta } from "@/lib/notifications/resolve-confirmation-email-cta";
 import { reportPathForSubmission } from "@/lib/cumple/informe";
 import { CUMPLE_FORM_ID } from "@/sites/cumple/site";
-
+import {
+  alreadyEnrolledMessage,
+  CONGRESS_VARONES_FORM_ID,
+  CONGRESS_VARONES_PROGRAM_PATH,
+  enrolleeIdentity,
+} from "@/lib/experience/forms/already-enrolled";
+import { isCongressRegistrationClaimable } from "@/core/congress/claim";
+import { claimCongressRegistrationFromForm } from "@/lib/congress/claim-registration";
+import { getCongressRegistration } from "@/lib/congress/repository";
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+/** Envía el tríptico si hay correo. No interrumpe la inscripción si el envío falla. */
+async function deliverCongressProgram(
+  tenant: string,
+  data: Record<string, unknown>
+): Promise<void> {
+  const participantEmail = enrolleeIdentity(data).email;
+  if (!participantEmail) return;
+
+  try {
+    const resolvedCta = await resolveConfirmationEmailCta(tenant, {
+      confirmationEmailCtaUrl: CONGRESS_VARONES_PROGRAM_PATH,
+    });
+    const emailResult = await sendCongressConfirmationEmail({
+      tenantId: tenant,
+      to: participantEmail,
+      participantName: String(data.fullName ?? "").trim() || "Participante",
+      programUrl: resolvedCta.url ?? CONGRESS_VARONES_PROGRAM_PATH,
+      attachment: resolvedCta.attachment,
+    });
+    if (!emailResult.ok) {
+      console.warn("[congreso] no se pudo enviar el programa:", emailResult.error);
+    }
+  } catch (emailError) {
+    console.error("[congreso] falló el correo con el programa", emailError);
+  }
 }
 
 function alreadyRegisteredResponse(field: string, attendance: ConvocatoriaRegistrationAttendance) {
@@ -249,6 +286,38 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     data = normalizeFormSubmissionData(form, data);
 
+    if (form._id === CONGRESS_VARONES_FORM_ID) {
+      const registrationId = String(data.registrationId ?? "").trim();
+      if (registrationId) {
+        const existingReg = await getCongressRegistration(tenant, registrationId);
+        if (!existingReg || !isCongressRegistrationClaimable(existingReg)) {
+          await deliverCongressProgram(tenant, data);
+          return NextResponse.json(
+            {
+              ok: false,
+              alreadyRegistered: true,
+              error: alreadyEnrolledMessage("rut"),
+            },
+            { status: 409 }
+          );
+        }
+      }
+
+      const enrolled = await findCongressEnrolleeMatch(tenant, form._id, data);
+      if (enrolled) {
+        await deliverCongressProgram(tenant, data);
+        return NextResponse.json(
+          {
+            ok: false,
+            alreadyRegistered: true,
+            match: enrolled,
+            error: alreadyEnrolledMessage(enrolled),
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const result = await submitExperienceForm({
       form,
       data,
@@ -264,6 +333,34 @@ export async function POST(request: Request, { params }: RouteParams) {
         },
         { status: 422 }
       );
+    }
+
+    if (form._id === CONGRESS_VARONES_FORM_ID) {
+      const registrationId = String(data.registrationId ?? "").trim();
+      if (registrationId && result.submissionId) {
+        const claimed = await claimCongressRegistrationFromForm({
+          tenantId: tenant,
+          registrationId,
+          submissionId: result.submissionId,
+          data,
+        });
+        if (!claimed.ok) {
+          await deliverCongressProgram(tenant, data);
+          return NextResponse.json(
+            {
+              ok: false,
+              alreadyRegistered: true,
+              error:
+                claimed.error === "rut_conflict"
+                  ? alreadyEnrolledMessage("rut")
+                  : alreadyEnrolledMessage("rut"),
+            },
+            { status: 409 }
+          );
+        }
+      }
+
+      await deliverCongressProgram(tenant, data);
     }
 
     if (convocatoria && data.registrationMode === "manual") {

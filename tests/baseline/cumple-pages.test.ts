@@ -8,15 +8,16 @@ import { getCodedPageView } from "../../src/sites/page-views";
 import { resolveCumpleSeo } from "../../src/sites/cumple/seo";
 import { CUMPLE_SEO, CUMPLE_TENANT_ID, cumpleSite } from "../../src/sites/cumple/site";
 
-/** `next/font/google` solo existe dentro del compilador de Next; fuera se sustituye por un stub. */
+/** `next/font/local` solo existe dentro del compilador de Next; fuera se sustituye por un stub. */
 function stubNextFonts(): void {
   const loader = Module as unknown as {
     _load: (request: string, ...rest: unknown[]) => unknown;
   };
   const original = loader._load;
   loader._load = function patched(request: string, ...rest: unknown[]) {
-    if (request === "next/font/google") {
-      return new Proxy({}, { get: () => () => ({ className: "", variable: "", style: {} }) });
+    if (request === "next/font/google" || request === "next/font/local") {
+      const fake = () => ({ className: "", variable: "", style: {} });
+      return Object.assign(fake, { default: fake });
     }
     return original.call(this, request, ...rest);
   };

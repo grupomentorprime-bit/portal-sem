@@ -1,3 +1,5 @@
+import type { UnitAccess } from "@/core/units/types";
+
 /** Identity & Access Management — Growth OS */
 
 export const USER_STATUSES = ["active", "suspended", "pending"] as const;
@@ -94,6 +96,11 @@ export interface IdentityMembership {
   unitAccess?: UnitAccess;
   /** Formularios y generaciones asignados (rol Asuntos Estudiantiles). */
   studentAffairsScope?: StudentAffairsScope;
+  /**
+   * Alcance dentro del Espacio. Ausente = todo el Espacio (clientes sin unidades).
+   * `tenant` = administración central. `units` = solo esas unidades.
+   */
+  unitAccess?: UnitAccess;
   /** Overrides granulares OT-IAM-002 — equivalente a user_permissions */
   permissionOverrides?: Record<string, boolean>;
   joinedAt: string;
@@ -125,6 +132,11 @@ export interface IdentitySession {
    * Vacío cuando la cuenta no tiene membresías activas (“sin espacio”).
    */
   tenantId: string;
+  /**
+   * Ausente = escritorio / Growth OS.
+   * `cumple` solo reconoce el host de Cumple y no abre el escritorio ni el admin.
+   */
+  audience?: "desk" | "cumple";
   ip?: string;
   userAgent?: string;
   createdAt: string;

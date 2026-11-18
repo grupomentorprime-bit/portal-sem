@@ -28,7 +28,13 @@ import {
   type MentorAppId,
   type WallpaperChoice,
 } from "@/lib/desktop/catalog";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 import { canManageAppKeys, desktopVisibleApps } from "@/lib/desktop/app-access";
+import {
+  connectLaunchForm,
+  createTransactionVerifier,
+  hashTransactionVerifier,
+} from "@/lib/connect/policy";
 import { desktopClick, type DesktopClick } from "@/lib/desktop/contract";
 import {
   deskIconsForDock,
@@ -79,7 +85,9 @@ export interface MentorDesktopProps {
   /** Llaves de la membresía en el Espacio activo. Ausente = legado (todo el techo). */
   authorizedApps?: MentorAppId[] | null;
   aprendeHoyEntryUrl: string | null;
+  aprendeHoyOrigin: string | null;
   cumpleOrigin: string | null;
+  rrhhOrigin: string | null;
   wallpaper: WallpaperChoice;
   /** Imagen propia, si ya subió una. Sigue disponible aunque el fondo activo sea del catálogo. */
   customWallpaper?: string | null;
@@ -246,6 +254,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const [attentionUnread, setAttentionUnread] = useState(Boolean(props.attentionUnread));
   const [spaceAjustesOpen, setSpaceAjustesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [entering, setEntering] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState(
     () => props.user.displayName || props.user.email
   );
@@ -310,6 +319,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const targetRef = useRef<number[]>(dockApps.map(() => 1));
   const frameRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
+  const connectingRef = useRef(false);
   const [deskSize, setDeskSize] = useState({ width: 1440, height: 900 });
 
   useEffect(() => {
@@ -328,6 +338,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   useEffect(() => {
     function releaseLaunch() {
       if (timerRef.current != null) window.clearTimeout(timerRef.current);
+      connectingRef.current = false;
       setLaunch(null);
       setPressedId(null);
       setShakeId(null);
@@ -344,6 +355,22 @@ export function MentorDesktop(props: MentorDesktopProps) {
       if (timerRef.current != null) window.clearTimeout(timerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const origins = [props.rrhhOrigin, props.aprendeHoyOrigin].filter(
+      (origin): origin is string => Boolean(origin)
+    );
+    const links = origins.map((origin) => {
+      const link = document.createElement("link");
+      link.rel = "preconnect";
+      link.href = origin;
+      document.head.append(link);
+      return link;
+    });
+    return () => {
+      for (const link of links) link.remove();
+    };
+  }, [props.rrhhOrigin, props.aprendeHoyOrigin]);
 
   useEffect(() => {
     function onMove(event: PointerEvent) {
@@ -721,7 +748,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
     }
   }
 
-  function openSheet(appId: MentorAppId, kind: Exclude<DesktopClick["kind"], "open">) {
+  function openSheet(appId: MentorAppId, kind: Exclude<DesktopClick["kind"], "open" | "connect">) {
     setSendingRequest(false);
     setSheet({ appId, kind });
   }
@@ -784,7 +811,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }
 
   function handleApp(appId: DockAppId, event?: ReactMouseEvent<HTMLButtonElement>) {
-    if (launch) return;
+    if (launch || connectingRef.current) return;
     if (appId === "atencion") {
       if (!props.attentionStaff) setAttentionUnread(false);
       setSheet(null);
@@ -833,9 +860,15 @@ export function MentorDesktop(props: MentorDesktopProps) {
       contracted: props.contracted,
       authorized: props.authorizedApps ?? null,
       aprendeHoyEntryUrl: props.aprendeHoyEntryUrl,
+      aprendeHoyOrigin: props.aprendeHoyOrigin,
       cumpleOrigin: props.cumpleOrigin,
+      rrhhOrigin: props.rrhhOrigin,
     });
     if (timerRef.current != null) window.clearTimeout(timerRef.current);
+    if (action.kind === "connect") {
+      void beginConnect(action.appId, event);
+      return;
+    }
     if (action.kind === "open") {
       if (event) beginOpen(appId, action.href, event);
       else window.location.assign(action.href);
@@ -850,6 +883,81 @@ export function MentorDesktop(props: MentorDesktopProps) {
       setShakeId(null);
       openSheet(appId, action.kind);
     }, 420);
+  }
+
+  async function beginConnect(
+    appId: "cumple" | "rrhh" | "aprende-hoy",
+    event?: ReactMouseEvent<HTMLButtonElement>
+  ) {
+    if (connectingRef.current) return;
+    connectingRef.current = true;
+    const glyph = event?.currentTarget.querySelector(".glyph");
+    const rect = glyph?.getBoundingClientRect();
+    const transaction = createTransactionVerifier();
+    const transactionHash = await hashTransactionVerifier(transaction);
+    const response = await fetch("/api/connect/launch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appId, transactionHash }),
+      signal: AbortSignal.timeout(8_000),
+    }).catch(() => null);
+    const body = (await response?.json().catch(() => null)) as {
+      ok?: boolean;
+      callback?: string;
+      code?: string;
+      reason?: string;
+    } | null;
+    const form =
+      response?.ok && body?.ok && body.callback && body.code
+        ? connectLaunchForm({
+            callback: body.callback,
+            code: body.code,
+            transaction,
+            deskOrigin: window.location.origin,
+            rrhhOrigin: props.rrhhOrigin,
+            aprendeHoyOrigin: props.aprendeHoyOrigin,
+          })
+        : null;
+    if (!form?.ok) {
+      connectingRef.current = false;
+      setLaunch(null);
+      const denied =
+        body?.reason === "no_key" ||
+        body?.reason === "no_plan" ||
+        body?.reason === "no_membership";
+      openSheet(appId, denied ? "unauthorized" : "disconnected");
+      return;
+    }
+    if (rect) {
+      setLaunch({
+        appId,
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+      if (timerRef.current != null) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => {
+        connectingRef.current = false;
+        setLaunch(null);
+        openSheet(appId, "disconnected");
+      }, 8_000);
+    }
+    const element = document.createElement("form");
+    element.method = form.method;
+    element.action = form.action;
+    element.referrerPolicy = form.referrerPolicy;
+    const field = document.createElement("input");
+    field.type = "hidden";
+    field.name = "code";
+    field.value = form.fields.code;
+    const proof = document.createElement("input");
+    proof.type = "hidden";
+    proof.name = "transaction";
+    proof.value = form.fields.transaction;
+    element.append(field, proof);
+    document.body.append(element);
+    element.submit();
   }
 
   async function submitRequest(appId: MentorAppId) {
@@ -907,8 +1015,13 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }
 
   async function enterClient(tenantId: string) {
+    if (entering) return;
+    setEntering(tenantId);
     const opened = await openClient(tenantId);
-    if (!opened) return;
+    if (!opened) {
+      setEntering(null);
+      return;
+    }
     writeEnteredClientCookie(tenantId);
     window.location.assign("/escritorio");
   }
@@ -993,13 +1106,13 @@ export function MentorDesktop(props: MentorDesktopProps) {
           <button
             type="button"
             className="who"
-            title={props.user.email}
+            title={displayName}
             aria-haspopup="dialog"
             aria-expanded={accountOpen}
             onClick={openAccount}
           >
             <DesktopAvatar view={avatarView} />
-            <span>{displayName}</span>
+            <span>{firstNameFromDisplayName(displayName) || displayName}</span>
           </button>
           <span className="meta-actions">
             {owner || companySettings ? (
@@ -1064,7 +1177,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
                 contracted: props.contracted,
                 authorized: props.authorizedApps ?? null,
                 aprendeHoyEntryUrl: props.aprendeHoyEntryUrl,
+                aprendeHoyOrigin: props.aprendeHoyOrigin,
                 cumpleOrigin: props.cumpleOrigin,
+                rrhhOrigin: props.rrhhOrigin,
               })
             : null;
           return (
@@ -1109,7 +1224,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
                   contracted: props.contracted,
                   authorized: props.authorizedApps ?? null,
                   aprendeHoyEntryUrl: props.aprendeHoyEntryUrl,
+                  aprendeHoyOrigin: props.aprendeHoyOrigin,
                   cumpleOrigin: props.cumpleOrigin,
+                  rrhhOrigin: props.rrhhOrigin,
                 })
               : null;
             const glyphState = [
@@ -1171,6 +1288,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       {clientesOpen ? (
         <DesktopClientes
           spaces={props.spaces}
+          entering={entering}
           onClose={() => setClientesOpen(false)}
           onEnter={(tenantId) => void enterClient(tenantId)}
         />

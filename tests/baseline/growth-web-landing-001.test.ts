@@ -29,7 +29,8 @@ describe("OT-GROWTH-WEB-LANDING-IMPLEMENT-001 — Sitio web V1", () => {
     const sitioEnd = nav.indexOf('id: "institucion"', sitioStart);
     const sitio = nav.slice(sitioStart, sitioEnd);
 
-    assert.doesNotMatch(sitio, /label: "Páginas"/);
+    assert.match(sitio, /label: "Sitio web"/);
+    assert.match(sitio, /href: "\/admin\/site\/pages"/);
     assert.match(sitio, /label: "Formularios"/);
     assert.doesNotMatch(sitio, /label: "Menús"/);
     assert.match(sitio, /label: "Dominio"/);

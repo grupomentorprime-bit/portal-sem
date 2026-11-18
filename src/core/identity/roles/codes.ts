@@ -6,6 +6,7 @@ export const ROLE_CODES = {
   SUPPORT: "support",
   ADMISSIONS: "admissions",
   STUDENT_AFFAIRS: "student_affairs",
+  CONGRESS_OPERATOR: "congress_operator",
   COMMUNICATIONS: "communications",
   REVIEWER: "reviewer",
   GUEST: "guest",
@@ -23,6 +24,7 @@ export type PortalRoleCode =
   | typeof ROLE_CODES.SUPPORT
   | typeof ROLE_CODES.ADMISSIONS
   | typeof ROLE_CODES.STUDENT_AFFAIRS
+  | typeof ROLE_CODES.CONGRESS_OPERATOR
   | typeof ROLE_CODES.COMMUNICATIONS
   | typeof ROLE_CODES.REVIEWER
   | typeof ROLE_CODES.GUEST;
@@ -33,6 +35,7 @@ export const PORTAL_ROLE_CODES: PortalRoleCode[] = [
   ROLE_CODES.SUPPORT,
   ROLE_CODES.ADMISSIONS,
   ROLE_CODES.STUDENT_AFFAIRS,
+  ROLE_CODES.CONGRESS_OPERATOR,
   ROLE_CODES.COMMUNICATIONS,
   ROLE_CODES.REVIEWER,
   ROLE_CODES.GUEST,
@@ -52,6 +55,7 @@ export const LEGACY_ROLE_NAME_TO_CODE: Record<string, RoleCode> = {
   Support: ROLE_CODES.SUPPORT,
   Admissions: ROLE_CODES.ADMISSIONS,
   "Student Affairs": ROLE_CODES.STUDENT_AFFAIRS,
+  "Congress Operator": ROLE_CODES.CONGRESS_OPERATOR,
   Editor: ROLE_CODES.COMMUNICATIONS,
   Communications: ROLE_CODES.COMMUNICATIONS,
   Reviewer: ROLE_CODES.REVIEWER,

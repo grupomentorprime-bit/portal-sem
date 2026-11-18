@@ -14,6 +14,12 @@ import {
   isValidChilePhone,
   normalizeChilePhone,
 } from "@/lib/experience/forms/phone-chile";
+import {
+  CHILE_RUT_INVALID_MESSAGE,
+  isValidChileRut,
+  normalizeChileRut,
+} from "@/lib/experience/forms/rut-chile";
+import { missingFieldMessage } from "@/lib/experience/forms/already-enrolled";
 
 export type FieldErrors = Record<string, string>;
 
@@ -32,6 +38,9 @@ function validateByType(type: ExperienceFormFieldType, value: string): string | 
     case "phone":
       if (!value) return null;
       return isValidChilePhone(value) ? null : CHILE_PHONE_INVALID_MESSAGE;
+    case "rut":
+      if (!value) return null;
+      return isValidChileRut(value) ? null : CHILE_RUT_INVALID_MESSAGE;
     case "number": {
       if (!value) return null;
       const n = Number(value);
@@ -59,13 +68,13 @@ export function validateFormField(
   const required = rules.required ?? false;
 
   if (field.type === "checkbox") {
-    if (required && !rawValue) return "Este campo es obligatorio";
+    if (required && !rawValue) return missingFieldMessage(field.label);
     return null;
   }
 
   const str = asString(value);
 
-  if (required && !str) return "Este campo es obligatorio";
+  if (required && !str) return missingFieldMessage(field.label);
   if (!str) return null;
 
   if (rules.minLength !== undefined && str.length < rules.minLength) {
@@ -88,7 +97,14 @@ export function validateFormField(
     return `El valor máximo es ${rules.max}`;
   }
 
-  return validateByType(field.type, str);
+  const typeError = validateByType(field.type, str);
+  if (typeError) return typeError;
+
+  if (field.name === "rut" && field.type !== "rut" && !isValidChileRut(str)) {
+    return CHILE_RUT_INVALID_MESSAGE;
+  }
+
+  return null;
 }
 
 export function validateFormSubmission(
@@ -137,6 +153,16 @@ export function normalizeFormSubmissionData(
     const rawPhone = asString(data.phone);
     if (rawPhone) {
       normalized.phone = normalizeChilePhone(rawPhone) ?? rawPhone;
+    }
+  }
+
+  const rutField = form.fields.find(
+    (field) => field.name === "rut" && (field.type === "rut" || field.type === "text")
+  );
+  if (rutField) {
+    const rawRut = asString(data.rut);
+    if (rawRut) {
+      normalized.rut = normalizeChileRut(rawRut) ?? rawRut;
     }
   }
   return normalized;

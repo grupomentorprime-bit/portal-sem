@@ -12,7 +12,7 @@ import type {
 } from "@/types/cms";
 import { SITE_CONFIG_ID } from "@/types/cms";
 
-type RawSiteConfig = Partial<SiteConfig> & {
+type RawSiteConfig = Omit<Partial<SiteConfig>, "institution" | "contact" | "features"> & {
   institution?: Partial<SiteConfig["institution"]> & {
     email?: string;
     phone?: string;

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ExperienceFormField } from "@/types/experience-forms";
 import { AttendanceTeacherIcon } from "./AttendanceTeacherIcon";
 import { ChilePhoneInput } from "./ChilePhoneInput";
+import { ChileRutInput } from "./ChileRutInput";
 
 interface PortalFormFieldsProps {
   fields: ExperienceFormField[];
@@ -184,6 +185,21 @@ function renderField(
       if (field.type === "phone") {
         return (
           <ChilePhoneInput
+            label={field.label}
+            name={field.name}
+            helper={field.helper}
+            error={error}
+            required={field.validation?.required}
+            disabled={disabled}
+            value={String(value ?? field.defaultValue ?? "")}
+            onChange={(nextValue) => onChange(field.name, nextValue)}
+          />
+        );
+      }
+
+      if (field.type === "rut" || field.name === "rut") {
+        return (
+          <ChileRutInput
             label={field.label}
             name={field.name}
             helper={field.helper}

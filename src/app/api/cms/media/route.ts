@@ -11,6 +11,7 @@ import {
 } from "@/lib/cms/media-validation";
 import { authorizeApiRead, authorizeApiWrite } from "@/lib/identity/api-guard";
 import { requirePermission } from "@/core/identity";
+import { mediaListUnitIds, mediaUploadUnitId } from "@/core/units/media-scope";
 import { writeMediaAudit } from "@/lib/cms/media-audit";
 import { buildOptimizationSummary } from "@/lib/cms/media-optimization";
 import type { MediaFolder, MediaListQuery } from "@/types/media";
@@ -46,6 +47,8 @@ export async function GET(request: Request) {
     if (usageFilter === "inUse" || usageFilter === "noUse") {
       query.usageFilter = usageFilter;
     }
+    const unitIds = await mediaListUnitIds(tenantCheck.tenant, searchParams.get("unitId"));
+    if (unitIds) query.unitIds = unitIds;
 
     const errors = validateMediaListQuery(query);
     if (errors.length > 0) {
@@ -79,6 +82,11 @@ export async function POST(request: Request) {
     const alt = formData.get("alt") ? String(formData.get("alt")) : undefined;
     const tagsRaw = formData.get("tags") ? String(formData.get("tags")) : "";
     const tags = tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : [];
+    const uploadedUnit = await mediaUploadUnitId(
+      tenant,
+      formData.get("unitId") ? String(formData.get("unitId")) : null
+    );
+    if (!uploadedUnit.ok) return uploadedUnit.response;
 
     if (!(file instanceof File)) {
       return NextResponse.json({ ok: false, error: "Archivo requerido." }, { status: 400 });
@@ -104,6 +112,7 @@ export async function POST(request: Request) {
       buffer,
       originalName: file.name,
       mimeType,
+      unitId: uploadedUnit.unitId,
       folder: folder as MediaFolder | undefined,
       tags,
       alt,

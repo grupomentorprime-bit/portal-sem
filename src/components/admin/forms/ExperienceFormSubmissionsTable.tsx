@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import {
   ABSENCE_REVIEW_POLICY,
   absenceReviewStatusLabel,
+  formatSubmissionAnswer,
   formatSubmissionPhone,
   getSubmissionGeneration,
   isTestimonialSubmissionForm,
@@ -32,6 +33,7 @@ import {
 } from "@/lib/admin/forms-center";
 import type {
   ExperienceFormAbsenceReview,
+  ExperienceFormField,
   ExperienceFormSubmission,
   ExperienceFormTestimonialReview,
 } from "@/types/experience-forms";
@@ -39,6 +41,7 @@ import { Alert } from "@/components/ui";
 
 export interface ExperienceFormSubmissionsTableProps {
   formId?: string;
+  fields?: ExperienceFormField[];
   submissions: ExperienceFormSubmission[];
   total: number;
   loading?: boolean;
@@ -52,6 +55,7 @@ export interface ExperienceFormSubmissionsTableProps {
 
 export function ExperienceFormSubmissionsTable({
   formId,
+  fields,
   submissions,
   total,
   loading = false,
@@ -99,6 +103,13 @@ export function ExperienceFormSubmissionsTable({
     [submissions, hasAttendance]
   );
   const hasGeneration = generationOptions.length > 0;
+  const zonaField = fields?.find((field) => field.name === "zona");
+  const iglesiaField = fields?.find((field) => field.name === "iglesia");
+  const hasAnswer = (name: string) =>
+    Boolean(fields?.some((field) => field.name === name)) ||
+    submissions.some((submission) => String(submission.data[name] ?? "").trim().length > 0);
+  const hasZona = hasAnswer("zona");
+  const hasIglesia = hasAnswer("iglesia");
   const absenceCount = useMemo(
     () => submissions.filter((submission) => submission.data.attendance === "no").length,
     [submissions]
@@ -118,9 +129,11 @@ export function ExperienceFormSubmissionsTable({
         String(submission.data.phone ?? ""),
         String(submission.data.rut ?? ""),
         String(submission.data.company ?? ""),
+        formatSubmissionAnswer(submission.data.zona, zonaField),
+        String(submission.data.iglesia ?? ""),
       ]);
     });
-  }, [submissions, generationFilter, search]);
+  }, [submissions, generationFilter, search, zonaField]);
 
   const suggestedSubmissions = useMemo(() => {
     const query = search.trim();
@@ -270,6 +283,30 @@ export function ExperienceFormSubmissionsTable({
           } satisfies AdminDataTableColumn<ExperienceFormSubmission>,
         ]
       : []),
+    ...(hasZona
+      ? [
+          {
+            id: "zona",
+            header: zonaField?.label || "Zona",
+            cell: (submission: ExperienceFormSubmission) => (
+              <span className="text-muted whitespace-nowrap">
+                {formatSubmissionAnswer(submission.data.zona, zonaField)}
+              </span>
+            ),
+          } satisfies AdminDataTableColumn<ExperienceFormSubmission>,
+        ]
+      : []),
+    ...(hasIglesia
+      ? [
+          {
+            id: "iglesia",
+            header: iglesiaField?.label || "Iglesia",
+            cell: (submission: ExperienceFormSubmission) => (
+              <span className="text-muted">{formatSubmissionAnswer(submission.data.iglesia, iglesiaField)}</span>
+            ),
+          } satisfies AdminDataTableColumn<ExperienceFormSubmission>,
+        ]
+      : []),
     {
       id: "date",
       header: "Fecha",
@@ -280,6 +317,21 @@ export function ExperienceFormSubmissionsTable({
   ];
 
   if (loading) return <LoadingState variant="table" />;
+
+  if (error && submissions.length === 0) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-primary" role="alert">
+          {error}
+        </p>
+        {onRefresh ? (
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            Reintentar
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
 
   if (submissions.length === 0) {
     return (
@@ -318,7 +370,10 @@ export function ExperienceFormSubmissionsTable({
 
       <FilterBar
         search={{
-          placeholder: "Buscar por nombre, correo o RUT…",
+          placeholder:
+            hasZona || hasIglesia
+              ? "Buscar por nombre, correo, zona o iglesia…"
+              : "Buscar por nombre, correo o RUT…",
           value: search,
           onChange: setSearch,
         }}

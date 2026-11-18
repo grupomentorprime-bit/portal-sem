@@ -1,60 +1,25 @@
-# Task 2 Report: Reglas de subida y archivo en disco
+# Task 2 report
 
-## Status
+**Status:** DONE
 
-DONE
+## Implemented
+- Added `allocateNextPaymentFolio(tenantId)` using atomic Mongo `$inc` on `CONGRESS_COLLECTIONS.sequences`.
+- Matched the repository's existing `findOneAndUpdate` shape by treating the return as the document directly.
+- Updated `recordCongressPayment` so successful new payments receive a folio before registration updates and `insertOne`.
+- Added `ensureCongressPaymentFolio({ tenantId, paymentId })` for legacy payments:
+  - returns `not_found` when payment is missing
+  - returns existing folio idempotently
+  - allocates a folio and conditionally updates only null/missing/empty folios
+  - handles lost races by re-reading and returning the winner's folio when present
+
+## Verification
+- `npx tsc --noEmit -p tsconfig.json --pretty false` passed.
+- `ReadLints` for `src/lib/congress/repository.ts` reported no linter errors.
+- Self-reviewed `git diff -- src/lib/congress/repository.ts`.
 
 ## Commits
-
-- `0b2d56b` — feat(desktop): guardar y validar foto de avatar
-
-## Test summary
-
-`node --import tsx --test tests/baseline/desktop-avatar.test.ts` — 4 passed, 0 failed (GREEN).
-
-## RED evidence
-
-Initial run failed as expected because the new avatar modules did not exist yet:
-
-```text
-Error: Cannot find module '../../src/lib/desktop/avatar-upload'
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '.../src/lib/desktop/avatar-file'
-```
-
-## GREEN evidence
-
-The focused test file now passes:
-
-```text
-✔ resuelve foto, preset e iniciales en ese orden
-✔ usa el email para iniciales si el nombre solo tiene espacios
-✔ valida tipo, peso y medida mínima de la foto
-✔ guarda foto cuadrada webp y rechaza una demasiado chica
-```
-
-## Files changed
-
-- `src/lib/desktop/avatar-upload.ts`
-- `src/lib/desktop/avatar-file.ts`
-- `tests/baseline/desktop-avatar.test.ts`
-- `.gitignore`
+- None. Changes intentionally left uncommitted.
 
 ## Concerns
-
-None. Lint diagnostics for the touched files were clean.
-
-## Review fix: temp único (Important)
-
-**Change:** `storeAvatarPhoto` now writes to `${target}.${process.pid}.${Date.now()}.tmp` instead of a fixed `${target}.tmp`, avoiding collisions on concurrent saves. On failure after `writeFile`, the temp file is unlinked before rethrowing.
-
-**Commit:** `cee6f68` — fix(desktop): temp único al guardar foto de avatar
-
-**Tests:** `node --import tsx --test tests/baseline/desktop-avatar.test.ts` — 4 passed, 0 failed (GREEN).
-
-## Re-fix: temp UUID (same-ms collision)
-
-**Change:** Temp path now uses `randomUUID()` from `node:crypto` instead of `Date.now()`, so concurrent saves in the same millisecond cannot collide on the temp filename.
-
-**Commit:** `0210913` — fix(desktop): temp UUID al guardar avatar
-
-**Tests:** `node --import tsx --test tests/baseline/desktop-avatar.test.ts` — 4 passed, 0 failed (GREEN).
+- No concerns for Task 2.
+- The working tree contains pre-existing Task 1/unrelated changes; they were not modified except for this report file and `src/lib/congress/repository.ts`.

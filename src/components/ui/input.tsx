@@ -67,7 +67,7 @@ export function Input({
         {showReveal ? (
           <button
             type="button"
-            className="password-reveal absolute top-1/2 right-1 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#102033] transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="password-reveal absolute top-1/2 right-1 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-foreground transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             onClick={() => setRevealed((value) => !value)}
             aria-label={revealed ? "Ocultar contraseña" : "Mostrar contraseña"}
             aria-pressed={revealed}

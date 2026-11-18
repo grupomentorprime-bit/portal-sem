@@ -1,4 +1,4 @@
-import { PLATFORM_CREDITS } from "@/core/branding/display";
+import { VENDOR_CREDIT_LINE } from "@/core/branding/display";
 import { createDefaultHeroPortal } from "@/lib/cms/hero-portal-defaults";
 import { colorDefaults } from "@/design/tokens/colors";
 import {
@@ -88,7 +88,7 @@ export function createDefaultSiteConfig(): SiteConfig {
       footerContactTitle: "Contacto",
       footerAdminLabel: "Administración",
       footerCopyrightSuffix: "Todos los derechos reservados.",
-      footerCredits: PLATFORM_CREDITS,
+      footerCredits: VENDOR_CREDIT_LINE,
       footerBackToTopLabel: "Volver arriba",
     },
     topBar: {

@@ -159,6 +159,16 @@ export function ThresholdLogin({
             text-decoration: none;
           }
           .login-card .login-back:hover { text-decoration: underline; }
+          .login-card .login-error {
+            margin: 0;
+            color: #9b1c1c;
+            font-size: 13px;
+          }
+          .login-card .login-unavailable {
+            margin: 0;
+            color: #1c1c1c;
+            font-size: 13px;
+          }
         `}</style>
         <div className="login-panel">
           <h1 className="login-title">Iniciar sesión</h1>

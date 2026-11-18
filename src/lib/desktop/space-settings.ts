@@ -143,12 +143,18 @@ export type SpaceSettingFilterInput = {
   contractedApps?: readonly MentorAppId[] | null;
 };
 
+function isPermissionList(
+  input: SpaceSettingFilterInput | readonly string[]
+): input is readonly string[] {
+  return Array.isArray(input);
+}
+
 export function canSeeSpaceSetting(
   item: SpaceSettingItem,
   input: SpaceSettingFilterInput | readonly string[]
 ): boolean {
-  const permissions = Array.isArray(input) ? input : input.permissions;
-  const contractedApps = Array.isArray(input) ? null : input.contractedApps;
+  const permissions = isPermissionList(input) ? input : input.permissions;
+  const contractedApps = isPermissionList(input) ? null : input.contractedApps;
   if (!item.requiredAny.length) return false;
   if (!item.requiredAny.some((permission) => permissions.includes(permission))) {
     return false;

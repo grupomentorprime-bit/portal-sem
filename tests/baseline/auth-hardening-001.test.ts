@@ -20,8 +20,9 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — login UI Auth Code + PKCE", () => {
   it("LoginForm pide usuario y contraseña y los valida en el servidor", () => {
     const form = readSrc("src/components/identity/LoginForm.tsx");
     const page = readSrc("src/app/login/page.tsx");
-    assert.match(form, /Usuario/);
+    assert.match(form, /Nombre de usuario/);
     assert.match(form, /Contraseña/);
+    assert.match(form, /Iniciar sesión/);
     assert.match(form, /type="password"/);
     assert.match(form, /\/api\/identity\/auth\/keycloak\/session/);
     assert.doesNotMatch(form, /href=\{loginHref\}/);
@@ -161,7 +162,7 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — cliente growth-os-web", () => {
       KEYCLOAK_CLIENT_SECRET: process.env.KEYCLOAK_CLIENT_SECRET,
     };
 
-    process.env.NODE_ENV = "production";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
     process.env.KEYCLOAK_URL = "https://auth.example.test";
     process.env.KEYCLOAK_REALM = "seminario-ipn";
     process.env.KEYCLOAK_CLIENT_SECRET = "secret-test-value";
@@ -186,7 +187,7 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — cliente growth-os-web", () => {
       assert.equal(getKeycloakConfig(), null);
       process.env.KEYCLOAK_CLIENT_SECRET = "secret-test-value";
 
-      process.env.NODE_ENV = "development";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "development";
       process.env.KEYCLOAK_CLIENT_ID = "seminario-ipn-web";
       assert.equal(getKeycloakConfig(), null);
 
@@ -195,7 +196,7 @@ describe("OT-GROWTH-AUTH-HARDENING-001 — cliente growth-os-web", () => {
       assert.ok(devCfg);
       assert.equal(devCfg!.clientId, "growth-os-dev");
     } finally {
-      process.env.NODE_ENV = prev.NODE_ENV;
+      (process.env as Record<string, string | undefined>).NODE_ENV = prev.NODE_ENV;
       for (const key of [
         "KEYCLOAK_URL",
         "KEYCLOAK_REALM",

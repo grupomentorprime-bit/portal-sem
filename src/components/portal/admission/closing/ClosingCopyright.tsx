@@ -1,5 +1,8 @@
-import Link from "next/link";
-import { rewriteLegacyPlatformProductName } from "@/core/branding/display";
+import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
+import {
+  VENDOR_CREDIT_LABEL,
+  rewriteLegacyPlatformProductName,
+} from "@/core/branding/display";
 import type { AdmissionClosingCopyrightData } from "@/types/admission-closing";
 import { ClosingSealPills } from "./ClosingSeal";
 
@@ -22,19 +25,10 @@ export function ClosingCopyright({ data, sealLines }: ClosingCopyrightProps) {
       {data.secondaryText ? (
         <p className="admission-closing__copyright-secondary">{data.secondaryText}</p>
       ) : null}
-      {developerText ? (
+      {developerText && developerText !== VENDOR_CREDIT_LABEL ? (
         <p className="admission-closing__copyright-developer">{developerText}</p>
-      ) : data.developerName ? (
-        <p className="admission-closing__copyright-developer">
-          {data.developerUrl ? (
-            <Link href={data.developerUrl} target="_blank" rel="noopener noreferrer">
-              {data.developerName}
-            </Link>
-          ) : (
-            data.developerName
-          )}
-        </p>
       ) : null}
+      <PublicVendorCredit className="admission-closing__copyright-developer" />
     </div>
   );
 }

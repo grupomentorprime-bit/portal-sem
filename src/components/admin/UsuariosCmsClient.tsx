@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ArrowLeft, LayoutGrid, List, Search, UserPlus } from "lucide-react";
 import { PORTAL_ROLE_CODES, type PortalRoleCode } from "@/core/identity/roles/codes";
 import { InviteUserWizard } from "@/components/admin/InviteUserWizard";
+import { inviteCreateFeedback } from "@/lib/desktop/invite-delivery";
 import {
   UserCmsCard,
   type AssignableRole,
@@ -20,6 +21,33 @@ type UsersCmsTab = "team" | "invite";
 type TeamView = "lista" | "kanban";
 
 const TEAM_VIEW_KEY = "growth-os-team-view";
+const teamViewListeners = new Set<() => void>();
+
+function readStoredTeamView(): TeamView {
+  try {
+    const saved = window.localStorage.getItem(TEAM_VIEW_KEY);
+    if (saved === "kanban" || saved === "lista") return saved;
+  } catch {
+    // Private mode or a blocked storage API keeps the default list.
+  }
+  return "lista";
+}
+
+function subscribeTeamView(listener: () => void) {
+  teamViewListeners.add(listener);
+  return () => {
+    teamViewListeners.delete(listener);
+  };
+}
+
+function storeTeamView(next: TeamView) {
+  try {
+    window.localStorage.setItem(TEAM_VIEW_KEY, next);
+  } catch {
+    // The choice still applies for this visit if storage is unavailable.
+  }
+  teamViewListeners.forEach((listener) => listener());
+}
 
 const COLUMN_THEMES = [
   {
@@ -91,7 +119,7 @@ export function UsuariosCmsClient() {
   >([]);
   const [activeTab, setActiveTab] = useState<UsersCmsTab>("team");
   const [searchQuery, setSearchQuery] = useState("");
-  const [teamView, setTeamView] = useState<TeamView>("lista");
+  const teamView = useSyncExternalStore(subscribeTeamView, readStoredTeamView, () => "lista");
   const [assignableRoles, setAssignableRoles] = useState<AssignableRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -138,14 +166,8 @@ export function UsuariosCmsClient() {
     if (me.ok) setCompatMode(me.compatMode === true);
   }, []);
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem(TEAM_VIEW_KEY);
-    if (saved === "kanban" || saved === "lista") setTeamView(saved);
-  }, []);
-
   function selectTeamView(next: TeamView) {
-    setTeamView(next);
-    window.localStorage.setItem(TEAM_VIEW_KEY, next);
+    storeTeamView(next);
   }
 
   useEffect(() => {
@@ -218,6 +240,7 @@ export function UsuariosCmsClient() {
     roleCode: string;
   }) {
     setActionError("");
+    setActionNotice("");
     const res = await fetch("/api/identity/invitations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -226,14 +249,30 @@ export function UsuariosCmsClient() {
         displayName: payload.displayName,
         roleCode: payload.roleCode,
       }),
+    }).catch(() => null);
+    const data = (await res?.json().catch(() => null)) as {
+      ok?: boolean;
+      emailSent?: boolean;
+      deliveryError?: string;
+      error?: string;
+    } | null;
+    const feedback = inviteCreateFeedback({
+      ok: Boolean(res?.ok && data?.ok),
+      emailSent: data?.emailSent === true,
+      deliveryError: data?.deliveryError,
+      error: data?.error ?? (res ? undefined : "No se pudo enviar la invitación."),
     });
-    const data = await res.json();
-    if (!data.ok) {
-      const message = humanizeTeamError(data.error, "No se pudo enviar la invitación.");
+    if (feedback.status === "not_created") {
+      const message = humanizeTeamError(feedback.message, "No se pudo enviar la invitación.");
       setActionError(message);
       throw new Error(message);
     }
     await loadTeam();
+    if (feedback.status === "created_unsent") {
+      setActionError(feedback.message);
+      throw new Error(feedback.message);
+    }
+    setActionNotice(feedback.message);
   }
 
   async function handleRoleChange(membershipId: string, roleCode: string) {

@@ -47,8 +47,12 @@
 
   /* ─── Motion foundation ─── */
   --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-press-in: 150ms;
+  --motion-press-out: 480ms;
+  --motion-press-scale: 0.972;
   --motion-duration-fast: 150ms;
   --motion-duration-normal: 250ms;
   --motion-duration-slow: 400ms;

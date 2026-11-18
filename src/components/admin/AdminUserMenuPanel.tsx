@@ -19,6 +19,7 @@ import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { cn } from "@/lib/utils";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
 import { spaceSwitchLanding, syncEnteredClientCookie } from "@/lib/desktop/catalog";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 
 export interface AdminSpaceSummary {
   tenantId: string;
@@ -95,6 +96,7 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
   }
 
   const label = user.displayName || user.email;
+  const shortLabel = firstNameFromDisplayName(label) || label;
   const subtitle = user.roleLabel ?? "Colaborador";
   const institution = user.institutionName;
 
@@ -111,11 +113,12 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
         )}
         aria-expanded={open}
         aria-haspopup="menu"
+        title={label}
       >
         <AdminUserAvatar name={label} size="sm" />
         <span className="hidden min-w-0 text-left sm:block">
           <span className="block max-w-[9rem] truncate text-sm font-semibold text-foreground">
-            {label}
+            {shortLabel}
           </span>
           <span className="block max-w-[9rem] truncate text-xs text-muted">{subtitle}</span>
         </span>

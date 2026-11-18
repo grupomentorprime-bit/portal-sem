@@ -33,7 +33,7 @@ const STATUS_ACTIONS: Array<{
     title: "Activar Espacio",
     description: "El portal vuelve a publicarse con el dominio de este Espacio.",
     icon: <Play className="h-[15px] w-[15px]" aria-hidden />,
-    tone: "text-emerald-700 hover:bg-emerald-100",
+    tone: "text-success hover:bg-success/10",
   },
   {
     status: "inactive",
@@ -41,7 +41,7 @@ const STATUS_ACTIONS: Array<{
     title: "Desactivar Espacio",
     description: "El portal deja de publicarse. Puedes activarlo de nuevo.",
     icon: <CircleOff className="h-[15px] w-[15px]" aria-hidden />,
-    tone: "text-slate-600 hover:bg-slate-100",
+    tone: "text-muted hover:bg-muted/10",
   },
   {
     status: "suspended",
@@ -49,7 +49,7 @@ const STATUS_ACTIONS: Array<{
     title: "Suspender Espacio",
     description: "El portal queda en mantenimiento hasta que lo actives.",
     icon: <Pause className="h-[15px] w-[15px]" aria-hidden />,
-    tone: "text-orange-700 hover:bg-orange-100",
+    tone: "text-warning hover:bg-warning/10",
   },
   {
     status: "archived",
@@ -58,7 +58,7 @@ const STATUS_ACTIONS: Array<{
     description:
       "El portal deja de publicarse. El Espacio sigue en el catálogo para reactivarlo.",
     icon: <Archive className="h-[15px] w-[15px]" aria-hidden />,
-    tone: "text-violet-700 hover:bg-violet-100",
+    tone: "text-accent hover:bg-accent/10",
   },
 ];
 
@@ -179,7 +179,7 @@ export function PlatformSpaceActionsMenu({
         ))}
         <button
           type="button"
-          className={cn(iconBtn, "text-rose-600 hover:bg-rose-100")}
+          className={cn(iconBtn, "text-danger hover:bg-danger/10")}
           aria-label="Eliminar"
           title={protectedSpace ? "Espacio protegido" : "Eliminar"}
           disabled={submitting || protectedSpace}

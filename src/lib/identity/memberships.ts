@@ -1,8 +1,9 @@
 import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
+import type { UnitAccess } from "@/core/units/types";
 import { grantUnitAccess } from "@/core/units/access";
-import type { IdentityMembership, StudentAffairsScope, UnitAccess } from "@/types/identity";
+import type { IdentityMembership, StudentAffairsScope } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
 
 export class MembershipConflictError extends Error {
@@ -84,6 +85,7 @@ export async function createMembership(input: {
   invitedBy?: string;
   status?: IdentityMembership["status"];
   authorizedApps?: IdentityMembership["authorizedApps"];
+  unitAccess?: UnitAccess;
 }): Promise<IdentityMembership> {
   const existing = await findMembershipAnyStatus(input.userId, input.tenantId);
   if (existing) {
@@ -102,6 +104,7 @@ export async function createMembership(input: {
     ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
     joinedAt: now,
     invitedBy: input.invitedBy,
+    ...(input.unitAccess ? { unitAccess: input.unitAccess } : {}),
     createdAt: now,
     updatedAt: now,
   };
@@ -127,12 +130,16 @@ export async function ensureActiveMembership(input: {
   roleIds: string[];
   invitedBy?: string;
   authorizedApps?: IdentityMembership["authorizedApps"];
+  unitAccess?: UnitAccess;
 }): Promise<{ membership: IdentityMembership; created: boolean; reactivated: boolean }> {
   const existing = await findMembershipAnyStatus(input.userId, input.tenantId);
   if (existing) {
     const now = new Date().toISOString();
     const wasInactive = existing.status !== "active";
     const db = await getDatabase();
+    const unitAccess = input.unitAccess
+      ? grantUnitAccess(existing.unitAccess, input.unitAccess)
+      : undefined;
     await db.collection<IdentityMembership>("identity_memberships").updateOne(
       { _id: existing._id },
       {
@@ -141,6 +148,7 @@ export async function ensureActiveMembership(input: {
           roleIds: input.roleIds,
           ...(input.invitedBy ? { invitedBy: input.invitedBy } : {}),
           ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
+          ...(unitAccess ? { unitAccess } : {}),
           updatedAt: now,
         },
       }
@@ -161,6 +169,7 @@ export async function ensureActiveMembership(input: {
       invitedBy: input.invitedBy,
       status: "active",
       authorizedApps: input.authorizedApps,
+      unitAccess: input.unitAccess,
     });
     return { membership, created: true, reactivated: false };
   } catch (error) {

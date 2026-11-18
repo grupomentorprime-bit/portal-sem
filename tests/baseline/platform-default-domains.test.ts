@@ -189,7 +189,7 @@ describe("subdominio de plataforma homologado", () => {
         assert.equal(primary?.kind, "platform_subdomain");
       } finally {
         await cleanup(db, tenantId);
-        await db.collection(DOMAINS_COLLECTION).deleteOne({ _id: loopHost });
+        await db.collection<DomainDocument>(DOMAINS_COLLECTION).deleteOne({ _id: loopHost });
       }
     });
   });

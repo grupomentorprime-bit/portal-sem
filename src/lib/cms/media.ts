@@ -79,6 +79,7 @@ function buildFilter(query: MediaListQuery | MediaSearchQuery): Record<string, u
   if (query.createdBy) filter.createdBy = query.createdBy;
   if (query.tags?.length) filter.tags = { $in: query.tags };
   if (query.favorite === true) filter.favorite = true;
+  if (query.unitIds) filter.unitId = { $in: query.unitIds };
 
   if (query.usageFilter === "inUse") {
     filter["usage.0"] = { $exists: true };
@@ -181,6 +182,7 @@ export interface UploadMediaInput {
   mimeType: string;
   folder?: MediaFolder;
   tags?: string[];
+  unitId?: string;
   alt?: string;
   caption?: string;
   credits?: string;
@@ -246,6 +248,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
         tenant: input.tenant,
         hash,
         visibility: "active",
+        ...(input.unitId ? { unitId: input.unitId } : {}),
       });
   if (duplicate) {
     return repairMissingMediaStorage(
@@ -300,6 +303,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
   const document: CmsMediaAsset = {
     _id: mediaId,
     tenant: input.tenant,
+    ...(input.unitId ? { unitId: input.unitId } : {}),
     filename: input.originalName,
     originalName: input.originalName,
     extension: ext,
@@ -413,6 +417,7 @@ export async function duplicateMedia(
     originalName: copyName,
     mimeType: source.mimeType,
     folder: source.folder,
+    unitId: source.unitId,
     tags: source.tags,
     alt: source.alt,
     caption: source.caption,

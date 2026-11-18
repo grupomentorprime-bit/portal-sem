@@ -99,15 +99,15 @@
 
 .portal-experience-form__validation-summary-title {
   margin: 0 0 0.5rem;
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   color: var(--color-danger);
 }
 
 .portal-experience-form__validation-summary-list {
   margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.8125rem;
+  padding-left: 1.15rem;
+  font-size: 1rem;
   color: color-mix(in srgb, var(--color-danger) 80%, var(--foreground));
 }
 

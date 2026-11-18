@@ -29,6 +29,7 @@
 @import "../styles/home-premium/institutional-home.css";
 @import "../styles/sites/cumple.css";
 @import "../styles/sites/coming-soon.css";
+@import "../styles/public-surface.css";
 
 
 @theme inline {
@@ -184,17 +185,22 @@ label {
 }
 
 .hover-lift {
-  transition: transform var(--transition-fast) var(--ease-default),
-    box-shadow var(--transition-fast) var(--ease-default);
+  transition:
+    translate var(--motion-press-out, 480ms) var(--ease-soft, var(--ease-hero)),
+    scale var(--motion-press-out, 480ms) var(--ease-soft, var(--ease-hero)),
+    box-shadow var(--motion-press-out, 480ms) var(--ease-soft, var(--ease-hero)),
+    filter 260ms var(--ease-soft, var(--ease-hero));
 }
 
 .hover-lift:hover {
-  transform: translateY(-1px);
+  translate: 0 -2px;
 }
 
+.hover-lift:active,
 .press-scale:active {
-  transform: scale(0.98);
-  transition: transform var(--transition-fast) var(--ease-in);
+  scale: var(--motion-press-scale, 0.972);
+  translate: 0 1px;
+  transition-duration: var(--motion-press-in, 150ms);
 }
 
 .sr-only {
@@ -2249,5 +2255,71 @@ body:has(.hero-premium) main {
 .media-details-panel {
   max-height: calc(100vh - 8rem);
   overflow-y: auto;
+}
+
+/* ─── Presión suave en todo el sistema ─── */
+@media (prefers-reduced-motion: no-preference) {
+  a:not([aria-disabled="true"]),
+  button:not(:disabled):not([aria-disabled="true"]),
+  summary,
+  label,
+  select:not(:disabled),
+  input:not(:disabled),
+  textarea:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]),
+  [role="radio"]:not([aria-disabled="true"]) {
+    transition-property: color, background-color, background, border-color, box-shadow, opacity, filter, outline-color, text-decoration-color, fill, stroke, transform, scale, translate;
+    transition-duration: 260ms, 260ms, 260ms, 260ms, 420ms, 240ms, 260ms, 200ms, 260ms, 260ms, 260ms, 480ms, 480ms, 480ms;
+    transition-timing-function: var(--ease-soft, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  button:not(:disabled):not([aria-disabled="true"]):active,
+  summary:active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  [role="tab"]:not([aria-disabled="true"]):active,
+  [role="menuitem"]:not([aria-disabled="true"]):active,
+  [role="option"]:not([aria-disabled="true"]):active,
+  [role="switch"]:not([aria-disabled="true"]):active,
+  input[type="button"]:not(:disabled):active,
+  input[type="submit"]:not(:disabled):active,
+  input[type="reset"]:not(:disabled):active,
+  input[type="checkbox"]:not(:disabled):active,
+  input[type="radio"]:not(:disabled):active {
+    scale: var(--motion-press-scale, 0.972);
+    translate: 0 1px;
+    filter: brightness(0.98);
+    transition-duration: var(--motion-press-in, 150ms);
+  }
+
+  a:not([aria-disabled="true"]):active {
+    scale: 0.985;
+    transition-duration: var(--motion-press-in, 150ms);
+  }
+
+  a.press-scale:active,
+  a.hover-lift:active,
+  a.btn-f:active:not([aria-disabled="true"]) {
+    scale: var(--motion-press-scale, 0.972);
+    translate: 0 1px;
+    filter: brightness(0.98);
+    transition-duration: var(--motion-press-in, 150ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hover-lift:hover,
+  .hover-lift:active,
+  .press-scale:active,
+  .btn-f:active:not(:disabled) {
+    scale: none;
+    translate: none;
+    transform: none;
+    transition: none;
+  }
 }
 

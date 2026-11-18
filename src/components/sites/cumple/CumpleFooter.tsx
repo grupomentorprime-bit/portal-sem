@@ -1,3 +1,4 @@
+import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import { Logo } from "@/components/sites/cumple/logo";
 import { tagline } from "@/sites/cumple/content";
 import type { CodedPageViewProps } from "@/sites/page-views";
@@ -71,13 +72,11 @@ export function CumpleFooter({ contact }: Pick<CodedPageViewProps, "contact">) {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <p className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-6 py-4 text-xs text-white/55">
-          <span>
-            Mentor Cumple es una empresa del <span className="font-semibold text-white/80">Grupo Mentor Prime</span>.
-          </span>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-6 py-4 text-xs text-white/55">
+          <span>© {new Date().getFullYear()}</span>
           <span aria-hidden="true">·</span>
-          <span>© 2026</span>
-        </p>
+          <PublicVendorCredit className="[&_a]:font-semibold [&_a]:text-white/80 [&_a]:underline-offset-2 hover:[&_a]:text-white hover:[&_a]:underline" />
+        </div>
       </div>
     </footer>
   );
