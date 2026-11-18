@@ -14,6 +14,7 @@ import { SummaryView } from "@/components/admin/congress/summary/SummaryView";
 import { LodgingOpsView } from "@/components/admin/congress/lodging/LodgingOpsView";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { useToast } from "@/components/admin/kit/states/Toast";
+import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -27,7 +28,11 @@ import type {
   CongressLodgingNeed,
   CongressRegistration,
 } from "@/core/congress/types";
-import { formatClp, formatZoneLabel } from "@/components/admin/congress/labels";
+import {
+  formatClp,
+  formatClpInput,
+  formatZoneLabel,
+} from "@/components/admin/congress/labels";
 import {
   ReceptionView,
   type ReceptionQuickFilter,
@@ -112,7 +117,7 @@ export function CongressOpsPanel() {
   >([]);
   const [groupChurch, setGroupChurch] = useState("");
   const [groupSelected, setGroupSelected] = useState<string[]>([]);
-  const [groupAmount, setGroupAmount] = useState("");
+  const [groupAmount, setGroupAmount] = useState<number | null>(null);
   const [groupPayer, setGroupPayer] = useState("");
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [voidReason, setVoidReason] = useState("");
@@ -468,7 +473,7 @@ export function CongressOpsPanel() {
   );
 
   const groupPreview = useMemo(() => {
-    const amount = Number(groupAmount.replace(/\D/g, ""));
+    const amount = groupAmount ?? 0;
     if (!amount || groupSelected.length === 0) return [];
     const base = Math.floor(amount / groupSelected.length);
     let rest = amount - base * groupSelected.length;
@@ -481,7 +486,7 @@ export function CongressOpsPanel() {
 
   const submitGroupPayment = async (event: React.FormEvent) => {
     event.preventDefault();
-    const amount = Number(groupAmount.replace(/\D/g, ""));
+    const amount = groupAmount ?? 0;
     if (!groupPayer.trim() || !amount || groupPreview.length === 0) {
       push({ title: "Complete pagador, monto y participantes", tone: "warning" });
       return;
@@ -510,7 +515,7 @@ export function CongressOpsPanel() {
       }
       push({ title: "Pago grupal registrado", tone: "success" });
       setGroupSelected([]);
-      setGroupAmount("");
+      setGroupAmount(null);
       void loadPayments();
       void loadRegistrations();
       void loadSummary();
@@ -760,11 +765,11 @@ export function CongressOpsPanel() {
                 onChange={(e) => setGroupPayer(e.target.value)}
                 required
               />
-              <Input
+              <ClpAmountInput
                 label="Monto total (CLP)"
-                inputMode="numeric"
                 value={groupAmount}
-                onChange={(e) => setGroupAmount(e.target.value)}
+                onValueChange={setGroupAmount}
+                placeholder={formatClpInput(CONGRESS_CONTRIBUTION_CLP)}
                 required
               />
               <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-border p-2">

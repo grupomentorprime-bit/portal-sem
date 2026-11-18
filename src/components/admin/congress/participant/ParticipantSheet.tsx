@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dialog } from "@/components/admin/kit";
+import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -17,6 +18,7 @@ import {
   contributionLabel,
   expectedDaysText,
   formatClp,
+  formatClpInput,
   formatDateTimeSantiago,
   formatLodgingNightLabel,
   formatMarkedAtSantiago,
@@ -96,7 +98,7 @@ export function ParticipantSheet({
   busy,
 }: Props) {
   const [tab, setTab] = useState<SheetTab>("asistencia");
-  const [payAmount, setPayAmount] = useState(String(CONGRESS_CONTRIBUTION_CLP));
+  const [payAmount, setPayAmount] = useState<number | null>(CONGRESS_CONTRIBUTION_CLP);
   const [payerName, setPayerName] = useState("");
   const [receiptRef, setReceiptRef] = useState("");
   const [homeId, setHomeId] = useState("");
@@ -119,11 +121,9 @@ export function ParticipantSheet({
     if (!registration || !open) return;
     const balance = remainingBalanceClp(registration);
     setPayAmount(
-      String(
-        balance > 0
-          ? balance
-          : registration.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP
-      )
+      balance > 0
+        ? balance
+        : registration.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP
     );
   }, [
     open,
@@ -364,12 +364,11 @@ export function ParticipantSheet({
                       onChange={(e) => setPayerName(e.target.value)}
                       placeholder={registration.identity.fullName}
                     />
-                    <Input
+                    <ClpAmountInput
                       label="Monto"
-                      inputMode="numeric"
                       value={payAmount}
-                      onChange={(e) => setPayAmount(e.target.value)}
-                      placeholder={String(CONGRESS_CONTRIBUTION_CLP)}
+                      onValueChange={setPayAmount}
+                      placeholder={formatClpInput(CONGRESS_CONTRIBUTION_CLP)}
                     />
                     <Input
                       className="sm:col-span-2"
@@ -382,7 +381,7 @@ export function ParticipantSheet({
                         size="sm"
                         disabled={busy}
                         onClick={() => {
-                          const amount = Number(payAmount.replace(/\D/g, ""));
+                          const amount = payAmount ?? 0;
                           if (!amount) return;
                           void onIndividualPayment({
                             registrationId: registration._id,

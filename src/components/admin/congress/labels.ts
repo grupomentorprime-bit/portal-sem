@@ -42,6 +42,19 @@ export function formatClp(value: number): string {
   }).format(value);
 }
 
+/** Entero CLP desde texto con `$`, puntos u otros no-dígitos. Vacío → 0. */
+export function parseClpInput(text: string): number {
+  const digits = text.replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits);
+}
+
+/** Texto para input editable; 0/null/undefined → "". */
+export function formatClpInput(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value) || value <= 0) return "";
+  return formatClp(Math.trunc(value));
+}
+
 export function formatLodgingNightLabel(night: string): string {
   if (night === "2026-11-20") return "Viernes 20";
   if (night === "2026-11-21") return "Sábado 21";
