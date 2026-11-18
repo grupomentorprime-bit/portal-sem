@@ -25,6 +25,7 @@ import {
   type CashMethodKey,
   type ContributionGroupRow,
 } from "@/core/congress/cash-box";
+import { foldCongressChurchBase } from "@/core/congress/church-name";
 import { effectivePaidOn } from "@/core/congress/payment-dates";
 import type {
   CongressPayment,
@@ -123,6 +124,10 @@ type Props = {
   onToPaidOnChange: (v: string) => void;
   statusFilter: "posted" | "voided" | "all";
   onStatusFilterChange: (v: "posted" | "voided" | "all") => void;
+  onOpenGroupPayment?: (input: {
+    zoneId: string;
+    churchBaseKey: string;
+  }) => void;
 };
 
 export function CashBoxView({
@@ -143,6 +148,7 @@ export function CashBoxView({
   onToPaidOnChange,
   statusFilter,
   onStatusFilterChange,
+  onOpenGroupPayment,
 }: Props) {
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
 
@@ -405,30 +411,44 @@ export function CashBoxView({
               {churchesInZone.map((row) => {
                 const owes = row.remainingClp > 0;
                 return (
-                  <li
-                    key={row.key}
-                    className={cn(
-                      "px-3 py-2.5",
-                      owes ? "bg-warning/10" : "bg-white"
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-foreground">{row.key}</p>
-                      {owes ? (
-                        <PayBadge owes />
-                      ) : (
-                        <span className="shrink-0 rounded-md bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
-                          Pagado
-                        </span>
+                  <li key={row.key}>
+                    <button
+                      type="button"
+                      className={cn(
+                        "w-full px-3 py-2.5 text-left transition-colors",
+                        owes
+                          ? "bg-warning/10 hover:bg-warning/15"
+                          : "bg-white hover:bg-background-soft",
+                        onOpenGroupPayment
+                          ? "cursor-pointer"
+                          : "cursor-default"
                       )}
-                    </div>
-                    <AmountInline
-                      expectedClp={row.expectedClp}
-                      collectedClp={row.collectedClp}
-                      remainingClp={row.remainingClp}
-                      count={row.count}
-                      emphasizeRemaining
-                    />
+                      onClick={() => {
+                        if (!selectedZoneId || !onOpenGroupPayment) return;
+                        onOpenGroupPayment({
+                          zoneId: selectedZoneId,
+                          churchBaseKey: foldCongressChurchBase(row.key),
+                        });
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-foreground">{row.key}</p>
+                        {owes ? (
+                          <PayBadge owes />
+                        ) : (
+                          <span className="shrink-0 rounded-md bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
+                            Pagado
+                          </span>
+                        )}
+                      </div>
+                      <AmountInline
+                        expectedClp={row.expectedClp}
+                        collectedClp={row.collectedClp}
+                        remainingClp={row.remainingClp}
+                        count={row.count}
+                        emphasizeRemaining
+                      />
+                    </button>
                   </li>
                 );
               })}

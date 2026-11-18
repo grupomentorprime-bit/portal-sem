@@ -311,6 +311,51 @@ export function CongressOpsPanel() {
     }
   };
 
+  const patchCharge = async (input: {
+    registrationId: string;
+    action: "exempt" | "restore";
+    reason: string;
+  }) => {
+    setSheetBusy(true);
+    try {
+      const res = await fetch(
+        `/api/congress/registrations/${encodeURIComponent(input.registrationId)}/charge`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: input.action,
+            reason: input.reason,
+          }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        push({
+          title: "Cargo no actualizado",
+          description: data.error ?? "No se pudo actualizar el aporte.",
+          tone: "warning",
+        });
+        return;
+      }
+      if (data.registration) upsertRegistration(data.registration);
+      void loadSummary();
+      if (!data.idempotent) {
+        push({
+          title:
+            input.action === "exempt"
+              ? "Marcado como exento"
+              : "Aporte restaurado",
+          tone: "success",
+        });
+      }
+    } catch {
+      push({ title: "Error de red", tone: "error" });
+    } finally {
+      setSheetBusy(false);
+    }
+  };
+
   const submitDoor = async (payload: {
     fullName: string;
     rut?: string;
@@ -1089,6 +1134,21 @@ export function CongressOpsPanel() {
               onToPaidOnChange={setCashTo}
               statusFilter={cashStatus}
               onStatusFilterChange={setCashStatus}
+              onOpenGroupPayment={({ zoneId, churchBaseKey }) => {
+                setGroupZone(zoneId);
+                setGroupChurch(churchBaseKey);
+                setGroupSelected(
+                  registrations
+                    .filter(
+                      (r) =>
+                        r.zoneId === zoneId &&
+                        foldCongressChurchBase(r.churchName) === churchBaseKey &&
+                        isGroupPaymentSelectable(r)
+                    )
+                    .map((r) => r._id)
+                );
+                setActiveTab("aportes");
+              }}
             />
           )}
         </TabsContent>
@@ -1185,6 +1245,7 @@ export function CongressOpsPanel() {
         onPatchAttendance={patchAttendance}
         onPatchRegistration={patchRegistration}
         onIndividualPayment={individualPayment}
+        onChargeChange={patchCharge}
         onAssignBed={assignBed}
         onAssignmentAction={assignmentAction}
         busy={sheetBusy}
