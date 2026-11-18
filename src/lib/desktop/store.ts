@@ -56,6 +56,10 @@ export function mongoAppRequestStore(): AppRequestStore {
         .find({ tenantId, status: "open" })
         .toArray();
     },
+    async listAllOpen() {
+      const db = await getDatabase();
+      return db.collection<AppRequest>(REQUESTS).find({ status: "open" }).toArray();
+    },
   };
 }
 

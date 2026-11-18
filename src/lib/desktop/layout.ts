@@ -9,7 +9,7 @@ export type DeskIconSpot = {
 };
 
 export function isDockAppId(value: string): value is DockAppId {
-  return value === "clientes" || value === "ajustes" || isMentorAppId(value);
+  return value === "atencion" || value === "clientes" || value === "ajustes" || isMentorAppId(value);
 }
 
 function clamp(value: number, min: number, max: number): number {

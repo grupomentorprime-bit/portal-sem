@@ -65,6 +65,15 @@ export interface IdentityCredential {
   updatedAt: string;
 }
 
+/**
+ * Alcance dentro del Espacio.
+ * Ausente: el miembro ve todo el Espacio.
+ * `tenant`: administración central. `units`: solo las unidades listadas.
+ */
+export type UnitAccess =
+  | { mode: "tenant" }
+  | { mode: "units"; unitIds: string[] };
+
 /** Alcance operativo para encargadas de asuntos estudiantiles. */
 export interface StudentAffairsScope {
   formIds: string[];
@@ -83,6 +92,8 @@ export interface IdentityMembership {
    * hasta la migración; lista vacía = ninguna llave.
    */
   authorizedApps?: Array<"growth-os" | "cumple" | "aprende-hoy" | "rrhh">;
+  /** Ausente = todo el Espacio. `tenant` = administración central. `units` = solo esas unidades. */
+  unitAccess?: UnitAccess;
   /** Formularios y generaciones asignados (rol Asuntos Estudiantiles). */
   studentAffairsScope?: StudentAffairsScope;
   /**

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 import {
   PRIVATE_CACHE_CONTROL,
   buildAppSecurityHeaders,
@@ -47,6 +48,12 @@ const PRIVATE_NO_STORE_SOURCES = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  // Este worktree vive dentro del repo padre, que también tiene package-lock.json.
+  // Sin una raíz explícita, Turbopack usa el lockfile padre y publica chunks
+  // `_worktrees_escritorio-mentor-prime_*` que el servidor de :3000 no puede servir.
+  turbopack: {
+    root: path.join(process.cwd()),
+  },
   // Windows: Playwright/scripts suelen usar 127.0.0.1; sin esto Next bloquea /_next/* en dev.
   allowedDevOrigins: ["127.0.0.1", "localhost", "cumple.localhost"],
   poweredByHeader: false,

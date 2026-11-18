@@ -4,6 +4,7 @@ import {
   EMPRESA_BLOCKS,
   empresaBlockDirty,
   empresaBlockPatch,
+  presenceBlocks,
 } from "../../src/lib/desktop/presence-patch";
 import type { SiteConfig } from "../../src/types/cms";
 
@@ -88,6 +89,19 @@ describe("bloques de Mi empresa", () => {
     );
   });
 
+  it("deja el contacto público en Canales y fuera de Mi empresa", () => {
+    assert.deepEqual(
+      presenceBlocks("empresa").map((block) => block.id),
+      ["general", "ubicacion"]
+    );
+    assert.deepEqual(
+      presenceBlocks("canales").map((block) => block.id),
+      ["contacto", "redes"]
+    );
+    assert.deepEqual(presenceBlocks("marca"), []);
+    assert.deepEqual(presenceBlocks("sitio"), []);
+  });
+
   it("guarda solo el bloque general sin tocar contacto", () => {
     const baseline = baseConfig();
     const current = structuredClone(baseline);
@@ -116,5 +130,30 @@ describe("bloques de Mi empresa", () => {
     assert.deepEqual(empresaBlockPatch("ubicacion", baseline, contactOnly), {
       contact: { city: "Santiago" },
     });
+  });
+
+  it("las redes se guardan aparte del contacto", () => {
+    const baseline = baseConfig();
+    const current = structuredClone(baseline);
+    current.social.instagram = "https://instagram.com/seminario";
+    current.contact.email = "otro@ejemplo.org";
+
+    assert.deepEqual(empresaBlockPatch("redes", baseline, current), {
+      social: { instagram: "https://instagram.com/seminario" },
+    });
+    assert.equal(empresaBlockDirty("contacto", baseline, current), true);
+    assert.equal(empresaBlockDirty("redes", baseline, structuredClone(baseline)), false);
+  });
+
+  it("la ubicación guarda la región junto con la ciudad", () => {
+    const baseline = baseConfig();
+    const current = structuredClone(baseline);
+    current.contact.region = "Metropolitana";
+    current.contact.city = "Santiago";
+
+    assert.deepEqual(empresaBlockPatch("ubicacion", baseline, current), {
+      contact: { region: "Metropolitana", city: "Santiago" },
+    });
+    assert.equal(empresaBlockDirty("contacto", baseline, current), false);
   });
 });

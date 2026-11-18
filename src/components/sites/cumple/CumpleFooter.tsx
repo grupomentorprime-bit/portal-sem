@@ -66,8 +66,8 @@ export function CumpleFooter({ contact }: Pick<CodedPageViewProps, "contact">) {
               </a>
             </p>
           ) : null}
-          {(contact.city || contact.country) && (
-            <p className="mt-2">{[contact.city, contact.country].filter(Boolean).join(", ")}</p>
+          {(contact.city || contact.region || contact.country) && (
+            <p className="mt-2">{[contact.city, contact.region, contact.country].filter(Boolean).join(", ")}</p>
           )}
         </div>
       </div>

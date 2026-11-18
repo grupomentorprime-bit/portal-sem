@@ -2,7 +2,7 @@ import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import type { ComingSoonLine, ComingSoonModel } from "@/sites/public-decision";
 
 const CHANNELS = ["Correo", "Teléfono", "WhatsApp", "Horario"];
-const PLACE = ["Dirección", "Ciudad", "País"];
+const PLACE = ["Dirección", "Región", "Ciudad", "País"];
 const SOCIAL = ["Facebook", "Instagram", "YouTube", "LinkedIn", "TikTok", "Spotify"];
 
 function pick(lines: ComingSoonLine[], labels: string[]) {
@@ -20,6 +20,7 @@ function placeCopy(lines: ComingSoonLine[]) {
   const address = lines.find((line) => line.label === "Dirección")?.value;
   const locality = [
     lines.find((line) => line.label === "Ciudad")?.value,
+    lines.find((line) => line.label === "Región")?.value,
     lines.find((line) => line.label === "País")?.value,
   ]
     .filter(Boolean)

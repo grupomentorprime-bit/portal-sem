@@ -5,7 +5,12 @@
  * - Mi empresa y Marca editan la SiteConfig del Espacio, sin abrir Growth OS.
  * - Sitio web administra la presencia pública cuando el plan incluye esa
  *   funcionalidad (Growth OS). No hay una segunda ficha ni datos duplicados.
- * El resto enlaza pantallas existentes. La seguridad personal vive en Mi cuenta.
+ * Conexión:
+ * - Canales edita los contactos y las redes de atención de este Espacio.
+ *   Si el plan incluye Growth OS, ofrece el conector de WhatsApp Business.
+ *   No reemplaza esta pantalla por el centro de mensajería.
+ * - Integraciones sigue en la pantalla existente de la aplicación.
+ * La seguridad personal vive en Mi cuenta.
  */
 
 import type { MentorAppId } from "@/lib/desktop/catalog";
@@ -19,7 +24,7 @@ export type SpaceSettingId =
   | "canales"
   | "integraciones";
 
-export type SpacePresencePanelId = "empresa" | "marca" | "sitio";
+export type SpacePresencePanelId = "empresa" | "marca" | "sitio" | "canales";
 export type SpaceTeamPanelId = "equipo" | "roles";
 export type SpacePanelId = SpacePresencePanelId | SpaceTeamPanelId;
 
@@ -111,13 +116,13 @@ export const SPACE_SETTING_GROUPS: SpaceSettingGroup[] = [
     items: [
       {
         id: "canales",
-        kind: "link",
-        href: "/admin/settings/channels",
+        kind: "panel",
+        panel: "canales",
         label: "Canales",
-        text: "Correo y WhatsApp.",
+        text: "Contactos y redes de atención.",
         mark: "canales",
         tone: "mark-channels",
-        requiredAny: ["settings.integrations"],
+        requiredAny: ["settings.update"],
       },
       {
         id: "integraciones",

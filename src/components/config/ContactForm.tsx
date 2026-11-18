@@ -4,6 +4,15 @@ import { useId } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { inputBase } from "@/components/ui/shared";
+import {
+  canonicalChileRegion,
+  chileRegionForCity,
+  chileRegionNames,
+  citiesInChileRegion,
+  isChileCountry,
+} from "@/lib/geo/chile-locations";
+import { cn } from "@/lib/utils";
 import type { ContactInfo } from "@/types/cms";
 
 interface ContactFormProps {
@@ -32,8 +41,15 @@ export function ContactForm({
   const whatsappId = useId();
   const hoursId = useId();
   const addressId = useId();
+  const regionId = useId();
   const cityId = useId();
   const countryId = useId();
+  const chile = isChileCountry(value.country);
+  const regionValue = chile
+    ? canonicalChileRegion(value.region) || value.region?.trim() || chileRegionForCity(value.city)
+    : value.region?.trim() || "";
+  const regionOptions = chileRegionNames(regionValue);
+  const cityOptions = citiesInChileRegion(regionValue, value.city);
 
   const fields = (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -90,18 +106,66 @@ export function ContactForm({
               id={addressId}
               value={value.address}
               onChange={(e) => update("address", e.target.value)}
-              placeholder="Calle, número, comuna"
+              placeholder="Calle y número"
             />
           </div>
 
           <div>
+            <Label className="mb-2 block" htmlFor={regionId}>Región</Label>
+            {chile ? (
+              <select
+                id={regionId}
+                className={cn(inputBase, "h-11")}
+                value={regionOptions.includes(regionValue) ? regionValue : ""}
+                onChange={(e) => {
+                  const region = e.target.value;
+                  const cities = citiesInChileRegion(region);
+                  const city = cities.includes(value.city) ? value.city : "";
+                  onChange({ ...value, region, city });
+                }}
+              >
+                <option value="">Elige una región</option>
+                {regionOptions.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                id={regionId}
+                value={value.region ?? ""}
+                onChange={(e) => update("region", e.target.value)}
+                placeholder="Región o estado"
+              />
+            )}
+          </div>
+
+          <div>
             <Label className="mb-2 block" htmlFor={cityId}>Ciudad</Label>
-            <Input
-              id={cityId}
-              value={value.city}
-              onChange={(e) => update("city", e.target.value)}
-              placeholder="Chillán"
-            />
+            {chile ? (
+              <select
+                id={cityId}
+                className={cn(inputBase, "h-11")}
+                value={cityOptions.includes(value.city) ? value.city : ""}
+                disabled={!regionValue}
+                onChange={(e) => onChange({ ...value, region: regionValue, city: e.target.value })}
+              >
+                <option value="">{regionValue ? "Elige una ciudad" : "Primero elige la región"}</option>
+                {cityOptions.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                id={cityId}
+                value={value.city}
+                onChange={(e) => update("city", e.target.value)}
+                placeholder="Ciudad"
+              />
+            )}
           </div>
 
           <div>
@@ -109,7 +173,15 @@ export function ContactForm({
             <Input
               id={countryId}
               value={value.country}
-              onChange={(e) => update("country", e.target.value)}
+              onChange={(e) => {
+                const country = e.target.value;
+                if (isChileCountry(country)) {
+                  const region = canonicalChileRegion(value.region) || chileRegionForCity(value.city);
+                  onChange({ ...value, country, region });
+                  return;
+                }
+                onChange({ ...value, country });
+              }}
               placeholder="Chile"
             />
           </div>

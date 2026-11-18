@@ -8,6 +8,7 @@ import {
   parseContractPatch,
   resolveContractedApps,
 } from "@/lib/desktop/contract";
+import { noteCommercialActivation } from "@/lib/desktop/attention-store";
 import { ensureDeskProduct } from "@/lib/desktop/ensure-client-company";
 import {
   mongoAppRequestStore,
@@ -48,6 +49,12 @@ export async function POST(request: Request, { params }: RouteParams) {
   const added = newlyContracted(before.contracted, patch.contractedApps);
   for (const appId of added) {
     await store.fulfillOpen(tenant.tenantId, appId);
+    await noteCommercialActivation({
+      tenantId: tenant.tenantId,
+      appId,
+      actorUserId: ctx.user._id,
+      actorName: ctx.user.displayName,
+    }).catch(() => null);
     if (appId === "rrhh" || appId === "aprende-hoy") {
       await ensureDeskProduct({
         tenantId: tenant.tenantId,

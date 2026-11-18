@@ -42,6 +42,7 @@ export function consolidatePageSeo(
           "@type": "PostalAddress",
           streetAddress: contact.address,
           addressLocality: contact.city || undefined,
+          addressRegion: contact.region || undefined,
           addressCountry: contact.country || undefined,
         }
       : undefined,

@@ -226,11 +226,12 @@ function defaultLocationFromContact(contact: ContactInfo): PortalContactLocation
     name: "Sede principal",
     address: contact.address,
     city: contact.city || undefined,
+    region: contact.region || undefined,
     country: contact.country || undefined,
     email: contact.email || undefined,
     phone: contact.phone || undefined,
     hours: contact.hours || undefined,
-    mapQuery: buildMapQuery([contact.address, contact.city, contact.country]),
+    mapQuery: buildMapQuery([contact.address, contact.city, contact.region, contact.country]),
     primary: true,
     visible: true,
   };

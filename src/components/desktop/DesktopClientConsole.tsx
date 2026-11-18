@@ -7,6 +7,7 @@ import {
   mentorAppLabel,
   type MentorAppId,
 } from "@/lib/desktop/catalog";
+import { DesktopSwitchGroup, DesktopSwitchRow } from "@/components/desktop/DesktopSwitch";
 import { isHttpsEntry } from "@/lib/desktop/contract";
 import {
   CLIENT_STATUSES,
@@ -185,26 +186,24 @@ export function DesktopClientConsole({
 
       <section>
         <p className="console-kicker">Plan</p>
-        <div className="plan-grid">
+        <DesktopSwitchGroup note="Enciende las que este Espacio puede abrir. Guarda el plan al terminar.">
           {MENTOR_APPS.map((appId) => {
             const on = apps.includes(appId);
             const asked = model.requestedApps.includes(appId) && !on;
             return (
-              <button
+              <DesktopSwitchRow
                 key={appId}
-                type="button"
-                className={on ? "is-on" : undefined}
-                aria-pressed={on}
+                mark={appId}
+                title={mentorAppLabel(appId)}
+                detail={mentorAppBlurb(appId)}
+                badge={asked ? "Pedido" : undefined}
+                checked={on}
                 disabled={busy !== null}
-                onClick={() => toggleApp(appId)}
-              >
-                {asked ? <em>Pedido</em> : null}
-                <strong>{mentorAppLabel(appId)}</strong>
-                <span>{mentorAppBlurb(appId)}</span>
-              </button>
+                onChange={() => toggleApp(appId)}
+              />
             );
           })}
-        </div>
+        </DesktopSwitchGroup>
         {apps.includes("aprende-hoy") ? (
           <label>
             Entrada de Aprende Hoy

@@ -38,6 +38,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   library: "Biblioteca",
   users: "Usuarios",
   team: "Equipo",
+  units: "Unidades",
   roles: "Permisos por rol",
   help: "Ayuda",
   aek: "Catálogo AEK",

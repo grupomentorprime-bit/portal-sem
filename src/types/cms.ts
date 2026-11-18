@@ -67,6 +67,8 @@ export interface ContactInfo {
   phone: string;
   whatsapp: string;
   address: string;
+  /** Región de Chile. Vacío si el país no es Chile o aún no se eligió. */
+  region?: string;
   city: string;
   country: string;
   /** Horario de atención público */

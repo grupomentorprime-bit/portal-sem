@@ -25,8 +25,8 @@ import {
 
 describe("contrato del escritorio", () => {
   it("el dueño y el cliente tienen escritorios distintos", () => {
-    assert.deepEqual(desktopDock(true), ["clientes", "ajustes"]);
-    assert.deepEqual(desktopDock(false), ["growth-os", "cumple", "aprende-hoy", "rrhh"]);
+    assert.deepEqual(desktopDock(true), ["atencion", "clientes", "ajustes"]);
+    assert.deepEqual(desktopDock(false), ["growth-os", "cumple", "aprende-hoy", "rrhh", "atencion"]);
   });
 
   it("el dueño permanece en la plataforma aunque su sesión tenga un cliente", () => {

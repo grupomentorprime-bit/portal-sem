@@ -40,6 +40,7 @@ export function publicSemContact(contact: ContactInfo, tenantId: string): Contac
     phone: "",
     whatsapp: "",
     address: "",
+    region: "",
     city: "",
   };
 }

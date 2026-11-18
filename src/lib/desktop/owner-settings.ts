@@ -42,6 +42,11 @@ export const OWNER_SECTIONS = [
     subtitle: "Qué puede traer un cliente.",
   },
   {
+    id: "atencion",
+    label: "Atención",
+    subtitle: "Áreas de contacto y qué ejecutivo atiende cada una.",
+  },
+  {
     id: "seguridad",
     label: "Seguridad",
     subtitle: "La sesión del dueño y la regla del último dueño.",

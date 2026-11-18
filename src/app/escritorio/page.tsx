@@ -14,6 +14,13 @@ import { desktopClients } from "@/lib/desktop/clients";
 import type { DesktopDayLine } from "@/lib/desktop/day";
 import { readDesktopDay } from "@/lib/desktop/day-read";
 import { escritorioRedirect } from "@/lib/desktop/contract";
+import { attentionBadge, type AttentionActor } from "@/lib/desktop/attention";
+import {
+  listAttentionCases,
+  listAttentionCasesForTenant,
+  readAttentionConfig,
+} from "@/lib/desktop/attention-store";
+import { hasAnySpaceSetting } from "@/lib/desktop/space-settings";
 import { mongoAppRequestStore, readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser, updateSessionActiveTenant } from "@/lib/identity/active-space";
 import { findMembership } from "@/lib/identity/memberships";
@@ -110,6 +117,44 @@ export default async function EscritorioPage() {
     authorizedApps = deskMembership?.authorizedApps ?? null;
   }
 
+  let attentionCount = 0;
+  let attentionUnread = false;
+  const attentionStaff = operator;
+  try {
+    const actor: AttentionActor = attentionStaff
+      ? {
+          userId: session.user._id,
+          displayName: session.user.displayName,
+          kind: "staff",
+          tenantId: deskTenantId || null,
+          allAreas: platformOwner,
+          areaIds: platformOwner ? [] : (await readAttentionConfig()).grants.find((grant) => grant.userId === session.user._id)?.areaIds ?? [],
+          orgWide: false,
+          economic: false,
+        }
+      : {
+          userId: session.user._id,
+          displayName: session.user.displayName,
+          kind: "client",
+          tenantId: deskTenantId,
+          allAreas: false,
+          areaIds: [],
+          orgWide: hasAnySpaceSetting(deskPermissions, contract.contracted),
+          economic: false,
+        };
+    const rows = attentionStaff
+      ? await listAttentionCases()
+      : deskTenantId
+        ? await listAttentionCasesForTenant(deskTenantId)
+        : [];
+    const badge = attentionBadge(rows, actor);
+    attentionCount = badge.count;
+    attentionUnread = badge.unread;
+  } catch {
+    attentionCount = 0;
+    attentionUnread = false;
+  }
+
   let departmentName = "";
   if (!onPlatformDesk && deskTenantId) {
     let placeRoleCodes = roleCodes;
@@ -173,6 +218,9 @@ export default async function EscritorioPage() {
       requested={openRequests.map((row) => row.appId)}
       dayLines={dayLines}
       owner={onPlatformDesk}
+      attentionStaff={attentionStaff}
+      attentionCount={attentionCount}
+      attentionUnread={attentionUnread}
       canReturnToPlatform={platformOwner && Boolean(entered)}
       permissions={onPlatformDesk ? [] : deskPermissions}
     />

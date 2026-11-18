@@ -2,7 +2,7 @@ export const MENTOR_APPS = ["growth-os", "cumple", "aprende-hoy", "rrhh"] as con
 export type MentorAppId = (typeof MENTOR_APPS)[number];
 
 /** Utilidades del escritorio. No se contratan. */
-export type DockAppId = MentorAppId | "clientes" | "ajustes";
+export type DockAppId = MentorAppId | "atencion" | "clientes" | "ajustes";
 
 /**
  * Catálogo de la mesa.
@@ -10,8 +10,8 @@ export type DockAppId = MentorAppId | "clientes" | "ajustes";
  * Ajustes del cliente sigue en la barra y no se duplica en su dock.
  */
 export function desktopDock(owner: boolean): DockAppId[] {
-  if (owner) return ["clientes", "ajustes"];
-  return [...MENTOR_APPS];
+  if (owner) return ["atencion", "clientes", "ajustes"];
+  return [...MENTOR_APPS, "atencion"];
 }
 
 /** Acciones de la barra que no están en el dock. */
@@ -124,11 +124,17 @@ export function mentorAppBlurb(appId: MentorAppId): string {
 
 export function dockAppLabel(appId: DockAppId): string {
   if (appId === "ajustes") return "Ajustes";
+  if (appId === "atencion") return "Atención";
   if (appId === "clientes") return "Clientes";
   return LABELS[appId];
 }
 
 export function dockAppBlurb(appId: DockAppId, owner = false): string {
+  if (appId === "atencion") {
+    return owner
+      ? "Casos de las empresas y la conversación con cada cliente."
+      : "Casos y conversación de esta empresa con Nelzuri.";
+  }
   if (appId === "clientes") return "Organizaciones. Se miran aquí, sin cambiar de escritorio.";
   if (appId === "ajustes") {
     return owner

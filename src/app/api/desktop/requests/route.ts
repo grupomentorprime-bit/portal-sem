@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/core/identity";
+import { notePlanRequest } from "@/lib/desktop/attention-store";
+import { isMentorAppId } from "@/lib/desktop/catalog";
 import { recordAppRequest } from "@/lib/desktop/requests";
 import {
   mongoAppRequestStore,
@@ -27,5 +29,13 @@ export async function POST(request: Request) {
     contracted: contract.contracted,
   });
   if (!result.ok) return NextResponse.json(result, { status: 400 });
+  if (!result.already && isMentorAppId(appId)) {
+    await notePlanRequest({
+      tenantId,
+      appId,
+      authorUserId: ctx.user._id,
+      authorName: ctx.user.displayName,
+    }).catch(() => null);
+  }
   return NextResponse.json(result);
 }
