@@ -1,9 +1,9 @@
 # Congreso de Varones — Pago grupal: selección y no duplicar imputados
 
 **Fecha:** 2026-11-18  
-**Estado:** pendiente de revisión del usuario  
+**Estado:** implementado (selección); abonos/partida supersedidos por `2026-11-18-pago-grupal-recaudacion-partida-design.md`  
 **Alcance:** UI de Pago grupal en Aportes; sin cambios de API/modelo  
-**Fuera de alcance:** abonos parciales por persona, import Excel, commit/PR salvo el de esta spec
+**Fuera de alcance (histórico):** abonos en grupal — ver spec de recaudación partida
 
 ## Objetivo
 

@@ -10,9 +10,11 @@ import {
   breakdownContributionsByZone,
   breakdownPaymentsByPaidOn,
   normalizePaymentMethod,
+  reconcilePostedAllocationsWithCollected,
   summarizeCashBox,
   summarizeContributionClose,
 } from "../../src/core/congress/cash-box";
+import { distributeProportional } from "../../src/core/congress/payment-distribute";
 import { allocatePayment } from "../../src/core/congress/payments";
 import { CONGRESS_EVENT_ID } from "../../src/core/congress/constants";
 import type { CongressPayment, CongressRegistration } from "../../src/core/congress/types";
@@ -217,6 +219,99 @@ describe("cash box breakdowns", () => {
     assert.equal(byChurch[0]?.remainingClp, 17_000);
     assert.equal(byChurch[1]?.key, "Alpha");
     assert.equal(byChurch[1]?.remainingClp, 12_000);
+  });
+});
+
+describe("recaudación partida vs caja", () => {
+  it("efectivo+transferencia proporcional cuadra caja, cierre y por zona", () => {
+    let regs = [1, 2, 3, 4, 5].map((n) =>
+      baseReg({
+        _id: `reg-${n}`,
+        zoneId: "zona-1",
+        churchName: "IPN TEST",
+        chargeAmountClp: 17_000,
+        allocatedPaidClp: 0,
+      })
+    );
+    const balanceRows = regs.map((r) => ({
+      registrationId: r._id,
+      balanceClp: 17_000,
+    }));
+    const cashAlloc = distributeProportional(balanceRows, 42_500);
+    const transferAlloc = distributeProportional(balanceRows, 42_500);
+    assert.equal(
+      cashAlloc.reduce((s, a) => s + a.amountClp, 0),
+      42_500
+    );
+    assert.equal(
+      transferAlloc.reduce((s, a) => s + a.amountClp, 0),
+      42_500
+    );
+
+    const cash = allocatePayment({
+      paymentId: "pay-cash",
+      tenantId: "ipn-chile",
+      eventId: CONGRESS_EVENT_ID,
+      payerType: "church",
+      payerName: "Lider zonal",
+      churchName: "IPN TEST",
+      amountClp: 42_500,
+      method: "cash",
+      paidOn: "2026-11-18",
+      allocations: cashAlloc,
+      createdByUserId: "u1",
+      createdAt: "2026-11-18T12:00:00.000Z",
+      registrations: regs,
+    });
+    assert.equal(cash.ok, true);
+    if (!cash.ok) return;
+    assert.equal(cash.payment.unallocatedClp, 0);
+    regs = regs.map((r) => cash.updatedRegistrations.find((u) => u._id === r._id) ?? r);
+
+    const transfer = allocatePayment({
+      paymentId: "pay-tr",
+      tenantId: "ipn-chile",
+      eventId: CONGRESS_EVENT_ID,
+      payerType: "church",
+      payerName: "Lider zonal",
+      churchName: "IPN TEST",
+      amountClp: 42_500,
+      method: "transfer",
+      paidOn: "2026-11-18",
+      allocations: transferAlloc,
+      createdByUserId: "u1",
+      createdAt: "2026-11-18T12:01:00.000Z",
+      registrations: regs,
+    });
+    assert.equal(transfer.ok, true);
+    if (!transfer.ok) return;
+    assert.equal(transfer.payment.unallocatedClp, 0);
+    regs = regs.map(
+      (r) => transfer.updatedRegistrations.find((u) => u._id === r._id) ?? r
+    );
+
+    const payments = [cash.payment, transfer.payment];
+    const box = summarizeCashBox(payments, { status: "posted" });
+    assert.equal(box.totalsClp.cash, 42_500);
+    assert.equal(box.totalsClp.transfer, 42_500);
+    assert.equal(box.totalsClp.total, 85_000);
+
+    const close = summarizeContributionClose(regs);
+    assert.equal(close.expectedClp, 85_000);
+    assert.equal(close.collectedClp, 85_000);
+    assert.equal(close.remainingClp, 0);
+    assert.equal(close.countsByStatus.paid, 5);
+
+    const reconcile = reconcilePostedAllocationsWithCollected(payments, regs);
+    assert.equal(reconcile.movementsAllocatedClp, 85_000);
+    assert.equal(reconcile.collectedClp, 85_000);
+    assert.equal(reconcile.deltaClp, 0);
+
+    const byZone = breakdownContributionsByZone(regs);
+    assert.equal(byZone[0]?.key, "zona-1");
+    assert.equal(byZone[0]?.expectedClp, 85_000);
+    assert.equal(byZone[0]?.collectedClp, 85_000);
+    assert.equal(byZone[0]?.remainingClp, 0);
   });
 });
 
