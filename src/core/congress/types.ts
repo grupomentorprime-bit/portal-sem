@@ -36,7 +36,18 @@ export interface CongressRegistration {
   identity: CongressRegistrationIdentity;
   /** Día previsto declarado en Excel; no es asistencia efectiva. */
   expectedDayLabel?: string | null;
+  /** Días previstos operativos; independientes de asistencia real. */
+  expectedDays?: CongressAttendanceDays;
+  /** Necesidad de alojamiento; default operativo unknown. */
+  lodgingNeed?: "unknown" | "none" | "requested";
   attendance: CongressAttendanceDays;
+  /** Primera hora de llegada por día (ISO servidor); no se sobrescribe. */
+  attendanceMeta?: {
+    saturdayMarkedAt?: string | null;
+    sundayMarkedAt?: string | null;
+  };
+  /** Historial de cambios de asistencia (correcciones incluidas). */
+  attendanceHistory?: CongressAttendanceHistoryEntry[];
   /** Cargo en CLP; null si no hay persona identificada. */
   chargeAmountClp: number | null;
   allocatedPaidClp: number;
@@ -44,6 +55,18 @@ export interface CongressRegistration {
   version: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export type CongressLodgingNeed = NonNullable<CongressRegistration["lodgingNeed"]>;
+
+export interface CongressAttendanceHistoryEntry {
+  day: CongressAttendanceDay;
+  previousPresent: boolean | null;
+  nextPresent: boolean | null;
+  previousMarkedAt: string | null;
+  reason: string | null;
+  at: string;
+  actorUserId: string;
 }
 
 export interface CongressPaymentAllocation {

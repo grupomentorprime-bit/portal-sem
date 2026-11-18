@@ -1,12 +1,9 @@
-import { CongressOpsPanel } from "@/components/admin/congress/CongressOpsPanel";
 import { FormsPanelDetailClient } from "@/components/admin/forms/FormsPanelClient";
 import { getSessionActiveTenantId } from "@/core/identity";
 import { CONGRESS_VARONES_FORM_ID } from "@/lib/experience/forms/already-enrolled";
+import { CONGRESS_VARONES_HOME_PATH } from "@/lib/admin/nav-access";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
-import { resolvePermissionsForMembership } from "@/lib/identity/permission-resolver";
-import { ensureTenantRoles } from "@/lib/identity/roles";
-import { loadSessionContext } from "@/lib/identity/sessions";
 import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +14,9 @@ interface FormsPanelDetailPageProps {
 
 export default async function FormsPanelDetailPage({ params }: FormsPanelDetailPageProps) {
   const { id } = await params;
-  const [sessionTenantId, config, session] = await Promise.all([
+  const [sessionTenantId, config] = await Promise.all([
     getSessionActiveTenantId(),
     getOperationalSiteConfig(),
-    loadSessionContext(),
   ]);
   const tenantId = sessionTenantId?.trim() || config?.institution.tenant?.trim() || "";
   if (!tenantId) {
@@ -31,17 +27,7 @@ export default async function FormsPanelDetailPage({ params }: FormsPanelDetailP
   if (!form) notFound();
 
   if (form._id === CONGRESS_VARONES_FORM_ID) {
-    if (!session?.membership) {
-      redirect(`/login?next=${encodeURIComponent(`/admin/portal/forms/panel/${form._id}`)}`);
-    }
-    await ensureTenantRoles(tenantId);
-    const permissions = await resolvePermissionsForMembership(tenantId, session.membership);
-    const canOperateCongress = permissions.some(
-      (p) => p === "congress.view" || p === "congress.operate"
-    );
-    if (canOperateCongress) {
-      return <CongressOpsPanel />;
-    }
+    redirect(CONGRESS_VARONES_HOME_PATH);
   }
 
   return (

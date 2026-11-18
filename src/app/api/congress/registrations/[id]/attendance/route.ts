@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { setAttendanceDay } from "@/core/congress/attendance";
+import { applyAttendanceChange } from "@/core/congress/attendance";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
 import { CONGRESS_ATTENDANCE_DAYS } from "@/core/congress/constants";
 import { requireCongressOperate } from "@/app/api/congress/guard";
@@ -21,6 +21,7 @@ export async function PATCH(
     const body = (await request.json().catch(() => null)) as {
       day?: string;
       present?: boolean | null;
+      reason?: string;
     } | null;
 
     const day = body?.day;
@@ -34,16 +35,41 @@ export async function PATCH(
     }
 
     const present = body?.present === undefined ? null : body.present;
-    const attendance = setAttendanceDay(
-      current.attendance,
-      day as CongressAttendanceDay,
-      present
-    );
+    const nowIso = new Date().toISOString();
+    const result = applyAttendanceChange({
+      attendance: current.attendance,
+      attendanceMeta: current.attendanceMeta ?? {},
+      attendanceHistory: current.attendanceHistory ?? [],
+      day: day as CongressAttendanceDay,
+      present,
+      reason: typeof body?.reason === "string" ? body.reason : undefined,
+      nowIso,
+      actorUserId: ctx.user._id,
+    });
+
+    if (!result.ok) {
+      return NextResponse.json(
+        { ok: false, error: "Se requiere motivo para corregir o limpiar la marcación." },
+        { status: 400 }
+      );
+    }
+
+    if (result.idempotent) {
+      return NextResponse.json({
+        ok: true,
+        registration: current,
+        idempotent: true,
+      });
+    }
 
     const updated = await updateCongressRegistration(
       ctx.tenantId,
       id,
-      { attendance },
+      {
+        attendance: result.attendance,
+        attendanceMeta: result.attendanceMeta,
+        attendanceHistory: result.attendanceHistory,
+      },
       current.version
     );
     if (!updated) {
@@ -59,7 +85,14 @@ export async function PATCH(
       action: "attendance.set",
       entity: "congress_registration",
       entityId: id,
-      metadata: { day, present },
+      metadata: {
+        day,
+        present,
+        markedAt:
+          day === "saturday"
+            ? result.attendanceMeta.saturdayMarkedAt
+            : result.attendanceMeta.sundayMarkedAt,
+      },
     });
 
     return NextResponse.json({ ok: true, registration: updated });

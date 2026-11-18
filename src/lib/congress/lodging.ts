@@ -15,6 +15,7 @@ import {
 import type {
   CongressLodgingAssignment,
   CongressLodgingHome,
+  CongressRegistration,
 } from "@/core/congress/types";
 import { appendCongressAudit } from "@/lib/congress/repository";
 import { getDatabase } from "@/lib/mongodb";
@@ -140,7 +141,9 @@ export type AssignBedResult =
         | "home_not_found"
         | "capacity_full"
         | "already_assigned"
-        | "concurrent_capacity";
+        | "concurrent_capacity"
+        | "lodging_none"
+        | "registration_not_found";
     };
 
 /**
@@ -158,6 +161,13 @@ export async function assignBed(input: {
   if (!isCongressNight(input.night)) return { ok: false, error: "invalid_night" };
   const night = input.night;
   const db = await getDatabase();
+
+  const registration = await db
+    .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+    .findOne({ ...eventFilter(input.tenantId), _id: input.registrationId });
+  if (!registration) return { ok: false, error: "registration_not_found" };
+  const lodgingNeed = registration.lodgingNeed ?? "unknown";
+  if (lodgingNeed === "none") return { ok: false, error: "lodging_none" };
 
   const home = await db
     .collection<CongressLodgingHome>(CONGRESS_COLLECTIONS.homes)
@@ -251,6 +261,16 @@ export async function assignBed(input: {
       }
     );
     return { ok: false, error: "concurrent_capacity" };
+  }
+
+  if (lodgingNeed !== "requested") {
+    await db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations).updateOne(
+      { _id: input.registrationId, ...eventFilter(input.tenantId) },
+      {
+        $set: { lodgingNeed: "requested", updatedAt: now },
+        $inc: { version: 1 },
+      }
+    );
   }
 
   await appendCongressAudit({

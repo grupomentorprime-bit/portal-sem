@@ -7,17 +7,38 @@ import {
 } from "@/core/congress/constants";
 import { emptyAttendance } from "@/core/congress/attendance";
 import { buildChargeAmountClp } from "@/core/congress/charges";
+import { emptyExpectedDays, parseExpectedDayLabel } from "@/core/congress/expected-days";
 import { allocatePayment, voidPayment } from "@/core/congress/payments";
 import type {
+  CongressAttendanceDays,
   CongressAuditEntry,
   CongressChurchLodgingRequest,
   CongressLodgingAssignment,
   CongressLodgingHome,
+  CongressLodgingNeed,
   CongressPayment,
   CongressPaymentAllocation,
   CongressRegistration,
 } from "@/core/congress/types";
 import { getDatabase } from "@/lib/mongodb";
+
+/** Normaliza campos nuevos sobre fichas legacy leídas de Mongo. */
+export function normalizeCongressRegistration(
+  reg: CongressRegistration
+): CongressRegistration {
+  const expectedDays: CongressAttendanceDays =
+    reg.expectedDays ??
+    (reg.expectedDayLabel
+      ? parseExpectedDayLabel(reg.expectedDayLabel)
+      : emptyExpectedDays());
+  return {
+    ...reg,
+    expectedDays,
+    lodgingNeed: reg.lodgingNeed ?? "unknown",
+    attendanceMeta: reg.attendanceMeta ?? {},
+    attendanceHistory: reg.attendanceHistory ?? [],
+  };
+}
 
 function eventFilter(tenantId: string, eventId = CONGRESS_EVENT_ID) {
   return { tenantId, eventId };
@@ -43,11 +64,12 @@ export async function listCongressRegistrations(
       { "identity.phone": { $regex: q, $options: "i" } },
     ];
   }
-  return db
+  const rows = await db
     .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
     .find(filter)
     .sort({ churchName: 1, "identity.fullName": 1 })
     .toArray();
+  return rows.map(normalizeCongressRegistration);
 }
 
 export async function getCongressRegistration(
@@ -55,9 +77,10 @@ export async function getCongressRegistration(
   id: string
 ): Promise<CongressRegistration | null> {
   const db = await getDatabase();
-  return db
+  const row = await db
     .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
     .findOne({ ...eventFilter(tenantId), _id: id });
+  return row ? normalizeCongressRegistration(row) : null;
 }
 
 export async function insertCongressRegistration(
@@ -90,7 +113,7 @@ export async function updateCongressRegistration(
       },
       { returnDocument: "after" }
     );
-  return result ?? null;
+  return result ? normalizeCongressRegistration(result) : null;
 }
 
 export function buildRegistrationDraft(input: {
@@ -106,11 +129,18 @@ export function buildRegistrationDraft(input: {
   submissionId?: string | null;
   importRowId?: string | null;
   expectedDayLabel?: string | null;
+  expectedDays?: CongressAttendanceDays;
+  lodgingNeed?: CongressLodgingNeed;
   needsReview?: boolean;
   now?: string;
 }): CongressRegistration {
   const now = input.now ?? new Date().toISOString();
   const fullName = input.fullName.trim();
+  const expectedDays =
+    input.expectedDays ??
+    (input.expectedDayLabel
+      ? parseExpectedDayLabel(input.expectedDayLabel)
+      : emptyExpectedDays());
   return {
     _id: generateId("creg"),
     tenantId: input.tenantId,
@@ -128,7 +158,11 @@ export function buildRegistrationDraft(input: {
       status: input.identityStatus,
     },
     expectedDayLabel: input.expectedDayLabel ?? null,
+    expectedDays,
+    lodgingNeed: input.lodgingNeed ?? "unknown",
     attendance: emptyAttendance(),
+    attendanceMeta: {},
+    attendanceHistory: [],
     chargeAmountClp: buildChargeAmountClp({ fullName }),
     allocatedPaidClp: 0,
     needsReview: Boolean(input.needsReview),
@@ -389,6 +423,8 @@ export async function buildCongressSummary(tenantId: string) {
   const bySource = { form: 0, import: 0, door: 0 };
   const attendanceSaturday = { present: 0, absent: 0, unmarked: 0 };
   const attendanceSunday = { present: 0, absent: 0, unmarked: 0 };
+  const receptionSaturday = { expected: 0, present: 0, pendingArrival: 0 };
+  const receptionSunday = { expected: 0, present: 0, pendingArrival: 0 };
   let totalChargeClp = 0;
   let totalPaidClp = 0;
   let needsReviewCount = 0;
@@ -401,6 +437,19 @@ export async function buildCongressSummary(tenantId: string) {
     if (reg.attendance.sunday === true) attendanceSunday.present += 1;
     else if (reg.attendance.sunday === false) attendanceSunday.absent += 1;
     else attendanceSunday.unmarked += 1;
+
+    const expected = reg.expectedDays ?? emptyExpectedDays();
+    if (expected.saturday === true) {
+      receptionSaturday.expected += 1;
+      if (reg.attendance.saturday === true) receptionSaturday.present += 1;
+      else receptionSaturday.pendingArrival += 1;
+    }
+    if (expected.sunday === true) {
+      receptionSunday.expected += 1;
+      if (reg.attendance.sunday === true) receptionSunday.present += 1;
+      else receptionSunday.pendingArrival += 1;
+    }
+
     if (reg.chargeAmountClp != null) totalChargeClp += reg.chargeAmountClp;
     totalPaidClp += reg.allocatedPaidClp;
     if (reg.needsReview) needsReviewCount += 1;
@@ -411,6 +460,8 @@ export async function buildCongressSummary(tenantId: string) {
     registrationsBySource: bySource,
     attendanceSaturday,
     attendanceSunday,
+    receptionSaturday,
+    receptionSunday,
     balances: {
       totalChargeClp,
       totalPaidClp,

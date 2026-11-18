@@ -342,12 +342,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
       },
       {
         id: "congreso-varones",
-        href: "/admin/portal/forms/panel/ipn-asistencia-congreso-varones-2026",
+        href: "/admin/portal/congreso-varones",
         label: "Congreso de Varones",
         icon: "students",
         matchPrefixes: [
-          "/admin/portal/forms/panel/ipn-asistencia-congreso-varones-2026",
           "/admin/portal/congreso-varones",
+          "/admin/portal/forms/panel/ipn-asistencia-congreso-varones-2026",
         ],
         requiredAnyPermission: ["congress.view", "congress.operate"],
       },

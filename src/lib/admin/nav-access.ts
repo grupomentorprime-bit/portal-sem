@@ -11,10 +11,12 @@ import {
 } from "@/lib/admin/nav-domains";
 
 export const STUDENT_AFFAIRS_HOME_PATH = "/admin/portal/asuntos-estudiantiles";
-/** Administración operativa del congreso: vive en Formularios → Operación. */
-export const CONGRESS_VARONES_HOME_PATH = `/admin/portal/forms/panel/${CONGRESS_VARONES_FORM_ID}`;
-/** Alias legacy; redirige al home de Operación. */
-export const CONGRESS_VARONES_LEGACY_PATH = "/admin/portal/congreso-varones";
+/** Home operativa del Congreso de Varones. */
+export const CONGRESS_VARONES_HOME_PATH = "/admin/portal/congreso-varones";
+/** Alias desde Formularios → Operación (mismo panel). */
+export const CONGRESS_VARONES_FORMS_ALIAS_PATH = `/admin/portal/forms/panel/${CONGRESS_VARONES_FORM_ID}`;
+/** @deprecated Usar CONGRESS_VARONES_FORMS_ALIAS_PATH */
+export const CONGRESS_VARONES_LEGACY_PATH = CONGRESS_VARONES_FORMS_ALIAS_PATH;
 
 const STUDENT_AFFAIRS_OPERATOR_BLOCKED_PATH_PREFIXES = [
   "/admin/portal/forms",
@@ -123,7 +125,10 @@ export function isCongressAllowedAdminPath(pathname: string): boolean {
   if (pathname === CONGRESS_VARONES_HOME_PATH || pathname.startsWith(`${CONGRESS_VARONES_HOME_PATH}/`)) {
     return true;
   }
-  if (pathname === CONGRESS_VARONES_LEGACY_PATH || pathname.startsWith(`${CONGRESS_VARONES_LEGACY_PATH}/`)) {
+  if (
+    pathname === CONGRESS_VARONES_FORMS_ALIAS_PATH ||
+    pathname.startsWith(`${CONGRESS_VARONES_FORMS_ALIAS_PATH}/`)
+  ) {
     return true;
   }
   if (pathname.startsWith("/admin/settings/help")) return true;
@@ -172,7 +177,8 @@ function isCongressAllowedItem(item: AdminNavItem): boolean {
     item.href === "/admin" ||
     item.href === CONGRESS_VARONES_HOME_PATH ||
     item.href.startsWith(`${CONGRESS_VARONES_HOME_PATH}/`) ||
-    item.href === CONGRESS_VARONES_LEGACY_PATH
+    item.href === CONGRESS_VARONES_FORMS_ALIAS_PATH ||
+    item.href.startsWith(`${CONGRESS_VARONES_FORMS_ALIAS_PATH}/`)
   );
 }
 

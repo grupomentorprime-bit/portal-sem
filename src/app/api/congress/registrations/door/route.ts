@@ -1,6 +1,26 @@
 import { NextResponse } from "next/server";
 import { requireCongressOperate } from "@/app/api/congress/guard";
 import { enrollAtDoor } from "@/lib/congress/door";
+import type { CongressAttendanceDays, CongressLodgingNeed } from "@/core/congress/types";
+
+function parseExpectedDays(raw: unknown): CongressAttendanceDays | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const obj = raw as Record<string, unknown>;
+  const toFlag = (v: unknown): boolean | null => {
+    if (v === true) return true;
+    if (v === false) return false;
+    return null;
+  };
+  return {
+    saturday: toFlag(obj.saturday),
+    sunday: toFlag(obj.sunday),
+  };
+}
+
+function parseLodgingNeed(raw: unknown): CongressLodgingNeed | undefined {
+  if (raw === "unknown" || raw === "none" || raw === "requested") return raw;
+  return undefined;
+}
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +41,8 @@ export async function POST(request: Request) {
       rut: body.rut != null ? String(body.rut) : null,
       phone: body.phone != null ? String(body.phone) : null,
       email: body.email != null ? String(body.email) : null,
+      expectedDays: parseExpectedDays(body.expectedDays),
+      lodgingNeed: parseLodgingNeed(body.lodgingNeed),
     });
 
     if (!result.ok) {

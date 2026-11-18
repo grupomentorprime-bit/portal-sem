@@ -5,6 +5,7 @@ import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { EmptyState } from "@/components/admin/kit/states/EmptyState";
 import { FormSubmissionsPanel } from "@/components/admin/forms/FormSubmissionsPanel";
 import { Button } from "@/components/ui/button";
+import { CONGRESS_VARONES_HOME_PATH } from "@/lib/admin/nav-access";
 import { CONGRESS_VARONES_FORM_ID } from "@/lib/experience/forms/already-enrolled";
 import type { ExperienceFormField } from "@/types/experience-forms";
 
@@ -43,7 +44,11 @@ export function FormsPanelClient({ rows }: { rows: FormsPanelRow[] }) {
             return (
               <li key={row.id}>
                 <Link
-                  href={`/admin/portal/forms/panel/${encodeURIComponent(row.id)}`}
+                  href={
+                    isCongressOps
+                      ? CONGRESS_VARONES_HOME_PATH
+                      : `/admin/portal/forms/panel/${encodeURIComponent(row.id)}`
+                  }
                   className="flex items-center justify-between gap-4 px-4 py-3 text-sm hover:bg-[var(--gray-50)]"
                 >
                   <span className="min-w-0">

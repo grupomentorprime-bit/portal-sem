@@ -5,7 +5,11 @@ import {
   CONGRESS_EVENT_ID,
   CONGRESS_NIGHTS,
 } from "../../src/core/congress/constants";
-import { emptyAttendance, setAttendanceDay } from "../../src/core/congress/attendance";
+import {
+  applyAttendanceChange,
+  emptyAttendance,
+  setAttendanceDay,
+} from "../../src/core/congress/attendance";
 import {
   buildChargeAmountClp,
   eligibleForCharge,
@@ -169,6 +173,73 @@ describe("congress domain attendance", () => {
     days = setAttendanceDay(days, "sunday", false);
     assert.equal(days.saturday, true);
     assert.equal(days.sunday, false);
+  });
+
+  it("conserva la primera hora de llegada ante present=true repetido", () => {
+    const first = applyAttendanceChange({
+      attendance: { saturday: null, sunday: null },
+      attendanceMeta: {},
+      attendanceHistory: [],
+      day: "saturday",
+      present: true,
+      nowIso: "2026-11-21T12:00:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(first.ok, true);
+    if (!first.ok) return;
+    const second = applyAttendanceChange({
+      attendance: first.attendance,
+      attendanceMeta: first.attendanceMeta,
+      attendanceHistory: first.attendanceHistory,
+      day: "saturday",
+      present: true,
+      nowIso: "2026-11-21T15:00:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(second.ok, true);
+    if (!second.ok) return;
+    assert.equal(second.attendanceMeta.saturdayMarkedAt, "2026-11-21T12:00:00.000Z");
+    assert.equal(second.attendanceHistory.length, first.attendanceHistory.length);
+  });
+
+  it("exige motivo para limpiar o corregir marcación", () => {
+    const marked = applyAttendanceChange({
+      attendance: { saturday: null, sunday: null },
+      attendanceMeta: {},
+      attendanceHistory: [],
+      day: "saturday",
+      present: true,
+      nowIso: "2026-11-21T12:00:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(marked.ok, true);
+    if (!marked.ok) return;
+    const clearNoReason = applyAttendanceChange({
+      attendance: marked.attendance,
+      attendanceMeta: marked.attendanceMeta,
+      attendanceHistory: marked.attendanceHistory,
+      day: "saturday",
+      present: null,
+      nowIso: "2026-11-21T13:00:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(clearNoReason.ok, false);
+    const clear = applyAttendanceChange({
+      attendance: marked.attendance,
+      attendanceMeta: marked.attendanceMeta,
+      attendanceHistory: marked.attendanceHistory,
+      day: "saturday",
+      present: null,
+      reason: "Error de operador",
+      nowIso: "2026-11-21T13:00:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(clear.ok, true);
+    if (!clear.ok) return;
+    assert.equal(clear.attendance.saturday, null);
+    assert.equal(clear.attendanceMeta.saturdayMarkedAt, null);
+    assert.equal(clear.attendanceHistory.length, 2);
+    assert.equal(clear.attendanceHistory[1]?.previousMarkedAt, "2026-11-21T12:00:00.000Z");
   });
 });
 

@@ -19,15 +19,37 @@ export async function GET(request: Request) {
 
     const all = await listCongressRegistrations(ctx.tenantId);
     const zones = [...new Set(all.map((r) => r.zoneId).filter(Boolean))]
-      .sort()
-      .map((id) => ({ id, label: id }));
+      .sort((a, b) => {
+        const na = Number(a.replace(/\D/g, "")) || 0;
+        const nb = Number(b.replace(/\D/g, "")) || 0;
+        return na - nb;
+      })
+      .map((id) => {
+        const match = id.match(/^zona-(\d+)$/i);
+        return {
+          id,
+          label: match ? `Zona ${String(Number(match[1])).padStart(2, "0")}` : id,
+        };
+      });
     const churches = [...new Set(all.map((r) => r.churchName).filter(Boolean))].sort();
+    const churchesByZone: Record<string, string[]> = {};
+    for (const reg of all) {
+      const zone = reg.zoneId?.trim();
+      const church = reg.churchName?.trim();
+      if (!zone || !church) continue;
+      const list = churchesByZone[zone] ?? [];
+      if (!list.includes(church)) list.push(church);
+      churchesByZone[zone] = list;
+    }
+    for (const zone of Object.keys(churchesByZone)) {
+      churchesByZone[zone].sort((a, b) => a.localeCompare(b, "es"));
+    }
 
     return NextResponse.json({
       ok: true,
       items,
       registrations: items,
-      filterOptions: { zones, churches },
+      filterOptions: { zones, churches, churchesByZone },
     });
   } catch (error) {
     console.error(error);

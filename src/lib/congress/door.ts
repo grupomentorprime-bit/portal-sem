@@ -1,7 +1,11 @@
 import { normalizeChileRut, isValidChileRut } from "@/lib/experience/forms/rut-chile";
 import { findDuplicateRegistrationId } from "@/core/congress/duplicates";
 import { generateId } from "@/core/identity/auth/crypto";
-import type { CongressRegistration } from "@/core/congress/types";
+import type {
+  CongressAttendanceDays,
+  CongressLodgingNeed,
+  CongressRegistration,
+} from "@/core/congress/types";
 import {
   buildRegistrationDraft,
   insertCongressRegistration,
@@ -18,6 +22,8 @@ export type DoorEnrollInput = {
   rut?: string | null;
   phone?: string | null;
   email?: string | null;
+  expectedDays?: CongressAttendanceDays;
+  lodgingNeed?: CongressLodgingNeed;
 };
 
 export type DoorEnrollResult =
@@ -61,6 +67,8 @@ export async function enrollAtDoor(input: DoorEnrollInput): Promise<DoorEnrollRe
     return { ok: false, error: "duplicate", duplicateId };
   }
 
+  const lodgingNeed = input.lodgingNeed ?? "unknown";
+
   const registration = buildRegistrationDraft({
     tenantId: input.tenantId,
     source: "door",
@@ -72,12 +80,9 @@ export async function enrollAtDoor(input: DoorEnrollInput): Promise<DoorEnrollRe
     phone: input.phone?.trim() || null,
     identityStatus,
     needsReview,
+    expectedDays: input.expectedDays,
+    lodgingNeed,
   });
-
-  // Sin RUT: la clave provisional es el propio _id de la ficha.
-  if (!rut) {
-    // already unique by _id; needsReview remains true
-  }
 
   await insertCongressRegistration(registration);
   await appendCongressAudit({
@@ -90,6 +95,7 @@ export async function enrollAtDoor(input: DoorEnrollInput): Promise<DoorEnrollRe
       identityStatus,
       needsReview,
       zoneId: registration.zoneId,
+      lodgingNeed,
     },
   });
 
