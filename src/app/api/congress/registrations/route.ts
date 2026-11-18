@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { CONGRESS_ZONES } from "@/core/congress/constants";
 import { requireCongressView } from "@/app/api/congress/guard";
+import { listCongressChurches } from "@/lib/congress/churches";
 import { listCongressRegistrations } from "@/lib/congress/repository";
 import { syncCongressFormSubmissions } from "@/lib/congress/sync-form";
 
@@ -21,8 +23,17 @@ export async function GET(request: Request) {
       churchName: url.searchParams.get("church") ?? undefined,
     });
 
-    const all = await listCongressRegistrations(ctx.tenantId);
-    const zones = [...new Set(all.map((r) => r.zoneId).filter(Boolean))]
+    const [all, catalog] = await Promise.all([
+      listCongressRegistrations(ctx.tenantId),
+      listCongressChurches(ctx.tenantId),
+    ]);
+
+    const zoneIds = new Set<string>([
+      ...CONGRESS_ZONES.map((z) => z.id),
+      ...all.map((r) => r.zoneId).filter(Boolean),
+      ...catalog.map((c) => c.zoneId).filter(Boolean),
+    ]);
+    const zones = [...zoneIds]
       .sort((a, b) => {
         const na = Number(a.replace(/\D/g, "")) || 0;
         const nb = Number(b.replace(/\D/g, "")) || 0;
@@ -35,19 +46,24 @@ export async function GET(request: Request) {
           label: match ? `Zona ${String(Number(match[1])).padStart(2, "0")}` : id,
         };
       });
-    const churches = [...new Set(all.map((r) => r.churchName).filter(Boolean))].sort();
+
     const churchesByZone: Record<string, string[]> = {};
-    for (const reg of all) {
-      const zone = reg.zoneId?.trim();
-      const church = reg.churchName?.trim();
-      if (!zone || !church) continue;
-      const list = churchesByZone[zone] ?? [];
-      if (!list.includes(church)) list.push(church);
-      churchesByZone[zone] = list;
-    }
+    const addChurch = (zone: string, church: string) => {
+      const z = zone.trim();
+      const c = church.trim();
+      if (!z || !c) return;
+      const list = churchesByZone[z] ?? [];
+      if (!list.includes(c)) list.push(c);
+      churchesByZone[z] = list;
+    };
+    for (const reg of all) addChurch(reg.zoneId, reg.churchName);
+    for (const row of catalog) addChurch(row.zoneId, row.churchName);
     for (const zone of Object.keys(churchesByZone)) {
       churchesByZone[zone].sort((a, b) => a.localeCompare(b, "es"));
     }
+    const churches = [...new Set(Object.values(churchesByZone).flat())].sort((a, b) =>
+      a.localeCompare(b, "es")
+    );
 
     return NextResponse.json({
       ok: true,

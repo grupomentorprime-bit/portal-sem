@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import type { AdminShellContext } from "@/components/admin/kit/utils/types";
 import { AdminStatusBadges } from "@/components/admin/AdminStatusBadges";
@@ -17,18 +17,36 @@ export interface AdminTopBarProps extends AdminShellContext {
   onOpenMobileNav: () => void;
 }
 
+function canUsePeopleSearch(permissions: string[]): boolean {
+  return (
+    permissions.includes("growth.people.view") ||
+    permissions.includes("growth.people.manage")
+  );
+}
+
+function isCongressOpsPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/admin/portal/congreso-varones") ||
+    pathname.startsWith("/admin/portal/forms/panel/")
+  );
+}
+
 /**
- * Topbar patrón maestro — buscador limitado a Personas (sin búsqueda global).
+ * Topbar patrón maestro — buscador de Personas solo si aporta (permiso + fuera del panel Congreso).
  */
 export function AdminTopBar({
   user,
   compatMode,
+  permissions,
   collapsed,
   onToggleSidebar,
   onOpenMobileNav,
 }: AdminTopBarProps) {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
   const [query, setQuery] = useState("");
+  const showPeopleSearch =
+    canUsePeopleSearch(permissions) && !isCongressOpsPath(pathname);
 
   function onSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,27 +94,31 @@ export function AdminTopBar({
           Escritorio
         </Link>
 
-        <form
-          onSubmit={onSearchSubmit}
-          className="relative hidden min-w-0 flex-1 md:block"
-          role="search"
-          aria-label="Buscar personas"
-        >
-          <Search
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--gray-500)]"
-            aria-hidden
-          />
-          <input
-            type="search"
-            name="q"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar personas…"
-            className="h-10 w-full max-w-[640px] rounded-[12px] border border-[var(--color-border-default)] bg-[var(--gray-50)] pl-10 pr-3 text-[13px] text-[var(--gray-800)] outline-none transition placeholder:text-[var(--gray-500)] focus:border-[var(--growth-os-secondary)] focus:bg-white focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--growth-os-secondary)_18%,transparent)]"
+        {showPeopleSearch ? (
+          <form
+            onSubmit={onSearchSubmit}
+            className="relative hidden min-w-0 flex-1 md:block"
+            role="search"
             aria-label="Buscar personas"
-            title="Busca solo en Personas"
-          />
-        </form>
+          >
+            <Search
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--gray-500)]"
+              aria-hidden
+            />
+            <input
+              type="search"
+              name="q"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar personas…"
+              className="h-10 w-full max-w-[640px] rounded-[12px] border border-[var(--color-border-default)] bg-[var(--gray-50)] pl-10 pr-3 text-[13px] text-[var(--gray-800)] outline-none transition placeholder:text-[var(--gray-500)] focus:border-[var(--growth-os-secondary)] focus:bg-white focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--growth-os-secondary)_18%,transparent)]"
+              aria-label="Buscar personas"
+              title="Busca solo en Personas"
+            />
+          </form>
+        ) : (
+          <div className="hidden min-w-0 flex-1 md:block" aria-hidden />
+        )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <AdminStatusBadges compatMode={compatMode} />

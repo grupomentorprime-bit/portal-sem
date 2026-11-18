@@ -5,7 +5,13 @@ import {
   listCongressPayments,
   recordCongressPayment,
 } from "@/lib/congress/repository";
-import type { CongressPaymentAllocation } from "@/core/congress/types";
+import { isValidPaidOn, todayPaidOnSantiago } from "@/core/congress/payment-dates";
+import type {
+  CongressPaymentAllocation,
+  CongressPaymentMethod,
+} from "@/core/congress/types";
+
+const PAYMENT_METHODS: CongressPaymentMethod[] = ["cash", "transfer", "other"];
 
 export async function GET() {
   try {
@@ -29,6 +35,8 @@ export async function POST(request: Request) {
       payerName?: string;
       churchName?: string | null;
       amountClp?: number;
+      method?: CongressPaymentMethod;
+      paidOn?: string;
       receiptRef?: string | null;
       note?: string | null;
       allocations?: CongressPaymentAllocation[];
@@ -38,12 +46,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Datos incompletos." }, { status: 400 });
     }
 
+    if (!body.method || !PAYMENT_METHODS.includes(body.method)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Debe indicar tipo de pago (efectivo, transferencia u otro).",
+        },
+        { status: 400 }
+      );
+    }
+
+    const paidOn =
+      typeof body.paidOn === "string" && body.paidOn.trim()
+        ? body.paidOn.trim()
+        : todayPaidOnSantiago();
+    if (!isValidPaidOn(paidOn)) {
+      return NextResponse.json(
+        { ok: false, error: "Fecha de pago inválida." },
+        { status: 400 }
+      );
+    }
+
     const result = await recordCongressPayment({
       tenantId: ctx.tenantId,
       payerType: body.payerType,
       payerName: body.payerName,
       churchName: body.churchName,
       amountClp: Number(body.amountClp),
+      method: body.method,
+      paidOn,
       receiptRef: body.receiptRef,
       note: body.note,
       allocations: Array.isArray(body.allocations) ? body.allocations : [],
@@ -64,6 +95,8 @@ export async function POST(request: Request) {
       metadata: {
         amountClp: result.payment.amountClp,
         unallocatedClp: result.payment.unallocatedClp,
+        method: result.payment.method,
+        paidOn: result.payment.paidOn,
         allocations: result.payment.allocations,
       },
     });

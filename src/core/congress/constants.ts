@@ -34,6 +34,7 @@ export const CONGRESS_COLLECTIONS = {
   homes: "congress_lodging_homes",
   assignments: "congress_lodging_assignments",
   churchRequests: "congress_lodging_church_requests",
+  churches: "congress_churches",
   importBatches: "congress_import_batches",
   audit: "congress_audit",
   events: "congress_events",

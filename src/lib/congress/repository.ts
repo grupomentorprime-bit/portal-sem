@@ -18,6 +18,7 @@ import type {
   CongressLodgingNeed,
   CongressPayment,
   CongressPaymentAllocation,
+  CongressPaymentMethod,
   CongressRegistration,
 } from "@/core/congress/types";
 import { getDatabase } from "@/lib/mongodb";
@@ -35,6 +36,8 @@ export function normalizeCongressRegistration(
     ...reg,
     expectedDays,
     lodgingNeed: reg.lodgingNeed ?? "unknown",
+    isChurchGroupLeader: reg.isChurchGroupLeader === true,
+    isZoneLeader: reg.isZoneLeader === true,
     attendanceMeta: reg.attendanceMeta ?? {},
     attendanceHistory: reg.attendanceHistory ?? [],
   };
@@ -178,6 +181,8 @@ export async function recordCongressPayment(input: {
   payerName: string;
   churchName?: string | null;
   amountClp: number;
+  method: CongressPaymentMethod;
+  paidOn: string;
   receiptRef?: string | null;
   note?: string | null;
   allocations: CongressPaymentAllocation[];
@@ -202,6 +207,8 @@ export async function recordCongressPayment(input: {
     payerName: input.payerName,
     churchName: input.churchName,
     amountClp: input.amountClp,
+    method: input.method,
+    paidOn: input.paidOn,
     receiptRef: input.receiptRef,
     note: input.note,
     allocations: input.allocations,

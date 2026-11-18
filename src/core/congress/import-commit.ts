@@ -11,17 +11,25 @@ export type ImportCommitPlanItem = {
   importRowId: string;
 };
 
+export type ImportCommitChurch = {
+  zoneId: string;
+  churchName: string;
+};
+
 export type ImportCommitPlan = {
   toCreate: ImportCommitPlanItem[];
   toLinkExisting: Array<ImportCommitPlanItem & { registrationId: string }>;
   skippedDuplicates: Array<ImportCommitPlanItem & { registrationId: string; reason: string }>;
   gapsKept: CongressImportPreview["quantityGaps"];
+  /** Catálogo de iglesias a upsert; nunca pedidos de alojamiento. */
+  churchesToUpsert: ImportCommitChurch[];
   summary: {
     namedCount: number;
     createCount: number;
     linkCount: number;
     skipCount: number;
     gapCount: number;
+    churchCount: number;
   };
 };
 
@@ -105,20 +113,41 @@ export function planCongressImportCommit(input: {
     toCreate.push(item);
   }
 
-  // batchId reserved for future commit writer; plan is side-effect free.
+  // batchId reserved for writer; plan is side-effect free.
   void input.batchId;
+
+  const churchSeen = new Map<string, ImportCommitChurch>();
+  for (const church of input.preview.churches ?? []) {
+    const churchName = church.churchName.trim();
+    if (!churchName) continue;
+    const key = `${foldName(church.zoneId)}|${foldName(churchName)}`;
+    if (!churchSeen.has(key)) {
+      churchSeen.set(key, { zoneId: church.zoneId, churchName });
+    }
+  }
+  for (const person of input.preview.namedPeople) {
+    const churchName = person.churchName.trim();
+    if (!churchName) continue;
+    const key = `${foldName(person.zoneId)}|${foldName(churchName)}`;
+    if (!churchSeen.has(key)) {
+      churchSeen.set(key, { zoneId: person.zoneId, churchName });
+    }
+  }
+  const churchesToUpsert = [...churchSeen.values()];
 
   return {
     toCreate,
     toLinkExisting,
     skippedDuplicates,
     gapsKept: input.preview.quantityGaps,
+    churchesToUpsert,
     summary: {
       namedCount: input.preview.namedPeople.length,
       createCount: toCreate.length,
       linkCount: toLinkExisting.length,
       skipCount: skippedDuplicates.length,
       gapCount: input.preview.quantityGaps.length,
+      churchCount: churchesToUpsert.length,
     },
   };
 }

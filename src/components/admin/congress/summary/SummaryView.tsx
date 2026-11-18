@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { AlertBanner, LoadingState, Section } from "@/components/admin/kit";
 import { CONGRESS_CONTRIBUTION_CLP } from "@/core/congress/constants";
-import { deriveContributionStatus } from "@/core/congress/finance-status";
 import { isLodgingPending } from "@/core/congress/lodging-status";
 import type {
   CongressLodgingAssignment,
@@ -14,6 +13,7 @@ import {
   lodgingLabel,
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type DayBucket = { expected: number; present: number; pendingArrival: number };
@@ -38,6 +38,7 @@ type Props = {
   assignments: CongressLodgingAssignment[];
   homesCount: number;
   churchRequestedBeds: number;
+  onOpenCashBox: () => void;
 };
 
 function StatRow({
@@ -80,21 +81,8 @@ export function SummaryView({
   assignments,
   homesCount,
   churchRequestedBeds,
+  onOpenCashBox,
 }: Props) {
-  const finance = useMemo(() => {
-    const counts = {
-      no_charge: 0,
-      needs_verification: 0,
-      pending: 0,
-      partial: 0,
-      paid: 0,
-    };
-    for (const reg of registrations) {
-      counts[deriveContributionStatus(reg)] += 1;
-    }
-    return counts;
-  }, [registrations]);
-
   const lodging = useMemo(() => {
     const counts = {
       unknown: 0,
@@ -195,20 +183,31 @@ export function SummaryView({
 
         <Section
           title="Alimentación y aportes"
-          description="Estados derivados del motor de cargos (un aporte por persona)."
+          description="Detalle completo en Control de caja."
         >
           <div className="rounded-md border border-border bg-white px-3">
-            <StatRow label="Pendiente" value={finance.pending} />
-            <StatRow label="Abono parcial" value={finance.partial} />
-            <StatRow label="Pendiente de verificación" value={finance.needs_verification} />
-            <StatRow label="Pagado" value={finance.paid} emphasize />
-            <StatRow label="Sin cargo" value={finance.no_charge} />
             <StatRow
-              label="Cargo total esperado"
+              label="Cargo esperado"
               value={formatClp(balances.totalChargeClp)}
-              hint={`Referencia ${formatClp(CONGRESS_CONTRIBUTION_CLP)} × personas con cargo`}
+            />
+            <StatRow
+              label="Cobrado imputado"
+              value={formatClp(balances.totalPaidClp)}
+            />
+            <StatRow
+              label="Saldo pendiente"
+              value={formatClp(balances.totalOutstandingClp)}
+              emphasize
             />
           </div>
+          <Button
+            type="button"
+            size="sm"
+            className="mt-3"
+            onClick={onOpenCashBox}
+          >
+            Ver control de caja
+          </Button>
         </Section>
 
         <Section

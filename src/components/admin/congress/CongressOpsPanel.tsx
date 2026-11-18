@@ -5,33 +5,46 @@ import { CreditCard, RefreshCw } from "lucide-react";
 import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import {
   AlertBanner,
-  EmptyState,
   LoadingState,
   Section,
   Timeline,
 } from "@/components/admin/kit";
 import { SummaryView } from "@/components/admin/congress/summary/SummaryView";
 import { LodgingOpsView } from "@/components/admin/congress/lodging/LodgingOpsView";
+import { CashBoxView } from "@/components/admin/congress/cash/CashBoxView";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { useToast } from "@/components/admin/kit/states/Toast";
-import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
-import { CONGRESS_CONTRIBUTION_CLP, CONGRESS_NIGHTS } from "@/core/congress/constants";
+import {
+  CONGRESS_CONTRIBUTION_CLP,
+  CONGRESS_NIGHTS,
+  CONGRESS_ZONES,
+} from "@/core/congress/constants";
+import {
+  foldCongressChurchBase,
+  formatCongressChurchLabel,
+  mergeCongressChurchOptions,
+} from "@/core/congress/church-name";
+import type { CashMethodKey } from "@/core/congress/cash-box";
+import { todayPaidOnSantiago } from "@/core/congress/payment-dates";
 import type {
   CongressAuditEntry,
   CongressLodgingAssignment,
   CongressLodgingHome,
   CongressLodgingNeed,
+  CongressPayment,
+  CongressPaymentMethod,
   CongressRegistration,
 } from "@/core/congress/types";
 import {
   formatClp,
-  formatClpInput,
   formatZoneLabel,
+  registrationDisplayName,
+  registrationRoleBadges,
 } from "@/components/admin/congress/labels";
 import {
   ReceptionView,
@@ -39,11 +52,13 @@ import {
 } from "@/components/admin/congress/reception/ReceptionView";
 import { NewParticipantDialog } from "@/components/admin/congress/participant/NewParticipantDialog";
 import { ParticipantSheet } from "@/components/admin/congress/participant/ParticipantSheet";
+import { ReportsView } from "@/components/admin/congress/reports/ReportsView";
 
 type TabId =
   | "recepcion"
   | "resumen"
   | "aportes"
+  | "caja"
   | "alojamiento"
   | "reportes"
   | "historial"
@@ -105,23 +120,24 @@ export function CongressOpsPanel() {
   const [arrivalSavingId, setArrivalSavingId] = useState<string | null>(null);
   const [sheetBusy, setSheetBusy] = useState(false);
 
-  const [payments, setPayments] = useState<
-    Array<{
-      _id: string;
-      payerName: string;
-      amountClp: number;
-      unallocatedClp: number;
-      status: string;
-      voidReason?: string | null;
-    }>
-  >([]);
+  const [payments, setPayments] = useState<CongressPayment[]>([]);
+  const [groupZone, setGroupZone] = useState("");
   const [groupChurch, setGroupChurch] = useState("");
   const [groupSelected, setGroupSelected] = useState<string[]>([]);
-  const [groupAmount, setGroupAmount] = useState<number | null>(null);
   const [groupPayer, setGroupPayer] = useState("");
+  const [groupMethod, setGroupMethod] = useState<CongressPaymentMethod>("cash");
+  const [groupPaidOn, setGroupPaidOn] = useState(todayPaidOnSantiago());
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [voidingId, setVoidingId] = useState<string | null>(null);
+  const [cashMethodFilter, setCashMethodFilter] = useState<CashMethodKey | "all">(
+    "all"
+  );
+  const [cashFrom, setCashFrom] = useState("");
+  const [cashTo, setCashTo] = useState("");
+  const [cashStatus, setCashStatus] = useState<"posted" | "voided" | "all">(
+    "posted"
+  );
 
   const [homeSaving, setHomeSaving] = useState(false);
 
@@ -223,7 +239,7 @@ export function CongressOpsPanel() {
   }, [loadSummary, loadCapabilities, loadRegistrations]);
 
   useDeferredEffect(() => {
-    if (activeTab === "aportes") void loadPayments();
+    if (activeTab === "aportes" || activeTab === "caja") void loadPayments();
     if (activeTab === "historial") void loadAudit();
   }, [activeTab, loadPayments, loadAudit]);
 
@@ -338,6 +354,9 @@ export function CongressOpsPanel() {
     patch: {
       expectedDays?: { saturday: boolean | null; sunday: boolean | null };
       lodgingNeed?: CongressLodgingNeed;
+      isChurchGroupLeader?: boolean;
+      isZoneLeader?: boolean;
+      ensureHnoPrefix?: boolean;
     }
   ) => {
     setSheetBusy(true);
@@ -357,6 +376,14 @@ export function CongressOpsPanel() {
         return;
       }
       if (data.registration) upsertRegistration(data.registration);
+      // Roles con unicidad pueden desmarcar a otros: refrescar listado completo.
+      if (
+        patch.isChurchGroupLeader != null ||
+        patch.isZoneLeader != null ||
+        patch.ensureHnoPrefix
+      ) {
+        void loadRegistrations();
+      }
       void loadSummary();
     } finally {
       setSheetBusy(false);
@@ -367,6 +394,8 @@ export function CongressOpsPanel() {
     registrationId: string;
     amountClp: number;
     payerName: string;
+    method: CongressPaymentMethod;
+    paidOn: string;
     receiptRef?: string;
   }) => {
     setSheetBusy(true);
@@ -378,6 +407,8 @@ export function CongressOpsPanel() {
           payerType: "individual",
           payerName: input.payerName,
           amountClp: input.amountClp,
+          method: input.method,
+          paidOn: input.paidOn,
           receiptRef: input.receiptRef,
           allocations: [
             { registrationId: input.registrationId, amountClp: input.amountClp },
@@ -464,31 +495,90 @@ export function CongressOpsPanel() {
     }
   };
 
+  const groupZones = useMemo(() => {
+    const byId = new Map(CONGRESS_ZONES.map((z) => [z.id, z]));
+    for (const z of zoneOptions) {
+      if (!byId.has(z.id)) {
+        byId.set(z.id, { id: z.id, label: z.label || formatZoneLabel(z.id) });
+      }
+    }
+    return Array.from(byId.values()).sort((a, b) => {
+      const na = Number(a.id.replace(/\D/g, "")) || 0;
+      const nb = Number(b.id.replace(/\D/g, "")) || 0;
+      return na - nb;
+    });
+  }, [zoneOptions]);
+
+  const groupChurchesInZone = useMemo(() => {
+    if (!groupZone) return [];
+    const fromMap = churchesByZone[groupZone] ?? [];
+    const fromRegs = registrations
+      .filter((r) => r.zoneId === groupZone)
+      .map((r) => r.churchName.trim())
+      .filter(Boolean);
+    return mergeCongressChurchOptions([...fromMap, ...fromRegs]);
+  }, [churchesByZone, groupZone, registrations]);
+
+  const groupChurchLabel = useMemo(() => {
+    const found = groupChurchesInZone.find((c) => c.baseKey === groupChurch);
+    return found?.label ?? (groupChurch ? formatCongressChurchLabel(groupChurch) : "");
+  }, [groupChurch, groupChurchesInZone]);
+
   const groupCandidates = useMemo(
     () =>
-      groupChurch
-        ? registrations.filter((r) => r.churchName === groupChurch)
+      groupZone && groupChurch
+        ? registrations.filter(
+            (r) =>
+              r.zoneId === groupZone &&
+              foldCongressChurchBase(r.churchName) === groupChurch
+          )
         : [],
-    [groupChurch, registrations]
+    [groupChurch, groupZone, registrations]
   );
 
+  const groupAmount = groupSelected.length * CONGRESS_CONTRIBUTION_CLP;
+
   const groupPreview = useMemo(() => {
-    const amount = groupAmount ?? 0;
-    if (!amount || groupSelected.length === 0) return [];
-    const base = Math.floor(amount / groupSelected.length);
-    let rest = amount - base * groupSelected.length;
-    return groupSelected.map((id) => {
-      const extra = rest > 0 ? 1 : 0;
-      if (rest > 0) rest -= 1;
-      return { registrationId: id, amountClp: base + extra };
-    });
+    if (!groupAmount || groupSelected.length === 0) return [];
+    return groupSelected.map((id) => ({
+      registrationId: id,
+      amountClp: CONGRESS_CONTRIBUTION_CLP,
+    }));
   }, [groupAmount, groupSelected]);
+
+  const voidPayment = async (paymentId: string) => {
+    if (voidReason.trim().length < 5) {
+      push({ title: "Motivo mínimo 5 caracteres", tone: "warning" });
+      return;
+    }
+    setVoidingId(paymentId);
+    try {
+      const res = await fetch(`/api/congress/payments/${paymentId}/void`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: voidReason.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        push({ title: data.error ?? "No se pudo anular", tone: "warning" });
+        return;
+      }
+      void loadPayments();
+      void loadRegistrations();
+      void loadSummary();
+    } finally {
+      setVoidingId(null);
+    }
+  };
 
   const submitGroupPayment = async (event: React.FormEvent) => {
     event.preventDefault();
-    const amount = groupAmount ?? 0;
+    const amount = groupAmount;
     if (!groupPayer.trim() || !amount || groupPreview.length === 0) {
-      push({ title: "Complete pagador, monto y participantes", tone: "warning" });
+      push({
+        title: "Complete pagador y seleccione al menos un participante",
+        tone: "warning",
+      });
       return;
     }
     setPaymentSaving(true);
@@ -499,8 +589,10 @@ export function CongressOpsPanel() {
         body: JSON.stringify({
           payerType: "church",
           payerName: groupPayer.trim(),
-          churchName: groupChurch || undefined,
+          churchName: groupChurchLabel || undefined,
           amountClp: amount,
+          method: groupMethod,
+          paidOn: groupPaidOn,
           allocations: groupPreview,
         }),
       });
@@ -515,7 +607,6 @@ export function CongressOpsPanel() {
       }
       push({ title: "Pago grupal registrado", tone: "success" });
       setGroupSelected([]);
-      setGroupAmount(null);
       void loadPayments();
       void loadRegistrations();
       void loadSummary();
@@ -527,11 +618,12 @@ export function CongressOpsPanel() {
   const createHome = async (input: {
     name: string;
     contactName?: string;
+    contactPhone?: string;
     address?: string;
     notes?: string;
     capFri: number;
     capSat: number;
-  }) => {
+  }): Promise<boolean> => {
     setHomeSaving(true);
     try {
       const res = await fetch("/api/congress/lodging/homes", {
@@ -540,6 +632,7 @@ export function CongressOpsPanel() {
         body: JSON.stringify({
           name: input.name,
           contactName: input.contactName,
+          contactPhone: input.contactPhone,
           address: input.address,
           notes: input.notes,
           capacityByNight: {
@@ -551,10 +644,59 @@ export function CongressOpsPanel() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
         push({ title: data.error ?? "No se pudo crear el hogar", tone: "warning" });
-        return;
+        return false;
       }
       void loadSummary();
       push({ title: "Hogar registrado con cupos", tone: "success" });
+      return true;
+    } catch {
+      push({ title: "Error de red al crear el hogar", tone: "warning" });
+      return false;
+    } finally {
+      setHomeSaving(false);
+    }
+  };
+
+  const updateHome = async (
+    homeId: string,
+    input: {
+      name: string;
+      contactName?: string;
+      contactPhone?: string;
+      address?: string;
+      notes?: string;
+      capFri: number;
+      capSat: number;
+    }
+  ): Promise<boolean> => {
+    setHomeSaving(true);
+    try {
+      const res = await fetch(`/api/congress/lodging/homes/${homeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: input.name,
+          contactName: input.contactName,
+          contactPhone: input.contactPhone,
+          address: input.address,
+          notes: input.notes,
+          capacityByNight: {
+            [CONGRESS_NIGHTS[0]]: input.capFri,
+            [CONGRESS_NIGHTS[1]]: input.capSat,
+          },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        push({ title: data.error ?? "No se pudo actualizar el hogar", tone: "warning" });
+        return false;
+      }
+      void loadSummary();
+      push({ title: "Hogar actualizado", tone: "success" });
+      return true;
+    } catch {
+      push({ title: "Error de red al actualizar el hogar", tone: "warning" });
+      return false;
     } finally {
       setHomeSaving(false);
     }
@@ -580,42 +722,45 @@ export function CongressOpsPanel() {
         return;
       }
       const named = data.preview?.namedPeople?.length ?? 0;
+      const churches = data.preview?.churches?.length ?? 0;
       setImportNote(
-        `Vista previa: ${named} personas nombradas. La importación definitiva permanece deshabilitada.`
+        `Vista previa: ${named} personas nombradas · ${churches} iglesias en catálogo. Puede confirmar la importación.`
       );
     } finally {
       setImportLoading(false);
     }
   };
 
-  const exportCsv = () => {
-    const rows = [
-      ["Nombre", "Zona", "Iglesia", "RUT", "Teléfono", "Sábado", "Domingo", "Cargo", "Pagado"].join(
-        ","
-      ),
-      ...registrations.map((r) =>
-        [
-          r.identity.fullName,
-          formatZoneLabel(r.zoneId),
-          r.churchName,
-          r.identity.rut ?? "",
-          r.identity.phone ?? "",
-          String(r.attendance.saturday),
-          String(r.attendance.sunday),
-          r.chargeAmountClp ?? "",
-          r.allocatedPaidClp,
-        ]
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-          .join(",")
-      ),
-    ].join("\n");
-    const blob = new Blob([rows], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "congreso-varones-inscritos.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  const runImportCommit = async () => {
+    if (!importFile) {
+      push({ title: "Seleccione un Excel", tone: "warning" });
+      return;
+    }
+    setImportLoading(true);
+    setImportNote(null);
+    try {
+      const form = new FormData();
+      form.set("file", importFile);
+      const res = await fetch("/api/congress/import/commit", {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setImportNote(data.error ?? "No se pudo confirmar la importación.");
+        push({ title: "Importación fallida", tone: "error" });
+        return;
+      }
+      const created = data.summary?.created ?? 0;
+      const churches = data.summary?.churchesUpserted ?? 0;
+      const skipped = data.summary?.skipped ?? 0;
+      setImportNote(`Creados ${created} · Iglesias ${churches} · Omitidos ${skipped}`);
+      push({ title: "Nómina importada", tone: "success" });
+      void loadRegistrations();
+      void loadSummary();
+    } finally {
+      setImportLoading(false);
+    }
   };
 
   return (
@@ -643,6 +788,7 @@ export function CongressOpsPanel() {
     >
       <Tabs
         defaultValue="recepcion"
+        value={activeTab}
         onChange={(value) => setActiveTab(value as TabId)}
         className="w-full"
       >
@@ -650,6 +796,7 @@ export function CongressOpsPanel() {
           <TabsTrigger value="recepcion">Recepción</TabsTrigger>
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="aportes">Aportes y pagos</TabsTrigger>
+          <TabsTrigger value="caja">Control de caja</TabsTrigger>
           <TabsTrigger value="alojamiento">Alojamiento</TabsTrigger>
           <TabsTrigger value="reportes">Reportes</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
@@ -736,6 +883,7 @@ export function CongressOpsPanel() {
             assignments={assignments}
             homesCount={summary?.lodging.homesCount ?? homes.length}
             churchRequestedBeds={summary?.lodging.requestedBeds ?? 0}
+            onOpenCashBox={() => setActiveTab("caja")}
           />
         </TabsContent>
 
@@ -746,17 +894,37 @@ export function CongressOpsPanel() {
           >
             <form onSubmit={submitGroupPayment} className="grid max-w-3xl gap-3">
               <Select
+                label="Zona"
+                value={groupZone}
+                onChange={(e) => {
+                  setGroupZone(e.target.value);
+                  setGroupChurch("");
+                  setGroupSelected([]);
+                }}
+                options={[
+                  { value: "", label: "Seleccionar zona…" },
+                  ...groupZones.map((z) => ({ value: z.id, label: z.label })),
+                ]}
+              />
+              <Select
                 label="Iglesia"
                 value={groupChurch}
+                disabled={!groupZone}
                 onChange={(e) => {
                   setGroupChurch(e.target.value);
                   setGroupSelected([]);
                 }}
                 options={[
-                  { value: "", label: "Seleccionar iglesia…" },
-                  ...Array.from(new Set(registrations.map((r) => r.churchName)))
-                    .sort()
-                    .map((c) => ({ value: c, label: c })),
+                  {
+                    value: "",
+                    label: groupZone
+                      ? "Seleccionar iglesia…"
+                      : "Primero elige zona…",
+                  },
+                  ...groupChurchesInZone.map((c) => ({
+                    value: c.baseKey,
+                    label: c.label,
+                  })),
                 ]}
               />
               <Input
@@ -765,16 +933,49 @@ export function CongressOpsPanel() {
                 onChange={(e) => setGroupPayer(e.target.value)}
                 required
               />
-              <ClpAmountInput
-                label="Monto total (CLP)"
-                value={groupAmount}
-                onValueChange={setGroupAmount}
-                placeholder={formatClpInput(CONGRESS_CONTRIBUTION_CLP)}
-                required
+              <div>
+                <p className="mb-1 text-sm font-medium text-foreground">
+                  Monto total (CLP)
+                </p>
+                <p className="rounded-md border border-border bg-background-soft px-3 py-2 text-sm tabular-nums text-foreground">
+                  {groupSelected.length === 0 ? (
+                    "Seleccione participantes…"
+                  ) : (
+                    <>
+                      {groupSelected.length} ×{" "}
+                      {formatClp(CONGRESS_CONTRIBUTION_CLP)} ={" "}
+                      <span className="font-bold">
+                        {formatClp(groupAmount)}
+                      </span>
+                    </>
+                  )}
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Se calcula solo al marcar personas (sin editar).
+                </p>
+              </div>
+              <Select
+                label="Tipo"
+                value={groupMethod}
+                onChange={(e) =>
+                  setGroupMethod(e.target.value as CongressPaymentMethod)
+                }
+                options={[
+                  { value: "cash", label: "Efectivo" },
+                  { value: "transfer", label: "Transferencia" },
+                  { value: "other", label: "Otro" },
+                ]}
+              />
+              <Input
+                label="Fecha de pago"
+                type="date"
+                value={groupPaidOn}
+                onChange={(e) => setGroupPaidOn(e.target.value)}
               />
               <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-border p-2">
                 {groupCandidates.map((r) => {
                   const checked = groupSelected.includes(r._id);
+                  const roles = registrationRoleBadges(r);
                   return (
                     <label key={r._id} className="flex items-center gap-2 text-sm">
                       <input
@@ -786,7 +987,12 @@ export function CongressOpsPanel() {
                           )
                         }
                       />
-                      {r.identity.fullName}
+                      <span>
+                        {registrationDisplayName(r)}
+                        {roles.length ? (
+                          <span className="text-xs text-muted"> · {roles.join(" · ")}</span>
+                        ) : null}
+                      </span>
                     </label>
                   );
                 })}
@@ -802,8 +1008,10 @@ export function CongressOpsPanel() {
                       const reg = registrations.find((r) => r._id === row.registrationId);
                       return (
                         <li key={row.registrationId}>
-                          {reg?.identity.fullName ?? row.registrationId}:{" "}
-                          {formatClp(row.amountClp)}
+                          {reg
+                            ? registrationDisplayName(reg)
+                            : row.registrationId}
+                          : {formatClp(row.amountClp)}
                         </li>
                       );
                     })}
@@ -814,68 +1022,38 @@ export function CongressOpsPanel() {
                 <CreditCard className="mr-2 h-4 w-4" />
                 Guardar pago grupal
               </Button>
+              <p className="text-xs text-muted">
+                Si pagan parte en efectivo y parte por transferencia, registre dos
+                pagos grupales (uno por tipo).
+              </p>
             </form>
           </Section>
+        </TabsContent>
 
-          <Section title="Pagos registrados" className="mt-6">
-            {capabilities.financeCorrect ? (
-              <Input
-                className="mb-3 max-w-md"
-                label="Motivo de anulación"
-                value={voidReason}
-                onChange={(e) => setVoidReason(e.target.value)}
-              />
-            ) : null}
-            {payments.length === 0 ? (
-              <EmptyState title="Sin pagos" />
-            ) : (
-              <ul className="divide-y divide-border rounded-lg border border-border bg-white">
-                {payments.map((p) => (
-                  <li
-                    key={p._id}
-                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
-                  >
-                    <span>
-                      {p.payerName} · {formatClp(p.amountClp)} · {p.status}
-                    </span>
-                    {p.status === "posted" && capabilities.financeCorrect ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        loading={voidingId === p._id}
-                        onClick={async () => {
-                          if (voidReason.trim().length < 5) {
-                            push({ title: "Motivo mínimo 5 caracteres", tone: "warning" });
-                            return;
-                          }
-                          setVoidingId(p._id);
-                          try {
-                            const res = await fetch(`/api/congress/payments/${p._id}/void`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ reason: voidReason.trim() }),
-                            });
-                            const data = await res.json().catch(() => ({}));
-                            if (!res.ok || !data.ok) {
-                              push({ title: data.error ?? "No se pudo anular", tone: "warning" });
-                              return;
-                            }
-                            void loadPayments();
-                            void loadRegistrations();
-                            void loadSummary();
-                          } finally {
-                            setVoidingId(null);
-                          }
-                        }}
-                      >
-                        Anular
-                      </Button>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
+        <TabsContent value="caja">
+          {!capabilities.payments ? (
+            <AlertBanner variant="warning">
+              No tienes permiso para ver pagos / caja.
+            </AlertBanner>
+          ) : (
+            <CashBoxView
+              payments={payments}
+              registrations={registrations}
+              canVoid={capabilities.financeCorrect}
+              voidReason={voidReason}
+              onVoidReasonChange={setVoidReason}
+              voidingId={voidingId}
+              onVoid={voidPayment}
+              methodFilter={cashMethodFilter}
+              onMethodFilterChange={setCashMethodFilter}
+              fromPaidOn={cashFrom}
+              onFromPaidOnChange={setCashFrom}
+              toPaidOn={cashTo}
+              onToPaidOnChange={setCashTo}
+              statusFilter={cashStatus}
+              onStatusFilterChange={setCashStatus}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="alojamiento">
@@ -887,16 +1065,17 @@ export function CongressOpsPanel() {
             operate={capabilities.operate}
             homeSaving={homeSaving}
             onCreateHome={createHome}
+            onUpdateHome={updateHome}
             onOpenParticipant={setSelectedId}
           />
         </TabsContent>
 
         <TabsContent value="reportes">
-          <Section title="Exportar">
-            <Button size="sm" variant="outline" onClick={exportCsv}>
-              Descargar CSV de inscritos
-            </Button>
-          </Section>
+          <ReportsView
+            homes={homes}
+            assignments={assignments}
+            registrations={registrations}
+          />
         </TabsContent>
 
         <TabsContent value="historial">
@@ -913,26 +1092,33 @@ export function CongressOpsPanel() {
 
         <TabsContent value="importacion">
           <Section
-            title="Revisión Excel"
-            description="Solo vista previa. La importación definitiva está fuera de alcance."
+            title="Importar nómina"
+            description="Precarga hermanos e iglesias del Excel. No importa alojamiento; eso lo resuelve el operador."
           >
             <Input
               type="file"
               accept=".xlsx,.xls"
               onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
             />
-            <Button
-              className="mt-3"
-              size="sm"
-              loading={importLoading}
-              onClick={() => void runImportPreview()}
-            >
-              Previsualizar
-            </Button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                loading={importLoading}
+                onClick={() => void runImportPreview()}
+              >
+                Previsualizar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                loading={importLoading}
+                disabled={!importFile || !capabilities.import}
+                onClick={() => void runImportCommit()}
+              >
+                Confirmar importación
+              </Button>
+            </div>
             {importNote ? <p className="mt-3 text-sm text-muted">{importNote}</p> : null}
-            <Button className="mt-3" size="sm" variant="outline" disabled>
-              Confirmar importación (deshabilitado)
-            </Button>
           </Section>
         </TabsContent>
       </Tabs>

@@ -33,6 +33,19 @@ export async function POST(request: Request) {
     if (!body?.name?.trim()) {
       return NextResponse.json({ ok: false, error: "Nombre obligatorio." }, { status: 400 });
     }
+    const capacityByNight = body.capacityByNight ?? {};
+    const bedCounts = Object.values(capacityByNight).map((n) =>
+      Math.max(0, Math.trunc(Number(n ?? 0)))
+    );
+    if (bedCounts.length === 0 || bedCounts.every((n) => n === 0)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Indique el número de camas (cupos) por noche. Al menos una noche debe tener 1 o más.",
+        },
+        { status: 400 }
+      );
+    }
     const home = await upsertLodgingHome({
       tenantId: ctx.tenantId,
       actorUserId: ctx.user._id,
@@ -41,7 +54,7 @@ export async function POST(request: Request) {
       contactPhone: body.contactPhone,
       address: body.address,
       notes: body.notes,
-      capacityByNight: body.capacityByNight ?? {},
+      capacityByNight,
     });
     return NextResponse.json({ ok: true, home });
   } catch (error) {

@@ -1,7 +1,9 @@
 import { remainingBalanceClp } from "@/core/congress/charges";
+import { isValidPaidOn } from "@/core/congress/payment-dates";
 import type {
   CongressPayment,
   CongressPaymentAllocation,
+  CongressPaymentMethod,
   CongressRegistration,
 } from "@/core/congress/types";
 
@@ -13,6 +15,8 @@ export type AllocatePaymentInput = {
   payerName: string;
   churchName?: string | null;
   amountClp: number;
+  method: CongressPaymentMethod;
+  paidOn: string;
   receiptRef?: string | null;
   note?: string | null;
   allocations: CongressPaymentAllocation[];
@@ -33,6 +37,8 @@ export type AllocatePaymentErr = {
   error:
     | "invalid_amount"
     | "empty_payer"
+    | "invalid_method"
+    | "invalid_paid_on"
     | "allocation_exceeds_payment"
     | "unknown_registration"
     | "no_charge"
@@ -43,7 +49,16 @@ export type AllocatePaymentErr = {
 
 export type AllocatePaymentResult = AllocatePaymentOk | AllocatePaymentErr;
 
+const PAYMENT_METHODS = new Set<CongressPaymentMethod>(["cash", "transfer", "other"]);
+
 export function allocatePayment(input: AllocatePaymentInput): AllocatePaymentResult {
+  if (!PAYMENT_METHODS.has(input.method)) {
+    return { ok: false, error: "invalid_method" };
+  }
+  if (!isValidPaidOn(input.paidOn)) {
+    return { ok: false, error: "invalid_paid_on" };
+  }
+
   const amountClp = Math.trunc(input.amountClp);
   if (!Number.isFinite(amountClp) || amountClp <= 0) {
     return { ok: false, error: "invalid_amount" };
@@ -100,6 +115,8 @@ export function allocatePayment(input: AllocatePaymentInput): AllocatePaymentRes
     payerName: input.payerName.trim(),
     churchName: input.churchName ?? null,
     amountClp,
+    method: input.method,
+    paidOn: input.paidOn,
     receiptRef: input.receiptRef ?? null,
     note: input.note ?? null,
     allocations: input.allocations.map((a) => ({

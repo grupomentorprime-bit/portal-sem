@@ -19,16 +19,18 @@ function useTabs() {
 
 interface TabsProps {
   defaultValue: string;
+  value?: string;
   children: ReactNode;
   className?: string;
   onChange?: (value: string) => void;
 }
 
-export function Tabs({ defaultValue, children, className, onChange }: TabsProps) {
-  const [activeTab, setActiveTab] = useState(defaultValue);
+export function Tabs({ defaultValue, value, children, className, onChange }: TabsProps) {
+  const [uncontrolled, setUncontrolled] = useState(defaultValue);
+  const activeTab = value ?? uncontrolled;
 
   const handleChange = (id: string) => {
-    setActiveTab(id);
+    if (value === undefined) setUncontrolled(id);
     onChange?.(id);
   };
 

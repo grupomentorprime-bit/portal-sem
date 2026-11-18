@@ -6,6 +6,7 @@ import {
 } from "@/core/congress/constants";
 import { CONGRESS_COLLECTIONS } from "@/core/congress/constants";
 import { enrolleeIdentity } from "@/lib/experience/forms/already-enrolled";
+import { shouldCreateFormRegistrationFromSubmission } from "@/core/congress/claim";
 import {
   buildRegistrationDraft,
   insertCongressRegistration,
@@ -46,6 +47,12 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
     }
 
     const data = (submission.data ?? {}) as Record<string, unknown>;
+    // Submit con registrationId ya reclamó (o debe reclamarse); no crear source=form.
+    if (!shouldCreateFormRegistrationFromSubmission(data)) {
+      skipped += 1;
+      continue;
+    }
+
     const identity = enrolleeIdentity(data);
     const fullName = String(
       data.fullName ?? data.nombre ?? data.name ?? ""

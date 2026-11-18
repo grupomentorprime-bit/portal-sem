@@ -26,6 +26,8 @@ import {
   journeyDayShortLabel,
   lodgingLabel,
   lodgingPendingReasonLabel,
+  registrationDisplayName,
+  registrationRoleBadges,
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
 
@@ -305,9 +307,13 @@ export function ReceptionView({
                     >
                       <td className="px-3 py-2.5">
                         <p className="font-semibold text-foreground">
-                          {reg.identity.fullName}
+                          {registrationDisplayName(reg)}
                         </p>
-                        <p className="text-xs text-muted">{reg.identity.phone || "—"}</p>
+                        <p className="text-xs text-muted">
+                          {[reg.identity.phone || "—", ...registrationRoleBadges(reg)].join(
+                            " · "
+                          )}
+                        </p>
                       </td>
                       <td className="px-3 py-2.5">
                         <p>{reg.churchName}</p>
@@ -397,9 +403,14 @@ export function ReceptionView({
                     className="w-full text-left"
                     onClick={() => onOpenParticipant(reg._id)}
                   >
-                    <p className="font-semibold text-foreground">{reg.identity.fullName}</p>
+                    <p className="font-semibold text-foreground">
+                      {registrationDisplayName(reg)}
+                    </p>
                     <p className="mt-1 text-xs text-muted">
                       {arrival.text} · {contributionLabel(reg)} · {lodgingLabel(lodging)}
+                      {registrationRoleBadges(reg).length
+                        ? ` · ${registrationRoleBadges(reg).join(" · ")}`
+                        : ""}
                     </p>
                   </button>
                   {operate ? (

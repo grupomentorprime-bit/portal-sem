@@ -28,9 +28,16 @@ export type CongressImportChurchLodgingRequest = {
   note: string | null;
 };
 
+export type CongressImportChurch = {
+  zoneId: string;
+  churchName: string;
+};
+
 export type CongressImportPreview = {
   namedPeople: CongressImportNamedPerson[];
   quantityGaps: CongressImportQuantityGap[];
+  /** Iglesias vistas en el Excel (con o sin nominados). No implica alojamiento. */
+  churches: CongressImportChurch[];
   churchLodgingRequests: CongressImportChurchLodgingRequest[];
   declaredRegisteredByZone: Record<string, number>;
   /** Siempre vacío: no fusionar nombres parecidos automáticamente. */
@@ -112,10 +119,24 @@ export function looksLikePersonName(value: string): boolean {
 /**
  * Construye la revisión a partir de filas ya normalizadas (tests + parser xlsx).
  */
+function dedupeChurches(rows: CongressImportChurch[]): CongressImportChurch[] {
+  const seen = new Map<string, CongressImportChurch>();
+  for (const row of rows) {
+    const churchName = row.churchName.trim();
+    if (!churchName) continue;
+    const key = `${fold(row.zoneId)}|${fold(churchName)}`;
+    if (!seen.has(key)) {
+      seen.set(key, { zoneId: row.zoneId, churchName });
+    }
+  }
+  return [...seen.values()];
+}
+
 export function buildCongressImportPreview(input: {
   peopleRows: CongressImportSheetRow[];
   declaredZones?: CongressImportDeclaredZone[];
   lodgingRequests?: CongressImportChurchLodgingRequest[];
+  churches?: CongressImportChurch[];
 }): CongressImportPreview {
   const namedPeople: CongressImportNamedPerson[] = [];
   const quantityGaps: CongressImportQuantityGap[] = [];
@@ -152,9 +173,16 @@ export function buildCongressImportPreview(input: {
     declaredTotal += zone.registered;
   }
 
+  const churches = dedupeChurches([
+    ...(input.churches ?? []),
+    ...namedPeople.map((p) => ({ zoneId: p.zoneId, churchName: p.churchName })),
+    ...quantityGaps.map((g) => ({ zoneId: g.zoneId, churchName: g.churchName })),
+  ]);
+
   return {
     namedPeople,
     quantityGaps,
+    churches,
     churchLodgingRequests: [...(input.lodgingRequests ?? [])],
     declaredRegisteredByZone,
     autoMergeSuggestions: [],
@@ -196,13 +224,24 @@ export function parseZoneSheetGrid(
 ): {
   peopleRows: CongressImportSheetRow[];
   lodgingRequests: CongressImportChurchLodgingRequest[];
+  churches: CongressImportChurch[];
 } {
-  if (!grid.length) return { peopleRows: [], lodgingRequests: [] };
+  if (!grid.length) return { peopleRows: [], lodgingRequests: [], churches: [] };
 
   const blocks = detectBlocks(grid[0] ?? []);
   const peopleRows: CongressImportSheetRow[] = [];
   const lodgingRequests: CongressImportChurchLodgingRequest[] = [];
   const churchByBlock = blocks.map(() => "");
+  const churchMap = new Map<string, CongressImportChurch>();
+
+  const rememberChurch = (churchName: string) => {
+    const trimmed = churchName.trim();
+    if (!trimmed) return;
+    const key = fold(trimmed);
+    if (!churchMap.has(key)) {
+      churchMap.set(key, { zoneId, churchName: trimmed });
+    }
+  };
 
   for (let index = 1; index < grid.length; index += 1) {
     const line = grid[index] ?? [];
@@ -222,6 +261,7 @@ export function parseZoneSheetGrid(
       } else if (churchCell && !isDayLabel(churchCell)) {
         // Columna IGLESIAS: siempre actualiza la iglesia activa (no es nombre de persona).
         churchByBlock[blockIndex] = churchCell;
+        rememberChurch(churchCell);
       }
 
       if (!nameCell && !dayCell) return;
@@ -237,7 +277,11 @@ export function parseZoneSheetGrid(
     });
   }
 
-  return { peopleRows, lodgingRequests };
+  return {
+    peopleRows,
+    lodgingRequests,
+    churches: [...churchMap.values()],
+  };
 }
 
 /** @deprecated Prefer parseZoneSheetGrid().peopleRows — kept for older tests. */
