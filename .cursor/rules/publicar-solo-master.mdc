@@ -1,0 +1,40 @@
+---
+description: Publicar en master y dejar solo esa rama, eligiendo antes qué subir y qué descartar
+alwaysApply: true
+---
+
+# Publicar solo en master
+
+El destino de las actualizaciones es `master`. Al cerrar trabajo, o cuando pidan subir cambios, no dejes ramas secundarias: al final solo debe quedar `master` (local y en `origin`).
+
+## 1. Inventario antes de subir o borrar
+
+Lista lo que existe y **no está en `master`**. Incluye cambios sin commit, commits de la rama actual y cada rama local o remota distinta de `master`.
+
+```text
+No está en master
+- rama: feat/ejemplo  (3 commits, no fusionada)
+  - abc1234 fix(congreso): cuadre de caja
+  - def5678 feat(congreso): comprobante PDF
+- sin commit: src/app/admin/page.tsx
+- remoto: origin/fix/programa  (ya está en master: se puede borrar)
+
+Para subir a master: …
+Para descartar y borrar la rama: …
+```
+
+No subas ni borres hasta que elijan, en ese listado, qué entra a `master` y qué se descarta.
+
+## 2. Subir lo elegido
+
+- Integra en `master` solo lo marcado para subir y haz `git push origin master`.
+- Si `master` ya tiene commits que la rama no tiene, fusiona `origin/master` primero y conserva el comportamiento que ya está en `master` cuando haya conflicto.
+- No uses `push --force` ni reescribas `master`.
+- No incluyas secretos (`.env`, credenciales). Avisa si piden commitearlos.
+
+## 3. Dejar solo master
+
+- Borra cada rama secundaria local y su `origin/…` cuando ya está en `master`, o cuando la marcaron para descartar.
+- No borres `master`.
+- No borres una rama con trabajo que no está en `master` si todavía no dijeron que se descarta.
+- Confirma con `git branch -vv` y `git status` que la rama actual es `master` y que no quedan ramas secundarias.
