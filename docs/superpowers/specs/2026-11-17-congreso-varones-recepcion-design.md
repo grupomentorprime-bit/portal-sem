@@ -1,7 +1,7 @@
 # Congreso de Varones — Recepción y panel operativo (rediseño UX)
 
 **Fecha:** 2026-11-17  
-**Estado:** autorizado para implementación (2026-11-17)  
+**Estado:** autorizado para implementación (2026-11-17); enmiendas 2026-11-18: exento de pago + drill-down iglesia → pago grupal  
 **Alcance explícitamente fuera:** importación definitiva (commit Excel), despliegue, commit/PR de git
 
 ## Objetivo
@@ -22,7 +22,9 @@ Convertir el panel operativo del Congreso Nacional de Varones 2026 en una herram
 | Indicadores del día | Sobre **todo** el evento; contador de resultados filtrados aparte |
 | Finanzas UI | Derivadas del motor existente; saldo 0 ≠ “Pagado” automático |
 | Aporte $17.000 | Único por persona y cubre ambos días; independiente del día de llegada |
+| Exento de pago | Operador (`congress.operate`) quita cargo con motivo + `chargeHistory`; no queda por cobrar; bloquear si hay imputaciones; revertible con motivo |
 | Pagos | Individual desde ficha; grupal solo en Aportes |
+| Drill-down caja → aportes | Clic en iglesia (Cierre operativo) abre Pago grupal con zona + iglesia cargadas y marcados quienes tienen saldo |
 | Idempotencia | Servidor como fuente de verdad; botones deshabilitados solo complementan |
 | Entrada | `/admin/portal/congreso-varones` como home del panel |
 
@@ -119,7 +121,7 @@ Nombre, estados principales y acceso a ficha; no comprimir la tabla completa.
 Drawer del kit admin. Encabezado: nombre, iglesia, zona.
 
 1. **Asistencia** — previstos (sábado/domingo/ambos/por confirmar + edición); marcas reales + primera hora; correcciones con **motivo obligatorio**; historial previo visible.
-2. **Alimentación** — estado derivado del motor; saldo; verificación; historial de imputaciones; **Registrar pago individual** (un participante = allocation única) reutilizando `POST /api/congress/payments`.
+2. **Alimentación** — estado derivado del motor; saldo; verificación; historial de imputaciones; **Registrar pago individual** (un participante = allocation única) reutilizando `POST /api/congress/payments`; **Marcar exento de pago** / **Restaurar aporte** con motivo (ver §5 cargo).
 3. **Alojamiento** — `lodgingNeed` + asignación; acciones asignar / confirmar / cancelar / reasignar; el servidor rechaza contradicciones.
 
 Registrar llegada solo muta asistencia (y meta/historial). No pago ni alojamiento.
@@ -162,9 +164,18 @@ attendanceHistory: Array<{
   at: string;            // ISO servidor
   actorUserId: string;
 }>;
+
+chargeHistory: Array<{
+  action: "exempt" | "restore";
+  previousChargeAmountClp: number | null;
+  nextChargeAmountClp: number | null;
+  reason: string; // obligatorio, no vacío
+  at: string;     // ISO servidor
+  actorUserId: string;
+}>;
 ```
 
-Legacy: sin `lodgingNeed` → `unknown`; sin `expectedDays` → ambos `null` (+ parseo seguro de `expectedDayLabel` si aplica).
+Legacy: sin `lodgingNeed` → `unknown`; sin `expectedDays` → ambos `null` (+ parseo seguro de `expectedDayLabel` si aplica); sin `chargeHistory` → `[]`.
 
 ### Asistencia — `PATCH .../attendance`
 
@@ -202,18 +213,41 @@ Filtro **Alojamiento pendiente** = Por confirmar ∪ Sin asignar ∪ Asignado (s
 
 ### Finanzas — estados derivados (sin motor nuevo)
 
-Función pura sobre `chargeAmountClp`, `allocatedPaidClp`, `needsReview` (y `remainingBalanceClp`):
+Función pura sobre `chargeAmountClp`, `allocatedPaidClp`, `needsReview` (y `remainingBalanceClp`). Para etiqueta UI se consulta además `chargeHistory`:
 
 | Estado | Condición | Etiqueta UI (ej.) |
 |--------|-----------|-------------------|
-| `no_charge` | `chargeAmountClp == null` | Sin cargo |
+| `no_charge` | `chargeAmountClp == null` | **Exento** si hay al menos un `chargeHistory.action === "exempt"` (y el cargo sigue null); si no → **Sin cargo** |
 | `needs_verification` | `needsReview === true` (con cargo) | Pendiente de verificación |
 | `pending` | cargo, `allocatedPaidClp === 0`, no review | Pendiente $17.000 |
 | `partial` | cargo, `0 < allocated < charge`, no review | Abono · saldo $… |
 | `paid` | cargo, saldo 0, **y** `needsReview === false` | Pagado |
 
 **No** mapear “saldo 0” → Pagado si `needsReview` es true (sigue `needs_verification`).  
-**No** inventar estados fuera de este derivador.
+**No** inventar estados de motor fuera de este derivador; **Exento** es solo etiqueta UI sobre `no_charge` + historial.  
+Filtro **Con saldo** / “por cobrar”: no incluye `no_charge` (ni Exento ni Sin cargo).  
+Summary / caja: `chargeAmountClp == null` no suma aporte esperado (comportamiento actual).
+
+### Cargo — exención y restauración — `PATCH .../charge`
+
+Body: `{ action: "exempt" | "restore"; reason: string }`.  
+Permiso: `congress.operate` (sin permiso nuevo). Reloj y actor en servidor.
+
+Reglas de dominio (`applyChargeChange` o equivalente):
+
+1. `reason` no vacío siempre (exentar y restaurar).
+2. **`exempt`:** si `allocatedPaidClp > 0` → rechazar (400: anular imputaciones primero). Si `chargeAmountClp == null` ya → idempotente (200; no duplicar historial). Si tiene cargo → `chargeAmountClp = null`, append `chargeHistory` con `action: "exempt"`.
+3. **`restore`:** solo si `chargeAmountClp == null` **y** existe al menos un `chargeHistory.action === "exempt"` (no restaurar filas “Sin cargo” sin exención previa); setea `CONGRESS_CONTRIBUTION_CLP`; append `action: "restore"`. Si ya tiene cargo o no hay exención previa → 400.
+4. Concurrencia por `version`. Audit: `registration.charge.exempt` / `registration.charge.restore`.
+
+**UI ficha (Alimentación):**
+
+- Con cargo y `allocatedPaidClp === 0`: **Marcar exento de pago** → motivo → PATCH `exempt`.
+- Exento: badge **Exento**; sin formulario de pago; **Restaurar aporte $17.000** → motivo → `restore`.
+- Con imputado > 0: no ofrecer exentar (deshabilitado / tip: anular pagos primero).
+- Mostrar historial de cargo (acción, motivo, hora `America/Santiago`).
+
+Alta puerta: sin cambio (cargo $17.000); la exención es post-alta. No chip de filtro rápido nuevo.
 
 ### Puerta — `POST .../door`
 
@@ -227,18 +261,37 @@ Acepta `expectedDays`, `lodgingNeed` (default `unknown`). Deduplicación en serv
 
 ### Pagos
 
-- **Ficha:** pago individual → mismo `POST /payments` con una allocation.
-- **Aportes:** flujo grupal con iglesia, multi-selección, preview de distribución, un solo movimiento.
+- **Ficha:** pago individual → mismo `POST /payments` con una allocation; no ofrecer pago si `chargeAmountClp == null`.
+- **Aportes:** flujo grupal con iglesia, multi-selección, preview de distribución, un solo movimiento; no incluir exentos como “por cobrar” en selección habitual (el motor ya rechaza `no_charge`).
 - Anulación: `congress.finance.correct`.
 - Anti doble post: servidor (idempotencia/validación); UI deshabilita mientras `saving`.
 
 ### Permisos
 
-Sin cambios de catálogo.
+Sin cambios de catálogo (`operate` alcanza para exentar/restaurar cargo).
 
 ## 6. Aportes grupales
 
 Sin cambios de intención respecto al diseño previo: pestaña propia, pagador ≠ cubiertos, preview, un POST, saldos reflejados en Recepción.
+
+### Seleccionables en pago grupal
+
+`isGroupPaymentSelectable`: persona con **saldo de cargo > 0** (`remainingBalanceClp > 0`, implica cargo no null). Incluye `pending`, `partial` y `needs_verification` con deuda. Excluye `paid`, `no_charge` / Exento.  
+(Amplía la regla previa que solo admitía `pending`, para alinear con “Falta pagar” de Cierre operativo.)
+
+### Drill-down desde Cierre operativo (caja)
+
+En la lista **Iglesias · Zona X** (tras elegir una zona):
+
+1. Clic en una fila de iglesia → cambiar a pestaña **Aportes y pagos** (Pago grupal).
+2. Precargar `groupZone` = zona seleccionada; `groupChurch` = iglesia del renglón (misma clave/`baseKey` que el select de Aportes).
+3. Precargar `groupSelected` = todos los candidatos de esa zona+iglesia que `isGroupPaymentSelectable` (tienen saldo). Si no hay ninguno: zona+iglesia igual cargadas; selección vacía.
+4. **No** precargar pagador, tipo ni fecha (defaults actuales del formulario).
+5. Monto total = N × $17.000 como hoy.
+6. Zona en la columna izquierda sigue solo filtrando iglesias (no navega a aportes).
+7. UX: filas de iglesia clickeables (cursor/affordance); tras navegar, scroll al bloque de pago grupal si hace falta.
+
+Callback tipico: `CashBoxView` → `onOpenGroupPayment({ zoneId, churchBaseKey })` → panel setea tab `aportes` + estado del formulario.
 
 ## 7. Diseño visual
 
@@ -252,12 +305,14 @@ src/components/admin/congress/
   reception/ReceptionView.tsx | ReceptionTable.tsx | ReceptionFilters.tsx
   participant/ParticipantSheet.tsx | NewParticipantDialog.tsx
   labels.ts | finance-status.ts (o en core)
-  payments/ …  lodging/ …
+  payments/ …  lodging/ …  cash/CashBoxView.tsx  # clic iglesia → onOpenGroupPayment
 src/core/congress/
   attendance.ts          # applyAttendanceChange + historial + primera hora
   lodging-status.ts      # resolveLodgingUiState + pending reasons
-  finance-status.ts      # deriveContributionStatus
+  finance-status.ts      # deriveContributionStatus + etiqueta Exento
+  charge.ts              # applyChargeChange (exempt / restore)
   expected-days.ts       # labelExpectedDays
+src/app/api/congress/registrations/[id]/charge/route.ts
 ```
 
 ## 9. Verificación
@@ -268,6 +323,8 @@ Admin + `congress_operator` en navegador:
 - Indicadores globales vs contador filtrado
 - Alta, llegada (primera hora estable ante reintento), corrección con motivo + historial
 - Pago individual (ficha) y grupal (Aportes)
+- Exento: marcar con motivo → no aparece en “Con saldo”; restaurar con motivo; rechazo si hay imputado
+- Caja → clic iglesia con saldo: Aportes con zona/iglesia y deudores marcados
 - Alojamiento: cuatro pendientes distinguibles + rechazo de “No requiere” con asignación
 - Persistencia al recargar; loading/errores; capturas de casos reales
 
@@ -282,4 +339,6 @@ Import commit Excel · despliegue · commit/PR · formulario público · Growth/
 3. Llegada / pago / alojamiento independientes, con reglas de servidor anteriores.
 4. Estados de comida y alojamiento derivados, sin contradicciones.
 5. Indicadores del día globales; resultados filtrados etiquetados aparte.
-6. Verificación en navegador con capturas de lo realmente probado.
+6. Operador puede exentar aporte (motivo + historial) y la persona deja de quedar por cobrar; restauración con motivo.
+7. Desde Cierre operativo, clic en iglesia abre pago grupal precargado (zona, iglesia, quienes deben).
+8. Verificación en navegador con capturas de lo realmente probado.

@@ -167,6 +167,7 @@ export function buildRegistrationDraft(input: {
     attendanceMeta: {},
     attendanceHistory: [],
     chargeAmountClp: buildChargeAmountClp({ fullName }),
+    chargeHistory: [],
     allocatedPaidClp: 0,
     needsReview: Boolean(input.needsReview),
     version: 1,

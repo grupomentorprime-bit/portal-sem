@@ -29,9 +29,9 @@ export function contributionStatusHasBalance(status: ContributionStatus): boolea
   return status === "pending" || status === "partial" || status === "needs_verification";
 }
 
-/** Pago grupal: solo pendientes sin imputar (monto completo, sin abonos). */
+/** Pago grupal: seleccionable si queda saldo de cargo. */
 export function isGroupPaymentSelectable(
   reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
 ): boolean {
-  return deriveContributionStatus(reg) === "pending";
+  return remainingBalanceClp(reg) > 0;
 }

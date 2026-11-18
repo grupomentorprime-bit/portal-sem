@@ -57,22 +57,27 @@ describe("group payment selectable", () => {
     needsReview: false,
   };
 
-  it("solo pending es seleccionable en pago grupal", () => {
+  it("seleccionable si tiene saldo de cargo (pending, partial, verification con deuda)", () => {
     assert.equal(
       isGroupPaymentSelectable({ ...base, allocatedPaidClp: 0 }),
+      true
+    );
+    assert.equal(
+      isGroupPaymentSelectable({ ...base, allocatedPaidClp: 5000 }),
+      true
+    );
+    assert.equal(
+      isGroupPaymentSelectable({
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        allocatedPaidClp: 0,
+        needsReview: true,
+      }),
       true
     );
     assert.equal(
       isGroupPaymentSelectable({
         ...base,
         allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
-      }),
-      false
-    );
-    assert.equal(
-      isGroupPaymentSelectable({
-        ...base,
-        allocatedPaidClp: 5000,
       }),
       false
     );

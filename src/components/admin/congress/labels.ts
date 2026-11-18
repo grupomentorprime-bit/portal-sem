@@ -8,6 +8,7 @@ import {
   expectedDaysLabelEs,
   labelExpectedDays,
 } from "@/core/congress/expected-days";
+import { isExplicitlyExempt } from "@/core/congress/charge";
 import {
   deriveContributionStatus,
   type ContributionStatus,
@@ -135,11 +136,14 @@ export function contributionLabel(reg: CongressRegistration): string {
 
 export function contributionStatusLabel(
   status: ContributionStatus,
-  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp">
+  reg: Pick<
+    CongressRegistration,
+    "chargeAmountClp" | "allocatedPaidClp" | "chargeHistory"
+  >
 ): string {
   switch (status) {
     case "no_charge":
-      return "Sin cargo";
+      return isExplicitlyExempt(reg) ? "Exento" : "Sin cargo";
     case "needs_verification":
       return "Pendiente de verificación";
     case "pending":
