@@ -1,11 +1,10 @@
 import "server-only";
 
 import type { UnitAccess } from "@/core/units/types";
-import { findOrgUnit } from "@/core/units/repository";
-import { getDatabase } from "@/lib/mongodb";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { setInvitationUnitAccess } from "@/lib/identity/invitations";
 import {
+  departmentInviteUnitId,
   departmentUnitIdForRole,
   unitIdsFromAccess,
 } from "@/lib/notifications/email-brand";
@@ -29,11 +28,11 @@ export async function unitIdsForDepartmentEmail(input: {
   const roleCode = roles.map(getRoleCode).find((code) =>
     Boolean(departmentUnitIdForRole(input.tenantId, code))
   );
-  const unitId = departmentUnitIdForRole(input.tenantId, roleCode);
+  const unitId = departmentInviteUnitId({
+    tenantId: input.tenantId,
+    roleCode,
+  });
   if (!unitId) return undefined;
-
-  const unit = await findOrgUnit(await getDatabase(), input.tenantId, unitId);
-  if (!unit) return undefined;
 
   if (input.invitationId) {
     await setInvitationUnitAccess(input.invitationId, input.tenantId, {

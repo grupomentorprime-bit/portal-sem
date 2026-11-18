@@ -17,7 +17,7 @@ import {
 } from "@/lib/identity/enterprise-profiles";
 import { resolvePermissionDetailsForMembership } from "@/lib/identity/permission-resolver";
 import { ROLE_CODES, resolveRoleCode } from "@/core/identity/roles/codes";
-import { departmentUnitIdForRole } from "@/lib/notifications/email-brand";
+import { departmentInviteUnitId } from "@/lib/notifications/email-brand";
 import {
   isValidEmail,
   isValidFullName,
@@ -26,16 +26,12 @@ import {
 } from "@/lib/validation/identity";
 
 /** Operador Congreso Varones queda en la unidad del departamento. */
-async function resolveInviteUnitId(input: {
+function resolveInviteUnitId(input: {
   tenantId: string;
   roleCode: string | null;
   requestedUnitId: string;
-}): Promise<string> {
-  if (input.requestedUnitId) return input.requestedUnitId;
-  const implied = departmentUnitIdForRole(input.tenantId, input.roleCode);
-  if (!implied) return "";
-  const unit = await findOrgUnit(await getDatabase(), input.tenantId, implied);
-  return unit ? implied : "";
+}): string {
+  return departmentInviteUnitId(input);
 }
 
 export async function GET() {
@@ -196,7 +192,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const inviteUnitId = await resolveInviteUnitId({
+    const inviteUnitId = resolveInviteUnitId({
       tenantId: ctx.tenantId,
       roleCode: newRoleCode,
       requestedUnitId: unitId,
@@ -239,7 +235,12 @@ export async function POST(request: Request) {
       displayName: invitation.displayName,
       token: invitation.token,
       expiresAt: invitation.expiresAt,
-      unitIds: invitation.unitAccess?.mode === "units" ? invitation.unitAccess.unitIds : undefined,
+      unitIds:
+        invitation.unitAccess?.mode === "units"
+          ? invitation.unitAccess.unitIds
+          : inviteUnitId
+            ? [inviteUnitId]
+            : undefined,
     });
     const emailSent = sent.ok;
     const deliveryError = sent.ok ? undefined : sent.error;

@@ -27,6 +27,21 @@ export function departmentUnitIdForRole(
 }
 
 /**
+ * Unidad que se guarda en la invitación y en el correo.
+ * La unidad pedida manda. Si no hay, se usa la del rol.
+ * No consulta la base: si la ficha no aparece, el correo igual nombra al departamento.
+ */
+export function departmentInviteUnitId(input: {
+  tenantId: string;
+  roleCode: string | null | undefined;
+  requestedUnitId?: string;
+}): string {
+  const requested = input.requestedUnitId?.trim() ?? "";
+  if (requested) return requested;
+  return departmentUnitIdForRole(input.tenantId, input.roleCode);
+}
+
+/**
  * Marca del departamento cuando la invitación es de esa unidad.
  * El Espacio completo, u otra unidad, no usa esta marca.
  */

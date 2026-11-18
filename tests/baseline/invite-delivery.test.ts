@@ -54,7 +54,7 @@ describe("entrega de invitaciones NELZURI", () => {
     assert.match(route, /emailSent/);
     assert.match(route, /deliveryError/);
     assert.match(route, /resolveInviteUnitId/);
-    assert.match(route, /departmentUnitIdForRole/);
+    assert.match(route, /departmentInviteUnitId/);
     const resend = readFileSync(
       resolve(process.cwd(), "src/lib/identity/resend-access.ts"),
       "utf8"
