@@ -1,48 +1,118 @@
-﻿### Task 2: Lectura por Espacio
+﻿### Task 2: `replaceGrowthFunnelStages` + apply SEM en memoria
 
 **Files:**
-- Create: `src/lib/growth/conversion-analytics-read.ts`
-- Test: `tests/baseline/growth-conversion-analytics.test.ts` (guarda de fuente; la funciÃ³n pura ya cubre el cÃ¡lculo)
+- Modify: `src/core/growth/funnels.ts` — exportar `replaceGrowthFunnelStages` y `applySemAdmisionDefaultFunnel`
+- Modify: `tests/baseline/sem-admision-funnel.test.ts` — casos con `createMemoryFunnelDirectory`
 
 **Interfaces:**
-- Consumes: `buildConversionAnalytics` y sus tipos de entrada. `getDatabase` (`src/lib/mongodb.ts`). Colecciones `GROWTH_OPORTUNIDADES_COLLECTION`, `GROWTH_ACTIVIDADES_COLLECTION`, `GROWTH_FUNNELS_COLLECTION`, `GROWTH_CAMPAIGNS_COLLECTION`. `listMembershipsByTenant`, `listUsersByIds`. `resolveAnalyticsPeriod`. `getExperienceFormById`, el mismo uso que `resolveFormNames` en `analytics-read.ts`.
-- Produces: `getConversionAnalytics(tenantId: string, query: ResolveAnalyticsPeriodInput): Promise<{ ok: true; data: ConversionAnalyticsResponse } | { ok: false; error: string; status: 400 }>`.
+- Consumes: `writeStages` (interno), `ensureGrowthFunnelsForTenant`, `renameGrowthFunnel`, `semAdmisionStages`, `isSemAdmisionStages`, `SEM_ADMISION_FUNNEL_NAME`, `GROWTH_FUNNEL_DEFAULT_KEY`
+- Produces:
+  - `replaceGrowthFunnelStages(directory, { tenantId, funnelKey, stages, now? })`
+  - `applySemAdmisionDefaultFunnel(directory, tenantId, now?): Promise<{ funnel; stages; changed: boolean }>`
 
-- [ ] **Step 1: Write the failing source guard**
+- [ ] **Step 1: Write the failing test**
 
-En el test de fase 3, leer `conversion-analytics-read.ts` y afirmar: filtra `tenantId`; kinds limitados a `opportunity_opened`, `opportunity_transitioned`, `opportunity_assigned`; no contiene `insert`, `update`, `delete`, `aggregate` de escritura, `029`, `lossReason`, ni `deriveCampaignMetrics`. Afirmar que `analytics-read.ts` y `analytics-aggregate.ts` no importan `conversion-analytics`.
+Añadir al mismo archivo de test:
+
+```ts
+import { createMemoryFunnelDirectory } from "../../src/core/growth/funnel-memory";
+import { ensureGrowthFunnelsForTenant } from "../../src/core/growth/funnels";
+import { applySemAdmisionDefaultFunnel } from "../../src/core/growth/funnels";
+import { SEM_TENANT_ID } from "../../src/core/tenant/constants";
+import { stagesFromDefinition } from "../../src/core/growth/funnel-stages";
+
+it("applySemAdmisionDefaultFunnel renombra default y deja etapas SEM; segunda pasada no cambia", async () => {
+  const directory = createMemoryFunnelDirectory();
+  await ensureGrowthFunnelsForTenant(directory, SEM_TENANT_ID, "2026-11-09T00:00:00.000Z");
+  const first = await applySemAdmisionDefaultFunnel(directory, SEM_TENANT_ID, "2026-11-09T01:00:00.000Z");
+  assert.equal(first.changed, true);
+  assert.equal(first.funnel.name, "Admisión");
+  assert.equal(isSemAdmisionStages(first.stages), true);
+
+  const second = await applySemAdmisionDefaultFunnel(directory, SEM_TENANT_ID, "2026-11-09T02:00:00.000Z");
+  assert.equal(second.changed, false);
+  const def = await directory.getDefinition(SEM_TENANT_ID, first.funnel.workflowDefinitionKey);
+  assert.equal(isSemAdmisionStages(stagesFromDefinition(def)), true);
+});
+```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
-
-Expected: FAIL al leer un archivo que no existe.
+Run: `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`  
+Expected: FAIL (`applySemAdmisionDefaultFunnel` / `replaceGrowthFunnelStages` missing)
 
 - [ ] **Step 3: Write minimal implementation**
 
-`conversion-analytics-read.ts` con `import "server-only"`. Si `resolveAnalyticsPeriod` falla, devolver `{ ok: false, error, status: 400 }`. Si no:
+En `funnels.ts`, exportar:
 
-1. `find` de oportunidades `{ tenantId }`.
-2. `find` de actividades `{ tenantId, kind: { $in: ["opportunity_opened", "opportunity_transitioned", "opportunity_assigned"] } }`. El historial anterior al perÃ­odo hace falta para permanencia y atribuciÃ³n; no recortar por `occurredAt` en Mongo.
-3. `find` de embudos y campaÃ±as `{ tenantId }`.
-4. MembresÃ­as del Espacio de cualquier estado. `active: membership.status === "active"`. Label: `displayName` o email. La vigencia la resuelve el nÃºcleo puro.
-5. Nombres de formulario solo para los `origin.formId` de esas oportunidades.
-6. `readAt = new Date().toISOString()` y llamar a `buildConversionAnalytics`. Proyectar al tipo de entrada; no pasar el documento crudo de mÃ¡s.
+```ts
+export async function replaceGrowthFunnelStages(
+  directory: GrowthFunnelDirectory,
+  input: {
+    tenantId: string;
+    funnelKey: string;
+    stages: GrowthFunnelStage[];
+    now?: string;
+  }
+): Promise<{ ok: true; stages: GrowthFunnelStage[] } | { ok: false; reason: GrowthFunnelFailure }> {
+  const funnel = await directory.findFunnel(input.tenantId, input.funnelKey);
+  if (!funnel || funnel.tenantId !== input.tenantId) return { ok: false, reason: "not_found" };
+  const definition = await writeStages(directory, funnel, input.stages, nowIso(input.now));
+  return { ok: true, stages: stagesFromDefinition(definition) };
+}
 
-No crear colecciÃ³n ni Ã­ndice.
+export async function applySemAdmisionDefaultFunnel(
+  directory: GrowthFunnelDirectory,
+  tenantId: string,
+  now?: string
+): Promise<{ funnel: GrowthFunnel; stages: GrowthFunnelStage[]; changed: boolean }> {
+  const at = nowIso(now);
+  const funnel = await ensureGrowthFunnelsForTenant(directory, tenantId, at);
+  let current = funnel;
+  let changed = false;
+  if (current.name !== SEM_ADMISION_FUNNEL_NAME) {
+    const renamed = await renameGrowthFunnel(directory, {
+      tenantId,
+      key: current.key,
+      name: SEM_ADMISION_FUNNEL_NAME,
+      now: at,
+    });
+    if (renamed.ok) {
+      current = renamed.funnel;
+      changed = true;
+    }
+  }
+  const existing = stagesFromDefinition(
+    await directory.getDefinition(tenantId, current.workflowDefinitionKey)
+  );
+  if (isSemAdmisionStages(existing)) {
+    return { funnel: current, stages: existing, changed };
+  }
+  const replaced = await replaceGrowthFunnelStages(directory, {
+    tenantId,
+    funnelKey: current.key,
+    stages: semAdmisionStages(),
+    now: at,
+  });
+  if (!replaced.ok) {
+    return { funnel: current, stages: existing, changed };
+  }
+  return { funnel: current, stages: replaced.stages, changed: true };
+}
+```
+
+Importar `SEM_ADMISION_FUNNEL_NAME`, `semAdmisionStages`, `isSemAdmisionStages` desde `./sem-admision-funnel`.
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx tsx --test tests/baseline/growth-conversion-analytics.test.ts`
-
-Expected: PASS.
+Run: `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`  
+Expected: PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/growth/conversion-analytics-read.ts tests/baseline/growth-conversion-analytics.test.ts
-git commit -m "feat: leer analÃ­tica de conversiÃ³n del Espacio sin materializarla"
+git add src/core/growth/funnels.ts tests/baseline/sem-admision-funnel.test.ts
+git commit -m "feat(growth): apply embudo Admisión SEM sobre funnel default"
 ```
 
 ---
-

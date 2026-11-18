@@ -1,41 +1,24 @@
-# Laboral RRHH editorial SDD
+﻿# SEM Admisión cola Ventas SDD
 
-Started: 2026-10-02
-Branch: feat/sitio-en-codigo
-Plan: docs/superpowers/plans/2026-10-02-cumple-laboral-rrhh-editorial.md
+Started: 2026-11-09
+Branch: feat/sem-admision-cola-ventas
+Plan: docs/superpowers/plans/2026-11-09-sem-admision-cola-ventas.md
+Base: 12ac89c
+Worktree: C:\Users\semip\Proyectos\portal-sem\.worktrees\sem-admision-cola-ventas
 
+Task 1: complete (commits 12ac89c..b023db1, review clean)
 
-Task 1: complete (uncommitted tests, review clean)
+Task 2: complete (commits b023db1..ed0d606, review clean)
 
-Task 2: complete (uncommitted materias.ts, review clean, visual OK)
+Task 3: complete (commits ed0d606..7ac62a4, review clean)
 
-Final review: Ready to merge this feature (Minor: more legal-guardrail asserts optional)
-All tasks complete.
+Task 4: complete (commits 7ac62a4..5439e89, review clean)
+Minors for final: Task4 sort test no same-band/null-key edge cases
 
-Finish choice: 3 keep branch as-is
+Task 5: complete (commits 5439e89..69f020d, review clean)
 
+Task 6: complete (commits 69f020d..c2f175f + barrel chore, review clean)
 
-# Conversion Engine fase 3 SDD
+Task 7: complete (focused 25/25 pass; baseline smoke unrelated fails; migrate/manual NOT RUN)
 
-Started: 2026-10-19
-Branch: feat/branding-admin-wip
-Plan: docs/superpowers/plans/2026-10-19-conversion-engine-fase-3.md
-Base: 9fd0967a3eb4d80ca4ea4de957d9b807ff0b9993
-
-Task 1: complete (commits 9fd0967..37696a0, review clean)
-
-Minors for final review:
-- Extra incomplete-history causes beyond the spec list
-- Quality buckets sinFechaApertura/sinFechaCierre/historialIncompleto are all-time, not period-scoped
-- Cohort excludes result statuses without closedAt
-- Funnel labels are the funnel key (input type has no name)
-- Stage rows sorted by count/label, not funnel stage order
-- ISO string compare can misorder mixed timestamp formats
-- First membership row wins if duplicates; empty active label becomes no vigente
-- Quality test asserts 3 of 6 buckets; no boundary tests
-- Loss exit rows keyed funnelKey:fromState
-Task 2: complete (commits 37696a0..ad31623, review clean)
-
-Task 3: complete (commits ad31623..f3549ce, review clean after fixes)
-Final review: Ready
-
+Final review: Needs work → fixed Important (cola open-only + unknown→interes+log) in 202ade3; Minor dueAt deferred; column empty label fixed
