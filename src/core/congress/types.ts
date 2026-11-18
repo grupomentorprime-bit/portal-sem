@@ -60,6 +60,8 @@ export interface CongressRegistration {
   attendanceHistory?: CongressAttendanceHistoryEntry[];
   /** Cargo en CLP; null si no hay persona identificada. */
   chargeAmountClp: number | null;
+  /** Historial de exención / restauración de cargo. */
+  chargeHistory?: CongressChargeHistoryEntry[];
   allocatedPaidClp: number;
   needsReview: boolean;
   version: number;
@@ -75,6 +77,17 @@ export interface CongressAttendanceHistoryEntry {
   nextPresent: boolean | null;
   previousMarkedAt: string | null;
   reason: string | null;
+  at: string;
+  actorUserId: string;
+}
+
+export type CongressChargeHistoryAction = "exempt" | "restore";
+
+export interface CongressChargeHistoryEntry {
+  action: CongressChargeHistoryAction;
+  previousChargeAmountClp: number | null;
+  nextChargeAmountClp: number | null;
+  reason: string;
   at: string;
   actorUserId: string;
 }

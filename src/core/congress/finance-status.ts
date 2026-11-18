@@ -28,3 +28,10 @@ export function deriveContributionStatus(
 export function contributionStatusHasBalance(status: ContributionStatus): boolean {
   return status === "pending" || status === "partial" || status === "needs_verification";
 }
+
+/** Pago grupal: seleccionable si queda saldo de cargo. */
+export function isGroupPaymentSelectable(
+  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "needsReview">
+): boolean {
+  return remainingBalanceClp(reg) > 0;
+}

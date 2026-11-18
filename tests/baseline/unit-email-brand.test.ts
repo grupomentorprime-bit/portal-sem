@@ -38,7 +38,10 @@ describe("correo del departamento", () => {
       "IPN Chile",
       "Departamento Nacional de Varones"
     );
-    assert.equal(voice.subject, "Invitación — Departamento Nacional de Varones");
+    assert.equal(
+      voice.subject,
+      "Bienvenido a la plataforma del Departamento Nacional de Varones"
+    );
     assert.match(voice.lead, /Departamento Nacional de Varones/);
     assert.doesNotMatch(voice.lead, /Espacio/);
     assert.match(voice.preview, /Departamento Nacional de Varones/);

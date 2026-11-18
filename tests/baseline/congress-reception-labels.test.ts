@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { CONGRESS_CONTRIBUTION_CLP } from "../../src/core/congress/constants";
 import { labelExpectedDays } from "../../src/core/congress/expected-days";
-import { deriveContributionStatus } from "../../src/core/congress/finance-status";
+import {
+  deriveContributionStatus,
+  isGroupPaymentSelectable,
+} from "../../src/core/congress/finance-status";
 import {
   assertLodgingNeedAllowed,
   isLodgingPending,
@@ -44,6 +47,55 @@ describe("finance status", () => {
         needsReview: false,
       }),
       "no_charge"
+    );
+  });
+});
+
+describe("group payment selectable", () => {
+  const base = {
+    chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+    needsReview: false,
+  };
+
+  it("seleccionable si tiene saldo de cargo (pending, partial, verification con deuda)", () => {
+    assert.equal(
+      isGroupPaymentSelectable({ ...base, allocatedPaidClp: 0 }),
+      true
+    );
+    assert.equal(
+      isGroupPaymentSelectable({ ...base, allocatedPaidClp: 5000 }),
+      true
+    );
+    assert.equal(
+      isGroupPaymentSelectable({
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        allocatedPaidClp: 0,
+        needsReview: true,
+      }),
+      true
+    );
+    assert.equal(
+      isGroupPaymentSelectable({
+        ...base,
+        allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
+      }),
+      false
+    );
+    assert.equal(
+      isGroupPaymentSelectable({
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
+        needsReview: true,
+      }),
+      false
+    );
+    assert.equal(
+      isGroupPaymentSelectable({
+        chargeAmountClp: null,
+        allocatedPaidClp: 0,
+        needsReview: false,
+      }),
+      false
     );
   });
 });

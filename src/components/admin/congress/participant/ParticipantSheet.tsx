@@ -31,6 +31,7 @@ import {
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
 import { Checkbox } from "@/components/ui/checkbox";
+import { isExplicitlyExempt } from "@/core/congress/charge";
 import { remainingBalanceClp } from "@/core/congress/charges";
 import { todayPaidOnSantiago } from "@/core/congress/payment-dates";
 import { occupiedBedsForNight } from "@/core/congress/lodging";
@@ -71,6 +72,11 @@ type Props = {
     paidOn: string;
     receiptRef?: string;
   }) => Promise<void>;
+  onChargeChange: (input: {
+    registrationId: string;
+    action: "exempt" | "restore";
+    reason: string;
+  }) => Promise<void>;
   onAssignBed: (input: {
     registrationId: string;
     homeId: string;
@@ -104,6 +110,7 @@ export function ParticipantSheet({
   onPatchAttendance,
   onPatchRegistration,
   onIndividualPayment,
+  onChargeChange,
   onAssignBed,
   onAssignmentAction,
   busy,
@@ -114,6 +121,7 @@ export function ParticipantSheet({
   const [payMethod, setPayMethod] = useState<CongressPaymentMethod>("cash");
   const [paidOn, setPaidOn] = useState(todayPaidOnSantiago());
   const [receiptRef, setReceiptRef] = useState("");
+  const [chargeReason, setChargeReason] = useState("");
   const [homeId, setHomeId] = useState("");
   const [night, setNight] = useState<string>(NIGHT_BOTH);
   const [expectedPreset, setExpectedPreset] = useState<
@@ -127,6 +135,7 @@ export function ParticipantSheet({
     setPayMethod("cash");
     setPaidOn(todayPaidOnSantiago());
     setReceiptRef("");
+    setChargeReason("");
     setHomeId("");
     setNight(NIGHT_BOTH);
     setExpectedPreset(expectedPresetFromReg(registration));
@@ -510,6 +519,75 @@ export function ParticipantSheet({
                         Registrar pago
                       </Button>
                     </div>
+                  </div>
+                ) : null}
+                {operate ? (
+                  <div className="grid gap-2 rounded-md border border-border p-3">
+                    <p className="text-xs font-semibold uppercase text-muted">
+                      Exención de aporte
+                    </p>
+                    <Input
+                      label="Motivo"
+                      value={chargeReason}
+                      onChange={(e) => setChargeReason(e.target.value)}
+                      placeholder="Invitado, staff, cortesía…"
+                    />
+                    {registration.chargeAmountClp != null ? (
+                      registration.allocatedPaidClp > 0 ? (
+                        <p className="text-xs text-muted">
+                          Anule los pagos imputados antes de marcar exento.
+                        </p>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy || !chargeReason.trim()}
+                          onClick={() => {
+                            void onChargeChange({
+                              registrationId: registration._id,
+                              action: "exempt",
+                              reason: chargeReason.trim(),
+                            }).then(() => setChargeReason(""));
+                          }}
+                        >
+                          Marcar exento de pago
+                        </Button>
+                      )
+                    ) : null}
+                    {isExplicitlyExempt(registration) ? (
+                      <Button
+                        size="sm"
+                        disabled={busy || !chargeReason.trim()}
+                        onClick={() => {
+                          void onChargeChange({
+                            registrationId: registration._id,
+                            action: "restore",
+                            reason: chargeReason.trim(),
+                          }).then(() => setChargeReason(""));
+                        }}
+                      >
+                        Restaurar aporte {formatClp(CONGRESS_CONTRIBUTION_CLP)}
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+                {(registration.chargeHistory ?? []).length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase text-muted">
+                      Historial de cargo
+                    </p>
+                    <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-muted">
+                      {[...(registration.chargeHistory ?? [])]
+                        .slice()
+                        .reverse()
+                        .map((h, idx) => (
+                          <li key={`${h.at}-${idx}`}>
+                            {formatDateTimeSantiago(h.at)} ·{" "}
+                            {h.action === "exempt" ? "Exento" : "Restaurado"}
+                            {h.reason ? ` · ${h.reason}` : ""}
+                          </li>
+                        ))}
+                    </ul>
                   </div>
                 ) : null}
               </div>
