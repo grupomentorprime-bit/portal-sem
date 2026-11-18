@@ -41,11 +41,16 @@ import type {
   CongressRegistration,
 } from "@/core/congress/types";
 import {
+  contributionStatusLabel,
   formatClp,
   formatZoneLabel,
   registrationDisplayName,
   registrationRoleBadges,
 } from "@/components/admin/congress/labels";
+import {
+  deriveContributionStatus,
+  isGroupPaymentSelectable,
+} from "@/core/congress/finance-status";
 import {
   ReceptionView,
   type ReceptionQuickFilter,
@@ -536,15 +541,27 @@ export function CongressOpsPanel() {
     [groupChurch, groupZone, registrations]
   );
 
-  const groupAmount = groupSelected.length * CONGRESS_CONTRIBUTION_CLP;
+  const groupSelectableIds = useMemo(() => {
+    const set = new Set(
+      groupCandidates.filter(isGroupPaymentSelectable).map((r) => r._id)
+    );
+    return set;
+  }, [groupCandidates]);
+
+  const groupSelectedActive = useMemo(
+    () => groupSelected.filter((id) => groupSelectableIds.has(id)),
+    [groupSelected, groupSelectableIds]
+  );
+
+  const groupAmount = groupSelectedActive.length * CONGRESS_CONTRIBUTION_CLP;
 
   const groupPreview = useMemo(() => {
-    if (!groupAmount || groupSelected.length === 0) return [];
-    return groupSelected.map((id) => ({
+    if (!groupAmount || groupSelectedActive.length === 0) return [];
+    return groupSelectedActive.map((id) => ({
       registrationId: id,
       amountClp: CONGRESS_CONTRIBUTION_CLP,
     }));
-  }, [groupAmount, groupSelected]);
+  }, [groupAmount, groupSelectedActive]);
 
   const voidPayment = async (paymentId: string) => {
     if (voidReason.trim().length < 5) {
@@ -938,11 +955,11 @@ export function CongressOpsPanel() {
                   Monto total (CLP)
                 </p>
                 <p className="rounded-md border border-border bg-background-soft px-3 py-2 text-sm tabular-nums text-foreground">
-                  {groupSelected.length === 0 ? (
+                  {groupSelectedActive.length === 0 ? (
                     "Seleccione participantes…"
                   ) : (
                     <>
-                      {groupSelected.length} ×{" "}
+                      {groupSelectedActive.length} ×{" "}
                       {formatClp(CONGRESS_CONTRIBUTION_CLP)} ={" "}
                       <span className="font-bold">
                         {formatClp(groupAmount)}
@@ -974,23 +991,43 @@ export function CongressOpsPanel() {
               />
               <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-border p-2">
                 {groupCandidates.map((r) => {
-                  const checked = groupSelected.includes(r._id);
+                  const selectable = isGroupPaymentSelectable(r);
+                  const checked = selectable && groupSelected.includes(r._id);
                   const roles = registrationRoleBadges(r);
+                  const status = deriveContributionStatus(r);
                   return (
-                    <label key={r._id} className="flex items-center gap-2 text-sm">
+                    <label
+                      key={r._id}
+                      className={`flex items-center gap-2 text-sm ${
+                        selectable ? "" : "text-muted"
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={checked}
-                        onChange={() =>
+                        disabled={!selectable}
+                        onChange={() => {
+                          if (!selectable) return;
                           setGroupSelected((prev) =>
-                            checked ? prev.filter((id) => id !== r._id) : [...prev, r._id]
-                          )
-                        }
+                            checked
+                              ? prev.filter((id) => id !== r._id)
+                              : [...prev, r._id]
+                          );
+                        }}
                       />
                       <span>
                         {registrationDisplayName(r)}
                         {roles.length ? (
-                          <span className="text-xs text-muted"> · {roles.join(" · ")}</span>
+                          <span className="text-xs text-muted">
+                            {" "}
+                            · {roles.join(" · ")}
+                          </span>
+                        ) : null}
+                        {!selectable ? (
+                          <span className="text-xs text-muted">
+                            {" "}
+                            · {contributionStatusLabel(status, r)}
+                          </span>
                         ) : null}
                       </span>
                     </label>
