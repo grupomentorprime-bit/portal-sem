@@ -182,7 +182,11 @@ export function LoginForm({
             <Button type="submit" loading={recoverLoading} disabled={recoverLoading}>
               Enviar enlace
             </Button>
-            {recoverMessage ? <p className="login-unavailable">{recoverMessage}</p> : null}
+            {recoverMessage ? (
+              <p className="login-unavailable" role="status">
+                {recoverMessage}
+              </p>
+            ) : null}
             {recoverError ? <p className="login-error">{recoverError}</p> : null}
           </form>
         ) : null}
