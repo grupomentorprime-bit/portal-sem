@@ -8,6 +8,7 @@ import {
   renderSteps,
   renderTransactionalEmail,
 } from "@/lib/notifications/email-layout";
+import { INVITATION_TTL_MINUTES } from "@/lib/identity/invitations";
 import { GROWTH_LOGIN_PATH } from "@/lib/identity/login-route";
 import {
   emailAbsoluteUrl,
@@ -41,6 +42,14 @@ export interface InvitationEmailInput {
   unitIds?: string[];
 }
 
+function invitationValidityLabel(): string {
+  const hours = INVITATION_TTL_MINUTES / 60;
+  if (Number.isInteger(hours) && hours >= 1) {
+    return hours === 1 ? "1 hora" : `${hours} horas`;
+  }
+  return `${INVITATION_TTL_MINUTES} minutos`;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -68,9 +77,10 @@ export function renderInvitationEmail(input: {
     timeStyle: "short",
   });
   const keycloakOnly = isKeycloakOnlyAuth();
+  const validityWindow = invitationValidityLabel();
   const validityNote = keycloakOnly
     ? `El enlace es válido hasta <strong>${escapeHtml(expiresLabel)}</strong>.`
-    : `El enlace es válido hasta <strong>${escapeHtml(expiresLabel)}</strong> (15 minutos).`;
+    : `El enlace es válido hasta <strong>${escapeHtml(expiresLabel)}</strong> (${validityWindow}).`;
 
   const bodyHtml = `
     <p style="margin:0 0 16px;">
@@ -106,7 +116,7 @@ export function renderInvitationEmail(input: {
       ? input.departmentName
         ? "Si no reconoces esta invitación, contacta a quien administra el departamento."
         : "Si no reconoces esta invitación, contacta a quien administra el Espacio."
-      : "Este enlace expira en 15 minutos por seguridad.",
+      : `Este enlace expira en ${validityWindow} por seguridad.`,
   });
 
   return {

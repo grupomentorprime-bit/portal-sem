@@ -6,8 +6,16 @@ import type { IdentityInvitation } from "@/types/identity";
 import { generateId, generateToken } from "@/core/identity/auth/crypto";
 import { normalizeEmail } from "@/lib/validation/identity";
 
-export const INVITATION_TTL_MINUTES = 30;
-export const INVITATION_TTL_MAX_MINUTES = 30;
+/** El enlace para crear contraseña no caduca antes de 12 horas. */
+export const INVITATION_TTL_MINUTES = 12 * 60;
+export const INVITATION_TTL_MAX_MINUTES = 12 * 60;
+
+export function invitationTtlMinutes(requested?: number): number {
+  const floor = INVITATION_TTL_MINUTES;
+  const ceiling = Math.max(INVITATION_TTL_MAX_MINUTES, floor);
+  const value = requested ?? floor;
+  return Math.min(Math.max(value, floor), ceiling);
+}
 
 export async function createInvitation(input: {
   tenantId: string;
@@ -29,10 +37,7 @@ export async function createInvitation(input: {
   }
 
   const now = new Date().toISOString();
-  const ttlMinutes = Math.min(
-    input.expiresInMinutes ?? INVITATION_TTL_MINUTES,
-    INVITATION_TTL_MAX_MINUTES
-  );
+  const ttlMinutes = invitationTtlMinutes(input.expiresInMinutes);
   const expires = new Date();
   expires.setMinutes(expires.getMinutes() + ttlMinutes);
 
@@ -174,7 +179,7 @@ export async function renewInvitationToken(
 ): Promise<IdentityInvitation | null> {
   const db = await getDatabase();
   const expires = new Date();
-  expires.setMinutes(expires.getMinutes() + INVITATION_TTL_MINUTES);
+  expires.setMinutes(expires.getMinutes() + invitationTtlMinutes());
 
   return db.collection<IdentityInvitation>("identity_invitations").findOneAndUpdate(
     { _id: invitationId, tenantId, status: "pending" },

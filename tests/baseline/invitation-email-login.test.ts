@@ -27,5 +27,6 @@ describe("invitation email login copy", () => {
     assert.match(html, /Crear mi contraseña/);
     assert.match(html, new RegExp(`${identity.origin}${GROWTH_LOGIN_PATH}`));
     assert.match(html, /Entra en/i);
+    assert.doesNotMatch(html, /15 minutos/);
   });
 });
