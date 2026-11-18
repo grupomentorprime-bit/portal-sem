@@ -40,6 +40,18 @@ describe("OT-GROWTH-TEST-001 — gate admin sin sesión", () => {
     assert.equal(res.status, 200);
   });
 
+  it("redirige /escritorio a /login cuando no hay cookie", () => {
+    const res = proxy(makeRequest("/escritorio"));
+    assert.equal(res.status, 307);
+    assert.equal(new URL(res.headers.get("location")!).pathname, "/login");
+    assert.equal(new URL(res.headers.get("location")!).searchParams.get("next"), "/escritorio");
+  });
+
+  it("permite /escritorio con cookie de sesión", () => {
+    const res = proxy(makeRequest("/escritorio", `${SESSION_COOKIE}=sess-test`));
+    assert.equal(res.status, 200);
+  });
+
   it("no exige sesión en rutas públicas del portal del Espacio", () => {
     const tenantOrigin = "http://seminario-ipn.localhost:3000";
     for (const path of ["/", "/programas", "/admision", "/formularios", "/contacto"]) {
@@ -93,6 +105,8 @@ describe("Host de plataforma — entrada Growth OS", () => {
       const programas = proxy(makeRequest("/programas", undefined, platformOrigin));
       assert.equal(programas.status, 307);
       assert.equal(new URL(programas.headers.get("location")!).pathname, "/");
+      const desk = proxy(makeRequest("/escritorio", `${SESSION_COOKIE}=sess-test`, platformOrigin));
+      assert.equal(desk.status, 200);
     });
   });
 

@@ -1,3 +1,5 @@
+import type { UnitAccess } from "@/core/units/types";
+
 /** Identity & Access Management — Growth OS */
 
 export const USER_STATUSES = ["active", "suspended", "pending"] as const;
@@ -26,6 +28,15 @@ export interface IdentityUser {
   emailVerified: boolean;
   displayName: string;
   photoMediaId?: string;
+  avatarPresetId?: string;
+  avatarPhoto?: boolean;
+  avatarPhotoUpdatedAt?: string;
+  desktopWallpaper?: "mar" | "valle" | "volcan" | "kepler" | "noche" | "custom";
+  /** Hay una imagen propia guardada, aunque el fondo activo sea del catálogo. */
+  desktopWallpaperCustom?: boolean;
+  desktopWallpaperUpdatedAt?: string;
+  /** Iconos sueltos en la mesa. Ausente: todavía no los acomodó. */
+  desktopLayout?: { appId: string; x: number; y: number }[];
   jobTitle?: string;
   phone?: string;
   timezone?: string;
@@ -66,8 +77,19 @@ export interface IdentityMembership {
   userId: string;
   roleIds: string[];
   status: MembershipStatus;
+  /**
+   * Llaves de aplicación en este Espacio (`growth-os` | `cumple` | `aprende-hoy` | `rrhh`).
+   * Solo cuentan las que también están en el plan del Espacio. Ausente = legado (todo el techo)
+   * hasta la migración; lista vacía = ninguna llave.
+   */
+  authorizedApps?: Array<"growth-os" | "cumple" | "aprende-hoy" | "rrhh">;
   /** Formularios y generaciones asignados (rol Asuntos Estudiantiles). */
   studentAffairsScope?: StudentAffairsScope;
+  /**
+   * Alcance dentro del Espacio. Ausente = todo el Espacio (clientes sin unidades).
+   * `tenant` = administración central. `units` = solo esas unidades.
+   */
+  unitAccess?: UnitAccess;
   /** Overrides granulares OT-IAM-002 — equivalente a user_permissions */
   permissionOverrides?: Record<string, boolean>;
   joinedAt: string;
@@ -99,6 +121,11 @@ export interface IdentitySession {
    * Vacío cuando la cuenta no tiene membresías activas (“sin espacio”).
    */
   tenantId: string;
+  /**
+   * Ausente = escritorio / Growth OS.
+   * `cumple` solo reconoce el host de Cumple y no abre el escritorio ni el admin.
+   */
+  audience?: "desk" | "cumple";
   ip?: string;
   userAgent?: string;
   createdAt: string;
@@ -126,6 +153,10 @@ export interface IdentityInvitation {
   email: string;
   displayName: string;
   roleIds: string[];
+  /** Llaves a copiar en la membresía al aceptar (solo dentro del techo). */
+  authorizedApps?: Array<"growth-os" | "cumple" | "aprende-hoy" | "rrhh">;
+  /** Si viene, al aceptar se autoriza ese alcance. Ausente = membresía del Espacio completo. */
+  unitAccess?: UnitAccess;
   token: string;
   status: InvitationStatus;
   invitedBy: string;

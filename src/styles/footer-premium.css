@@ -423,6 +423,18 @@
   color: color-mix(in srgb, var(--text-inverse) 22%, transparent);
 }
 
+.footer-premium__credits .public-vendor-credit__link,
+.portal-footer-premium__credits .public-vendor-credit__link {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.footer-premium__credits .public-vendor-credit__link:hover,
+.portal-footer-premium__credits .public-vendor-credit__link:hover {
+  text-decoration: underline;
+}
+
 .portal-footer-premium--v2 .footer-premium__admin-link {
   font-size: 0.625rem;
   letter-spacing: 0.04em;

@@ -71,6 +71,8 @@ export interface MediaUsageRef {
 export interface CmsMediaAsset {
   _id: string;
   tenant: string;
+  /** Unidad interna dueña del archivo. Ausente = documento del Espacio. */
+  unitId?: string;
   filename: string;
   originalName: string;
   extension: string;
@@ -132,6 +134,7 @@ export type CmsMediaUpdate = Partial<
     | "visibility"
     | "originalName"
     | "favorite"
+    | "unitId"
   >
 >;
 
@@ -149,6 +152,8 @@ export interface MediaListQuery {
   favorite?: boolean;
   /** Filtrar por uso activo */
   usageFilter?: "inUse" | "noUse";
+  /** Si viene, solo documentos de esas unidades. Ausente = todo el Espacio. */
+  unitIds?: string[];
   page?: number;
   limit?: number;
 }

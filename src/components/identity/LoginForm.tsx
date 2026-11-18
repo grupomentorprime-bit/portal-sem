@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useThresholdOnAuthenticated } from "@/components/identity/ThresholdLogin";
 import { Button, Input } from "@/components/ui";
 
 /**
@@ -21,21 +22,24 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState(errorMessage ?? "");
   const [loading, setLoading] = useState(false);
+  const [showAccessHelp, setShowAccessHelp] = useState(false);
+  const [recoverEmail, setRecoverEmail] = useState("");
+  const [recoverMessage, setRecoverMessage] = useState("");
+  const [recoverError, setRecoverError] = useState("");
+  const [recoverLoading, setRecoverLoading] = useState(false);
+  const onAuthenticated = useThresholdOnAuthenticated();
 
   if (!authReady) {
     return (
       <div className="space-y-4 text-center">
-        <p className="text-sm text-muted">
+        <p className="login-unavailable">
           El servicio de autenticación no está disponible. Contacta al administrador del Espacio.
         </p>
-        <p className="text-center text-xs text-muted">
-          <Link
-            href="/"
-            className="font-medium text-[var(--growth-os-primary)] underline-offset-2 hover:underline"
-          >
-            Volver a Growth OS
+        <div className="login-actions">
+          <Link href="/" className="login-back">
+            Volver
           </Link>
-        </p>
+        </div>
       </div>
     );
   }
@@ -58,6 +62,8 @@ export function LoginForm({
         ok?: boolean;
         error?: string;
         redirectTo?: string;
+        thresholdLine?: string;
+        thresholdArrival?: boolean;
       };
       if (!data.ok) {
         setError(data.error ?? "No se pudo iniciar sesión.");
@@ -67,6 +73,14 @@ export function LoginForm({
         data.redirectTo && data.redirectTo.startsWith("/") && !data.redirectTo.startsWith("//")
           ? data.redirectTo
           : "/admin";
+      if (onAuthenticated) {
+        await onAuthenticated({
+          redirectTo: destination,
+          thresholdLine: data.thresholdLine,
+          thresholdArrival: data.thresholdArrival,
+        });
+        return;
+      }
       window.location.assign(destination);
     } catch {
       setError("No se pudo conectar con el servidor.");
@@ -75,41 +89,108 @@ export function LoginForm({
     }
   }
 
+  async function onRequestAccessLink(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRecoverError("");
+    setRecoverMessage("");
+    setRecoverLoading(true);
+    try {
+      const res = await fetch("/api/identity/access/request-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recoverEmail.trim() }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) {
+        setRecoverError(data.error ?? "No se pudo enviar el enlace.");
+        return;
+      }
+      setRecoverMessage(
+        data.message ??
+          "Si el correo está registrado, enviamos un enlace para crear o renovar tu clave."
+      );
+    } catch {
+      setRecoverError("No se pudo conectar con el servidor.");
+    } finally {
+      setRecoverLoading(false);
+    }
+  }
+
+  function openAccessHelp() {
+    setShowAccessHelp((open) => {
+      const nextOpen = !open;
+      if (nextOpen && !recoverEmail.trim() && username.includes("@")) {
+        setRecoverEmail(username.trim());
+      }
+      return nextOpen;
+    });
+  }
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      {error ? <p className="text-sm text-[var(--color-danger)]">{error}</p> : null}
+    <div className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
+        {error ? <p className="login-error">{error}</p> : null}
 
-      <Input
-        label="Usuario"
-        name="username"
-        type="text"
-        autoComplete="username"
-        value={username}
-        onChange={(event) => setUsername(event.target.value)}
-        required
-      />
-      <Input
-        label="Contraseña"
-        name="password"
-        type="password"
-        autoComplete="current-password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        required
-      />
+        <Input
+          label="Nombre de usuario"
+          name="username"
+          type="text"
+          autoComplete="username"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          required
+        />
+        <Input
+          label="Contraseña"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+        />
 
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Ingresando…" : "Ingresar"}
-      </Button>
+        <div className="login-actions">
+          <Button type="submit" loading={loading} disabled={loading} className="login-submit">
+            Iniciar sesión
+          </Button>
+          <Link href="/" className="login-back">
+            Volver
+          </Link>
+        </div>
+      </form>
 
-      <p className="pt-1 text-center text-xs text-muted">
-        <Link
-          href="/"
-          className="font-medium text-[var(--growth-os-primary)] underline-offset-2 hover:underline"
-        >
-          Volver a Growth OS
-        </Link>
-      </p>
-    </form>
+      <div className="space-y-2 pt-2">
+        <button type="button" className="login-back" onClick={openAccessHelp}>
+          ¿No tienes o perdiste tu clave?
+        </button>
+        {showAccessHelp ? (
+          <form onSubmit={onRequestAccessLink} className="space-y-3">
+            <Input
+              label="Correo"
+              name="recover-email"
+              type="email"
+              autoComplete="email"
+              value={recoverEmail}
+              onChange={(event) => setRecoverEmail(event.target.value)}
+              required
+            />
+            <Button type="submit" loading={recoverLoading} disabled={recoverLoading}>
+              Enviar enlace
+            </Button>
+            {recoverMessage ? (
+              <p className="login-unavailable" role="status">
+                {recoverMessage}
+              </p>
+            ) : null}
+            {recoverError ? <p className="login-error">{recoverError}</p> : null}
+          </form>
+        ) : null}
+      </div>
+    </div>
   );
 }

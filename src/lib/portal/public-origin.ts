@@ -5,6 +5,7 @@ import {
   SEM_SITE_ID,
   SEM_TENANT_ID,
   findDefaultSiteForTenant,
+  findDomainsBySiteId,
   findPrimaryDomainBySiteId,
   resolveSpacePreviewOrigin,
   resolveSpacePublishedOrigin,
@@ -52,10 +53,14 @@ export async function resolvePublishedOriginForTenant(
     site?._id ||
     (trimmed === SEM_TENANT_ID ? SEM_SITE_ID : trimmed);
 
-  const primary = await findPrimaryDomainBySiteId(db, siteId);
+  const domains = await findDomainsBySiteId(db, siteId);
   const slug = site?.slug?.trim() || siteId;
   return resolveSpacePublishedOrigin({
     slug,
-    primaryHost: primary?.host,
+    hosts: domains.map((domain) => ({
+      host: domain.host,
+      isPrimary: domain.isPrimary,
+      kind: domain.kind,
+    })),
   });
 }

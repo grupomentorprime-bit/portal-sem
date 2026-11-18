@@ -44,5 +44,14 @@ yarn-error.log*
 /public/media/*
 !/public/media/.gitkeep
 /data/media/
+/data/desktop-wallpapers/
+/data/desktop-avatars/
 
 .worktrees/
+
+# local SDD / superpowers artifacts (do not version)
+/.superpowers/
+
+# Local secrets / scratch
+tmp-creds.txt
+tmp-*.txt

@@ -10,6 +10,7 @@ import {
 } from "@/lib/platform/space-labels";
 import { PlatformSpacesCatalog } from "@/components/platform/PlatformSpacesCatalog";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+import { GrowthOsWelcomeBand } from "@/components/product/GrowthOsWelcomeBand";
 import { resolvePlatformBaseDomain } from "@/core/tenant/hosts";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { cn } from "@/lib/utils";
@@ -51,30 +52,6 @@ const METRIC_ITEMS = [
   },
 ];
 
-function HeroMountains() {
-  return (
-    <svg
-      className="pointer-events-none absolute inset-y-0 right-0 h-full w-[min(62%,680px)]"
-      viewBox="0 0 680 220"
-      preserveAspectRatio="xMaxYMid slice"
-      aria-hidden
-    >
-      <path
-        d="M40 168c70-48 130-28 190-62 54-30 96-18 150-46 48-25 96-8 150 6 40 10 90-6 150-28v182H40V168Z"
-        fill="var(--gray-200)"
-      />
-      <path
-        d="M120 188c62-36 118-52 176-36 58 16 96-22 156-40 52-16 96 8 148-10 28-10 52-8 80-18v136H120V188Z"
-        fill="color-mix(in srgb, var(--gray-200) 80%, var(--growth-os-secondary))"
-      />
-      <path
-        d="M250 196c48-28 96-16 140-40 46-25 88-8 140-22 42-12 78 6 150-8v94H250V196Z"
-        fill="var(--gray-100)"
-      />
-    </svg>
-  );
-}
-
 /**
  * Inicio de Platform Admin — resumen y catálogo de Espacios.
  * Solo datos reales del catálogo; sin tendencias inventadas.
@@ -93,22 +70,17 @@ export default async function PlatformHomePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="relative overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-white">
-        <HeroMountains />
-        <div className="relative z-10 flex min-h-[132px] items-center justify-between gap-6 px-5 py-5 sm:px-7">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--growth-os-secondary)]">
-              {PLATFORM_DISPLAY_NAME}
-            </p>
-            <h1 className="mt-1.5 text-[1.65rem] font-bold leading-none tracking-[-0.03em] text-[var(--gray-900)] sm:text-[1.85rem]">
-              {greeting}, {firstName}{" "}
-              <span aria-hidden>👋</span>
-            </h1>
-            <p className="mt-2 text-[14px] text-[var(--gray-500)]">
-              Organizaciones que forman un mejor futuro.
-            </p>
-          </div>
-          <blockquote className="hidden max-w-[15rem] shrink-0 text-right lg:block">
+      <GrowthOsWelcomeBand
+        eyebrow={PLATFORM_DISPLAY_NAME}
+        title={
+          <>
+            {greeting}, {firstName} <span aria-hidden>👋</span>
+          </>
+        }
+        subtitle="Organizaciones que forman un mejor futuro."
+        asideClassName="hidden max-w-[15rem] text-right lg:block"
+        aside={
+          <blockquote>
             <p className="text-[13px] leading-snug text-[var(--gray-500)]">
               “Más organizaciones.
               <br />
@@ -118,8 +90,8 @@ export default async function PlatformHomePage() {
               — {PLATFORM_DISPLAY_NAME}
             </footer>
           </blockquote>
-        </div>
-      </section>
+        }
+      />
 
       <section aria-label="Resumen de plataforma">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -4,11 +4,15 @@
 
 :root {
   --btn-font-weight: 600;
-  --btn-transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
-    border-color var(--motion-duration-fast) var(--motion-ease-standard),
-    color var(--motion-duration-fast) var(--motion-ease-standard),
-    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
-    transform var(--motion-duration-fast) var(--motion-ease-standard);
+  --btn-transition: background-color 260ms var(--motion-ease-soft, var(--motion-ease-standard)),
+    border-color 260ms var(--motion-ease-soft, var(--motion-ease-standard)),
+    color 260ms var(--motion-ease-soft, var(--motion-ease-standard)),
+    box-shadow var(--motion-press-out, 480ms) var(--motion-ease-soft, var(--motion-ease-standard)),
+    opacity 240ms var(--motion-ease-soft, var(--motion-ease-standard)),
+    filter 260ms var(--motion-ease-soft, var(--motion-ease-standard)),
+    transform var(--motion-press-out, 480ms) var(--motion-ease-soft, var(--motion-ease-standard)),
+    scale var(--motion-press-out, 480ms) var(--motion-ease-soft, var(--motion-ease-standard)),
+    translate var(--motion-press-out, 480ms) var(--motion-ease-soft, var(--motion-ease-standard));
 }
 
 /* Clase foundation */
@@ -47,8 +51,14 @@
 
 .btn-f-primary:hover:not(:disabled) {
   background: var(--color-secondary);
-  transform: translateY(-1px);
+  translate: 0 -1px;
   box-shadow: var(--shadow-md);
+}
+
+.btn-f:active:not(:disabled) {
+  scale: var(--motion-press-scale, 0.972);
+  translate: 0 1px;
+  transition-duration: var(--motion-press-in, 150ms);
 }
 
 .btn-f-outline {
@@ -67,6 +77,8 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+  scale: none;
+  translate: none;
 }
 
 .btn-f[aria-busy="true"] {

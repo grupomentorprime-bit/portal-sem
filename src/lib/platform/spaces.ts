@@ -34,6 +34,9 @@ import {
   labelTenantStatus,
   labelTenantType,
 } from "@/lib/platform/space-labels";
+import { resolveContractedApps } from "@/lib/desktop/contract";
+import { mongoAppRequestStore } from "@/lib/desktop/store";
+import type { MentorAppId } from "@/lib/desktop/catalog";
 
 export interface PlatformSpaceListItem {
   tenantId: string;
@@ -111,6 +114,13 @@ export interface PlatformSpaceDetail {
   logoUrl: string | null;
   coverUrl: string | null;
   tagline: string | null;
+  contractedApps: MentorAppId[];
+  aprendeHoyEntryUrl: string | null;
+  openAppRequests: Array<{
+    appId: MentorAppId;
+    requestedBy: string;
+    createdAt: string;
+  }>;
 }
 
 function asConfiguredText(value: unknown): string | null {
@@ -248,6 +258,19 @@ async function buildListItem(tenant: TenantDocument): Promise<PlatformSpaceListI
 }
 
 /**
+ * Nombres de Espacio para armar listas de cuentas.
+ * Una sola lectura de tenants: sin sitio, dominio, miembros ni media.
+ */
+export async function listPlatformSpaceNames(): Promise<{ tenantId: string; name: string }[]> {
+  const db = await getDatabase();
+  const tenants = await listTenants(db);
+  return tenants.map((tenant) => ({
+    tenantId: tenant.tenantId,
+    name: tenant.name?.trim() || PLATFORM_SPACE_FALLBACK,
+  }));
+}
+
+/**
  * Catálogo global de Espacios para operadores de Growth OS.
  * No usa membresías del caller ni el listado de Espacios de la cuenta.
  */
@@ -301,6 +324,13 @@ export async function getPlatformSpaceDetail(
     findRoleByCode(tenant.tenantId, ROLE_CODES.SUPER_ADMIN),
     findRoleByCode(tenant.tenantId, ROLE_CODES.INSTITUTION_ADMIN),
   ]);
+  const openAppRequests = (await mongoAppRequestStore().listOpen(tenant.tenantId)).map(
+    (row) => ({
+      appId: row.appId,
+      requestedBy: row.requestedBy,
+      createdAt: row.createdAt,
+    })
+  );
 
   const scopedMemberships = memberships.filter(
     (membership) => membership.tenantId === tenant.tenantId
@@ -406,5 +436,11 @@ export async function getPlatformSpaceDetail(
       siteConfig && siteConfig.tenantId === tenant.tenantId
         ? readTagline(siteConfig.institution)
         : null,
+    contractedApps: resolveContractedApps({
+      tenantId: tenant.tenantId,
+      contractedApps: tenant.contractedApps,
+    }),
+    aprendeHoyEntryUrl: tenant.aprendeHoyEntryUrl ?? null,
+    openAppRequests,
   };
 }

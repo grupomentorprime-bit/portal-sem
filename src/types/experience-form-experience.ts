@@ -58,6 +58,11 @@ export interface FormExperienceHero {
   motivational?: string;
   mediaId?: string;
   mediaUrl?: string;
+  /**
+   * banner: la imagen se muestra completa, con su proporción, sin recorte
+   * ni texto superpuesto. El titular queda solo para el documento y lectores de pantalla.
+   */
+  mediaPresentation?: "banner";
   videoMediaId?: string;
   overlayOpacity: number;
   height: "compact" | "default" | "tall";

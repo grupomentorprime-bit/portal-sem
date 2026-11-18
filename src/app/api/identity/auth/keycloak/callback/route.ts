@@ -18,6 +18,7 @@ import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
 import { logServerError } from "@/core/security/redact";
 import { updateUserLastLogin } from "@/lib/identity/users";
 import { writeAudit } from "@/lib/identity/audit";
+import { DESK_ENTERED_COOKIE } from "@/lib/desktop/catalog";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
 import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
 import {
@@ -41,6 +42,7 @@ function redirectTo(request: Request, path: string): NextResponse {
   response.cookies.set(STATE_COOKIE, "", clear);
   response.cookies.set(PKCE_COOKIE, "", clear);
   response.cookies.set(NEXT_COOKIE, "", clear);
+  response.cookies.set(DESK_ENTERED_COOKIE, "", { path: "/", maxAge: 0, sameSite: "lax" });
   return response;
 }
 

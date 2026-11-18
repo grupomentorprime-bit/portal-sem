@@ -184,10 +184,11 @@ export function PlatformSpacesKanban({
                   <div className="mt-3 flex items-center gap-1.5">
                     <Link
                       href={`/platform/spaces/${encodeURIComponent(space.tenantId)}`}
-                      className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-[var(--color-border-default)] bg-white px-2.5 text-[12px] font-semibold text-[var(--growth-os-primary)] transition hover:border-[color-mix(in_srgb,var(--growth-os-secondary)_45%,var(--border))] hover:bg-[var(--gray-100)]"
+                      aria-label="Ver espacio"
+                      title="Ver espacio"
+                      className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-[9px] text-[var(--growth-os-primary)] transition hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,white)]"
                     >
-                      Ver espacio
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                      <ArrowRight className="h-[15px] w-[15px]" aria-hidden />
                     </Link>
                     <PlatformSpaceActionsMenu
                       tenantId={space.tenantId}

@@ -60,6 +60,7 @@ export {
   resolveSemBootstrapHostsFromEnv,
   resolveSpacePreviewOrigin,
   resolveSpacePublishedOrigin,
+  selectPublishedSpaceHost,
   shouldEnterPlatformHome,
 } from "./hosts";
 

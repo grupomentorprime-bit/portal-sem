@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, Crown, LogOut, Settings2, UserRound } from "lucide-react";
+import { ArrowRight, Crown, LogOut, Settings2, Sparkles, UserRound } from "lucide-react";
 import { Drawer } from "@/components/admin/kit/drawers/Drawer";
 import { NavIcon } from "@/components/admin/kit/navigation/NavIcon";
 import type { AdminShellContext } from "@/components/admin/kit/utils/types";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
-import { ProductMark } from "@/components/product";
 import type { AdminNavItem } from "@/lib/admin/institutional";
-import { filterAdminNavGroups } from "@/lib/admin/nav-access";
+import { filterAdminNavGroups, filterNavItem } from "@/lib/admin/nav-access";
 import {
   isNavGroupActive,
   isNavPlaceholder,
@@ -20,6 +19,7 @@ import {
   type AdminNavGroup,
 } from "@/lib/admin/nav-domains";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 import { cn } from "@/lib/utils";
 
 export interface AdminSidebarProps extends AdminShellContext {
@@ -49,24 +49,29 @@ function GrowthOsMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "relative flex h-9 w-9 shrink-0 items-end justify-center gap-[3px] overflow-hidden rounded-[12px] bg-[var(--growth-os-primary)] px-2 pb-2 pt-2.5",
+        "relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[var(--growth-os-primary)]",
         className
       )}
       aria-hidden
     >
-      <span className="h-2 w-[3px] rounded-sm bg-white/90" />
-      <span className="h-3.5 w-[3px] rounded-sm bg-white" />
-      <span className="h-2.5 w-[3px] rounded-sm bg-white/90" />
+      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-br-[12px] bg-[var(--growth-os-accent)]" />
+      <Sparkles className="relative h-4 w-4 text-white" strokeWidth={2.25} />
     </span>
   );
 }
 
-function SidebarBrand({ collapsed }: { collapsed: boolean }) {
+function SidebarBrand({
+  collapsed,
+  spaceName,
+}: {
+  collapsed: boolean;
+  spaceName: string;
+}) {
   return (
     <div
       className={cn(
         "flex shrink-0",
-        collapsed ? "items-center justify-center px-2 py-4" : "px-4 pb-2 pt-5"
+        collapsed ? "items-center justify-center px-2 py-4" : "px-3.5 pb-4 pt-4"
       )}
     >
       {collapsed ? (
@@ -79,7 +84,16 @@ function SidebarBrand({ collapsed }: { collapsed: boolean }) {
           className="inline-flex min-w-0 items-center gap-2.5 transition hover:opacity-90"
         >
           <GrowthOsMark />
-          <ProductMark size="md" className="min-w-0 [&_span]:text-white" />
+          <span className="min-w-0">
+            <span className="block truncate text-[15px] font-bold leading-tight tracking-[-0.03em] text-white">
+              {PLATFORM_DISPLAY_NAME}
+            </span>
+            {spaceName ? (
+              <span className="mt-0.5 block text-[11px] leading-snug text-[var(--growth-os-on-ink-muted)]">
+                {spaceName}
+              </span>
+            ) : null}
+          </span>
         </Link>
       )}
     </div>
@@ -115,28 +129,19 @@ function SidebarFooter({
   }
 
   return (
-    <div className="mt-auto flex shrink-0 flex-col gap-2.5 border-t border-[var(--sidebar-border)] px-3 py-3">
-      <Link
-        href="/admin/settings/team"
-        onClick={onNavigate}
-        className="flex items-center gap-2.5 rounded-[14px] border border-[var(--sidebar-border)] bg-[color-mix(in_srgb,white_6%,transparent)] px-2.5 py-2.5 transition hover:bg-[var(--sidebar-hover)]"
-      >
-        <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--color-warning)_22%,transparent)] text-[var(--color-warning)]"
-          aria-hidden
+    <div className="mt-auto px-2.5 pb-3 pt-2">
+      <div className="overflow-hidden rounded-2xl bg-[var(--growth-os-primary)] px-3.5 py-3.5">
+        <p className="text-[13px] font-semibold leading-snug text-white">{spaceLabel}</p>
+        <p className="mt-1 text-[12px] leading-snug text-white/75">Plan Pro</p>
+        <Link
+          href="/admin/settings/team"
+          onClick={onNavigate}
+          className="mt-3 inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-1 text-[12px] font-semibold text-white transition hover:bg-white/10"
         >
-          <Crown className="h-4 w-4" strokeWidth={2} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[12px] font-semibold leading-tight text-white">
-            {spaceLabel}
-          </span>
-          <span className="block truncate text-[11px] text-[var(--sidebar-fg-muted)]">
-            Plan Pro
-          </span>
-        </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-[var(--sidebar-fg-muted)]" aria-hidden />
-      </Link>
+          Equipo
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+      </div>
     </div>
   );
 }
@@ -225,7 +230,8 @@ function SidebarNav({
     ctx.permissions,
     ctx.compatMode,
     ctx.roleCodes,
-    ctx.navBadges
+    ctx.navBadges,
+    ctx.enabledAppIds
   );
   const groupsById = new Map(groups.map((group) => [group.id, group]));
 
@@ -244,6 +250,61 @@ function SidebarNav({
         return (
           <div key={zone.id} className="flex flex-col gap-0.5">
             {zoneGroups.map((group) => {
+              if (group.id === "sitio-web") {
+                return (
+                  <div key={group.id} className="flex flex-col gap-0.5">
+                    {group.items.map((item) => {
+                      const itemActive = isSidebarItemActive(pathname, item, searchParams);
+                      const childItems = (item.children ?? []).filter(
+                        (child) =>
+                          !isNavPlaceholder(child) &&
+                          filterNavItem(child, ctx.permissions, ctx.compatMode, ctx.roleCodes)
+                      );
+                      return (
+                        <div key={item.id ?? item.href ?? item.label} className="flex flex-col gap-0.5">
+                          <SidebarLink
+                            item={item}
+                            pathname={pathname}
+                            searchParams={searchParams}
+                            collapsed={collapsed}
+                            onNavigate={onNavigate}
+                            activeOverride={itemActive}
+                          />
+                          {itemActive && !collapsed && childItems.length > 0 ? (
+                            <div
+                              className="mb-1 ml-9 flex flex-col gap-0.5 border-l border-[var(--sidebar-border)] pl-2"
+                              role="group"
+                              aria-label={item.label}
+                            >
+                              {childItems.map((child) => {
+                                const childActive = isSidebarItemActive(pathname, child, searchParams);
+                                const href = child.href as string;
+                                return (
+                                  <Link
+                                    key={child.id ?? href}
+                                    href={href}
+                                    onClick={onNavigate}
+                                    aria-current={childActive ? "page" : undefined}
+                                    className={cn(
+                                      "rounded-[8px] px-2 py-1.5 text-[12px] font-medium transition-colors duration-150",
+                                      childActive
+                                        ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)]"
+                                        : "text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-hover)] hover:text-white"
+                                    )}
+                                  >
+                                    {child.label}
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
               const link = navGroupAsSidebarLink(group);
               if (!link) return null;
               return (
@@ -292,6 +353,7 @@ function SidebarProfileMenu({
   if (!user) return null;
 
   const label = user.displayName || user.email;
+  const shortLabel = firstNameFromDisplayName(label) || label;
   const role = user.roleLabel ?? "Colaborador";
 
   async function handleLogout() {
@@ -311,7 +373,7 @@ function SidebarProfileMenu({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        title={collapsed ? label : undefined}
+        title={label}
         aria-expanded={open}
         aria-haspopup="menu"
         className={cn(
@@ -322,7 +384,7 @@ function SidebarProfileMenu({
         <AdminUserAvatar name={label} size="sm" />
         {!collapsed ? (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[var(--gray-900)]">{label}</p>
+            <p className="truncate text-sm font-semibold text-[var(--gray-900)]">{shortLabel}</p>
             <p className="truncate text-xs text-[var(--gray-500)]">{role}</p>
           </div>
         ) : null}
@@ -381,6 +443,8 @@ export function AdminSidebar({
   onMobileClose,
   ...ctx
 }: AdminSidebarProps) {
+  const spaceName =
+    ctx.branding.institutionShortName?.trim() || ctx.branding.institutionName || "";
   const desktop = (
     <aside
       className={cn(
@@ -389,7 +453,7 @@ export function AdminSidebar({
       )}
       aria-label="Barra lateral"
     >
-      <SidebarBrand collapsed={collapsed} />
+      <SidebarBrand collapsed={collapsed} spaceName={spaceName} />
       <SidebarNav ctx={ctx} collapsed={collapsed} />
       <SidebarFooter
         branding={ctx.branding}
@@ -407,7 +471,7 @@ export function AdminSidebar({
       side="left"
       className="admin-shell-v2-drawer max-w-none sm:max-w-sm"
     >
-      <SidebarBrand collapsed={false} />
+      <SidebarBrand collapsed={false} spaceName={spaceName} />
       <SidebarNav ctx={ctx} collapsed={false} onNavigate={onMobileClose} />
       <SidebarFooter
         branding={ctx.branding}

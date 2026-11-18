@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, Dropdown } from "@/components/ui";
+import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 
 export interface AdminUserSummary {
   displayName: string;
@@ -37,15 +38,19 @@ export function AdminUserMenu({ user, compatMode }: AdminUserMenuProps) {
   }
 
   const label = user.displayName || user.email;
+  const shortLabel = firstNameFromDisplayName(label) || label;
 
   return (
     <Dropdown
       align="right"
       trigger={
-        <span className="flex items-center gap-2 rounded-lg px-2 py-1 transition hover:bg-background-muted">
+        <span
+          className="flex items-center gap-2 rounded-lg px-2 py-1 transition hover:bg-background-muted"
+          title={label}
+        >
           <Avatar name={label} size="sm" />
           <span className="hidden max-w-[10rem] truncate text-sm font-medium sm:inline">
-            {label}
+            {shortLabel}
           </span>
         </span>
       }

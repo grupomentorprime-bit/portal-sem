@@ -40,6 +40,15 @@ export function hasPlatformOperatorCapability(
   );
 }
 
+/** Solo el dueño del ecosistema. El operador de usuarios no hereda esta capacidad. */
+export function hasPlatformOwnerCapability(
+  user: PlatformCapabilityUser | null | undefined
+): boolean {
+  if (!user) return false;
+  if (user.status && user.status !== "active") return false;
+  return readPlatformRoles(user).includes(PLATFORM_ROLE_CODES.OWNER);
+}
+
 /**
  * Decisión deny-by-default, independiente del Espacio activo.
  * `membership` y `activeTenantId` se aceptan para que los tests prueben que se ignoran.

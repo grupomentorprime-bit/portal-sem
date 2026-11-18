@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { requirePlatformOperator } from "@/core/identity";
+import { hasPlatformOwnerCapability } from "@/core/identity/platform/capability";
+import { ensureClientCompany } from "@/lib/desktop/ensure-client-company";
 import {
   grantOperatorSpaceAccess,
+  grantOwnerSpaceAccess,
   PlatformEnterSpaceError,
 } from "@/lib/platform/enter-space";
 
@@ -10,9 +13,8 @@ interface RouteContext {
 }
 
 /**
- * Alta explícita de acceso acotado (rol Soporte) para el operador en el Espacio.
- * Deny-by-default vía requirePlatformOperator.
- * No crea Dueño / super_admin. No impersona.
+ * El superadministrador entra como dueño del Espacio.
+ * El operador entra como Soporte. No impersona.
  */
 export async function POST(_request: Request, context: RouteContext) {
   const ctx = await requirePlatformOperator();
@@ -20,20 +22,37 @@ export async function POST(_request: Request, context: RouteContext) {
 
   try {
     const { tenantId } = await context.params;
-    const result = await grantOperatorSpaceAccess({
-      tenantId: decodeURIComponent(tenantId),
-      operatorUserId: ctx.user._id,
-    });
+    const decoded = decodeURIComponent(tenantId);
+    const asOwner = hasPlatformOwnerCapability(ctx.user);
+    const result = asOwner
+      ? await grantOwnerSpaceAccess({
+          tenantId: decoded,
+          ownerUserId: ctx.user._id,
+        })
+      : await grantOperatorSpaceAccess({
+          tenantId: decoded,
+          operatorUserId: ctx.user._id,
+        });
+    if (asOwner) {
+      await ensureClientCompany({
+        tenantId: decoded,
+        userId: ctx.user._id,
+        email: ctx.user.email,
+        displayName: ctx.user.displayName,
+      });
+    }
 
     return NextResponse.json({
       ok: true,
       membershipId: result.membershipId,
       roleCode: result.roleCode,
-      roleLabel: "Soporte",
+      roleLabel: asOwner ? "Super administrador" : "Soporte",
       created: result.created,
       reactivated: result.reactivated,
       message: result.created
-        ? "Acceso de Soporte creado."
+        ? asOwner
+          ? "Entras como super administrador."
+          : "Acceso de Soporte creado."
         : result.reactivated
           ? "Acceso reactivado."
           : "Ya tenías acceso a este Espacio.",

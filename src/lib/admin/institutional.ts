@@ -27,6 +27,8 @@ export interface AdminNavItem {
   requiredRole?: string[];
   /** En el grupo activo, no aparece en la subnav horizontal (sí cuenta para match/activo). */
   subnavHidden?: boolean;
+  /** Segunda barra, visible solo cuando este ítem está activo. */
+  children?: AdminNavItem[];
 }
 
 /**
@@ -154,6 +156,8 @@ export const INSTITUTIONAL_ROLE_LABELS: Record<string, string> = {
   Admissions: "Admisiones",
   [ROLE_CODES.STUDENT_AFFAIRS]: "Asuntos Estudiantiles",
   "Student Affairs": "Asuntos Estudiantiles",
+  [ROLE_CODES.CONGRESS_OPERATOR]: "Operador Congreso Varones",
+  "Congress Operator": "Operador Congreso Varones",
   [ROLE_CODES.COMMUNICATIONS]: "Comunicaciones",
   Communications: "Comunicaciones",
   Editor: "Comunicaciones",
@@ -174,6 +178,7 @@ export const CMS_INVITE_ROLES = [
   { code: ROLE_CODES.SUPPORT, label: "Soporte" },
   { code: ROLE_CODES.ADMISSIONS, label: "Admisiones" },
   { code: ROLE_CODES.STUDENT_AFFAIRS, label: "Asuntos Estudiantiles" },
+  { code: ROLE_CODES.CONGRESS_OPERATOR, label: "Operador Congreso Varones" },
   { code: ROLE_CODES.COMMUNICATIONS, label: "Comunicaciones" },
   { code: ROLE_CODES.REVIEWER, label: "Revisor" },
   { code: ROLE_CODES.GUEST, label: "Consulta" },
@@ -190,6 +195,11 @@ export const CMS_USER_GROUPS = [
     id: "student-affairs",
     label: "Asuntos Estudiantiles",
     roleCodes: [ROLE_CODES.STUDENT_AFFAIRS],
+  },
+  {
+    id: "congress-operator",
+    label: "Congreso Varones",
+    roleCodes: [ROLE_CODES.CONGRESS_OPERATOR],
   },
   { id: "admissions", label: "Admisiones", roleCodes: [ROLE_CODES.ADMISSIONS] },
   { id: "guests", label: "Consulta", roleCodes: [ROLE_CODES.GUEST] },

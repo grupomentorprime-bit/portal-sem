@@ -146,7 +146,59 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.35rem;
+  gap: 2px;
+}
+
+.users-cms-icon-act {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  padding: 0;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.users-cms-icon-act svg {
+  width: 15px;
+  height: 15px;
+}
+
+.users-cms-icon-act:hover {
+  background: var(--gray-50);
+}
+
+.users-cms-icon-act:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.users-cms-icon-act--edit {
+  color: var(--color-accent);
+}
+
+.users-cms-icon-act--edit:hover,
+.users-cms-icon-act--edit.is-on {
+  background: var(--gray-100);
+}
+
+.users-cms-icon-act--send {
+  color: var(--sem-primary);
+}
+
+.users-cms-icon-act--send:hover {
+  background: var(--gray-100);
+}
+
+.users-cms-icon-act--remove {
+  color: var(--color-danger);
+}
+
+.users-cms-icon-act--remove:hover {
+  background: var(--state-danger-bg);
 }
 
 .users-cms-roles {

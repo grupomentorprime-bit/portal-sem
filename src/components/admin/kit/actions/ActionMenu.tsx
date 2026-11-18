@@ -4,11 +4,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MoreHorizontal } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 const menuItemClass = (destructive?: boolean) =>
   cn(
-    "block w-full px-3 py-2 text-left text-sm transition hover:bg-background-muted",
+    "block w-full whitespace-nowrap px-3 py-2 text-left text-sm transition hover:bg-background-muted",
     destructive ? "text-[var(--color-danger)]" : "text-foreground"
   );
 
@@ -18,30 +19,109 @@ export interface ActionMenuProps {
   align?: "start" | "end";
 }
 
-/** Menú de acciones compacto (⋯). */
+interface MenuPosition {
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+  maxHeight: number;
+}
+
+/**
+ * Menú de acciones (⋯). Se pinta en un portal con posición fija para que
+ * no lo recorten los contenedores con overflow de las tablas.
+ */
 export function ActionMenu({ label = "Acciones", children, align = "end" }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
-  const [openUp, setOpenUp] = useState(false);
+  const [position, setPosition] = useState<MenuPosition | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (ref.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
     }
     document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
-  function toggle() {
-    if (!open && ref.current) {
-      const trigger = ref.current.getBoundingClientRect();
-      const estimatedMenuHeight = 148;
-      const spaceBelow = window.innerHeight - trigger.bottom;
-      const spaceAbove = trigger.top;
-      setOpenUp(spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow);
+  useLayoutEffect(() => {
+    if (!open) {
+      setPosition(null);
+      return;
     }
-    setOpen((value) => !value);
-  }
+
+    function place() {
+      const trigger = ref.current?.querySelector("button");
+      const menuEl = menuRef.current;
+      if (!trigger || !menuEl) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const gap = 6;
+      const margin = 8;
+      const menuHeight = menuEl.scrollHeight;
+      const spaceBelow = window.innerHeight - rect.bottom - margin;
+      const spaceAbove = rect.top - margin;
+      const openUp = spaceBelow < menuHeight + gap && spaceAbove > spaceBelow;
+      const available = openUp ? spaceAbove : spaceBelow;
+
+      const next: MenuPosition = {
+        maxHeight: Math.max(120, available - gap),
+        ...(openUp
+          ? { bottom: window.innerHeight - rect.top + gap }
+          : { top: rect.bottom + gap }),
+      };
+
+      if (align === "end") {
+        next.right = Math.max(margin, window.innerWidth - rect.right);
+      } else {
+        next.left = Math.max(margin, rect.left);
+      }
+      setPosition(next);
+    }
+
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open, align, children]);
+
+  const menu =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={{
+              position: "fixed",
+              top: position?.top,
+              bottom: position?.bottom,
+              left: position?.left,
+              right: position?.right,
+              maxHeight: position?.maxHeight,
+              visibility: position ? "visible" : "hidden",
+            }}
+            className="z-[80] w-max min-w-[12rem] max-w-[min(20rem,calc(100vw-1rem))] overflow-y-auto rounded-lg border border-border bg-[var(--admin-surface,white)] py-1 shadow-[var(--shadow-lg)]"
+          >
+            <div className="flex flex-col" onClick={() => setOpen(false)}>
+              {children}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -51,24 +131,12 @@ export function ActionMenu({ label = "Acciones", children, align = "end" }: Acti
         size="sm"
         aria-label={label}
         aria-expanded={open}
-        onClick={toggle}
+        aria-haspopup="menu"
+        onClick={() => setOpen((value) => !value)}
       >
         <MoreHorizontal className="h-4 w-4" />
       </Button>
-      {open ? (
-        <div
-          className={cn(
-            "absolute z-50 min-w-[10rem] rounded-lg border border-border bg-background py-1 shadow-[var(--shadow-lg)]",
-            openUp ? "bottom-full mb-1" : "mt-1",
-            align === "end" ? "right-0" : "left-0"
-          )}
-          role="menu"
-        >
-          <div className="flex flex-col" onClick={() => setOpen(false)}>
-            {children}
-          </div>
-        </div>
-      ) : null}
+      {menu}
     </div>
   );
 }

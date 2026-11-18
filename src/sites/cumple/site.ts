@@ -15,6 +15,44 @@ export const cumpleSite: CodedSite = {
       path: "/",
       title: CUMPLE_SEO.title,
       navLabel: "Inicio",
+      slots: [
+        {
+          id: "hero.kicker",
+          label: "Antetítulo",
+          type: "text",
+          default: "Cumplimiento empresarial",
+        },
+        {
+          id: "hero.lead",
+          label: "Bajada",
+          type: "text",
+          multiline: true,
+          default:
+            "Mentor Cumple identifica sus obligaciones, detecta brechas y le ayuda a implementar, documentar y demostrar su cumplimiento.",
+        },
+        {
+          id: "hero.quote",
+          label: "Frase de la asesora",
+          type: "text",
+          default: "¡Antes de que sea urgente!",
+        },
+        {
+          id: "hero.image",
+          label: "Imagen principal",
+          type: "image",
+          default: {
+            src: "/hero-asesora.png",
+            alt: "Asesora de cumplimiento revisando el estado en una tablet",
+          },
+        },
+        {
+          id: "hero.animation",
+          label: "Animaciones de la portada",
+          type: "animation",
+          default: true,
+          description: "Si se apaga, la portada queda quieta.",
+        },
+      ],
     },
     {
       path: "/materias/ley-karin",

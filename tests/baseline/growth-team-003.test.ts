@@ -262,9 +262,10 @@ describe("OT-GROWTH-TEAM-IMPLEMENT-003 — fixtures Mongo (unicidad + multi-tena
     await client.connect();
     try {
       const db = client.db(dbName);
-      const memberships = db.collection("identity_memberships");
-      const users = db.collection("identity_users");
-      const sessions = db.collection("identity_sessions");
+      type StringIdDoc = { _id: string; [key: string]: unknown };
+      const memberships = db.collection<StringIdDoc>("identity_memberships");
+      const users = db.collection<StringIdDoc>("identity_users");
+      const sessions = db.collection<StringIdDoc>("identity_sessions");
 
       await memberships.deleteMany({ userId: FIX_USER });
       await users.deleteMany({ _id: FIX_USER });

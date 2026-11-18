@@ -75,6 +75,7 @@ const INFRASTRUCTURE_FILES = new Set([
 const CSS_INFRASTRUCTURE = new Set([
   "src/styles/design-tokens.css",
   "src/styles/tokens/admin-branding.css",
+  "src/styles/tokens/nelzuri.css",
 ]);
 
 /**
@@ -82,6 +83,7 @@ const CSS_INFRASTRUCTURE = new Set([
  * - emails HTML, SVG, confetti, error API (colores técnicamente inevitables)
  * - sitios públicos en código (`src/sites` + UI/CSS del espacio): identidad propia,
  *   no la paleta Master Growth OS (ver docs/design/BRANDING-SYSTEM.md)
+ * - escritorio Nelzuri: vidrio sobre el fondo, no la paleta del admin
  */
 const EXEMPT_PREFIXES = [
   "src/lib/notifications/",
@@ -91,6 +93,9 @@ const EXEMPT_PREFIXES = [
   "src/components/sites/",
   "src/styles/sites/",
   "src/sites/",
+  "src/components/desktop/",
+  "src/components/identity/ThresholdLogin.tsx",
+  "src/lib/desktop/catalog.ts",
 ];
 
 function isExemptFile(file: string): boolean {

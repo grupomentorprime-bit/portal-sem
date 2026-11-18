@@ -10,12 +10,15 @@ import type {
 } from "@/types/identity";
 import { SESSION_COOKIE, isSecureCookieFromHeaders } from "@/core/identity/auth/config";
 import { generateId } from "@/core/identity/auth/crypto";
+import { allowedCumpleBase } from "@/lib/connect/desk";
+import { growthSessionAllowed, isCumpleRequestHost } from "@/lib/connect/policy";
 
 export async function createSession(input: {
   userId: string;
   tenantId: string;
   ip?: string;
   userAgent?: string;
+  audience?: IdentitySession["audience"];
 }): Promise<IdentitySession> {
   const db = await getDatabase();
   const now = new Date().toISOString();
@@ -31,6 +34,7 @@ export async function createSession(input: {
     createdAt: now,
     expiresAt: expires.toISOString(),
     lastActivity: now,
+    ...(input.audience ? { audience: input.audience } : {}),
   };
 
   await db.collection<IdentitySession>("identity_sessions").insertOne(session);
@@ -133,6 +137,12 @@ export const loadSessionContext = cache(async (): Promise<{
 
   const session = await getSessionById(sessionId);
   if (!session) return null;
+
+  const headerBag = await headers();
+  const host = headerBag.get("x-forwarded-host") ?? headerBag.get("host");
+  const base = allowedCumpleBase();
+  const hostIsCumple = isCumpleRequestHost(host, base) || isCumpleRequestHost(host, null);
+  if (!growthSessionAllowed({ audience: session.audience, hostIsCumple })) return null;
 
   const db = await getDatabase();
   const user = await db.collection<IdentityUser>("identity_users").findOne({

@@ -89,6 +89,7 @@ export async function POST(_request: Request, context: RouteContext) {
         displayName: targetUser.displayName || targetUser.email,
         roleIds: membership.roleIds,
         invitedBy: ctx.user._id,
+        unitIds: membership.unitAccess?.mode === "units" ? membership.unitAccess.unitIds : undefined,
       }),
       {
         ok: false,

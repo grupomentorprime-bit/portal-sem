@@ -29,6 +29,8 @@ export interface TenantDocument {
   status: TenantStatus;
   type: TenantType;
   defaultSiteId: string;
+  contractedApps?: Array<"growth-os" | "cumple" | "aprende-hoy" | "rrhh">;
+  aprendeHoyEntryUrl?: string | null;
   organization?: string;
   website?: string;
   createdAt: string;

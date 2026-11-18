@@ -82,18 +82,23 @@
 .stagger-f > *:nth-child(5) { animation-delay: calc(var(--motion-stagger-step) * 4); }
 .stagger-f > *:nth-child(6) { animation-delay: calc(var(--motion-stagger-step) * 5); }
 
-/* Hover lift — bridge globals */
+/* Hover lift — se eleva con translate para no pisar transform de layout */
 .hover-lift {
-  transition: transform var(--motion-duration-fast) var(--motion-ease-standard),
-    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+  transition:
+    translate var(--motion-press-out, 480ms) var(--motion-ease-soft, var(--motion-ease-standard)),
+    scale var(--motion-press-out, 480ms) var(--motion-ease-soft, var(--motion-ease-standard)),
+    box-shadow var(--motion-press-out, 480ms) var(--motion-ease-soft, var(--motion-ease-standard)),
+    filter 260ms var(--motion-ease-soft, var(--motion-ease-standard));
 }
 
 .hover-lift:hover {
-  transform: translateY(-2px);
+  translate: 0 -2px;
 }
 
 .press-scale:active {
-  transform: scale(0.98);
+  scale: var(--motion-press-scale, 0.972);
+  translate: 0 1px;
+  transition-duration: var(--motion-press-in, 150ms);
 }
 
 .portal-home-experience [data-block]:not([data-block="hero"]) > .portal-home-x__reveal {
@@ -114,12 +119,19 @@
   animation: f-slide-up var(--motion-duration-normal) var(--motion-ease-enter) forwards;
 }
 
+.threshold-arrival[data-threshold-arrival="true"] > ul > li:first-child,
+.threshold-arrival[data-threshold-arrival="true"] > :not(ul) {
+  animation: f-slide-up var(--motion-duration-normal) var(--motion-ease-enter) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-f-fade-in,
   .animate-f-slide-up,
   .animate-f-scale-in,
   .animate-f-reveal,
   .animate-slide-up,
+  .threshold-arrival[data-threshold-arrival="true"] > ul > li:first-child,
+  .threshold-arrival[data-threshold-arrival="true"] > :not(ul),
   .portal-home-experience [data-block]:not([data-block="hero"]) > .portal-home-x__reveal {
     animation: none !important;
     opacity: 1 !important;
@@ -130,5 +142,7 @@
   .hover-lift:hover,
   .press-scale:active {
     transform: none;
+    scale: none;
+    translate: none;
   }
 }

@@ -20,15 +20,12 @@ import {
   Search,
   Settings,
   Trash2,
-  Users,
 } from "lucide-react";
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { AdminModuleCenter } from "@/components/admin/AdminModuleCenter";
-import { ConvocatoriaRosterPanel } from "@/components/admin/forms/ConvocatoriaRosterPanel";
 import { ExperienceFormFieldsEditor } from "@/components/admin/forms/ExperienceFormFieldsEditor";
 import { FormExperienceEditor } from "@/components/admin/forms/FormExperienceEditor";
 import { FormSimpleVisualEditor } from "@/components/admin/forms/FormSimpleVisualEditor";
-import { FormSubmissionsPanel } from "@/components/admin/forms/FormSubmissionsPanel";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { spacePublicHref, useSpacePublicOrigin } from "@/components/admin/SpacePublicOrigin";
 import { Button } from "@/components/ui/button";
@@ -45,7 +42,7 @@ import {
 } from "@/lib/admin/forms-center";
 import type { ExperienceFormDefinition } from "@/types/experience-forms";
 
-type PrimaryTabId = "formulario" | "respuestas" | "participantes" | "mas";
+type PrimaryTabId = "formulario" | "mas";
 
 type MoreSectionId =
   | "presentacion"
@@ -56,8 +53,6 @@ type MoreSectionId =
 
 const PRIMARY_HELP: Record<PrimaryTabId, string> = {
   formulario: "Así se verá para quien responde. Ajusta título, texto y preguntas.",
-  respuestas: "Quién respondió y qué contestó.",
-  participantes: "Lista de alumnos convocados (Excel o uno a uno).",
   mas: "Presentación, apariencia y ajustes poco frecuentes.",
 };
 
@@ -77,12 +72,7 @@ interface FormDetailClientProps {
   publishedFormHref?: string | null;
 }
 
-function resolvePrimaryTab(
-  raw: string | null,
-  hasConvocatoria: boolean
-): PrimaryTabId {
-  if (raw === "respuestas" && !hasConvocatoria) return "respuestas";
-  if (raw === "participantes" && hasConvocatoria) return "participantes";
+function resolvePrimaryTab(raw: string | null): PrimaryTabId {
   if (
     raw === "mas" ||
     raw === "experiencia" ||
@@ -93,10 +83,7 @@ function resolvePrimaryTab(
   ) {
     return "mas";
   }
-  // formulario | editor | campos (legacy) → editor visual principal
-  if (raw === "formulario" || raw === "editor" || raw === "campos") return "formulario";
-  // Default: editor for normal forms; participantes for convocatoria operations.
-  return hasConvocatoria ? "participantes" : "formulario";
+  return "formulario";
 }
 
 function resolveMoreSection(raw: string | null): MoreSectionId {
@@ -118,9 +105,7 @@ export function FormDetailClient({
   const searchParams = useSearchParams();
   const publicOrigin = useSpacePublicOrigin();
   const initialTabParam = searchParams.get("tab");
-  const [tab, setTab] = useState<PrimaryTabId>(() =>
-    resolvePrimaryTab(initialTabParam, Boolean(convocatoria))
-  );
+  const [tab, setTab] = useState<PrimaryTabId>(() => resolvePrimaryTab(initialTabParam));
   const [moreSection, setMoreSection] = useState<MoreSectionId>(() =>
     resolveMoreSection(initialTabParam)
   );
@@ -300,9 +285,7 @@ export function FormDetailClient({
   const isPublished = form.active && (isPrivate || form.visible);
   const summary = form.description?.trim()
     ? form.description
-    : convocatoria
-      ? "Nómina de alumnos, preguntas y publicación."
-      : "Edita las preguntas y publícalo cuando esté listo.";
+    : "Edita las preguntas y publícalo cuando esté listo.";
   const questionLabel = `${form.fields.length} ${form.fields.length === 1 ? "pregunta" : "preguntas"}`;
 
   const openMore = (section: MoreSectionId) => {
@@ -359,6 +342,15 @@ export function FormDetailClient({
                 Vista previa
               </Button>
             ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              className="admin-form-detail__btn"
+              href={`/admin/portal/forms/panel/${encodeURIComponent(form._id)}`}
+            >
+              <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
+              Ver respuestas
+            </Button>
             {isArchived ? (
               <>
                 <Button
@@ -470,24 +462,6 @@ export function FormDetailClient({
         <div className="admin-form-detail__workspace">
         <nav className="admin-form-detail__tabs" aria-label="Secciones del formulario">
           <TabButton active={tab === "formulario"} icon={FileText} onClick={() => setTab("formulario")}>Formulario</TabButton>
-          {!convocatoria ? (
-            <TabButton
-              active={tab === "respuestas"}
-              icon={ClipboardList}
-              onClick={() => setTab("respuestas")}
-            >
-              Respuestas
-            </TabButton>
-          ) : null}
-          {convocatoria ? (
-            <TabButton
-              active={tab === "participantes"}
-              icon={Users}
-              onClick={() => setTab("participantes")}
-            >
-              Participantes
-            </TabButton>
-          ) : null}
           <TabButton active={tab === "mas"} icon={MoreHorizontal} onClick={() => setTab("mas")}>
             Más opciones
           </TabButton>
@@ -533,14 +507,6 @@ export function FormDetailClient({
             onDescriptionChange={(description) => setForm({ ...form, description })}
             onFieldsChange={(fields) => setForm({ ...form, fields })}
           />
-        ) : null}
-
-        {tab === "respuestas" && !convocatoria ? (
-          <FormSubmissionsPanel formId={form._id} />
-        ) : null}
-
-        {tab === "participantes" && convocatoria ? (
-          <ConvocatoriaRosterPanel convocatoriaSlug={convocatoria.slug} />
         ) : null}
 
         {tab === "mas" ? (

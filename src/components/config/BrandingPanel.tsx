@@ -4,7 +4,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { ColorPicker } from "@/components/config/ColorPicker";
 import { HeroPortalPanel } from "@/components/config/HeroPortalPanel";
 import { HomeHeroPhotosField } from "@/components/config/HomeHeroPhotosField";
-import { LogoUploader, FaviconUploader } from "@/components/config/ImageUploader";
+import { FaviconUploader, HeroUploader, LogoUploader } from "@/components/config/ImageUploader";
 import { isSemTenant } from "@/core/tenant/is-sem";
 import type { Branding } from "@/types/cms";
 import type { HeroPortalConfig } from "@/types/hero-portal";
@@ -15,6 +15,8 @@ interface BrandingPanelProps {
   heroPortal: HeroPortalConfig;
   onHeroPortalChange: (value: HeroPortalConfig) => void;
   tenant: string;
+  /** false: solo logo, favicon y colores (Marca NELZURI). */
+  includePortalHero?: boolean;
 }
 
 export function BrandingPanel({
@@ -23,6 +25,7 @@ export function BrandingPanel({
   heroPortal,
   onHeroPortalChange,
   tenant,
+  includePortalHero = true,
 }: BrandingPanelProps) {
   const update = <K extends keyof Branding>(key: K, fieldValue: Branding[K]) => {
     onChange({ ...value, [key]: fieldValue });
@@ -30,7 +33,7 @@ export function BrandingPanel({
 
   return (
     <div className="space-y-6">
-      {isSemTenant(tenant) ? (
+      {includePortalHero && isSemTenant(tenant) ? (
         <Card>
           <CardHeader>
             <CardTitle>Fotografías del inicio</CardTitle>
@@ -49,28 +52,50 @@ export function BrandingPanel({
       <Card>
         <CardHeader>
           <CardTitle>Identidad visual</CardTitle>
-          <CardDescription>Logotipos y favicon del portal.</CardDescription>
+          <CardDescription>
+            {includePortalHero
+              ? "Logotipos y favicon del portal."
+              : "Logotipos y favicon de la organización."}
+          </CardDescription>
         </CardHeader>
         <div className="space-y-6">
           <LogoUploader
             value={value.logoMediaId ?? ""}
             onChange={(v) => update("logoMediaId", v)}
             tenant={tenant}
+            description={
+              includePortalHero
+                ? "Logo principal del portal. Se recomienda formato PNG con fondo transparente."
+                : "Logo principal de la organización. Se recomienda formato PNG con fondo transparente."
+            }
           />
           <FaviconUploader
             value={value.faviconMediaId ?? ""}
             onChange={(v) => update("faviconMediaId", v)}
             tenant={tenant}
           />
+          {includePortalHero ? (
+            <HeroUploader
+              value={value.heroMediaId ?? ""}
+              onChange={(v) => update("heroMediaId", v)}
+              tenant={tenant}
+            />
+          ) : null}
         </div>
       </Card>
 
-      <HeroPortalPanel value={heroPortal} onChange={onHeroPortalChange} tenant={tenant} />
+      {includePortalHero ? (
+        <HeroPortalPanel value={heroPortal} onChange={onHeroPortalChange} tenant={tenant} />
+      ) : null}
 
       <Card>
         <CardHeader>
           <CardTitle>Paleta de colores</CardTitle>
-          <CardDescription>Colores institucionales aplicados al portal.</CardDescription>
+          <CardDescription>
+            {includePortalHero
+              ? "Colores institucionales aplicados al portal."
+              : "Colores institucionales de la organización."}
+          </CardDescription>
         </CardHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           <ColorPicker

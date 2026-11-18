@@ -1,11 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { MoreVertical } from "lucide-react";
-import { Button, Dropdown, Input, Modal } from "@/components/ui";
+import { useState, type ReactNode } from "react";
+import {
+  Archive,
+  CircleOff,
+  Pause,
+  Play,
+  Trash2,
+} from "lucide-react";
+import { Button, Input, Modal } from "@/components/ui";
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
 import { isProtectedPlatformSpace } from "@/lib/platform/delete-space-client";
+import { cn } from "@/lib/utils";
 import type { TenantStatus } from "@/core/tenant/types";
 
 type PendingAction =
@@ -17,24 +24,32 @@ const STATUS_ACTIONS: Array<{
   label: string;
   title: string;
   description: string;
+  icon: ReactNode;
+  tone: string;
 }> = [
   {
     status: "active",
     label: "Activar",
     title: "Activar Espacio",
     description: "El portal vuelve a publicarse con el dominio de este Espacio.",
+    icon: <Play className="h-[15px] w-[15px]" aria-hidden />,
+    tone: "text-success hover:bg-success/10",
   },
   {
     status: "inactive",
     label: "Desactivar",
     title: "Desactivar Espacio",
     description: "El portal deja de publicarse. Puedes activarlo de nuevo.",
+    icon: <CircleOff className="h-[15px] w-[15px]" aria-hidden />,
+    tone: "text-muted hover:bg-muted/10",
   },
   {
     status: "suspended",
     label: "Suspender",
     title: "Suspender Espacio",
     description: "El portal queda en mantenimiento hasta que lo actives.",
+    icon: <Pause className="h-[15px] w-[15px]" aria-hidden />,
+    tone: "text-warning hover:bg-warning/10",
   },
   {
     status: "archived",
@@ -42,8 +57,13 @@ const STATUS_ACTIONS: Array<{
     title: "Archivar Espacio",
     description:
       "El portal deja de publicarse. El Espacio sigue en el catálogo para reactivarlo.",
+    icon: <Archive className="h-[15px] w-[15px]" aria-hidden />,
+    tone: "text-accent hover:bg-accent/10",
   },
 ];
+
+const iconBtn =
+  "inline-flex h-[30px] w-[30px] items-center justify-center rounded-[9px] transition disabled:cursor-default disabled:opacity-45";
 
 export function PlatformSpaceActionsMenu({
   tenantId,
@@ -131,41 +151,43 @@ export function PlatformSpaceActionsMenu({
     (action) => pending?.kind === "status" && action.status === pending.status
   );
 
-  const items = [
-    ...STATUS_ACTIONS.filter((action) => action.status !== status).map(
-      (action) => ({
-        label: action.label,
-        onClick: () =>
-          setPending({
-            kind: "status",
-            status: action.status,
-            title: action.title,
-            description: action.description,
-          }),
-      })
-    ),
-    {
-      label: "Eliminar",
-      danger: true,
-      disabled: protectedSpace,
-      onClick: () => setPending({ kind: "delete" }),
-    },
-  ];
-
   return (
     <>
-      <Dropdown
-        align="right"
-        trigger={
-          <span
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border-default)] bg-white text-[var(--gray-700)] transition hover:bg-[var(--gray-100)]"
-            aria-label={`Controles de ${spaceName}`}
+      <div
+        className="inline-flex items-center gap-0.5"
+        aria-label={`Controles de ${spaceName}`}
+      >
+        {STATUS_ACTIONS.filter((action) => action.status !== status).map((action) => (
+          <button
+            key={action.status}
+            type="button"
+            className={cn(iconBtn, action.tone)}
+            aria-label={action.label}
+            title={action.label}
+            disabled={submitting}
+            onClick={() =>
+              setPending({
+                kind: "status",
+                status: action.status,
+                title: action.title,
+                description: action.description,
+              })
+            }
           >
-            <MoreVertical className="h-4 w-4" aria-hidden />
-          </span>
-        }
-        items={items}
-      />
+            {action.icon}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={cn(iconBtn, "text-danger hover:bg-danger/10")}
+          aria-label="Eliminar"
+          title={protectedSpace ? "Espacio protegido" : "Eliminar"}
+          disabled={submitting || protectedSpace}
+          onClick={() => setPending({ kind: "delete" })}
+        >
+          <Trash2 className="h-[15px] w-[15px]" aria-hidden />
+        </button>
+      </div>
 
       <Modal
         open={pending?.kind === "status"}

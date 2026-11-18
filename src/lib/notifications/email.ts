@@ -1,5 +1,7 @@
 import "server-only";
 
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { logServerError } from "@/core/security/redact";
 import { isKeycloakOnlyAuth } from "@/core/identity/auth/config";
 import {
@@ -12,10 +14,20 @@ import {
   type EmailIdentity,
 } from "@/lib/notifications/identity";
 import { resolveEmailIdentityForTenant } from "@/lib/notifications/resolve-identity";
+import { publicTransactionalEmailError } from "@/lib/notifications/email-errors";
+import {
+  accessEmailVoice,
+  departmentEmailBrand,
+  ensureDepartmentLogo,
+  invitationEmailVoice,
+  recoveryEmailVoice,
+  type DepartmentEmailBrand,
+} from "@/lib/notifications/email-brand";
 import {
   formatFromHeader,
   getResendClient,
-  getTechnicalMailbox,
+  resolveSendingMailbox,
+  serializeResendAttachments,
 } from "@/lib/notifications/transport";
 
 export type { EmailIdentity } from "@/lib/notifications/identity";
@@ -26,6 +38,7 @@ export interface InvitationEmailInput {
   displayName: string;
   token: string;
   expiresAt: string;
+  unitIds?: string[];
 }
 
 function escapeHtml(value: string): string {
@@ -41,12 +54,15 @@ export function renderInvitationEmail(input: {
   displayName: string;
   token: string;
   expiresAt: string;
+  departmentName?: string;
+  logoSrc?: string;
 }): { subject: string; html: string } {
-  const institution = input.identity.displayName;
+  const voice = invitationEmailVoice(input.identity.displayName, input.departmentName);
   const inviteUrl = emailAbsoluteUrl(
     input.identity,
     `/invite/${encodeURIComponent(input.token)}`
   );
+  const loginUrl = emailAbsoluteUrl(input.identity, GROWTH_LOGIN_PATH);
   const expiresLabel = new Date(input.expiresAt).toLocaleString("es-CL", {
     dateStyle: "short",
     timeStyle: "short",
@@ -58,7 +74,10 @@ export function renderInvitationEmail(input: {
 
   const bodyHtml = `
     <p style="margin:0 0 16px;">
-      Te invitaron a administrar el Espacio <strong>${escapeHtml(institution)}</strong>.
+      ${escapeHtml(voice.lead).replace(
+        escapeHtml(voice.label),
+        `<strong>${escapeHtml(voice.label)}</strong>`
+      )}
     </p>
     <p style="margin:0 0 16px;">
       Crea tu contraseña con el enlace siguiente. ${validityNote}
@@ -66,25 +85,32 @@ export function renderInvitationEmail(input: {
     ${renderSteps([
       "Abre el enlace de invitación.",
       "Define tu contraseña de acceso.",
-      "Entra al centro de administración con tu correo y la contraseña que creaste.",
+      `Entra en ${loginUrl} con tu correo y la contraseña que creaste.`,
     ])}
+    <p style="margin:16px 0 0;">
+      Acceso al sistema (login):
+      <a href="${escapeHtml(loginUrl)}" style="color:inherit;font-weight:600;">${escapeHtml(loginUrl)}</a>
+    </p>
   `;
 
   const html = renderTransactionalEmail({
-    institutionName: institution,
-    previewText: `Crea tu contraseña para acceder a ${institution}.`,
+    institutionName: voice.label,
+    logoSrc: input.logoSrc,
+    previewText: voice.preview,
     headline: "Completa tu acceso",
     greeting: `Hola, ${input.displayName}`,
     bodyHtml,
     ctaLabel: "Crear mi contraseña",
     ctaUrl: inviteUrl,
     footerNote: keycloakOnly
-      ? "Si no reconoces esta invitación, contacta a quien administra el Espacio."
+      ? input.departmentName
+        ? "Si no reconoces esta invitación, contacta a quien administra el departamento."
+        : "Si no reconoces esta invitación, contacta a quien administra el Espacio."
       : "Este enlace expira en 15 minutos por seguridad.",
   });
 
   return {
-    subject: `Invitación — ${institution}`,
+    subject: voice.subject,
     html,
   };
 }
@@ -94,13 +120,18 @@ export function renderAccessReminderEmail(input: {
   identity: EmailIdentity;
   displayName: string;
   email: string;
+  departmentName?: string;
+  logoSrc?: string;
 }): { subject: string; html: string } {
-  const institution = input.identity.displayName;
+  const voice = accessEmailVoice(input.identity.displayName, input.departmentName);
   const loginUrl = emailAbsoluteUrl(input.identity, GROWTH_LOGIN_PATH);
 
   const bodyHtml = `
     <p style="margin:0 0 16px;">
-      Te reenviamos el acceso al Espacio <strong>${escapeHtml(institution)}</strong>.
+      ${escapeHtml(voice.lead).replace(
+        escapeHtml(voice.label),
+        `<strong>${escapeHtml(voice.label)}</strong>`
+      )}
     </p>
     <p style="margin:0 0 16px;">
       Entra con el correo <strong>${escapeHtml(input.email)}</strong> y la contraseña que ya definiste.
@@ -108,23 +139,28 @@ export function renderAccessReminderEmail(input: {
     ${renderSteps([
       "Abre el enlace de acceso.",
       "Inicia sesión con tu correo.",
-      "Entra al centro de administración de este Espacio.",
+      input.departmentName
+        ? "Entra al centro de administración del departamento."
+        : "Entra al centro de administración de este Espacio.",
     ])}
   `;
 
   const html = renderTransactionalEmail({
-    institutionName: institution,
-    previewText: `Tu acceso a ${institution}.`,
+    institutionName: voice.label,
+    logoSrc: input.logoSrc,
+    previewText: voice.preview,
     headline: "Tu acceso",
     greeting: `Hola, ${input.displayName}`,
     bodyHtml,
-    ctaLabel: "Entrar al Espacio",
+    ctaLabel: input.departmentName ? "Entrar al departamento" : "Entrar al Espacio",
     ctaUrl: loginUrl,
-    footerNote: "Si no reconoces este correo, contacta a quien administra el Espacio.",
+    footerNote: input.departmentName
+      ? "Si no reconoces este correo, contacta a quien administra el departamento."
+      : "Si no reconoces este correo, contacta a quien administra el Espacio.",
   });
 
   return {
-    subject: `Tu acceso — ${institution}`,
+    subject: voice.subject,
     html,
   };
 }
@@ -133,12 +169,16 @@ export async function sendAccessReminderEmail(input: {
   tenantId: string;
   to: string;
   displayName: string;
+  unitIds?: string[];
 }): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const department = await loadDepartmentEmail(input.unitIds);
   const { subject, html } = renderAccessReminderEmail({
     identity,
     displayName: input.displayName,
     email: input.to,
+    departmentName: department?.brand.name,
+    logoSrc: department?.logoSrc,
   });
 
   return sendTransactionalHtmlEmail({
@@ -146,6 +186,60 @@ export async function sendAccessReminderEmail(input: {
     subject,
     html,
     identity,
+    fromName: department?.brand.name,
+    unitIds: input.unitIds,
+  });
+}
+
+export async function sendPasswordRecoveryEmail(input: {
+  tenantId: string;
+  to: string;
+  displayName: string;
+  resetUrl: string;
+  unitIds?: string[];
+}): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
+  const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const department = await loadDepartmentEmail(input.unitIds);
+  const voice = recoveryEmailVoice(identity.displayName, department?.brand.name);
+  const bodyHtml = `
+    <p style="margin:0 0 16px;">
+      ${escapeHtml(voice.lead).replace(
+        escapeHtml(voice.label),
+        `<strong>${escapeHtml(voice.label)}</strong>`
+      )}
+    </p>
+    <p style="margin:0 0 16px;">
+      El enlace sirve una sola vez. Si no pediste este cambio, ignora el correo.
+    </p>
+    ${renderSteps([
+      "Abre el enlace de recuperación.",
+      "Define tu nueva contraseña.",
+      department
+        ? "Entra al departamento con tu correo y la contraseña nueva."
+        : "Entra al Espacio con tu correo y la contraseña nueva.",
+    ])}
+  `;
+  const html = renderTransactionalEmail({
+    institutionName: voice.label,
+    logoSrc: department?.logoSrc,
+    previewText: voice.preview,
+    headline: "Crea una nueva contraseña",
+    greeting: `Hola, ${input.displayName}`,
+    bodyHtml,
+    ctaLabel: "Crear nueva contraseña",
+    ctaUrl: input.resetUrl,
+    footerNote: department
+      ? "Si no reconoces este correo, contacta a quien administra el departamento."
+      : "Si no reconoces este correo, contacta a quien administra el Espacio.",
+  });
+
+  return sendTransactionalHtmlEmail({
+    to: input.to,
+    subject: voice.subject,
+    html,
+    identity,
+    fromName: department?.brand.name,
+    unitIds: input.unitIds,
   });
 }
 
@@ -153,11 +247,14 @@ export async function sendInvitationEmail(
   input: InvitationEmailInput
 ): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const identity = await resolveEmailIdentityForTenant(input.tenantId);
+  const department = await loadDepartmentEmail(input.unitIds);
   const { subject, html } = renderInvitationEmail({
     identity,
     displayName: input.displayName,
     token: input.token,
     expiresAt: input.expiresAt,
+    departmentName: department?.brand.name,
+    logoSrc: department?.logoSrc,
   });
 
   return sendTransactionalHtmlEmail({
@@ -165,31 +262,39 @@ export async function sendInvitationEmail(
     subject,
     html,
     identity,
+    fromName: department?.brand.name,
+    unitIds: input.unitIds,
   });
 }
 
-function publicEmailError(error: { name?: string }): string {
-  switch (error.name) {
-    case "missing_api_key":
-    case "invalid_api_key":
-    case "restricted_api_key":
-      return "El correo transaccional no está configurado.";
-    case "invalid_from_address":
-      return "El remitente del correo no está verificado.";
-    case "monthly_quota_exceeded":
-    case "daily_quota_exceeded":
-      return "Se alcanzó el límite de correos. Intenta más tarde.";
-    case "rate_limit_exceeded":
-      return "Hay demasiados envíos seguidos. Espera un momento e intenta de nuevo.";
-    case "validation_error":
-    case "invalid_parameter":
-    case "missing_required_field":
-      return "El correo no se pudo armar. Revisa el destinatario y vuelve a intentar.";
-    case "application_error":
-      return "El servicio de correo no respondió. Intenta de nuevo.";
-    default:
-      return "No se pudo enviar el correo.";
+async function loadDepartmentEmail(unitIds: string[] | undefined): Promise<{
+  brand: DepartmentEmailBrand;
+  logoSrc?: string;
+  attachment?: Array<{ filename: string; content: Buffer; contentId: string }>;
+} | null> {
+  const brand = departmentEmailBrand(unitIds);
+  if (!brand) return null;
+  try {
+    const content = await readFile(path.join(process.cwd(), "public", brand.logoFile));
+    return {
+      brand,
+      logoSrc: brand.logoSrc,
+      attachment: [{ filename: "varones-nacional.png", content, contentId: brand.contentId }],
+    };
+  } catch (error) {
+    logServerError("email", error);
+    return { brand };
   }
+}
+
+function sendingMailbox(identity: EmailIdentity): string {
+  const configured = identity.mailbox?.trim();
+  if (configured?.includes("@")) return configured;
+  return resolveSendingMailbox({
+    tenantId: identity.tenantId,
+    siteId: identity.siteId,
+    domains: [],
+  });
 }
 
 export async function sendTransactionalHtmlEmail(input: {
@@ -197,32 +302,49 @@ export async function sendTransactionalHtmlEmail(input: {
   subject: string;
   html: string;
   identity: EmailIdentity;
-  attachments?: Array<{ filename: string; content: Buffer }>;
+  fromName?: string;
+  unitIds?: string[];
+  attachments?: Array<{ filename: string; content: Buffer; contentId?: string }>;
 }): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const resend = getResendClient();
   if (!resend) {
     return { ok: false, error: "El correo transaccional no está configurado." };
   }
 
+  const department = await loadDepartmentEmail(input.unitIds);
+  const html = department?.logoSrc
+    ? ensureDepartmentLogo(input.html, {
+        name: department.brand.name,
+        logoSrc: department.logoSrc,
+      })
+    : input.html;
+  const fromName = input.fromName?.trim() || department?.brand.name || input.identity.displayName;
+  const seenIds = new Set(
+    (input.attachments ?? []).map((attachment) => attachment.contentId).filter(Boolean)
+  );
+  const attachments = [
+    ...(input.attachments ?? []),
+    ...(department?.attachment ?? []).filter((attachment) => !seenIds.has(attachment.contentId)),
+  ];
+
+  const resendAttachments = serializeResendAttachments(attachments);
+
   try {
     const { data, error } = await resend.emails.send(
       {
-        from: formatFromHeader(input.identity.displayName, getTechnicalMailbox()),
+        from: formatFromHeader(fromName, sendingMailbox(input.identity)),
         to: input.to,
         subject: input.subject,
-        html: input.html,
+        html,
         ...(input.identity.replyTo ? { replyTo: input.identity.replyTo } : {}),
-        attachments: input.attachments?.map((attachment) => ({
-          filename: attachment.filename,
-          content: attachment.content,
-        })),
+        ...(resendAttachments ? { attachments: resendAttachments } : {}),
       },
-      { signal: AbortSignal.timeout(6_000) } as { headers?: HeadersInit }
+      { signal: AbortSignal.timeout(15_000) } as { headers?: HeadersInit }
     );
 
     if (error) {
       logServerError("email", error);
-      return { ok: false, error: publicEmailError(error) };
+      return { ok: false, error: publicTransactionalEmailError(error) };
     }
 
     return { ok: true, id: data?.id };

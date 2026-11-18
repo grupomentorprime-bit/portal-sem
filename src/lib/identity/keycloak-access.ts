@@ -4,8 +4,10 @@ import { getDatabase } from "@/lib/mongodb";
 import type { IdentityMembership, IdentityUser } from "@/types/identity";
 import {
   acceptInvitation,
+  findLatestInvitationDisplayName,
   findPendingInvitationByEmail,
 } from "@/lib/identity/invitations";
+import { resolveLoginDisplayName } from "@/lib/identity/login-display-name";
 import {
   createMembership,
   ensureActiveMembership,
@@ -13,11 +15,7 @@ import {
   findMembershipAnyStatus,
   MembershipConflictError,
 } from "@/lib/identity/memberships";
-import { ensureTenantRoles, getSuperAdminRole, ensureSuperAdminMembership } from "@/lib/identity/roles";
-import {
-  ensureSuperAdminMembershipForEmail,
-  SUPER_ADMIN_BOOTSTRAP_EMAIL,
-} from "@/lib/identity/iam-guard";
+import { ensureTenantRoles, getSuperAdminRole } from "@/lib/identity/roles";
 import {
   createUser,
   findUserByEmail,
@@ -56,10 +54,21 @@ export async function upsertUserFromKeycloak(
   const invitation = await findPendingInvitationByEmail(tenantId, email);
   let user = await findUserByEmail(email);
 
-  const displayName =
-    claims.displayName ||
-    invitation?.displayName?.trim() ||
-    email;
+  const identityName = claims.displayName.trim();
+  const currentName = user?.displayName?.trim() || "";
+  let invitationName = invitation?.displayName?.trim() || "";
+  const copiedFromIdentity =
+    !currentName || currentName.toLowerCase() === email || currentName === identityName;
+  if (!invitationName && copiedFromIdentity) {
+    invitationName = await findLatestInvitationDisplayName(tenantId, email);
+  }
+
+  const displayName = resolveLoginDisplayName({
+    email,
+    identityName,
+    invitationName,
+    currentName,
+  });
 
   if (!user) {
     user = await createUser({
@@ -105,11 +114,6 @@ export async function resolveKeycloakMembership(
 
   const existingAny = await findMembershipAnyStatus(user._id, tenantId);
   if (existingAny) {
-    if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {
-      await ensureSuperAdminMembership(tenantId, user._id);
-      return findMembership(user._id, tenantId);
-    }
-
     const invitation = await findPendingInvitationByEmail(tenantId, user.email);
     if (invitation && existingAny.status !== "active") {
       // Reinvitación: reactivar sobre la membership existente (D3). Rol desde invitación, no realm.
@@ -181,11 +185,6 @@ export async function resolveKeycloakMembership(
     }
   }
 
-  if (user.email.toLowerCase() === SUPER_ADMIN_BOOTSTRAP_EMAIL) {
-    await ensureSuperAdminMembership(tenantId, user._id);
-    return findMembership(user._id, tenantId);
-  }
-
   return null;
 }
 
@@ -211,7 +210,6 @@ export async function finishKeycloakLogin(
   );
 
   if (preferred) {
-    await ensureSuperAdminMembershipForEmail(user.email, preferred, user._id);
     await resolveKeycloakMembership(user, preferred, accessToken);
   }
 

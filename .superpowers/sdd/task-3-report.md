@@ -1,14 +1,41 @@
-﻿# Task 3 — Report
+# Task 3: API ensure-folio — Report
 
 ## Status
-DONE
+**Complete**
 
-## Commit
-`7ac62a495881451547a2fcc64a2627de0f701548` - `feat(growth): migración 030 embudo Admisión SEM`
+## Changes
 
-## Test summary
-`npx tsx --test tests/baseline/sem-admision-funnel.test.ts` passed.
-`ReadLints` on the touched files reported no lint errors.
+| File | Action |
+|------|--------|
+| `src/app/api/congress/payments/[id]/ensure-folio/route.ts` | Created POST handler |
+| `src/app/api/congress/payments/route.ts` | Added `folio` to `payment.record` audit metadata |
 
-## Notes
-Only the Task 3 source/test files were committed. All `.superpowers/sdd/*` files were left unstaged and uncommitted.
+## Implementation
+
+- **Guard:** `requireCongressPayments()` (same bar as creating payments / download use case).
+- **Handler:** Calls `ensureCongressPaymentFolio({ tenantId, paymentId })`.
+- **Responses:**
+  - Success: `{ ok: true, payment }` (200)
+  - `not_found` → 404
+  - Other errors (e.g. `folio_sequence_failed`) → 500
+  - Uncaught → 500 `{ ok: false, error: "Error interno." }`
+- **Params:** `context.params` awaited as `Promise<{ id: string }>` (matches `void/route.ts`).
+
+## Verification
+
+- ESLint: no issues on touched files.
+- `tsc --noEmit`: exit 0 (no errors on new/changed paths).
+
+## Commits
+None (per task instructions).
+
+## Concerns / follow-ups
+
+- No automated API test for this route yet; manual or integration test recommended before release.
+- Clients must send auth/cookies expected by `requireCongressPayments`.
+
+## Brief checklist
+
+- [x] Step 1: Create route
+- [x] Step 2: Confirm POST `/payments` returns full `payment` (unchanged contract; `payment.folio` included when set at record time)
+- [x] Optional: `folio` in `payment.record` audit metadata

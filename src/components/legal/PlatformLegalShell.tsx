@@ -1,3 +1,4 @@
+import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import { ProductMark, PlatformNeutralTheme } from "@/components/product";
 import {
   PLATFORM_LEGAL_LAST_UPDATED,
@@ -93,6 +94,7 @@ export function PlatformLegalShell({
               {PLATFORM_SUPPORT_EMAIL}
             </a>
           </div>
+          <PublicVendorCredit className="mx-auto max-w-3xl px-4 pb-6 text-sm text-muted sm:px-6" />
         </footer>
       </div>
     </PlatformNeutralTheme>

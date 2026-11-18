@@ -227,6 +227,16 @@
   }
 }
 
+.cumple-site[data-motion="off"] .rise,
+.cumple-site[data-motion="off"] .orb-a,
+.cumple-site[data-motion="off"] .orb-b,
+.cumple-site[data-motion="off"] .orb-c,
+.cumple-site[data-motion="off"] .float-card,
+.cumple-site[data-motion="off"] .pulse-dot,
+.cumple-site[data-motion="off"] .gauge-value {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cumple-site {
     scroll-behavior: auto;

@@ -36,7 +36,8 @@ function isPlatformProductPath(pathname: string): boolean {
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/robots.txt" ||
-    pathname === "/sitemap.xml"
+    pathname === "/sitemap.xml" ||
+    pathname === "/escritorio"
   );
 }
 
@@ -63,7 +64,8 @@ export function proxy(request: NextRequest) {
   const isProtected =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/internal") ||
-    pathname.startsWith("/platform");
+    pathname.startsWith("/platform") ||
+    pathname === "/escritorio";
 
   if (!isProtected) {
     return continueWithPathname(request);
@@ -92,6 +94,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)",
   ],
 };

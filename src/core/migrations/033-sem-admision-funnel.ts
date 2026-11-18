@@ -6,8 +6,8 @@ import { planSemAdmisionStatusRemaps } from "@/core/growth/sem-admision-funnel";
 import type { MigrationDefinition } from "@/core/migrations/types";
 import { SEM_TENANT_ID } from "@/core/tenant/constants";
 
-export const migration030SemAdmisionFunnel: MigrationDefinition = {
-  id: "030-sem-admision-funnel",
+export const migration033SemAdmisionFunnel: MigrationDefinition = {
+  id: "033-sem-admision-funnel",
   description: "Embudo Admisión SEM: etapas, rename default y remap de status abiertos",
   modules: [],
 

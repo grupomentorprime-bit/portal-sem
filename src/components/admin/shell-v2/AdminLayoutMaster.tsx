@@ -12,7 +12,7 @@ interface AdminLayoutMasterProps {
   sidebarCollapsed: boolean;
   shell: Pick<
     AdminShellContext,
-    "permissions" | "compatMode" | "roleCodes" | "navBadges"
+    "permissions" | "compatMode" | "roleCodes" | "navBadges" | "enabledAppIds"
   >;
 }
 
@@ -38,6 +38,7 @@ export function AdminLayoutMaster({
             compatMode={shell.compatMode}
             roleCodes={shell.roleCodes}
             navBadges={shell.navBadges}
+            enabledAppIds={shell.enabledAppIds}
           />
         </Suspense>
         {children}

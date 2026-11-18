@@ -17,6 +17,7 @@ interface AdminShellProps {
   shellV2?: boolean;
   branding?: AdminTenantBranding;
   navBadges?: Record<string, number>;
+  enabledAppIds?: string[] | null;
 }
 
 export function AdminShell({
@@ -28,6 +29,7 @@ export function AdminShell({
   shellV2 = false,
   branding,
   navBadges,
+  enabledAppIds = null,
 }: AdminShellProps) {
   const pathname = usePathname();
   const hideChrome = pathname === "/admin/login";
@@ -46,6 +48,7 @@ export function AdminShell({
         roleCodes={roleCodes}
         branding={branding}
         navBadges={navBadges}
+        enabledAppIds={enabledAppIds}
       >
         {children}
       </AdminShellV2>

@@ -210,7 +210,7 @@ describe("OT-GROWTH-PLATFORM-HOST-ISOLATION-001 — resolución", () => {
           assert.equal(result.source, "domain");
         }
       } finally {
-        await db.collection(DOMAINS_COLLECTION).deleteOne({ _id: semHost });
+        await db.collection<DomainDocument>(DOMAINS_COLLECTION).deleteOne({ _id: semHost });
       }
     });
   });
@@ -312,7 +312,7 @@ describe("OT-GROWTH-PLATFORM-HOST-ISOLATION-001 — resolución", () => {
         assert.equal(platformA.ok, false);
         assert.equal(platformB.ok, false);
       } finally {
-        await db.collection(DOMAINS_COLLECTION).deleteOne({ _id: semHost });
+        await db.collection<DomainDocument>(DOMAINS_COLLECTION).deleteOne({ _id: semHost });
       }
     });
   });

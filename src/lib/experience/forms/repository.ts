@@ -16,6 +16,10 @@ import type {
 } from "@/types/experience-forms";
 import type { FormSubmissionAttachment } from "@/lib/experience/forms/attachments";
 import { buildOperatorAbsenceMarked } from "@/lib/experience/forms/absence-justification-deadline";
+import {
+  enrolleeIdentity,
+  type EnrolleeMatch,
+} from "@/lib/experience/forms/already-enrolled";
 
 const COLLECTION = "experience_forms";
 const SUBMISSIONS = "experience_form_submissions";
@@ -232,6 +236,35 @@ export async function duplicateExperienceForm(
     name: `${source.name} (copia)`,
     active: false,
   });
+}
+
+/** Inscripción previa del congreso: primero por RUT, después por correo. */
+export async function findCongressEnrolleeMatch(
+  tenant: string,
+  formId: string,
+  data: Record<string, unknown>
+): Promise<EnrolleeMatch | null> {
+  const identity = enrolleeIdentity(data);
+  if (!identity.rut && !identity.email) return null;
+
+  const db = await getDatabase();
+  const collection = db.collection(SUBMISSIONS);
+  const scope = { tenant, formId };
+
+  if (identity.rut) {
+    const byRut = await collection.findOne({ ...scope, "data.rut": identity.rut });
+    if (byRut) return "rut";
+  }
+
+  if (identity.email) {
+    const byEmail = await collection.findOne(
+      { ...scope, "data.email": identity.email },
+      { collation: { locale: "es", strength: 2 } }
+    );
+    if (byEmail) return "email";
+  }
+
+  return null;
 }
 
 export async function saveFormSubmission(
@@ -722,4 +755,22 @@ export async function getFormSubmissionStats(
     notAttending,
     other: total - attending - notAttending,
   };
+}
+
+/** Respuestas por formulario, solo del espacio indicado. */
+export async function countSubmissionsByForm(tenant: string): Promise<Record<string, number>> {
+  const db = await getDatabase();
+  const rows = await db
+    .collection(SUBMISSIONS)
+    .aggregate<{ _id: string; total: number }>([
+      { $match: { tenant } },
+      { $group: { _id: "$formId", total: { $sum: 1 } } },
+    ])
+    .toArray();
+
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    if (typeof row._id === "string") counts[row._id] = row.total;
+  }
+  return counts;
 }

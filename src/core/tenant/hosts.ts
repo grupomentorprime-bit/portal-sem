@@ -386,18 +386,66 @@ export function resolveSpacePreviewOrigin(input: {
   return publicOriginFromHost(buildDefaultSpaceHost(slug, { env }));
 }
 
-/** Dominio público del Espacio, el de «Ver público», aunque el admin esté en local. */
-export function resolveSpacePublishedOrigin(input: {
+export type PublishedSpaceHost = {
+  host: string;
+  isPrimary?: boolean;
+  kind?: string | null;
+};
+
+/**
+ * Host de «Ver público».
+ * Loopback y `{slug}.localhost` son la vista previa: no salen en este enlace.
+ * Si el dominio marcado como principal es el de desarrollo, se usa el dominio
+ * propio o, si no hay, `{slug}.{SPACE_BASE_DOMAIN}`.
+ */
+export function selectPublishedSpaceHost(input: {
   slug: string;
-  primaryHost?: string | null;
+  hosts?: PublishedSpaceHost[] | null;
   env?: NodeJS.ProcessEnv | Record<string, string | undefined>;
 }): string | null {
   const env = input.env ?? process.env;
   const slug = normalizePlatformHostSlug(input.slug);
   if (!slug || isReservedSpaceSlug(slug, env)) return null;
-  const fromPrimary = publicOriginFromHost(input.primaryHost);
-  if (fromPrimary) return fromPrimary;
-  return publicOriginFromHost(buildDefaultSpaceHost(slug, { env }));
+
+  const usable: PublishedSpaceHost[] = [];
+  for (const item of input.hosts ?? []) {
+    const host = normalizeHost(item.host);
+    if (!host || isLocalPreviewHost(host)) continue;
+    usable.push({ host, isPrimary: item.isPrimary, kind: item.kind });
+  }
+
+  const primary = usable.find((item) => item.isPrimary);
+  if (primary) return primary.host;
+  const custom = usable.find((item) => item.kind === "custom");
+  if (custom) return custom.host;
+  const subdomain = usable.find(
+    (item) => item.kind === "platform_subdomain" || item.kind === "legacy"
+  );
+  if (subdomain) return subdomain.host;
+  if (usable[0]) return usable[0].host;
+  return buildPlatformSubdomainHost(slug, { env });
+}
+
+/** Dominio público del Espacio, el de «Ver público», aunque el admin esté en local. */
+export function resolveSpacePublishedOrigin(input: {
+  slug: string;
+  primaryHost?: string | null;
+  hosts?: PublishedSpaceHost[] | null;
+  env?: NodeJS.ProcessEnv | Record<string, string | undefined>;
+}): string | null {
+  const env = input.env ?? process.env;
+  const slug = normalizePlatformHostSlug(input.slug);
+  if (!slug || isReservedSpaceSlug(slug, env)) return null;
+
+  const listed = input.hosts?.length
+    ? input.hosts
+    : input.primaryHost
+      ? [{ host: input.primaryHost, isPrimary: true }]
+      : [];
+  const host =
+    selectPublishedSpaceHost({ slug, hosts: listed, env }) ??
+    buildDefaultSpaceHost(slug, { env });
+  return publicOriginFromHost(host);
 }
 
 /**

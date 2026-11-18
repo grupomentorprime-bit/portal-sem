@@ -1,0 +1,36 @@
+{
+  "name": "NELZURI — Ecosistema Empresarial",
+  "short_name": "NELZURI",
+  "description": "Tu ecosistema empresarial. Una solución de Mentor Prime.",
+  "start_url": "/escritorio",
+  "scope": "/escritorio",
+  "display": "standalone",
+  "background_color": "#0B1E5D",
+  "theme_color": "#0B1E5D",
+  "icons": [
+    {
+      "src": "/branding/nelzuri/icons/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/branding/nelzuri/icons/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/branding/nelzuri/icons/pwa-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/branding/nelzuri/icons/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { PublicSurface } from "@/components/portal/PublicSurface";
 import { MATTER_STATUS_LABEL } from "@/sites/cumple/diagnostico";
 import { loadInformeDelHost } from "@/lib/cumple/informe";
 import { notFound } from "next/navigation";
@@ -14,6 +15,7 @@ export default async function InformeDiagnosticoPage({ params }: InformePageProp
   if (!record) notFound();
 
   return (
+    <PublicSurface>
     <main className="mx-auto max-w-2xl px-4 py-10 text-foreground">
       <p className="text-xs font-bold uppercase tracking-widest text-muted">
         Diagnóstico orientativo
@@ -52,5 +54,6 @@ export default async function InformeDiagnosticoPage({ params }: InformePageProp
         Descargar texto
       </a>
     </main>
+    </PublicSurface>
   );
 }

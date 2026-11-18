@@ -1,8 +1,10 @@
+import { PublicSurface } from "@/components/portal/PublicSurface";
 import { ComingSoonPage } from "@/components/sites/ComingSoonPage";
 import { CodedSiteView } from "@/components/sites/CodedSiteView";
 import { getPortalContext } from "@/lib/portal/site";
 import { getCodedPageView } from "@/sites/page-views";
 import { ensureProductionCodedSites } from "@/sites/production";
+import { resolvePageContent } from "@/sites/content/overlay";
 import { comingSoonModel, decidePublicSite } from "@/sites/public-decision";
 import { getCodedSite } from "@/sites/registry";
 import {
@@ -29,11 +31,11 @@ export default async function SiteLayout({
     if (pathname !== "/" && pathname !== "") {
       redirect("/");
     }
-    return children;
+    return <PublicSurface>{children}</PublicSurface>;
   }
 
   if (!ctx) {
-    return children;
+    return <PublicSurface>{children}</PublicSurface>;
   }
 
   ensureProductionCodedSites();
@@ -76,18 +78,20 @@ export default async function SiteLayout({
   });
 
   if (decision.kind === "passthrough") {
-    return children;
+    return <PublicSurface>{children}</PublicSurface>;
   }
 
   if (decision.kind === "coming-soon") {
     return (
-      <ComingSoonPage
-        model={comingSoonModel({
-          institutionName: ctx.config.institution.name,
-          contact: ctx.config.contact,
-          social: ctx.config.social,
-        })}
-      />
+      <PublicSurface>
+        <ComingSoonPage
+          model={comingSoonModel({
+            institutionName: ctx.config.institution.name,
+            contact: ctx.config.contact,
+            social: ctx.config.social,
+          })}
+        />
+      </PublicSurface>
     );
   }
 
@@ -98,24 +102,44 @@ export default async function SiteLayout({
   if (decision.kind === "page" && site) {
     const { registerProductionPageViews } = await import("@/sites/production-views");
     registerProductionPageViews();
+    const page = site.pages.find((item) => item.path === decision.path);
+    let content = resolvePageContent(page, undefined);
+    if (page?.slots?.length) {
+      try {
+        const { getSitePageContent } = await import("@/sites/content/store");
+        const stored = await getSitePageContent(ctx.tenant, decision.path);
+        content = resolvePageContent(page, stored?.values);
+      } catch (error) {
+        console.error(
+          "[coded-site] no se pudo leer el contenido de la página",
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
     const PageView = getCodedPageView(ctx.tenant, decision.path);
     if (PageView) {
       return (
-        <PageView
-          institutionName={ctx.config.institution.name}
-          contact={ctx.config.contact}
-          social={ctx.config.social}
-        />
+        <PublicSurface>
+          <PageView
+            institutionName={ctx.config.institution.name}
+            contact={ctx.config.contact}
+            social={ctx.config.social}
+            content={content}
+          />
+        </PublicSurface>
       );
     }
     return (
-      <CodedSiteView
-        site={site}
-        path={decision.path}
-        institutionName={ctx.config.institution.name}
-        contact={ctx.config.contact}
-        social={ctx.config.social}
-      />
+      <PublicSurface>
+        <CodedSiteView
+          site={site}
+          path={decision.path}
+          institutionName={ctx.config.institution.name}
+          contact={ctx.config.contact}
+          social={ctx.config.social}
+          content={content}
+        />
+      </PublicSurface>
     );
   }
 

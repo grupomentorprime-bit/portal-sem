@@ -44,9 +44,12 @@ describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
     const config = readSrc("src/lib/cms/config.ts");
     assert.match(
       config,
-      /updateSiteConfig\(\s*update:\s*SiteConfigUpdate,\s*options:\s*\{\s*tenantId:\s*string\s*\}/
+      /updateSiteConfig\(\s*update:\s*SiteConfigPatch,\s*options:\s*\{\s*tenantId:\s*string\s*\}/
     );
-    assert.match(config, /if\s*\(\s*!tenantId\s*\)\s*\{\s*return null/);
+    assert.match(
+      config,
+      /if\s*\(\s*!tenantId\s*\)\s*\{\s*return\s*\{\s*ok:\s*false,\s*code:\s*"missing"/
+    );
     assert.doesNotMatch(
       config,
       /effectiveTenant[\s\S]{0,80}SEM_TENANT_ID/

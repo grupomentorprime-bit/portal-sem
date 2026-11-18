@@ -1,3 +1,4 @@
+import { PublicVendorCredit } from "@/components/portal/PublicVendorCredit";
 import type { PortalFooterPremiumViewModel } from "@/types/footer-premium";
 import { FooterExperienceLink } from "./FooterExperienceLink";
 
@@ -6,17 +7,17 @@ interface PortalFooterLegalProps {
 }
 
 export function PortalFooterLegal({ viewModel }: PortalFooterLegalProps) {
-  const { legal, adminLabel, adminAction, copyright, copyrightSuffix, credits } = viewModel;
-
-  if (!copyright && legal.length === 0 && !credits) return null;
+  const { legal, adminLabel, adminAction, copyright, copyrightSuffix } = viewModel;
 
   return (
     <div className="portal-footer-premium__bottom">
       <div className="portal-footer-premium__bottom-inner">
-        <p className="portal-footer-premium__copyright">
-          {copyright}
-          {copyrightSuffix ? `. ${copyrightSuffix}` : null}
-        </p>
+        {copyright ? (
+          <p className="portal-footer-premium__copyright">
+            {copyright}
+            {copyrightSuffix ? `. ${copyrightSuffix}` : null}
+          </p>
+        ) : null}
         {legal.length > 0 || adminLabel ? (
           <div className="portal-footer-premium__legal">
             {legal.map((link) => (
@@ -38,7 +39,7 @@ export function PortalFooterLegal({ viewModel }: PortalFooterLegalProps) {
             ) : null}
           </div>
         ) : null}
-        {credits ? <p className="portal-footer-premium__credits">{credits}</p> : null}
+        <PublicVendorCredit className="portal-footer-premium__credits" />
       </div>
     </div>
   );

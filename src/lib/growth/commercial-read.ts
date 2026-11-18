@@ -191,6 +191,13 @@ export async function readCommercialPanel(
   };
 }
 
+/** Vencidas + sin seguimiento + estancadas del Espacio. Sin nombres. */
+export async function readSpaceAttentionCount(tenantId: string): Promise<number> {
+  const loaded = await loadOpen(tenantId);
+  const counts = countGrowthBands(loaded.opportunities, loaded.now, loaded.staleAfterDays);
+  return counts.overdue + counts.unfollowed + counts.stale;
+}
+
 export async function readMyWork(tenantId: string, userId: string): Promise<MyWorkRead> {
   const loaded = await loadOpen(tenantId);
   const sections = myGrowthWork(

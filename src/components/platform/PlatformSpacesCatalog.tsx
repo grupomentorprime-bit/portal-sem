@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Columns3, LayoutList, Plus, Search } from "lucide-react";
 import {
   EmptyState,
@@ -23,6 +23,17 @@ const SPACE_ROW_GRID =
   "lg:grid lg:grid-cols-[minmax(14rem,1.45fr)_minmax(7rem,0.85fr)_minmax(10rem,1.15fr)_4rem_6.75rem_auto] lg:items-center lg:gap-x-4";
 
 type SpacesView = "list" | "kanban";
+
+function CreateFromQuery({ open }: { open: () => void }) {
+  const params = useSearchParams();
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || params.get("crear") !== "1") return;
+    started.current = true;
+    open();
+  }, [open, params]);
+  return null;
+}
 
 function statusTone(status: PlatformSpaceListItem["status"]): StatusBadgeTone {
   switch (status) {
@@ -132,6 +143,7 @@ export function PlatformSpacesCatalog({
           id="espacios"
           className="scroll-mt-20 overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-white shadow-[0_10px_28px_-24px_rgba(14,79,144,0.45)]"
         >
+          <CreateFromQuery open={openCreate} />
           <div className="flex flex-col gap-3 border-b border-[var(--color-border-default)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="min-w-0">
               <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-[var(--gray-900)]">
@@ -358,10 +370,11 @@ export function PlatformSpacesCatalog({
                         <p className="sr-only">Acciones</p>
                         <Link
                           href={`/platform/spaces/${encodeURIComponent(space.tenantId)}`}
-                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--color-border-default)] bg-white px-2.5 text-[12px] font-semibold text-[var(--growth-os-primary)] transition hover:border-[color-mix(in_srgb,var(--growth-os-secondary)_45%,var(--border))] hover:bg-[var(--gray-100)]"
+                          aria-label="Ver espacio"
+                          title="Ver espacio"
+                          className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-[9px] text-[var(--growth-os-primary)] transition hover:bg-[color-mix(in_srgb,var(--growth-os-primary)_10%,white)]"
                         >
-                          Ver espacio
-                          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                          <ArrowRight className="h-[15px] w-[15px]" aria-hidden />
                         </Link>
                         <PlatformSpaceActionsMenu
                           tenantId={space.tenantId}

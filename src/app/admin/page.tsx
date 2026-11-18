@@ -11,6 +11,7 @@ import {
   type AnalyticsPeriodPreset,
 } from "@/lib/growth/analytics-period";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
+import { activeDepartmentName } from "@/lib/identity/place-context";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import {
@@ -69,7 +70,15 @@ export default async function AdminHomePage({ searchParams }: PageProps) {
 
   const spaces = session ? await listAvailableSpacesForUser(session.user._id) : [];
   const activeSpace = spaces.find((s) => s.tenantId === tenantId);
+  const departmentName = tenantId
+    ? await activeDepartmentName({
+        tenantId,
+        roleCodes,
+        unitAccess: session?.membership?.unitAccess,
+      })
+    : "";
   const spaceName =
+    departmentName ||
     activeSpace?.name?.trim() ||
     displayInstitutionName(config?.institution.name, PLATFORM_SPACE_FALLBACK);
 
@@ -109,27 +118,76 @@ export default async function AdminHomePage({ searchParams }: PageProps) {
     process.env.NODE_ENV === "development" && params.empty === "1";
   const periodPreset = resolvePreset(params.preset);
 
+  return (
+    <Suspense fallback={<AdminHomeOpening />}>
+      <AdminHomeSnapshot
+        greeting={timeOfDayGreeting()}
+        firstName={firstName}
+        spaceName={spaceName}
+        periodPreset={periodPreset}
+        tenantId={tenantId}
+        userId={session?.user._id ?? ""}
+        empty={forceEmpty}
+        from={params.from}
+        to={params.to}
+        capabilities={capabilities}
+      />
+    </Suspense>
+  );
+}
+
+function AdminHomeOpening() {
+  return (
+    <div className="grid gap-4" aria-busy="true">
+      <p className="text-sm text-[var(--gray-500)]">Abriendo el Espacio…</p>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {["a", "b", "c", "d"].map((key) => (
+          <div key={key} className="h-24 animate-pulse rounded-2xl bg-[var(--gray-100)]" />
+        ))}
+      </div>
+      <div className="h-72 animate-pulse rounded-2xl bg-[var(--gray-100)]" />
+    </div>
+  );
+}
+
+async function AdminHomeSnapshot({
+  greeting,
+  firstName,
+  spaceName,
+  periodPreset,
+  tenantId,
+  userId,
+  empty,
+  from,
+  to,
+  capabilities,
+}: {
+  greeting: string;
+  firstName: string;
+  spaceName: string;
+  periodPreset: AnalyticsPeriodPreset;
+  tenantId: string;
+  userId: string;
+  empty: boolean;
+  from?: string;
+  to?: string;
+  capabilities: GrowthOsHomeCapabilities;
+}) {
   const home = await loadGrowthOsHomeSnapshot({
     tenantId,
-    userId: session?.user._id ?? "",
-    empty: forceEmpty,
-    periodQuery: {
-      preset: periodPreset,
-      from: params.from,
-      to: params.to,
-    },
+    userId,
+    empty,
+    periodQuery: { preset: periodPreset, from, to },
     capabilities,
   });
 
   return (
-    <Suspense fallback={null}>
-      <GrowthOsAdminHomeMaster
-        greeting={timeOfDayGreeting()}
-        firstName={firstName}
-        spaceName={spaceName}
-        home={home}
-        periodPreset={periodPreset}
-      />
-    </Suspense>
+    <GrowthOsAdminHomeMaster
+      greeting={greeting}
+      firstName={firstName}
+      spaceName={spaceName}
+      home={home}
+      periodPreset={periodPreset}
+    />
   );
 }

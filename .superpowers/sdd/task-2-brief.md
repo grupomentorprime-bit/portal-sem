@@ -1,118 +1,89 @@
-﻿### Task 2: `replaceGrowthFunnelStages` + apply SEM en memoria
+﻿### Task 2: Repositorio — secuencia atómica + folio al crear + ensure
 
 **Files:**
-- Modify: `src/core/growth/funnels.ts` — exportar `replaceGrowthFunnelStages` y `applySemAdmisionDefaultFunnel`
-- Modify: `tests/baseline/sem-admision-funnel.test.ts` — casos con `createMemoryFunnelDirectory`
+- Modify: `src/lib/congress/repository.ts`
+- (sin test de integración Mongo en baseline; dominio cubierto en Task 1)
 
 **Interfaces:**
-- Consumes: `writeStages` (interno), `ensureGrowthFunnelsForTenant`, `renameGrowthFunnel`, `semAdmisionStages`, `isSemAdmisionStages`, `SEM_ADMISION_FUNNEL_NAME`, `GROWTH_FUNNEL_DEFAULT_KEY`
+- Consumes: `formatPaymentFolio`, `CONGRESS_COLLECTIONS.sequences`, `CONGRESS_EVENT_ID`, `CONGRESS_PAYMENT_FOLIO_YEAR`
 - Produces:
-  - `replaceGrowthFunnelStages(directory, { tenantId, funnelKey, stages, now? })`
-  - `applySemAdmisionDefaultFunnel(directory, tenantId, now?): Promise<{ funnel; stages; changed: boolean }>`
+  - `allocateNextPaymentFolio(tenantId: string): Promise<string>`
+  - `ensureCongressPaymentFolio(input: { tenantId; paymentId }): Promise<{ ok: true; payment } | { ok: false; error }>`
+  - `recordCongressPayment` → `payment.folio` siempre presente en éxito
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Añadir allocateNextPaymentFolio**
 
-Añadir al mismo archivo de test:
+En `repository.ts`, tras imports existentes:
 
 ```ts
-import { createMemoryFunnelDirectory } from "../../src/core/growth/funnel-memory";
-import { ensureGrowthFunnelsForTenant } from "../../src/core/growth/funnels";
-import { applySemAdmisionDefaultFunnel } from "../../src/core/growth/funnels";
-import { SEM_TENANT_ID } from "../../src/core/tenant/constants";
-import { stagesFromDefinition } from "../../src/core/growth/funnel-stages";
-
-it("applySemAdmisionDefaultFunnel renombra default y deja etapas SEM; segunda pasada no cambia", async () => {
-  const directory = createMemoryFunnelDirectory();
-  await ensureGrowthFunnelsForTenant(directory, SEM_TENANT_ID, "2026-11-09T00:00:00.000Z");
-  const first = await applySemAdmisionDefaultFunnel(directory, SEM_TENANT_ID, "2026-11-09T01:00:00.000Z");
-  assert.equal(first.changed, true);
-  assert.equal(first.funnel.name, "Admisión");
-  assert.equal(isSemAdmisionStages(first.stages), true);
-
-  const second = await applySemAdmisionDefaultFunnel(directory, SEM_TENANT_ID, "2026-11-09T02:00:00.000Z");
-  assert.equal(second.changed, false);
-  const def = await directory.getDefinition(SEM_TENANT_ID, first.funnel.workflowDefinitionKey);
-  assert.equal(isSemAdmisionStages(stagesFromDefinition(def)), true);
-});
+import { formatPaymentFolio } from "@/core/congress/payment-folio";
+import { CONGRESS_PAYMENT_FOLIO_YEAR } from "@/core/congress/constants";
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`  
-Expected: FAIL (`applySemAdmisionDefaultFunnel` / `replaceGrowthFunnelStages` missing)
-
-- [ ] **Step 3: Write minimal implementation**
-
-En `funnels.ts`, exportar:
-
 ```ts
-export async function replaceGrowthFunnelStages(
-  directory: GrowthFunnelDirectory,
-  input: {
-    tenantId: string;
-    funnelKey: string;
-    stages: GrowthFunnelStage[];
-    now?: string;
-  }
-): Promise<{ ok: true; stages: GrowthFunnelStage[] } | { ok: false; reason: GrowthFunnelFailure }> {
-  const funnel = await directory.findFunnel(input.tenantId, input.funnelKey);
-  if (!funnel || funnel.tenantId !== input.tenantId) return { ok: false, reason: "not_found" };
-  const definition = await writeStages(directory, funnel, input.stages, nowIso(input.now));
-  return { ok: true, stages: stagesFromDefinition(definition) };
+function paymentFolioSequenceId(tenantId: string, eventId = CONGRESS_EVENT_ID) {
+  return `${tenantId}:${eventId}:payment-folio`;
 }
 
-export async function applySemAdmisionDefaultFunnel(
-  directory: GrowthFunnelDirectory,
-  tenantId: string,
-  now?: string
-): Promise<{ funnel: GrowthFunnel; stages: GrowthFunnelStage[]; changed: boolean }> {
-  const at = nowIso(now);
-  const funnel = await ensureGrowthFunnelsForTenant(directory, tenantId, at);
-  let current = funnel;
-  let changed = false;
-  if (current.name !== SEM_ADMISION_FUNNEL_NAME) {
-    const renamed = await renameGrowthFunnel(directory, {
-      tenantId,
-      key: current.key,
-      name: SEM_ADMISION_FUNNEL_NAME,
-      now: at,
-    });
-    if (renamed.ok) {
-      current = renamed.funnel;
-      changed = true;
-    }
+export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
+  const db = await getDatabase();
+  const doc = await db
+    .collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences)
+    .findOneAndUpdate(
+      { _id: paymentFolioSequenceId(tenantId) },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: "after" }
+    );
+  const seq = doc?.seq;
+  if (!seq || !Number.isInteger(seq) || seq <= 0) {
+    throw new Error("folio_sequence_failed");
   }
-  const existing = stagesFromDefinition(
-    await directory.getDefinition(tenantId, current.workflowDefinitionKey)
-  );
-  if (isSemAdmisionStages(existing)) {
-    return { funnel: current, stages: existing, changed };
-  }
-  const replaced = await replaceGrowthFunnelStages(directory, {
-    tenantId,
-    funnelKey: current.key,
-    stages: semAdmisionStages(),
-    now: at,
-  });
-  if (!replaced.ok) {
-    return { funnel: current, stages: existing, changed };
-  }
-  return { funnel: current, stages: replaced.stages, changed: true };
+  return formatPaymentFolio(seq, CONGRESS_PAYMENT_FOLIO_YEAR);
 }
 ```
 
-Importar `SEM_ADMISION_FUNNEL_NAME`, `semAdmisionStages`, `isSemAdmisionStages` desde `./sem-admision-funnel`.
+Nota: el driver Mongo puede devolver el documento en `doc` o `doc.value` según versión — usar el patrón ya existente en este repo para `findOneAndUpdate` (ver `updateCongressRegistration` en el mismo archivo) y adaptar.
 
-- [ ] **Step 4: Run test to verify it passes**
+In this repo, `updateCongressRegistration` uses:
+```ts
+return result ? normalizeCongressRegistration(result) : null;
+```
+So treat `findOneAndUpdate` return as the document directly (not `.value`).
 
-Run: `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`  
-Expected: PASS
+- [ ] **Step 2: Asignar folio en recordCongressPayment antes de insertOne**
 
-- [ ] **Step 5: Commit**
+Dentro de `recordCongressPayment`, **después** de `allocatePayment` OK, asignar folio **antes** del loop de updates a registrations:
 
-```bash
-git add src/core/growth/funnels.ts tests/baseline/sem-admision-funnel.test.ts
-git commit -m "feat(growth): apply embudo Admisión SEM sobre funnel default"
+```ts
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  let folio: string;
+  try {
+    folio = await allocateNextPaymentFolio(input.tenantId);
+  } catch {
+    return { ok: false, error: "folio_sequence_failed" };
+  }
+
+  const paymentWithFolio: CongressPayment = { ...result.payment, folio };
 ```
 
----
+Usar `paymentWithFolio` en el `insertOne` y en el return. El loop de `updatedRegistrations` sigue igual.
+
+Si el loop de registrations falla (`concurrent_payment`), el folio queda “consumido” (hueco en secuencia) — aceptable (no reutilizar).
+
+- [ ] **Step 3: ensureCongressPaymentFolio**
+
+Implement idempotent ensure for legacy payments without folio. Prefer a clean race-safe version:
+
+1. find payment; if missing → not_found; if has folio → return it
+2. allocateNextPaymentFolio
+3. findOneAndUpdate only when folio is null/missing/empty; returnDocument after
+4. if update lost race, findOne again and return existing folio if present; else folio_sequence_failed
+
+Do not leave dead unreachable branches (the plan's sample had a redundant `if (payment?.folio)` inside `if (!payment?.folio)` — clean that up).
+
+- [ ] **Step 4: Smoke / typecheck**
+
+Prefer focused check: ensure repository.ts typechecks. If full `npx tsc --noEmit -p tsconfig.json` is too noisy/slow, at least confirm no TS errors in the edited file via reading lints / compiling if feasible. Report what you ran.

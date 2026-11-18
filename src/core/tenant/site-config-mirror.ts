@@ -15,8 +15,8 @@ import type { SiteConfigDocument } from "@/core/tenant/types";
 export async function mirrorLegacyConfigToSiteConfig(
   db: Db,
   config: SiteConfig,
-  options?: { tenantId?: string; siteId?: string }
-): Promise<void> {
+  options?: { tenantId?: string; siteId?: string; expectedUpdatedAt?: string }
+): Promise<boolean> {
   const tenantId = options?.tenantId?.trim() || config.institution.tenant?.trim() || SEM_TENANT_ID;
   const siteId = options?.siteId?.trim() || (tenantId === SEM_TENANT_ID ? SEM_SITE_ID : tenantId);
   const now = new Date().toISOString();
@@ -50,7 +50,17 @@ export async function mirrorLegacyConfigToSiteConfig(
     updatedAt: now,
   };
 
+  const expectedUpdatedAt = options?.expectedUpdatedAt;
+  if (expectedUpdatedAt) {
+    if (!existing || existing.updatedAt !== expectedUpdatedAt) return false;
+    const result = await db
+      .collection<SiteConfigDocument>(SITE_CONFIG_COLLECTION)
+      .replaceOne({ _id: siteId, updatedAt: expectedUpdatedAt }, document, { upsert: false });
+    return result.matchedCount === 1;
+  }
+
   await db
     .collection<SiteConfigDocument>(SITE_CONFIG_COLLECTION)
     .replaceOne({ _id: siteId }, document, { upsert: true });
+  return true;
 }

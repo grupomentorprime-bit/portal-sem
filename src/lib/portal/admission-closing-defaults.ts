@@ -250,9 +250,9 @@ export const DEFAULT_ADMISSION_CLOSING_BLOCKS: AdmissionClosingBlock[] = [
     data: {
       primaryText: "© Seminario Eclesiástico Mayor.",
       secondaryText: "Institución oficial de formación ministerial de IPN Chile.",
-      developerText: "Desarrollado sobre Growth OS por Grupo Mentor Prime.",
-      developerName: "Grupo Mentor Prime",
-      developerUrl: "https://grupomentorprime.com",
+      developerText: "",
+      developerName: "Creado por Mentor Prime Consultores",
+      developerUrl: "https://mentorprime.cl/",
     },
   },
   {

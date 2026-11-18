@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getDatabase } from "@/lib/mongodb";
+import type { UnitAccess } from "@/core/units/types";
 import type { IdentityInvitation } from "@/types/identity";
 import { generateId, generateToken } from "@/core/identity/auth/crypto";
 import { normalizeEmail } from "@/lib/validation/identity";
@@ -14,7 +15,9 @@ export async function createInvitation(input: {
   displayName: string;
   roleIds: string[];
   invitedBy: string;
+  unitAccess?: UnitAccess;
   expiresInMinutes?: number;
+  authorizedApps?: IdentityInvitation["authorizedApps"];
 }): Promise<IdentityInvitation> {
   const db = await getDatabase();
   const email = normalizeEmail(input.email);
@@ -39,6 +42,8 @@ export async function createInvitation(input: {
     email,
     displayName,
     roleIds: input.roleIds,
+    ...(input.authorizedApps ? { authorizedApps: input.authorizedApps } : {}),
+    ...(input.unitAccess ? { unitAccess: input.unitAccess } : {}),
     token: generateToken(24),
     status: "pending",
     invitedBy: input.invitedBy,
@@ -48,6 +53,21 @@ export async function createInvitation(input: {
 
   await db.collection<IdentityInvitation>("identity_invitations").insertOne(invitation);
   return invitation;
+}
+
+/** Nombre más reciente escrito al invitar a este correo en el Espacio. */
+export async function findLatestInvitationDisplayName(
+  tenantId: string,
+  email: string
+): Promise<string> {
+  const db = await getDatabase();
+  const row = await db
+    .collection<IdentityInvitation>("identity_invitations")
+    .find({ tenantId, email: normalizeEmail(email) })
+    .sort({ createdAt: -1 })
+    .limit(1)
+    .next();
+  return row?.displayName?.trim() || "";
 }
 
 export async function findPendingInvitationByEmail(
@@ -61,6 +81,21 @@ export async function findPendingInvitationByEmail(
     status: "pending",
     expiresAt: { $gt: new Date().toISOString() },
   });
+}
+
+/** Invitaciones pendientes vigentes para un correo (cualquier Espacio). */
+export async function findPendingInvitationsByEmail(
+  email: string
+): Promise<IdentityInvitation[]> {
+  const db = await getDatabase();
+  return db
+    .collection<IdentityInvitation>("identity_invitations")
+    .find({
+      email: normalizeEmail(email),
+      status: "pending",
+      expiresAt: { $gt: new Date().toISOString() },
+    })
+    .toArray();
 }
 
 export async function listInvitationsByTenant(
@@ -122,6 +157,7 @@ export function serializeInvitationWithoutToken(invitation: IdentityInvitation) 
     email: invitation.email,
     displayName: invitation.displayName,
     roleIds: invitation.roleIds,
+    unitAccess: invitation.unitAccess,
     status: invitation.status,
     invitedBy: invitation.invitedBy,
     expiresAt: invitation.expiresAt,
@@ -149,6 +185,18 @@ export async function renewInvitationToken(
       },
     },
     { returnDocument: "after" }
+  );
+}
+
+export async function setInvitationUnitAccess(
+  invitationId: string,
+  tenantId: string,
+  unitAccess: UnitAccess
+): Promise<void> {
+  const db = await getDatabase();
+  await db.collection<IdentityInvitation>("identity_invitations").updateOne(
+    { _id: invitationId, tenantId },
+    { $set: { unitAccess } }
   );
 }
 

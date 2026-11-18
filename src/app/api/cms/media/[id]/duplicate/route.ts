@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireActiveTenant, tenantGuardResponse } from "@/core/security";
 import { duplicateMedia, getMediaById } from "@/lib/cms/media";
 import { authorizeApiWrite } from "@/lib/identity/api-guard";
+import { assertReadableUnitDocument } from "@/core/units/media-scope";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -23,6 +24,8 @@ export async function POST(_request: Request, { params }: RouteParams) {
     if (!source) {
       return NextResponse.json({ ok: false, error: "No se pudo duplicar." }, { status: 404 });
     }
+    const hidden = await assertReadableUnitDocument(tenantCheck.tenant, source.unitId);
+    if (hidden) return hidden;
 
     const media = await duplicateMedia(id, tenantCheck.tenant);
     if (!media) {

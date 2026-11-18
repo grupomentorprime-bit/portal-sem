@@ -5,14 +5,27 @@ import {
   keycloakUserNeedsPassword,
   setKeycloakPasswordForInvite,
 } from "@/lib/identity/keycloak-admin";
+import { resolveInviteAuthorizedApps } from "@/lib/desktop/invite-apps";
 import { acceptInvitation, findInvitationByToken } from "@/lib/identity/invitations";
 import {
   ensureActiveMembership,
   findMembership,
+  findMembershipAnyStatus,
+  grantMembershipUnitAccess,
   MembershipConflictError,
+  updateMembershipAuthorizedApps,
 } from "@/lib/identity/memberships";
 import { createSession, getRequestMeta, setSessionCookie } from "@/lib/identity/sessions";
 import { findUserByEmail, updateUserLastLogin } from "@/lib/identity/users";
+
+async function membershipAppsForInvite(
+  invitation: NonNullable<Awaited<ReturnType<typeof findInvitationByToken>>>
+) {
+  return resolveInviteAuthorizedApps(
+    invitation.tenantId,
+    invitation.authorizedApps !== undefined ? invitation.authorizedApps : undefined
+  );
+}
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -53,6 +66,26 @@ async function handleKeycloakAccept(
   const needsPassword = await keycloakUserNeedsPassword(invitation.email);
 
   if (!needsPassword) {
+    if (body.password) {
+      if (body.password.length < 8) {
+        return NextResponse.json(
+          { ok: false, error: "La contraseña debe tener al menos 8 caracteres." },
+          { status: 400 }
+        );
+      }
+      const passwordResult = await setKeycloakPasswordForInvite({
+        email: invitation.email,
+        displayName: invitation.displayName,
+        password: body.password,
+      });
+      if (!passwordResult.ok) {
+        return NextResponse.json(
+          { ok: false, error: "No se pudo completar el acceso. Intenta de nuevo." },
+          { status: passwordResult.code === "not_configured" ? 503 : 502 }
+        );
+      }
+    }
+
     const { createUser } = await import("@/lib/identity/users");
     const user =
       existing ??
@@ -64,6 +97,9 @@ async function handleKeycloakAccept(
 
     const active = await findMembership(user._id, invitation.tenantId);
     if (active) {
+      if (invitation.unitAccess) {
+        await grantMembershipUnitAccess(active._id, invitation.unitAccess);
+      }
       await acceptInvitation(invitation._id, user._id, invitation.tenantId);
       return NextResponse.json({
         ok: true,
@@ -79,6 +115,8 @@ async function handleKeycloakAccept(
         userId: user._id,
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
+        authorizedApps: await membershipAppsForInvite(invitation),
+        unitAccess: invitation.unitAccess,
       });
     } catch (error) {
       if (!(error instanceof MembershipConflictError)) throw error;
@@ -129,6 +167,8 @@ async function handleKeycloakAccept(
         userId: user._id,
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
+        authorizedApps: await membershipAppsForInvite(invitation),
+        unitAccess: invitation.unitAccess,
       });
     } catch (error) {
       if (!(error instanceof MembershipConflictError)) throw error;
@@ -166,7 +206,11 @@ async function handleLocalAccept(
         userId: existing._id,
         roleIds: invitation.roleIds,
         invitedBy: invitation.invitedBy,
+        authorizedApps: await membershipAppsForInvite(invitation),
+        unitAccess: invitation.unitAccess,
       });
+    } else if (invitation.unitAccess) {
+      await grantMembershipUnitAccess(active._id, invitation.unitAccess);
     }
     await acceptInvitation(invitation._id, existing._id, invitation.tenantId);
 
@@ -202,6 +246,19 @@ async function handleLocalAccept(
     return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
   }
 
+  const membership = await findMembership(result.user._id, invitation.tenantId);
+  if (membership) {
+    await updateMembershipAuthorizedApps(
+      membership._id,
+      await membershipAppsForInvite(invitation)
+    );
+  }
+  if (invitation.unitAccess) {
+    const unitMembership = await findMembershipAnyStatus(result.user._id, invitation.tenantId);
+    if (unitMembership) {
+      await grantMembershipUnitAccess(unitMembership._id, invitation.unitAccess);
+    }
+  }
   await acceptInvitation(invitation._id, result.user._id, invitation.tenantId);
   return NextResponse.json({ ok: true, userId: result.user._id, existing: false });
 }

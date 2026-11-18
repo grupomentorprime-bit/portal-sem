@@ -10,6 +10,8 @@ export interface AdminShellContext {
   branding: AdminTenantBranding;
   /** Badges opcionales por id o href de ítem de navegación. */
   navBadges?: Record<string, number>;
+  /** null = todo el Espacio. Arreglo = aplicaciones habilitadas en las unidades del miembro. */
+  enabledAppIds?: string[] | null;
 }
 
 export type SortDirection = "asc" | "desc";

@@ -3,8 +3,12 @@ import { AdminShell } from "@/components/identity/AdminShell";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
 import {
+  CONGRESS_VARONES_HOME_PATH,
+  isCongressAllowedAdminPath,
   isStudentAffairsAllowedAdminPath,
+  isUnitScopedAdminPathAllowed,
   STUDENT_AFFAIRS_HOME_PATH,
+  usesCongressFocusedShell,
   usesStudentAffairsFocusedShell,
 } from "@/lib/admin/nav-access";
 import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
@@ -13,7 +17,10 @@ import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { resolveRequestHost } from "@/core/tenant";
 import { resolvePublicOriginForTenant } from "@/lib/portal/public-origin";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
+import { hasAppKey } from "@/lib/desktop/app-access";
+import { readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
+import { activeDepartmentName } from "@/lib/identity/place-context";
 import { findRolesByIds, getRoleCode } from "@/lib/identity/roles";
 import { loadSessionContext } from "@/lib/identity/sessions";
 import { headers } from "next/headers";
@@ -55,6 +62,19 @@ export default async function AdminLayout({
     redirect("/admin");
   }
 
+  // Growth OS exige llave en el Espacio activo (no basta ocultar el icono).
+  if (session?.membership && hasSpace && !isLoginRoute && !isNoSpaceRoute) {
+    const activeTenantId = session.session.tenantId.trim();
+    const contract = await readSpaceContract(activeTenantId);
+    const allowed = hasAppKey("growth-os", {
+      contracted: contract.contracted,
+      authorizedApps: session.membership.authorizedApps ?? null,
+    });
+    if (!allowed) {
+      redirect("/escritorio");
+    }
+  }
+
   let roleLabel = "Colaborador";
   let roleCodes: string[] = [];
   const spaces = session ? await listAvailableSpacesForUser(session.user._id) : [];
@@ -76,12 +96,24 @@ export default async function AdminLayout({
   const compatMode = false;
   const shellV2 = isAdminShellV2Enabled();
   const brandingBase = buildAdminTenantBranding(config);
+  const departmentName = hasSpace
+    ? await activeDepartmentName({
+        tenantId: session!.session.tenantId,
+        roleCodes,
+        unitAccess: session?.membership?.unitAccess,
+      })
+    : "";
   const spaceDisplayName =
+    departmentName ||
     activeSpace?.name?.trim() ||
     config?.institution.name?.trim() ||
     "";
   const branding = spaceDisplayName
-    ? { ...brandingBase, institutionName: spaceDisplayName }
+    ? {
+        ...brandingBase,
+        institutionName: spaceDisplayName,
+        ...(departmentName ? { institutionShortName: departmentName } : {}),
+      }
     : brandingBase;
   const tenant = session?.session.tenantId?.trim() || config?.institution.tenant || "default";
   const tenantId = session?.session.tenantId?.trim() || tenant;
@@ -102,10 +134,45 @@ export default async function AdminLayout({
   if (
     pathname &&
     hasSpace &&
+    usesCongressFocusedShell(permissions, roleCodes) &&
+    !isCongressAllowedAdminPath(pathname)
+  ) {
+    redirect(CONGRESS_VARONES_HOME_PATH);
+  }
+
+  if (
+    pathname &&
+    hasSpace &&
     usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes) &&
     !isStudentAffairsAllowedAdminPath(pathname, roleCodes)
   ) {
     redirect(STUDENT_AFFAIRS_HOME_PATH);
+  }
+
+  let enabledAppIds: string[] | null = null;
+  if (session?.membership?.unitAccess?.mode === "units" && hasSpace) {
+    const { getDatabase } = await import("@/lib/mongodb");
+    const { listOrgUnits } = await import("@/core/units/repository");
+    const db = await getDatabase();
+    const allowed = new Set(session.membership.unitAccess.unitIds);
+    const units = await listOrgUnits(db, session.session.tenantId);
+    enabledAppIds = [
+      ...new Set(
+        units
+          .filter((unit) => unit.status === "active" && allowed.has(unit.unitId))
+          .flatMap((unit) => unit.enabledAppIds)
+      ),
+    ];
+  }
+
+  if (
+    pathname &&
+    hasSpace &&
+    !isLoginRoute &&
+    !isNoSpaceRoute &&
+    !isUnitScopedAdminPathAllowed(pathname, enabledAppIds)
+  ) {
+    redirect("/admin");
   }
 
   const publicOrigin = hasSpace
@@ -142,10 +209,7 @@ export default async function AdminLayout({
                 displayName: session.user.displayName,
                 email: session.user.email,
                 roleLabel,
-                institutionName:
-                  activeSpace?.name?.trim() ||
-                  config?.institution.name?.trim() ||
-                  branding.institutionName,
+                institutionName: spaceDisplayName || branding.institutionName,
                 activeTenantId: session.session.tenantId || null,
                 spaces: spaces.map((s) => ({ tenantId: s.tenantId, name: s.name })),
                 canOpenPlatform: hasPlatformOperatorCapability(session.user),
@@ -158,6 +222,7 @@ export default async function AdminLayout({
         shellV2={shellV2}
         branding={branding}
         navBadges={navBadges}
+        enabledAppIds={enabledAppIds}
       >
         {children}
       </AdminShell>

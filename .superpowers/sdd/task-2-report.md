@@ -1,30 +1,25 @@
-﻿# Task 2 - replaceGrowthFunnelStages + applySemAdmisionDefaultFunnel
+# Task 2 report
 
-Status: DONE
+**Status:** DONE
 
-## Archivos
-- Modificado: `src/core/growth/funnels.ts`
-- Modificado: `tests/baseline/sem-admision-funnel.test.ts`
+## Implemented
+- Added `allocateNextPaymentFolio(tenantId)` using atomic Mongo `$inc` on `CONGRESS_COLLECTIONS.sequences`.
+- Matched the repository's existing `findOneAndUpdate` shape by treating the return as the document directly.
+- Updated `recordCongressPayment` so successful new payments receive a folio before registration updates and `insertOne`.
+- Added `ensureCongressPaymentFolio({ tenantId, paymentId })` for legacy payments:
+  - returns `not_found` when payment is missing
+  - returns existing folio idempotently
+  - allocates a folio and conditionally updates only null/missing/empty folios
+  - handles lost races by re-reading and returning the winner's folio when present
 
-## RED
-`npx tsx --test tests/baseline/sem-admision-funnel.test.ts`
+## Verification
+- `npx tsc --noEmit -p tsconfig.json --pretty false` passed.
+- `ReadLints` for `src/lib/congress/repository.ts` reported no linter errors.
+- Self-reviewed `git diff -- src/lib/congress/repository.ts`.
 
-Primero fallo por falta de export:
-`TypeError: (0 , import_funnels.applySemAdmisionDefaultFunnel) is not a function`
+## Commits
+- None. Changes intentionally left uncommitted.
 
-## GREEN
-El mismo comando paso completo:
-- 4 tests
-- 0 fallos
-
-## Implementacion
-- `replaceGrowthFunnelStages(directory, { tenantId, funnelKey, stages, now? })` busca el funnel, reusa `writeStages` y devuelve las etapas persistidas; si no encuentra el funnel, devuelve `not_found`.
-- `applySemAdmisionDefaultFunnel(directory, tenantId, now?)` asegura el funnel default, renombra a `Admisión` cuando hace falta, y reemplaza sus etapas por `semAdmisionStages()` solo si todavia no son SEM.
-- Si el funnel ya tiene nombre y etapas SEM, devuelve `changed: false`.
-
-## Verificacion
-- `npx tsx --test tests/baseline/sem-admision-funnel.test.ts`
-- `ReadLints` sobre `src/core/growth/funnels.ts` y `tests/baseline/sem-admision-funnel.test.ts`: sin errores
-
-## Commit
-- `ed0d606` - `feat(growth): apply embudo Admisión SEM sobre funnel default`
+## Concerns
+- No concerns for Task 2.
+- The working tree contains pre-existing Task 1/unrelated changes; they were not modified except for this report file and `src/lib/congress/repository.ts`.
