@@ -10,7 +10,8 @@ const TONE: Record<DockAppId, string> = {
   "aprende-hoy": "g-aprende",
   rrhh: "g-rrhh",
   ajustes: "g-ajustes",
-  atencion: "g-atencion",
+  mensajes: "g-mensajes",
+  envivo: "g-envivo",
   clientes: "g-clientes",
 };
 

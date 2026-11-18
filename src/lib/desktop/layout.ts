@@ -9,7 +9,13 @@ export type DeskIconSpot = {
 };
 
 export function isDockAppId(value: string): value is DockAppId {
-  return value === "atencion" || value === "clientes" || value === "ajustes" || isMentorAppId(value);
+  return (
+    value === "mensajes" ||
+    value === "envivo" ||
+    value === "clientes" ||
+    value === "ajustes" ||
+    isMentorAppId(value)
+  );
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -18,7 +24,8 @@ function clamp(value: number, min: number, max: number): number {
 
 function parseSpot(value: unknown): DeskIconSpot | null {
   if (!value || typeof value !== "object") return null;
-  const appId = (value as { appId?: unknown }).appId;
+  const rawId = (value as { appId?: unknown }).appId;
+  const appId = rawId === "atencion" ? "mensajes" : rawId;
   const x = (value as { x?: unknown }).x;
   const y = (value as { y?: unknown }).y;
   if (typeof appId !== "string" || !isDockAppId(appId)) return null;
@@ -223,6 +230,25 @@ export function deskIconsForDock(
 ): DeskIconSpot[] {
   if (saved == null) return orderedDeskIcons(dock);
   return regulateDeskIcons(saved.filter((icon) => dock.includes(icon.appId)));
+}
+
+/** Suma los iconos del dock que la mesa guardada todavía no tiene. */
+export function completeDeskIcons(
+  saved: DeskIconSpot[] | null,
+  dock: readonly DockAppId[]
+): DeskIconSpot[] {
+  const current = deskIconsForDock(saved, dock);
+  const missing = dock.filter((appId) => !current.some((icon) => icon.appId === appId));
+  if (missing.length === 0) return current;
+  const step = GRID_X[1] - GRID_X[0];
+  return regulateDeskIcons([
+    ...current,
+    ...missing.map((appId, index) => ({
+      appId,
+      x: GRID_X[0] + (current.length + index) * step,
+      y: GRID_Y[0],
+    })),
+  ]);
 }
 
 export function regulateAfterDrop(input: {

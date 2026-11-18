@@ -4,10 +4,13 @@ import { getDatabase } from "@/lib/mongodb";
 import type { IdentityMembership, IdentityUser } from "@/types/identity";
 import {
   acceptInvitation,
-  findLatestInvitationDisplayName,
   findPendingInvitationByEmail,
+  listInvitationDisplayNames,
 } from "@/lib/identity/invitations";
-import { resolveLoginDisplayName } from "@/lib/identity/login-display-name";
+import {
+  pickInvitationDisplayName,
+  resolveLoginDisplayName,
+} from "@/lib/identity/login-display-name";
 import {
   createMembership,
   ensureActiveMembership,
@@ -56,11 +59,18 @@ export async function upsertUserFromKeycloak(
 
   const identityName = claims.displayName.trim();
   const currentName = user?.displayName?.trim() || "";
-  let invitationName = invitation?.displayName?.trim() || "";
   const copiedFromIdentity =
-    !currentName || currentName.toLowerCase() === email || currentName === identityName;
-  if (!invitationName && copiedFromIdentity) {
-    invitationName = await findLatestInvitationDisplayName(tenantId, email);
+    !currentName ||
+    currentName.toLowerCase() === email.toLowerCase() ||
+    currentName.toLowerCase() === identityName.toLowerCase();
+  let invitationName = "";
+  if (invitation?.displayName?.trim() || copiedFromIdentity) {
+    const recorded = await listInvitationDisplayNames(tenantId, email);
+    const pendingName = invitation?.displayName?.trim() || "";
+    const ordered = pendingName
+      ? [pendingName, ...recorded.filter((name) => name !== pendingName)]
+      : recorded;
+    invitationName = pickInvitationDisplayName(ordered, identityName);
   }
 
   const displayName = resolveLoginDisplayName({

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { resolveLoginDisplayName } from "../../src/lib/identity/login-display-name";
+import {
+  nameForMemberAccessEmail,
+  pickInvitationDisplayName,
+  resolveLoginDisplayName,
+} from "../../src/lib/identity/login-display-name";
 import { firstNameFromDisplayName } from "../../src/lib/platform/space-labels";
 
 describe("nombre corto de la cuenta", () => {
@@ -35,6 +39,47 @@ describe("nombre corto de la cuenta", () => {
         currentName: "",
       }),
       "Ana Google"
+    );
+  });
+
+  it("conserva el nombre corregido aunque el último reenvío copie a Google", () => {
+    assert.equal(
+      resolveLoginDisplayName({
+        email: "msepulvedabustos@gmail.com",
+        identityName: "masf dsd",
+        invitationName: "masf dsd",
+        currentName: "Marco Sepúlveda Bustos",
+      }),
+      "Marco Sepúlveda Bustos"
+    );
+  });
+
+  it("ignora la copia de Google y usa el nombre escrito en la invitación", () => {
+    assert.equal(
+      pickInvitationDisplayName(
+        ["masf dsd", "Marco Sepúlveda Bustos", "Marco Sepúlveda B."],
+        "masf dsd"
+      ),
+      "Marco Sepúlveda Bustos"
+    );
+    assert.equal(pickInvitationDisplayName(["masf dsd"], "masf dsd"), "masf dsd");
+  });
+
+  it("el reenvío no vuelve a grabar el nombre de Google", () => {
+    assert.equal(
+      nameForMemberAccessEmail("masf dsd", ["masf dsd", "Marco Sepúlveda Bustos"]),
+      "Marco Sepúlveda Bustos"
+    );
+    assert.equal(
+      nameForMemberAccessEmail("masf dsd", ["Marco Sepúlveda Bustos"]),
+      "Marco Sepúlveda Bustos"
+    );
+    assert.equal(
+      nameForMemberAccessEmail("Marco Sepúlveda Bustos", [
+        "masf dsd",
+        "Marco Sepúlveda Bustos",
+      ]),
+      "Marco Sepúlveda Bustos"
     );
   });
 });

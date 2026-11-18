@@ -60,19 +60,29 @@ export async function createInvitation(input: {
   return invitation;
 }
 
+/** Nombres de invitación de este correo, del más nuevo al más viejo. */
+export async function listInvitationDisplayNames(
+  tenantId: string,
+  email: string
+): Promise<string[]> {
+  const db = await getDatabase();
+  const rows = await db
+    .collection<IdentityInvitation>("identity_invitations")
+    .find({ tenantId, email: normalizeEmail(email) })
+    .project<{ displayName?: string }>({ displayName: 1 })
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .toArray();
+  return rows.map((row) => row.displayName?.trim() || "").filter(Boolean);
+}
+
 /** Nombre más reciente escrito al invitar a este correo en el Espacio. */
 export async function findLatestInvitationDisplayName(
   tenantId: string,
   email: string
 ): Promise<string> {
-  const db = await getDatabase();
-  const row = await db
-    .collection<IdentityInvitation>("identity_invitations")
-    .find({ tenantId, email: normalizeEmail(email) })
-    .sort({ createdAt: -1 })
-    .limit(1)
-    .next();
-  return row?.displayName?.trim() || "";
+  const names = await listInvitationDisplayNames(tenantId, email);
+  return names[0] ?? "";
 }
 
 export async function findPendingInvitationByEmail(

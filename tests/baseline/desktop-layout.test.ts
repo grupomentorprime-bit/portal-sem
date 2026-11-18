@@ -4,6 +4,7 @@ import {
   DESK_ICON_GAP,
   DESK_ICON_HEIGHT,
   DESK_ICON_WIDTH,
+  completeDeskIcons,
   defaultDeskIcons,
   deskIconPixels,
   deskIconsForDock,
@@ -37,6 +38,15 @@ describe("iconos del escritorio", () => {
     assert.deepEqual(deskIconsForDock(saved, ["clientes", "ajustes"]), [
       { appId: "clientes", x: 38, y: 40 },
     ]);
+    const migrated = parseDesktopLayout([
+      { appId: "atencion", x: 8, y: 16 },
+      { appId: "clientes", x: 18, y: 16 },
+    ]);
+    assert.equal(migrated?.[0]?.appId, "mensajes");
+    assert.deepEqual(
+      completeDeskIcons(migrated, ["mensajes", "envivo", "clientes", "ajustes"]).map((icon) => icon.appId),
+      ["mensajes", "clientes", "envivo", "ajustes"]
+    );
     assert.deepEqual(
       regulateDeskIcons([
         { appId: "growth-os", x: 8, y: 16 },

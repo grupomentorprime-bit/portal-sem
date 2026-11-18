@@ -5,8 +5,10 @@ import {
   createInvitation,
   findPendingInvitationByEmail,
   findInvitationById,
+  listInvitationDisplayNames,
   renewInvitationToken,
 } from "@/lib/identity/invitations";
+import { nameForMemberAccessEmail } from "@/lib/identity/login-display-name";
 import { unitIdsForDepartmentEmail } from "@/lib/identity/invite-department";
 import { sendAccessReminderEmail, sendInvitationEmail } from "@/lib/notifications/email";
 import { normalizeEmail } from "@/lib/validation/identity";
@@ -92,7 +94,9 @@ export async function resendMemberAccessEmail(input: {
     return { ok: false, error: "Esta persona no tiene un correo.", status: 400 };
   }
 
-  const displayName = input.displayName.trim() || email;
+  const recordedNames = await listInvitationDisplayNames(input.tenantId, email);
+  const displayName =
+    nameForMemberAccessEmail(input.displayName, recordedNames) || email;
   const needsPassword = isKeycloakOnlyAuth();
   const unitIds =
     input.unitIds?.length

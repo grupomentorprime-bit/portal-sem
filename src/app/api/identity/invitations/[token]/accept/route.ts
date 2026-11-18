@@ -16,7 +16,8 @@ import {
   updateMembershipAuthorizedApps,
 } from "@/lib/identity/memberships";
 import { createSession, getRequestMeta, setSessionCookie } from "@/lib/identity/sessions";
-import { findUserByEmail, updateUserLastLogin } from "@/lib/identity/users";
+import { findUserByEmail, updateUserLastLogin, updateUserProfile } from "@/lib/identity/users";
+import { resolveLoginDisplayName } from "@/lib/identity/login-display-name";
 
 async function membershipAppsForInvite(
   invitation: NonNullable<Awaited<ReturnType<typeof findInvitationByToken>>>
@@ -29,6 +30,22 @@ async function membershipAppsForInvite(
 
 interface RouteParams {
   params: Promise<{ token: string }>;
+}
+
+/** La cuenta que ya existía (perfil de Google) toma el nombre escrito en la invitación. */
+async function adoptInvitationDisplayName(
+  user: { _id: string; displayName: string },
+  invitation: { email: string; displayName: string }
+): Promise<void> {
+  const next = resolveLoginDisplayName({
+    email: invitation.email,
+    identityName: user.displayName,
+    invitationName: invitation.displayName,
+    currentName: user.displayName,
+  });
+  if (next && next !== user.displayName.trim()) {
+    await updateUserProfile(user._id, { displayName: next });
+  }
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
@@ -94,6 +111,7 @@ async function handleKeycloakAccept(
         displayName: invitation.displayName,
         emailVerified: true,
       }));
+    await adoptInvitationDisplayName(user, invitation);
 
     const active = await findMembership(user._id, invitation.tenantId);
     if (active) {
@@ -160,6 +178,7 @@ async function handleKeycloakAccept(
         displayName: invitation.displayName,
         emailVerified: true,
       }));
+    await adoptInvitationDisplayName(user, invitation);
 
     try {
       await ensureActiveMembership({
@@ -199,6 +218,7 @@ async function handleLocalAccept(
   const existing = await findUserByEmail(invitation.email);
 
   if (existing) {
+    await adoptInvitationDisplayName(existing, invitation);
     const active = await findMembership(existing._id, invitation.tenantId);
     if (!active) {
       await ensureActiveMembership({

@@ -1,6 +1,7 @@
 "use client";
 
 import { jsPDF } from "jspdf";
+import { VENDOR_CREDIT_LABEL } from "@/core/branding/display";
 import { normalizePaymentMethod, type CashMethodKey } from "@/core/congress/cash-box";
 import { paymentReceiptFilename } from "@/core/congress/payment-folio";
 import type { CongressPayment } from "@/core/congress/types";
@@ -8,7 +9,6 @@ import type { CongressPayment } from "@/core/congress/types";
 const LOGO_PATH = "/branding/ipn-chile/varones-nacional.png";
 const MARGIN = 16;
 const PAGE_WIDTH = 210;
-const PAGE_HEIGHT = 297;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 const FOOTER_Y = 279;
 
@@ -79,6 +79,7 @@ function addFooter(doc: jsPDF, emittedAt: string): void {
     { maxWidth: CONTENT_WIDTH }
   );
   doc.text(`Emitido America/Santiago: ${emittedAt}`, MARGIN, FOOTER_Y + 6);
+  doc.text(`${VENDOR_CREDIT_LABEL} · mentorprime.cl`, MARGIN, FOOTER_Y + 11);
   doc.setTextColor(0);
 }
 
@@ -194,7 +195,7 @@ export async function downloadCongressPaymentReceiptPdf(input: {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(100);
-    doc.text(`Página ${page} de ${totalPages}`, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 10, {
+    doc.text(`Página ${page} de ${totalPages}`, PAGE_WIDTH - MARGIN, FOOTER_Y + 6, {
       align: "right",
     });
     doc.setTextColor(0);

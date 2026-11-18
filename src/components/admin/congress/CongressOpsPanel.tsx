@@ -261,9 +261,15 @@ function CongressOpsPanelInner() {
   }, [loadSummary, loadCapabilities, loadRegistrations]);
 
   useDeferredEffect(() => {
-    if (activeTab === "aportes" || activeTab === "caja") void loadPayments();
+    if (activeTab === "aportes" || activeTab === "caja" || activeTab === "reportes") {
+      void loadPayments();
+    }
+    if (activeTab === "reportes") {
+      void loadRegistrations();
+      void loadSummary();
+    }
     if (activeTab === "historial") void loadAudit();
-  }, [activeTab, loadPayments, loadAudit]);
+  }, [activeTab, loadPayments, loadAudit, loadRegistrations, loadSummary]);
 
   useDeferredEffect(() => {
     if (selectedId && capabilities.payments) void loadPayments();
@@ -1543,6 +1549,13 @@ function CongressOpsPanelInner() {
             homes={homes}
             assignments={assignments}
             registrations={registrations}
+            payments={payments}
+            churchesByZone={churchesByZone}
+            onRefresh={() => {
+              void loadRegistrations();
+              void loadPayments();
+              void loadSummary();
+            }}
           />
         </TabsContent>
 

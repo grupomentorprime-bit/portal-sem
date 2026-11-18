@@ -43,8 +43,8 @@ export const OWNER_SECTIONS = [
   },
   {
     id: "atencion",
-    label: "Atención",
-    subtitle: "Áreas de contacto y qué ejecutivo atiende cada una.",
+    label: "Mensajes",
+    subtitle: "Áreas de los mensajes y qué ejecutivo atiende cada una.",
   },
   {
     id: "seguridad",

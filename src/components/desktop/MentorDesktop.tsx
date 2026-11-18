@@ -37,7 +37,7 @@ import {
 } from "@/lib/connect/policy";
 import { desktopClick, type DesktopClick } from "@/lib/desktop/contract";
 import {
-  deskIconsForDock,
+  completeDeskIcons,
   DESK_ICON_HEIGHT,
   DESK_ICON_WIDTH,
   cellAnchor,
@@ -149,7 +149,8 @@ function toneClass(appId: DockAppId): string {
   if (appId === "growth-os") return "g-growth";
   if (appId === "cumple") return "g-cumple";
   if (appId === "aprende-hoy") return "g-aprende";
-  if (appId === "atencion") return "g-atencion";
+  if (appId === "mensajes") return "g-mensajes";
+  if (appId === "envivo") return "g-envivo";
   if (appId === "clientes") return "g-clientes";
   if (appId === "ajustes") return "g-ajustes";
   return "g-rrhh";
@@ -160,11 +161,19 @@ function glyphClass(appId: DockAppId): string {
 }
 
 function renderGlyph(appId: DockAppId) {
-  if (appId === "atencion") {
+  if (appId === "mensajes") {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" aria-hidden="true">
         <path d="M5 16.5V7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6A2.5 2.5 0 0 1 16.5 16H12l-4.5 3.5V16H7.5A2.5 2.5 0 0 1 5 13.5" strokeLinejoin="round" />
         <path d="M8.5 9.5h7M8.5 12.5h4" />
+      </svg>
+    );
+  }
+  if (appId === "envivo") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" aria-hidden="true">
+        <path d="M8 18.5 5 21V8.5A2.5 2.5 0 0 1 7.5 6h9A2.5 2.5 0 0 1 19 8.5v6a2.5 2.5 0 0 1-2.5 2.5H8z" strokeLinejoin="round" />
+        <circle cx="12" cy="11.5" r="1.4" fill="#fff" stroke="none" />
       </svg>
     );
   }
@@ -250,7 +259,8 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const [spaceListOpen, setSpaceListOpen] = useState(false);
   const [ajustesOpen, setAjustesOpen] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(false);
-  const [attentionOpen, setAttentionOpen] = useState(false);
+  const [chat, setChat] = useState<null | "mensajes" | "envivo">(null);
+  const [liveDot, setLiveDot] = useState(false);
   const [attentionUnread, setAttentionUnread] = useState(Boolean(props.attentionUnread));
   const [spaceAjustesOpen, setSpaceAjustesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -282,11 +292,12 @@ export function MentorDesktop(props: MentorDesktopProps) {
         authorizedApps: props.authorizedApps ?? null,
         canRequestPlan,
       }),
-      "atencion",
+      "mensajes",
+      "envivo",
     ];
   }, [owner, props.contracted, props.authorizedApps, canRequestPlan]);
   const [icons, setIcons] = useState<DeskIconSpot[]>(() =>
-    deskIconsForDock(
+    completeDeskIcons(
       props.layout,
       owner
         ? desktopDock(true)
@@ -296,7 +307,8 @@ export function MentorDesktop(props: MentorDesktopProps) {
               authorizedApps: props.authorizedApps ?? null,
               canRequestPlan: canManageAppKeys(props.permissions ?? []),
             }),
-            "atencion",
+            "mensajes",
+            "envivo",
           ]
     )
   );
@@ -583,6 +595,31 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }, [props.attentionUnread]);
 
   useEffect(() => {
+    let timer = 0;
+    const beat = () => {
+      if (document.visibilityState === "hidden") return;
+      void fetch("/api/desktop/presence", { method: "POST" })
+        .then(async (response) => {
+          const body = (await response.json().catch(() => null)) as {
+            ok?: boolean;
+            staffOnline?: boolean;
+            online?: unknown[];
+          } | null;
+          if (!response.ok || !body?.ok) return;
+          setLiveDot(props.attentionStaff ? (body.online?.length ?? 0) > 0 : body.staffOnline === true);
+        })
+        .catch(() => undefined);
+    };
+    beat();
+    timer = window.setInterval(beat, 20000);
+    document.addEventListener("visibilitychange", beat);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", beat);
+    };
+  }, [props.attentionStaff]);
+
+  useEffect(() => {
     setAvatarState({
       avatarPresetId: props.user.avatarPresetId ?? null,
       avatarPhoto: props.user.avatarPhoto === true,
@@ -591,7 +628,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }, [props.user.avatarPhoto, props.user.avatarPhotoUpdatedAt, props.user.avatarPresetId]);
 
   useEffect(() => {
-    setIcons(deskIconsForDock(props.layout, dockApps));
+    setIcons(completeDeskIcons(props.layout, dockApps));
     scalesRef.current = dockApps.map(() => 1);
     velocityRef.current = dockApps.map(() => 0);
     targetRef.current = dockApps.map(() => 1);
@@ -785,7 +822,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
   function closeWindows() {
     setAjustesOpen(false);
     setClientesOpen(false);
-    setAttentionOpen(false);
+    setChat(null);
     setSpaceAjustesOpen(false);
     setAccountOpen(false);
   }
@@ -795,13 +832,16 @@ export function MentorDesktop(props: MentorDesktopProps) {
     setSpaceListOpen(false);
     setAjustesOpen(false);
     setClientesOpen(false);
-    setAttentionOpen(false);
+    setChat(null);
     setSpaceAjustesOpen(false);
     setAccountOpen((open) => !open);
   }
 
   function attentionMark(appId: DockAppId) {
-    if (appId !== "atencion") return null;
+    if (appId === "envivo") {
+      return liveDot ? <em className="attn-dot" aria-label="Alguien en línea" /> : null;
+    }
+    if (appId !== "mensajes") return null;
     const count = props.attentionCount ?? 0;
     if (props.attentionStaff && count > 0) {
       return <em className="attn-count">{count > 99 ? "99+" : count}</em>;
@@ -812,22 +852,22 @@ export function MentorDesktop(props: MentorDesktopProps) {
 
   function handleApp(appId: DockAppId, event?: ReactMouseEvent<HTMLButtonElement>) {
     if (launch || connectingRef.current) return;
-    if (appId === "atencion") {
-      if (!props.attentionStaff) setAttentionUnread(false);
+    if (appId === "mensajes" || appId === "envivo") {
+      if (appId === "mensajes" && !props.attentionStaff) setAttentionUnread(false);
       setSheet(null);
       setSpaceListOpen(false);
       setAjustesOpen(false);
       setClientesOpen(false);
       setSpaceAjustesOpen(false);
       setAccountOpen(false);
-      setAttentionOpen((open) => !open);
+      setChat((open) => (open === appId ? null : appId));
       return;
     }
     if (appId === "ajustes" && props.owner) {
       setSheet(null);
       setSpaceListOpen(false);
       setClientesOpen(false);
-      setAttentionOpen(false);
+      setChat(null);
       setSpaceAjustesOpen(false);
       setAccountOpen(false);
       setAjustesOpen((open) => !open);
@@ -837,7 +877,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       setSheet(null);
       setSpaceListOpen(false);
       setAjustesOpen(false);
-      setAttentionOpen(false);
+      setChat(null);
       setSpaceAjustesOpen(false);
       setAccountOpen(false);
       setClientesOpen((open) => !open);
@@ -848,7 +888,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       setSheet(null);
       setSpaceListOpen(false);
       setAccountOpen(false);
-      setAttentionOpen(false);
+      setChat(null);
       setSpaceAjustesOpen((open) => !open);
       return;
     }
@@ -1278,11 +1318,11 @@ export function MentorDesktop(props: MentorDesktopProps) {
       {ajustesOpen ? (
         <DesktopAjustes self={props.user} onClose={() => setAjustesOpen(false)} />
       ) : null}
-      {attentionOpen ? (
+      {chat ? (
         <DesktopAttention
           mode={props.attentionStaff ? "panel" : "client"}
-          selfId={props.user.id}
-          onClose={() => setAttentionOpen(false)}
+          channel={chat}
+          onClose={() => setChat(null)}
         />
       ) : null}
       {clientesOpen ? (
@@ -1371,7 +1411,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
               </button>
             </div>
             {sheet.kind === "request" && sheetRequested ? (
-              <p className="sent">Queda registrada para este Espacio. Puedes seguirla en Atención.</p>
+              <p className="sent">Queda registrada para este Espacio. Puedes seguirla en Mensajes.</p>
             ) : null}
           </div>
         ) : null}
