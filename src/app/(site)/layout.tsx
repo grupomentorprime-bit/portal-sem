@@ -124,6 +124,7 @@ export default async function SiteLayout({
             institutionName={ctx.config.institution.name}
             contact={ctx.config.contact}
             social={ctx.config.social}
+            content={content}
           />
         </PublicSurface>
       );
