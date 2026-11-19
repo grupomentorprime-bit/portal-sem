@@ -1,7 +1,7 @@
 # Atención · Plataforma — Cápsula Mac 2050
 
 **Fecha:** 2026-11-18  
-**Estado:** diseño aprobado en chat; pendiente revisión del archivo  
+**Estado:** implementado (cápsula Plataforma); Chat en vivo y empresa fuera de alcance  
 **Alcance:** solo la mesa **Atención · Plataforma** (`serverDesk === "platform"`, `mode === "panel"`, canal mensajes)  
 **Fuera de alcance:** Chat en vivo (`live-chat-sheet` / canal `envivo`), Atención de empresa (`is-attention-company`), lógica de tickets/API, adjuntos (ya existentes)
 
