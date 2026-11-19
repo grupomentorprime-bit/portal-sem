@@ -26,6 +26,7 @@ describe("ajustes del dueño", () => {
         "Plataforma",
         "Dirección",
         "Productos",
+        "Atención al Cliente",
         "Seguridad",
         "Legales",
         "Actividad",

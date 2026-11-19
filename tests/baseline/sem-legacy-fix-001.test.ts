@@ -68,7 +68,8 @@ describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
     assert.doesNotMatch(client, /import\s*\{\s*DEFAULT_MENUS/);
     assert.doesNotMatch(client, /SEM_DEFAULT_MENUS/);
     assert.doesNotMatch(client, /seedMenus\s*=\s*DEFAULT_MENUS/);
-    assert.match(menusPage, /getDefaultMenusForTenant/);
+    assert.match(menusPage, /notFound\s*\(/);
+    assert.doesNotMatch(menusPage, /SEM_DEFAULT_MENUS|PLATFORM_DEFAULT_MENUS|getDefaultMenusForTenant|seedMenus/);
     assert.equal(getDefaultMenusForTenant(SEM_TENANT_ID), SEM_DEFAULT_MENUS);
     assert.equal(getDefaultMenusForTenant(ADL_TENANT_ID), PLATFORM_DEFAULT_MENUS);
     assert.equal(getDefaultMenusForTenant("otro-espacio"), PLATFORM_DEFAULT_MENUS);
