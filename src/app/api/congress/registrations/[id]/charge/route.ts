@@ -19,9 +19,10 @@ export async function PATCH(
     const body = (await request.json().catch(() => null)) as {
       action?: string;
       reason?: string;
+      waiveClp?: number;
     } | null;
 
-    if (body?.action !== "exempt" && body?.action !== "restore") {
+    if (body?.action !== "exempt" && body?.action !== "restore" && body?.action !== "reduce") {
       return NextResponse.json({ ok: false, error: "Acción inválida." }, { status: 400 });
     }
 
@@ -36,16 +37,21 @@ export async function PATCH(
       chargeHistory: current.chargeHistory ?? [],
       action: body.action,
       reason: body.reason,
+      waiveClp: body.waiveClp,
       nowIso: new Date().toISOString(),
       actorUserId: ctx.user._id,
     });
 
     if (!result.ok) {
       const messages = {
-        reason_required: "Se requiere motivo.",
-        has_allocations: "Anule los pagos imputados antes de marcar exento.",
-        not_exempt: "Solo se puede restaurar un aporte previamente exento.",
-        already_charged: "La inscripción ya tiene cargo.",
+        reason_required: "Elija el motivo.",
+        has_allocations: "Anule los pagos imputados antes de no cobrar el total.",
+        not_exempt: "Solo se puede restaurar un aporte que ya fue ajustado.",
+        already_charged: "La inscripción ya tiene el aporte completo.",
+        waive_invalid: "Indique la parte que no se cobra.",
+        waive_too_high: "La parte que no se cobra supera el aporte.",
+        below_paid: "El aporte que queda no puede ser menor a lo ya pagado.",
+        no_charge: "Esta ficha no tiene aporte que ajustar.",
       } as const;
       return NextResponse.json(
         { ok: false, error: messages[result.error] },
@@ -83,10 +89,15 @@ export async function PATCH(
       action:
         body.action === "exempt"
           ? "registration.charge.exempt"
-          : "registration.charge.restore",
+          : body.action === "reduce"
+            ? "registration.charge.reduce"
+            : "registration.charge.restore",
       entity: "congress_registration",
       entityId: id,
-      metadata: { reason: String(body.reason ?? "").trim() },
+      metadata: {
+        reason: String(body.reason ?? "").trim(),
+        waiveClp: body.waiveClp ?? null,
+      },
     });
 
     return NextResponse.json({ ok: true, registration: updated });

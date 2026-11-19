@@ -98,12 +98,18 @@ export interface MentorDesktopProps {
   dayLines?: DesktopDayLine[];
   /** Dueño del ecosistema: Ajustes controla el acceso total y aparece Clientes. */
   owner?: boolean;
-  /** Dueño u operador: el panel de casos, no la bandeja del cliente. */
+  /** Dueño u operador. Dentro de una empresa, Atención sigue el espacio activo. */
   attentionStaff?: boolean;
+  /** Mesa de plataforma, o la empresa que está abierta. */
+  attentionDesk?: "platform" | "company";
+  /** Nombre de la empresa activa. Vacío en la mesa de plataforma. */
+  attentionCompanyName?: string;
   /** Casos sin asignar o con respuesta sin leer. */
   attentionCount?: number;
   /** El cliente tiene una respuesta de Nelzuri sin abrir. */
   attentionUnread?: boolean;
+  /** Mensajes de chat sin leer. Distinto de la cola de tickets. */
+  attentionUnreadCount?: number;
   /** El dueño abrió el escritorio de un cliente y puede volver a la plataforma. */
   canReturnToPlatform?: boolean;
   /** Permisos del Espacio activo. Filtran Ajustes de empresa. */
@@ -259,8 +265,10 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const [spaceListOpen, setSpaceListOpen] = useState(false);
   const [ajustesOpen, setAjustesOpen] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(false);
-  const [chat, setChat] = useState<null | "mensajes" | "envivo">(null);
-  const [liveDot, setLiveDot] = useState(false);
+  const [chat, setChat] = useState<null | "mensajes">(null);
+  const [liveMounted, setLiveMounted] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(false);
+  const [liveUnread, setLiveUnread] = useState(props.attentionStaff ? 0 : (props.attentionUnreadCount ?? 0));
   const [attentionUnread, setAttentionUnread] = useState(Boolean(props.attentionUnread));
   const [attentionCount, setAttentionCount] = useState(props.attentionCount ?? 0);
   const [spaceAjustesOpen, setSpaceAjustesOpen] = useState(false);
@@ -284,6 +292,11 @@ export function MentorDesktop(props: MentorDesktopProps) {
   const dockRef = useRef<HTMLDivElement>(null);
   const deskRef = useRef<HTMLElement>(null);
   const owner = Boolean(props.owner);
+  const attentionInCompany = (props.attentionDesk ?? (owner ? "platform" : "company")) === "company";
+  const attentionCompanyLabel =
+    props.attentionCompanyName?.trim() ||
+    props.spaces.find((space) => space.tenantId === props.activeTenantId)?.name?.trim() ||
+    props.spaceName;
   const canRequestPlan = canManageAppKeys(props.permissions ?? []);
   const dockApps = useMemo<DockAppId[]>(() => {
     if (owner) return desktopDock(true);
@@ -294,7 +307,6 @@ export function MentorDesktop(props: MentorDesktopProps) {
         canRequestPlan,
       }),
       "mensajes",
-      "envivo",
     ];
   }, [owner, props.contracted, props.authorizedApps, canRequestPlan]);
   const [icons, setIcons] = useState<DeskIconSpot[]>(() =>
@@ -309,7 +321,6 @@ export function MentorDesktop(props: MentorDesktopProps) {
               canRequestPlan: canManageAppKeys(props.permissions ?? []),
             }),
             "mensajes",
-            "envivo",
           ]
     )
   );
@@ -594,32 +605,35 @@ export function MentorDesktop(props: MentorDesktopProps) {
   useEffect(() => {
     setAttentionUnread(Boolean(props.attentionUnread));
     setAttentionCount(props.attentionCount ?? 0);
-  }, [props.attentionCount, props.attentionUnread]);
+    if (!props.attentionStaff) setLiveUnread(props.attentionUnreadCount ?? 0);
+  }, [props.attentionCount, props.attentionStaff, props.attentionUnread, props.attentionUnreadCount]);
 
   useEffect(() => {
     let timer = 0;
     const beat = () => {
       if (document.visibilityState === "hidden") return;
-      void fetch("/api/desktop/presence", { method: "POST" })
-        .then(async (response) => {
-          const body = (await response.json().catch(() => null)) as {
+      void Promise.all([
+        fetch("/api/desktop/presence", { method: "POST" }),
+        fetch("/api/desktop/attention"),
+      ])
+        .then(async ([presenceResponse, attentionResponse]) => {
+          const presence = (await presenceResponse.json().catch(() => null)) as {
             ok?: boolean;
-            staffOnline?: boolean;
-            online?: unknown[];
+            online?: Array<{ tenantId: string }>;
           } | null;
-          if (!response.ok || !body?.ok) return;
-          setLiveDot(props.attentionStaff ? (body.online?.length ?? 0) > 0 : body.staffOnline === true);
-        })
-        .catch(() => undefined);
-      void fetch("/api/desktop/attention")
-        .then(async (response) => {
-          const attention = (await response.json().catch(() => null)) as {
+          const attention = (await attentionResponse.json().catch(() => null)) as {
             ok?: boolean;
-            badge?: { count?: number; unread?: boolean };
+            cases?: Array<{ tenantId: string; unread: boolean }>;
+            badge?: { count?: number; unread?: boolean; unreadCount?: number };
           } | null;
-          if (!response.ok || !attention?.ok || !attention.badge) return;
+          if (!attentionResponse.ok || !attention?.ok || !attention.badge) return;
           setAttentionCount(attention.badge.count ?? 0);
-          if (!props.attentionStaff) setAttentionUnread(Boolean(attention.badge.unread));
+          if (!props.attentionStaff || attentionInCompany) setAttentionUnread(Boolean(attention.badge.unread));
+          const online = new Set((presence?.online ?? []).map((org) => org.tenantId));
+          const unread = props.attentionStaff
+            ? (attention.cases ?? []).filter((item) => item.unread && online.has(item.tenantId)).length
+            : (attention.badge.unreadCount ?? 0);
+          setLiveUnread(unread);
         })
         .catch(() => undefined);
     };
@@ -630,7 +644,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", beat);
     };
-  }, [props.attentionStaff]);
+  }, [attentionInCompany, props.attentionStaff]);
 
   useEffect(() => {
     setAvatarState({
@@ -851,22 +865,30 @@ export function MentorDesktop(props: MentorDesktopProps) {
   }
 
   function attentionMark(appId: DockAppId) {
-    if (appId === "envivo") {
-      return liveDot ? <em className="attn-dot" aria-label="Alguien en línea" /> : null;
-    }
     if (appId !== "mensajes") return null;
     const count = attentionCount;
-    if (props.attentionStaff && count > 0) {
+    if (props.attentionStaff && !attentionInCompany && count > 0) {
       return <em className="attn-count">{count > 99 ? "99+" : count}</em>;
     }
-    if (!props.attentionStaff && attentionUnread) return <em className="attn-dot" aria-label="Mensaje nuevo" />;
+    if ((!props.attentionStaff || attentionInCompany) && attentionUnread) {
+      return <em className="attn-dot" aria-label="Mensaje nuevo" />;
+    }
     return null;
+  }
+
+  function toggleLiveChat() {
+    setLiveMounted(true);
+    setLiveOpen((open) => !open);
   }
 
   function handleApp(appId: DockAppId, event?: ReactMouseEvent<HTMLButtonElement>) {
     if (launch || connectingRef.current) return;
-    if (appId === "mensajes" || appId === "envivo") {
-      if (appId === "mensajes" && !props.attentionStaff) setAttentionUnread(false);
+    if (appId === "envivo") {
+      toggleLiveChat();
+      return;
+    }
+    if (appId === "mensajes") {
+      if (!props.attentionStaff) setAttentionUnread(false);
       setSheet(null);
       setSpaceListOpen(false);
       setAjustesOpen(false);
@@ -1333,8 +1355,10 @@ export function MentorDesktop(props: MentorDesktopProps) {
       ) : null}
       {chat ? (
         <DesktopAttention
-          mode={props.attentionStaff ? "panel" : "client"}
+          mode={props.attentionStaff && !attentionInCompany ? "panel" : "client"}
           channel={chat}
+          spaceName={attentionInCompany ? attentionCompanyLabel : ""}
+          lockedTenantId={attentionInCompany ? props.activeTenantId : ""}
           onClose={() => setChat(null)}
         />
       ) : null}
@@ -1366,6 +1390,38 @@ export function MentorDesktop(props: MentorDesktopProps) {
           onClose={() => setAccountOpen(false)}
         />
       ) : null}
+
+      <div className="live-chat">
+        {liveMounted ? (
+          <div id="live-chat-panel" className={`live-chat-panel${liveOpen ? " is-open" : ""}`}>
+            <DesktopAttention
+              mode={props.attentionStaff && !attentionInCompany ? "panel" : "client"}
+              channel="envivo"
+              presentation="bubble"
+              spaceName={attentionInCompany ? attentionCompanyLabel : ""}
+              lockedTenantId={attentionInCompany ? props.activeTenantId : ""}
+              onClose={() => setLiveOpen(false)}
+              onUnreadCount={setLiveUnread}
+            />
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="live-chat-bubble"
+          aria-expanded={liveOpen}
+          aria-controls="live-chat-panel"
+          aria-label={liveUnread > 0 ? `Chat en vivo, ${liveUnread} sin leer` : "Chat en vivo"}
+          onClick={toggleLiveChat}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" aria-hidden="true">
+            <path d="M8 18.5 5 21V8.5A2.5 2.5 0 0 1 7.5 6h9A2.5 2.5 0 0 1 19 8.5v6a2.5 2.5 0 0 1-2.5 2.5H8z" strokeLinejoin="round" />
+            <circle cx="12" cy="11.5" r="1.4" fill="#fff" stroke="none" />
+          </svg>
+          {liveUnread > 0 ? (
+            <em className="live-chat-count">{liveUnread > 99 ? "99+" : liveUnread}</em>
+          ) : null}
+        </button>
+      </div>
 
       {launch ? (
         <div

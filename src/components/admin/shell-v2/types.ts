@@ -19,6 +19,7 @@ export interface AdminShellV2Context {
   branding: AdminTenantBranding;
   navBadges?: Record<string, number>;
   enabledAppIds?: string[] | null;
+  showCongressVarones?: boolean;
 }
 
 export interface ModuleHeaderProps {

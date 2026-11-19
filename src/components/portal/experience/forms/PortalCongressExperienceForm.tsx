@@ -104,6 +104,8 @@ export function PortalCongressExperienceForm({
   const [suggestions, setSuggestions] = useState<PublicHit[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [suggestionsHasMore, setSuggestionsHasMore] = useState(false);
+  const [registered, setRegistered] = useState<PublicHit[]>([]);
+  const [registeredHasMore, setRegisteredHasMore] = useState(false);
   const [churchesByZone, setChurchesByZone] = useState<Record<string, string[]>>({});
   const [otherChurch, setOtherChurch] = useState(false);
 
@@ -158,8 +160,10 @@ export function PortalCongressExperienceForm({
     if (q.length < 2) {
       setMatches([]);
       setSuggestions([]);
+      setRegistered([]);
       setHasMore(false);
       setSuggestionsHasMore(false);
+      setRegisteredHasMore(false);
       return;
     }
     let cancelled = false;
@@ -175,12 +179,15 @@ export function PortalCongressExperienceForm({
           if (!res.ok || !data.ok) {
             setMatches([]);
             setSuggestions([]);
+            setRegistered([]);
             return;
           }
           setMatches(data.matches ?? []);
           setSuggestions(data.suggestions ?? []);
+          setRegistered(data.registered ?? []);
           setHasMore(Boolean(data.hasMore));
           setSuggestionsHasMore(Boolean(data.suggestionsHasMore));
+          setRegisteredHasMore(Boolean(data.registeredHasMore));
         } finally {
           if (!cancelled) setSearching(false);
         }
@@ -363,6 +370,28 @@ export function PortalCongressExperienceForm({
             />
             {searching ? <p className="text-xs text-muted">Buscando…</p> : null}
 
+            {registered.length > 0 ? (
+              <div role="status" aria-live="polite">
+                <PortalFormSuccess
+                  variant="inline"
+                  className="portal-experience-form__success--registered"
+                  kicker="Está OK"
+                  title="Ya envió el formulario"
+                  message={registered
+                    .map(
+                      (hit) =>
+                        `${hit.fullName} · ${hit.churchName} · ${formatZoneLabel(hit.zoneId)}`
+                    )
+                    .join(". ")}
+                >
+                  <p className="text-sm font-semibold">
+                    No necesita enviarlo otra vez.
+                    {registeredHasMore ? " Hay más personas con ese nombre que ya enviaron." : ""}
+                  </p>
+                </PortalFormSuccess>
+              </div>
+            ) : null}
+
             {matches.length > 0 ? (
               <ul className="max-h-80 overflow-y-auto rounded-xl border border-border bg-background shadow-sm">
                 {matches.map((hit) => (
@@ -416,7 +445,11 @@ export function PortalCongressExperienceForm({
               </div>
             ) : null}
 
-            {trimmedQuery.length >= 2 && !searching && matches.length === 0 && suggestions.length === 0 ? (
+            {trimmedQuery.length >= 2 &&
+            !searching &&
+            matches.length === 0 &&
+            suggestions.length === 0 &&
+            registered.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border bg-background-muted/30 px-4 py-4">
                 <p className="text-sm leading-relaxed text-muted">
                   No hay coincidencias para «{trimmedQuery}». Si no apareces, regístrate como nuevo.
@@ -434,7 +467,8 @@ export function PortalCongressExperienceForm({
               </div>
             ) : null}
 
-            {trimmedQuery.length >= 2 && (matches.length > 0 || suggestions.length > 0) ? (
+            {trimmedQuery.length >= 2 &&
+            (matches.length > 0 || suggestions.length > 0 || registered.length > 0) ? (
               <Button type="button" variant="ghost" size="sm" onClick={enableManual} disabled={submitting}>
                 No aparezco / registrarme
               </Button>

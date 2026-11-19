@@ -1,24 +1,47 @@
+import { NextResponse } from "next/server";
 import { can, requirePermission } from "@/core/identity";
+import { isCongressVaronesPlace } from "@/core/congress/place";
 import type { AuthContext } from "@/types/identity";
 
+function rejectOutsideCongressPlace(ctx: AuthContext): NextResponse | null {
+  const unitIds =
+    ctx.membership?.unitAccess?.mode === "units" ? ctx.membership.unitAccess.unitIds : null;
+  if (isCongressVaronesPlace({ tenantId: ctx.tenantId, unitIds })) return null;
+  return NextResponse.json(
+    {
+      ok: false,
+      error: "El Congreso de Varones solo está en IPN Chile, Departamento Nacional de Varones.",
+    },
+    { status: 404 }
+  );
+}
+
+async function requireCongressPermission(permission: Parameters<typeof requirePermission>[0]) {
+  const ctx = await requirePermission(permission);
+  if (ctx instanceof NextResponse) return ctx;
+  const rejected = rejectOutsideCongressPlace(ctx);
+  if (rejected) return rejected;
+  return ctx;
+}
+
 export async function requireCongressView() {
-  return requirePermission("congress.view");
+  return requireCongressPermission("congress.view");
 }
 
 export async function requireCongressOperate() {
-  return requirePermission("congress.operate");
+  return requireCongressPermission("congress.operate");
 }
 
 export async function requireCongressPayments() {
-  return requirePermission("congress.payments");
+  return requireCongressPermission("congress.payments");
 }
 
 export async function requireCongressImport() {
-  return requirePermission("congress.import");
+  return requireCongressPermission("congress.import");
 }
 
 export async function requireCongressFinanceCorrect() {
-  return requirePermission("congress.finance.correct");
+  return requireCongressPermission("congress.finance.correct");
 }
 
 export function congressCapabilities(ctx: AuthContext) {

@@ -8,10 +8,11 @@ export type DockAppId = MentorAppId | "mensajes" | "envivo" | "clientes" | "ajus
  * Catálogo de la mesa.
  * El dueño ve Clientes y Ajustes. El cliente ve las cuatro aplicaciones.
  * Ajustes del cliente sigue en la barra y no se duplica en su dock.
+ * El chat en vivo no está en la mesa: se abre desde la burbuja.
  */
 export function desktopDock(owner: boolean): DockAppId[] {
-  if (owner) return ["mensajes", "envivo", "clientes", "ajustes"];
-  return [...MENTOR_APPS, "mensajes", "envivo"];
+  if (owner) return ["mensajes", "clientes", "ajustes"];
+  return [...MENTOR_APPS, "mensajes"];
 }
 
 /** Acciones de la barra que no están en el dock. */
@@ -124,7 +125,7 @@ export function mentorAppBlurb(appId: MentorAppId): string {
 
 export function dockAppLabel(appId: DockAppId): string {
   if (appId === "ajustes") return "Ajustes";
-  if (appId === "mensajes") return "Atención al Cliente";
+  if (appId === "mensajes") return "Atención";
   if (appId === "envivo") return "Chat en vivo";
   if (appId === "clientes") return "Clientes";
   return LABELS[appId];

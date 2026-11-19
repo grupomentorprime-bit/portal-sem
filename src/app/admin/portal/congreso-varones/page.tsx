@@ -1,4 +1,5 @@
 import { CongressOpsPanel } from "@/components/admin/congress/CongressOpsPanel";
+import { isCongressVaronesPlace } from "@/core/congress/place";
 import { getSessionActiveTenantId } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { resolvePermissionsForMembership } from "@/lib/identity/permission-resolver";
@@ -30,6 +31,14 @@ export default async function CongresoVaronesOpsPage() {
     (p) => p === "congress.view" || p === "congress.operate"
   );
   if (!canOperateCongress) {
+    redirect("/admin");
+  }
+
+  const unitIds =
+    session.membership.unitAccess?.mode === "units"
+      ? session.membership.unitAccess.unitIds
+      : null;
+  if (!isCongressVaronesPlace({ tenantId, unitIds })) {
     redirect("/admin");
   }
 

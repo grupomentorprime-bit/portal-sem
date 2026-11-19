@@ -1,0 +1,201 @@
+﻿{
+  "stamp": "2026-11-19T03:51:08.455Z",
+  "otherEmail": {
+    "email": "msepulvedabustos@gmail.com",
+    "tenantId": "ipn-chile",
+    "name": "Marco Sepúlveda Bustos"
+  },
+  "ownerInCompany": {
+    "status": 200,
+    "mode": "client",
+    "desk": "company",
+    "activeCompany": {
+      "tenantId": "mentor-prime-capacitacion",
+      "name": "Mentor Capacitación"
+    },
+    "caseCount": 4
+  },
+  "chat": {
+    "status": 200,
+    "ok": true,
+    "correlative": "AC-00017",
+    "caseId": "0b1bb13c-541f-4e3d-bded-d6c793f33cce",
+    "modeHint": "client",
+    "intakeChannel": "portal",
+    "channelLabel": "Portal",
+    "originId": "escritorio.chat-en-vivo",
+    "helpPlace": "Escritorio Empresarial · Chat en vivo → Chat en vivo",
+    "firstRoles": [
+      "client",
+      "system"
+    ],
+    "requesterName": "Marco Antonio  Sepulveda Bustos",
+    "followUp": {
+      "staffOk": true,
+      "staffRoles": [
+        {
+          "role": "client",
+          "body": "Mensaje inicial de chat como cliente de empresa. 2026-11-19T03:51:08.455Z"
+        },
+        {
+          "role": "system",
+          "body": "Solicitud recibida. AC-00017"
+        },
+        {
+          "role": "staff",
+          "body": "Respuesta de NELZURI al chat. Queda el seguimiento."
+        }
+      ],
+      "clientOk": true,
+      "finalMessages": [
+        {
+          "role": "client",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Mensaje inicial de chat como cliente de empresa. 2026-11-19T03:51:08.455Z"
+        },
+        {
+          "role": "system",
+          "label": "Nelzuri",
+          "body": "Solicitud recibida. AC-00017"
+        },
+        {
+          "role": "staff",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Respuesta de NELZURI al chat. Queda el seguimiento."
+        },
+        {
+          "role": "client",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Confirmo seguimiento desde el chat."
+        }
+      ],
+      "events": [
+        {
+          "id": "6b1e040e-e9d5-451e-980a-448d9ba8561e",
+          "at": "2026-11-19T03:51:15.497Z",
+          "detail": "Recepción.",
+          "kind": "recepcion",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "id": "322ac90c-d30c-46ee-ac17-f77af588270d:respuesta",
+          "at": "2026-11-19T03:51:18.598Z",
+          "detail": "Primera respuesta humana.",
+          "kind": "primera_respuesta",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ]
+    },
+    "db": {
+      "correlative": "AC-00017",
+      "sharedWithCompany": false,
+      "requesterName": "Marco Antonio  Sepulveda Bustos",
+      "messages": [
+        {
+          "role": "client",
+          "authorName": "Marco Antonio  Sepulveda Bustos",
+          "body": "Mensaje inicial de chat como cliente de empresa. 2026-11-19T03:51:08.455Z"
+        },
+        {
+          "role": "system",
+          "authorName": "Nelzuri",
+          "body": "Solicitud recibida. AC-00017"
+        },
+        {
+          "role": "staff",
+          "authorName": "Marco Antonio  Sepulveda Bustos",
+          "body": "Respuesta de NELZURI al chat. Queda el seguimiento."
+        },
+        {
+          "role": "client",
+          "authorName": "Marco Antonio  Sepulveda Bustos",
+          "body": "Confirmo seguimiento desde el chat."
+        }
+      ],
+      "events": [
+        {
+          "id": "6b1e040e-e9d5-451e-980a-448d9ba8561e",
+          "at": "2026-11-19T03:51:15.497Z",
+          "actorUserId": "user-1782932426409-a28f422a",
+          "kind": "recepcion",
+          "detail": "Recepción.",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "id": "322ac90c-d30c-46ee-ac17-f77af588270d:respuesta",
+          "at": "2026-11-19T03:51:18.598Z",
+          "actorUserId": "user-1782932426409-a28f422a",
+          "kind": "primera_respuesta",
+          "detail": "Primera respuesta humana.",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ],
+      "helpFrom": {
+        "originId": "escritorio.chat-en-vivo",
+        "channel": "escritorio",
+        "siteOrApp": "Escritorio Empresarial",
+        "module": "Chat en vivo",
+        "screen": "Chat en vivo",
+        "action": null,
+        "at": "2026-11-19T03:51:08.455Z"
+      }
+    }
+  },
+  "isolation": {
+    "semDesk": "company",
+    "semMode": "client",
+    "seesChat": false,
+    "seesPhoneAC15": false,
+    "seesPortalAC14": true,
+    "codes": [
+      "AC-00014"
+    ]
+  },
+  "sameCompany": {
+    "alexMode": "client",
+    "alexDesk": "company",
+    "seesPortalAC14": true,
+    "codes": [
+      {
+        "code": "AC-00014",
+        "subject": "Auditoría portal 2026-11-19T03:48:52.114Z"
+      },
+      {
+        "code": "AC-00008",
+        "subject": "No puedo entrar al curso de liderazgo desde el escritorio de la empresa."
+      },
+      {
+        "code": "AC-00006",
+        "subject": "Alta de prueba desde Chat en vivo"
+      },
+      {
+        "code": "AC-00003",
+        "subject": "No me deja guardar el formulario de admisión."
+      }
+    ]
+  },
+  "reportPhoneOnly": {
+    "ok": true,
+    "dispatch": {
+      "id": "a68b54b1-5288-42b7-b199-a5e3c9aeac08",
+      "at": "2026-11-19T03:51:34.637Z",
+      "actorUserId": "user-1782932426409-a28f422a",
+      "actorName": "Marco Antonio  Sepulveda Bustos",
+      "tenantId": "mentor-prime-capacitacion",
+      "company": "Mentor Capacitación",
+      "periodLabel": "Últimos 7 días",
+      "channelLabel": "Teléfono",
+      "to": [
+        {
+          "userId": "user-1794415684515",
+          "name": "Owner Mentor Prime",
+          "email": "owner@mentorprime.cl"
+        }
+      ],
+      "cc": [],
+      "message": "Informe canal teléfono auditoría 2026-11-19T03:51:08.455Z",
+      "result": "enviado",
+      "detail": "Correo aceptado."
+    }
+  }
+}

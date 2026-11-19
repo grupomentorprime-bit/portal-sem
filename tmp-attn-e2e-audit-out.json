@@ -1,0 +1,471 @@
+﻿{
+  "stamp": "2026-11-19T03:48:52.114Z",
+  "steps": [
+    {
+      "name": "owner GET platform desk",
+      "status": 200,
+      "mode": "panel",
+      "desk": "platform",
+      "cases": 11,
+      "companies": 12
+    }
+  ],
+  "portal": {
+    "status": 200,
+    "ok": true,
+    "correlative": "AC-00014",
+    "caseId": "4cf0f739-281b-4d4d-a58d-75620e1084c9",
+    "tenantId": "seminario-ipn",
+    "intakeChannel": "portal",
+    "channelLabel": "Portal",
+    "helpPlace": "Escritorio Empresarial · Atención al Cliente → Nuevo ticket",
+    "events": [
+      {
+        "id": "d09c2934-72e2-4a27-8e67-6436d3a6e57a",
+        "at": "2026-11-19T03:48:58.550Z",
+        "detail": "Recepción.",
+        "kind": "recepcion",
+        "actorName": "Asuntos estudiantiles"
+      }
+    ],
+    "messages": [
+      {
+        "role": "client",
+        "body": "Ticket de portal de prueba 2026-11-19T03:48:52.114Z. Empresa Seminario."
+      },
+      {
+        "role": "system",
+        "body": "Solicitud recibida. AC-00014"
+      }
+    ],
+    "visibility": {
+      "companyASees": true,
+      "companyADesk": "platform",
+      "companyAMode": "panel",
+      "companyACount": 12,
+      "ownerSees": true
+    },
+    "followUp": {
+      "assignOk": true,
+      "assignee": "Admin de usuarios",
+      "replyOk": true,
+      "events": [
+        {
+          "id": "d09c2934-72e2-4a27-8e67-6436d3a6e57a",
+          "at": "2026-11-19T03:48:58.550Z",
+          "detail": "Recepción.",
+          "kind": "recepcion",
+          "actorName": "Asuntos estudiantiles"
+        },
+        {
+          "id": "c39f6261-3f52-4171-9d7b-cce2d0e8e62c",
+          "at": "2026-11-19T03:49:24.612Z",
+          "detail": "Asignado a Admin de usuarios.",
+          "kind": "asignado",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "id": "82f43647-e175-4497-aa75-e2cc59059cae:respuesta",
+          "at": "2026-11-19T03:49:28.494Z",
+          "detail": "Primera respuesta humana.",
+          "kind": "primera_respuesta",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ],
+      "messages": [
+        {
+          "role": "client",
+          "body": "Ticket de portal de prueba 2026-11-19T03:48:52.114Z. Empresa Seminario."
+        },
+        {
+          "role": "system",
+          "body": "Solicitud recibida. AC-00014"
+        },
+        {
+          "role": "staff",
+          "body": "Recibimos tu ticket de portal. Seguimos en este mismo correlativo."
+        }
+      ],
+      "nextStep": "Le toca al cliente"
+    },
+    "clientConfirmation": {
+      "visible": true,
+      "unread": true,
+      "lastMessage": {
+        "id": "82f43647-e175-4497-aa75-e2cc59059cae",
+        "at": "2026-11-19T03:49:28.494Z",
+        "role": "staff",
+        "label": "Marco Antonio  Sepulveda Bustos",
+        "body": "Recibimos tu ticket de portal. Seguimos en este mismo correlativo."
+      },
+      "status": "abierto",
+      "nextStep": "Le toca al cliente"
+    },
+    "db": {
+      "correlative": "AC-00014",
+      "requesterName": "Asuntos estudiantiles",
+      "sharedWithCompany": false,
+      "events": [
+        {
+          "id": "d09c2934-72e2-4a27-8e67-6436d3a6e57a",
+          "at": "2026-11-19T03:48:58.550Z",
+          "actorUserId": "user-1783091325665-72a82b9b",
+          "kind": "recepcion",
+          "detail": "Recepción.",
+          "actorName": "Asuntos estudiantiles"
+        },
+        {
+          "id": "c39f6261-3f52-4171-9d7b-cce2d0e8e62c",
+          "at": "2026-11-19T03:49:24.612Z",
+          "actorUserId": "user-1782932426409-a28f422a",
+          "kind": "asignado",
+          "detail": "Asignado a Admin de usuarios.",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "id": "82f43647-e175-4497-aa75-e2cc59059cae:respuesta",
+          "at": "2026-11-19T03:49:28.494Z",
+          "actorUserId": "user-1782932426409-a28f422a",
+          "kind": "primera_respuesta",
+          "detail": "Primera respuesta humana.",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ],
+      "messages": [
+        {
+          "role": "client",
+          "body": "Ticket de portal de prueba 2026-11-19T03:48:52.114Z. Empresa Seminario.",
+          "authorName": "Asuntos estudiantiles"
+        },
+        {
+          "role": "system",
+          "body": "Solicitud recibida. AC-00014",
+          "authorName": "Nelzuri"
+        },
+        {
+          "role": "staff",
+          "body": "Recibimos tu ticket de portal. Seguimos en este mismo correlativo.",
+          "authorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ],
+      "helpFrom": {
+        "originId": "escritorio.atencion.nuevo-ticket",
+        "channel": "escritorio",
+        "siteOrApp": "Escritorio Empresarial",
+        "module": "Atención al Cliente",
+        "screen": "Nuevo ticket",
+        "action": null,
+        "at": "2026-11-19T03:48:52.114Z"
+      }
+    }
+  },
+  "phone": {
+    "status": 200,
+    "ok": true,
+    "correlative": "AC-00015",
+    "caseId": "b071be53-7c59-4952-a22c-9548ed51188f",
+    "tenantId": "mentor-prime-capacitacion",
+    "intakeChannel": "telefono",
+    "channelLabel": "Teléfono",
+    "requesterName": "Cliente telefónico de prueba",
+    "events": [
+      {
+        "id": "fe3bf671-24e3-4936-9501-fdb68589caf9",
+        "at": "2026-11-19T03:49:10.230Z",
+        "detail": "Reporte por Teléfono, ingresado por Marco Antonio  Sepulveda Bustos.",
+        "kind": "recepcion",
+        "actorName": "Marco Antonio  Sepulveda Bustos"
+      }
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "body": "Llamada de prueba registrada por operador. 2026-11-19T03:48:52.114Z"
+      }
+    ],
+    "visibility": {
+      "companyBSees": false,
+      "companyASees": false,
+      "companyASeesAfter": true
+    },
+    "followUp": {
+      "replyOk": true,
+      "events": [
+        {
+          "id": "fe3bf671-24e3-4936-9501-fdb68589caf9",
+          "at": "2026-11-19T03:49:10.230Z",
+          "detail": "Reporte por Teléfono, ingresado por Marco Antonio  Sepulveda Bustos.",
+          "kind": "recepcion",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "id": "ac79a29e-a7a0-4dd2-8958-0bc29a317506:respuesta",
+          "at": "2026-11-19T03:49:39.269Z",
+          "detail": "Primera respuesta humana.",
+          "kind": "primera_respuesta",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ],
+      "messages": [
+        {
+          "role": "system",
+          "body": "Llamada de prueba registrada por operador. 2026-11-19T03:48:52.114Z"
+        },
+        {
+          "role": "staff",
+          "body": "Registramos la llamada. Queda el seguimiento en este ticket."
+        }
+      ],
+      "intakeChannel": "telefono",
+      "channelLabel": "Teléfono",
+      "requesterName": "Cliente telefónico de prueba"
+    },
+    "db": {
+      "correlative": "AC-00015",
+      "intakeChannel": "telefono",
+      "requesterName": "Cliente telefónico de prueba",
+      "sharedWithCompany": true,
+      "events": [
+        {
+          "id": "fe3bf671-24e3-4936-9501-fdb68589caf9",
+          "at": "2026-11-19T03:49:10.230Z",
+          "actorUserId": "user-1782932426409-a28f422a",
+          "kind": "recepcion",
+          "detail": "Reporte por Teléfono, ingresado por Marco Antonio  Sepulveda Bustos.",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "id": "ac79a29e-a7a0-4dd2-8958-0bc29a317506:respuesta",
+          "at": "2026-11-19T03:49:39.269Z",
+          "actorUserId": "user-1782932426409-a28f422a",
+          "kind": "primera_respuesta",
+          "detail": "Primera respuesta humana.",
+          "actorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ],
+      "messages": [
+        {
+          "role": "system",
+          "body": "Llamada de prueba registrada por operador. 2026-11-19T03:48:52.114Z",
+          "authorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "role": "staff",
+          "body": "Registramos la llamada. Queda el seguimiento en este ticket.",
+          "authorName": "Marco Antonio  Sepulveda Bustos"
+        }
+      ],
+      "helpFrom": {
+        "originId": "escritorio.atencion.nuevo-ticket",
+        "channel": "escritorio",
+        "siteOrApp": "Escritorio Empresarial",
+        "module": "Atención al Cliente",
+        "screen": "Nuevo ticket",
+        "action": null,
+        "at": "2026-11-19T03:48:52.114Z"
+      }
+    }
+  },
+  "chat": {
+    "status": 200,
+    "ok": true,
+    "correlative": "AC-00016",
+    "caseId": "34244943-5a23-47e3-a66c-b34205fa3ecc",
+    "tenantId": "mentor-prime-capacitacion",
+    "intakeChannel": "portal",
+    "channelLabel": "Portal",
+    "helpPlace": "Escritorio Empresarial · Chat en vivo → Chat en vivo",
+    "originId": "escritorio.chat-en-vivo",
+    "events": [
+      {
+        "id": "39a2c73c-6d48-4973-9755-7cea414dabd0",
+        "at": "2026-11-19T03:49:21.414Z",
+        "detail": "Recepción.",
+        "kind": "recepcion",
+        "actorName": "Owner Mentor Prime"
+      }
+    ],
+    "messages": [
+      {
+        "role": "staff",
+        "body": "Hola, necesito seguimiento por chat. 2026-11-19T03:48:52.114Z"
+      }
+    ],
+    "followUp": {
+      "staffOk": true,
+      "clientOk": true,
+      "events": [
+        {
+          "id": "39a2c73c-6d48-4973-9755-7cea414dabd0",
+          "at": "2026-11-19T03:49:21.414Z",
+          "detail": "Recepción.",
+          "kind": "recepcion",
+          "actorName": "Owner Mentor Prime"
+        }
+      ],
+      "messages": [
+        {
+          "role": "staff",
+          "body": "Hola, necesito seguimiento por chat. 2026-11-19T03:48:52.114Z"
+        },
+        {
+          "role": "staff",
+          "body": "Te leemos. Déjanos el detalle para el seguimiento."
+        },
+        {
+          "role": "staff",
+          "body": "Sigo aquí. Necesito que quede registrado el seguimiento."
+        }
+      ],
+      "helpPlace": "Escritorio Empresarial · Chat en vivo → Chat en vivo",
+      "originId": "escritorio.chat-en-vivo"
+    },
+    "db": {
+      "correlative": "AC-00016",
+      "requesterName": "Owner Mentor Prime",
+      "sharedWithCompany": true,
+      "events": [
+        {
+          "id": "39a2c73c-6d48-4973-9755-7cea414dabd0",
+          "at": "2026-11-19T03:49:21.414Z",
+          "actorUserId": "user-1794415684515",
+          "kind": "recepcion",
+          "detail": "Recepción.",
+          "actorName": "Owner Mentor Prime"
+        }
+      ],
+      "messages": [
+        {
+          "role": "staff",
+          "body": "Hola, necesito seguimiento por chat. 2026-11-19T03:48:52.114Z",
+          "authorName": "Owner Mentor Prime"
+        },
+        {
+          "role": "staff",
+          "body": "Te leemos. Déjanos el detalle para el seguimiento.",
+          "authorName": "Marco Antonio  Sepulveda Bustos"
+        },
+        {
+          "role": "staff",
+          "body": "Sigo aquí. Necesito que quede registrado el seguimiento.",
+          "authorName": "Owner Mentor Prime"
+        }
+      ],
+      "helpFrom": {
+        "originId": "escritorio.chat-en-vivo",
+        "channel": "escritorio",
+        "siteOrApp": "Escritorio Empresarial",
+        "module": "Chat en vivo",
+        "screen": "Chat en vivo",
+        "action": null,
+        "at": "2026-11-19T03:48:52.114Z"
+      }
+    }
+  },
+  "report": {
+    "directoryStatus": 200,
+    "directoryOk": true,
+    "admins": [
+      {
+        "name": "Owner Mentor Prime",
+        "email": "owner@mentorprime.cl",
+        "userId": "user-1794415684515"
+      }
+    ],
+    "authorized": [
+      {
+        "name": "Marco Antonio  Sepulveda Bustos",
+        "email": "soporte@mentorprime.cl",
+        "admin": false
+      },
+      {
+        "name": "Owner Mentor Prime",
+        "email": "owner@mentorprime.cl",
+        "admin": true
+      }
+    ],
+    "send": {
+      "status": 200,
+      "ok": true,
+      "dispatch": {
+        "id": "81605732-1506-463f-ae57-670d4e7d878b",
+        "at": "2026-11-19T03:49:48.391Z",
+        "actorUserId": "user-1782932426409-a28f422a",
+        "actorName": "Marco Antonio  Sepulveda Bustos",
+        "tenantId": "mentor-prime-capacitacion",
+        "company": "Mentor Capacitación",
+        "periodLabel": "Últimos 7 días",
+        "channelLabel": "Todos los canales",
+        "to": [
+          {
+            "userId": "user-1794415684515",
+            "name": "Owner Mentor Prime",
+            "email": "owner@mentorprime.cl"
+          }
+        ],
+        "cc": [
+          {
+            "userId": "user-1782932426409-a28f422a",
+            "name": "Marco Antonio  Sepulveda Bustos",
+            "email": "soporte@mentorprime.cl"
+          }
+        ],
+        "message": "Informe de auditoría Atención 2026-11-19T03:48:52.114Z. Destinatarios de prueba.",
+        "result": "enviado",
+        "detail": "Correo aceptado."
+      }
+    },
+    "companyUserForbidden": {
+      "status": 403,
+      "ok": false,
+      "error": "No tienes permiso para esta acción.",
+      "reason": "forbidden"
+    },
+    "recentDispatches": [
+      {
+        "at": "2026-11-19T03:49:48.391Z",
+        "company": "Mentor Capacitación",
+        "result": "enviado",
+        "detail": "Correo aceptado.",
+        "to": [
+          {
+            "userId": "user-1794415684515",
+            "name": "Owner Mentor Prime",
+            "email": "owner@mentorprime.cl"
+          }
+        ],
+        "cc": [
+          {
+            "userId": "user-1782932426409-a28f422a",
+            "name": "Marco Antonio  Sepulveda Bustos",
+            "email": "soporte@mentorprime.cl"
+          }
+        ],
+        "periodLabel": "Últimos 7 días",
+        "channelLabel": "Todos los canales"
+      },
+      {
+        "at": "2026-11-19T03:36:02.733Z",
+        "company": "Mentor Capacitación",
+        "result": "enviado",
+        "detail": "Correo aceptado.",
+        "to": [
+          {
+            "userId": "user-1794415684515",
+            "name": "Owner Mentor Prime",
+            "email": "owner@mentorprime.cl"
+          }
+        ],
+        "cc": [
+          {
+            "userId": "user-1782932426409-a28f422a",
+            "name": "Marco Antonio  Sepulveda Bustos",
+            "email": "soporte@mentorprime.cl"
+          }
+        ],
+        "periodLabel": "Últimos 30 días",
+        "channelLabel": "Todos los canales"
+      }
+    ]
+  }
+}

@@ -1,0 +1,277 @@
+﻿{
+  "mentorCodes": [
+    {
+      "code": "AC-00017",
+      "channel": "Portal",
+      "intake": "portal",
+      "origin": "escritorio.chat-en-vivo",
+      "subject": "Chat seguimiento 2026-11-19T03:51:08.455Z",
+      "status": "pendiente"
+    },
+    {
+      "code": "AC-00015",
+      "channel": "Teléfono",
+      "intake": "telefono",
+      "origin": "escritorio.atencion.nuevo-ticket",
+      "subject": "Auditoría teléfono 2026-11-19T03:48:52.114Z",
+      "status": "pendiente"
+    },
+    {
+      "code": "AC-00016",
+      "channel": "Portal",
+      "intake": "portal",
+      "origin": "escritorio.chat-en-vivo",
+      "subject": "Auditoría chat 2026-11-19T03:48:52.114Z",
+      "status": "pendiente"
+    },
+    {
+      "code": "AC-00013",
+      "channel": "Teléfono",
+      "intake": "telefono",
+      "origin": "",
+      "subject": "Prueba de registro manual",
+      "status": "pendiente"
+    },
+    {
+      "code": "AC-00010",
+      "channel": "Portal",
+      "intake": "portal",
+      "origin": "escritorio.atencion.nuevo-ticket",
+      "subject": "grfgdfgfdaf",
+      "status": "pendiente"
+    },
+    {
+      "code": "AC-00009",
+      "channel": "Portal",
+      "intake": "portal",
+      "origin": "escritorio.atencion.nuevo-ticket",
+      "subject": "Verificación Owner en Mentor Capacitación 2026-11-19T01:05:47.972Z",
+      "status": "pendiente"
+    },
+    {
+      "code": "AC-00007",
+      "channel": "Portal",
+      "intake": "portal",
+      "origin": "escritorio.atencion.nuevo-ticket",
+      "subject": "Verificación de contexto. Contexto 23:44:45",
+      "status": "pendiente"
+    }
+  ],
+  "seminarioCodes": [
+    {
+      "code": "AC-00014",
+      "channel": "Portal",
+      "origin": "escritorio.atencion.nuevo-ticket",
+      "subject": "Auditoría portal 2026-11-19T03:48:52.114Z"
+    },
+    {
+      "code": "AC-00008",
+      "channel": "Portal",
+      "origin": "escritorio.atencion.nuevo-ticket",
+      "subject": "No puedo entrar al curso de liderazgo desde el escritorio de la empresa."
+    },
+    {
+      "code": "AC-00006",
+      "channel": "Portal",
+      "origin": "escritorio.chat-en-vivo",
+      "subject": "Alta de prueba desde Chat en vivo"
+    },
+    {
+      "code": "AC-00003",
+      "channel": "Portal",
+      "origin": "growth-os.admision.editar-formulario",
+      "subject": "No me deja guardar el formulario de admisión."
+    }
+  ],
+  "mentorPhone": [
+    "AC-00015",
+    "AC-00013"
+  ],
+  "mentorPortal": [
+    "AC-00017",
+    "AC-00016",
+    "AC-00010",
+    "AC-00009",
+    "AC-00007"
+  ],
+  "hasAC15": true,
+  "hasAC16": true,
+  "hasAC17": true,
+  "hasAC14": false,
+  "ac17Channel": {
+    "id": "0b1bb13c-541f-4e3d-bded-d6c793f33cce",
+    "code": "AC-00017",
+    "tenantId": "mentor-prime-capacitacion",
+    "company": "Mentor Capacitación",
+    "areaId": "general",
+    "areaName": "Consultas generales",
+    "subject": "Chat seguimiento 2026-11-19T03:51:08.455Z",
+    "status": "pendiente",
+    "priority": "normal",
+    "productId": null,
+    "productLabel": null,
+    "requesterName": "Marco Antonio  Sepulveda Bustos",
+    "assigneeUserId": null,
+    "assigneeName": null,
+    "contextNote": "",
+    "unread": false,
+    "createdAt": "2026-11-19T03:51:15.497Z",
+    "updatedAt": "2026-11-19T03:51:22.183Z",
+    "commercial": null,
+    "messages": [
+      {
+        "id": "883b076a-8e32-4aee-90a8-5f4a5d9b9f9c",
+        "at": "2026-11-19T03:51:15.497Z",
+        "role": "client",
+        "label": "Marco Antonio  Sepulveda Bustos",
+        "body": "Mensaje inicial de chat como cliente de empresa. 2026-11-19T03:51:08.455Z"
+      },
+      {
+        "id": "883b076a-8e32-4aee-90a8-5f4a5d9b9f9c:recibo",
+        "at": "2026-11-19T03:51:15.497Z",
+        "role": "system",
+        "label": "Nelzuri",
+        "body": "Solicitud recibida. AC-00017"
+      },
+      {
+        "id": "322ac90c-d30c-46ee-ac17-f77af588270d",
+        "at": "2026-11-19T03:51:18.598Z",
+        "role": "staff",
+        "label": "Marco Antonio  Sepulveda Bustos",
+        "body": "Respuesta de NELZURI al chat. Queda el seguimiento."
+      },
+      {
+        "id": "1fe73bc4-aa62-44cc-93ce-be06d9999f53",
+        "at": "2026-11-19T03:51:22.183Z",
+        "role": "client",
+        "label": "Marco Antonio  Sepulveda Bustos",
+        "body": "Confirmo seguimiento desde el chat."
+      }
+    ],
+    "events": [
+      {
+        "id": "6b1e040e-e9d5-451e-980a-448d9ba8561e",
+        "at": "2026-11-19T03:51:15.497Z",
+        "detail": "Recepción.",
+        "kind": "recepcion",
+        "actorName": "Marco Antonio  Sepulveda Bustos"
+      },
+      {
+        "id": "322ac90c-d30c-46ee-ac17-f77af588270d:respuesta",
+        "at": "2026-11-19T03:51:18.598Z",
+        "detail": "Primera respuesta humana.",
+        "kind": "primera_respuesta",
+        "actorName": "Marco Antonio  Sepulveda Bustos"
+      }
+    ],
+    "originId": "escritorio.chat-en-vivo",
+    "helpFromLabel": "Origen",
+    "helpPlace": "Escritorio Empresarial · Chat en vivo → Chat en vivo",
+    "helpAt": "2026-11-19T03:51:08.455Z",
+    "nextStep": "nelzuri",
+    "nextStepLabel": "Le toca a NELZURI",
+    "whereNote": "",
+    "attachmentName": null,
+    "attachmentDataUrl": null,
+    "awaitingFirstReply": false,
+    "intakeChannel": "portal",
+    "channelLabel": "Portal",
+    "registeredByName": "",
+    "contactVerified": false,
+    "location": {
+      "state": "unavailable",
+      "label": "No está disponible",
+      "place": "",
+      "at": null
+    }
+  },
+  "ac16Channel": {
+    "id": "34244943-5a23-47e3-a66c-b34205fa3ecc",
+    "code": "AC-00016",
+    "tenantId": "mentor-prime-capacitacion",
+    "company": "Mentor Capacitación",
+    "areaId": "general",
+    "areaName": "Consultas generales",
+    "subject": "Auditoría chat 2026-11-19T03:48:52.114Z",
+    "status": "pendiente",
+    "priority": "normal",
+    "productId": null,
+    "productLabel": null,
+    "requesterName": "Owner Mentor Prime",
+    "assigneeUserId": null,
+    "assigneeName": null,
+    "contextNote": "",
+    "unread": false,
+    "createdAt": "2026-11-19T03:49:21.414Z",
+    "updatedAt": "2026-11-19T03:49:35.683Z",
+    "commercial": null,
+    "messages": [
+      {
+        "id": "05cec9bb-20ca-4f85-a6f4-89f5fcf78a1b",
+        "at": "2026-11-19T03:49:21.414Z",
+        "role": "staff",
+        "label": "Owner Mentor Prime",
+        "body": "Hola, necesito seguimiento por chat. 2026-11-19T03:48:52.114Z"
+      },
+      {
+        "id": "26ff15ec-83dc-4839-bb9b-06263bbe19dc",
+        "at": "2026-11-19T03:49:32.089Z",
+        "role": "staff",
+        "label": "Marco Antonio  Sepulveda Bustos",
+        "body": "Te leemos. Déjanos el detalle para el seguimiento."
+      },
+      {
+        "id": "11a0519d-2dd9-4543-99ca-49c90c130cc2",
+        "at": "2026-11-19T03:49:35.683Z",
+        "role": "staff",
+        "label": "Owner Mentor Prime",
+        "body": "Sigo aquí. Necesito que quede registrado el seguimiento."
+      }
+    ],
+    "events": [
+      {
+        "id": "39a2c73c-6d48-4973-9755-7cea414dabd0",
+        "at": "2026-11-19T03:49:21.414Z",
+        "detail": "Recepción.",
+        "kind": "recepcion",
+        "actorName": "Owner Mentor Prime"
+      }
+    ],
+    "originId": "escritorio.chat-en-vivo",
+    "helpFromLabel": "Origen",
+    "helpPlace": "Escritorio Empresarial · Chat en vivo → Chat en vivo",
+    "helpAt": "2026-11-19T03:48:52.114Z",
+    "nextStep": "cliente",
+    "nextStepLabel": "Le toca al cliente",
+    "whereNote": "",
+    "attachmentName": null,
+    "attachmentDataUrl": null,
+    "awaitingFirstReply": false,
+    "intakeChannel": "portal",
+    "channelLabel": "Portal",
+    "registeredByName": "",
+    "contactVerified": false,
+    "location": {
+      "state": "unavailable",
+      "label": "No está disponible",
+      "place": "",
+      "at": null
+    }
+  },
+  "alexMembership": {
+    "roleIds": [
+      "role-seminario-ipn-institution-admin"
+    ],
+    "authorizedApps": [
+      "growth-os"
+    ]
+  },
+  "contactoMembership": {
+    "roleIds": [
+      "role-seminario-ipn-student-affairs"
+    ],
+    "authorizedApps": [
+      "growth-os"
+    ]
+  }
+}

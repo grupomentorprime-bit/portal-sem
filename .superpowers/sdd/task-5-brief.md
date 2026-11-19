@@ -1,83 +1,163 @@
-﻿### Task 5: Vista `cola` por defecto + switcher
+﻿### Task 5: Filtros flotantes con draft + Aplicar
 
 **Files:**
-- Modify: `src/app/admin/ventas/page.tsx`
-- Modify: `src/components/admin/growth/VentasListClient.tsx`
-- Modify: `tests/baseline/sem-admision-ventas-vista.test.ts`
+- Modify: `src/components/desktop/DesktopAttention.tsx`
+- Modify: `src/components/desktop/mentor-desktop.css`
 
 **Interfaces:**
-- Consumes: `searchParams.vista`
-- Produces: `vista: "cola" | "kanban" | "lista"`; default sin param = `"cola"`
+- Consumes: `emptyDeskFilters`, `countAppliedDeskFilters`, `DeskFilterFields`
+- Produces: applied fields drive `listed` / badge; draft only while panel open
 
-Parse helper puro (testable):
+- [ ] **Step 1: Replace flat filter state with applied + draft**
+
+Import helpers. Replace individual `companyId` / `originId` / … used for listing with:
 
 ```ts
-// src/lib/growth/ventas-vista.ts
-export type GrowthVentasVista = "cola" | "kanban" | "lista";
+const [appliedFilters, setAppliedFilters] = useState(emptyDeskFilters);
+const [draftFilters, setDraftFilters] = useState(emptyDeskFilters);
+const [filtersOpen, setFiltersOpen] = useState(false);
+```
 
-export function parseGrowthVentasVista(raw: string | undefined | null): GrowthVentasVista {
-  const value = raw?.trim().toLowerCase();
-  if (value === "lista") return "lista";
-  if (value === "kanban") return "kanban";
-  return "cola";
+```ts
+const activeFilterCount = globalDesk
+  ? countAppliedDeskFilters(appliedFilters)
+  : countAppliedDeskFilters({
+      ...appliedFilters,
+      tenantId: "",
+    });
+```
+
+In platform panel, always use full `countAppliedDeskFilters(appliedFilters)` when `globalDesk`; when company desk with panel filters (if still shown), exclude tenant. Spec: filters panel with empresa is only on `globalDesk`. Prefer:
+
+```ts
+const activeFilterCount = globalDesk ? countAppliedDeskFilters(appliedFilters) : 0;
+```
+
+and only render Filtros when `mode === "panel" && channel === "mensajes" && globalDesk` **or** keep current `mode === "panel"` but hide Empresa when not `globalDesk`. Match current UX: show Filtros on panel mensajes; if not globalDesk, omit Empresa from draft/applied count (tenant always "").
+
+Wire `filterDeskCases`:
+
+```ts
+tenantId: globalDesk ? appliedFilters.tenantId : "",
+originId: mode === "panel" ? appliedFilters.originId : "",
+status: mode === "panel" ? appliedFilters.status : "",
+priority: mode === "panel" ? appliedFilters.priority : "",
+assigneeUserId: mode === "panel" ? appliedFilters.assigneeUserId : "",
+```
+
+- [ ] **Step 2: Open/close/apply/clear handlers**
+
+```ts
+function openFilters() {
+  setDraftFilters(appliedFilters);
+  setFiltersOpen(true);
+}
+
+function closeFilters() {
+  setFiltersOpen(false);
+}
+
+function applyFilters() {
+  setAppliedFilters(draftFilters);
+  setFiltersOpen(false);
+}
+
+function clearDraftFilters() {
+  setDraftFilters(emptyDeskFilters());
 }
 ```
 
-- [ ] **Step 1: Write the failing test**
-
-```ts
-import { parseGrowthVentasVista } from "../../src/lib/growth/ventas-vista";
-
-it("parseGrowthVentasVista default cola", () => {
-  assert.equal(parseGrowthVentasVista(undefined), "cola");
-  assert.equal(parseGrowthVentasVista(""), "cola");
-  assert.equal(parseGrowthVentasVista("kanban"), "kanban");
-  assert.equal(parseGrowthVentasVista("lista"), "lista");
-  assert.equal(parseGrowthVentasVista("COLA"), "cola");
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx tsx --test tests/baseline/sem-admision-ventas-vista.test.ts`  
-Expected: FAIL
-
-- [ ] **Step 3: Implement parse + wire page + client**
-
-1. Crear `ventas-vista.ts`.
-2. En `page.tsx`: `const vista = parseGrowthVentasVista(params.vista);` (reemplaza el ternario actual).
-3. En `VentasListClient`:
-   - Tipo `vista: "cola" | "kanban" | "lista"`.
-   - Switcher orden: **Cola · Kanban · Lista** (icono `ListOrdered` o `ClipboardList` de lucide para Cola).
-   - `pushFilters`: si `vista === "cola"` omitir query `vista` (URL limpia = default); `lista`/`kanban` setean el param.
-   - Render Cola: misma fila densa que Lista (persona, etapa/`statusLabel`, `nextActionLabel`, responsable, chip de `priorityBand`), lista vertical; empty states compartidos.
-   - Limpiar filtros debe volver a `/admin/ventas` (cola), no a kanban.
-
-Fragmento switcher:
+Toggle button:
 
 ```tsx
-<button type="button" aria-pressed={vista === "cola"} onClick={() => pushFilters({ vista: "cola" })}>
-  Cola
-</button>
-<button type="button" aria-pressed={vista === "kanban"} onClick={() => pushFilters({ vista: "kanban" })}>
-  Kanban
-</button>
-<button type="button" aria-pressed={vista === "lista"} onClick={() => pushFilters({ vista: "lista" })}>
-  Lista
-</button>
+onClick={() => (filtersOpen ? closeFilters() : openFilters())}
 ```
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 3: Render floating panel**
 
-Run: `npx tsx --test tests/baseline/sem-admision-ventas-vista.test.ts`  
-Expected: PASS  
-Smoke manual: `/admin/ventas` sin query muestra Cola activa.
+Wrap tools + panel so the float anchors correctly:
 
-- [ ] **Step 5: Commit**
+```tsx
+<div className="attn-filter-anchor">
+  {/* chips + Filtros + Nuevo ticket */}
+  {filtersOpen && mode === "panel" && channel === "mensajes" ? (
+    <div className="attn-filter-float" role="dialog" aria-label="Filtros">
+      {/* selects bound to draftFilters / setDraftFilters */}
+      {globalDesk ? (
+        <label>
+          Empresa
+          <select
+            aria-label="Empresa"
+            value={draftFilters.tenantId}
+            onChange={(e) =>
+              setDraftFilters((d) => ({ ...d, tenantId: e.target.value }))
+            }
+          >
+            <option value="">Todas</option>
+            {companies.map((c) => (
+              <option key={c.tenantId} value={c.tenantId}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      {/* Origen, Estado, Prioridad, Responsable → draftFilters fields */}
+      <div className="attn-filter-actions">
+        <button type="button" className="ghost" onClick={clearDraftFilters}>
+          Limpiar
+        </button>
+        <button type="button" className="primary" onClick={applyFilters}>
+          Aplicar
+        </button>
+      </div>
+    </div>
+  ) : null}
+</div>
+```
+
+Remove the old inline `attn-filter-panel` block that sat between tools and the list (so the list no longer reflows).
+
+- [ ] **Step 4: CSS floating panel**
+
+In `mentor-desktop.css`, replace or extend `.attn-filter-panel` rules:
+
+```css
+.attn-filter-anchor { position: relative; flex: none; }
+.attn-filter-float {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 16px;
+  right: 16px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--nelzuri-line-soft);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+}
+.attn-filter-float label { display: grid; gap: 4px; font-size: 13px; font-weight: 650; color: var(--nelzuri-ink); }
+.attn-filter-float select {
+  width: 100%; height: 40px; padding: 0 12px;
+  border: 1px solid var(--nelzuri-line-soft); border-radius: 12px;
+  background: #fff; font: inherit; color: var(--nelzuri-ink);
+}
+.attn-filter-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+```
+
+Keep `.attn-quick` inside `.attn-filter-anchor` so `top: 100%` anchors under the chips row. Ensure `.attn-inbox` / list does not get `margin` push from the float.
+
+- [ ] **Step 5: Run all related tests**
+
+Run:
 
 ```bash
-git add src/lib/growth/ventas-vista.ts src/app/admin/ventas/page.tsx src/components/admin/growth/VentasListClient.tsx tests/baseline/sem-admision-ventas-vista.test.ts
-git commit -m "feat(ventas): vista Cola por defecto con switcher"
+npx tsx --test tests/baseline/desktop-attention-filters.test.ts tests/baseline/desktop-attention-ui.test.ts tests/baseline/attention-context.test.ts tests/baseline/desktop-attention.test.ts tests/baseline/help-desk.test.ts
 ```
 
+Expected: all PASS
+
 ---
+

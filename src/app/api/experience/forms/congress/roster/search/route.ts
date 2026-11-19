@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
+import { IPN_CHILE_TENANT_ID } from "@/core/units/ipn-chile";
 import { foldPersonSearchText } from "@/lib/experience/forms/person-search";
 import { searchCongressPublicRoster } from "@/lib/congress/roster-search";
 import { publicInternalError } from "@/core/security/public-error";
@@ -11,6 +12,9 @@ export async function GET(request: Request) {
     if (!tenant) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
+    if (tenant !== IPN_CHILE_TENANT_ID) {
+      return NextResponse.json({ ok: false, error: "Formulario no disponible." }, { status: 404 });
+    }
 
     const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
     if (foldPersonSearchText(query).length < 2) {
@@ -20,6 +24,8 @@ export async function GET(request: Request) {
         suggestions: [],
         hasMore: false,
         suggestionsHasMore: false,
+        registered: [],
+        registeredHasMore: false,
       });
     }
 

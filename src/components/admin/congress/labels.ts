@@ -8,7 +8,10 @@ import {
   expectedDaysLabelEs,
   labelExpectedDays,
 } from "@/core/congress/expected-days";
-import { isExplicitlyExempt } from "@/core/congress/charge";
+import {
+  activeChargeConsideration,
+  isExplicitlyExempt,
+} from "@/core/congress/charge";
 import {
   deriveContributionStatus,
   type ContributionStatus,
@@ -134,6 +137,14 @@ export function contributionLabel(reg: CongressRegistration): string {
   return contributionStatusLabel(status, reg);
 }
 
+function considerationSuffix(
+  reg: Pick<CongressRegistration, "chargeAmountClp" | "chargeHistory">
+): string {
+  const note = activeChargeConsideration(reg);
+  if (!note) return "";
+  return ` · no paga ${formatClp(note.unpaidClp)} · ${note.reason}`;
+}
+
 export function contributionStatusLabel(
   status: ContributionStatus,
   reg: Pick<
@@ -141,17 +152,18 @@ export function contributionStatusLabel(
     "chargeAmountClp" | "allocatedPaidClp" | "chargeHistory"
   >
 ): string {
+  const suffix = considerationSuffix(reg);
   switch (status) {
     case "no_charge":
-      return isExplicitlyExempt(reg) ? "Exento" : "Sin cargo";
+      return isExplicitlyExempt(reg) ? `Exento${suffix}` : "Sin cargo";
     case "needs_verification":
-      return "Pendiente de verificación";
+      return `Pendiente de verificación${suffix}`;
     case "pending":
-      return `Pendiente ${formatClp(reg.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP)}`;
+      return `Pendiente ${formatClp(reg.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP)}${suffix}`;
     case "partial":
-      return `Abono · saldo ${formatClp(remainingBalanceClp(reg))}`;
+      return `Abono · saldo ${formatClp(remainingBalanceClp(reg))}${suffix}`;
     case "paid":
-      return "Pagado";
+      return `Pagado${suffix}`;
     default:
       return "—";
   }

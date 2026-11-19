@@ -2,7 +2,9 @@ import { SpacePublicOriginProvider } from "@/components/admin/SpacePublicOrigin"
 import { AdminShell } from "@/components/identity/AdminShell";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
+import { isCongressVaronesPlace } from "@/core/congress/place";
 import {
+  CONGRESS_VARONES_FORMS_ALIAS_PATH,
   CONGRESS_VARONES_HOME_PATH,
   isCongressAllowedAdminPath,
   isStudentAffairsAllowedAdminPath,
@@ -131,9 +133,28 @@ export default async function AdminLayout({
       })()
     : [];
 
+  const congressUnitIds =
+    session?.membership?.unitAccess?.mode === "units"
+      ? session.membership.unitAccess.unitIds
+      : null;
+  const showCongressVarones = isCongressVaronesPlace({
+    tenantId,
+    unitIds: congressUnitIds,
+  });
+  const onCongressAdmin =
+    pathname === CONGRESS_VARONES_HOME_PATH ||
+    pathname.startsWith(`${CONGRESS_VARONES_HOME_PATH}/`) ||
+    pathname === CONGRESS_VARONES_FORMS_ALIAS_PATH ||
+    pathname.startsWith(`${CONGRESS_VARONES_FORMS_ALIAS_PATH}/`);
+
+  if (pathname && hasSpace && onCongressAdmin && !showCongressVarones) {
+    redirect("/admin");
+  }
+
   if (
     pathname &&
     hasSpace &&
+    showCongressVarones &&
     usesCongressFocusedShell(permissions, roleCodes) &&
     !isCongressAllowedAdminPath(pathname)
   ) {
@@ -223,6 +244,7 @@ export default async function AdminLayout({
         branding={branding}
         navBadges={navBadges}
         enabledAppIds={enabledAppIds}
+        showCongressVarones={showCongressVarones}
       >
         {children}
       </AdminShell>

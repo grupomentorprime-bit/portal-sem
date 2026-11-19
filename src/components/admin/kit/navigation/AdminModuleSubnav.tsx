@@ -17,6 +17,7 @@ interface AdminModuleSubnavProps {
   roleCodes: AdminShellContext["roleCodes"];
   navBadges?: AdminShellContext["navBadges"];
   enabledAppIds?: AdminShellContext["enabledAppIds"];
+  showCongressVarones?: AdminShellContext["showCongressVarones"];
 }
 
 /**
@@ -29,6 +30,7 @@ export function AdminModuleSubnav({
   roleCodes,
   navBadges,
   enabledAppIds = null,
+  showCongressVarones = false,
 }: AdminModuleSubnavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -37,7 +39,8 @@ export function AdminModuleSubnav({
     compatMode,
     roleCodes,
     navBadges,
-    enabledAppIds
+    enabledAppIds,
+    showCongressVarones === true
   );
   const activeGroupId = findActiveNavGroupId(pathname, groups, searchParams);
   const activeGroup = activeGroupId
@@ -55,7 +58,7 @@ export function AdminModuleSubnav({
   const childItems = (activeItem?.children ?? []).filter(
     (child) =>
       !isNavPlaceholder(child) &&
-      filterNavItem(child, permissions, compatMode, roleCodes)
+      filterNavItem(child, permissions, compatMode, roleCodes, showCongressVarones === true)
   );
 
   if (activeGroup.id === "sitio-web") {

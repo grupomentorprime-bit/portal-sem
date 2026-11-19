@@ -91,7 +91,7 @@ export interface CongressAttendanceHistoryEntry {
   actorUserId: string;
 }
 
-export type CongressChargeHistoryAction = "exempt" | "restore";
+export type CongressChargeHistoryAction = "exempt" | "restore" | "reduce";
 
 export interface CongressChargeHistoryEntry {
   action: CongressChargeHistoryAction;

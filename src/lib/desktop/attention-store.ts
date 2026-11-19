@@ -16,6 +16,7 @@ import {
 } from "@/lib/desktop/attention";
 import type { MentorAppId } from "@/lib/desktop/catalog";
 import { formatCorrelative, type HelpLocation } from "@/lib/desktop/help-origins";
+import type { ReportDispatchRecord } from "@/lib/desktop/platform-desk";
 import { getDatabase } from "@/lib/mongodb";
 
 const CASES = "attention_cases";
@@ -80,6 +81,14 @@ export async function saveAttentionGrant(userId: string, areaIds: string[]): Pro
     { $set: { grants }, $setOnInsert: { areas: current.areas } },
     { upsert: true }
   );
+}
+
+export async function saveReportDispatch(item: ReportDispatchRecord): Promise<void> {
+  const db = await getDatabase();
+  await db.collection<ReportDispatchRecord & { _id: string }>("attention_report_dispatches").insertOne({
+    _id: item.id,
+    ...item,
+  });
 }
 
 export async function saveAttentionCase(item: AttentionCase): Promise<void> {

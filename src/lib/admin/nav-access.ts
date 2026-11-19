@@ -182,12 +182,24 @@ function isCongressAllowedItem(item: AdminNavItem): boolean {
   );
 }
 
+function isCongressNavItem(item: AdminNavItem): boolean {
+  if (item.id === "congreso-varones") return true;
+  const href = item.href ?? "";
+  return (
+    href === CONGRESS_VARONES_HOME_PATH ||
+    href.startsWith(`${CONGRESS_VARONES_HOME_PATH}/`)
+  );
+}
+
 export function filterNavItem(
   item: AdminNavItem,
   permissions: string[],
   compatMode: boolean,
-  roleCodes: string[] = []
+  roleCodes: string[] = [],
+  showCongressVarones = true
 ): boolean {
+  if (isCongressNavItem(item) && !showCongressVarones) return false;
+
   if (usesCongressFocusedShell(permissions, roleCodes)) {
     return isCongressAllowedItem(item);
   }
@@ -304,14 +316,17 @@ export function filterAdminNavGroups(
   compatMode: boolean,
   roleCodes: string[] = [],
   navBadges?: Record<string, number>,
-  enabledAppIds?: readonly string[] | null
+  enabledAppIds?: readonly string[] | null,
+  showCongressVarones = true
 ): AdminNavGroup[] {
   const focusedShell =
     usesCongressFocusedShell(permissions, roleCodes) ||
     usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes);
 
   const visibleItems = getAllNavTreeItems().filter((item) => {
-    if (!filterNavItem(item, permissions, compatMode, roleCodes)) return false;
+    if (!filterNavItem(item, permissions, compatMode, roleCodes, showCongressVarones)) {
+      return false;
+    }
     if (focusedShell && item.id === "dashboard-home") return false;
     return true;
   });

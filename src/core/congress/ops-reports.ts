@@ -1,4 +1,7 @@
-import { isExplicitlyExempt } from "@/core/congress/charge";
+import {
+  activeChargeConsideration,
+  isExplicitlyExempt,
+} from "@/core/congress/charge";
 import {
   breakdownPaymentsByPaidOn,
   normalizePaymentMethod,
@@ -207,18 +210,30 @@ function zoneOrder(zoneId: string): number {
   return index === -1 ? 1000 : index;
 }
 
+function formatReportClp(value: number): string {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 function financeLabel(reg: CongressRegistration, status: ContributionStatus): string {
+  const note = activeChargeConsideration(reg);
+  const suffix = note
+    ? ` · no paga ${formatReportClp(note.unpaidClp)} · ${note.reason}`
+    : "";
   switch (status) {
     case "no_charge":
-      return isExplicitlyExempt(reg) ? "Exento" : "Sin cargo";
+      return isExplicitlyExempt(reg) ? `Exento${suffix}` : "Sin cargo";
     case "needs_verification":
-      return "Por verificar";
+      return `Por verificar${suffix}`;
     case "pending":
-      return "Pendiente";
+      return `Pendiente${suffix}`;
     case "partial":
-      return "Abono";
+      return `Abono${suffix}`;
     case "paid":
-      return "Pagado";
+      return `Pagado${suffix}`;
     default:
       return "—";
   }

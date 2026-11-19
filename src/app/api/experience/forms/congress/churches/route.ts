@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
+import { IPN_CHILE_TENANT_ID } from "@/core/units/ipn-chile";
 import { CONGRESS_ZONES } from "@/core/congress/constants";
 import { listCongressChurches } from "@/lib/congress/churches";
 import { listCongressRegistrations } from "@/lib/congress/repository";
@@ -11,6 +12,9 @@ export async function GET(request: Request) {
     const tenant = await getActiveTenantId();
     if (!tenant) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
+    }
+    if (tenant !== IPN_CHILE_TENANT_ID) {
+      return NextResponse.json({ ok: false, error: "Formulario no disponible." }, { status: 404 });
     }
 
     const zone = new URL(request.url).searchParams.get("zone")?.trim() || undefined;

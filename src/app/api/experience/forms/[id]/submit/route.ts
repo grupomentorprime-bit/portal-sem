@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
+import { IPN_CHILE_TENANT_ID } from "@/core/units/ipn-chile";
 import { submitExperienceForm } from "@/core/experience/forms";
 import { normalizeFormSubmissionData } from "@/core/experience/forms/validation";
 import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
@@ -89,6 +90,10 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     if (!tenant) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
+    }
+
+    if (id === CONGRESS_VARONES_FORM_ID && tenant !== IPN_CHILE_TENANT_ID) {
+      return NextResponse.json({ ok: false, error: "Formulario no disponible." }, { status: 404 });
     }
 
     const form = await getDirectAccessibleExperienceForm(tenant, id);

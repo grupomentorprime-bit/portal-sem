@@ -12,6 +12,8 @@ export interface AdminShellContext {
   navBadges?: Record<string, number>;
   /** null = todo el Espacio. Arreglo = aplicaciones habilitadas en las unidades del miembro. */
   enabledAppIds?: string[] | null;
+  /** El Congreso de Varones solo se muestra en IPN Chile, Departamento de Varones. */
+  showCongressVarones?: boolean;
 }
 
 export type SortDirection = "asc" | "desc";

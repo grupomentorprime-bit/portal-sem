@@ -231,7 +231,8 @@ function SidebarNav({
     ctx.compatMode,
     ctx.roleCodes,
     ctx.navBadges,
-    ctx.enabledAppIds
+    ctx.enabledAppIds,
+    ctx.showCongressVarones === true
   );
   const groupsById = new Map(groups.map((group) => [group.id, group]));
 
@@ -258,7 +259,13 @@ function SidebarNav({
                       const childItems = (item.children ?? []).filter(
                         (child) =>
                           !isNavPlaceholder(child) &&
-                          filterNavItem(child, ctx.permissions, ctx.compatMode, ctx.roleCodes)
+                          filterNavItem(
+                            child,
+                            ctx.permissions,
+                            ctx.compatMode,
+                            ctx.roleCodes,
+                            ctx.showCongressVarones === true
+                          )
                       );
                       return (
                         <div key={item.id ?? item.href ?? item.label} className="flex flex-col gap-0.5">

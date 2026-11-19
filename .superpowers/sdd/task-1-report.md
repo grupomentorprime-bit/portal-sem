@@ -1,67 +1,72 @@
-# Task 1 Report: Dominio puro — tipo, etiqueta y merge
+# Task 1 Report: Helpers de filtros de mesa
 
 ## Status
 
 **DONE**
 
+## Scope
+
+Implemented pure helpers for desk filter draft/applied counting in `help-origins.ts`, with baseline tests. Only files named in the brief were modified.
+
+| File | Action |
+|------|--------|
+| `tests/baseline/desktop-attention-filters.test.ts` | Created |
+| `src/lib/desktop/help-origins.ts` | Modified (after `filterDeskCases`) |
+
+## TDD Evidence
+
+### RED (Step 2)
+
+Command:
+
+```text
+npx tsx --test tests/baseline/desktop-attention-filters.test.ts
+```
+
+Exit code: **1**
+
+Result: 3 failing tests — `emptyDeskFilters` and `countAppliedDeskFilters` not exported (missing implementation).
+
+Key errors:
+
+```text
+TypeError: (0 , import_help_origins.emptyDeskFilters) is not a function
+TypeError: (0 , import_help_origins.countAppliedDeskFilters) is not a function
+ℹ pass 0 / ℹ fail 3
+```
+
+### GREEN (Step 4)
+
+Same command after implementation.
+
+Exit code: **0**
+
+```text
+✔ vacío cuenta 0
+✔ cuenta solo campos con valor
+✔ emptyDeskFilters deja todos los campos en cadena vacía
+ℹ pass 3 / ℹ fail 0
+```
+
+## Implementation Summary
+
+Exports added immediately after `filterDeskCases`:
+
+- `DeskFilterFields` — five string fields: `tenantId`, `originId`, `status`, `priority`, `assigneeUserId`
+- `emptyDeskFilters()` — returns all fields as `""`
+- `countAppliedDeskFilters(fields)` — counts truthy values via `[...fields].filter(Boolean).length`
+
+## Self-Review
+
+- Matches brief verbatim (types, field names, placement).
+- No UI or unrelated Atención WIP touched.
+- `countAppliedDeskFilters` is consistent with how `filterDeskCases` treats optional string filters (non-empty means applied).
+- No new dependencies; follows existing baseline test pattern (`node:test` + `node:assert/strict`).
+
 ## Commits
 
-None (per global plan constraints).
-
-## TDD
-
-1. Created `tests/baseline/congress-form-submitted-at.test.ts` verbatim from brief.
-2. Ran tests — 4 failures (`formSubmissionDisplay` / `withFormSubmittedAt` not exported).
-3. Implemented type field and helpers per brief.
-4. Re-ran tests — 4/4 pass.
-
-```
-npx tsx --test tests/baseline/congress-form-submitted-at.test.ts
-ℹ pass 4, fail 0
-```
-
-## Changes
-
-### `src/core/congress/types.ts`
-
-- Added optional `formSubmittedAt?: string | null` on `CongressRegistration` after `submissionId`, with JSDoc noting API-only enrichment (not persisted).
-
-### `src/core/congress/form-engagement.ts`
-
-- `formSubmissionDisplay(reg)` — returns `{ label, at }`:
-  - No trimmed non-empty `formSubmittedAt` → `{ label: null, at: null }`.
-  - `source === "form"` → `"Formulario"`.
-  - Otherwise → `"Actualización"`.
-- `withFormSubmittedAt(regs, map)` — maps each registration, setting `formSubmittedAt` from map by trimmed `submissionId`, or `null` when no id or no map entry.
-
-### `tests/baseline/congress-form-submitted-at.test.ts`
-
-- New baseline suite covering display labels (form / actualización / sin hora) and merge behavior.
-
-## Self-review
-
-- Matches brief verbatim; no unrelated files touched.
-- Aligns with existing `form-engagement.ts` patterns (`Pick<CongressRegistration, ...>`, Spanish labels consistent with file comments).
-- `withFormSubmittedAt` returns new objects via spread (immutable merge).
-- Linter: no issues on modified files.
+None (project constraint).
 
 ## Concerns
 
 None.
-
-## Out of scope (later tasks)
-
-- Mongo/API wiring to populate `formSubmittedAt` when listing.
-- UI (ReceptionView, CongressOpsPanel).
-## Final-review fix
-
-**Problem:** `submissionId` can be a Mongo ObjectId at runtime (`sync-form.ts` wrote `submission._id` raw), so `id.trim()` / `reg.submissionId?.trim()` crashed GET `/api/congress/registrations`.
-
-**Changes**
-- `src/core/congress/form-engagement.ts`: new pure `submissionIdKey(value: unknown): string | null` (string -> trim; object -> toHexString/String(); null/empty/`[object Object]`/invalid -> null). `withFormSubmittedAt` uses it.
-- `src/lib/congress/form-submitted-at.ts`: loader takes `readonly unknown[]` and normalizes with `submissionIdKey`; map keys remain strings.
-- `src/lib/congress/sync-form.ts`: writes `String(submission._id)` (both insert and link-by-RUT update); the dedupe lookup uses `$in: [string, rawId]` so legacy ObjectId rows still match (no duplicates).
-- `src/app/api/congress/registrations/route.ts`: passes `items.map(r => r.submissionId)` directly (loader coerces).
-- `tests/baseline/congress-form-submitted-at.test.ts`: added ObjectId-like / toString-only / padded / `{}` / number cases and `submissionIdKey` tests.
-
-**Test output** (`npx tsx --test tests/baseline/congress-form-submitted-at.test.ts`): tests 6, pass 6, fail 0. `tsc --noEmit` reports no errors in touched files. No commit made; ReceptionView untouched.

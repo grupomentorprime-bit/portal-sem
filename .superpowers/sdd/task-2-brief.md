@@ -1,100 +1,57 @@
-﻿### Task 2: Cargar horas de envío y enriquecer GET listado
+﻿### Task 2: Contrato de UI en fuente (copy y panel)
 
 **Files:**
-- Create: `src/lib/congress/form-submitted-at.ts`
-- Modify: `src/app/api/congress/registrations/route.ts`
+- Create: `tests/baseline/desktop-attention-ui.test.ts`
+- Modify later in Tasks 3–4: `DesktopAttention.tsx`, `mentor-desktop.css`
 
 **Interfaces:**
-- Consumes: `withFormSubmittedAt` (Task 1)
-- Produces: `loadFormSubmittedAtBySubmissionIds(tenantId, submissionIds: string[]): Promise<Map<string, string>>`
-- GET JSON: cada ítem de `items` / `registrations` incluye `formSubmittedAt: string | null`
+- Consumes: copy fijado en el spec
+- Produces: red de seguridad para no regresar a «Elige una empresa» ni panel inline
 
-- [ ] **Step 1: Implementar loader**
-
-Crear `src/lib/congress/form-submitted-at.ts`:
+- [ ] **Step 1: Write the failing test**
 
 ```ts
-import "server-only";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, it } from "node:test";
 
-import { ObjectId } from "mongodb";
-import { getDatabase } from "@/lib/mongodb";
+const root = process.cwd();
+const src = () =>
+  readFileSync(resolve(root, "src/components/desktop/DesktopAttention.tsx"), "utf8");
+const css = () =>
+  readFileSync(resolve(root, "src/components/desktop/mentor-desktop.css"), "utf8");
 
-const SUBMISSIONS = "experience_form_submissions";
+describe("Atención UI — Plataforma", () => {
+  it("Nuevo ticket usa Seleccionar empresa y no Elige una empresa", () => {
+    const text = src();
+    assert.match(text, /Seleccionar empresa/);
+    assert.doesNotMatch(text, /Elige una empresa/);
+  });
 
-/**
- * Map submissionId (string) → createdAt ISO del envío.
- * IDs inválidos o sin documento se omiten del mapa.
- */
-export async function loadFormSubmittedAtBySubmissionIds(
-  tenantId: string,
-  submissionIds: string[]
-): Promise<Map<string, string>> {
-  const unique = [...new Set(submissionIds.map((id) => id.trim()).filter(Boolean))];
-  const objectIds: ObjectId[] = [];
-  const idByHex = new Map<string, string>();
-  for (const id of unique) {
-    try {
-      const oid = new ObjectId(id);
-      objectIds.push(oid);
-      idByHex.set(oid.toHexString(), id);
-    } catch {
-      // skip non-ObjectId strings
-    }
-  }
-  const out = new Map<string, string>();
-  if (objectIds.length === 0) return out;
+  it("la ventana de Plataforma se titula Atención · Plataforma", () => {
+    assert.match(src(), /Atención · Plataforma/);
+  });
 
-  const db = await getDatabase();
-  const rows = await db
-    .collection<{ _id: ObjectId; createdAt?: string }>(SUBMISSIONS)
-    .find(
-      { tenant: tenantId, _id: { $in: objectIds } },
-      { projection: { createdAt: 1 } }
-    )
-    .toArray();
+  it("Filtros tiene Aplicar y Limpiar, y el panel es flotante en CSS", () => {
+    const text = src();
+    assert.match(text, />Aplicar</);
+    assert.match(text, />Limpiar</);
+    assert.match(css(), /\.attn-filter-float/);
+    assert.match(css(), /position:\s*absolute/);
+  });
 
-  for (const row of rows) {
-    const key = idByHex.get(row._id.toHexString());
-    const createdAt = typeof row.createdAt === "string" ? row.createdAt : null;
-    if (key && createdAt) out.set(key, createdAt);
-  }
-  return out;
-}
-```
-
-- [ ] **Step 2: Enriquecer route**
-
-En `src/app/api/congress/registrations/route.ts`, tras obtener `items`:
-
-```ts
-import { loadFormSubmittedAtBySubmissionIds } from "@/lib/congress/form-submitted-at";
-import { withFormSubmittedAt } from "@/core/congress/form-engagement";
-
-// ... sync + listCongressRegistrations como hoy ...
-
-const submittedAtMap = await loadFormSubmittedAtBySubmissionIds(
-  ctx.tenantId,
-  items.map((r) => r.submissionId).filter((id): id is string => Boolean(id))
-);
-const enriched = withFormSubmittedAt(items, submittedAtMap);
-
-// Usar enriched en la respuesta:
-return NextResponse.json({
-  ok: true,
-  items: enriched,
-  registrations: enriched,
-  filterOptions: { zones, churches, churchesByZone },
+  it("Compose se remonta con composeSession", () => {
+    assert.match(src(), /composeSession/);
+    assert.match(src(), /key=\{composeSession\}/);
+  });
 });
 ```
 
-No tocar el sync existente ni los `filterOptions`.
+- [ ] **Step 2: Run test to verify it fails**
 
-- [ ] **Step 3: Verificación manual rápida (dev)**
-
-Con el panel abierto, `GET /api/congress/registrations` debe devolver `formSubmittedAt` ISO en filas con `submissionId`, y `null` en import/puerta sin envío.  
-Expected: JSON con el campo; sin errores 500.
-
-- [ ] **Step 4: Commit** — omitir salvo pedido explícito.
+Run: `npx tsx --test tests/baseline/desktop-attention-ui.test.ts`  
+Expected: FAIL on missing strings / CSS class
 
 ---
 

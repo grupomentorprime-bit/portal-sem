@@ -1,137 +1,67 @@
-﻿### Task 3: UI Recepción + ficha + conservar al upsert
+﻿### Task 3: Compose — placeholder, disable y remount
 
 **Files:**
-- Modify: `src/components/admin/congress/CongressOpsPanel.tsx` (`upsertRegistration`)
-- Modify: `src/components/admin/congress/reception/ReceptionView.tsx`
-- Modify: `src/components/admin/congress/participant/ParticipantSheet.tsx`
+- Modify: `src/components/desktop/DesktopAttention.tsx`
 
 **Interfaces:**
-- Consumes: `formSubmissionDisplay`, `formatDateTimeSantiago`
-- UI: columna **Formulario**; móvil y ficha con la misma línea de copy de la spec
+- Consumes: `Compose` actual (`tenantId` inicia en `""`, `companyReady`)
+- Produces: `composeSession` number; `openComposer` incrementa; `key={composeSession}` en ambos mounts de `Compose` (panel y company)
 
-- [ ] **Step 1: Conservar `formSubmittedAt` en upsert**
+- [ ] **Step 1: Add composeSession state and bump on open**
 
-En `CongressOpsPanel.tsx`, reemplazar el cuerpo de `upsertRegistration`:
-
-```ts
-const upsertRegistration = (reg: CongressRegistration) => {
-  setRegistrations((prev) => {
-    const idx = prev.findIndex((r) => r._id === reg._id);
-    if (idx < 0) return [reg, ...prev];
-    const prevReg = prev[idx];
-    const next = [...prev];
-    next[idx] = {
-      ...reg,
-      formSubmittedAt:
-        reg.formSubmittedAt !== undefined
-          ? reg.formSubmittedAt
-          : prevReg.formSubmittedAt ?? null,
-    };
-    return next;
-  });
-};
-```
-
-Así un PATCH de llegada/pago/alojamiento no borra la hora del formulario en memoria.
-
-- [ ] **Step 2: Columna y móvil en ReceptionView**
-
-Imports:
+Near other state in `DesktopAttention`:
 
 ```ts
-import { formSubmissionDisplay } from "@/core/congress/form-engagement";
-import { formatDateTimeSantiago } from "@/components/admin/congress/labels";
+const [composeSession, setComposeSession] = useState(0);
 ```
 
-En `<thead>`, entre Alojamiento y Acción:
+Update `openComposer`:
+
+```ts
+function openComposer() {
+  setComposeSession((n) => n + 1);
+  setComposing(true);
+  setReceipt(null);
+  setSelectedId("");
+  setSelectedTenantId("");
+}
+```
+
+- [ ] **Step 2: Pass key to Compose instances**
+
+On every `<Compose ... />` in the platform frame and in `CompanySpace`:
 
 ```tsx
-<th className="px-3 py-2 font-semibold">Formulario</th>
+<Compose
+  key={composeSession}
+  ...
+/>
 ```
 
-En cada fila desktop, antes de la celda Acción:
+In `CompanySpace`, accept `composeSession: number` as prop and pass `key={composeSession}` to its `Compose`.
+
+- [ ] **Step 3: Fix placeholder copy**
+
+In Compose select (platform, not fixed company):
 
 ```tsx
-<td className="px-3 py-2.5">
-  {(() => {
-    const form = formSubmissionDisplay(reg);
-    if (!form.at || !form.label) return "—";
-    return (
-      <>
-        <p>{formatDateTimeSantiago(form.at)}</p>
-        <p className="text-xs text-muted">{form.label}</p>
-      </>
-    );
-  })()}
-</td>
+<option value="">Seleccionar empresa</option>
 ```
 
-(Preferible calcular `const form = formSubmissionDisplay(reg)` junto a `sat`/`sun` para no usar IIFE.)
+Ensure there is no `Elige una empresa` left in the file.
 
-En la lista móvil, bajo el nombre (dentro del botón), añadir línea:
+Confirm submit stays:
 
 ```tsx
-{(() => {
-  const form = formSubmissionDisplay(reg);
-  if (!form.at || !form.label) {
-    return <p className="mt-0.5 text-xs text-muted">Sin formulario</p>;
-  }
-  return (
-    <p className="mt-0.5 text-xs text-muted">
-      {form.label} · {formatDateTimeSantiago(form.at)}
-    </p>
-  );
-})()}
+disabled={sending || !body.trim() || !areaId || !companyReady}
 ```
 
-- [ ] **Step 3: Línea en ParticipantSheet**
+with `companyReady = mode !== "panel" || Boolean(lockedTenantId || tenantId)`.
 
-Tras el bloque de nombre/roles (o justo antes de “Previsto:”), mostrar:
+- [ ] **Step 4: Re-run UI test partial**
 
-```tsx
-{(() => {
-  const form = formSubmissionDisplay(registration);
-  if (!form.at || !form.label) {
-    return <p className="text-xs text-muted">Sin formulario</p>;
-  }
-  return (
-    <p className="text-xs text-muted">
-      {form.label} · {formatDateTimeSantiago(form.at)}
-    </p>
-  );
-})()}
-```
-
-Imports: `formSubmissionDisplay`, `formatDateTimeSantiago`.
-
-- [ ] **Step 4: Verificar en navegador**
-
-1. Persona `source=form` con envío: tabla **Formulario** + fecha; ficha `Formulario · …`.
-2. Nómina con `submissionId` (ya ingresó): **Actualización** + hora histórica del envío.
-3. Import/puerta sin envío: **—** / **Sin formulario**.
-4. Registrar llegada: la hora del formulario en tabla y ficha no cambia.
-
-- [ ] **Step 5: Re-correr tests de dominio**
-
-Run: `npx tsx --test tests/baseline/congress-form-submitted-at.test.ts`  
-Expected: PASS
-
-- [ ] **Step 6: Commit** — omitir salvo pedido explícito.
+Run: `npx tsx --test tests/baseline/desktop-attention-ui.test.ts`  
+Expected: PASS on Seleccionar empresa + composeSession; may still FAIL on título/Aplicar until Task 4–5.
 
 ---
 
-## Spec coverage (self-review)
-
-| Spec | Task |
-|------|------|
-| Fuente = `createdAt` del envío vía `submissionId` | 2 |
-| Solo en respuesta GET listado; no persistir | 1 (tipo documentado) + 2 |
-| Incluye quienes ya ingresaron | 2 (sync + lookup histórico) |
-| Mantener sync al listar | 2 (no se quita) |
-| Etiquetas Formulario / Actualización | 1 + 3 |
-| Columna tabla, móvil, ficha | 3 |
-| Llegada no cambia la hora mostrada | 3 (`upsertRegistration`) |
-| Sin campo persistido / sin migración | Global + 1–2 |
-
-**Placeholders:** ninguno.  
-**Tipos:** `formSubmittedAt`, `formSubmissionDisplay`, `withFormSubmittedAt`, `loadFormSubmittedAtBySubmissionIds` consistentes entre tareas.

@@ -365,10 +365,7 @@ export function ReceptionView({
                       </td>
                       <td className="px-3 py-2.5">
                         {form.at && form.label ? (
-                          <>
-                            <p>{formatDateTimeSantiago(form.at)}</p>
-                            <p className="text-xs text-muted">{form.label}</p>
-                          </>
+                          <FormOkNotice at={form.at} />
                         ) : (
                           "—"
                         )}
@@ -434,10 +431,12 @@ export function ReceptionView({
                       </span>
                       {registrationDisplayName(reg)}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted">
-                      {form.at && form.label
-                        ? `${form.label} · ${formatDateTimeSantiago(form.at)}`
-                        : "Sin formulario"}
+                    <p className="mt-1">
+                      {form.at && form.label ? (
+                        <FormOkNotice at={form.at} />
+                      ) : (
+                        <span className="text-xs text-muted">Sin formulario</span>
+                      )}
                     </p>
                     <p className="mt-1 text-xs text-muted">
                       {arrival.text} · {contributionLabel(reg)} · {lodgingLabel(lodging)}
@@ -476,6 +475,17 @@ export function ReceptionView({
         </>
       ) : null}
     </div>
+  );
+}
+
+function FormOkNotice({ at }: { at: string }) {
+  return (
+    <span className="inline-flex flex-col rounded-md border-2 border-[var(--growth-os-success)] bg-[color-mix(in_srgb,var(--growth-os-success)_16%,white)] px-2 py-1 leading-tight">
+      <span className="text-xs font-extrabold uppercase tracking-wide text-[var(--growth-os-success)]">
+        Formulario OK
+      </span>
+      <span className="text-xs font-semibold text-foreground">{formatDateTimeSantiago(at)}</span>
+    </span>
   );
 }
 

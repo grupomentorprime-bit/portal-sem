@@ -94,6 +94,15 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
     general: true,
   },
   {
+    id: "escritorio.chat-en-vivo",
+    channel: "escritorio",
+    siteOrApp: "Escritorio Empresarial",
+    module: "Chat en vivo",
+    screen: "Chat en vivo",
+    action: null,
+    general: true,
+  },
+  {
     id: "web.publica.pedir-ayuda",
     channel: "web",
     siteOrApp: "Web pública",
@@ -230,6 +239,7 @@ export function filterDeskCases<
     helpFrom?: { originId: string } | null;
     originId?: string;
     company?: string;
+    requesterName?: string;
   },
 >(
   cases: readonly T[],
@@ -249,7 +259,7 @@ export function filterDeskCases<
     const originId = item.originId || item.helpFrom?.originId || "";
     const code = (item.code || item.correlative || "").toLocaleLowerCase("es");
     if (query) {
-      const blob = `${code} ${item.subject} ${item.company ?? ""}`.toLocaleLowerCase("es");
+      const blob = `${code} ${item.subject} ${item.company ?? ""} ${item.requesterName ?? ""}`.toLocaleLowerCase("es");
       if (!blob.includes(query)) return false;
     }
     if (filter.tenantId && item.tenantId !== filter.tenantId) return false;
@@ -261,6 +271,34 @@ export function filterDeskCases<
     if (filter.noFirstReply && item.messages.some((message) => message.role === "staff")) return false;
     return true;
   });
+}
+
+export type DeskFilterFields = {
+  tenantId: string;
+  originId: string;
+  status: string;
+  priority: string;
+  assigneeUserId: string;
+};
+
+export function emptyDeskFilters(): DeskFilterFields {
+  return {
+    tenantId: "",
+    originId: "",
+    status: "",
+    priority: "",
+    assigneeUserId: "",
+  };
+}
+
+export function countAppliedDeskFilters(fields: DeskFilterFields): number {
+  return [
+    fields.tenantId,
+    fields.originId,
+    fields.status,
+    fields.priority,
+    fields.assigneeUserId,
+  ].filter(Boolean).length;
 }
 
 export function screenForPath(pathname: string): HelpOriginRecord | null {

@@ -14,7 +14,8 @@ import { desktopClients } from "@/lib/desktop/clients";
 import type { DesktopDayLine } from "@/lib/desktop/day";
 import { readDesktopDay } from "@/lib/desktop/day-read";
 import { escritorioRedirect } from "@/lib/desktop/contract";
-import { attentionBadge, type AttentionActor } from "@/lib/desktop/attention";
+import { attentionBadge } from "@/lib/desktop/attention";
+import { attentionCasesInScope, attentionDeskScope, attentionMemberActor } from "@/lib/desktop/attention-context";
 import {
   listAttentionCases,
   listAttentionCasesForTenant,
@@ -119,14 +120,21 @@ export default async function EscritorioPage() {
 
   let attentionCount = 0;
   let attentionUnread = false;
+  let attentionUnreadCount = 0;
   const attentionStaff = operator;
+  const attentionScope = attentionDeskScope({
+    owner: platformOwner,
+    sessionTenantId: tenantId,
+    enteredTenantId: entered,
+  });
   try {
-    const actor: AttentionActor = attentionStaff
+    const actor = attentionMemberActor(
+      attentionStaff
       ? {
           userId: session.user._id,
           displayName: session.user.displayName,
           kind: "staff",
-          tenantId: deskTenantId || null,
+          tenantId: attentionScope.desk === "company" ? attentionScope.tenantId : null,
           allAreas: platformOwner,
           areaIds: platformOwner ? [] : (await readAttentionConfig()).grants.find((grant) => grant.userId === session.user._id)?.areaIds ?? [],
           orgWide: false,
@@ -141,18 +149,24 @@ export default async function EscritorioPage() {
           areaIds: [],
           orgWide: hasAnySpaceSetting(deskPermissions, contract.contracted),
           economic: false,
-        };
-    const rows = attentionStaff
-      ? await listAttentionCases()
-      : deskTenantId
-        ? await listAttentionCasesForTenant(deskTenantId)
-        : [];
+        },
+      attentionScope
+    );
+    const pool =
+      attentionScope.desk === "company"
+        ? await listAttentionCasesForTenant(attentionScope.tenantId)
+        : attentionStaff
+          ? await listAttentionCases()
+          : [];
+    const rows = attentionCasesInScope(pool, attentionScope);
     const badge = attentionBadge(rows, actor);
     attentionCount = badge.count;
     attentionUnread = badge.unread;
+    attentionUnreadCount = badge.unreadCount;
   } catch {
     attentionCount = 0;
     attentionUnread = false;
+    attentionUnreadCount = 0;
   }
 
   let departmentName = "";
@@ -219,8 +233,11 @@ export default async function EscritorioPage() {
       dayLines={dayLines}
       owner={onPlatformDesk}
       attentionStaff={attentionStaff}
+      attentionDesk={attentionScope.desk}
+      attentionCompanyName={attentionScope.desk === "company" ? active?.name?.trim() || "" : ""}
       attentionCount={attentionCount}
       attentionUnread={attentionUnread}
+      attentionUnreadCount={attentionUnreadCount}
       canReturnToPlatform={platformOwner && Boolean(entered)}
       permissions={onPlatformDesk ? [] : deskPermissions}
     />

@@ -15,6 +15,7 @@ import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experienc
 import { isSemTenant } from "@/core/tenant/is-sem";
 import { ipnDepartmentColors } from "@/design/tokens/colors";
 import { SEM_CONTACT_PUBLISHED } from "@/lib/portal/sem-identity-v7";
+import { IPN_CHILE_TENANT_ID } from "@/core/units/ipn-chile";
 import { getActivePortal } from "@/lib/portal/site";
 import type { ExperienceFormExperience } from "@/types/experience-form-experience";
 import {
@@ -217,6 +218,9 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
   const { id } = await params;
   const ctx = await getActivePortal();
   if (!ctx) notFound();
+  if (id === VARONES_ATTENDANCE_FORM_ID && ctx.tenant !== IPN_CHILE_TENANT_ID) {
+    notFound();
+  }
 
   if (getSupersededFormIds(ctx.tenant).has(id)) {
     const convocatoria = getActiveConvocatoria(ctx.tenant);

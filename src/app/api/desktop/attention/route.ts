@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { randomInt, randomUUID } from "node:crypto";
 import { findTenantById, listTenants } from "@/core/tenant";
@@ -20,11 +21,15 @@ import {
   markCaseRead,
   openAttentionCase,
   presentAttentionCase,
+  promoteChatToTicket,
+  requestClientConfirmation,
+  resolveClientConfirmation,
   recordEconomicApproval,
   reopenAttentionCase,
   setAttentionArea,
   setAttentionPriority,
   setAttentionStatus,
+  statusLabel,
   visibleAttentionCases,
   type AttentionActor,
   type AttentionCase,
@@ -51,9 +56,37 @@ import {
   readHelpLocation,
   saveAttentionCase,
   saveHelpLocation,
+  saveReportDispatch,
   takeCorrelative,
 } from "@/lib/desktop/attention-store";
 import { formatFromHeader, getResendClient, mailboxForSend } from "@/lib/notifications/transport";
+import {
+  attentionCaseInDesk,
+  attentionCasesInScope,
+  attentionDeskScope,
+  attentionMemberActor,
+  attentionOpenTarget,
+  chatCaseActor,
+  enteredTenantFromCookie,
+  resolveChatOpening,
+  type AttentionDeskScope,
+} from "@/lib/desktop/attention-context";
+import { listCompanyPeople } from "@/lib/desktop/platform-directory";
+import {
+  applyManualIntake,
+  clipReportMessage,
+  intakeChannelLabel,
+  filterIncidents,
+  incidentTotals,
+  isIntakeChannel,
+  reportPeriod,
+  reportSince,
+  resolveIntakeChannel,
+  sendRequiresCompany,
+  type ReportDispatchRecord,
+} from "@/lib/desktop/platform-desk";
+import { buildIncidentReportPdf, reportFileName, reportMailSubject } from "@/lib/desktop/platform-report-pdf";
+import { DESK_ENTERED_COOKIE } from "@/lib/desktop/catalog";
 import { hasAnySpaceSetting } from "@/lib/desktop/space-settings";
 import { readSpaceContract } from "@/lib/desktop/store";
 import { getDatabase } from "@/lib/mongodb";
@@ -71,8 +104,14 @@ const REASONS: Record<string, string> = {
   closed: "El caso está resuelto.",
   forbidden: "No tienes permiso para esta acción.",
   origin: "Ese origen no está registrado.",
-  attachment: "La captura tiene que ser una imagen pequeña.",
+  attachment: "Adjunta una imagen, un PDF o un Word de hasta 4 MB.",
   contact: "Hay que verificar el contacto para seguir este caso.",
+  requester: "Indica el usuario o contacto.",
+  channel: "Elige el canal de origen.",
+  period: "Elige un período.",
+  recipient: "Elige un administrador de esa empresa.",
+  mail: "No se pudo enviar el correo.",
+  company: "Elige una empresa.",
   assignee: "Esa persona no atiende esta área.",
   decided: "La aprobación económica ya quedó registrada.",
   missing: "Este caso no tiene una solicitud comercial.",
@@ -179,22 +218,42 @@ function visitorView(item: AttentionCase) {
   };
 }
 
-async function loadVisible(actor: AttentionActor): Promise<{
+async function resolveDesk(user: {
+  platformRoles?: unknown;
+  status?: string;
+}, sessionTenantId: string | null | undefined): Promise<AttentionDeskScope> {
+  const owner = hasPlatformOwnerCapability(user);
+  const jar = await cookies();
+  const entered = enteredTenantFromCookie(jar.get(DESK_ENTERED_COOKIE)?.value);
+  const scope = attentionDeskScope({
+    owner,
+    sessionTenantId,
+    enteredTenantId: entered,
+  });
+  if (!owner || scope.desk !== "company") return scope;
+  const tenant = await findTenantById(await getDatabase(), scope.tenantId);
+  if (!tenant) return { desk: "platform", tenantId: null };
+  return { desk: "company", tenantId: tenant.tenantId };
+}
+
+async function loadVisible(actor: AttentionActor, scope: AttentionDeskScope): Promise<{
   cases: AttentionCase[];
   areaNames: Map<string, string>;
   areas: Array<{ id: string; name: string; description: string; active: boolean }>;
 }> {
   const config = await readAttentionConfig();
   const pool =
-    actor.kind === "client" && actor.tenantId
-      ? await listAttentionCasesForTenant(actor.tenantId)
-      : await listAttentionCases();
+    scope.desk === "company"
+      ? await listAttentionCasesForTenant(scope.tenantId)
+      : actor.kind === "staff"
+        ? await listAttentionCases()
+        : [];
   const areas = config.areas.filter((area) => {
     if (actor.kind === "client") return area.active;
     return actor.allAreas || actor.areaIds.includes(area.id);
   });
   return {
-    cases: visibleAttentionCases(pool, actor),
+    cases: visibleAttentionCases(attentionCasesInScope(pool, scope), actor),
     areaNames: new Map(config.areas.map((area) => [area.id, area.name])),
     areas: areas.map((area) => ({
       id: area.id,
@@ -210,12 +269,14 @@ export async function GET() {
   if (ctx instanceof NextResponse) return ctx;
   const actor = await resolveActor(ctx);
   if (actor instanceof NextResponse) return actor;
+  const scope = await resolveDesk(ctx.user, ctx.tenantId);
+  const deskActor = attentionMemberActor(actor, scope);
 
-  const loaded = await loadVisible(actor);
-  const names = await companiesFor(actor);
-  const colleagues = actor.kind === "staff" ? await listAttentionColleagues() : [];
+  const loaded = await loadVisible(deskActor, scope);
+  const names = await companiesFor(deskActor);
+  const colleagues = deskActor.kind === "staff" ? await listAttentionColleagues() : [];
   const locations = new Map<string, HelpLocation>();
-  if (actor.kind === "staff") {
+  if (deskActor.kind === "staff") {
     await Promise.all(
       loaded.cases.map(async (item) => {
         const signal = await readHelpLocation(item.tenantId, item.requesterUserId);
@@ -223,20 +284,57 @@ export async function GET() {
       })
     );
   }
-  const badge = attentionBadge(loaded.cases, actor);
+  const badge = attentionBadge(loaded.cases, deskActor);
+  const activeCompany =
+    scope.desk === "company"
+      ? { tenantId: scope.tenantId, name: names.get(scope.tenantId) || scope.tenantId }
+      : null;
   return NextResponse.json({
     ok: true,
-    mode: actor.kind === "staff" ? "panel" : "client",
+    mode: deskActor.kind === "staff" ? "panel" : "client",
+    desk: scope.desk,
+    activeCompany,
     online: attentionOnline().online,
     areas: loaded.areas,
-    cases: presentVisible(loaded.cases, actor, names, loaded.areaNames, locations),
+    cases: presentVisible(loaded.cases, deskActor, names, loaded.areaNames, locations),
     colleagues,
     companies:
-      actor.kind === "staff"
+      scope.desk === "platform" && actor.kind === "staff"
         ? [...names.entries()].map(([tenantId, name]) => ({ tenantId, name })).sort((a, b) => a.name.localeCompare(b.name, "es"))
         : [],
     badge,
+    viewerUserId: actor.userId,
   });
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char] ?? char);
+}
+
+async function mailIncidentReport(input: {
+  to: string;
+  cc: string[];
+  subject: string;
+  message: string;
+  company: string;
+  periodLabel: string;
+  filename: string;
+  pdf: Uint8Array;
+}): Promise<boolean> {
+  const resend = getResendClient();
+  if (!resend) return false;
+  const note = input.message ? `<p>${escapeHtml(input.message)}</p>` : "";
+  const sent = await resend.emails
+    .send({
+      from: formatFromHeader("NELZURI", mailboxForSend()),
+      to: input.to,
+      cc: input.cc.length > 0 ? input.cc : undefined,
+      subject: input.subject,
+      html: `<p>Informe de incidencias de ${escapeHtml(input.company)} · ${escapeHtml(input.periodLabel)}.</p>${note}`,
+      attachments: [{ filename: input.filename, content: Buffer.from(input.pdf) }],
+    })
+    .catch(() => null);
+  return Boolean(sent && !sent.error);
 }
 
 async function mailVisitorCode(email: string, code: string, correlative: string): Promise<boolean> {
@@ -340,18 +438,20 @@ export async function POST(request: Request) {
   if (ctx instanceof NextResponse) return ctx;
   const actor = await resolveActor(ctx);
   if (actor instanceof NextResponse) return actor;
+  const scope = await resolveDesk(ctx.user, ctx.tenantId);
+  const deskActor = attentionMemberActor(actor, scope);
 
   const config = await readAttentionConfig();
-  const names = await companiesFor(actor);
+  const names = await companiesFor(actor.kind === "staff" ? actor : deskActor);
   const areaNames = new Map(config.areas.map((area) => [area.id, area.name]));
 
   const finish = async (item: AttentionCase) => {
     await saveAttentionCase(item);
-    const signal = actor.kind === "staff" ? await readHelpLocation(item.tenantId, item.requesterUserId) : null;
-    const view = presentAttentionCase(item, actor, {
+    const signal = deskActor.kind === "staff" ? await readHelpLocation(item.tenantId, item.requesterUserId) : null;
+    const view = presentAttentionCase(item, deskActor, {
       company: companyName(item, names),
       areaName: areaNames.get(item.areaId) || item.areaId,
-      location: actor.kind === "staff" ? presentHelpLocation(signal, Date.now()) : null,
+      location: deskActor.kind === "staff" ? presentHelpLocation(signal, Date.now()) : null,
     });
     return NextResponse.json({
       ok: true,
@@ -359,6 +459,84 @@ export async function POST(request: Request) {
       receipt: item.correlative ? { title: "Solicitud recibida", correlative: item.correlative } : null,
     });
   };
+
+  if (action === "company-directory" || action === "send-report") {
+    if (actor.kind !== "staff" || scope.desk !== "platform") return fail("forbidden", 403);
+    const tenantId = typeof body?.tenantId === "string" ? body.tenantId.trim() : "";
+    if (sendRequiresCompany(tenantId) || !names.has(tenantId)) return fail("company");
+    const people = await listCompanyPeople(tenantId);
+    if (action === "company-directory") {
+      return NextResponse.json({
+        ok: true,
+        admins: people.filter((person) => person.admin),
+        authorized: people,
+      });
+    }
+    const periodId = typeof body?.period === "string" ? body.period : "";
+    const period = reportPeriod(periodId);
+    const since = reportSince(periodId, Date.now());
+    if (!period || since == null) return fail("period");
+    const channel = typeof body?.channel === "string" ? body.channel.trim() : "";
+    if (channel && !isIntakeChannel(channel)) return fail("channel");
+    const clipped = clipReportMessage(typeof body?.message === "string" ? body.message : "");
+    if (!clipped.ok) return fail(clipped.reason);
+    const toUserId = typeof body?.toUserId === "string" ? body.toUserId.trim() : "";
+    const ccIds = Array.isArray(body?.ccUserIds)
+      ? [...new Set(body.ccUserIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0))]
+      : [];
+    const to = people.find((person) => person.userId === toUserId && person.admin);
+    if (!to) return fail("recipient");
+    const cc = ccIds.filter((id) => id !== to.userId).flatMap((id) => {
+      const person = people.find((item) => item.userId === id);
+      return person ? [person] : [];
+    });
+    if (cc.length !== ccIds.filter((id) => id !== to.userId).length) return fail("recipient");
+    const loaded = await loadVisible(deskActor, scope);
+    const company = names.get(tenantId) || tenantId;
+    const incidents = filterIncidents(loaded.cases, { since, tenantId, channel }).map((item) => ({
+      code: item.correlative?.trim() || item.id,
+      subject: item.subject,
+      requester: item.requesterName,
+      channel: intakeChannelLabel(resolveIntakeChannel(item)),
+      status: statusLabel(item.status),
+    }));
+    const totals = incidentTotals(filterIncidents(loaded.cases, { since, tenantId, channel }));
+    const pdf = buildIncidentReportPdf({
+      company,
+      periodLabel: period.label,
+      channelLabel: channel ? intakeChannelLabel(channel) : "Todos los canales",
+      totals,
+      rows: incidents,
+      emittedAt: new Date().toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" }),
+    });
+    const mailed = await mailIncidentReport({
+      to: to.email,
+      cc: cc.map((person) => person.email),
+      subject: reportMailSubject(company, period.label),
+      message: clipped.message,
+      company,
+      periodLabel: period.label,
+      filename: reportFileName(company),
+      pdf,
+    });
+    const dispatch: ReportDispatchRecord = {
+      id: randomUUID(),
+      at: now,
+      actorUserId: actor.userId,
+      actorName: actor.displayName,
+      tenantId,
+      company,
+      periodLabel: period.label,
+      channelLabel: channel ? intakeChannelLabel(channel) : "Todos los canales",
+      to: [{ userId: to.userId, name: to.name, email: to.email }],
+      cc: cc.map((person) => ({ userId: person.userId, name: person.name, email: person.email })),
+      message: clipped.message,
+      result: mailed ? "enviado" : "fallido",
+      detail: mailed ? "Correo aceptado." : "El correo no salió.",
+    };
+    await saveReportDispatch(dispatch);
+    return NextResponse.json({ ok: true, dispatch });
+  }
 
   if (action === "locate") {
     if (actor.kind !== "client" || !actor.tenantId) return fail("forbidden", 403);
@@ -375,23 +553,29 @@ export async function POST(request: Request) {
 
   if (action === "open") {
     const originId = typeof body?.originId === "string" ? body.originId.trim() : "";
-    const tenantId =
-      actor.kind === "staff"
-        ? typeof body?.tenantId === "string"
-          ? body.tenantId.trim()
-          : ""
-        : actor.tenantId || "";
-    if (actor.kind === "staff" && !names.has(tenantId)) return fail("forbidden", 403);
+    const requestedTenant = typeof body?.tenantId === "string" ? body.tenantId : "";
+    const chatOpen = originId === "escritorio.chat-en-vivo";
+    const chatTarget = chatOpen ? resolveChatOpening({ scope, chosenTenantId: requestedTenant }) : null;
+    if (chatOpen && chatTarget && !chatTarget.ok) return fail(chatTarget.reason, 400);
+    const target = chatTarget?.ok
+      ? { ok: true as const, tenantId: chatTarget.tenantId, asMember: true }
+      : attentionOpenTarget(scope, requestedTenant);
+    if (!target.ok) return fail(target.reason, 400);
+    const asMember = target.asMember || (scope.desk === "platform" && body?.asRequester === true);
+    if (actor.kind === "staff" && !names.has(target.tenantId)) return fail("forbidden", 403);
+    if (actor.kind === "client" && actor.tenantId !== target.tenantId) return fail("forbidden", 403);
+    const tenantId = target.tenantId;
     let correlative = "";
     try {
       correlative = await takeCorrelative();
     } catch {
       return fail("missing", 500);
     }
-    const asRequester = body?.asRequester === true && Boolean(tenantId);
-    const requester: AttentionActor = asRequester
-      ? { ...actor, kind: "client", tenantId, allAreas: false, areaIds: [], orgWide: false, economic: false }
-      : actor;
+    const requester: AttentionActor = chatOpen
+      ? chatCaseActor(actor, tenantId)
+      : asMember && actor.kind === "staff"
+        ? { ...actor, kind: "client", tenantId, allAreas: false, areaIds: [], orgWide: false, economic: false }
+        : actor;
     const shared = {
       areas: config.areas,
       actor: requester,
@@ -413,25 +597,57 @@ export async function POST(request: Request) {
           capturedAt: typeof body?.capturedAt === "string" && body.capturedAt.trim() ? body.capturedAt : now,
           whereNote: typeof body?.whereNote === "string" ? body.whereNote : "",
           attachment: body?.attachment,
-          forCompany: !asRequester && actor.kind === "staff",
+          forCompany: !chatOpen && actor.kind === "staff" && !asMember,
         })
       : openAttentionCase({
           ...shared,
           contextNote: typeof body?.contextNote === "string" ? body.contextNote : "",
           productId: typeof body?.productId === "string" ? body.productId : "",
+          forCompany: !chatOpen && actor.kind === "staff" && !asMember,
         });
     if (!opened.ok) return fail(opened.reason, opened.reason === "forbidden" ? 403 : 400);
+    const contactName = typeof body?.contactName === "string" ? body.contactName : "";
+    const intakeRaw = typeof body?.intakeChannel === "string" ? body.intakeChannel : "";
+    const linkedUserId = typeof body?.requesterUserId === "string" ? body.requesterUserId.trim() : "";
+    if (!chatOpen && actor.kind === "staff" && !asMember && (contactName.trim() || intakeRaw.trim() || linkedUserId)) {
+      let linkedName = contactName;
+      if (linkedUserId) {
+        const people = await listCompanyPeople(tenantId);
+        const person = people.find((item) => item.userId === linkedUserId);
+        if (!person) return fail("requester");
+        linkedName = person.name;
+      }
+      const manual = applyManualIntake(opened.case, {
+        contactName: linkedName,
+        channel: intakeRaw,
+        operatorUserId: actor.userId,
+        operatorName: actor.displayName,
+        requesterUserId: linkedUserId,
+      });
+      if (!manual.ok) return fail(manual.reason === "contact" ? "requester" : manual.reason);
+      return finish(manual.case);
+    }
     return finish(opened.case);
   }
 
+  const supportAction =
+    action === "request-info" ||
+    action === "reopen" ||
+    action === "link-company" ||
+    action === "area" ||
+    action === "assign" ||
+    action === "status" ||
+    action === "priority";
+  if (scope.desk === "company" && supportAction) return fail("forbidden", 403);
+
   const caseId = typeof body?.caseId === "string" ? body.caseId.trim() : "";
   const current = caseId ? await findAttentionCase(caseId) : null;
-  if (!current || !canSeeAttentionCase(actor, current)) {
+  if (!current || !canSeeAttentionCase(deskActor, current) || !attentionCaseInDesk(scope, current.tenantId)) {
     return NextResponse.json({ ok: false, reason: "missing" }, { status: 404 });
   }
 
   if (action === "read") {
-    return finish(markCaseRead(current, actor, now));
+    return finish(markCaseRead(current, deskActor, now));
   }
 
   if (action === "request-info") {
@@ -469,9 +685,37 @@ export async function POST(request: Request) {
     return finish(linked.case);
   }
 
+  if (action === "promote") {
+    const result = promoteChatToTicket(current, { actor, id: randomUUID(), now });
+    if (!result.ok) return fail(result.reason, result.reason === "forbidden" ? 403 : 400);
+    return finish(result.case);
+  }
+
+  if (action === "confirm-ask") {
+    const result = requestClientConfirmation(current, { actor, id: randomUUID(), now });
+    if (!result.ok) return fail(result.reason, result.reason === "forbidden" ? 403 : 400);
+    return finish(result.case);
+  }
+
+  if (action === "confirm") {
+    const decision = body?.decision === "resuelto" || body?.decision === "sigue" ? body.decision : "";
+    if (!decision) return fail("status");
+    const result = resolveClientConfirmation(current, {
+      actor: deskActor,
+      decision,
+      reason: typeof body?.reason === "string" ? body.reason : "",
+      id: randomUUID(),
+      now,
+    });
+    if (!result.ok) return fail(result.reason, result.reason === "forbidden" ? 403 : 400);
+    return finish(result.case);
+  }
+
   if (action === "message") {
+    const asClient = body?.asClient === true && actor.userId === current.requesterUserId;
+    const writer = asClient ? chatCaseActor(actor, current.tenantId) : deskActor;
     const result = appendCaseMessage(current, {
-      actor,
+      actor: writer,
       body: typeof body?.body === "string" ? body.body : "",
       id: randomUUID(),
       now,
@@ -512,6 +756,11 @@ export async function POST(request: Request) {
   if (action === "status") {
     const status = typeof body?.status === "string" ? body.status : "";
     if (!isCaseStatus(status)) return fail("status");
+    if (status === "resuelto" || status === "confirmacion") {
+      const asked = requestClientConfirmation(current, { actor, id: randomUUID(), now });
+      if (!asked.ok) return fail(asked.reason, asked.reason === "forbidden" ? 403 : 400);
+      return finish(asked.case);
+    }
     const result = setAttentionStatus(current, { actor, status, id: randomUUID(), now });
     if (!result.ok) return fail(result.reason, 403);
     return finish(result.case);

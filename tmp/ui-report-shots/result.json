@@ -1,0 +1,116 @@
+{
+  "commit": "53884927d0f4e1f1d962ec81309e4863de42c86c",
+  "server": "next start http://localhost:3000",
+  "period": "Últimos 30 días",
+  "mentorExcludesAC00019": true,
+  "seminarioAC00026Once": true,
+  "reports": [
+    {
+      "company": "Mentor Capacitación",
+      "channel": "Chat en vivo",
+      "period": "Últimos 30 días",
+      "uiTotals": {
+        "received": "2",
+        "open": "2",
+        "resolved": "0"
+      },
+      "filterTotals": {
+        "received": 2,
+        "open": 2,
+        "resolved": 0
+      },
+      "codes": [
+        "",
+        "AC-00021",
+        "AC-00018"
+      ],
+      "checks": {
+        "uiMatchesFilter": false,
+        "uiTotals": true,
+        "csvMatchesUi": false,
+        "csvMatchesFilter": true,
+        "pdfHasEveryCode": true,
+        "pdfHasTotals": true,
+        "pdfHasAC00019": false,
+        "pdfHasAC00026": false,
+        "countAC00019": 0,
+        "countAC00026": 0
+      },
+      "rows": [
+        {
+          "code": "",
+          "subject": "",
+          "company": "Empresa",
+          "requester": "Solicitante",
+          "channel": "Canal",
+          "status": "Estado"
+        },
+        {
+          "code": "AC-00021",
+          "subject": "Chat con empresa activa 2026-11-19T04:20:39.205Z",
+          "company": "Mentor Capacitación",
+          "requester": "Marco Antonio Sepulveda Bustos",
+          "channel": "Chat en vivo",
+          "status": "Pendiente"
+        },
+        {
+          "code": "AC-00018",
+          "subject": "Chat con empresa activa 2026-11-19T04:15:26.836Z",
+          "company": "Mentor Capacitación",
+          "requester": "Marco Antonio Sepulveda Bustos",
+          "channel": "Chat en vivo",
+          "status": "Pendiente"
+        }
+      ]
+    },
+    {
+      "company": "Seminario Eclesiástico Mayor",
+      "channel": "Chat en vivo",
+      "period": "Últimos 30 días",
+      "uiTotals": {
+        "received": "1",
+        "open": "1",
+        "resolved": "0"
+      },
+      "filterTotals": {
+        "received": 1,
+        "open": 1,
+        "resolved": 0
+      },
+      "codes": [
+        "",
+        "AC-00026"
+      ],
+      "checks": {
+        "uiMatchesFilter": false,
+        "uiTotals": true,
+        "csvMatchesUi": false,
+        "csvMatchesFilter": true,
+        "pdfHasEveryCode": true,
+        "pdfHasTotals": true,
+        "pdfHasAC00019": false,
+        "pdfHasAC00026": true,
+        "countAC00019": 0,
+        "countAC00026": 1
+      },
+      "rows": [
+        {
+          "code": "",
+          "subject": "",
+          "company": "Empresa",
+          "requester": "Solicitante",
+          "channel": "Canal",
+          "status": "Estado"
+        },
+        {
+          "code": "AC-00026",
+          "subject": "Chat propio 2026-11-19T10:29:13.192Z",
+          "company": "Seminario Eclesiástico Mayor",
+          "requester": "Asuntos estudiantiles",
+          "channel": "Chat en vivo",
+          "status": "Pendiente"
+        }
+      ]
+    }
+  ]
+}

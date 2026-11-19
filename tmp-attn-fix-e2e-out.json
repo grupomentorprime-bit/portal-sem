@@ -1,0 +1,478 @@
+{
+  "stamp": "2026-11-19T04:20:39.205Z",
+  "companies": {
+    "mentor": "mentor-prime-capacitacion",
+    "seminario": "seminario-ipn"
+  },
+  "directory": {
+    "status": 200,
+    "people": [
+      {
+        "name": "Alejandra Lara Gutiérrez",
+        "email": "alejandralara1978@gmail.com",
+        "admin": false,
+        "userId": "user-1783385637181-c08fe8fe"
+      },
+      {
+        "name": "Alex Espinoza",
+        "email": "soporte@seminarioipn.cl",
+        "admin": true,
+        "userId": "user-1783178852195-37d65f9e"
+      },
+      {
+        "name": "Asuntos estudiantiles",
+        "email": "contacto@mentorprime.cl",
+        "admin": false,
+        "userId": "user-1783091325665-72a82b9b"
+      },
+      {
+        "name": "Carolina Cisterna M.",
+        "email": "carocisternam@gmail.com",
+        "admin": false,
+        "userId": "user-1783431373380-d679aa4b"
+      },
+      {
+        "name": "Cliente Prueba",
+        "email": "cliente.prueba@mentorprime.cl",
+        "admin": true,
+        "userId": "user-1795038677231-1a92c772"
+      },
+      {
+        "name": "Joaquin Sepulveda",
+        "email": "j.sepulvedao2022@gmail.com",
+        "admin": false,
+        "userId": "user-1783162559130-26eedfe0"
+      },
+      {
+        "name": "Marco Antonio  Sepulveda Bustos",
+        "email": "soporte@mentorprime.cl",
+        "admin": true,
+        "userId": "user-1782932426409-a28f422a"
+      },
+      {
+        "name": "Owner Mentor Prime",
+        "email": "owner@mentorprime.cl",
+        "admin": true,
+        "userId": "user-1794415684515"
+      },
+      {
+        "name": "Silvana Roco",
+        "email": "silvanaroco@gmail.com",
+        "admin": false,
+        "userId": "user-1783175999696-b3d89986"
+      }
+    ]
+  },
+  "roles": {
+    "requester": {
+      "name": "Asuntos estudiantiles",
+      "email": "contacto@mentorprime.cl",
+      "admin": false
+    },
+    "admin": {
+      "name": "Alex Espinoza",
+      "email": "soporte@seminarioipn.cl",
+      "admin": true
+    },
+    "colleague": {
+      "name": "Alejandra Lara Gutiérrez",
+      "email": "alejandralara1978@gmail.com",
+      "admin": false
+    }
+  },
+  "chatWithoutCompany": {
+    "status": 400,
+    "error": "Elige una empresa.",
+    "reason": "company",
+    "created": false,
+    "caseCountBefore": 18,
+    "caseCountAfter": 18
+  },
+  "chat": {
+    "opened": {
+      "id": "eead6fd3-ff4e-417c-b410-9d90aa32fab1",
+      "code": "AC-00021",
+      "tenantId": "mentor-prime-capacitacion",
+      "status": "pendiente",
+      "intakeChannel": "envivo",
+      "channelLabel": "Chat en vivo",
+      "requesterName": "Marco Antonio  Sepulveda Bustos",
+      "ticketCaseId": "",
+      "helpPlace": "Escritorio Empresarial · Chat en vivo → Chat en vivo",
+      "originId": "escritorio.chat-en-vivo",
+      "messages": [
+        {
+          "role": "client",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Hola desde el chat, con la empresa activa. 2026-11-19T04:20:39.205Z"
+        },
+        {
+          "role": "system",
+          "label": "Nelzuri",
+          "body": "Solicitud recibida. AC-00021"
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-19T04:20:55.632Z",
+          "kind": "recepcion",
+          "actorName": "Marco Antonio  Sepulveda Bustos",
+          "detail": "Recepción."
+        }
+      ]
+    },
+    "status": 200,
+    "afterMessages": {
+      "id": "eead6fd3-ff4e-417c-b410-9d90aa32fab1",
+      "code": "AC-00021",
+      "tenantId": "mentor-prime-capacitacion",
+      "status": "pendiente",
+      "intakeChannel": "envivo",
+      "channelLabel": "Chat en vivo",
+      "requesterName": "Marco Antonio  Sepulveda Bustos",
+      "ticketCaseId": "",
+      "helpPlace": "Escritorio Empresarial · Chat en vivo → Chat en vivo",
+      "originId": "escritorio.chat-en-vivo",
+      "messages": [
+        {
+          "role": "client",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Hola desde el chat, con la empresa activa. 2026-11-19T04:20:39.205Z"
+        },
+        {
+          "role": "system",
+          "label": "Nelzuri",
+          "body": "Solicitud recibida. AC-00021"
+        },
+        {
+          "role": "staff",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Te leemos desde la mesa de plataforma."
+        },
+        {
+          "role": "client",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Sigo en el chat como cliente de la empresa."
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-19T04:20:55.632Z",
+          "kind": "recepcion",
+          "actorName": "Marco Antonio  Sepulveda Bustos",
+          "detail": "Recepción."
+        },
+        {
+          "at": "2026-11-19T04:20:58.841Z",
+          "kind": "primera_respuesta",
+          "actorName": "Marco Antonio  Sepulveda Bustos",
+          "detail": "Primera respuesta humana."
+        }
+      ]
+    },
+    "staffStatus": 200,
+    "staffRole": "staff",
+    "clientFollowStatus": 200,
+    "resume": {
+      "onlineBefore": true,
+      "onlineAfter": false,
+      "status": 200,
+      "id": "eead6fd3-ff4e-417c-b410-9d90aa32fab1",
+      "code": "AC-00021",
+      "sameCase": true,
+      "sameCode": true,
+      "lastRole": "staff",
+      "channelLabel": "Chat en vivo"
+    },
+    "promote": {
+      "first": {
+        "status": 200,
+        "id": "eead6fd3-ff4e-417c-b410-9d90aa32fab1",
+        "code": "AC-00021",
+        "ticketCaseId": "eead6fd3-ff4e-417c-b410-9d90aa32fab1",
+        "messages": 5,
+        "events": [
+          "Recepción.",
+          "Primera respuesta humana.",
+          "Pasó a ticket."
+        ]
+      },
+      "afterNewSession": {
+        "status": 200,
+        "id": "eead6fd3-ff4e-417c-b410-9d90aa32fab1",
+        "code": "AC-00021",
+        "ticketCaseId": "eead6fd3-ff4e-417c-b410-9d90aa32fab1",
+        "messages": 5,
+        "events": [
+          "Recepción.",
+          "Primera respuesta humana.",
+          "Pasó a ticket."
+        ],
+        "sameCase": true,
+        "sameHistory": true
+      }
+    }
+  },
+  "chatChosenCompany": {
+    "status": 200,
+    "code": "AC-00022",
+    "channelLabel": "Chat en vivo",
+    "firstRole": "client",
+    "requesterName": "Marco Antonio  Sepulveda Bustos"
+  },
+  "clientThread": {
+    "code": "AC-00023",
+    "id": "fb3f1a10-98c9-4ba0-817f-b38713ca80df",
+    "channelLabel": "Chat en vivo",
+    "openedRole": "client",
+    "operatorRole": "staff",
+    "clientRole": "client",
+    "resumeSameId": true,
+    "resumeSameCode": true,
+    "resumeRole": "staff",
+    "roles": [
+      "client",
+      "system",
+      "staff",
+      "client",
+      "staff"
+    ],
+    "portalCode": "AC-00024",
+    "portalChannel": "Portal",
+    "liveThreadCodes": [
+      {
+        "code": "AC-00023",
+        "channel": "Chat en vivo"
+      }
+    ]
+  },
+  "phone": {
+    "status": 200,
+    "opened": {
+      "id": "01411b9a-6320-43a5-a7ce-f2fe89194dd0",
+      "code": "AC-00025",
+      "tenantId": "seminario-ipn",
+      "status": "pendiente",
+      "intakeChannel": "telefono",
+      "channelLabel": "Teléfono",
+      "requesterName": "Asuntos estudiantiles",
+      "ticketCaseId": "",
+      "helpPlace": "",
+      "originId": "",
+      "messages": [
+        {
+          "role": "system",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Alta telefónica de prueba 2026-11-19T04:20:39.205Z."
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-19T04:21:46.378Z",
+          "kind": "recepcion",
+          "actorName": "Marco Antonio  Sepulveda Bustos",
+          "detail": "Reporte por Teléfono, ingresado por Marco Antonio  Sepulveda Bustos."
+        }
+      ]
+    },
+    "sharedWithCompany": false,
+    "linkedUser": true,
+    "visibility": {
+      "requesterSees": true,
+      "requesterDesk": "company",
+      "adminSees": true,
+      "adminDesk": "company",
+      "adminName": "Alex Espinoza",
+      "colleagueSees": false,
+      "colleagueEmail": "alejandralara1978@gmail.com",
+      "otherCompanySees": false
+    },
+    "waiting": {
+      "status": "confirmacion",
+      "code": "AC-00025",
+      "event": {
+        "id": "34178805-f408-486e-b2ab-a90190d17b66",
+        "at": "2026-11-19T04:22:04.218Z",
+        "detail": "Quedó pendiente de confirmación.",
+        "kind": "estado",
+        "actorName": "Marco Antonio  Sepulveda Bustos"
+      },
+      "resolvedTotalIncludesIt": false,
+      "statusInList": "confirmacion"
+    },
+    "still": {
+      "id": "01411b9a-6320-43a5-a7ce-f2fe89194dd0",
+      "code": "AC-00025",
+      "tenantId": "seminario-ipn",
+      "status": "abierto",
+      "intakeChannel": "telefono",
+      "channelLabel": "Teléfono",
+      "requesterName": "Asuntos estudiantiles",
+      "ticketCaseId": "",
+      "helpPlace": "",
+      "originId": "",
+      "messages": [
+        {
+          "role": "system",
+          "label": "Marco Antonio  Sepulveda Bustos",
+          "body": "Alta telefónica de prueba 2026-11-19T04:20:39.205Z."
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-19T04:21:46.378Z",
+          "kind": "recepcion",
+          "actorName": "Marco Antonio  Sepulveda Bustos",
+          "detail": "Reporte por Teléfono, ingresado por Marco Antonio  Sepulveda Bustos."
+        },
+        {
+          "at": "2026-11-19T04:22:04.218Z",
+          "kind": "estado",
+          "actorName": "Marco Antonio  Sepulveda Bustos",
+          "detail": "Quedó pendiente de confirmación."
+        },
+        {
+          "at": "2026-11-19T04:22:12.713Z",
+          "kind": "estado",
+          "actorName": "Asuntos estudiantiles",
+          "detail": "Volvió a En atención. Motivo: Sigo sin poder entrar después de la llamada."
+        }
+      ]
+    },
+    "resolved": {
+      "askedStatus": "confirmacion",
+      "final": {
+        "id": "01411b9a-6320-43a5-a7ce-f2fe89194dd0",
+        "code": "AC-00025",
+        "tenantId": "seminario-ipn",
+        "status": "resuelto",
+        "intakeChannel": "telefono",
+        "channelLabel": "Teléfono",
+        "requesterName": "Asuntos estudiantiles",
+        "ticketCaseId": "",
+        "helpPlace": "",
+        "originId": "",
+        "messages": [
+          {
+            "role": "system",
+            "label": "Marco Antonio  Sepulveda Bustos",
+            "body": "Alta telefónica de prueba 2026-11-19T04:20:39.205Z."
+          }
+        ],
+        "events": [
+          {
+            "at": "2026-11-19T04:21:46.378Z",
+            "kind": "recepcion",
+            "actorName": "Marco Antonio  Sepulveda Bustos",
+            "detail": "Reporte por Teléfono, ingresado por Marco Antonio  Sepulveda Bustos."
+          },
+          {
+            "at": "2026-11-19T04:22:04.218Z",
+            "kind": "estado",
+            "actorName": "Marco Antonio  Sepulveda Bustos",
+            "detail": "Quedó pendiente de confirmación."
+          },
+          {
+            "at": "2026-11-19T04:22:12.713Z",
+            "kind": "estado",
+            "actorName": "Asuntos estudiantiles",
+            "detail": "Volvió a En atención. Motivo: Sigo sin poder entrar después de la llamada."
+          },
+          {
+            "at": "2026-11-19T04:22:16.377Z",
+            "kind": "estado",
+            "actorName": "Marco Antonio  Sepulveda Bustos",
+            "detail": "Quedó pendiente de confirmación."
+          },
+          {
+            "at": "2026-11-19T04:22:20.005Z",
+            "kind": "estado",
+            "actorName": "Asuntos estudiantiles",
+            "detail": "Quedó resuelto."
+          }
+        ]
+      }
+    }
+  },
+  "report": {
+    "chat": {
+      "status": 200,
+      "ok": true,
+      "dispatch": {
+        "result": "enviado",
+        "detail": "Correo aceptado.",
+        "channelLabel": "Chat en vivo",
+        "company": "Mentor Capacitación",
+        "to": [
+          {
+            "userId": "user-1794415684515",
+            "name": "Owner Mentor Prime",
+            "email": "owner@mentorprime.cl"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "code": "AC-00022",
+          "channelLabel": "Chat en vivo",
+          "status": "pendiente",
+          "requesterName": "Marco Antonio  Sepulveda Bustos",
+          "subject": "Chat tras elegir empresa 2026-11-19T04:20:39.205Z"
+        },
+        {
+          "code": "AC-00021",
+          "channelLabel": "Chat en vivo",
+          "status": "pendiente",
+          "requesterName": "Marco Antonio  Sepulveda Bustos",
+          "subject": "Chat con empresa activa 2026-11-19T04:20:39.205Z"
+        }
+      ]
+    },
+    "phone": {
+      "status": 200,
+      "ok": true,
+      "dispatch": {
+        "result": "enviado",
+        "detail": "Correo aceptado.",
+        "channelLabel": "Teléfono",
+        "company": "Seminario Eclesiástico Mayor",
+        "to": [
+          {
+            "userId": "user-1783178852195-37d65f9e",
+            "name": "Alex Espinoza",
+            "email": "soporte@seminarioipn.cl"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "code": "AC-00025",
+          "channelLabel": "Teléfono",
+          "status": "resuelto",
+          "requesterName": "Asuntos estudiantiles",
+          "subject": "Llamada vinculada 2026-11-19T04:20:39.205Z"
+        },
+        {
+          "code": "AC-00020",
+          "channelLabel": "Teléfono",
+          "status": "resuelto",
+          "requesterName": "Asuntos estudiantiles",
+          "subject": "Llamada vinculada 2026-11-19T04:15:26.836Z"
+        }
+      ]
+    }
+  },
+  "mailbox": {
+    "tried": true,
+    "listStatus": 200,
+    "openedAttachment": false,
+    "subjects": [
+      "Informe de incidencias · Seminario Eclesiástico Mayor · Últimos 7 días",
+      "Informe de incidencias · Mentor Capacitación · Últimos 7 días",
+      "Informe de incidencias · Seminario Eclesiástico Mayor · Últimos 7 días",
+      "Informe de incidencias · Mentor Capacitación · Últimos 7 días",
+      "Informe de incidencias · Mentor Capacitación · Últimos 7 días"
+    ],
+    "reason": "el listado no trajo el envío de esta pasada"
+  }
+}

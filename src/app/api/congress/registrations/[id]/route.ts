@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { requireCongressOperate } from "@/app/api/congress/guard";
 import { ensureHnoPrefix } from "@/core/congress/brother-name";
 import {
+  applyOperatorIdentityEdit,
+  OPERATOR_IDENTITY_EDIT_MESSAGES,
+} from "@/core/congress/registration-edit";
+import {
   assertLodgingNeedAllowed,
   isActiveLodgingAssignment,
 } from "@/core/congress/lodging-status";
@@ -11,6 +15,7 @@ import {
   appendCongressAudit,
   getCongressRegistration,
   listCongressAssignments,
+  listCongressRegistrations,
   updateCongressRegistration,
 } from "@/lib/congress/repository";
 
@@ -84,6 +89,31 @@ export async function PATCH(
         ...current.identity,
         fullName: ensureHnoPrefix(current.identity.fullName),
       };
+    }
+
+    if (typeof body.fullName === "string") {
+      const existing = await listCongressRegistrations(ctx.tenantId);
+      const edited = applyOperatorIdentityEdit({
+        registration: current,
+        fullName: body.fullName,
+        rut: String(body.rut ?? ""),
+        email: String(body.email ?? ""),
+        phone: String(body.phone ?? ""),
+        zoneId: String(body.zoneId ?? ""),
+        churchName: String(body.churchName ?? ""),
+        existing,
+      });
+      if (!edited.ok) {
+        const status = edited.error === "duplicate_rut" ? 409 : 400;
+        return NextResponse.json(
+          { ok: false, error: OPERATOR_IDENTITY_EDIT_MESSAGES[edited.error] },
+          { status }
+        );
+      }
+      patch.identity = edited.identity;
+      patch.zoneId = edited.zoneId;
+      patch.churchName = edited.churchName;
+      patch.needsReview = edited.needsReview;
     }
 
     if (Object.keys(patch).length === 0) {

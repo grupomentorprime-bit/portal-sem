@@ -61,6 +61,14 @@ export function isCongressRegistrationClaimable(reg: CongressRegistration): bool
   return reg.source === "import" && !reg.submissionId;
 }
 
+/** Ya envió el formulario público: alta por form o ficha enlazada a un envío. */
+export function hasCongressFormEnrollment(
+  reg: Pick<CongressRegistration, "source" | "submissionId">
+): boolean {
+  if (reg.source === "form") return true;
+  return Boolean(String(reg.submissionId ?? "").trim());
+}
+
 /** True si sync debe crear una ficha source=form nueva (sin reclamo de nómina). */
 export function shouldCreateFormRegistrationFromSubmission(
   data: Record<string, unknown>
@@ -97,5 +105,21 @@ export function searchClaimableCongressRegistrations(
     suggestions: suggestions.items,
     hasMore: matches.length > limit,
     suggestionsHasMore: suggestions.hasMore,
+  };
+}
+
+/** Quienes ya enviaron el formulario y coinciden con la búsqueda. */
+export function searchEnrolledCongressRegistrations(
+  registrations: CongressRegistration[],
+  query: string,
+  limit = 8
+) {
+  const fields = (r: CongressRegistration) => [r.identity.fullName, r.churchName];
+  const matches = registrations.filter(
+    (r) => hasCongressFormEnrollment(r) && matchesPersonSearch(query, fields(r))
+  );
+  return {
+    matches: matches.slice(0, limit),
+    hasMore: matches.length > limit,
   };
 }

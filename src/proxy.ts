@@ -37,7 +37,8 @@ function isPlatformProductPath(pathname: string): boolean {
     pathname.startsWith("/login/") ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
-    pathname === "/escritorio"
+    pathname === "/escritorio" ||
+    pathname.startsWith("/dev")
   );
 }
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
-import { CONGRESS_CONTRIBUTION_CLP, CONGRESS_NIGHTS } from "@/core/congress/constants";
+import { CONGRESS_CONTRIBUTION_CLP, CONGRESS_NIGHTS, CONGRESS_ZONES } from "@/core/congress/constants";
 import type {
   CongressLodgingAssignment,
   CongressLodgingHome,
@@ -27,12 +27,11 @@ import {
   formatZoneLabel,
   lodgingLabel,
   registrationDisplayName,
-  registrationNeedsHnoPrefix,
   registrationRoleBadges,
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
 import { Checkbox } from "@/components/ui/checkbox";
-import { isExplicitlyExempt } from "@/core/congress/charge";
+import { CHARGE_WAIVE_REASONS, isExplicitlyExempt } from "@/core/congress/charge";
 import { remainingBalanceClp } from "@/core/congress/charges";
 import { formSubmissionDisplay } from "@/core/congress/form-engagement";
 import { todayPaidOnSantiago } from "@/core/congress/payment-dates";
@@ -49,6 +48,7 @@ type Props = {
   homes: CongressLodgingHome[];
   operate: boolean;
   canPay: boolean;
+  zoneOptions?: { id: string; label: string }[];
   onClose: () => void;
   onPatchAttendance: (
     id: string,
@@ -64,6 +64,12 @@ type Props = {
       isChurchGroupLeader?: boolean;
       isZoneLeader?: boolean;
       ensureHnoPrefix?: boolean;
+      fullName?: string;
+      rut?: string;
+      email?: string;
+      phone?: string;
+      zoneId?: string;
+      churchName?: string;
     }
   ) => Promise<void>;
   onIndividualPayment: (input: {
@@ -79,8 +85,9 @@ type Props = {
   onDownloadReceipt: (payment: CongressPayment) => void;
   onChargeChange: (input: {
     registrationId: string;
-    action: "exempt" | "restore";
+    action: "exempt" | "restore" | "reduce";
     reason: string;
+    waiveClp?: number;
   }) => Promise<void>;
   onAssignBed: (input: {
     registrationId: string;
@@ -93,6 +100,36 @@ type Props = {
   ) => Promise<void>;
   busy: boolean;
 };
+
+function chargeHistoryLabel(entry: {
+  action: string;
+  previousChargeAmountClp: number | null;
+  nextChargeAmountClp: number | null;
+}): string {
+  if (entry.action === "exempt") return "No paga el total";
+  if (entry.action === "reduce") {
+    const unpaid = Math.max(
+      0,
+      (entry.previousChargeAmountClp ?? 0) - (entry.nextChargeAmountClp ?? 0)
+    );
+    return `No paga ${formatClp(unpaid)}`;
+  }
+  return "Aporte restaurado";
+}
+
+function sheetZoneOptions(
+  zoneOptions: { id: string; label: string }[],
+  currentZoneId: string
+) {
+  const base =
+    zoneOptions.length > 0
+      ? zoneOptions
+      : CONGRESS_ZONES.map((zone) => ({ id: zone.id, label: zone.label }));
+  if (currentZoneId && !base.some((zone) => zone.id === currentZoneId)) {
+    return [{ id: currentZoneId, label: formatZoneLabel(currentZoneId) }, ...base];
+  }
+  return base;
+}
 
 function expectedPresetFromReg(
   registration: CongressRegistration
@@ -111,6 +148,7 @@ export function ParticipantSheet({
   homes,
   operate,
   canPay,
+  zoneOptions = [],
   onClose,
   onPatchAttendance,
   onPatchRegistration,
@@ -130,11 +168,21 @@ export function ParticipantSheet({
   const [paidOn, setPaidOn] = useState(todayPaidOnSantiago());
   const [receiptRef, setReceiptRef] = useState("");
   const [chargeReason, setChargeReason] = useState("");
+  const [adjustCharge, setAdjustCharge] = useState(false);
+  const [waiveScope, setWaiveScope] = useState<"total" | "part">("total");
+  const [waiveAmount, setWaiveAmount] = useState<number | null>(null);
+  const [reasonOther, setReasonOther] = useState("");
   const [homeId, setHomeId] = useState("");
   const [night, setNight] = useState<string>(NIGHT_BOTH);
   const [expectedPreset, setExpectedPreset] = useState<
     "unconfirmed" | "saturday" | "sunday" | "both"
   >("unconfirmed");
+  const [editName, setEditName] = useState("");
+  const [editRut, setEditRut] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editZone, setEditZone] = useState("");
+  const [editChurch, setEditChurch] = useState("");
 
   useEffect(() => {
     if (!registration || !open) return;
@@ -144,10 +192,20 @@ export function ParticipantSheet({
     setPaidOn(todayPaidOnSantiago());
     setReceiptRef("");
     setChargeReason("");
+    setAdjustCharge(false);
+    setWaiveScope("total");
+    setWaiveAmount(null);
+    setReasonOther("");
     setHomeId("");
     setNight(NIGHT_BOTH);
     setExpectedPreset(expectedPresetFromReg(registration));
-  }, [open, registration?._id]);
+    setEditName(registration.identity.fullName);
+    setEditRut(registration.identity.rut ?? "");
+    setEditEmail(registration.identity.email ?? "");
+    setEditPhone(registration.identity.phone ?? "");
+    setEditZone(registration.zoneId);
+    setEditChurch(registration.churchName);
+  }, [open, registration?._id, registration?.updatedAt]);
 
   useEffect(() => {
     if (!registration || !open) return;
@@ -282,6 +340,22 @@ export function ParticipantSheet({
         <p className="text-sm text-muted">Seleccione un participante.</p>
       ) : (
         <div className="space-y-4 text-sm">
+          {formDisplay?.at && formDisplay.label ? (
+            <div
+              className="rounded-lg border-2 border-[var(--growth-os-success)] bg-[color-mix(in_srgb,var(--growth-os-success)_14%,white)] px-4 py-3"
+              role="status"
+            >
+              <p className="text-base font-extrabold uppercase tracking-wide text-[var(--growth-os-success)]">
+                Formulario OK
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {formDisplay.label} · {formatDateTimeSantiago(formDisplay.at)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted">Sin formulario</p>
+          )}
+
           <div className="flex flex-wrap gap-1 border-b border-border pb-2">
             {tabs.map((item) => (
               <button
@@ -304,32 +378,67 @@ export function ParticipantSheet({
             {tab === "asistencia" ? (
               <div className="space-y-3">
                 {operate ? (
-                  <div className="space-y-2 rounded-md border border-border bg-white p-3">
+                  <div className="space-y-3 rounded-md border border-border bg-white p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                      Nombre y roles
+                      Datos del inscrito
                     </p>
-                    <p className="text-sm text-foreground">
-                      {registrationDisplayName(registration)}
-                    </p>
-                    {registrationNeedsHnoPrefix(registration) ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Input
+                        label="Nombre"
+                        value={editName}
                         disabled={busy}
-                        onClick={() =>
-                          void onPatchRegistration(registration._id, {
-                            ensureHnoPrefix: true,
-                          })
-                        }
-                      >
-                        Agregar prefijo Hno
-                      </Button>
-                    ) : (
-                      <p className="text-xs text-muted">
-                        Nombre con Hno (pastor también se muestra como Hno).
-                      </p>
-                    )}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                      <Input
+                        label="RUT"
+                        value={editRut}
+                        disabled={busy}
+                        onChange={(e) => setEditRut(e.target.value)}
+                      />
+                      <Input
+                        label="Correo"
+                        type="email"
+                        value={editEmail}
+                        disabled={busy}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                      />
+                      <Input
+                        label="Teléfono"
+                        value={editPhone}
+                        disabled={busy}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                      />
+                      <Select
+                        label="Zona"
+                        value={editZone}
+                        disabled={busy}
+                        onChange={(e) => setEditZone(e.target.value)}
+                        options={sheetZoneOptions(zoneOptions, editZone)}
+                      />
+                      <Input
+                        label="Iglesia"
+                        value={editChurch}
+                        disabled={busy}
+                        onChange={(e) => setEditChurch(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={busy || !editName.trim() || !editChurch.trim() || !editZone}
+                      onClick={() =>
+                        void onPatchRegistration(registration._id, {
+                          fullName: editName,
+                          rut: editRut,
+                          email: editEmail,
+                          phone: editPhone,
+                          zoneId: editZone,
+                          churchName: editChurch,
+                        })
+                      }
+                    >
+                      Guardar datos
+                    </Button>
                     <Checkbox
                       label="Líder del grupo (iglesia)"
                       description="Solo uno por iglesia. Puede ser también jefe zonal."
@@ -356,12 +465,6 @@ export function ParticipantSheet({
                 ) : roleBadges.length > 0 ? (
                   <p className="text-xs text-muted">{roleBadges.join(" · ")}</p>
                 ) : null}
-
-                <p className="text-xs text-muted">
-                  {formDisplay?.at && formDisplay.label
-                    ? `${formDisplay.label} · ${formatDateTimeSantiago(formDisplay.at)}`
-                    : "Sin formulario"}
-                </p>
 
                 <div className="flex flex-wrap items-end gap-3">
                   <p className="text-muted">
@@ -479,81 +582,233 @@ export function ParticipantSheet({
             {tab === "alimentacion" ? (
               <div className="space-y-3">
                 <p className="text-xs text-muted">
-                  Aporte único de {formatClp(CONGRESS_CONTRIBUTION_CLP)} por ambos días; no
-                  cambia según el día de llegada.
+                  Aporte único de {formatClp(CONGRESS_CONTRIBUTION_CLP)} por ambos días.
                 </p>
                 <p className="text-base font-semibold">{contributionLabel(registration)}</p>
-                <p className="text-muted">
-                  Cargo{" "}
-                  {registration.chargeAmountClp != null
-                    ? formatClp(registration.chargeAmountClp)
-                    : "—"}{" "}
-                  · Imputado {formatClp(registration.allocatedPaidClp)}
-                </p>
+                {registration.allocatedPaidClp > 0 ? (
+                  <p className="text-xs text-muted">
+                    Imputado {formatClp(registration.allocatedPaidClp)}
+                  </p>
+                ) : null}
                 {canPay && operate && registration.chargeAmountClp != null ? (
-                  <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-2">
-                    <p className="sm:col-span-2 text-xs font-semibold uppercase text-muted">
-                      Pago individual
-                    </p>
-                    <Input
-                      label="Pagador"
-                      value={payerName}
-                      onChange={(e) => setPayerName(e.target.value)}
-                      placeholder={registration.identity.fullName}
-                    />
-                    <ClpAmountInput
-                      label="Monto"
-                      value={payAmount}
-                      onValueChange={setPayAmount}
-                      placeholder={formatClpInput(CONGRESS_CONTRIBUTION_CLP)}
-                    />
-                    <Select
-                      label="Tipo"
-                      value={payMethod}
-                      onChange={(e) =>
-                        setPayMethod(e.target.value as CongressPaymentMethod)
-                      }
-                      options={[
-                        { value: "cash", label: "Efectivo" },
-                        { value: "transfer", label: "Transferencia" },
-                        { value: "other", label: "Otro" },
-                      ]}
-                    />
-                    <Input
-                      label="Fecha de pago"
-                      type="date"
-                      value={paidOn}
-                      onChange={(e) => setPaidOn(e.target.value)}
-                    />
-                    <Input
-                      className="sm:col-span-2"
-                      label="Referencia"
-                      value={receiptRef}
-                      onChange={(e) => setReceiptRef(e.target.value)}
-                    />
-                    <div className="sm:col-span-2">
-                      <Button
-                        size="sm"
-                        disabled={busy}
-                        onClick={() => {
-                          const amount = payAmount ?? 0;
-                          if (!amount) return;
-                          void onIndividualPayment({
-                            registrationId: registration._id,
-                            amountClp: amount,
-                            payerName:
-                              payerName.trim() || registration.identity.fullName,
-                            method: payMethod,
-                            paidOn,
-                            receiptRef: receiptRef.trim() || undefined,
-                          }).then(() => {
-                            setReceiptRef("");
-                          });
-                        }}
-                      >
-                        Registrar pago
-                      </Button>
+                  <div className="space-y-3 rounded-md border border-border p-3">
+                    <p className="text-xs font-semibold uppercase text-muted">Pago</p>
+                    <div className="grid grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)] items-end gap-3">
+                      <div>
+                        {!adjustCharge ? (
+                          <ClpAmountInput
+                            label="Monto"
+                            value={payAmount}
+                            disabled={busy}
+                            onValueChange={setPayAmount}
+                            onFocus={(event) => {
+                              if (payAmount == null || payAmount <= 0) {
+                                setPayAmount(CONGRESS_CONTRIBUTION_CLP);
+                              }
+                              event.currentTarget.select();
+                            }}
+                            onBlur={() => {
+                              if (payAmount != null && payAmount > 0) return;
+                              setPayAmount(CONGRESS_CONTRIBUTION_CLP);
+                            }}
+                          />
+                        ) : waiveScope === "part" ? (
+                          <ClpAmountInput
+                            label="No se cobra"
+                            value={waiveAmount}
+                            disabled={busy}
+                            placeholder=""
+                            onValueChange={setWaiveAmount}
+                          />
+                        ) : (
+                          <div className="h-10" />
+                        )}
+                      </div>
+                      <div className="col-span-2 flex items-center gap-3">
+                        {(
+                          [
+                            ["total", "Exento de pago"],
+                            ["part", "Parcial"],
+                          ] as const
+                        ).map(([scope, label]) => {
+                          const selected = adjustCharge && waiveScope === scope;
+                          return (
+                            <button
+                              key={scope}
+                              type="button"
+                              disabled={busy}
+                              className={
+                                selected
+                                  ? "h-10 flex-1 rounded-md border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary"
+                                  : "h-10 flex-1 rounded-md border border-border bg-background px-4 text-sm font-semibold text-foreground"
+                              }
+                              onClick={() => {
+                                if (selected) {
+                                  setAdjustCharge(false);
+                                  setChargeReason("");
+                                  setReasonOther("");
+                                  setWaiveAmount(null);
+                                  return;
+                                }
+                                setAdjustCharge(true);
+                                setWaiveScope(scope);
+                                setChargeReason("");
+                                setReasonOther("");
+                                setWaiveAmount(null);
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
+                    {adjustCharge ? (
+                      <div className="grid grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)] items-end gap-3">
+                        <div className="col-span-3">
+                        <Select
+                          label="Motivo"
+                          value={chargeReason}
+                          disabled={busy}
+                          onChange={(event) => setChargeReason(event.target.value)}
+                          options={[
+                            { value: "", label: "Elija el motivo…" },
+                            ...CHARGE_WAIVE_REASONS.map((reason) => ({
+                              value: reason,
+                              label: reason,
+                            })),
+                          ]}
+                        />
+                        </div>
+                        {chargeReason === "Otro" ? (
+                          <div className="col-span-3">
+                            <Input
+                              label="Cuál"
+                              value={reasonOther}
+                              disabled={busy}
+                              onChange={(event) => setReasonOther(event.target.value)}
+                            />
+                          </div>
+                        ) : null}
+                        <div className="col-start-2 col-span-2 flex gap-3">
+                        <Button
+                          size="md"
+                          variant="outline"
+                          className="h-10 flex-1"
+                          disabled={busy}
+                          onClick={() => {
+                            setAdjustCharge(false);
+                            setChargeReason("");
+                            setReasonOther("");
+                            setWaiveAmount(null);
+                            setPayAmount(CONGRESS_CONTRIBUTION_CLP);
+                          }}
+                        >
+                          Volver
+                        </Button>
+                        <Button
+                          size="md"
+                          className="h-10 flex-1"
+                          disabled={
+                            busy ||
+                            !chargeReason ||
+                            (chargeReason === "Otro" && !reasonOther.trim()) ||
+                            (waiveScope === "part" &&
+                              !(
+                                waiveAmount != null &&
+                                waiveAmount > 0 &&
+                                waiveAmount < remainingBalanceClp(registration)
+                              ))
+                          }
+                          onClick={() => {
+                            const reason =
+                              chargeReason === "Otro"
+                                ? `Otro: ${reasonOther.trim()}`
+                                : chargeReason;
+                            const clearsAll =
+                              waiveScope === "total" && registration.allocatedPaidClp <= 0;
+                            void onChargeChange({
+                              registrationId: registration._id,
+                              action: clearsAll ? "exempt" : "reduce",
+                              reason,
+                              waiveClp: clearsAll
+                                ? undefined
+                                : waiveScope === "total"
+                                  ? remainingBalanceClp(registration)
+                                  : waiveAmount ?? undefined,
+                            }).then(() => {
+                              setChargeReason("");
+                              setReasonOther("");
+                              setWaiveAmount(null);
+                              setAdjustCharge(false);
+                            });
+                          }}
+                        >
+                          Guardar
+                        </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                    {!adjustCharge ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                          <Input
+                            label="Pagador"
+                            value={payerName}
+                            onChange={(e) => setPayerName(e.target.value)}
+                            placeholder={registration.identity.fullName}
+                          />
+                        </div>
+                        <Select
+                          label="Tipo"
+                          value={payMethod}
+                          onChange={(e) =>
+                            setPayMethod(e.target.value as CongressPaymentMethod)
+                          }
+                          options={[
+                            { value: "cash", label: "Efectivo" },
+                            { value: "transfer", label: "Transferencia" },
+                            { value: "other", label: "Otro" },
+                          ]}
+                        />
+                        <Input
+                          label="Fecha de pago"
+                          type="date"
+                          value={paidOn}
+                          onChange={(e) => setPaidOn(e.target.value)}
+                        />
+                        <div className="col-span-2">
+                          <Input
+                            label="Referencia"
+                            value={receiptRef}
+                            onChange={(e) => setReceiptRef(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Button
+                            size="sm"
+                            disabled={busy || adjustCharge}
+                            onClick={() => {
+                              const amount = payAmount ?? 0;
+                              if (!amount) return;
+                              void onIndividualPayment({
+                                registrationId: registration._id,
+                                amountClp: amount,
+                                payerName:
+                                  payerName.trim() || registration.identity.fullName,
+                                method: payMethod,
+                                paidOn,
+                                receiptRef: receiptRef.trim() || undefined,
+                              }).then(() => {
+                                setReceiptRef("");
+                              });
+                            }}
+                          >
+                            Registrar pago
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
                 {lastReceiptPayment && lastReceiptBelongsToRegistration ? (
@@ -605,55 +860,25 @@ export function ParticipantSheet({
                     </ul>
                   </div>
                 ) : null}
-                {operate ? (
-                  <div className="grid gap-2 rounded-md border border-border p-3">
-                    <p className="text-xs font-semibold uppercase text-muted">
-                      Exención de aporte
-                    </p>
-                    <Input
-                      label="Motivo"
-                      value={chargeReason}
-                      onChange={(e) => setChargeReason(e.target.value)}
-                      placeholder="Invitado, staff, cortesía…"
-                    />
-                    {registration.chargeAmountClp != null ? (
-                      registration.allocatedPaidClp > 0 ? (
-                        <p className="text-xs text-muted">
-                          Anule los pagos imputados antes de marcar exento.
-                        </p>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy || !chargeReason.trim()}
-                          onClick={() => {
-                            void onChargeChange({
-                              registrationId: registration._id,
-                              action: "exempt",
-                              reason: chargeReason.trim(),
-                            }).then(() => setChargeReason(""));
-                          }}
-                        >
-                          Marcar exento de pago
-                        </Button>
-                      )
-                    ) : null}
-                    {isExplicitlyExempt(registration) ? (
-                      <Button
-                        size="sm"
-                        disabled={busy || !chargeReason.trim()}
-                        onClick={() => {
-                          void onChargeChange({
-                            registrationId: registration._id,
-                            action: "restore",
-                            reason: chargeReason.trim(),
-                          }).then(() => setChargeReason(""));
-                        }}
-                      >
-                        Restaurar aporte {formatClp(CONGRESS_CONTRIBUTION_CLP)}
-                      </Button>
-                    ) : null}
-                  </div>
+                {operate &&
+                (isExplicitlyExempt(registration) ||
+                  (registration.chargeAmountClp != null &&
+                    registration.chargeAmountClp < CONGRESS_CONTRIBUTION_CLP)) ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-fit"
+                    disabled={busy}
+                    onClick={() => {
+                      void onChargeChange({
+                        registrationId: registration._id,
+                        action: "restore",
+                        reason: "Vuelve a cobrar",
+                      });
+                    }}
+                  >
+                    Restaurar aporte {formatClp(CONGRESS_CONTRIBUTION_CLP)}
+                  </Button>
                 ) : null}
                 {(registration.chargeHistory ?? []).length > 0 ? (
                   <div className="space-y-1">
@@ -666,8 +891,7 @@ export function ParticipantSheet({
                         .reverse()
                         .map((h, idx) => (
                           <li key={`${h.at}-${idx}`}>
-                            {formatDateTimeSantiago(h.at)} ·{" "}
-                            {h.action === "exempt" ? "Exento" : "Restaurado"}
+                            {formatDateTimeSantiago(h.at)} · {chargeHistoryLabel(h)}
                             {h.reason ? ` · ${h.reason}` : ""}
                           </li>
                         ))}

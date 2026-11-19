@@ -398,8 +398,9 @@ function CongressOpsPanelInner() {
 
   const patchCharge = async (input: {
     registrationId: string;
-    action: "exempt" | "restore";
+    action: "exempt" | "restore" | "reduce";
     reason: string;
+    waiveClp?: number;
   }) => {
     setSheetBusy(true);
     try {
@@ -411,6 +412,7 @@ function CongressOpsPanelInner() {
           body: JSON.stringify({
             action: input.action,
             reason: input.reason,
+            waiveClp: input.waiveClp,
           }),
         }
       );
@@ -429,8 +431,10 @@ function CongressOpsPanelInner() {
         push({
           title:
             input.action === "exempt"
-              ? "Marcado como exento"
-              : "Aporte restaurado",
+              ? "Exento de pago"
+              : input.action === "reduce"
+                ? "Aporte parcial"
+                : "Aporte restaurado",
           tone: "success",
         });
       }
@@ -492,6 +496,12 @@ function CongressOpsPanelInner() {
       isChurchGroupLeader?: boolean;
       isZoneLeader?: boolean;
       ensureHnoPrefix?: boolean;
+      fullName?: string;
+      rut?: string;
+      email?: string;
+      phone?: string;
+      zoneId?: string;
+      churchName?: string;
     }
   ) => {
     setSheetBusy(true);
@@ -515,7 +525,8 @@ function CongressOpsPanelInner() {
       if (
         patch.isChurchGroupLeader != null ||
         patch.isZoneLeader != null ||
-        patch.ensureHnoPrefix
+        patch.ensureHnoPrefix ||
+        patch.fullName != null
       ) {
         void loadRegistrations();
       }
@@ -1625,6 +1636,7 @@ function CongressOpsPanelInner() {
         homes={homes}
         operate={capabilities.operate}
         canPay={capabilities.payments}
+        zoneOptions={zoneOptions}
         onClose={() => setSelectedId(null)}
         onPatchAttendance={patchAttendance}
         onPatchRegistration={patchRegistration}
