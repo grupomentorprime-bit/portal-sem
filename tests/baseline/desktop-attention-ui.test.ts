@@ -25,7 +25,7 @@ describe("Atención UI — Plataforma", () => {
     assert.match(text, />Aplicar</);
     assert.match(text, />Limpiar</);
     assert.match(css(), /\.attn-filter-float/);
-    assert.match(css(), /position:\s*absolute/);
+    assert.match(css(), /\.attn-filter-float\s*\{[^}]*position:\s*absolute/);
   });
 
   it("Compose se remonta con composeSession", () => {
