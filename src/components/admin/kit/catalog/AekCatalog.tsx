@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { FileText, LayoutGrid } from "lucide-react";
 import { ActionMenu, ActionMenuItem } from "@/components/admin/kit/actions/ActionMenu";
 import { FloatingActionButton, FloatingActions } from "@/components/admin/kit/actions/FloatingActions";
@@ -74,7 +75,7 @@ export function AekCatalog() {
     <div className="space-y-10">
       <ModuleHeader
         title="Experience Kit Administrativo"
-        description="Catálogo AEK v1 — BackOffice de Growth OS. Componentes presentacionales reutilizables."
+        description={`Catálogo AEK v1 — BackOffice de ${PLATFORM_DISPLAY_NAME}. Componentes presentacionales reutilizables.`}
         actions={
           <Button size="sm" variant="outline" href="/internal/design-system">
             Design System portal

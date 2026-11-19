@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Drawer } from "@/components/ui/drawer";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { isNavActive } from "@/lib/admin/institutional";
 import { filterAdminNav } from "@/lib/admin/nav-access";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ export function AdminNavDrawer({ compatMode, permissions, roleCodes = [] }: Admi
         <Menu className="h-5 w-5" />
       </button>
 
-      <Drawer open={open} onClose={() => setOpen(false)} title="Growth OS" side="left">
+      <Drawer open={open} onClose={() => setOpen(false)} title={PLATFORM_DISPLAY_NAME} side="left">
         <nav className="space-y-1" aria-label="Navegación principal">
           {navItems
             .filter((item): item is typeof item & { href: string } => item.href != null)

@@ -50,7 +50,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
       title: PLATFORM_DISPLAY_NAME,
       description:
-        "Growth OS es la plataforma donde cada organización opera su sitio, sus personas y su comunicación, en su propia dirección.",
+        `${PLATFORM_DISPLAY_NAME} es la plataforma donde cada organización opera su sitio, sus personas y su comunicación, en su propia dirección.`,
     };
   }
 

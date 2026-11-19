@@ -8,6 +8,7 @@ import { HeroSlideEditor } from "@/components/config/HeroSlideEditor";
 import { HeroSlideList } from "@/components/config/HeroSlideList";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { RadioGroup } from "@/components/ui/radio";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -124,7 +125,7 @@ export function HeroPortalPanel({ value, onChange, tenant }: HeroPortalPanelProp
         <CardHeader>
           <CardTitle>Hero del Portal</CardTitle>
           <CardDescription>
-            Constructor de slides — módulo Core de Growth OS (OT-HERO-006). El diseño queda en código; todo el contenido se administra aquí.
+            Constructor de slides — módulo Core de {PLATFORM_DISPLAY_NAME} (OT-HERO-006). El diseño queda en código; todo el contenido se administra aquí.
           </CardDescription>
         </CardHeader>
         <div className="space-y-6">

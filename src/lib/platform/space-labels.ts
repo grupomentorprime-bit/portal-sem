@@ -4,6 +4,7 @@ import {
   type PlatformRoleCode,
 } from "@/core/identity/platform/codes";
 import type { DomainKind, SiteStatus, TenantStatus, TenantType } from "@/core/tenant/types";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 
 /** Etiquetas visibles en Platform Admin (Growth OS). */
 export function labelTenantStatus(status: TenantStatus | string): string {
@@ -88,12 +89,12 @@ export function labelSpaceRole(code: string | null | undefined): string {
 export function labelPlatformRole(
   roles: readonly PlatformRoleCode[] | null | undefined
 ): string {
-  if (!roles || roles.length === 0) return "Operador de Growth OS";
-  if (roles.includes(PLATFORM_ROLE_CODES.OWNER)) return "Dueño de Growth OS";
+  if (!roles || roles.length === 0) return `Operador de ${PLATFORM_DISPLAY_NAME}`;
+  if (roles.includes(PLATFORM_ROLE_CODES.OWNER)) return `Dueño de ${PLATFORM_DISPLAY_NAME}`;
   if (roles.includes(PLATFORM_ROLE_CODES.OPERATOR)) {
-    return "Operador de Growth OS";
+    return `Operador de ${PLATFORM_DISPLAY_NAME}`;
   }
-  return "Operador de Growth OS";
+  return `Operador de ${PLATFORM_DISPLAY_NAME}`;
 }
 
 /** Primer nombre para saludo; fallback al displayName completo. */

@@ -729,7 +729,7 @@ describe("OT-GROWTH-UX-ADMIN-MASTER-001 — maqueta Inicio", () => {
         kind: "next_action_set",
         summary: "Próxima acción: Llamar para confirmar interés",
       }).story,
-      "Growth OS programó un seguimiento."
+      "NELZURI programó un seguimiento."
     );
     assert.equal(
       humanizeHomeActivityStory({

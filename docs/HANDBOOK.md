@@ -1,8 +1,8 @@
-# Handbook — Growth OS
+# Handbook — NELZURI
 
 Punto de entrada oficial del repositorio. Toda persona o agente que se incorpore debe leer esto antes de escribir código o proponer cambios.
 
-> **Growth OS** es el producto de este repo. **Espacio** = cliente en UI. **Tenant** = término técnico. SEM (T001) y ADL (T002) son clientes. Educación es la vertical. **Aprende Hoy** es otro producto (sistema académico), con handoff opt-in.
+> **NELZURI** es el producto de este repo. Mentor Prime lo opera. **Growth OS** es el nombre anterior. **Espacio** = cliente en UI. **Tenant** = término técnico. SEM (T001, `seminario-ipn`) y ADL (T002) son clientes. Educación es la vertical. **Aprende Hoy** es otro producto (sistema académico), con handoff opt-in.
 >
 > Brújula: *atraer personas, no perder oportunidades y convertirlas en clientes, alumnos o participantes.*
 >
@@ -24,7 +24,7 @@ Contratos vigentes:
 ## 1. Mapa rápido
 
 ```text
-Growth OS                          ← este repositorio (producto)
+NELZURI                            ← este repositorio (producto)
 ├── Platform Core                  ← Identity, Tenant, CMS, Media, Workflow, Events
 ├── Productization                 ← nombre, chrome, correo, docs de entrada (cerrada en V1)
 ├── Growth Core                    ← V1 cerrada (ADR-010 · CORE-001→007 · CLOSE-001); Personas en /admin
@@ -37,7 +37,7 @@ Growth OS                          ← este repositorio (producto)
 | Hoy | No asumir listo |
 | --- | --- |
 | Core multi-tenant, CMS, portal, formularios, interesados | CRM completo / recorridos / automatizaciones |
-| Chrome y créditos = Growth OS | Planes, self-serve completo |
+| Chrome de plataforma = NELZURI; crédito = Mentor Prime | Planes, self-serve completo |
 | Operador de Growth OS ≠ Owner de un Espacio (`requirePlatformOperator`) | UI de gestión de operadores / alta self-serve |
 | Platform Admin V1 + patrón visual `/platform` congelado ([UX-SHELL-003](./validation/OT-GROWTH-UX-SHELL-003/README.md)) | Más estilo en Platform Admin; Growth Core en `/platform` |
 | Patrón maestro Inicio Espacio + `/admin` productivo congelados ([UX-ADMIN-MASTER-001](./validation/OT-GROWTH-UX-ADMIN-MASTER-001/README.md) · [001A](./validation/OT-GROWTH-UX-ADMIN-MASTER-001A/README.md) · [SHELL-002](./validation/OT-GROWTH-UX-ADMIN-SHELL-002/README.md) · [002A](./validation/OT-GROWTH-UX-ADMIN-SHELL-002A/README.md) · **CERRADAS · APTO**) · **GROWTH OS ADMIN SHELL V1 cerrado** | Búsqueda global; módulos Crecer funcionales; más microajustes salvo OT explícita |
@@ -52,7 +52,7 @@ Growth OS                          ← este repositorio (producto)
 
 1. Una sola fuente de verdad documental en el repo.
 2. Ningún desarrollo sin OT y sin revisión de documentación obligatoria.
-3. Branding visible = datos del **Espacio** / Site; chrome de plataforma = **Growth OS**.
+3. Branding visible = datos del **Espacio** / Site; chrome de plataforma = **NELZURI**.
 4. Datos siempre vía API Routes; nunca MongoDB directo desde componentes.
 5. Este producto **no** almacena alumnos, matrículas, pagos, expedientes ni campus — eso es Aprende Hoy.
 
@@ -63,7 +63,7 @@ Growth OS                          ← este repositorio (producto)
 ```
 Usuario / operador
         ↓
-Growth OS (Next.js — App Router)
+NELZURI (Next.js — App Router)
         ↓
 API Routes (/api/*) + TenantContext
         ↓

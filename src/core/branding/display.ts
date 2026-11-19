@@ -1,7 +1,7 @@
 import type { Branding, SiteConfig } from "@/types/cms";
 
 /** Nombre de producto de plataforma — nunca una institución concreta. */
-export const PLATFORM_DISPLAY_NAME = "Growth OS";
+export const PLATFORM_DISPLAY_NAME = "NELZURI";
 
 /**
  * Fallback visible cuando el Site/Espacio no tiene nombre configurado.

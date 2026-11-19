@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Sparkles, Zap } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -165,7 +166,7 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
     step === "choose"
       ? "¿Qué quieres crear?"
       : step === "ai"
-        ? "Describe lo que necesitas. Growth OS preparará el formulario."
+        ? `Describe lo que necesitas. ${PLATFORM_DISPLAY_NAME} preparará el formulario.`
         : step === "template"
           ? "Empieza con un formulario listo para editar."
           : "Para quien quiera controlar todo desde el inicio.";
@@ -180,7 +181,7 @@ export function CreateFormDialog({ open, onClose, onCreated }: CreateFormDialogP
             <EntryCard
               icon={<Sparkles className="h-5 w-5" aria-hidden="true" />}
               title="Crear con IA"
-              subtitle="Describe lo que necesitas y Growth OS prepara el formulario."
+              subtitle={`Describe lo que necesitas y ${PLATFORM_DISPLAY_NAME} prepara el formulario.`}
               onClick={() => {
                 setError(null);
                 setStep("ai");

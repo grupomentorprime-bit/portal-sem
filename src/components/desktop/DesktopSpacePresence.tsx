@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NetworkTile, type NetworkId } from "@/components/brand/NetworkMark";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { BrandingPanel } from "@/components/config/BrandingPanel";
 import { ContactForm } from "@/components/config/ContactForm";
 import { InstitutionForm } from "@/components/config/InstitutionForm";
@@ -518,10 +519,10 @@ export function DesktopSpacePresence({
       {panel === "canales" && growthOs ? (
         <div className="space-presence-forms">
           <div className="space-site-card">
-            <p className="space-site-kicker">Growth OS</p>
+            <p className="space-site-kicker">{PLATFORM_DISPLAY_NAME}</p>
             <strong>Conectar las redes</strong>
             <p>
-              WhatsApp, Instagram y Facebook se autorizan en Growth OS. El chat
+              WhatsApp, Instagram y Facebook se autorizan en {PLATFORM_DISPLAY_NAME}. El chat
               del sitio y el correo todavía no tienen conector.
             </p>
           </div>

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Button, Input, Modal, Select } from "@/components/ui";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { proposeInitialSpaceHost } from "@/lib/platform/propose-space-host";
 import { SPACE_ORGANIZATION_TYPES } from "@/lib/platform/space-organization-types";
 import { slugify } from "@/lib/slugify";
@@ -165,7 +166,7 @@ export function PlatformCreateSpacePanel({
         open={open}
         onClose={handleClose}
         title="Crear Espacio"
-        description="Agrega una organización o negocio a Growth OS."
+        description={`Agrega una organización o negocio a ${PLATFORM_DISPLAY_NAME}.`}
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4 p-4 pt-0">
@@ -184,7 +185,7 @@ export function PlatformCreateSpacePanel({
             onChange={(e) => setType(e.target.value)}
             options={TYPE_OPTIONS}
             placeholder="Selecciona una categoría"
-            helper="La categoría no limita las capacidades de Growth OS."
+            helper={`La categoría no limita las capacidades de ${PLATFORM_DISPLAY_NAME}.`}
             required
           />
 
@@ -199,7 +200,7 @@ export function PlatformCreateSpacePanel({
               proposeHost("mentor-capacitacion") ||
               "mentor-capacitacion.localhost:3000"
             }
-            helper="Subdominio de Growth OS mientras el Espacio no tenga un dominio propio."
+            helper={`Subdominio de ${PLATFORM_DISPLAY_NAME} mientras el Espacio no tenga un dominio propio.`}
             required
             autoComplete="off"
           />

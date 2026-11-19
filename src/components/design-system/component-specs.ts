@@ -161,7 +161,7 @@ export const componentSpecs: ComponentSpec[] = [
     tokens: ["--primary", "--gray-*", "--border"],
     accessibility: ["nav con landmarks", "links descriptivos"],
     props: ["columns", "copyright?", "social?"],
-    example: `<Footer columns={[...]} copyright="© Growth OS" />`,
+    example: `<Footer columns={[...]} copyright="© NELZURI" />`,
     source: "src/components/ui/footer.tsx",
   },
   {

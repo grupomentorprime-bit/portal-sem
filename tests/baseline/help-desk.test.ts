@@ -72,9 +72,10 @@ describe("Atención al Cliente", () => {
     const frozen = freezeHelpOrigin("growth-os.admision.editar-formulario", OPENED);
     assert.equal(frozen.ok, true);
     if (!frozen.ok) return;
+    assert.equal(frozen.helpFrom.originId, "growth-os.admision.editar-formulario");
     assert.equal(frozen.helpFrom.screen, "Editar formulario");
     assert.equal(frozen.helpFrom.module, "Admisión");
-    assert.equal(frozen.helpFrom.siteOrApp, "Growth OS");
+    assert.equal(frozen.helpFrom.siteOrApp, "NELZURI");
     assert.equal(frozen.helpFrom.at, OPENED);
 
     const opened = openHelpTicket({
@@ -365,8 +366,22 @@ describe("Atención al Cliente", () => {
     assert.equal(frozen.helpFrom.screen, "Editar formulario");
     assert.equal(
       formatHelpOrigin(frozen.helpFrom),
-      "Aplicación · Growth OS → Admisión → Editar formulario → Publicar formulario"
+      "Aplicación · NELZURI → Admisión → Editar formulario → Publicar formulario"
     );
+    assert.equal(
+      frozen.helpFrom.originId,
+      "growth-os.admision.editar-formulario.publicar"
+    );
+  });
+
+  it("el origen del escritorio se muestra como NELZURI y conserva su id", () => {
+    const frozen = freezeHelpOrigin("escritorio.atencion.nuevo-ticket", OPENED);
+    assert.equal(frozen.ok, true);
+    if (!frozen.ok) return;
+    assert.equal(frozen.helpFrom.originId, "escritorio.atencion.nuevo-ticket");
+    assert.equal(frozen.helpFrom.siteOrApp, "NELZURI");
+    assert.match(formatHelpOrigin(frozen.helpFrom), /NELZURI/);
+    assert.doesNotMatch(formatHelpOrigin(frozen.helpFrom), /Growth OS|Escritorio Empresarial/);
   });
 
   it("confirma la solicitud y separa recepción, asignación y primera respuesta", () => {

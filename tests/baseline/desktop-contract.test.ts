@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { CUMPLE_TENANT_ID } from "../../src/sites/cumple/site";
+import { CUMPLE_SEO, CUMPLE_TENANT_ID } from "../../src/sites/cumple/site";
 import {
   CUMPLE_SPACE_ID,
   DESKTOP_FALLBACK,
@@ -55,8 +55,10 @@ describe("contrato del escritorio", () => {
     assert.equal(enteredClientId({ owner: false, requestedId: "adl", spaceIds }), null);
   });
 
-  it("el id de Cumple es el del sitio", () => {
+  it("el id de Cumple es el del sitio y su título no es el de la plataforma", () => {
     assert.equal(CUMPLE_SPACE_ID, CUMPLE_TENANT_ID);
+    assert.match(CUMPLE_SEO.title, /Mentor Cumple/);
+    assert.doesNotMatch(CUMPLE_SEO.title, /NELZURI|Growth OS|Seminario/);
   });
 
   it("sin campo, Growth OS; Cumple suma su app; la lista explícita reemplaza", () => {

@@ -1,5 +1,5 @@
 /**
- * Alinea la identidad visible del realm de plataforma a Growth OS.
+ * Alinea la identidad visible del realm de plataforma a NELZURI.
  *
  * No renombra el realm, no regenera secrets, no cambia redirect URIs
  * y no toca usuarios ni sesiones.
@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   const adminUser = process.env.KEYCLOAK_ADMIN?.trim() || env.KEYCLOAK_ADMIN;
   const adminPassword = process.env.KEYCLOAK_ADMIN_PASSWORD?.trim() || env.KEYCLOAK_ADMIN_PASSWORD;
 
-  console.log("\n── Identidad Keycloak: Growth OS ──\n");
+  console.log(`\n── Identidad Keycloak: ${KEYCLOAK_REALM_DISPLAY_NAME} ──\n`);
 
   if (!baseUrl || !realm) {
     console.error("✗ Faltan KEYCLOAK_URL o KEYCLOAK_REALM en .env");
@@ -169,7 +169,7 @@ async function main(): Promise<void> {
     throw new Error("El id técnico del realm cambió. Revisa el servidor antes de seguir.");
   }
   if (confirmed.displayName !== KEYCLOAK_REALM_DISPLAY_NAME) {
-    throw new Error("El Display Name no quedó en Growth OS.");
+    throw new Error(`El Display Name no quedó en ${KEYCLOAK_REALM_DISPLAY_NAME}.`);
   }
 
   const clientTargets: Array<{ clientId: string; name: string; theme: string | null }> = [
@@ -294,7 +294,7 @@ async function main(): Promise<void> {
       "· Monta infra/keycloak/themes/growth-os e infra/keycloak/themes/sem en el directorio themes/ de Keycloak y vuelve a ejecutar este script."
     );
     console.log(
-      "· Hasta entonces, el Display Name Growth OS es la identidad general, también en seminario-ipn-web."
+      `· Hasta entonces, el Display Name ${KEYCLOAK_REALM_DISPLAY_NAME} es la identidad general, también en seminario-ipn-web.`
     );
   } else {
     console.log(`✓ Tema de plataforma: ${KEYCLOAK_GROWTH_OS_LOGIN_THEME}`);

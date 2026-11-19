@@ -1,3 +1,4 @@
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { labelSpaceRole } from "@/lib/platform/space-labels";
 
 export const OWNER_PROFILE_IDS = [
@@ -122,7 +123,7 @@ export function profileNeedsSpace(profile: OwnerProfileId): boolean {
 }
 
 export function labelOwnerProfile(profile: OwnerProfileId): string {
-  if (profile === "platform_owner") return "Dueño de Growth OS";
+  if (profile === "platform_owner") return `Dueño de ${PLATFORM_DISPLAY_NAME}`;
   if (profile === "platform_operator") return "Operador de usuarios";
   return labelSpaceRole(profile);
 }

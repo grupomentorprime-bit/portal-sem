@@ -3,6 +3,7 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import type { PortalCopy } from "@/types/cms";
 
 interface PortalCopyFormProps {
@@ -16,7 +17,7 @@ const fields: Array<{ key: keyof PortalCopy; label: string; placeholder: string 
   { key: "footerAdmissionTitle", label: "Título — Admisión", placeholder: "Admisión" },
   { key: "footerContactTitle", label: "Título — Contacto", placeholder: "Contacto" },
   { key: "footerCopyrightSuffix", label: "Sufijo copyright", placeholder: "Todos los derechos reservados." },
-  { key: "footerCredits", label: "Créditos (opcional)", placeholder: "Growth OS" },
+  { key: "footerCredits", label: "Créditos (opcional)", placeholder: PLATFORM_DISPLAY_NAME },
   { key: "footerBackToTopLabel", label: "Botón volver arriba", placeholder: "Volver arriba" },
   { key: "footerAdminLabel", label: "Enlace administración", placeholder: "Administración" },
 ];

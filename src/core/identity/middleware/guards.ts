@@ -5,6 +5,7 @@ import { loadSessionContext } from "@/lib/identity/sessions";
 import type { AuthContext } from "@/types/identity";
 import type { PermissionId } from "@/core/identity/permissions/registry";
 import { authorize } from "@/core/identity/policies/engine";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 
 async function resolveSessionPermissions(
   tenantId: string,
@@ -127,7 +128,7 @@ export async function requirePermission(
       })
     ) {
       return NextResponse.json(
-        { ok: false, error: "No autorizado para Growth OS en este Espacio." },
+        { ok: false, error: `No autorizado para ${PLATFORM_DISPLAY_NAME} en este Espacio.` },
         { status: 403 }
       );
     }
@@ -224,7 +225,7 @@ export async function requirePlatformOperator(): Promise<AuthContext | NextRespo
       metadata: { reason: decision.reason },
     });
     return NextResponse.json(
-      { ok: false, error: "Se requiere operador de Growth OS." },
+      { ok: false, error: `Se requiere operador de ${PLATFORM_DISPLAY_NAME}.` },
       { status: 403 }
     );
   }

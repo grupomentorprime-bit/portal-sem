@@ -26,6 +26,8 @@ describe("OT-GROWTH-UX-CAMPAIGNS-004 — diseño final Campañas", () => {
       /Organiza de dónde llegarán las personas y cómo las acompañarás/
     );
     assert.match(labels, /Nueva campaña/);
+    assert.match(labels, /están en \$\{PLATFORM_DISPLAY_NAME\}/);
+    assert.doesNotMatch(labels, /Growth OS/);
     assert.match(labels, /Terminar campaña/);
 
     const list = readSrc(
@@ -55,6 +57,8 @@ describe("OT-GROWTH-UX-CAMPAIGNS-004 — diseño final Campañas", () => {
     assert.match(form, /CAMPAIGN_SAVE_DRAFT_CTA/);
     assert.match(form, /CAMPAIGN_ACTIVATE_CAMPAIGN_CTA/);
     assert.match(form, /CAMPAIGN_SOURCE_NONE_LABEL/);
+    assert.match(form, /CAMPAIGN_SOURCE_NONE_DETAIL/);
+    assert.doesNotMatch(form, /Growth OS/);
     assert.match(form, /Automatización/);
     assert.doesNotMatch(form, /Clave de seguimiento/);
     assert.doesNotMatch(form, /ID del formulario/);

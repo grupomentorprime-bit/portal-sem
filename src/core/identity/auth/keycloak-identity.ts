@@ -1,6 +1,6 @@
 /**
  * Identidad del realm de plataforma.
- * El id técnico no es la marca: Growth OS es la plataforma.
+ * El id técnico no es la marca: NELZURI es la plataforma.
  * SEM, ADL, Mentor Capacitación y Fundación Mueve son Espacios equivalentes.
  */
 
@@ -8,7 +8,7 @@
 export const KEYCLOAK_REALM_TECHNICAL_ID = "seminario-ipn";
 
 /** Nombre visible del realm (Display Name). No es un Espacio. */
-export const KEYCLOAK_REALM_DISPLAY_NAME = "Growth OS";
+export const KEYCLOAK_REALM_DISPLAY_NAME = "NELZURI";
 
 /** Tema de login de la plataforma. Lo usan growth-os-web y growth-os-dev. */
 export const KEYCLOAK_GROWTH_OS_LOGIN_THEME = "growth-os";

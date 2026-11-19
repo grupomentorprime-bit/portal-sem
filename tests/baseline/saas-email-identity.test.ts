@@ -165,7 +165,7 @@ describe("OT-GROWTH-PROD-002 — transporte vs identidad", () => {
 });
 
 describe("OT-GROWTH-PROD-002 — identidad del Espacio", () => {
-  it("SEM originado usa nombre y reply-to SEM; ADL usa ADL; vacío → Growth OS", () => {
+  it("SEM originado usa nombre y reply-to SEM; ADL usa ADL; vacío → NELZURI", () => {
     const semConfig = applySemSiteIdentity(createDefaultSiteConfig());
     const adlConfig = applyAdlSiteIdentity(createDefaultSiteConfig());
     const empty = createDefaultSiteConfig();
@@ -191,19 +191,21 @@ describe("OT-GROWTH-PROD-002 — identidad del Espacio", () => {
     const none = resolveEmailIdentity({ config: empty, tenantId: "acme", siteId: "acme" });
 
     assert.equal(sem.displayName, SEM_SITE_IDENTITY.institution.name);
+    assert.doesNotMatch(sem.displayName, /NELZURI|Academia ADL/);
     assert.equal(sem.replyTo, SEM_SITE_IDENTITY.contact.email);
     assert.equal(sem.origin, "https://seminarioipn.cl");
     assert.doesNotMatch(sem.origin, /adl/);
     assert.doesNotMatch(JSON.stringify(sem), /Academia ADL/);
 
     assert.equal(adl.displayName, ADL_SITE_IDENTITY.institution.name);
+    assert.doesNotMatch(adl.displayName, /NELZURI/);
     assert.notEqual(adl.displayName, sem.displayName);
     assert.equal(adl.origin, "http://adl.localhost:3000");
     assert.doesNotMatch(adl.origin, /seminarioipn/);
     assert.doesNotMatch(JSON.stringify(adl), /Seminario Eclesiástico Mayor/);
     assert.doesNotMatch(JSON.stringify(adl), /seminarioipn/);
 
-    assert.equal(none.displayName, "Growth OS");
+    assert.equal(none.displayName, "NELZURI");
     assert.equal(none.replyTo, undefined);
     assert.doesNotMatch(none.displayName, /SEM/);
     assert.doesNotMatch(none.displayName, /Seminario/);
@@ -444,7 +446,7 @@ describe("OT-GROWTH-PROD-002 — copy de motor sin cliente hardcodeado", () => {
 });
 
 describe("OT-GROWTH-PROD-002 — fixture Mongo aislado", () => {
-  it("SEM y ADL en DB no se cruzan; Site sin nombre → Growth OS", async () => {
+  it("SEM y ADL en DB no se cruzan; Site sin nombre → NELZURI", async () => {
     await withDb(async (db) => {
       const siteConfig = db.collection<SiteConfigDocument>(SITE_CONFIG_COLLECTION);
       const domains = db.collection<DomainDocument>(DOMAINS_COLLECTION);
@@ -548,7 +550,7 @@ describe("OT-GROWTH-PROD-002 — fixture Mongo aislado", () => {
         configFromSiteDoc(fixtureDoc),
         fixtureDomains
       );
-      assert.equal(fixture.displayName, "Growth OS");
+      assert.equal(fixture.displayName, "NELZURI");
       assert.equal(fixture.origin, `http://${FIX_HOST}`);
       assert.doesNotMatch(fixture.displayName, /Seminario/);
       assert.doesNotMatch(JSON.stringify(fixture), /seminarioipn/);
