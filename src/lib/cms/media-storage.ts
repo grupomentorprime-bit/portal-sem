@@ -1,5 +1,6 @@
 import { unlink, rm, readFile } from "fs/promises";
 import path from "path";
+import { resolveContainedMediaPath } from "@/core/security/media-access";
 import { deleteS3Object, getS3ObjectBuffer, putS3Object } from "@/lib/cms/storage-s3";
 import { assertS3StorageForUpload, resolveStorageSettings } from "@/lib/cms/storage-config";
 import {
@@ -108,7 +109,8 @@ export async function readMediaFile(
   }
 
   try {
-    const filePath = path.join(localMediaRoot(), key);
+    const filePath = resolveContainedMediaPath(localMediaRoot(), key);
+    if (!filePath) return null;
     const buffer = await readFile(filePath);
     return { buffer, mimeType };
   } catch {

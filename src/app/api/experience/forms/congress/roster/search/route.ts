@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
+import { PUBLIC_CONGRESS_SEARCH_MIN } from "@/core/congress/claim";
 import { foldPersonSearchText } from "@/lib/experience/forms/person-search";
 import { searchCongressPublicRoster } from "@/lib/congress/roster-search";
+import {
+  PUBLIC_SEARCH_LIMIT,
+  PUBLIC_SEARCH_WINDOW_MS,
+  consumeRateLimit,
+  publicClientKey,
+  publicRateLimitStore,
+} from "@/core/security/public-rate-limit";
 import { publicInternalError } from "@/core/security/public-error";
 
-/** Búsqueda pública de nómina reclamable (nombre + iglesia + zona). */
+/** Búsqueda pública de nómina reclamable. No devuelve el id interno. */
 export async function GET(request: Request) {
   try {
     const tenant = await getActiveTenantId();
@@ -12,8 +20,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
 
+    const limited = consumeRateLimit({
+      store: publicRateLimitStore,
+      key: publicClientKey(request.headers.get("x-forwarded-for"), "congress-roster-search"),
+      limit: PUBLIC_SEARCH_LIMIT,
+      windowMs: PUBLIC_SEARCH_WINDOW_MS,
+      nowMs: Date.now(),
+    });
+    if (!limited.ok) {
+      return NextResponse.json(
+        { ok: false, error: "Demasiadas consultas." },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+      );
+    }
+
     const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
-    if (foldPersonSearchText(query).length < 2) {
+    if (foldPersonSearchText(query).length < PUBLIC_CONGRESS_SEARCH_MIN) {
       return NextResponse.json({
         ok: true,
         matches: [],

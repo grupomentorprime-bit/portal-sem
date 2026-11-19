@@ -98,6 +98,8 @@ export interface CmsMediaAsset {
   status?: MediaAssetStatus;
   version?: number;
   visibility: MediaVisibility;
+  /** Publicación según el propósito del archivo, no según su extensión. */
+  distribution?: "public" | "private";
   url: string;
   thumbnail: string;
   responsive: MediaResponsiveUrls;
@@ -132,6 +134,7 @@ export type CmsMediaUpdate = Partial<
     | "focalPoint"
     | "status"
     | "visibility"
+    | "distribution"
     | "originalName"
     | "favorite"
     | "unitId"

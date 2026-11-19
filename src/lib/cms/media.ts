@@ -23,6 +23,10 @@ import {
   storageKeyFromMediaUrl,
 } from "@/lib/cms/media-storage";
 import { invalidateMediaCache } from "@/core/media/cache";
+import {
+  distributionFromPurpose,
+  purposeFromFolder,
+} from "@/core/security/media-access";
 import { mediaHasUsage } from "@/lib/cms/media-usage-helpers";
 import type {
   CmsMediaAsset,
@@ -321,6 +325,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     status: "active",
     version: 1,
     visibility: "active",
+    distribution: distributionFromPurpose(purposeFromFolder(folder)),
     url,
     thumbnail: thumbnail || url,
     responsive,
@@ -354,7 +359,21 @@ export async function moveMedia(
   tenant: string,
   folder: MediaFolder
 ): Promise<CmsMediaAsset | null> {
-  return updateMedia(id, tenant, { folder });
+  return updateMedia(id, tenant, {
+    folder,
+    distribution: distributionFromPurpose(purposeFromFolder(folder)),
+  });
+}
+
+export async function findMediaAssetByObjectKey(
+  tenant: string,
+  key: string
+): Promise<CmsMediaAsset | null> {
+  const mediaId = key.split("/")[1];
+  if (!mediaId) return null;
+  const db = await getDatabase();
+  const asset = await db.collection<CmsMediaAsset>("cms_media").findOne({ _id: mediaId, tenant });
+  return asset ? normalizeAsset(asset) : null;
 }
 
 async function readAssetBuffer(asset: CmsMediaAsset): Promise<Buffer | null> {

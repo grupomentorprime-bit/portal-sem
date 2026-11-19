@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isConvocatoriaIdentityReady } from "@/lib/experience/forms/convocatoria-identity";
 import { formatGenerationDisplay } from "@/lib/experience/forms/generations";
-import { formatChilePhoneDisplay } from "@/lib/experience/forms/phone-chile";
 import type { ExperienceFormField } from "@/types/experience-forms";
 import { AbsenceJustificationFields } from "./AbsenceJustificationFields";
 import { AttendanceNoFeedback } from "./AttendanceNoFeedback";
@@ -27,20 +26,19 @@ interface ConvocatoriaParticipantFieldsProps {
 }
 
 interface RosterStudent {
-  id: string;
-  rut?: string;
+  selectionRef: string;
   fullName: string;
   generation: string;
-  phone?: string;
-  email?: string;
+  hasEmail: boolean;
+  hasPhone: boolean;
 }
 
 interface RosterContact {
-  email: string;
-  phone: string;
+  hasEmail: boolean;
+  hasPhone: boolean;
 }
 
-const CONTACT_ON_FILE_HELPER = "Lo tenemos registrado. Confírmalo o corrígelo si está mal.";
+const CONTACT_ON_FILE_HELPER = "Hay un dato registrado. Escríbelo tú; la búsqueda no lo muestra.";
 const EMAIL_MISSING_HELPER = "No tenemos un correo registrado. Escríbelo para continuar.";
 const PHONE_MISSING_HELPER =
   "No tenemos un teléfono registrado. Escríbelo para continuar. Formato: +56 9 1234 5678.";
@@ -77,33 +75,31 @@ export function ConvocatoriaParticipantFields({
 
   const selectedStudent = useMemo(() => {
     if (manualEntry) return null;
-    const studentId = String(values.studentId ?? "");
-    if (!studentId) return null;
+    const selectionRef = String(values.selectionRef ?? "");
+    if (!selectionRef) return null;
     return {
-      id: studentId,
+      selectionRef,
       fullName: String(values.fullName ?? ""),
       generation: String(values.generation ?? values.program ?? ""),
+      hasEmail: false,
+      hasPhone: false,
     };
-  }, [manualEntry, values.studentId, values.fullName, values.generation, values.program]);
+  }, [manualEntry, values.selectionRef, values.fullName, values.generation, values.program]);
 
   const trimmedQuery = query.trim();
-  const visibleResults = trimmedQuery.length >= 2 ? results : [];
-  const visibleSuggestions = trimmedQuery.length >= 2 ? suggestions : [];
+  const visibleResults = trimmedQuery.length >= 3 ? results : [];
+  const visibleSuggestions = trimmedQuery.length >= 3 ? suggestions : [];
   const showEmptyResults =
     !manualEntry &&
     !selectedStudent &&
     !searching &&
-    trimmedQuery.length >= 2 &&
+    trimmedQuery.length >= 3 &&
     lastSearchedQuery === trimmedQuery &&
     visibleResults.length === 0 &&
     visibleSuggestions.length === 0;
 
   useEffect(() => {
-    if (manualEntry || trimmedQuery.length < 2) {
-      setHasMoreResults(false);
-      setSuggestionsHasMore(false);
-      return;
-    }
+    if (manualEntry || trimmedQuery.length < 3) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
@@ -149,13 +145,13 @@ export function ConvocatoriaParticipantFields({
       if (field.name === "email") {
         return {
           ...field,
-          helper: rosterContact?.email ? CONTACT_ON_FILE_HELPER : EMAIL_MISSING_HELPER,
+          helper: rosterContact?.hasEmail ? CONTACT_ON_FILE_HELPER : EMAIL_MISSING_HELPER,
         };
       }
       if (field.name === "phone") {
         return {
           ...field,
-          helper: rosterContact?.phone ? CONTACT_ON_FILE_HELPER : PHONE_MISSING_HELPER,
+          helper: rosterContact?.hasPhone ? CONTACT_ON_FILE_HELPER : PHONE_MISSING_HELPER,
         };
       }
       return field;
@@ -163,18 +159,15 @@ export function ConvocatoriaParticipantFields({
 
   const handleSelectStudent = (student: RosterStudent) => {
     onChange("registrationMode", "roster");
-    onChange("studentId", student.id);
+    onChange("studentId", "");
+    onChange("selectionRef", student.selectionRef);
     onChange("fullName", student.fullName);
     onChange("program", student.generation);
     onChange("generation", student.generation);
-    onChange("rut", student.rut ?? "");
-    const phone = student.phone
-      ? formatChilePhoneDisplay(student.phone) || student.phone
-      : "";
-    const email = student.email?.trim() ?? "";
-    onChange("phone", phone);
-    onChange("email", email);
-    setRosterContact({ email, phone });
+    onChange("rut", "");
+    onChange("phone", "");
+    onChange("email", "");
+    setRosterContact({ hasEmail: student.hasEmail, hasPhone: student.hasPhone });
     setManualEntry(false);
     setQuery("");
     setResults([]);
@@ -187,6 +180,7 @@ export function ConvocatoriaParticipantFields({
   const handleClearStudent = () => {
     onChange("registrationMode", "");
     onChange("studentId", "");
+    onChange("selectionRef", "");
     onChange("fullName", "");
     onChange("program", "");
     onChange("generation", "");
@@ -216,6 +210,8 @@ export function ConvocatoriaParticipantFields({
   const handleBackToSearch = () => {
     setManualEntry(false);
     onChange("registrationMode", "");
+    onChange("selectionRef", "");
+    onChange("studentId", "");
     onChange("fullName", "");
     onChange("program", "");
     onChange("generation", "");
@@ -231,9 +227,9 @@ export function ConvocatoriaParticipantFields({
         <div className="portal-experience-form__field portal-experience-form__field--lookup space-y-3">
           {!selectedStudent ? (
             <Input
-              label="Busca tu nombre o RUT en el listado"
-              placeholder="Escribe tu nombre, apellido o RUT…"
-              helper="Selecciona tu registro. Si ya tenemos tu correo y teléfono, solo confírmalos."
+              label="Busca tu nombre en el listado"
+              placeholder="Escribe tu nombre o apellido…"
+              helper="Selecciona tu registro. El correo y el teléfono los escribes tú."
               icon={Search}
               value={query}
               disabled={disabled}
@@ -247,7 +243,7 @@ export function ConvocatoriaParticipantFields({
           {!selectedStudent && visibleResults.length > 0 ? (
             <ul className="portal-experience-form__lookup-results max-h-80 overflow-y-auto rounded-xl border border-border bg-background shadow-sm">
               {visibleResults.map((student) => (
-                <li key={student.id} className="border-b border-border last:border-0">
+                <li key={student.selectionRef} className="border-b border-border last:border-0">
                   <button
                     type="button"
                     className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left transition hover:bg-background-muted/60 focus-visible:bg-background-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-secondary"
@@ -266,7 +262,7 @@ export function ConvocatoriaParticipantFields({
 
           {!selectedStudent && visibleResults.length > 0 && hasMoreResults ? (
             <p className="text-xs text-muted">
-              Hay más coincidencias. Agrega otro nombre o escribe tu RUT.
+              Hay más coincidencias. Agrega otro nombre.
             </p>
           ) : null}
 
@@ -279,7 +275,7 @@ export function ConvocatoriaParticipantFields({
               </p>
               <ul className="portal-experience-form__lookup-results max-h-80 overflow-y-auto rounded-xl border border-border bg-background shadow-sm">
                 {visibleSuggestions.map((student) => (
-                  <li key={student.id} className="border-b border-border last:border-0">
+                  <li key={student.selectionRef} className="border-b border-border last:border-0">
                     <button
                       type="button"
                       className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left transition hover:bg-background-muted/60 focus-visible:bg-background-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-secondary"

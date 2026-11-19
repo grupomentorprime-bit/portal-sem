@@ -27,5 +27,17 @@ jobs:
       - name: Check branding tokens
         run: npm run check:branding
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Baseline tests
+        run: npm run test:baseline
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Secret scan
+        run: npx tsx scripts/scan-secrets.ts
+
       - name: Build
         run: npm run build

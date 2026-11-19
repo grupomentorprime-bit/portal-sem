@@ -26,7 +26,7 @@ import { PortalFormSuccess } from "./PortalFormSuccess";
 import { PortalFormValidationSummary } from "./PortalFormValidationSummary";
 
 type PublicHit = {
-  registrationId: string;
+  selectionRef: string;
   fullName: string;
   churchName: string;
   zoneId: string;
@@ -67,6 +67,7 @@ function initialValues(form: ExperienceFormDefinition): Record<string, unknown> 
   const values: Record<string, unknown> = {
     registrationMode: "idle",
     registrationId: "",
+    selectionRef: "",
   };
   for (const field of form.fields) {
     if (field.defaultValue !== undefined) {
@@ -108,7 +109,7 @@ export function PortalCongressExperienceForm({
   const [otherChurch, setOtherChurch] = useState(false);
 
   const mode = String(values.registrationMode ?? "idle") as RegistrationMode;
-  const selectedId = String(values.registrationId ?? "").trim();
+  const selectedId = String(values.selectionRef ?? "").trim();
 
   const fullNameField = fieldName(form, ["fullName", "nombre", "name"]);
   const zoneField = fieldName(form, ["zona", "zoneId", "zone"]);
@@ -155,13 +156,7 @@ export function PortalCongressExperienceForm({
   useEffect(() => {
     const q = query.trim();
     if (mode === "roster" && selectedId) return;
-    if (q.length < 2) {
-      setMatches([]);
-      setSuggestions([]);
-      setHasMore(false);
-      setSuggestionsHasMore(false);
-      return;
-    }
+    if (q.length < 3) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void (async () => {
@@ -197,7 +192,8 @@ export function PortalCongressExperienceForm({
       const next: Record<string, unknown> = {
         ...prev,
         registrationMode: "roster",
-        registrationId: hit.registrationId,
+        registrationId: "",
+        selectionRef: hit.selectionRef,
       };
       if (fullNameField) next[fullNameField] = hit.fullName;
       if (zoneField) next[zoneField] = hit.zoneId;
@@ -213,8 +209,9 @@ export function PortalCongressExperienceForm({
   const enableManual = () => {
     setValues((prev) => ({
       ...prev,
-      registrationMode: "manual",
-      registrationId: "",
+        registrationMode: "manual",
+        registrationId: "",
+        selectionRef: "",
     }));
     setMatches([]);
     setSuggestions([]);
@@ -226,6 +223,7 @@ export function PortalCongressExperienceForm({
         ...prev,
         registrationMode: "idle",
         registrationId: "",
+        selectionRef: "",
       };
       if (fullNameField) next[fullNameField] = "";
       if (zoneField) next[zoneField] = "";
@@ -341,6 +339,9 @@ export function PortalCongressExperienceForm({
 
   const showLookup = mode !== "roster" || !selectedId;
   const trimmedQuery = query.trim();
+  const lookupReady = trimmedQuery.length >= 3;
+  const visibleMatches = lookupReady ? matches : [];
+  const visibleSuggestions = lookupReady ? suggestions : [];
 
   return (
     <form className={formClass} onSubmit={handleSubmit} noValidate aria-labelledby="portal-form-title">
@@ -363,10 +364,10 @@ export function PortalCongressExperienceForm({
             />
             {searching ? <p className="text-xs text-muted">Buscando…</p> : null}
 
-            {matches.length > 0 ? (
+            {visibleMatches.length > 0 ? (
               <ul className="max-h-80 overflow-y-auto rounded-xl border border-border bg-background shadow-sm">
-                {matches.map((hit) => (
-                  <li key={hit.registrationId} className="border-b border-border last:border-0">
+                {visibleMatches.map((hit) => (
+                  <li key={hit.selectionRef} className="border-b border-border last:border-0">
                     <button
                       type="button"
                       className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left transition hover:bg-background-muted/60"
@@ -382,20 +383,20 @@ export function PortalCongressExperienceForm({
                 ))}
               </ul>
             ) : null}
-            {hasMore ? (
+            {lookupReady && hasMore ? (
               <p className="text-xs text-muted">Hay más coincidencias. Agrega otro apellido.</p>
             ) : null}
 
-            {suggestions.length > 0 ? (
+            {visibleSuggestions.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted">
-                  {matches.length > 0
+                  {visibleMatches.length > 0
                     ? "Sugerencias parecidas"
                     : "No hay coincidencia exacta. Sugerencias:"}
                 </p>
                 <ul className="max-h-80 overflow-y-auto rounded-xl border border-border bg-background shadow-sm">
-                  {suggestions.map((hit) => (
-                    <li key={hit.registrationId} className="border-b border-border last:border-0">
+                  {visibleSuggestions.map((hit) => (
+                    <li key={hit.selectionRef} className="border-b border-border last:border-0">
                       <button
                         type="button"
                         className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left transition hover:bg-background-muted/60"
@@ -410,13 +411,13 @@ export function PortalCongressExperienceForm({
                     </li>
                   ))}
                 </ul>
-                {suggestionsHasMore ? (
+                {lookupReady && suggestionsHasMore ? (
                   <p className="text-xs text-muted">Hay más sugerencias. Afina la búsqueda.</p>
                 ) : null}
               </div>
             ) : null}
 
-            {trimmedQuery.length >= 2 && !searching && matches.length === 0 && suggestions.length === 0 ? (
+            {lookupReady && !searching && visibleMatches.length === 0 && visibleSuggestions.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border bg-background-muted/30 px-4 py-4">
                 <p className="text-sm leading-relaxed text-muted">
                   No hay coincidencias para «{trimmedQuery}». Si no apareces, regístrate como nuevo.
@@ -434,7 +435,7 @@ export function PortalCongressExperienceForm({
               </div>
             ) : null}
 
-            {trimmedQuery.length >= 2 && (matches.length > 0 || suggestions.length > 0) ? (
+            {lookupReady && (visibleMatches.length > 0 || visibleSuggestions.length > 0) ? (
               <Button type="button" variant="ghost" size="sm" onClick={enableManual} disabled={submitting}>
                 No aparezco / registrarme
               </Button>
