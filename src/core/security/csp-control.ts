@@ -1,8 +1,8 @@
-/** Superficies que hoy inyectan script inline y impiden quitar 'unsafe-inline'. */
-export const CSP_INLINE_SCRIPT_SURFACES = [
-  "src/components/sites/cumple/CumpleShell.tsx",
-  "src/components/portal/seo/PortalStructuredData.tsx",
-] as const;
+export const CSP_RUNTIME_CHECK = {
+  verified: false,
+  reason:
+    "script-src de producción ya no trae 'unsafe-inline'. Falta recorrer CUMPLE, formularios, login y páginas públicas en un navegador con esta política.",
+} as const;
 
 export interface ScriptPolicyStatus {
   approved: boolean;

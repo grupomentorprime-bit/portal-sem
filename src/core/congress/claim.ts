@@ -82,7 +82,7 @@ const PROPOSED_FIELD_NAMES = [
 ] as const;
 
 export function claimAuditMetadata(input: {
-  phase: "requested" | "applied";
+  phase: "requested" | "applied" | "challenge_issued" | "challenge_rejected";
   fields: string[];
   authorization?: "operator" | "accredited-contact";
   channel?: "email" | "phone";
@@ -136,6 +136,12 @@ function fingerprintContact(value: string): string {
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
+
+export function accreditedTokenHash(token: string): string {
+  return hashToken(token);
+}
+
+export const ACCREDITED_CONTACT_TTL_MS = 15 * 60 * 1000;
 
 function hashesEqual(left: string, right: string): boolean {
   const a = Buffer.from(left, "hex");
@@ -242,6 +248,44 @@ export function applyProtectedRegistrationChange(input: {
     registration,
     auditAuthorization: authorization.method,
     ...("challenge" in authorization ? { channel: authorization.challenge.channel } : {}),
+  };
+}
+
+/** Aplica el cambio y deja el desafío consumido. Un segundo uso del mismo objeto falla. */
+export function consumeAccreditedContactChange(input: {
+  registration: CongressRegistration;
+  proposed: ProposedRegistrationChange;
+  challenge: AccreditedContactChallenge;
+  token: string;
+  nowIso: string;
+}):
+  | {
+      ok: true;
+      registration: CongressRegistration;
+      challenge: AccreditedContactChallenge;
+      auditAuthorization: "accredited-contact";
+      channel: "email" | "phone";
+    }
+  | { ok: false; error: "identity_not_proven" | "not_claimable" | "challenge_rejected" | "already_consumed" } {
+  if (input.challenge.consumed) return { ok: false, error: "already_consumed" };
+  const applied = applyProtectedRegistrationChange({
+    registration: input.registration,
+    proposed: input.proposed,
+    authorization: {
+      method: "accredited-contact",
+      token: input.token,
+      challenge: input.challenge,
+      nowIso: input.nowIso,
+    },
+    nowIso: input.nowIso,
+  });
+  if (!applied.ok) return applied;
+  return {
+    ok: true,
+    registration: applied.registration,
+    challenge: { ...input.challenge, consumed: true },
+    auditAuthorization: "accredited-contact",
+    channel: input.challenge.channel,
   };
 }
 

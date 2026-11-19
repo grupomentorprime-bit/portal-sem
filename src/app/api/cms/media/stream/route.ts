@@ -3,9 +3,8 @@ import { getOperationalTenantId } from "@/core/identity";
 import {
   PUBLIC_MEDIA_PROBE_LIMIT,
   PUBLIC_SEARCH_WINDOW_MS,
-  consumeRateLimit,
+  consumeSharedRateLimit,
   publicClientKey,
-  publicRateLimitStore,
 } from "@/core/security/public-rate-limit";
 import { decideMediaRead } from "@/core/security/media-access";
 import { findMediaAssetByObjectKey } from "@/lib/cms/media";
@@ -48,13 +47,11 @@ function notFoundResponse(request: Request): NextResponse {
   );
 }
 
-function probeLimited(request: Request): NextResponse | null {
-  const decision = consumeRateLimit({
-    store: publicRateLimitStore,
+async function probeLimited(request: Request): Promise<NextResponse | null> {
+  const decision = await consumeSharedRateLimit({
     key: publicClientKey(request.headers.get("x-forwarded-for"), "media-probe"),
     limit: PUBLIC_MEDIA_PROBE_LIMIT,
     windowMs: PUBLIC_SEARCH_WINDOW_MS,
-    nowMs: Date.now(),
   });
   if (decision.ok) return null;
   return NextResponse.json(
@@ -81,7 +78,7 @@ export async function GET(request: Request) {
     memberTenantId,
   });
   if (!decision.allow) {
-    const limited = probeLimited(request);
+    const limited = await probeLimited(request);
     if (limited) return limited;
     return notFoundResponse(request);
   }

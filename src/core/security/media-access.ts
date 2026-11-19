@@ -10,7 +10,7 @@ export const MEDIA_LINK_REVIEW = {
   baseCommit: "5388492",
   appDoors: ["/api/cms/media/stream", "/media/[...path]"],
   directStorage:
-    "Con S3 en accessMode public, buildPublicUrl publica {publicUrl}/media/{key}. Ese enlace no pasa por la app.",
+    "Con S3 en accessMode public, buildPublicUrl puede armar {publicUrl}/media/{key}. La app ya no entrega esa URL si el archivo es privado. El objeto sigue accesible para quien la conozca mientras el bucket no cambie.",
   localDev:
     "En desarrollo el disco puede quedar bajo public/media y Next lo sirve como estático.",
   institutionalStatic:
@@ -83,6 +83,30 @@ export function resolveContainedMediaPath(root: string, key: string): string | n
   const filePath = path.resolve(base, key);
   if (filePath !== base && !filePath.startsWith(base + path.sep)) return null;
   return filePath;
+}
+
+export function keyFromPublicObjectUrl(url: string): string | null {
+  try {
+    const parsed = url.startsWith("http")
+      ? new URL(url)
+      : new URL(url, "https://placeholder.local");
+    const marker = "/media/";
+    const idx = parsed.pathname.indexOf(marker);
+    if (idx < 0) return null;
+    const key = decodeURIComponent(parsed.pathname.slice(idx + marker.length));
+    return isSafeMediaStorageKey(key) ? key : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Un documento privado no se entrega con la URL del bucket. La imagen pública conserva la suya. */
+export function presentMediaUrl(input: { distribution: MediaDistribution; url: string }): string {
+  if (input.distribution !== "private") return input.url;
+  if (!/^https?:\/\//i.test(input.url)) return input.url;
+  const key = keyFromPublicObjectUrl(input.url);
+  if (!key) return input.url;
+  return `/api/cms/media/stream?key=${encodeURIComponent(key)}`;
 }
 
 export function directStorageBypassesApp(settings: {

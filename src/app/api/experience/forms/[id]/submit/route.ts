@@ -35,7 +35,7 @@ import {
   enrolleeIdentity,
 } from "@/lib/experience/forms/already-enrolled";
 import { isCongressRegistrationClaimable } from "@/core/congress/claim";
-import { fileCongressClaimRequestFromForm } from "@/lib/congress/claim-registration";
+import { deliverAccreditedContactChallenge, fileCongressClaimRequestFromForm } from "@/lib/congress/claim-registration";
 import { openSelectionRef, selectionRefSecret } from "@/core/security/selection-ref";
 import { getCongressRegistration } from "@/lib/congress/repository";
 interface RouteParams {
@@ -335,12 +335,16 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
+    let claimVerification:
+      | { requestId: string; delivered: boolean; channel: "email" | "phone" | null }
+      | undefined;
+
     if (form._id === CONGRESS_VARONES_FORM_ID) {
       const selectionRef = String(data.selectionRef ?? "").trim();
       if (selectionRef && result.submissionId) {
         try {
           const opened = openSelectionRef(selectionRef, selectionRefSecret(), Date.now());
-          await fileCongressClaimRequestFromForm({
+          const filed = await fileCongressClaimRequestFromForm({
             tenantId: tenant,
             submissionId: result.submissionId,
             opened: opened.ok
@@ -352,6 +356,19 @@ export async function POST(request: Request, { params }: RouteParams) {
                 }
               : { ok: false },
           });
+          if (filed.ok) {
+            const sent = await deliverAccreditedContactChallenge({
+              tenantId: tenant,
+              requestId: filed.requestId,
+            });
+            if (sent.ok) {
+              claimVerification = {
+                requestId: filed.requestId,
+                delivered: sent.delivered,
+                channel: sent.channel,
+              };
+            }
+          }
         } catch {
           console.error("[congress] no se pudo archivar la solicitud de reclamo");
         }
@@ -489,6 +506,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       submissionId: result.submissionId,
       message: result.message,
       ...(reportPath ? { reportPath } : {}),
+      ...(claimVerification ? { claimVerification } : {}),
     });
   } catch (error) {
     return publicInternalError("experience-form-submit", error);

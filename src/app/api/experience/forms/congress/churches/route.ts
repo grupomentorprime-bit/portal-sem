@@ -6,9 +6,8 @@ import { listCongressChurchLabels } from "@/lib/congress/repository";
 import {
   PUBLIC_SEARCH_LIMIT,
   PUBLIC_SEARCH_WINDOW_MS,
-  consumeRateLimit,
+  consumeSharedRateLimit,
   publicClientKey,
-  publicRateLimitStore,
 } from "@/core/security/public-rate-limit";
 import { publicInternalError } from "@/core/security/public-error";
 
@@ -21,12 +20,10 @@ export async function GET(request: Request) {
     }
 
     const zone = new URL(request.url).searchParams.get("zone")?.trim() || undefined;
-    const limited = consumeRateLimit({
-      store: publicRateLimitStore,
+    const limited = await consumeSharedRateLimit({
       key: publicClientKey(request.headers.get("x-forwarded-for"), "congress-churches"),
       limit: PUBLIC_SEARCH_LIMIT,
       windowMs: PUBLIC_SEARCH_WINDOW_MS,
-      nowMs: Date.now(),
     });
     if (!limited.ok) {
       return NextResponse.json(

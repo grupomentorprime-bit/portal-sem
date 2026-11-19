@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import {
   PRIVATE_CACHE_CONTROL,
-  buildAppSecurityHeaders,
+  buildStaticSecurityHeaders,
 } from "./src/core/security/http-headers";
 
 function buildRemotePatterns(): NonNullable<NextConfig["images"]>["remotePatterns"] {
@@ -79,7 +79,7 @@ const nextConfig: NextConfig = {
     remotePatterns: buildRemotePatterns(),
   },
   async headers() {
-    const security = buildAppSecurityHeaders(process.env);
+    const security = buildStaticSecurityHeaders(process.env);
 
     return [
       {

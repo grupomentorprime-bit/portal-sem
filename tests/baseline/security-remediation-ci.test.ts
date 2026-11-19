@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
-import { DEPLOY_GATE } from "../../src/core/security/deploy-gate";
+import { DEPLOY_GATE, releaseGateRecord } from "../../src/core/security/deploy-gate";
 import { formatSecretFindings, scanTextForSecrets } from "../../src/core/security/secret-scan";
 
 describe("gate de CI preparado", () => {
@@ -18,6 +18,19 @@ describe("gate de CI preparado", () => {
     assert.equal(DEPLOY_GATE.dokployDefinedInRepo, false);
     assert.equal(DEPLOY_GATE.failedCiBlocksDeploy, false);
     assert.equal(DEPLOY_GATE.branchProtectionChanged, false);
+    assert.equal(DEPLOY_GATE.integrationPrepared, true);
+    assert.equal(DEPLOY_GATE.dokployApiCalled, false);
+    assert.equal(DEPLOY_GATE.productionConfigChanged, false);
+    const workflow = readFileSync(DEPLOY_GATE.workflow, "utf8");
+    assert.match(workflow, /release-gate:/);
+    assert.doesNotMatch(workflow, /dokploy/i);
+    const success = releaseGateRecord("success");
+    const failure = releaseGateRecord("failure");
+    assert.equal(success.deployAllowedByThisRepo, true);
+    assert.equal(success.dokployCalled, false);
+    assert.equal(success.enforced, false);
+    assert.equal(failure.deployAllowedByThisRepo, false);
+    assert.equal(failure.enforced, false);
   });
 
   it("el escáner informa la regla y no el secreto", () => {

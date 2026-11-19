@@ -6,6 +6,7 @@ import {
   decideMediaRead,
   directStorageBypassesApp,
   isSafeMediaStorageKey,
+  presentMediaUrl,
   resolveContainedMediaPath,
   resolveMediaDistribution,
 } from "../../src/core/security/media-access";
@@ -85,6 +86,20 @@ describe("medios por propósito", () => {
     assert.equal(
       resolveContainedMediaPath(path.join("data", "media"), "sem/media-sintetica/../../secreto"),
       null
+    );
+  });
+
+  it("un documento privado no sale con la URL del bucket y una imagen pública sí", () => {
+    const bucket = "https://cdn.ejemplo.test/media/sem/media-sintetica/ficha.pdf";
+    assert.equal(
+      presentMediaUrl({ distribution: "private", url: bucket }),
+      "/api/cms/media/stream?key=sem%2Fmedia-sintetica%2Fficha.pdf"
+    );
+    const cover = "https://cdn.ejemplo.test/media/sem/media-sintetica/portada.webp";
+    assert.equal(presentMediaUrl({ distribution: "public", url: cover }), cover);
+    assert.equal(
+      presentMediaUrl({ distribution: "private", url: "/media/sem/media-sintetica/ficha.pdf" }),
+      "/media/sem/media-sintetica/ficha.pdf"
     );
   });
 

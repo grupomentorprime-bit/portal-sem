@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   applyProtectedRegistrationChange,
+  consumeAccreditedContactChange,
   filePublicClaimRequest,
   isCongressRegistrationClaimable,
   issueAccreditedContactChallenge,
@@ -109,8 +110,8 @@ describe("congress nomina claim search", () => {
         status: "provisional",
       },
     });
-    assert.equal(registrationIdAuthorizesChange("1", "1"), false);
-    assert.equal(nameOrRutMatchAuthorizesChange(true, true), false);
+    assert.equal(registrationIdAuthorizesChange(), false);
+    assert.equal(nameOrRutMatchAuthorizesChange(), false);
     const filed = filePublicClaimRequest({
       registration: base,
       submissionId: "sub-1",
@@ -241,6 +242,77 @@ describe("congress nomina claim search", () => {
     );
     assert.equal(audit.includes("ana.nueva"), false);
     assert.equal(audit.includes("@"), false);
+  });
+
+  it("el token vence, se usa una vez y la auditoría no guarda el código", () => {
+    const base = stub({
+      _id: "1",
+      fullName: "Ana Sintetica",
+      identity: {
+        fullName: "Ana Sintetica",
+        rut: null,
+        email: "ana.sintetica@ejemplo.test",
+        phone: null,
+        status: "provisional",
+      },
+    });
+    const proposed = {
+      submissionId: "sub-1",
+      fullName: "Ana Sintetica",
+      rut: null,
+      email: "ana.nueva@ejemplo.test",
+      phone: null,
+      zoneId: "zona-1",
+      churchName: "Quilicura",
+      expectedDays: { saturday: true, sunday: true },
+    };
+    const issued = issueAccreditedContactChallenge({
+      registration: base,
+      channel: "email",
+      nowIso: "2026-11-18T12:00:00.000Z",
+      ttlMs: 60_000,
+      token: "token-sintetico",
+    });
+    assert.equal(issued.ok, true);
+    if (!issued.ok) return;
+    const expired = consumeAccreditedContactChange({
+      registration: base,
+      proposed,
+      challenge: issued.challenge,
+      token: "token-sintetico",
+      nowIso: "2026-11-18T12:02:00.000Z",
+    });
+    assert.equal(expired.ok, false);
+    const used = consumeAccreditedContactChange({
+      registration: base,
+      proposed,
+      challenge: issued.challenge,
+      token: "token-sintetico",
+      nowIso: "2026-11-18T12:00:30.000Z",
+    });
+    assert.equal(used.ok, true);
+    if (!used.ok) return;
+    assert.equal(used.challenge.consumed, true);
+    const again = consumeAccreditedContactChange({
+      registration: base,
+      proposed,
+      challenge: used.challenge,
+      token: "token-sintetico",
+      nowIso: "2026-11-18T12:00:40.000Z",
+    });
+    assert.equal(again.ok, false);
+    if (again.ok) return;
+    assert.equal(again.error, "already_consumed");
+    const audit = JSON.stringify(
+      claimAuditMetadata({
+        phase: "challenge_issued",
+        fields: ["token-sintetico"],
+        authorization: "accredited-contact",
+        channel: "email",
+      })
+    );
+    assert.equal(audit.includes("token-sintetico"), false);
+    assert.equal(audit.includes("ana.sintetica"), false);
   });
 
   it("sync no crea source=form cuando hay registrationId", () => {

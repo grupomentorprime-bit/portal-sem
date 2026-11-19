@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { sanitizeHtml, sanitizeSvgMarkup } from "../../src/lib/cms/sanitize";
 import { buildContentSecurityPolicy } from "../../src/core/security/http-headers";
 import {
-  CSP_INLINE_SCRIPT_SURFACES,
+  CSP_RUNTIME_CHECK,
   productionScriptPolicyStatus,
 } from "../../src/core/security/csp-control";
 
@@ -47,14 +47,22 @@ describe("sanitizador HTML y SVG", () => {
 });
 
 describe("CSP como control separado", () => {
-  it("no declara aprobada la política de producción mientras script-src permita inline", () => {
-    const csp = buildContentSecurityPolicy({ NODE_ENV: "production" });
+  it("la política de producción quita el script inline y aún no está verificada en el navegador", () => {
+    const csp = buildContentSecurityPolicy(
+      { NODE_ENV: "production" },
+      { nonce: "sintetico" }
+    );
     const status = productionScriptPolicyStatus(csp);
-    assert.equal(status.unsafeInline, true);
-    assert.equal(status.approved, false);
-    for (const surface of CSP_INLINE_SCRIPT_SURFACES) {
-      const source = readFileSync(surface, "utf8");
-      assert.match(source, /dangerouslySetInnerHTML/);
-    }
+    assert.equal(status.unsafeInline, false);
+    assert.match(csp, /script-src 'self' 'nonce-sintetico'/);
+    assert.match(csp, /form-action 'self'/);
+    assert.equal(CSP_RUNTIME_CHECK.verified, false);
+    const cumple = readFileSync("src/components/sites/cumple/CumpleShell.tsx", "utf8");
+    const structured = readFileSync("src/components/portal/seo/PortalStructuredData.tsx", "utf8");
+    assert.match(cumple, /nonce=\{nonce\}/);
+    assert.match(structured, /nonce=\{nonce\}/);
+    const proxy = readFileSync("src/proxy.ts", "utf8");
+    assert.match(proxy, /buildContentSecurityPolicy/);
+    assert.doesNotMatch(readFileSync("next.config.ts", "utf8"), /contentSecurityPolicy/);
   });
 });

@@ -35,7 +35,7 @@ describe("OT-GROWTH-SECURITY-HARDENING-002 — config", () => {
   it("next.config desactiva X-Powered-By y declara headers de seguridad + no-store", () => {
     const cfg = readSrc("next.config.ts");
     assert.match(cfg, /poweredByHeader:\s*false/);
-    assert.match(cfg, /buildAppSecurityHeaders/);
+    assert.match(cfg, /buildStaticSecurityHeaders/);
     assert.match(cfg, /PRIVATE_CACHE_CONTROL/);
     assert.match(cfg, /\/admin\/:path\*/);
     assert.match(cfg, /\/platform\/:path\*/);

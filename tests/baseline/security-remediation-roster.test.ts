@@ -11,7 +11,10 @@ import {
 import { matchesPersonSearch } from "../../src/lib/experience/forms/person-search";
 import {
   PUBLIC_SEARCH_LIMIT,
+  consumeDistributedRateLimit,
   consumeRateLimit,
+  createCollectionRateLimitStore,
+  createMemoryDistributedRateLimitStore,
   createMemoryRateLimitStore,
 } from "../../src/core/security/public-rate-limit";
 import { openSelectionRef, sealSelectionRef } from "../../src/core/security/selection-ref";
@@ -148,6 +151,53 @@ describe("nómina pública", () => {
     assert.doesNotMatch(form, /student\.email/);
     assert.match(congress, /selectionRef/);
     assert.doesNotMatch(submit, /updateRosterStudentContactFields/);
+  });
+
+  it("dos consumidores comparten el tope si usan el mismo almacén", async () => {
+    const store = createMemoryDistributedRateLimitStore();
+    for (let i = 0; i < PUBLIC_SEARCH_LIMIT; i += 1) {
+      const first = await consumeDistributedRateLimit({
+        store,
+        key: "busqueda|sintetica",
+        limit: PUBLIC_SEARCH_LIMIT,
+        windowMs: 60_000,
+        nowMs: 5_000,
+      });
+      assert.equal(first.ok, true);
+    }
+    const second = await consumeDistributedRateLimit({
+      store,
+      key: "busqueda|sintetica",
+      limit: PUBLIC_SEARCH_LIMIT,
+      windowMs: 60_000,
+      nowMs: 5_500,
+    });
+    assert.equal(second.ok, false);
+    const counts = new Map<string, number>();
+    const collection = {
+      async findOneAndUpdate(filter: { _id: string }) {
+        const count = (counts.get(filter._id) ?? 0) + 1;
+        counts.set(filter._id, count);
+        return { count };
+      },
+    };
+    const shared = createCollectionRateLimitStore(collection);
+    const allowed = await consumeDistributedRateLimit({
+      store: shared,
+      key: "otro|sintetica",
+      limit: 1,
+      windowMs: 60_000,
+      nowMs: 1_000,
+    });
+    const blocked = await consumeDistributedRateLimit({
+      store: shared,
+      key: "otro|sintetica",
+      limit: 1,
+      windowMs: 60_000,
+      nowMs: 1_100,
+    });
+    assert.equal(allowed.ok, true);
+    assert.equal(blocked.ok, false);
   });
 });
 

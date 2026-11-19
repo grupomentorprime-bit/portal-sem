@@ -6,9 +6,8 @@ import { searchCongressPublicRoster } from "@/lib/congress/roster-search";
 import {
   PUBLIC_SEARCH_LIMIT,
   PUBLIC_SEARCH_WINDOW_MS,
-  consumeRateLimit,
+  consumeSharedRateLimit,
   publicClientKey,
-  publicRateLimitStore,
 } from "@/core/security/public-rate-limit";
 import { publicInternalError } from "@/core/security/public-error";
 
@@ -20,12 +19,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, error: "Portal no configurado." }, { status: 503 });
     }
 
-    const limited = consumeRateLimit({
-      store: publicRateLimitStore,
+    const limited = await consumeSharedRateLimit({
       key: publicClientKey(request.headers.get("x-forwarded-for"), "congress-roster-search"),
       limit: PUBLIC_SEARCH_LIMIT,
       windowMs: PUBLIC_SEARCH_WINDOW_MS,
-      nowMs: Date.now(),
     });
     if (!limited.ok) {
       return NextResponse.json(

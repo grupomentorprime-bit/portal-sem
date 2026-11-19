@@ -7,6 +7,21 @@ export const DEPLOY_GATE = {
   dokployDefinedInRepo: false,
   failedCiBlocksDeploy: false,
   branchProtectionChanged: false,
+  integrationPrepared: true,
+  dokployApiCalled: false,
+  productionConfigChanged: false,
+  releaseGateJob: "release-gate",
   reason:
-    "Un job rojo marca GitHub Actions. No impide el despliegue mientras Dokploy siga publicando al margen de ese resultado. Cambiar esa política requiere autorización aparte.",
+    "El job release-gate deja por escrito el resultado de branding. No llama a Dokploy ni cambia su proyecto. El despliegue sigue por su cuenta hasta que operaciones use ese resultado.",
 } as const;
+
+export function releaseGateRecord(conclusion: string) {
+  return {
+    job: "branding",
+    conclusion,
+    deployAllowedByThisRepo: conclusion === "success",
+    dokployCalled: false,
+    enforced: false,
+    productionConfigChanged: false,
+  };
+}

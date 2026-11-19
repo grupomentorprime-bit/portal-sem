@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +96,10 @@ export function PortalCongressExperienceForm({
   const [validationSummary, setValidationSummary] = useState<ValidationSummaryItem[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [claimRequestId, setClaimRequestId] = useState<string | null>(null);
+  const [claimCode, setClaimCode] = useState("");
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [confirmingClaim, setConfirmingClaim] = useState(false);
   const [alreadyEnrolledMessage, setAlreadyEnrolledMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -270,6 +274,10 @@ export function PortalCongressExperienceForm({
         errors?: Record<string, string>;
         error?: string;
         alreadyRegistered?: boolean;
+        claimVerification?: {
+          requestId: string;
+          delivered: boolean;
+        };
       };
 
       if (payload.alreadyRegistered) {
@@ -301,11 +309,40 @@ export function PortalCongressExperienceForm({
       if (form.postSubmit?.action) {
         await executeExperienceAction(form.postSubmit.action, actionCtx);
       }
+      if (payload.claimVerification?.delivered && payload.claimVerification.requestId) {
+        setClaimRequestId(payload.claimVerification.requestId);
+        return;
+      }
       setSuccessMessage(message);
     } catch {
       setGlobalError(form.errorMessage);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const confirmClaim = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!claimRequestId) return;
+    setConfirmingClaim(true);
+    setClaimError(null);
+    try {
+      const res = await fetch("/api/congress/claim/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: claimRequestId, token: claimCode.trim() }),
+      });
+      const payload = (await res.json()) as { ok?: boolean };
+      if (!payload.ok) {
+        setClaimError("El código no corresponde, ya se usó o venció.");
+        return;
+      }
+      setClaimRequestId(null);
+      setSuccessMessage("La ficha importada quedó actualizada.");
+    } catch {
+      setClaimError("No se pudo confirmar el código.");
+    } finally {
+      setConfirmingClaim(false);
     }
   };
 
@@ -324,6 +361,27 @@ export function PortalCongressExperienceForm({
           {successExtras}
         </PortalFormSuccess>
       </div>
+    );
+  }
+
+  if (claimRequestId) {
+    return (
+      <form className={formClass} onSubmit={confirmClaim} noValidate>
+        <PortalFormHeader
+          form={form}
+          overline={overline}
+          title="Confirma tu ficha"
+          description="Enviamos un código al correo que ya estaba registrado. No mostramos ese correo."
+        />
+        {claimError ? <PortalFormError message={claimError} /> : null}
+        <Input
+          label="Código"
+          value={claimCode}
+          onChange={(event) => setClaimCode(event.target.value)}
+          autoComplete="one-time-code"
+        />
+        <PortalFormActions submitLabel="Confirmar código" loading={confirmingClaim} />
+      </form>
     );
   }
 

@@ -4,9 +4,8 @@ import { decideMediaRead } from "@/core/security/media-access";
 import {
   PUBLIC_MEDIA_PROBE_LIMIT,
   PUBLIC_SEARCH_WINDOW_MS,
-  consumeRateLimit,
+  consumeSharedRateLimit,
   publicClientKey,
-  publicRateLimitStore,
 } from "@/core/security/public-rate-limit";
 import { findMediaAssetByObjectKey } from "@/lib/cms/media";
 import { readMediaFile } from "@/lib/cms/media-storage";
@@ -34,12 +33,10 @@ export async function GET(
     memberTenantId,
   });
   if (!decision.allow) {
-    const limited = consumeRateLimit({
-      store: publicRateLimitStore,
+    const limited = await consumeSharedRateLimit({
       key: publicClientKey(request.headers.get("x-forwarded-for"), "media-probe"),
       limit: PUBLIC_MEDIA_PROBE_LIMIT,
       windowMs: PUBLIC_SEARCH_WINDOW_MS,
-      nowMs: Date.now(),
     });
     if (!limited.ok) {
       return new NextResponse(null, {
