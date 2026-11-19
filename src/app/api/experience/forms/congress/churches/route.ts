@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
 import { CONGRESS_ZONES } from "@/core/congress/constants";
 import { listCongressChurches } from "@/lib/congress/churches";
-import { listCongressRegistrations } from "@/lib/congress/repository";
+import { listCongressChurchLabels } from "@/lib/congress/repository";
+import {
+  PUBLIC_SEARCH_LIMIT,
+  PUBLIC_SEARCH_WINDOW_MS,
+  consumeSharedRateLimit,
+  publicClientKey,
+} from "@/core/security/public-rate-limit";
 import { publicInternalError } from "@/core/security/public-error";
 
 /** Catálogo público de ILEUs del congreso (sin datos personales). */
@@ -14,9 +20,20 @@ export async function GET(request: Request) {
     }
 
     const zone = new URL(request.url).searchParams.get("zone")?.trim() || undefined;
+    const limited = await consumeSharedRateLimit({
+      key: publicClientKey(request.headers.get("x-forwarded-for"), "congress-churches"),
+      limit: PUBLIC_SEARCH_LIMIT,
+      windowMs: PUBLIC_SEARCH_WINDOW_MS,
+    });
+    if (!limited.ok) {
+      return NextResponse.json(
+        { ok: false, error: "Demasiadas consultas." },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+      );
+    }
     const [catalog, regs] = await Promise.all([
       listCongressChurches(tenant, zone),
-      listCongressRegistrations(tenant, zone ? { zoneId: zone } : {}),
+      listCongressChurchLabels(tenant, zone ? { zoneId: zone } : {}),
     ]);
 
     const byZone: Record<string, string[]> = {};

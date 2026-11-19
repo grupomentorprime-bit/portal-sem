@@ -14,6 +14,7 @@ import { isHomePageSlug } from "@/lib/portal/home-experience";
 import { PortalStructuredData } from "@/components/portal/seo/PortalStructuredData";
 import type { PortalContext } from "@/lib/portal/site";
 import type { PortalPageModel } from "@/types/portal";
+import { headers } from "next/headers";
 
 interface PortalRendererProps {
   page: PortalPageModel;
@@ -31,6 +32,7 @@ export async function PortalRenderer({ page, ctx, preview }: PortalRendererProps
   const blocks = preparePageBlocks(page, renderCtx);
   const seo = consolidatePageSeo(page, ctx.config, blocks);
   const isHome = isHomePageSlug(page.slug);
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   publishPageViewed({
     tenantId: ctx.tenant,
@@ -66,7 +68,7 @@ export async function PortalRenderer({ page, ctx, preview }: PortalRendererProps
   return (
     <>
       {isHome ? <div className="portal-home-experience">{blockNodes}</div> : blockNodes}
-      <PortalStructuredData jsonLd={seo.jsonLd} />
+      <PortalStructuredData jsonLd={seo.jsonLd} nonce={nonce} />
     </>
   );
 }

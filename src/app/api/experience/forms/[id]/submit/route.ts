@@ -25,7 +25,6 @@ import {
 } from "@/lib/experience/forms/repository";
 import { sendCongressConfirmationEmail } from "@/lib/notifications/congress-confirmation-email";
 import { sendConvocatoriaConfirmationEmail } from "@/lib/notifications/convocatoria-confirmation-email";
-import { updateRosterStudentContactFields } from "@/lib/student-affairs/roster-outreach";
 import { resolveConfirmationEmailCta } from "@/lib/notifications/resolve-confirmation-email-cta";
 import { reportPathForSubmission } from "@/lib/cumple/informe";
 import { CUMPLE_FORM_ID } from "@/sites/cumple/site";
@@ -36,7 +35,8 @@ import {
   enrolleeIdentity,
 } from "@/lib/experience/forms/already-enrolled";
 import { isCongressRegistrationClaimable } from "@/core/congress/claim";
-import { claimCongressRegistrationFromForm } from "@/lib/congress/claim-registration";
+import { deliverAccreditedContactChallenge, fileCongressClaimRequestFromForm } from "@/lib/congress/claim-registration";
+import { openSelectionRef, selectionRefSecret } from "@/core/security/selection-ref";
 import { getCongressRegistration } from "@/lib/congress/repository";
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -335,28 +335,42 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
+    let claimVerification:
+      | { requestId: string; delivered: boolean; channel: "email" | "phone" | null }
+      | undefined;
+
     if (form._id === CONGRESS_VARONES_FORM_ID) {
-      const registrationId = String(data.registrationId ?? "").trim();
-      if (registrationId && result.submissionId) {
-        const claimed = await claimCongressRegistrationFromForm({
-          tenantId: tenant,
-          registrationId,
-          submissionId: result.submissionId,
-          data,
-        });
-        if (!claimed.ok) {
-          await deliverCongressProgram(tenant, data);
-          return NextResponse.json(
-            {
-              ok: false,
-              alreadyRegistered: true,
-              error:
-                claimed.error === "rut_conflict"
-                  ? alreadyEnrolledMessage("rut")
-                  : alreadyEnrolledMessage("rut"),
-            },
-            { status: 409 }
-          );
+      const selectionRef = String(data.selectionRef ?? "").trim();
+      if (selectionRef && result.submissionId) {
+        try {
+          const opened = openSelectionRef(selectionRef, selectionRefSecret(), Date.now());
+          const filed = await fileCongressClaimRequestFromForm({
+            tenantId: tenant,
+            submissionId: result.submissionId,
+            opened: opened.ok
+              ? {
+                  ok: true,
+                  kind: opened.subject.kind,
+                  tenantId: opened.subject.tenantId,
+                  subjectId: opened.subject.subjectId,
+                }
+              : { ok: false },
+          });
+          if (filed.ok) {
+            const sent = await deliverAccreditedContactChallenge({
+              tenantId: tenant,
+              requestId: filed.requestId,
+            });
+            if (sent.ok) {
+              claimVerification = {
+                requestId: filed.requestId,
+                delivered: sent.delivered,
+                channel: sent.channel,
+              };
+            }
+          }
+        } catch {
+          console.error("[congress] no se pudo archivar la solicitud de reclamo");
         }
       }
 
@@ -378,30 +392,6 @@ export async function POST(request: Request, { params }: RouteParams) {
         );
         // Excluidos ya se rechazan antes de guardar; aquí solo se evita reinsertarlos.
         void upserted;
-      }
-    }
-
-    if (convocatoria && String(data.registrationMode ?? "") === "roster") {
-      const rosterStudentId = String(data.studentId ?? "").trim();
-      if (rosterStudentId) {
-        try {
-          const confirmedEmail = String(data.email ?? "").trim();
-          const confirmedPhone = String(data.phone ?? "").trim();
-          if (confirmedEmail || confirmedPhone) {
-            await updateRosterStudentContactFields({
-              tenant,
-              formId: id,
-              studentId: rosterStudentId,
-              ...(confirmedEmail ? { email: confirmedEmail } : {}),
-              ...(confirmedPhone ? { phone: confirmedPhone } : {}),
-            });
-          }
-        } catch (contactError) {
-          console.error(
-            "[convocatoria] no se pudo guardar el correo o teléfono corregido",
-            contactError
-          );
-        }
       }
     }
 
@@ -516,6 +506,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       submissionId: result.submissionId,
       message: result.message,
       ...(reportPath ? { reportPath } : {}),
+      ...(claimVerification ? { claimVerification } : {}),
     });
   } catch (error) {
     return publicInternalError("experience-form-submit", error);

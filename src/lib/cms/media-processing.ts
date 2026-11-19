@@ -4,6 +4,7 @@ import {
   RESPONSIVE_WIDTHS,
   THUMBNAIL_WIDTH,
 } from "@/lib/cms/media-defaults";
+import { sanitizeSvgMarkup } from "@/lib/cms/sanitize";
 import { putMediaFile, buildStorageKey } from "@/lib/cms/media-storage";
 import type { MediaResponsiveUrls } from "@/types/media";
 
@@ -24,12 +25,7 @@ export interface ProcessedImageResult {
 }
 
 function sanitizeSvg(buffer: Buffer): Buffer {
-  const text = buffer.toString("utf8");
-  const cleaned = text
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/javascript:/gi, "");
-  return Buffer.from(cleaned, "utf8");
+  return Buffer.from(sanitizeSvgMarkup(buffer.toString("utf8")), "utf8");
 }
 
 export async function extractImageMetadata(buffer: Buffer): Promise<ImageMetadata> {

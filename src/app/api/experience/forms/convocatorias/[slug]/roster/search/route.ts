@@ -1,24 +1,19 @@
 import { NextResponse } from "next/server";
 import { getActiveTenantId } from "@/core/identity";
+import { PUBLIC_ROSTER_MIN_QUERY, toPublicRosterHit } from "@/core/experience/public-roster";
+import { foldPersonSearchText } from "@/lib/experience/forms/person-search";
 import { getConvocatoriaBySlug } from "@/lib/admin/forms-center";
+import { searchConvocatoriaRoster } from "@/lib/experience/forms/roster";
+import { sealSelectionRef, selectionRefSecret } from "@/core/security/selection-ref";
 import {
-  hydrateRosterStudentContact,
-  searchConvocatoriaRoster,
-} from "@/lib/experience/forms/roster";
-import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
+  PUBLIC_SEARCH_LIMIT,
+  PUBLIC_SEARCH_WINDOW_MS,
+  consumeSharedRateLimit,
+  publicClientKey,
+} from "@/core/security/public-rate-limit";
 import { publicInternalError } from "@/core/security/public-error";
 
-function toPublicRosterSearchResult(
-  student: ConvocatoriaRosterStudent
-): Pick<ConvocatoriaRosterStudent, "id" | "fullName" | "generation" | "phone" | "email"> {
-  return {
-    id: student.id,
-    fullName: student.fullName,
-    generation: student.generation,
-    phone: student.phone,
-    email: student.email,
-  };
-}
+const SELECTION_TTL_MS = 2 * 60 * 60 * 1000;
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -37,27 +32,37 @@ export async function GET(request: Request, { params }: RouteParams) {
       return NextResponse.json({ ok: false, error: "Convocatoria no encontrada." }, { status: 404 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q")?.trim() ?? "";
-    if (query.length < 2) {
+    const limited = await consumeSharedRateLimit({
+      key: publicClientKey(request.headers.get("x-forwarded-for"), `roster-search:${slug}`),
+      limit: PUBLIC_SEARCH_LIMIT,
+      windowMs: PUBLIC_SEARCH_WINDOW_MS,
+    });
+    if (!limited.ok) {
+      return NextResponse.json(
+        { ok: false, error: "Demasiadas consultas." },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+      );
+    }
+
+    const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
+    if (foldPersonSearchText(query).length < PUBLIC_ROSTER_MIN_QUERY) {
       return NextResponse.json({ ok: true, students: [], suggestions: [] });
     }
 
     const { students, suggestions, hasMore, suggestionsHasMore } = await searchConvocatoriaRoster(
       tenant,
       slug,
-      query
+      query,
+      { audience: "public" }
     );
-    const withContact = await hydrateRosterStudentContact(tenant, [...students, ...suggestions]);
-    const contactById = new Map(withContact.map((student) => [student.id, student]));
+    const secret = selectionRefSecret();
+    const exp = Date.now() + SELECTION_TTL_MS;
+    const seal = (id: string) =>
+      sealSelectionRef({ kind: "roster", tenantId: tenant, subjectId: id, exp }, secret);
     return NextResponse.json({
       ok: true,
-      students: students.map((student) =>
-        toPublicRosterSearchResult(contactById.get(student.id) ?? student)
-      ),
-      suggestions: suggestions.map((student) =>
-        toPublicRosterSearchResult(contactById.get(student.id) ?? student)
-      ),
+      students: students.map((student) => toPublicRosterHit(student, seal(student.id))),
+      suggestions: suggestions.map((student) => toPublicRosterHit(student, seal(student.id))),
       hasMore,
       suggestionsHasMore,
     });

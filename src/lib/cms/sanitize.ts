@@ -1,25 +1,97 @@
-const FORBIDDEN_TAGS =
-  /<\s*\/?\s*(script|iframe|object|embed|form|input|button|link|meta|style)\b[^>]*>/gi;
-const EVENT_HANDLERS = /\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
-const JAVASCRIPT_URL = /(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi;
+import sanitizeHtmlLib from "sanitize-html";
+
+const HTML_ALLOWED_TAGS = ["p", "br", "strong", "em", "ul", "ol", "li", "h1", "h2", "h3", "blockquote", "a"];
+
+/** Política de HTML de contenido. No se reutiliza para SVG. */
+export const HTML_SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
+  allowedTags: HTML_ALLOWED_TAGS,
+  allowedAttributes: { a: ["href"] },
+  allowedSchemes: ["http", "https", "mailto"],
+  allowedSchemesByTag: { a: ["http", "https", "mailto"] },
+  allowProtocolRelative: false,
+  disallowedTagsMode: "discard",
+  parser: { lowerCaseTags: true, lowerCaseAttributeNames: true },
+};
+
+const SVG_TAGS = [
+  "svg",
+  "g",
+  "path",
+  "circle",
+  "rect",
+  "ellipse",
+  "line",
+  "polyline",
+  "polygon",
+  "text",
+  "tspan",
+  "defs",
+  "linearGradient",
+  "radialGradient",
+  "stop",
+  "clipPath",
+  "title",
+  "desc",
+];
+
+const SVG_DRAW_ATTRS = [
+  "id",
+  "fill",
+  "stroke",
+  "stroke-width",
+  "stroke-linecap",
+  "stroke-linejoin",
+  "d",
+  "cx",
+  "cy",
+  "r",
+  "x",
+  "y",
+  "x1",
+  "y1",
+  "x2",
+  "y2",
+  "width",
+  "height",
+  "points",
+  "transform",
+  "opacity",
+  "viewBox",
+  "xmlns",
+  "offset",
+  "stop-color",
+  "stop-opacity",
+  "gradientUnits",
+  "gradientTransform",
+  "cx",
+  "cy",
+  "r",
+];
+
+/** Política de SVG de carga. Sin script, sin manejadores y sin enlaces externos. */
+export const SVG_SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
+  allowedTags: SVG_TAGS,
+  allowedAttributes: Object.fromEntries(SVG_TAGS.map((tag) => [tag, SVG_DRAW_ATTRS])),
+  allowedSchemes: [],
+  allowProtocolRelative: false,
+  disallowedTagsMode: "discard",
+  parser: { lowerCaseTags: false, lowerCaseAttributeNames: false },
+};
+
+export function sanitizeHtmlContent(input: string): string {
+  return sanitizeHtmlLib(input, HTML_SANITIZE_OPTIONS);
+}
 
 export function sanitizeHtml(input: string): string {
-  return input
-    .replace(FORBIDDEN_TAGS, "")
-    .replace(EVENT_HANDLERS, "")
-    .replace(JAVASCRIPT_URL, '$1="#"');
+  return sanitizeHtmlContent(input);
 }
 
-export function sanitizeMarkdown(input: string): string {
-  return input
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-    .replace(/javascript:/gi, "");
+export function sanitizeSvgMarkup(input: string): string {
+  return sanitizeHtmlLib(input, SVG_SANITIZE_OPTIONS);
 }
 
-/** Minimal markdown → HTML (headings, paragraphs, links, lists) */
 export function markdownToHtml(markdown: string): string {
-  const safe = sanitizeMarkdown(markdown);
-  const lines = safe.split("\n");
+  const lines = markdown.split("\n");
   const html: string[] = [];
   let inList = false;
 
@@ -53,7 +125,7 @@ export function markdownToHtml(markdown: string): string {
     }
   }
   if (inList) html.push("</ul>");
-  return sanitizeHtml(html.join(""));
+  return sanitizeHtmlContent(html.join(""));
 }
 
 function inlineMarkdown(text: string): string {
@@ -61,7 +133,9 @@ function inlineMarkdown(text: string): string {
   return escaped.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
     (_, label: string, url: string) => {
-      const safeUrl = url.startsWith("http") || url.startsWith("/") ? url : "#";
+      const safeUrl = url.startsWith("https://") || url.startsWith("http://") || url.startsWith("/")
+        ? url
+        : "#";
       return `<a href="${safeUrl}">${label}</a>`;
     }
   );

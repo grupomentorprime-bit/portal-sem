@@ -263,6 +263,34 @@ export function filterDeskCases<
   });
 }
 
+export type DeskFilterFields = {
+  tenantId: string;
+  originId: string;
+  status: string;
+  priority: string;
+  assigneeUserId: string;
+};
+
+export function emptyDeskFilters(): DeskFilterFields {
+  return {
+    tenantId: "",
+    originId: "",
+    status: "",
+    priority: "",
+    assigneeUserId: "",
+  };
+}
+
+export function countAppliedDeskFilters(fields: DeskFilterFields): number {
+  return [
+    fields.tenantId,
+    fields.originId,
+    fields.status,
+    fields.priority,
+    fields.assigneeUserId,
+  ].filter(Boolean).length;
+}
+
 export function screenForPath(pathname: string): HelpOriginRecord | null {
   const path = pathname.split("?")[0].replace(/\/$/, "") || "/";
   if (path === "/admin") return findHelpOrigin("growth-os.inicio");
