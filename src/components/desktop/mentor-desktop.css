@@ -850,6 +850,74 @@ input.desk-switch:checked::after { transform: translateX(20px); }
   font-weight: 650;
   letter-spacing: -.015em;
 }
+.ajustes-window.is-platform-capsule .attn-stage {
+  background: rgba(255,255,255,.55);
+}
+.ajustes-window.is-platform-capsule .attn-stage-empty {
+  gap: 10px;
+  color: rgba(15,23,42,.45);
+}
+.ajustes-window.is-platform-capsule .attn-stage-empty::before {
+  content: "";
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(47,91,255,.08);
+}
+.ajustes-window.is-platform-capsule .attn-stage-head {
+  border-bottom: 1px solid rgba(15,23,42,.06);
+  background: rgba(255,255,255,.4);
+  padding: 18px 22px 14px;
+}
+.ajustes-window.is-platform-capsule .attn-stage-head h3 {
+  font-size: 22px;
+  letter-spacing: -.03em;
+}
+.ajustes-window.is-platform-capsule .attn-stage-actions {
+  gap: 10px;
+}
+.ajustes-window.is-platform-capsule .attn-stage-tabs {
+  border-bottom: 0;
+  padding: 12px 18px 0;
+  gap: 6px;
+}
+.ajustes-window.is-platform-capsule .attn-stage-tabs button {
+  border-radius: 999px;
+  background: rgba(255,255,255,.55);
+  padding: 8px 14px;
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,.05);
+}
+.ajustes-window.is-platform-capsule .attn-stage-tabs button.is-on {
+  color: var(--nelzuri-azul-profundo);
+  background: rgba(47,91,255,.12);
+  box-shadow: none;
+}
+.ajustes-window.is-platform-capsule .attn-log {
+  gap: 12px;
+  padding: 16px 22px;
+}
+.ajustes-window.is-platform-capsule .attn-log li > div {
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 1px 0 rgba(15,23,42,.04);
+}
+.ajustes-window.is-platform-capsule .attn-composer,
+.ajustes-window.is-platform-capsule .attn-reply-bar {
+  border-top: 1px solid rgba(15,23,42,.06);
+  background: rgba(255,255,255,.62);
+  backdrop-filter: blur(16px);
+}
+.ajustes-window.is-platform-capsule .attn-compose {
+  background: transparent;
+}
+.ajustes-window.is-platform-capsule .attn-compose-head,
+.ajustes-window.is-platform-capsule .attn-compose-fields,
+.ajustes-window.is-platform-capsule .attn-compose-foot {
+  background: transparent;
+}
+.ajustes-window.is-platform-capsule .attn-compose-foot {
+  border-top: 1px solid rgba(15,23,42,.06);
+}
 .ajustes-window.is-attention .ajustes-wait, .ajustes-window.is-attention .attn-error { margin: 16px 20px 0; }
 .attn-shell { display: grid; grid-template-columns: 220px minmax(260px, 320px) minmax(0, 1fr); height: 100%; min-height: 0; background: #fff; }
 .attn-shell.is-idle { grid-template-columns: 240px minmax(0, 1fr); }
