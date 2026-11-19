@@ -23,6 +23,7 @@ export {
 } from "@/lib/desktop/help-origins";
 
 const MAX_WHERE = 200;
+const MAX_ATTACHMENT_BYTES = 4_000_000;
 
 export function acceptScreenshot(
   raw: unknown
@@ -32,7 +33,13 @@ export function acceptScreenshot(
   const name = typeof row.name === "string" ? row.name.trim() : "";
   const mediaType = typeof row.mediaType === "string" ? row.mediaType.trim() : "";
   const dataUrl = typeof row.dataUrl === "string" ? row.dataUrl : "";
-  const allowed = mediaType === "image/png" || mediaType === "image/jpeg" || mediaType === "image/webp";
+  const allowed =
+    mediaType === "image/png" ||
+    mediaType === "image/jpeg" ||
+    mediaType === "image/webp" ||
+    mediaType === "application/pdf" ||
+    mediaType === "application/msword" ||
+    mediaType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   if (!name || name.length > 80 || /[\\/]/.test(name) || !allowed) {
     return { ok: false, reason: "attachment" };
   }
@@ -40,7 +47,7 @@ export function acceptScreenshot(
   if (!dataUrl.startsWith(prefix)) return { ok: false, reason: "attachment" };
   const payload = dataUrl.slice(prefix.length);
   if (!payload || !/^[a-zA-Z0-9+/=]+$/.test(payload)) return { ok: false, reason: "attachment" };
-  if (Math.floor((payload.length * 3) / 4) > 400_000) return { ok: false, reason: "attachment" };
+  if (Math.floor((payload.length * 3) / 4) > MAX_ATTACHMENT_BYTES) return { ok: false, reason: "attachment" };
   return { ok: true, attachment: { name, mediaType, dataUrl } };
 }
 
@@ -109,6 +116,7 @@ export function openHelpTicket(input: {
     },
     whereNote: origin.general ? where : "",
     attachment,
+    intakeChannel: input.originId === "escritorio.chat-en-vivo" ? "envivo" : undefined,
     id: input.id,
     messageId: input.messageId,
     eventId: input.eventId,

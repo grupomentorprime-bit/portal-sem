@@ -1,14 +1,5 @@
-# Task 5 — Report
-
-## Status
-DONE
-
-## Commit
-`69f020d` - `feat(ventas): default cola view switcher`
-
-## Test summary
-`npx tsx --test tests/baseline/sem-admision-ventas-vista.test.ts` passed.
-`ReadLints` on the touched files reported no lint errors.
-
-## Notes
-Only the source, helper, and baseline test files were committed. The `.superpowers/sdd/*` files were left unstaged and uncommitted.
+﻿Status: done
+Commits: none
+Test summary: `npx tsx --test tests/baseline/desktop-attention-filters.test.ts tests/baseline/desktop-attention-ui.test.ts tests/baseline/attention-context.test.ts tests/baseline/desktop-attention.test.ts tests/baseline/help-desk.test.ts` passed (37 tests, 0 failures).
+Concerns: none.
+Report path: `C:\Users\semip\Proyectos\portal-sem\.superpowers\sdd\task-5-report.md`

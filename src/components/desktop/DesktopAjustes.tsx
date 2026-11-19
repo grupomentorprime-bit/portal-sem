@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DeskAppBar } from "@/components/desktop/DeskAppBar";
 import { DesktopAttentionSettings } from "@/components/desktop/DesktopAttentionSettings";
 import { DesktopAvatar } from "@/components/desktop/DesktopAvatar";
 import { DeskIcon, activityTone, productTone, type DeskIconName } from "@/components/desktop/DeskIcon";
@@ -129,6 +130,7 @@ export function DesktopAjustes({
   const [users, setUsers] = useState<MaintainedUserRow[] | null>(null);
   const [error, setError] = useState("");
   const [section, setSection] = useState<OwnerSectionId>("cuentas");
+  const [enlarged, setEnlarged] = useState(false);
   const [desk, setDesk] = useState<DeskSnapshot | null>(null);
   const [deskError, setDeskError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -429,42 +431,27 @@ export function DesktopAjustes({
   return (
     <div className="ajustes-back" onClick={onClose}>
       <div
-        className="ajustes-window is-owner"
+        className={`ajustes-window is-owner is-app-capsule${enlarged ? " is-enlarged" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="ajustes-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="ajustes-head">
-          <div className="ajustes-brand">
-            <span className="mini-glyph tone-ink" aria-hidden="true">
-              <DeskIcon name="gear" />
-            </span>
-            <div>
-              <p className="kicker">Dueño</p>
-              <h2 id="ajustes-title">Ajustes</h2>
-              <p>{subtitle}</p>
-            </div>
-          </div>
-          <button type="button" className="ghost" onClick={onClose}>
-            Cerrar
-          </button>
-        </header>
-        <nav className="ajustes-nav" aria-label="Secciones">
+        <DeskAppBar title="Ajustes" titleId="ajustes-title" mark="gear" enlarged={enlarged} onEnlarge={setEnlarged} onClose={onClose}>
           {OWNER_SECTIONS.map((item) => (
             <button
               key={item.id}
               type="button"
-              className={section === item.id ? "is-on" : undefined}
+              className={`plat-side${section === item.id ? " is-on" : ""}`}
               aria-pressed={section === item.id}
               onClick={() => setSection(item.id)}
             >
-              <DeskIcon name={item.id} />
               {item.label}
             </button>
           ))}
-        </nav>
+        </DeskAppBar>
         <div className="owner-body">
+        <p className="app-lead">{subtitle}</p>
         {accountsSection ? (
           users ? (
           section === "cuentas" ? (

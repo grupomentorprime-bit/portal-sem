@@ -1,51 +1,65 @@
-# Task 2 Report: Cargar horas de envío y enriquecer GET listado
+# Task 2 Report: Contrato de UI en fuente (copy y panel)
 
 ## Status
 
 **DONE**
 
+## Scope
+
+Adds the source-contract baseline that locks Atención Plataforma copy, filter actions, floating CSS, and compose remount behavior. **No production UI changes** in this task — Tasks 3–4 will implement what the contract requires.
+
+| File | Action |
+|------|--------|
+| `tests/baseline/desktop-attention-ui.test.ts` | Created (verbatim from brief) |
+| `src/components/desktop/DesktopAttention.tsx` | Not modified |
+| `src/components/desktop/mentor-desktop.css` | Not modified |
+
+## TDD Evidence
+
+### RED (Step 2 — expected)
+
+Command:
+
+```text
+npx tsx --test tests/baseline/desktop-attention-ui.test.ts
+```
+
+Exit code: **1**
+
+Result: 4 failing tests — current source still uses legacy copy/markup and lacks `composeSession` / `.attn-filter-float`.
+
+```text
+▶ Atención UI — Plataforma
+  ✖ Nuevo ticket usa Seleccionar empresa y no Elige una empresa
+  ✖ la ventana de Plataforma se titula Atención · Plataforma
+  ✖ Filtros tiene Aplicar y Limpiar, y el panel es flotante en CSS
+  ✖ Compose se remonta con composeSession
+ℹ pass 0 / ℹ fail 4 / ℹ duration_ms ~299
+```
+
+Per-test assertions (first failure in each case):
+
+| Test | Expected pattern | Outcome |
+|------|------------------|---------|
+| Nuevo ticket copy | `/Seleccionar empresa/` in TSX | Missing; TSX still has `Elige una empresa` |
+| Ventana título | `/Atención · Plataforma/` | Missing |
+| Filtros + CSS | `>Aplicar</`, `>Limpiar</`, `.attn-filter-float`, `position: absolute` | Missing `>Aplicar</` in TSX (and downstream CSS class) |
+| Compose remount | `composeSession`, `key={composeSession}` | Missing |
+
+### GREEN
+
+Not in scope for Task 2. Implement in Tasks 3–5; re-run the same command for exit code **0** and `pass 4`.
+
+## Self-Review
+
+- Test file matches `task-2-brief.md` exactly.
+- Confirms red net: guards against regressing to «Elige una empresa» and non-floating filter UI.
+- Follows existing baseline pattern (`node:test` + `readFileSync` source contract).
+
 ## Commits
 
-None (per task constraints).
-
-## Smoke / verification
-
-| Check | Result |
-|-------|--------|
-| `npx tsc --noEmit` | pass (exit 0) |
-| `npx tsx --test tests/baseline/congress-form-submitted-at.test.ts` | 4/4 pass |
-| ESLint on touched files | no issues |
-| Manual `GET /api/congress/registrations` | not run — requires authenticated congress view session |
-
-## Changes
-
-### `src/lib/congress/form-submitted-at.ts` (new)
-
-- `loadFormSubmittedAtBySubmissionIds(tenantId, submissionIds)`:
-  - Dedupes/trims ids; parses valid `ObjectId`; queries `experience_form_submissions` with `{ tenant, _id: { $in } }`, projection `{ createdAt: 1 }`.
-  - Maps hex `_id` back to original string key (preserves caller’s id formatting).
-  - Skips invalid ObjectIds and rows without string `createdAt`.
-
-### `src/app/api/congress/registrations/route.ts`
-
-- Imports loader + `withFormSubmittedAt`.
-- After filtered `items` and `filterOptions` build (unchanged): loads map from `items`’ `submissionId`s, enriches, returns `items` / `registrations` as `enriched`.
-- `syncCongressFormSubmissions` still runs first; `filterOptions` logic untouched.
-
-## Self-review
-
-- Matches brief code verbatim for loader and route snippet.
-- Enrichment applies only to filtered `items` (not full `all`) — correct for list response; `filterOptions` still derived from `all` + catalog as before.
-- `all` used for churches/zones only — no accidental double enrichment or behavior change on filters.
-- ObjectId ↔ string bridge via `idByHex` handles normalized hex lookup after Mongo round-trip.
-- Server-only module; reuses `getDatabase` like other congress lib code.
+None (project constraint).
 
 ## Concerns
 
-- **Manual API check pending:** JSON `formSubmittedAt` on real data needs dev login + Mongo with submissions. Logic covered by Task 1 unit tests + compile; loader has no dedicated integration test in this task.
-
-## Out of scope
-
-- UI columns (ReceptionView / CongressOpsPanel).
-- Persisting `formSubmittedAt` on registration documents.
-- Commit / push.
+None. Failures align with known WIP UI; safe to proceed to Task 3.

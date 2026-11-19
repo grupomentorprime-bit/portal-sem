@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { DeskAppBar } from "@/components/desktop/DeskAppBar";
 import { DesktopClientConsole } from "@/components/desktop/DesktopClientConsole";
 import { readClientConsole } from "@/lib/desktop/client-console";
 import { proposeInitialSpaceHost } from "@/lib/platform/propose-space-host";
@@ -21,6 +22,7 @@ export function DesktopClientes({
   onEnter: (tenantId: string) => void;
 }) {
   const [rows, setRows] = useState(spaces);
+  const [enlarged, setEnlarged] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [detail, setDetail] = useState<unknown>(null);
@@ -114,22 +116,19 @@ export function DesktopClientes({
   return (
     <div className="ajustes-back" onClick={onClose}>
       <div
-        className="ajustes-window is-clients"
+        className={`ajustes-window is-clients is-app-capsule${enlarged ? " is-enlarged" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="clientes-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="ajustes-head">
-          <div>
-            <p className="kicker">Plataforma</p>
-            <h2 id="clientes-title">Clientes</h2>
-            <p>Estado, plan y dominio de cada organización. Entrar abre su escritorio.</p>
-          </div>
-          <button type="button" className="ghost" onClick={onClose}>
-            Cerrar
+        <DeskAppBar title="Clientes" titleId="clientes-title" mark="home" enlarged={enlarged} onEnlarge={setEnlarged} onClose={onClose}>
+          <span className="plat-side is-on">Organizaciones</span>
+          <span className="plat-tabs-gap" />
+          <button type="button" className="primary" onClick={() => { setCreating(true); setSelectedId(null); }}>
+            Nueva organización
           </button>
-        </header>
+        </DeskAppBar>
         {error ? <p className="form-error">{error}</p> : null}
         <div className="client-desk desk-users">
           <section className="desk-card">
@@ -137,6 +136,7 @@ export function DesktopClientes({
               <h2>Organizaciones</h2>
               <p>{rows.length === 1 ? "1 cliente" : `${rows.length} clientes`}</p>
             </header>
+            <p className="app-lead">Estado, plan y dominio de cada organización. Entrar abre su escritorio.</p>
             <ul>
               {rows.map((row) => (
                 <li key={row.tenantId}>
@@ -158,9 +158,6 @@ export function DesktopClientes({
                 </li>
               ))}
             </ul>
-            <button type="button" className="primary" onClick={() => { setCreating(true); setSelectedId(null); }}>
-              Nueva organización
-            </button>
           </section>
           <section className="desk-card">
             {creating ? (

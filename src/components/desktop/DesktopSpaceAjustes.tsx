@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { DeskAppBar } from "@/components/desktop/DeskAppBar";
 import { DesktopSpacePresence } from "@/components/desktop/DesktopSpacePresence";
 import { DesktopSpaceProfiles } from "@/components/desktop/DesktopSpaceProfiles";
 import { DesktopSpaceTeam } from "@/components/desktop/DesktopSpaceTeam";
@@ -202,6 +203,7 @@ export function DesktopSpaceAjustes({
   const [groups, setGroups] = useState<SpaceSettingGroup[] | null>(null);
   const [error, setError] = useState("");
   const [panel, setPanel] = useState<SpacePanelId | null>(null);
+  const [enlarged, setEnlarged] = useState(false);
   const [sectionDirty, setSectionDirty] = useState(false);
   const [canConnectChannels, setCanConnectChannels] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -239,7 +241,7 @@ export function DesktopSpaceAjustes({
 
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    dialogRef.current?.querySelector<HTMLElement>(".ajustes-head .ghost")?.focus();
+    dialogRef.current?.querySelector<HTMLElement>('.plat-chrome button[aria-label="Cerrar"]')?.focus();
     return () => opener?.focus();
   }, []);
 
@@ -319,22 +321,33 @@ export function DesktopSpaceAjustes({
     <div className="ajustes-back" onClick={requestClose}>
       <div
         ref={dialogRef}
-        className="ajustes-window is-space is-settings-surface"
+        className={`ajustes-window is-space is-settings-surface is-app-capsule${enlarged ? " is-enlarged" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="space-ajustes-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="ajustes-head">
-          <div>
-            <p className="kicker">{spaceName}</p>
-            <h2 id="space-ajustes-title">{heading.title}</h2>
-            <p>{heading.lead}</p>
-          </div>
-          <button type="button" className="ghost" onClick={requestClose}>
-            Cerrar
-          </button>
-        </header>
+        <DeskAppBar title={`Ajustes · ${spaceName}`} titleId="space-ajustes-title" mark="gear" enlarged={enlarged} onEnlarge={setEnlarged} onClose={requestClose}>
+          {groups?.flatMap((group) =>
+            group.items.map((item) =>
+              item.kind === "panel" ? (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`plat-side${item.panel === panel ? " is-on" : ""}`}
+                  aria-current={item.panel === panel ? "page" : undefined}
+                  onClick={() => selectPanel(item.panel)}
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <a key={item.id} href={item.href}>
+                  {item.label}
+                </a>
+              ),
+            ),
+          )}
+        </DeskAppBar>
 
         {groups === null ? <p className="ajustes-wait">Cargando ajustes…</p> : null}
         {error ? <p className="form-error">{error}</p> : null}
@@ -367,6 +380,7 @@ export function DesktopSpaceAjustes({
             </nav>
 
             <div className="settings-main">
+              <p className="app-lead">{heading.lead}</p>
               {presencePanel ? (
                 <DesktopSpacePresence
                   panel={presencePanel}

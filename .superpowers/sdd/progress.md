@@ -225,3 +225,20 @@ Minors for final review:
 
 Final review: Critical ObjectId trim crash fixed; re-review Ready. Domain tests 6/6. Browser smoke pendiente.
 
+
+# Atención Plataforma formulario/filtros SDD
+
+Started: 2026-11-18
+Branch: master (in-place; sin commit salvo pedido)
+Plan: docs/superpowers/plans/2026-11-18-atencion-plataforma-formulario-filtros.md
+Base HEAD: 000cf55686270d4d83cad943f5d7b7c9b206927c
+Constraint: sin git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"; reviews via uncommitted diffs; preserve existing Atención WIP
+
+Task 1: complete (uncommitted, filters helpers 3/3, review clean; Minor: pre-existing chat-en-vivo hunk in help-origins)
+Task 2: complete (uncommitted, UI contract tests RED 0/4, review clean)
+Task 3: complete (uncommitted, Compose remount+Seleccionar empresa, review clean after LiveClient fix)
+Task 4: complete (uncommitted, Atención · Plataforma title, review clean)
+Task 5: complete (uncommitted, floating filters draft+Aplicar, 37 related tests pass, review clean)
+Task 6: complete with concerns (company Mis tickets+fixed empresa PASS on SEM; Plataforma/Mentor smoke BLOCKED — session is client CP desk)
+Final review: Ready with fixes (smoke Owner/Plataforma/Mentor blocked by session). Critical none.
+Finish choice: 3 keep as-is (master + uncommitted Atención WIP preserved)

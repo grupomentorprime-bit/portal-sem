@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DeskAppBar } from "@/components/desktop/DeskAppBar";
 import { DesktopAvatar } from "@/components/desktop/DesktopAvatar";
 import {
   ACCOUNT_SECTIONS,
@@ -113,6 +114,7 @@ export function DesktopAccount({
   onClose: () => void;
 }) {
   const [section, setSection] = useState<AccountSectionId>("perfil");
+  const [enlarged, setEnlarged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [userId, setUserId] = useState("");
@@ -530,41 +532,25 @@ export function DesktopAccount({
   return (
     <div className="ajustes-back" onClick={onClose}>
       <div
-        className="ajustes-window is-account"
+        className={`ajustes-window is-account is-app-capsule${enlarged ? " is-enlarged" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="ajustes-head">
-          <div className="ajustes-brand">
+        <DeskAppBar title="Mi cuenta" titleId="account-title" mark="user" enlarged={enlarged} onEnlarge={setEnlarged} onClose={onClose}>
+          {ACCOUNT_SECTIONS.map((item) => (
             <button
+              key={item.id}
               type="button"
-              className="account-hero-edit"
-              aria-label="Editar avatar"
-              aria-expanded={avatarEditorOpen}
-              aria-controls="account-avatar-editor"
-              disabled={loading || avatarStatus === "saving"}
-              onClick={() => {
-                setAvatarEditorOpen((open) => {
-                  if (open) setAvatarGalleryOpen(false);
-                  return !open;
-                });
-                setSection("perfil");
-              }}
+              className={`plat-side${section === item.id ? " is-on" : ""}`}
+              aria-pressed={section === item.id}
+              onClick={() => setSection(item.id)}
             >
-              <DesktopAvatar view={avatarView} className="account-hero-avatar" />
+              {item.label}
             </button>
-            <div>
-              <p className="kicker">NELZURI</p>
-              <h2 id="account-title">Mi cuenta</h2>
-              <p>{subtitle}</p>
-            </div>
-          </div>
-          <button type="button" className="ghost" onClick={onClose}>
-            Cerrar
-          </button>
-        </header>
+          ))}
+        </DeskAppBar>
 
         {avatarEditorOpen ? (
           <section
@@ -648,21 +634,25 @@ export function DesktopAccount({
           </section>
         ) : null}
 
-        <nav className="ajustes-nav" aria-label="Secciones de la cuenta">
-          {ACCOUNT_SECTIONS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={section === item.id ? "is-on" : undefined}
-              aria-pressed={section === item.id}
-              onClick={() => setSection(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
         <div className="account-body">
+          <p className="app-lead">{subtitle}</p>
+          <button
+            type="button"
+            className="account-hero-edit"
+            aria-label="Editar avatar"
+            aria-expanded={avatarEditorOpen}
+            aria-controls="account-avatar-editor"
+            disabled={loading || avatarStatus === "saving"}
+            onClick={() => {
+              setAvatarEditorOpen((open) => {
+                if (open) setAvatarGalleryOpen(false);
+                return !open;
+              });
+              setSection("perfil");
+            }}
+          >
+            <DesktopAvatar view={avatarView} className="account-hero-avatar" />
+          </button>
           {loading ? <p className="ajustes-wait">Cargando tu cuenta…</p> : null}
           {!loading && error && profileStatus !== "error" && section === "perfil" ? (
             <p className="form-error" role="alert">

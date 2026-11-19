@@ -1,5 +1,6 @@
 import { isMentorAppId, mentorAppLabel, type MentorAppId } from "@/lib/desktop/catalog";
 import { formatHelpOrigin } from "@/lib/desktop/help-origins";
+import { intakeChannelLabel, isIntakeChannel, resolveIntakeChannel, type IntakeChannel } from "@/lib/desktop/platform-desk";
 
 /**
  * Presencia real llega en la etapa siguiente.
@@ -11,7 +12,7 @@ export function attentionOnline(): { online: false } {
 
 export const COMMERCIAL_AREA_ID = "comercial";
 
-export type CaseStatus = "abierto" | "pendiente" | "resuelto";
+export type CaseStatus = "abierto" | "pendiente" | "resuelto" | "confirmacion";
 export type CasePriority = "normal" | "alta";
 export type ApprovalState = "sin_revision" | "aprobada" | "rechazada";
 export type ActivationState = "pendiente" | "activada";
@@ -154,8 +155,13 @@ export interface AttentionCase {
   helpFrom?: HelpFrom | null;
   whereNote?: string;
   attachment?: HelpAttachment | null;
+  intakeChannel?: IntakeChannel;
+  registeredByUserId?: string;
+  registeredByName?: string;
   waitingOn?: "nelzuri" | "cliente";
   sharedWithCompany?: boolean;
+  /** Mismo caso cuando el chat pasó a ticket. Repetir la acción no abre otro. */
+  ticketCaseId?: string;
   readAtByUser?: Record<string, string>;
   visitorEmail?: string;
   contactCodeHash?: string;
@@ -210,6 +216,7 @@ export interface PublicAttentionCase {
   productId: MentorAppId | null;
   productLabel: string | null;
   requesterName: string;
+  requesterUserId: string;
   assigneeUserId: string | null;
   assigneeName: string | null;
   contextNote: string;
@@ -229,6 +236,10 @@ export interface PublicAttentionCase {
   attachmentName: string | null;
   attachmentDataUrl: string | null;
   awaitingFirstReply: boolean;
+  intakeChannel: IntakeChannel;
+  channelLabel: string;
+  registeredByName: string;
+  ticketCaseId: string;
   contactVerified: boolean;
   location: {
     state: "now" | "last" | "unavailable";
@@ -259,6 +270,7 @@ const MAX_SUBJECT = 120;
 export function statusLabel(status: CaseStatus): string {
   if (status === "abierto") return "En gestión";
   if (status === "resuelto") return "Resuelto";
+  if (status === "confirmacion") return "Pendiente de confirmación";
   return "Pendiente";
 }
 
@@ -287,7 +299,7 @@ export function planRequestBody(appId: MentorAppId): string {
 }
 
 export function isCaseStatus(value: string): value is CaseStatus {
-  return value === "abierto" || value === "pendiente" || value === "resuelto";
+  return value === "abierto" || value === "pendiente" || value === "resuelto" || value === "confirmacion";
 }
 
 export function isCasePriority(value: string): value is CasePriority {
@@ -431,15 +443,16 @@ export function nextStepLabel(step: "nelzuri" | "cliente" | "resuelto"): string 
 export function attentionBadge(
   cases: readonly AttentionCase[],
   actor: AttentionActor
-): { count: number; unread: boolean } {
+): { count: number; unread: boolean; unreadCount: number } {
   const visible = cases.filter((item) => canSeeAttentionCase(actor, item));
+  const unreadCount = visible.filter((item) => caseIsUnread(item, actor)).length;
   if (actor.kind === "staff") {
     const count = visible.filter(
       (item) => (item.status !== "resuelto" && !item.assigneeUserId) || caseIsUnread(item, actor)
     ).length;
-    return { count, unread: false };
+    return { count, unread: false, unreadCount };
   }
-  return { count: 0, unread: visible.some((item) => caseIsUnread(item, actor)) };
+  return { count: 0, unread: unreadCount > 0, unreadCount };
 }
 
 export interface AttentionFilter {
@@ -573,6 +586,7 @@ export function presentAttentionCase(
   const staff = actor.kind === "staff";
   const step = caseNextStep(item);
   const helpPlace = item.helpFrom ? formatHelpOrigin(item.helpFrom) : "";
+  const intakeChannel = resolveIntakeChannel(item);
   return {
     id: item.id,
     code: item.correlative?.trim() || caseCode(item.id),
@@ -586,6 +600,7 @@ export function presentAttentionCase(
     productId: item.productId,
     productLabel: item.productId ? mentorAppLabel(item.productId) : null,
     requesterName: item.requesterName,
+    requesterUserId: item.requesterUserId,
     assigneeUserId: staff ? item.assigneeUserId : null,
     assigneeName: item.assigneeName,
     contextNote: item.contextNote,
@@ -617,6 +632,10 @@ export function presentAttentionCase(
     attachmentName: item.attachment?.name ?? null,
     attachmentDataUrl: item.attachment?.dataUrl ?? null,
     awaitingFirstReply: item.status !== "resuelto" && !item.messages.some((row) => row.role === "staff"),
+    intakeChannel,
+    channelLabel: intakeChannelLabel(intakeChannel),
+    registeredByName: item.registeredByName?.trim() ?? "",
+    ticketCaseId: item.ticketCaseId ?? "",
     contactVerified: Boolean(item.contactVerifiedAt),
     location: staff
       ? input.location ?? { state: "unavailable", label: "No está disponible", place: "", at: null }
@@ -640,6 +659,7 @@ export function openAttentionCase(input: {
   helpFrom?: HelpFrom | null;
   whereNote?: string;
   attachment?: HelpAttachment | null;
+  intakeChannel?: IntakeChannel;
   id: string;
   messageId: string;
   eventId: string;
@@ -722,6 +742,9 @@ export function openAttentionCase(input: {
   created.helpFrom = input.helpFrom ?? null;
   created.whereNote = whereNote;
   created.attachment = input.attachment ?? null;
+  if (input.intakeChannel && isIntakeChannel(input.intakeChannel)) {
+    created.intakeChannel = input.intakeChannel;
+  }
   created.waitingOn = staffOpening ? "cliente" : "nelzuri";
   created.sharedWithCompany = staffOpening;
   created.readAtByUser = role === "client" ? { [input.actor.userId]: input.now } : {};
@@ -1192,6 +1215,150 @@ export function askCaseInformation(
       events: [
         ...sent.case.events,
         event(input.eventId, input.now, input.actor.userId, "estado", "Pidió información.", author),
+      ],
+    },
+  };
+}
+
+export function isLiveChatCase(item: {
+  intakeChannel?: string | null;
+  originId?: string | null;
+  helpFrom?: { originId?: string | null } | null;
+}): boolean {
+  return (
+    item.intakeChannel === "envivo" ||
+    item.originId === "escritorio.chat-en-vivo" ||
+    item.helpFrom?.originId === "escritorio.chat-en-vivo"
+  );
+}
+
+/** El globo sigue solo el chat abierto de quien escribe, no un ticket de otro canal. */
+export function pickOwnLiveThread<
+  T extends {
+    status: string;
+    updatedAt: string;
+    requesterUserId?: string;
+    intakeChannel?: string | null;
+    originId?: string | null;
+    helpFrom?: { originId?: string | null } | null;
+  },
+>(items: readonly T[], requesterUserId: string): T | null {
+  const id = requesterUserId.trim();
+  if (!id) return null;
+  return (
+    items
+      .filter((item) => isLiveChatCase(item) && item.requesterUserId === id && item.status !== "resuelto")
+      .slice()
+      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0))[0] ?? null
+  );
+}
+
+export function promoteChatToTicket(
+  item: AttentionCase,
+  input: { actor: AttentionActor; id: string; now: string }
+): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "channel" } {
+  if (input.actor.kind !== "staff" || !canSeeAttentionCase(input.actor, item)) {
+    return { ok: false, reason: "forbidden" };
+  }
+  const chat = item.intakeChannel === "envivo" || item.helpFrom?.originId === "escritorio.chat-en-vivo";
+  if (!chat) return { ok: false, reason: "channel" };
+  if (item.ticketCaseId) return { ok: true, case: item };
+  const authorName = input.actor.displayName.trim() || "Nelzuri";
+  return {
+    ok: true,
+    case: {
+      ...item,
+      ticketCaseId: item.id,
+      updatedAt: input.now,
+      events: [
+        ...item.events,
+        event(input.id, input.now, input.actor.userId, "estado", "Pasó a ticket.", authorName),
+      ],
+    },
+  };
+}
+
+export function requestClientConfirmation(
+  item: AttentionCase,
+  input: { actor: AttentionActor; id: string; now: string }
+): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "closed" } {
+  if (input.actor.kind !== "staff" || !canSeeAttentionCase(input.actor, item)) {
+    return { ok: false, reason: "forbidden" };
+  }
+  if (item.status === "resuelto") return { ok: false, reason: "closed" };
+  if (item.status === "confirmacion") return { ok: true, case: item };
+  const authorName = input.actor.displayName.trim() || "Nelzuri";
+  return {
+    ok: true,
+    case: {
+      ...item,
+      status: "confirmacion",
+      waitingOn: "cliente",
+      updatedAt: input.now,
+      events: [
+        ...item.events,
+        event(input.id, input.now, input.actor.userId, "estado", "Quedó pendiente de confirmación.", authorName),
+      ],
+    },
+  };
+}
+
+export function resolveClientConfirmation(
+  item: AttentionCase,
+  input: {
+    actor: AttentionActor;
+    decision: "resuelto" | "sigue";
+    reason?: string;
+    id: string;
+    now: string;
+  }
+): { ok: true; case: AttentionCase } | { ok: false; reason: "forbidden" | "status" | "empty" | "long" } {
+  if (item.status !== "confirmacion") return { ok: false, reason: "status" };
+  if (
+    input.actor.kind !== "client" ||
+    input.actor.userId !== item.requesterUserId ||
+    !canSeeAttentionCase(input.actor, item)
+  ) {
+    return { ok: false, reason: "forbidden" };
+  }
+  const authorName = input.actor.displayName.trim() || "Cliente";
+  if (input.decision === "resuelto") {
+    return {
+      ok: true,
+      case: {
+        ...item,
+        status: "resuelto",
+        resolvedAt: input.now,
+        updatedAt: input.now,
+        events: [
+          ...item.events,
+          event(input.id, input.now, input.actor.userId, "estado", "Quedó resuelto.", authorName),
+        ],
+      },
+    };
+  }
+  const reason = (input.reason ?? "").trim().replace(/\s+/g, " ");
+  if (!reason) return { ok: false, reason: "empty" };
+  if (reason.length > MAX_NOTE) return { ok: false, reason: "long" };
+  const motive = /[.!?]$/.test(reason) ? reason : `${reason}.`;
+  return {
+    ok: true,
+    case: {
+      ...item,
+      status: "abierto",
+      waitingOn: "nelzuri",
+      resolvedAt: undefined,
+      updatedAt: input.now,
+      events: [
+        ...item.events,
+        event(
+          input.id,
+          input.now,
+          input.actor.userId,
+          "estado",
+          `Volvió a En atención. Motivo: ${motive}`,
+          authorName
+        ),
       ],
     },
   };

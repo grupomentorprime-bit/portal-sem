@@ -185,6 +185,71 @@ describe("Atención al Cliente", () => {
     assert.equal(canSeeAttentionCase(client({ tenantId: "sem", userId: "otro" }), second.case), true);
   });
 
+  it("el chat crea con su acceso y al retomar conserva el origen inicial", () => {
+    const created = openHelpTicket({
+      areas: DEFAULT_ATTENTION_AREAS,
+      actor: client(),
+      tenantId: "sem",
+      areaId: "general",
+      subject: "hola",
+      body: "hola",
+      originId: "escritorio.chat-en-vivo",
+      capturedAt: OPENED,
+      correlative: "AC-00007",
+      id: "case-chat",
+      messageId: "m1",
+      eventId: "e1",
+      now: SENT,
+    });
+    assert.equal(created.ok, true);
+    if (!created.ok || !created.case.helpFrom) return;
+    assert.equal(created.case.helpFrom.originId, "escritorio.chat-en-vivo");
+    assert.equal(formatHelpOrigin(created.case.helpFrom), "NELZURI · Chat en vivo → Chat en vivo");
+    assert.equal(created.case.intakeChannel, "envivo");
+    assert.equal(created.case.messages[0]?.role, "client");
+    const continued = appendCaseMessage(created.case, {
+      actor: client(),
+      body: "sigo en el mismo caso",
+      id: "m2",
+      now: LATER,
+    });
+    assert.equal(continued.ok, true);
+    if (!continued.ok) return;
+    assert.equal(continued.case.correlative, "AC-00007");
+    assert.equal(continued.case.helpFrom?.originId, "escritorio.chat-en-vivo");
+    assert.equal(continued.case.helpFrom?.at, created.case.helpFrom.at);
+
+    const prior = openHelpTicket({
+      areas: DEFAULT_ATTENTION_AREAS,
+      actor: client(),
+      tenantId: "sem",
+      areaId: "general",
+      subject: "No me deja guardar",
+      body: "No me deja guardar",
+      originId: "growth-os.admision.editar-formulario",
+      capturedAt: OPENED,
+      correlative: "AC-00003",
+      id: "case-previo",
+      messageId: "m1",
+      eventId: "e1",
+      now: SENT,
+    });
+    assert.equal(prior.ok, true);
+    if (!prior.ok || !prior.case.helpFrom) return;
+    const followed = appendCaseMessage(prior.case, {
+      actor: client(),
+      body: "escribo desde el chat",
+      id: "m-chat",
+      now: LATER,
+    });
+    assert.equal(followed.ok, true);
+    if (!followed.ok) return;
+    assert.equal(followed.case.correlative, "AC-00003");
+    assert.equal(followed.case.helpFrom?.originId, "growth-os.admision.editar-formulario");
+    assert.equal(followed.case.helpFrom?.screen, "Editar formulario");
+    assert.equal(followed.case.helpFrom?.at, OPENED);
+  });
+
   it("la mesa asigna, responde, resuelve y reabre sin perder correlativo ni origen", () => {
     const opened = openHelpTicket({
       areas: DEFAULT_ATTENTION_AREAS,
@@ -291,11 +356,25 @@ describe("Atención al Cliente", () => {
     assert.equal(filterDeskCases([opened.case], { assigneeUserId: "agent-1" }).length, 0);
   });
 
-  it("la captura es opcional y no acepta otra cosa que una imagen pequeña", () => {
+  it("el adjunto acepta imagen, PDF o Word y rechaza otro tipo o un archivo de más de 4 MB", () => {
     const ok = acceptScreenshot({ name: "error.png", mediaType: "image/png", dataUrl: "data:image/png;base64,aaaa" });
     assert.equal(ok.ok, true);
+    const pdf = acceptScreenshot({ name: "orden.pdf", mediaType: "application/pdf", dataUrl: "data:application/pdf;base64,aaaa" });
+    assert.equal(pdf.ok, true);
+    const word = acceptScreenshot({
+      name: "informe.docx",
+      mediaType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      dataUrl: "data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,aaaa",
+    });
+    assert.equal(word.ok, true);
     const bad = acceptScreenshot({ name: "notas.txt", mediaType: "text/plain", dataUrl: "data:text/plain;base64,aaaa" });
     assert.equal(bad.ok, false);
+    const heavy = acceptScreenshot({
+      name: "grande.png",
+      mediaType: "image/png",
+      dataUrl: `data:image/png;base64,${"A".repeat(5_333_336)}`,
+    });
+    assert.equal(heavy.ok, false);
   });
 
   it("un visitante de la web sigue el ticket solo después de verificar el contacto", () => {

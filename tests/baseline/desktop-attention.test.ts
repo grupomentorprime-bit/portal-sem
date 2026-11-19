@@ -17,6 +17,10 @@ import {
   noteCommercialRequest,
   openAttentionCase,
   presentAttentionCase,
+  pickOwnLiveThread,
+  promoteChatToTicket,
+  requestClientConfirmation,
+  resolveClientConfirmation,
   recordEconomicApproval,
   setAttentionAreaActive,
   type AttentionActor,
@@ -317,6 +321,7 @@ describe("Atención por casos", () => {
 
     const unread = attentionBadge([item], staff({ areaIds: ["tecnico"] }));
     assert.equal(unread.count, 1);
+    assert.equal(unread.unreadCount, 1);
     const mine = filterAttentionCases([moved.case], { view: "mias", actorUserId: "agent-2" });
     assert.equal(mine.length, 1);
     assert.equal(filterAttentionCases([moved.case], { view: "sin_asignar" }).length, 0);
@@ -419,5 +424,182 @@ describe("Atención por casos", () => {
     const active = areas.filter((area) => area.active);
     assert.equal(active.length >= 1, true);
     assert.equal(active.some((area) => area.id === "comercial"), true);
+  });
+
+  it("el chat conserva el hilo de quien escribe y no sigue un ticket de otro canal", () => {
+    const portal = {
+      status: "abierto",
+      updatedAt: "2026-11-16T12:30:00.000Z",
+      intakeChannel: "portal" as const,
+      requesterUserId: "ana",
+    };
+    const own = {
+      status: "abierto",
+      updatedAt: "2026-11-16T12:10:00.000Z",
+      intakeChannel: "envivo" as const,
+      originId: "escritorio.chat-en-vivo",
+      requesterUserId: "ana",
+    };
+    const other = {
+      status: "abierto",
+      updatedAt: "2026-11-16T12:40:00.000Z",
+      intakeChannel: "envivo" as const,
+      requesterUserId: "otro",
+    };
+    assert.equal(pickOwnLiveThread([portal, other, own], "ana"), own);
+    assert.equal(pickOwnLiveThread([portal], "ana"), null);
+  });
+
+  it("pasar a ticket reutiliza el caso y repetirlo abre el mismo", () => {
+    const opened = openAttentionCase({
+      areas: DEFAULT_ATTENTION_AREAS,
+      actor: client(),
+      tenantId: "sem",
+      areaId: "general",
+      subject: "Seguimiento por chat",
+      body: "Hola, necesito ayuda.",
+      correlative: "AC-00020",
+      intakeChannel: "envivo",
+      id: "case-chat",
+      messageId: "m1",
+      eventId: "e1",
+      now: NOW,
+    });
+    assert.equal(opened.ok, true);
+    if (!opened.ok) return;
+    const followed = appendCaseMessage(opened.case, {
+      actor: staff({ allAreas: true, displayName: "Operador" }),
+      body: "Te leemos.",
+      id: "m2",
+      now: "2026-11-16T12:05:00.000Z",
+    });
+    assert.equal(followed.ok, true);
+    if (!followed.ok) return;
+    const first = promoteChatToTicket(followed.case, {
+      actor: staff({ allAreas: true, displayName: "Operador" }),
+      id: "promo-1",
+      now: "2026-11-16T12:06:00.000Z",
+    });
+    assert.equal(first.ok, true);
+    if (!first.ok) return;
+    assert.equal(first.case.id, "case-chat");
+    assert.equal(first.case.correlative, "AC-00020");
+    assert.equal(first.case.ticketCaseId, "case-chat");
+    assert.equal(first.case.messages.length, 3);
+    assert.equal(first.case.messages[0]?.role, "client");
+    assert.equal(first.case.messages[1]?.role, "system");
+    assert.equal(first.case.messages[2]?.role, "staff");
+    assert.equal(first.case.events.at(-1)?.detail, "Pasó a ticket.");
+    assert.equal(first.case.events.at(-1)?.actorUserId, "owner-1");
+    const again = promoteChatToTicket(first.case, {
+      actor: staff({ allAreas: true, displayName: "Operador" }),
+      id: "promo-2",
+      now: "2026-11-16T12:07:00.000Z",
+    });
+    assert.equal(again.ok, true);
+    if (!again.ok) return;
+    assert.equal(again.case.id, first.case.id);
+    assert.equal(again.case.correlative, first.case.correlative);
+    assert.equal(again.case.ticketCaseId, first.case.ticketCaseId);
+    assert.equal(again.case.messages.length, first.case.messages.length);
+    assert.equal(again.case.events.length, first.case.events.length);
+  });
+
+  it("la confirmación cierra o devuelve el mismo correlativo y deja fuera al compañero", () => {
+    const opened = openAttentionCase({
+      areas: DEFAULT_ATTENTION_AREAS,
+      actor: client({ userId: "ana", displayName: "Ana Pérez" }),
+      tenantId: "sem",
+      areaId: "general",
+      subject: "La llamada no quedó",
+      body: "No puedo entrar.",
+      correlative: "AC-00021",
+      id: "case-phone",
+      messageId: "m1",
+      eventId: "e1",
+      now: NOW,
+    });
+    assert.equal(opened.ok, true);
+    if (!opened.ok) return;
+    const phone: AttentionCase = {
+      ...opened.case,
+      intakeChannel: "telefono",
+      sharedWithCompany: false,
+      requesterUserId: "ana",
+      requesterName: "Ana Pérez",
+    };
+    const requester = client({ userId: "ana", displayName: "Ana Pérez" });
+    const admin = client({ userId: "admin", displayName: "Admin", orgWide: true });
+    const colleague = client({ userId: "colega", displayName: "Colega" });
+    assert.equal(canSeeAttentionCase(requester, phone), true);
+    assert.equal(canSeeAttentionCase(admin, phone), true);
+    assert.equal(canSeeAttentionCase(colleague, phone), false);
+    assert.equal(canSeeAttentionCase(staff({ allAreas: true }), phone), true);
+
+    const asked = requestClientConfirmation(phone, {
+      actor: staff({ allAreas: true, displayName: "Operador" }),
+      id: "ask-1",
+      now: "2026-11-16T12:10:00.000Z",
+    });
+    assert.equal(asked.ok, true);
+    if (!asked.ok) return;
+    assert.equal(asked.case.status, "confirmacion");
+    assert.equal(asked.case.correlative, "AC-00021");
+    assert.equal(asked.case.events.at(-1)?.detail, "Quedó pendiente de confirmación.");
+    assert.equal(asked.case.events.at(-1)?.actorUserId, "owner-1");
+    assert.equal(asked.case.events.at(-1)?.at, "2026-11-16T12:10:00.000Z");
+
+    const denied = resolveClientConfirmation(asked.case, {
+      actor: colleague,
+      decision: "resuelto",
+      id: "nope",
+      now: "2026-11-16T12:11:00.000Z",
+    });
+    assert.equal(denied.ok, false);
+
+    const still = resolveClientConfirmation(asked.case, {
+      actor: requester,
+      decision: "sigue",
+      reason: "Sigue sin entrar",
+      id: "still-1",
+      now: "2026-11-16T12:12:00.000Z",
+    });
+    assert.equal(still.ok, true);
+    if (!still.ok) return;
+    assert.equal(still.case.id, "case-phone");
+    assert.equal(still.case.correlative, "AC-00021");
+    assert.equal(still.case.status, "abierto");
+    assert.match(still.case.events.at(-1)?.detail ?? "", /En atención/);
+    assert.match(still.case.events.at(-1)?.detail ?? "", /Sigue sin entrar/);
+    assert.equal(still.case.events.at(-1)?.actorUserId, "ana");
+
+    const askedAgain = requestClientConfirmation(still.case, {
+      actor: staff({ allAreas: true, displayName: "Operador" }),
+      id: "ask-2",
+      now: "2026-11-16T12:20:00.000Z",
+    });
+    assert.equal(askedAgain.ok, true);
+    if (!askedAgain.ok) return;
+    const empty = resolveClientConfirmation(askedAgain.case, {
+      actor: requester,
+      decision: "sigue",
+      reason: "   ",
+      id: "empty",
+      now: "2026-11-16T12:21:00.000Z",
+    });
+    assert.equal(empty.ok, false);
+    const done = resolveClientConfirmation(askedAgain.case, {
+      actor: requester,
+      decision: "resuelto",
+      id: "done",
+      now: "2026-11-16T12:22:00.000Z",
+    });
+    assert.equal(done.ok, true);
+    if (!done.ok) return;
+    assert.equal(done.case.status, "resuelto");
+    assert.equal(done.case.correlative, "AC-00021");
+    assert.equal(done.case.resolvedAt, "2026-11-16T12:22:00.000Z");
+    assert.equal(done.case.events.at(-1)?.detail, "Quedó resuelto.");
+    assert.equal(done.case.events.at(-1)?.actorUserId, "ana");
   });
 });

@@ -5,6 +5,8 @@ import {
   approvalLabel,
   formatAttentionWhen,
   groupAttentionOrgs,
+  isLiveChatCase,
+  pickOwnLiveThread,
   priorityLabel,
   statusLabel,
   type PublicAttentionCase,
@@ -18,6 +20,9 @@ import {
   HELP_ORIGINS,
   type DeskFilterFields,
 } from "@/lib/desktop/help-origins";
+import { PlatformAttention } from "@/components/desktop/PlatformAttention";
+import { applyQueueAction, examplePlatformQueue } from "@/lib/desktop/platform-queue";
+import { isIntakeChannel, intakeChannelLabel } from "@/lib/desktop/platform-desk";
 import { NELZURI_LOGO_ON_DARK, NELZURI_NAME } from "@/lib/desktop/nelzuri";
 
 type AreaOption = { id: string; name: string; description: string; active: boolean };
@@ -133,8 +138,14 @@ export function DesktopAttention({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [viewerId, setViewerId] = useState("");
+  const [clientChat, setClientChat] = useState(false);
+  const demoQueue = useRef(false);
+  if (typeof window !== "undefined") {
+    demoQueue.current = new URLSearchParams(window.location.search).get("cola") === "100";
+  }
 
-  const liveClient = channel === "envivo" && mode === "client";
+  const liveClient = channel === "envivo" && (mode === "client" || clientChat);
   const bubble = presentation === "bubble";
 
   useEffect(() => {
@@ -162,6 +173,7 @@ export function DesktopAttention({
             cases?: PublicAttentionCase[];
             colleagues?: Colleague[];
             companies?: Array<{ tenantId: string; name: string }>;
+            viewerUserId?: string;
           } | null;
           const presence = (await presenceResponse.json().catch(() => null)) as {
             ok?: boolean;
@@ -176,9 +188,14 @@ export function DesktopAttention({
           if (attention.desk === "company" || attention.desk === "platform") setServerDesk(attention.desk);
           setActiveCompany(attention.activeCompany ?? null);
           setAreas(attention.areas ?? []);
-          setCases(attention.cases ?? []);
           setColleagues(attention.colleagues ?? []);
           setCompanies(attention.companies ?? []);
+          setViewerId(attention.viewerUserId ?? "");
+          if (demoQueue.current) {
+            if (!quiet) setCases(examplePlatformQueue({ viewerUserId: attention.viewerUserId || "me", now: Date.now() }));
+          } else {
+            setCases(attention.cases ?? []);
+          }
           if (presenceResponse.ok && presence?.ok) {
             setStaffOnline(presence.staffOnline === true);
             setOnlineOrgs(presence.online ?? []);
@@ -248,20 +265,33 @@ export function DesktopAttention({
       !needle || title.toLocaleLowerCase("es").includes(needle) || preview.toLocaleLowerCase("es").includes(needle);
 
     if (channel === "envivo" && mode === "panel") {
-      return onlineOrgs.flatMap((org) => {
-        const related = source.filter((item) => item.tenantId === org.tenantId).sort(byRecent);
-        const preview = org.names.length > 0 ? `${org.names.join(", ")} en línea` : "En el escritorio";
-        if (!matches(org.company, preview)) return [];
+      const openChats = source.filter((item) => isLiveChatCase(item) && item.status !== "resuelto");
+      const desks = new Map<string, { company: string; online: boolean; names: string[] }>();
+      for (const org of onlineOrgs) desks.set(org.tenantId, { company: org.company, online: true, names: org.names });
+      for (const item of openChats) {
+        if (!desks.has(item.tenantId)) desks.set(item.tenantId, { company: item.company, online: false, names: [] });
+      }
+      return [...desks.entries()].flatMap(([tenantId, org]) => {
+        const related = openChats.filter((item) => item.tenantId === tenantId).sort(byRecent);
+        const chosen = related[0] ?? null;
+        const preview = org.online
+          ? org.names.length > 0
+            ? `${org.names.join(", ")} en línea`
+            : "En el escritorio"
+          : chosen
+            ? `Desconectado · ${chosen.code}`
+            : "Desconectado";
+        if (!matches(org.company, preview) && !(chosen && matches(chosen.code, chosen.subject))) return [];
         return [
           {
-            key: org.tenantId,
-            tenantId: org.tenantId,
-            caseId: pickCase(related)?.id ?? "",
+            key: tenantId,
+            tenantId,
+            caseId: chosen?.id ?? "",
             title: org.company,
             preview,
-            at: related[0]?.updatedAt ?? "",
+            at: chosen?.updatedAt ?? "",
             unread: related.some((item) => item.unread),
-            online: true,
+            online: org.online,
           } satisfies ChatRow,
         ];
       });
@@ -339,12 +369,15 @@ export function DesktopAttention({
 
   const selected = cases.find((item) => item.id === selectedId) ?? null;
   const orgCases = selected
-    ? cases.filter((item) => item.tenantId === selected.tenantId).slice().sort(byRecent)
+    ? cases
+        .filter((item) => item.tenantId === selected.tenantId && (channel !== "envivo" || isLiveChatCase(item)))
+        .slice()
+        .sort(byRecent)
     : [];
   const liveCase = useMemo(() => {
     if (!liveClient) return null;
-    return pickCase(cases.filter((item) => item.status !== "resuelto")) ?? pickCase(cases);
-  }, [cases, liveClient]);
+    return pickOwnLiveThread(cases, viewerId);
+  }, [cases, liveClient, viewerId]);
   const threadCase = liveClient ? liveCase : selected;
 
   function replaceCase(next: PublicAttentionCase) {
@@ -355,6 +388,65 @@ export function DesktopAttention({
   }
 
   async function post(payload: Record<string, unknown>): Promise<boolean> {
+    if (demoQueue.current && payload.action !== "read") {
+      const now = new Date().toISOString();
+      const caseId = typeof payload.caseId === "string" ? payload.caseId : "";
+      setSending(true);
+      setError("");
+      if (payload.action === "open") {
+        const channel = typeof payload.intakeChannel === "string" && isIntakeChannel(payload.intakeChannel) ? payload.intakeChannel : "telefono";
+        const tenantId = typeof payload.tenantId === "string" ? payload.tenantId : "";
+        const opened = examplePlatformQueue({ viewerUserId: viewerId || "me", now: Date.now() })[0];
+        const subject = typeof payload.subject === "string" && payload.subject.trim() ? payload.subject.trim() : "Consulta";
+        const next = {
+          ...opened,
+          id: `q-new-${Date.now()}`,
+          code: "AC-NUEVO",
+          tenantId,
+          company: companies.find((company) => company.tenantId === tenantId)?.name || "Empresa",
+          subject,
+          status: "pendiente" as const,
+          priority: "normal" as const,
+          assigneeUserId: null,
+          assigneeName: null,
+          nextStep: "nelzuri" as const,
+          nextStepLabel: "Le toca a NELZURI",
+          requesterName: typeof payload.contactName === "string" && payload.contactName.trim() ? payload.contactName.trim() : "Contacto",
+          intakeChannel: channel,
+          channelLabel: intakeChannelLabel(channel),
+          createdAt: now,
+          updatedAt: now,
+          messages: [{ id: `q-new-m`, at: now, role: "client" as const, label: "Contacto", body: typeof payload.body === "string" ? payload.body : subject }],
+          events: [{ id: `q-new-e`, at: now, detail: "Alta manual.", actorName: "NELZURI", kind: "creado" as const }],
+        };
+        setCases((current) => [next, ...current]);
+        setSelectedId(next.id);
+        setComposing(false);
+        setSending(false);
+        return true;
+      }
+      setCases((current) =>
+        current.map((item) => {
+          if (item.id !== caseId) return item;
+          if (payload.action === "message" && typeof payload.body === "string") {
+            return applyQueueAction(item, { action: "message", body: payload.body, now });
+          }
+          if (payload.action === "confirm-ask") return applyQueueAction(item, { action: "confirm-ask", now });
+          if (payload.action === "assign") {
+            const assigneeUserId = typeof payload.assigneeUserId === "string" ? payload.assigneeUserId : "";
+            const assigneeName = colleagues.find((person) => person.userId === assigneeUserId)?.displayName ?? "";
+            return applyQueueAction(item, { action: "assign", assigneeUserId, assigneeName, now });
+          }
+          if (payload.action === "priority" && typeof payload.priority === "string") {
+            return applyQueueAction(item, { action: "priority", priority: payload.priority, now });
+          }
+          if (payload.action === "promote") return applyQueueAction(item, { action: "promote", now });
+          return item;
+        })
+      );
+      setSending(false);
+      return true;
+    }
     setSending(true);
     setError("");
     const response = await fetch("/api/desktop/attention", {
@@ -394,7 +486,7 @@ export function DesktopAttention({
     setReceipt(null);
     setSelectedTenantId(row.tenantId);
     setSelectedId(row.caseId);
-    if (!row.caseId || !row.unread) return;
+    if (!row.caseId || !row.unread || demoQueue.current) return;
     await post({ action: "read", caseId: row.caseId });
   }
 
@@ -409,7 +501,9 @@ export function DesktopAttention({
     if (loading) return;
     const count =
       bubble && mode === "panel"
-        ? cases.filter((item) => item.unread && onlineIds.has(item.tenantId)).length
+        ? cases.filter(
+            (item) => item.unread && (onlineIds.has(item.tenantId) || (isLiveChatCase(item) && item.status !== "resuelto"))
+          ).length
         : cases.filter((item) => item.unread).length;
     onUnreadCount?.(count);
   }, [bubble, cases, loading, mode, onUnreadCount, onlineIds]);
@@ -513,6 +607,11 @@ export function DesktopAttention({
                       <h2>{title}</h2>
                       <p>{channel === "envivo" ? "Quien está en el escritorio" : companyView && mode === "client" ? "Mis tickets" : "Bandeja"}</p>
                     </div>
+                    {channel === "envivo" && mode === "panel" ? (
+                      <button type="button" className="ghost" onClick={() => setClientChat(true)}>
+                        Escribir como cliente
+                      </button>
+                    ) : null}
                     <WindowDismiss bubble onClose={onClose} />
                   </header>
                 ) : null}
@@ -728,10 +827,13 @@ export function DesktopAttention({
                   item={liveCase}
                   staffOnline={staffOnline}
                   areas={areas.filter((area) => area.active)}
+                  companies={companies}
+                  activeTenantId={activeCompany?.tenantId || lockedTenantId || ""}
                   defaultArea={defaultArea}
                   sending={sending}
                   onPost={post}
                   onClose={onClose}
+                  onBack={clientChat ? () => setClientChat(false) : undefined}
                   bubble={bubble}
                 />
               ) : composing && channel === "mensajes" ? (
@@ -779,6 +881,36 @@ export function DesktopAttention({
   );
 
   if (bubble) return frame;
+  if (globalDesk) {
+    return (
+      <div className="ajustes-back" onClick={onClose}>
+        <PlatformAttention
+          cases={cases}
+          companies={companies}
+          colleagues={colleagues}
+          selected={selected}
+          sending={sending}
+          loading={loading}
+          error={error}
+          defaultArea={defaultArea}
+          viewerUserId={viewerId}
+          onClose={onClose}
+          onOpen={(item) => void openRow({
+            key: item.id,
+            tenantId: item.tenantId,
+            caseId: item.id,
+            title: item.subject,
+            preview: item.company,
+            at: item.updatedAt,
+            unread: item.unread,
+            online: false,
+          })}
+          onClear={backToList}
+          onPost={post}
+        />
+      </div>
+    );
+  }
   if (companyView) {
     return (
       <div className="ajustes-back" onClick={onClose}>
@@ -998,6 +1130,50 @@ function CompanySpace({
   );
 }
 
+function ClientConfirmation({
+  item,
+  sending,
+  onPost,
+}: {
+  item: PublicAttentionCase;
+  sending: boolean;
+  onPost: (payload: Record<string, unknown>) => Promise<boolean>;
+}) {
+  const [reason, setReason] = useState("");
+  return (
+    <div className="attn-reply-bar">
+      <p>Pendiente de confirmación</p>
+      <button
+        type="button"
+        className="primary"
+        disabled={sending}
+        onClick={() => void onPost({ action: "confirm", caseId: item.id, decision: "resuelto" })}
+      >
+        Quedó resuelto
+      </button>
+      <label>
+        Motivo
+        <textarea
+          value={reason}
+          rows={2}
+          maxLength={2000}
+          aria-label="Motivo"
+          placeholder="Qué sigue sin funcionar"
+          onChange={(event) => setReason(event.target.value)}
+        />
+      </label>
+      <button
+        type="button"
+        className="ghost"
+        disabled={sending || !reason.trim()}
+        onClick={() => void onPost({ action: "confirm", caseId: item.id, decision: "sigue", reason })}
+      >
+        Sigo con el problema
+      </button>
+    </div>
+  );
+}
+
 function CompanyConversation({
   item,
   sending,
@@ -1018,14 +1194,16 @@ function CompanyConversation({
         <span className={`attn-status-pill is-${item.status}`}>{statusLabel(item.status)}</span>
       </header>
       <Bubbles item={item} mine="client" voice="company" />
-      {item.status === "resuelto" ? (
+      {item.status === "confirmacion" ? (
+        <ClientConfirmation item={item} sending={sending} onPost={onPost} />
+      ) : item.status === "resuelto" ? (
         <p className="lead attn-resolved">Este ticket está resuelto.</p>
       ) : (
         <div className="attn-reply-bar">
           <Composer
             sending={sending}
             placeholder="Escribe una respuesta…"
-            onSend={(body) => onPost({ action: "message", caseId: item.id, body })}
+            onSend={(body) => onPost({ action: "message", caseId: item.id, body, asClient: true })}
           />
         </div>
       )}
@@ -1109,19 +1287,25 @@ function LiveClient({
   item,
   staffOnline,
   areas,
+  companies,
+  activeTenantId,
   defaultArea,
   sending,
   onPost,
   onClose,
+  onBack,
   bubble = false,
 }: {
   item: PublicAttentionCase | null;
   staffOnline: boolean;
   areas: AreaOption[];
+  companies: Array<{ tenantId: string; name: string }>;
+  activeTenantId: string;
   defaultArea: string;
   sending: boolean;
   onPost: (payload: Record<string, unknown>) => Promise<boolean>;
   onClose: () => void;
+  onBack?: () => void;
   bubble?: boolean;
 }) {
   return (
@@ -1132,21 +1316,38 @@ function LiveClient({
             {NELZURI_NAME}
             {staffOnline ? <i className="attn-live-dot" title="En línea" /> : null}
           </h3>
-          <p>{staffOnline ? "En línea" : "No hay nadie en línea. El mensaje queda en Atención al Cliente."}</p>
+          <p>
+            {activeTenantId
+              ? staffOnline
+                ? "En línea"
+                : "No hay nadie en línea. El mensaje queda en Atención al Cliente."
+              : "Selecciona la empresa del chat antes de iniciar el caso."}
+          </p>
         </div>
+        {onBack ? (
+          <button type="button" className="ghost" onClick={onBack}>
+            Volver a la bandeja
+          </button>
+        ) : null}
         {bubble ? <WindowDismiss bubble onClose={onClose} /> : null}
       </header>
       {item ? <Bubbles item={item} mine="client" /> : <p className="attn-placeholder">Escribe para empezar.</p>}
-      {item && item.status !== "resuelto" ? (
-        <Composer sending={sending} onSend={(body) => onPost({ action: "message", caseId: item.id, body })} />
+      {item && item.status === "confirmacion" ? (
+        <ClientConfirmation item={item} sending={sending} onPost={onPost} />
+      ) : item && item.status !== "resuelto" ? (
+        <Composer
+          sending={sending}
+          onSend={(body) => onPost({ action: "message", caseId: item.id, body, asClient: true })}
+        />
       ) : (
         <Compose
           mode="client"
-          companies={[]}
+          companies={companies}
           areas={areas}
           defaultArea={defaultArea}
           sending={sending}
           originId="escritorio.chat-en-vivo"
+          lockedTenantId={activeTenantId}
           onSubmit={onPost}
         />
       )}
@@ -1399,6 +1600,7 @@ function Compose({
   const [openedAt] = useState(() => new Date().toISOString());
   const [areaId, setAreaId] = useState(defaultArea);
   const [tenantId, setTenantId] = useState("");
+  const [chatTenantId, setChatTenantId] = useState("");
   const [body, setBody] = useState("");
   const [whereNote, setWhereNote] = useState("");
   const [attachment, setAttachment] = useState<Record<string, string> | null>(null);
@@ -1412,10 +1614,12 @@ function Compose({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const companyId = lockedTenantId || (ticketForm && mode === "client" ? "" : ticketForm ? tenantId : chatTenantId);
+    if (!ticketForm && !companyId) return;
     void onSubmit({
       action: "open",
       areaId,
-      tenantId: mode === "panel" ? lockedTenantId || tenantId : "",
+      tenantId: companyId,
       subject: subjectFrom(body),
       body,
       originId,
@@ -1578,15 +1782,34 @@ function Compose({
   }
 
   if (!ticketForm) {
+    const companyId = lockedTenantId || chatTenantId;
     return (
       <form className="attn-compose is-live" onSubmit={submit}>
         <h2>Nuevo mensaje</h2>
+        {lockedTenantId ? null : (
+          <label>
+            Empresa
+            <select
+              value={chatTenantId}
+              required
+              aria-label="Empresa del chat"
+              onChange={(event) => setChatTenantId(event.target.value)}
+            >
+              <option value="">Seleccionar empresa del chat</option>
+              {companies.map((company) => (
+                <option key={company.tenantId} value={company.tenantId}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="attn-area-field">
           <span>Área</span>
           <AreaSelect areas={areas} value={areaId} onChange={setAreaId} />
         </div>
         <div className="attn-composer">
-          <ComposerFields body={body} sending={sending} onChange={setBody} />
+          <ComposerFields body={body} sending={sending || !companyId} onChange={setBody} />
         </div>
       </form>
     );
@@ -1777,7 +2000,7 @@ function Thread({
             {online ? <i className="attn-live-dot" title="En línea" /> : null}
           </h3>
           <p className="attn-detail-meta">
-            {mode === "panel" && item.status !== "resuelto" ? (
+            {mode === "panel" && item.status !== "resuelto" && item.status !== "confirmacion" ? (
               <select
                 className={`attn-status is-${item.status}`}
                 aria-label="Estado"
@@ -1792,9 +2015,20 @@ function Thread({
               <span className={`attn-status-pill is-${item.status}`}>{statusLabel(item.status)}</span>
             )}
             <span>{item.company}</span>
+            <span>{item.channelLabel}</span>
             <span className="attn-meta-origin">{item.helpPlace || "Origen no registrado"}</span>
           </p>
         </div>
+        {mode === "panel" && (item.intakeChannel === "envivo" || item.originId === "escritorio.chat-en-vivo") ? (
+          <button
+            type="button"
+            className="ghost"
+            disabled={sending || Boolean(item.ticketCaseId)}
+            onClick={() => void onPost({ action: "promote", caseId: item.id })}
+          >
+            {item.ticketCaseId ? `Mismo ticket ${item.code}` : "Pasar a ticket"}
+          </button>
+        ) : null}
         {mode === "panel" && item.status !== "resuelto" ? (
           <div className="attn-stage-actions">
             <select
@@ -1940,7 +2174,9 @@ function Thread({
           </div>
         </div>
       ) : null}
-      {item.status === "resuelto" ? (
+      {item.status === "confirmacion" && mode === "client" ? (
+        <ClientConfirmation item={item} sending={sending} onPost={onPost} />
+      ) : item.status === "resuelto" ? (
         mode === "panel" ? (
           <div className="attn-reply-bar">
             <button type="button" className="primary" disabled={sending} onClick={() => void onPost({ action: "reopen", caseId: item.id })}>
@@ -1952,6 +2188,16 @@ function Thread({
         )
       ) : (
         <div className="attn-reply-bar">
+          {mode === "panel" && item.status !== "confirmacion" ? (
+            <button
+              type="button"
+              className="ghost"
+              disabled={sending}
+              onClick={() => void onPost({ action: "confirm-ask", caseId: item.id })}
+            >
+              Pendiente de confirmación
+            </button>
+          ) : null}
           {mode === "panel" ? (
             <button
               type="button"
@@ -1962,7 +2208,10 @@ function Thread({
               Pedir información
             </button>
           ) : null}
-          <Composer sending={sending} onSend={(body) => onPost({ action: "message", caseId: item.id, body })} />
+          <Composer
+            sending={sending}
+            onSend={(body) => onPost({ action: "message", caseId: item.id, body, asClient: mode === "client" })}
+          />
         </div>
       )}
     </div>

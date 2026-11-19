@@ -96,6 +96,15 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
     general: true,
   },
   {
+    id: "escritorio.chat-en-vivo",
+    channel: "escritorio",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
+    module: "Chat en vivo",
+    screen: "Chat en vivo",
+    action: null,
+    general: true,
+  },
+  {
     id: "web.publica.pedir-ayuda",
     channel: "web",
     siteOrApp: "Web pública",
@@ -232,6 +241,7 @@ export function filterDeskCases<
     helpFrom?: { originId: string } | null;
     originId?: string;
     company?: string;
+    requesterName?: string;
   },
 >(
   cases: readonly T[],
@@ -251,7 +261,7 @@ export function filterDeskCases<
     const originId = item.originId || item.helpFrom?.originId || "";
     const code = (item.code || item.correlative || "").toLocaleLowerCase("es");
     if (query) {
-      const blob = `${code} ${item.subject} ${item.company ?? ""}`.toLocaleLowerCase("es");
+      const blob = `${code} ${item.subject} ${item.company ?? ""} ${item.requesterName ?? ""}`.toLocaleLowerCase("es");
       if (!blob.includes(query)) return false;
     }
     if (filter.tenantId && item.tenantId !== filter.tenantId) return false;
