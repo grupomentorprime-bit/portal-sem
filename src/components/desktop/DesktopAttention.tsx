@@ -292,12 +292,13 @@ export function DesktopAttention({
   }, [liveClient, liveCase?.id, liveCase?.unread]);
 
   const title = channel === "envivo" ? "Chat en vivo" : "Atención al Cliente";
+  const globalDesk = channel === "mensajes" && mode === "panel";
   const defaultArea = areas.find((area) => area.id === "general" && area.active)?.id ?? areas.find((area) => area.active)?.id ?? "";
 
   return (
     <div className="ajustes-back" onClick={onClose}>
       <div
-        className={`ajustes-window is-clients is-attention${liveClient ? " is-attention-client" : " is-attention-panel"}`}
+        className={`ajustes-window is-clients is-attention${liveClient ? " is-attention-client" : " is-attention-panel"}${globalDesk ? " is-platform-capsule" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="attention-title"
