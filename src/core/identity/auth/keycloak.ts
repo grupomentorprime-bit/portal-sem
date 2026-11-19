@@ -3,6 +3,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { resolveKeycloakRedirectUri } from "@/core/identity/auth/public-origin";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 
 /** Cliente OAuth de Growth OS en producción (confidential + Standard flow). */
 export const GROWTH_OS_KEYCLOAK_CLIENT_ID = "growth-os-web";
@@ -60,7 +61,7 @@ export function getKeycloakConfig(): KeycloakConfig | null {
 
   if (BLOCKED_GROWTH_OS_CLIENT_IDS.has(clientId)) {
     console.error(
-      `[keycloak] cliente "${clientId}" no es de Growth OS. Local: ${GROWTH_OS_DEV_KEYCLOAK_CLIENT_ID}. Producción: ${GROWTH_OS_KEYCLOAK_CLIENT_ID}.`
+      `[keycloak] cliente "${clientId}" no es de ${PLATFORM_DISPLAY_NAME}. Local: ${GROWTH_OS_DEV_KEYCLOAK_CLIENT_ID}. Producción: ${GROWTH_OS_KEYCLOAK_CLIENT_ID}.`
     );
     return null;
   }
@@ -265,14 +266,14 @@ function parseTokenError(res: Response, body: { error?: string; error_descriptio
 
   if (errorCode === "invalid_client" || normalized.includes("invalid client")) {
     throw new KeycloakAuthError(
-      "El cliente de Growth OS no existe en el realm o la configuración no coincide.",
+      `El cliente de ${PLATFORM_DISPLAY_NAME} no existe en el realm o la configuración no coincide.`,
       "misconfigured"
     );
   }
 
   if (errorCode === "unauthorized_client" || normalized.includes("direct access grants")) {
     throw new KeycloakAuthError(
-      "El grant solicitado no está habilitado en el cliente de Growth OS.",
+      `El grant solicitado no está habilitado en el cliente de ${PLATFORM_DISPLAY_NAME}.`,
       "misconfigured"
     );
   }

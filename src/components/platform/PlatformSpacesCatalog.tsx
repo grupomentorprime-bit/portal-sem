@@ -15,6 +15,7 @@ import { PlatformSpaceActionsMenu } from "@/components/platform/PlatformSpaceAct
 import { SpaceTypeFallbackMark } from "@/components/platform/SpaceTypeFallbackMark";
 import { subscribePlatformSpacesSearch } from "@/components/platform/PlatformShell";
 import { Button } from "@/components/ui";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { spaceTypeVisual } from "@/lib/platform/space-type-visual";
 import type { PlatformSpaceListItem } from "@/lib/platform/spaces";
 import { cn } from "@/lib/utils";
@@ -240,7 +241,7 @@ export function PlatformSpacesCatalog({
             <div className="px-4 pb-4 sm:px-5">
               <EmptyState
                 title="Sin Espacios"
-                description="Todavía no hay organizaciones en Growth OS."
+                description={`Todavía no hay organizaciones en ${PLATFORM_DISPLAY_NAME}.`}
                 action={{
                   label: "Crear Espacio",
                   onClick: openCreate,

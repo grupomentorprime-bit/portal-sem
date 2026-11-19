@@ -1,6 +1,7 @@
 /**
  * OT-GROWTH-PROD-003 — créditos y defaults de plataforma.
- * Producto = Growth OS; cliente = nombre del Espacio; sin nombre = Growth OS.
+ * Producto = NELZURI; cliente = nombre del Espacio; sin nombre de producto = NELZURI.
+ * El crédito visible sigue siendo Mentor Prime, no el nombre del producto.
  * T001 conserva pack SEM/IPN; adapter Aprende Hoy intacto.
  */
 import assert from "node:assert/strict";
@@ -121,19 +122,19 @@ function containsLegacyProductName(text: string): string | null {
 
 describe("OT-GROWTH-PROD-003 — helper y defaults", () => {
   it("reescribe nombres de producto heredados; copy propio no se pisa", () => {
-    assert.equal(PLATFORM_DISPLAY_NAME, "Growth OS");
-    assert.equal(PLATFORM_CREDITS, "Growth OS");
+    assert.equal(PLATFORM_DISPLAY_NAME, "NELZURI");
+    assert.equal(PLATFORM_CREDITS, "NELZURI");
     assert.equal(
       rewriteLegacyPlatformProductName(
         "Desarrollado por Grupo Mentor Prime · Learning OS"
       ),
-      "Desarrollado por Grupo Mentor Prime · Growth OS"
+      "Desarrollado por Grupo Mentor Prime · NELZURI"
     );
     assert.equal(
       rewriteLegacyPlatformProductName("Desarrollado con AprendeHoy Learning OS"),
-      "Desarrollado con Growth OS"
+      "Desarrollado con NELZURI"
     );
-    assert.equal(rewriteLegacyPlatformProductName("Portal SEM"), "Growth OS");
+    assert.equal(rewriteLegacyPlatformProductName("Portal SEM"), "NELZURI");
     assert.equal(
       rewriteLegacyPlatformProductName("Crédito de Academia Norte"),
       "Crédito de Academia Norte"
@@ -141,9 +142,10 @@ describe("OT-GROWTH-PROD-003 — helper y defaults", () => {
     assert.equal(rewriteLegacyPlatformProductName("  "), "");
   });
 
-  it("plantilla de Site acredita Growth OS; no Learning OS ni SEM", () => {
+  it("plantilla de Site acredita a Mentor Prime; no Learning OS ni SEM", () => {
     const defaults = createDefaultSiteConfig();
-    assert.equal(defaults.portalCopy.footerCredits, PLATFORM_CREDITS);
+    assert.equal(defaults.portalCopy.footerCredits, "Creado por Mentor Prime Consultores");
+    assert.notEqual(defaults.portalCopy.footerCredits, PLATFORM_DISPLAY_NAME);
     assert.equal(containsLegacyProductName(defaults.portalCopy.footerCredits), null);
     assert.equal(defaults.institution.name, "");
     assert.notEqual(
@@ -160,7 +162,7 @@ describe("OT-GROWTH-PROD-003 — helper y defaults", () => {
     assert.ok(normalized);
     assert.equal(
       normalized.portalCopy.footerCredits,
-      "Desarrollado por Grupo Mentor Prime · Growth OS"
+      "Desarrollado por Grupo Mentor Prime · NELZURI"
     );
     assert.equal(
       containsLegacyProductName(normalized.portalCopy.footerCredits),
@@ -180,14 +182,14 @@ describe("OT-GROWTH-PROD-003 — SEM conserva pack; ADL no hereda nombres SEM", 
       SEM_FOOTER_INSTITUTION.sealLine3,
       "Iglesia Pentecostal Nazareth"
     );
-    assert.doesNotMatch(SEM_FOOTER_LEGAL.credits, /Learning OS/);
-    assert.match(SEM_FOOTER_LEGAL.credits, /Growth OS/);
+    assert.equal(SEM_FOOTER_LEGAL.credits, "Creado por Mentor Prime Consultores");
+    assert.doesNotMatch(SEM_FOOTER_LEGAL.credits, /Learning OS|Growth OS|NELZURI/);
 
     const closingJson = JSON.stringify(DEFAULT_ADMISSION_CLOSING);
     assert.match(closingJson, /Seminario Eclesiástico Mayor/);
     assert.match(closingJson, /IPN Chile/);
-    assert.doesNotMatch(closingJson, /Learning OS/);
-    assert.match(closingJson, /Growth OS/);
+    assert.doesNotMatch(closingJson, /Learning OS|Growth OS|NELZURI/);
+    assert.match(closingJson, /Creado por Mentor Prime Consultores/);
 
     const semFooter = resolveFooterContent(emptyFooterViewModel(), {
       tenantId: SEM_TENANT_ID,
@@ -196,17 +198,19 @@ describe("OT-GROWTH-PROD-003 — SEM conserva pack; ADL no hereda nombres SEM", 
       semFooter.institution.sealLine3,
       SEM_FOOTER_INSTITUTION.sealLine3
     );
-    assert.doesNotMatch(semFooter.legal.credits, /Learning OS|Portal SEM/);
-    assert.match(semFooter.legal.credits, /Growth OS/);
+    assert.doesNotMatch(semFooter.legal.credits, /Learning OS|Portal SEM|NELZURI/);
+    assert.match(semFooter.legal.credits, /Mentor Prime Consultores/);
   });
 
-  it("Espacio vacío / ADL: crédito Growth OS, sin branding ni nombres SEM", () => {
-    assert.equal(PLATFORM_FOOTER_LEGAL.credits, PLATFORM_CREDITS);
+  it("Espacio vacío / ADL: crédito Mentor Prime, sin branding ni nombres SEM", () => {
+    assert.equal(PLATFORM_FOOTER_LEGAL.credits, "Creado por Mentor Prime Consultores");
+    assert.notEqual(PLATFORM_FOOTER_LEGAL.credits, PLATFORM_DISPLAY_NAME);
 
     const emptyFooter = resolveFooterContent(emptyFooterViewModel(), {
       tenantId: "tenant-prod003",
     });
-    assert.equal(emptyFooter.legal.credits, PLATFORM_DISPLAY_NAME);
+    assert.equal(emptyFooter.legal.credits, "Creado por Mentor Prime Consultores");
+    assert.doesNotMatch(emptyFooter.legal.credits, /NELZURI|Seminario/);
     assert.equal(emptyFooter.institution.sealLine3, "");
     assert.notEqual(
       emptyFooter.institution.sealLine3,
@@ -215,7 +219,7 @@ describe("OT-GROWTH-PROD-003 — SEM conserva pack; ADL no hereda nombres SEM", 
 
     const adl = applyAdlSiteIdentity(createDefaultSiteConfig());
     assert.equal(adl.institution.shortName, "ADL");
-    assert.equal(adl.portalCopy.footerCredits, PLATFORM_CREDITS);
+    assert.equal(adl.portalCopy.footerCredits, "Creado por Mentor Prime Consultores");
     assert.equal(containsLegacyProductName(adl.portalCopy.footerCredits), null);
     assert.doesNotMatch(adl.institution.name, /Seminario|SEM|IPN/i);
     assert.equal(adl.branding.logo, "");
@@ -223,7 +227,8 @@ describe("OT-GROWTH-PROD-003 — SEM conserva pack; ADL no hereda nombres SEM", 
     const adlFooter = resolveFooterContent(emptyFooterViewModel(), {
       tenantId: ADL_TENANT_ID,
     });
-    assert.equal(adlFooter.legal.credits, PLATFORM_DISPLAY_NAME);
+    assert.equal(adlFooter.legal.credits, "Creado por Mentor Prime Consultores");
+    assert.doesNotMatch(JSON.stringify(adlFooter), /NELZURI/);
     assert.equal(adlFooter.cta.title, "");
     assert.doesNotMatch(JSON.stringify(adlFooter), /Seminario Eclesiástico Mayor/);
   });

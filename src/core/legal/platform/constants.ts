@@ -1,12 +1,12 @@
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 
-/** Operador institucional de Growth OS (sin datos personales). */
+/** Operador institucional de NELZURI (sin datos personales). */
 export const PLATFORM_SUPPORT_EMAIL = "soporte@mentorprime.cl";
 
-/** Operador comercial / producto detrás de Growth OS. */
+/** Empresa operadora de NELZURI. */
 export const PLATFORM_OPERATOR_NAME = "Mentor Prime";
 
-export const PLATFORM_LEGAL_LAST_UPDATED = "2026-09-11";
+export const PLATFORM_LEGAL_LAST_UPDATED = "2026-11-19";
 
 export const PLATFORM_LEGAL_ROUTES = {
   index: "/legal",

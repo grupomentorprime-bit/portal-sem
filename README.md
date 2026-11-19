@@ -1,14 +1,15 @@
-# Growth OS
+# NELZURI
 
-**Growth OS** ayuda a atraer personas, no perder oportunidades y convertirlas en clientes, alumnos o participantes.
+**NELZURI** ayuda a atraer personas, no perder oportunidades y convertirlas en clientes, alumnos o participantes.
 
 > **Simple por fuera. Potente por dentro.**
 
-Este repositorio es el producto **Growth OS**. No es el Portal SEM ni AprendeHoy Learning OS.
+Este repositorio es el producto **NELZURI**, operado por Mentor Prime. No es el Portal SEM ni AprendeHoy Learning OS. Growth OS es el nombre anterior del producto.
 
 | Concepto | Significado |
 | --- | --- |
-| **Growth OS** | Producto de este repo (plataforma) |
+| **NELZURI** | Producto de este repo (plataforma) |
+| **Growth OS** | Nombre anterior del producto. Sigue en identificadores técnicos |
 | **Espacio** | Cliente / organización en la UI |
 | **Tenant** | Término técnico interno (`tenantId`) |
 | **SEM (T001)** / **ADL (T002)** | Clientes reales sobre el mismo core |
@@ -29,7 +30,7 @@ Nombre histórico del repo / package: `portal-sem`. No se renombra en Productiza
 - Portal público y admin por **Espacio** (host → Site; sesión → Espacio activo)
 - Clientes **SEM (T001)** y **ADL (T002)** en la misma instancia ([ADR-008](./docs/architecture/ADR-008.md))
 - Formularios de experiencia, admisión de **interesados**, handoff opt-in a Aprende Hoy
-- Identidad de producto Growth OS en chrome, correo y créditos (PROD-001→003)
+- Identidad de producto NELZURI en chrome, correo y créditos (PROD-001→003)
 
 ### Roadmap (no asumir como listo)
 
@@ -49,7 +50,7 @@ Contrato de producto: [ADR-009](./docs/architecture/ADR-009.md). Fundación mult
 ```
 Visitante / operador
         ↓
-Growth OS (Next.js — App Router)
+NELZURI (Next.js — App Router)
         ↓
 API Routes (/api/*) + TenantContext (host o sesión)
         ↓
@@ -88,7 +89,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000): origen de plataforma (Growth OS), no un Espacio.  
+Abrir [http://localhost:3000](http://localhost:3000): origen de plataforma (NELZURI), no un Espacio.  
 Espacio SEM en desarrollo: `seminario-ipn.localhost:3000`.  
 Espacio ADL (T002): host configurado en `ADL_DEV_HOST` (p. ej. `adl.localhost:3000`).
 
@@ -114,7 +115,7 @@ Variables mínimas: ver [.env.example](./.env.example).
 | Mentor Capacitación | — | Espacio equivalente a SEM y ADL |
 | Fundación Mueve | — | Espacio equivalente a SEM y ADL |
 
-El pack SEM es **dato del Espacio**, no la identidad de Growth OS. El realm Keycloak conserva el id técnico `seminario-ipn`; su nombre visible es Growth OS.
+El pack SEM es **dato del Espacio**, no la identidad de NELZURI. El realm Keycloak conserva el id técnico `seminario-ipn`; su nombre visible preparado es NELZURI. Publicar ese nombre en el servidor queda para un paso coordinado.
 
 ---
 

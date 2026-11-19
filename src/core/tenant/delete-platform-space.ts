@@ -1,4 +1,5 @@
 import type { Db } from "mongodb";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import type { IdentityAuditEntry, IdentitySession } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
 import {
@@ -175,7 +176,7 @@ export async function deletePlatformSpace(
   if (isProtectedPlatformSpace(tenantId)) {
     throw new DeletePlatformSpaceError(
       "protected_space",
-      "Este Espacio de fundación no se puede eliminar desde Growth OS.",
+      `Este Espacio de fundación no se puede eliminar desde ${PLATFORM_DISPLAY_NAME}.`,
       403
     );
   }

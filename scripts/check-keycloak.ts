@@ -49,7 +49,7 @@ async function main(): Promise<void> {
   }
 
   if (clientId === "admin-cli" || clientId === "seminario-ipn-web") {
-    console.log(`✗ Cliente "${clientId}" no es de Growth OS.`);
+    console.log(`✗ Cliente "${clientId}" no es de NELZURI.`);
     console.log("  Local: KEYCLOAK_CLIENT_ID=growth-os-dev");
     console.log("  Producción: KEYCLOAK_CLIENT_ID=growth-os-web\n");
     process.exit(1);
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
   console.log(`Redirect: ${redirectUri}\n`);
 
   if (!clientSecret) {
-    console.log("✗ KEYCLOAK_CLIENT_SECRET vacío — el cliente de Growth OS es confidential.\n");
+    console.log("✗ KEYCLOAK_CLIENT_SECRET vacío — el cliente de NELZURI es confidential.\n");
     process.exit(1);
   }
 

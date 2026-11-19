@@ -26,7 +26,7 @@ const OUTCOMES = [
 ] as const;
 
 /**
- * Portada pública de Growth OS. No muestra contenido de ningún Espacio.
+ * Portada pública de NELZURI. No muestra contenido de ningún Espacio.
  */
 export function PlatformPublicLanding() {
   return (
@@ -91,7 +91,7 @@ export function PlatformPublicLanding() {
                 dirección.
               </h1>
               <p className="mt-4 max-w-[28rem] text-[1.02rem] leading-relaxed text-white/80">
-                Un Espacio. Un sitio. Un equipo. Growth OS concentra la
+                Un Espacio. Un sitio. Un equipo. {PLATFORM_DISPLAY_NAME} concentra la
                 operación digital de cada organización sin mezclar marcas ni
                 audiencias.
               </p>
@@ -125,7 +125,7 @@ export function PlatformPublicLanding() {
           <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--growth-os-secondary)]">
-                Por qué Growth OS
+                Por qué {PLATFORM_DISPLAY_NAME}
               </p>
               <h2 className="mt-3 text-[clamp(1.65rem,3vw,2.35rem)] font-semibold tracking-tight text-[var(--growth-os-primary)]">
                 Multiplica impacto sin diluir la identidad de cada organización.

@@ -57,10 +57,10 @@ describe("OT-GROWTH-UX-SHELL-002 — identidad y shell", () => {
     assert.doesNotMatch(login, /ProductAuthFrame/);
     assert.match(noSpace, /ProductAuthFrame/);
     assert.match(platformLayout, /ProductAuthFrame/);
-    assert.equal(PLATFORM_DISPLAY_NAME, "Growth OS");
+    assert.equal(PLATFORM_DISPLAY_NAME, "NELZURI");
   });
 
-  it("SEM/ADL conservan pack de identidad aparte del default Growth OS", () => {
+  it("SEM/ADL conservan pack de identidad aparte del default NELZURI", () => {
     const colorsTs = readSrc("src/design/tokens/colors.ts");
     const sem = readSrc("src/core/tenant/sem-site-identity.ts");
     const adl = readSrc("src/core/tenant/adl-site-identity.ts");
@@ -85,10 +85,28 @@ describe("OT-GROWTH-UX-SHELL-002 — identidad y shell", () => {
     assert.doesNotMatch(sidebar, /Acelera tu crecimiento/);
   });
 
+  it("legales públicos y la portada nombran NELZURI y fechan el cambio", () => {
+    const legal = readSrc("src/core/legal/platform/content.ts");
+    const legalPage = readSrc("src/app/legal/page.tsx");
+    const constants = readSrc("src/core/legal/platform/constants.ts");
+    const landing = readSrc("src/components/platform/PlatformPublicLanding.tsx");
+    assert.match(constants, /PLATFORM_LEGAL_LAST_UPDATED = "2026-11-19"/);
+    assert.doesNotMatch(legal, /Growth OS/);
+    assert.doesNotMatch(legalPage, /Growth OS/);
+    assert.match(legal, /Qué es \$\{PRODUCT\}/);
+    assert.match(legal, /Uso de \$\{PRODUCT\}/);
+    assert.match(legal, /eliminemos tus datos de \$\{PRODUCT\}/);
+    assert.match(legal, /dentro de \$\{PRODUCT\}/);
+    assert.doesNotMatch(landing, /Growth OS/);
+    assert.match(landing, /PLATFORM_DISPLAY_NAME/);
+  });
+
   it("copy visible no usa CMS seguro / usuarios CMS en superficies principales", () => {
     const dashboard = readSrc("src/components/admin/AdminDashboardClient.tsx");
     const status = readSrc("src/components/admin/AdminStatusBadges.tsx");
     assert.doesNotMatch(dashboard, /CMS seguro|CMS compat\./);
+    assert.doesNotMatch(dashboard, /Growth OS/);
+    assert.match(dashboard, /PLATFORM_DISPLAY_NAME/);
     assert.doesNotMatch(status, /\bCMS\b/);
   });
 

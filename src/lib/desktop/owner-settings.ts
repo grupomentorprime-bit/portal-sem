@@ -29,7 +29,7 @@ export const OWNER_SECTIONS = [
   {
     id: "plataforma",
     label: "Plataforma",
-    subtitle: "El nombre y quién opera Growth OS.",
+    subtitle: `El nombre y quién opera ${NELZURI_NAME}.`,
   },
   {
     id: "direccion",

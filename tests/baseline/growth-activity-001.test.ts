@@ -162,9 +162,9 @@ describe("OT-GROWTH-ACTIVITY-001 — contrato A–L", () => {
     assert.doesNotMatch(read, /DOMAIN_EVENT|GrowthMessageReceived|GrowthActivityRecorded/);
   });
 
-  it("G — automatización aparece como Growth OS", () => {
+  it("G — automatización nueva aparece como NELZURI y Growth OS sigue siendo actor de sistema", () => {
     assert.equal(isGrowthAutomationActor(GROWTH_AUTOMATION_SYSTEM_ACTOR), true);
-    assert.equal(growthActividadActorSystemLabel(), "Growth OS");
+    assert.equal(growthActividadActorSystemLabel(), "NELZURI");
     assert.equal(
       resolveGrowthActividadCategory("note", GROWTH_AUTOMATION_SYSTEM_ACTOR),
       "automatizaciones"
@@ -178,15 +178,39 @@ describe("OT-GROWTH-ACTIVITY-001 — contrato A–L", () => {
         payload: { dueAt: "2026-09-12T15:00:00.000Z" },
       }),
       personaLabel: "Pedro",
-      actorLabel: "Growth OS",
+      actorLabel: growthActividadActorSystemLabel(),
       dueLabel: "mañana",
     });
     assert.ok(item);
-    assert.equal(item!.actorLabel, "Growth OS");
+    assert.equal(item!.actorLabel, "NELZURI");
     assert.equal(
       item!.story,
+      "NELZURI programó un seguimiento para mañana."
+    );
+
+    const historical = projectActivityToFeedItem({
+      activity: activity({
+        kind: "next_action_set",
+        summary: "Próxima acción: Llamar",
+        actorUserId: GROWTH_AUTOMATION_SYSTEM_ACTOR,
+        payload: { dueAt: "2026-09-12T15:00:00.000Z" },
+      }),
+      personaLabel: "Pedro",
+      actorLabel: "Growth OS",
+      dueLabel: "mañana",
+    });
+    assert.equal(historical!.actorLabel, "Growth OS");
+    assert.equal(
+      historical!.story,
       "Growth OS programó un seguimiento para mañana."
     );
+
+    const feed = readFileSync(
+      resolve(process.cwd(), "src/components/admin/growth/ActividadFeedClient.tsx"),
+      "utf8"
+    );
+    assert.match(feed, /"Growth OS"/);
+    assert.match(feed, /"NELZURI"/);
   });
 
   it("H — estados técnicos quedan humanizados", () => {

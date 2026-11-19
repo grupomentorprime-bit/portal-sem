@@ -21,7 +21,7 @@ export const PLATFORM_PRIVACY_POLICY: PlatformLegalDocument = {
   sections: [
     {
       id: "que-es",
-      title: "Qué es Growth OS",
+      title: `Qué es ${PRODUCT}`,
       paragraphs: [
         `${PRODUCT} es un producto/plataforma multi-espacio. Cada cliente opera uno o más Espacios con su propia configuración, usuarios autorizados y contenidos.`,
         `${OPERATOR} provee y opera la plataforma. La organización cliente decide qué datos incorpora a su Espacio y cómo usa las funciones disponibles.`,
@@ -45,7 +45,7 @@ export const PLATFORM_PRIVACY_POLICY: PlatformLegalDocument = {
         "Datos de cuenta y contacto: nombre, correo electrónico, credenciales de acceso o identificadores de autenticación, y datos de perfil asociados a usuarios autorizados.",
         "Datos de organización y Espacio: nombre del Espacio, configuración, roles y membresías.",
         "Datos operativos del servicio: registros técnicos (por ejemplo, eventos de acceso, errores, métricas de uso del servicio) necesarios para seguridad, soporte y continuidad.",
-        "Datos que los clientes gestionan dentro de Growth OS: contenidos, formularios, envíos, mensajes u otros registros que el cliente decide almacenar o procesar en su Espacio.",
+        `Datos que los clientes gestionan dentro de ${PRODUCT}: contenidos, formularios, envíos, mensajes u otros registros que el cliente decide almacenar o procesar en su Espacio.`,
         "Información proveniente de canales conectados: cuando el cliente conecta un canal externo (por ejemplo WhatsApp vía Meta u otros proveedores), pueden fluir mensajes, identificadores de conversación y metadatos del canal según la configuración del cliente y las reglas del proveedor.",
       ],
     },
@@ -135,7 +135,7 @@ export const PLATFORM_TERMS_OF_SERVICE: PlatformLegalDocument = {
   sections: [
     {
       id: "servicio",
-      title: "Uso de Growth OS",
+      title: `Uso de ${PRODUCT}`,
       paragraphs: [
         `${PRODUCT} permite operar Espacios con funciones de portal, administración, formularios, mensajería y canales, según el plan o acuerdo comercial vigente.`,
         `El servicio se presta “tal cual” está disponible en cada momento, sin garantizar que todas las funciones existan para todos los clientes ni que se mantengan sin cambios.`,
@@ -252,7 +252,7 @@ export const PLATFORM_DATA_DELETION: PlatformLegalDocument = {
   sections: [
     {
       id: "proceso",
-      title: "Cómo pedir que eliminemos tus datos de Growth OS",
+      title: `Cómo pedir que eliminemos tus datos de ${PRODUCT}`,
       paragraphs: [
         `Sigue este proceso:`,
       ],

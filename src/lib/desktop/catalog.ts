@@ -1,3 +1,5 @@
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+
 export const MENTOR_APPS = ["growth-os", "cumple", "aprende-hoy", "rrhh"] as const;
 export type MentorAppId = (typeof MENTOR_APPS)[number];
 
@@ -97,7 +99,7 @@ export type WallpaperChoice = DesktopWallpaper | "custom";
 export const DESKTOP_FALLBACK = "#102033";
 
 const LABELS: Record<MentorAppId, string> = {
-  "growth-os": "Growth OS",
+  "growth-os": PLATFORM_DISPLAY_NAME,
   cumple: "Cumple",
   "aprende-hoy": "Aprende Hoy",
   rrhh: "RR.HH.",

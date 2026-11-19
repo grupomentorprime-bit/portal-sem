@@ -14,6 +14,7 @@
  */
 import { readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
+import { KEYCLOAK_REALM_DISPLAY_NAME } from "../src/core/identity/auth/keycloak-identity";
 
 const ENV_PATH = resolve(process.cwd(), ".env");
 const DEV_CLIENT_ID = "growth-os-dev";
@@ -110,8 +111,8 @@ async function findClient(
 function devClientPayload() {
   return {
     clientId: DEV_CLIENT_ID,
-    name: "Growth OS",
-    description: "Cliente de desarrollo de Growth OS (localhost)",
+    name: KEYCLOAK_REALM_DISPLAY_NAME,
+    description: `Cliente de desarrollo de ${KEYCLOAK_REALM_DISPLAY_NAME} (localhost)`,
     enabled: true,
     publicClient: false,
     clientAuthenticatorType: "client-secret",
@@ -211,7 +212,7 @@ async function main(): Promise<void> {
   const adminUser = process.env.KEYCLOAK_ADMIN?.trim() || env.KEYCLOAK_ADMIN;
   const adminPassword = process.env.KEYCLOAK_ADMIN_PASSWORD?.trim() || env.KEYCLOAK_ADMIN_PASSWORD;
 
-  console.log("\n── Cliente Keycloak de desarrollo Growth OS ──\n");
+  console.log(`\n── Cliente Keycloak de desarrollo ${KEYCLOAK_REALM_DISPLAY_NAME} ──\n`);
 
   if (!baseUrl || !realm) {
     console.error("✗ Faltan KEYCLOAK_URL o KEYCLOAK_REALM en .env");

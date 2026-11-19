@@ -166,12 +166,15 @@ describe("OT-GROWTH-SAAS-006 — plantilla y T001", () => {
     assert.equal(containsSemMarker(seoDescriptionFromConfig(testSite) ?? ""), false);
 
     const empty = createDefaultSiteConfig();
-    assert.equal(seoTitleFromConfig(empty), "Growth OS");
+    assert.equal(seoTitleFromConfig(empty), "NELZURI");
+    assert.doesNotMatch(seoTitleFromConfig(empty), /Seminario|ADL|Cumple/);
     assert.equal(containsSemMarker(seoTitleFromConfig(empty)), false);
     assert.notEqual(seoTitleFromConfig(empty), SEM_SITE_IDENTITY.seo.title);
 
     const semConfig = applySemSiteIdentity(createDefaultSiteConfig());
     assert.equal(seoTitleFromConfig(semConfig), SEM_SITE_IDENTITY.seo.title);
+    assert.doesNotMatch(seoTitleFromConfig(semConfig), /NELZURI|Growth OS/);
+    assert.match(semConfig.branding.logo, /logo-sem/);
 
     assert.equal(testSite.branding.logo, "/images/logo-demo.png");
     assert.equal(createDefaultSiteConfig().branding.logo, "");

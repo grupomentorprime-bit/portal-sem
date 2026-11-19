@@ -4,6 +4,7 @@
  * Solo presentación. No cambia resúmenes persistidos ni Growth Core.
  */
 
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { growthOpportunityStatusLabel, growthOpportunityTypeLabel } from "@/lib/growth/labels";
 
 export type HomeActivityTone =
@@ -222,12 +223,12 @@ export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
       }
       if (due) {
         return {
-          story: `Growth OS programó un seguimiento para ${due}.`,
+          story: `${PLATFORM_DISPLAY_NAME} programó un seguimiento para ${due}.`,
           tone: "followup",
         };
       }
       return {
-        story: "Growth OS programó un seguimiento.",
+        story: `${PLATFORM_DISPLAY_NAME} programó un seguimiento.`,
         tone: "followup",
       };
     }

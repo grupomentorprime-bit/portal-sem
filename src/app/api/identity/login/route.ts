@@ -3,13 +3,14 @@ import { isEmailAuthEnabled } from "@/core/identity/auth/config";
 import { hasPlatformOperatorCapability, loginWithEmail } from "@/core/identity";
 import { resolvePostAuthDestination } from "@/core/identity/platform/landing";
 import { resolveActiveTenantIdFromRequest } from "@/core/tenant/context";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { publicInternalError } from "@/core/security/public-error";
 
 export async function POST(request: Request) {
   try {
     if (!isEmailAuthEnabled()) {
       return NextResponse.json(
-        { ok: false, error: "El acceso es solo mediante la cuenta de Growth OS." },
+        { ok: false, error: `El acceso es solo mediante la cuenta de ${PLATFORM_DISPLAY_NAME}.` },
         { status: 403 }
       );
     }
