@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { formatChilePhoneInput } from "@/lib/experience/forms/phone-chile";
 import { reorderFormExperienceBlocks } from "@/lib/cms/form-experience-utils";
 import { counterDateInputValue, normalizeChileEventTime } from "@/lib/experience/forms/convocatoria-event-datetime";
 import { spacePublicHref, useSpacePublicOrigin } from "@/components/admin/SpacePublicOrigin";
@@ -1166,16 +1167,28 @@ export function FormExperienceEditor({
             <Input
               value={experience.footer.contactPhone ?? ""}
               onChange={(e) =>
-                update({ footer: { ...experience.footer, contactPhone: e.target.value } })
+                update({
+                  footer: {
+                    ...experience.footer,
+                    contactPhone: formatChilePhoneInput(e.target.value),
+                  },
+                })
               }
+              placeholder="+56 9 1234 5678"
             />
           </Field>
           <Field label="WhatsApp">
             <Input
               value={experience.footer.whatsapp ?? ""}
               onChange={(e) =>
-                update({ footer: { ...experience.footer, whatsapp: e.target.value } })
+                update({
+                  footer: {
+                    ...experience.footer,
+                    whatsapp: formatChilePhoneInput(e.target.value),
+                  },
+                })
               }
+              placeholder="+56 9 1234 5678"
             />
           </Field>
           <div className="md:col-span-2">

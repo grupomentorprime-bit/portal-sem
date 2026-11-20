@@ -273,7 +273,7 @@ function CashBody({ report }: { report: Extract<OpsReport, { kind: "cash" }> }) 
           { label: "Total vigente", value: formatClp(t.total) },
           { label: "Efectivo", value: formatClp(t.cash) },
           { label: "Transferencia", value: formatClp(t.transfer) },
-          { label: "Otro / sin clasificar", value: formatClp(t.other + t.unclassified) },
+          { label: "Otro / sin medio", value: formatClp(t.other + t.unclassified) },
         ]}
       />
       <section>

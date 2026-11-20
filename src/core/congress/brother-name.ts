@@ -6,16 +6,21 @@ export function hasBrotherOrTitlePrefix(fullName: string): boolean {
   return TITLE_PREFIX_RE.test(fullName.trim());
 }
 
-/** Clave plegada para detectar la misma persona (sin título ni acentos). */
-export function foldCongressPersonName(fullName: string): string {
+/** Nombre en minúsculas, sin título, conservando acentos. */
+export function congressPersonSpellingKey(fullName: string): string {
   return fullName
     .trim()
     .replace(TITLE_PREFIX_RE, "")
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** Clave plegada para detectar la misma persona (sin título ni acentos). */
+export function foldCongressPersonName(fullName: string): string {
+  return congressPersonSpellingKey(fullName)
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
 }
 
 /**

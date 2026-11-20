@@ -4,6 +4,7 @@ import { MediaField } from "@/components/media/MediaPicker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { formatChilePhoneInput } from "@/lib/experience/forms/phone-chile";
 import type {
   AdmissionClosingActionItem,
   AdmissionClosingBlock,
@@ -482,16 +483,24 @@ export function AdmissionClosingBlockEditor({
             <Input
               value={block.data.phone}
               onChange={(e) =>
-                onChange({ ...block, data: { ...block.data, phone: e.target.value } })
+                onChange({
+                  ...block,
+                  data: { ...block.data, phone: formatChilePhoneInput(e.target.value) },
+                })
               }
+              placeholder="+56 9 1234 5678"
             />
           </Field>
           <Field label="WhatsApp">
             <Input
               value={block.data.whatsapp ?? ""}
               onChange={(e) =>
-                onChange({ ...block, data: { ...block.data, whatsapp: e.target.value } })
+                onChange({
+                  ...block,
+                  data: { ...block.data, whatsapp: formatChilePhoneInput(e.target.value) },
+                })
               }
+              placeholder="+56 9 1234 5678"
             />
           </Field>
           <Field label="Horario">

@@ -147,13 +147,27 @@ export function ActionMenuItem({
   href,
   external,
   destructive,
+  disabled,
 }: {
   children: ReactNode;
   onClick?: () => void;
   href?: string;
   external?: boolean;
   destructive?: boolean;
+  disabled?: boolean;
 }) {
+  if (disabled) {
+    return (
+      <span
+        role="menuitem"
+        aria-disabled="true"
+        className={cn(menuItemClass(destructive), "cursor-not-allowed opacity-50")}
+      >
+        {children}
+      </span>
+    );
+  }
+
   if (href) {
     return (
       <Link

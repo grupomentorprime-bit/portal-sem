@@ -1,6 +1,7 @@
 import { ensureHnoPrefix } from "@/core/congress/brother-name";
 import { registrationDuplicateKey } from "@/core/congress/duplicates";
 import type { CongressRegistration, CongressRegistrationIdentity } from "@/core/congress/types";
+import { isValidChilePhone, normalizeChilePhone } from "@/lib/experience/forms/phone-chile";
 import { isValidChileRut, normalizeChileRut } from "@/lib/experience/forms/rut-chile";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -10,6 +11,7 @@ export type OperatorIdentityEditError =
   | "missing_zone"
   | "missing_church"
   | "invalid_rut"
+  | "invalid_phone"
   | "invalid_email"
   | "duplicate_rut";
 
@@ -18,6 +20,7 @@ export const OPERATOR_IDENTITY_EDIT_MESSAGES: Record<OperatorIdentityEditError, 
   missing_zone: "Falta la zona.",
   missing_church: "Falta la iglesia.",
   invalid_rut: "El RUT no es válido.",
+  invalid_phone: "El teléfono no es válido. Use +56 9 1234 5678.",
   invalid_email: "El correo no es válido.",
   duplicate_rut: "Ese RUT ya está en otra ficha.",
 };
@@ -67,7 +70,13 @@ export function applyOperatorIdentityEdit(input: {
   if (emailRaw && !EMAIL_RE.test(emailRaw)) return { ok: false, error: "invalid_email" };
   const email = emailRaw || null;
 
-  const phone = input.phone.trim().replace(/\s+/g, " ") || null;
+  const phoneRaw = input.phone.trim();
+  let phone: string | null = null;
+  if (phoneRaw) {
+    if (!isValidChilePhone(phoneRaw)) return { ok: false, error: "invalid_phone" };
+    phone = normalizeChilePhone(phoneRaw);
+    if (!phone) return { ok: false, error: "invalid_phone" };
+  }
 
   if (rut) {
     const key = registrationDuplicateKey({ rut });

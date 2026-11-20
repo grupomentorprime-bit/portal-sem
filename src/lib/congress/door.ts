@@ -1,3 +1,4 @@
+import { isValidChilePhone, normalizeChilePhone } from "@/lib/experience/forms/phone-chile";
 import { normalizeChileRut, isValidChileRut } from "@/lib/experience/forms/rut-chile";
 import { findDuplicateRegistrationId } from "@/core/congress/duplicates";
 import { generateId } from "@/core/identity/auth/crypto";
@@ -30,7 +31,7 @@ export type DoorEnrollResult =
   | { ok: true; registration: CongressRegistration }
   | {
       ok: false;
-      error: "missing_name" | "invalid_rut" | "duplicate" | "missing_zone";
+      error: "missing_name" | "invalid_rut" | "invalid_phone" | "duplicate" | "missing_zone";
       duplicateId?: string;
     };
 
@@ -52,6 +53,14 @@ export async function enrollAtDoor(input: DoorEnrollInput): Promise<DoorEnrollRe
     needsReview = false;
   } else {
     provisionalKey = generateId("door");
+  }
+
+  const phoneRaw = String(input.phone ?? "").trim();
+  let phone: string | null = null;
+  if (phoneRaw) {
+    if (!isValidChilePhone(phoneRaw)) return { ok: false, error: "invalid_phone" };
+    phone = normalizeChilePhone(phoneRaw);
+    if (!phone) return { ok: false, error: "invalid_phone" };
   }
 
   const existing = await listCongressRegistrations(input.tenantId);
@@ -77,7 +86,7 @@ export async function enrollAtDoor(input: DoorEnrollInput): Promise<DoorEnrollRe
     fullName,
     rut,
     email: input.email?.trim() || null,
-    phone: input.phone?.trim() || null,
+    phone,
     identityStatus,
     needsReview,
     expectedDays: input.expectedDays,

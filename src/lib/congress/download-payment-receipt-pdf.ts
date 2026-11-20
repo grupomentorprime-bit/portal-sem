@@ -16,7 +16,7 @@ const METHOD_LABELS: Record<CashMethodKey, string> = {
   cash: "Efectivo",
   transfer: "Transferencia",
   other: "Otro",
-  unclassified: "Sin clasificar",
+  unclassified: "Sin medio",
 };
 
 async function loadLogoDataUrl(): Promise<string | null> {

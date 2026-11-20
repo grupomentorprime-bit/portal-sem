@@ -68,6 +68,7 @@ describe("operator identity edit", () => {
     assert.equal(result.identity.fullName, "Hno eleuterio espinoza");
     assert.equal(result.identity.rut, "15.676.490-6");
     assert.equal(result.identity.email, "eleuterio@iglesia.cl");
+    assert.equal(result.identity.phone, "+56 9 1111 2222");
     assert.equal(result.identity.status, "verified");
     assert.equal(result.churchName, "IPN San Carlos");
     assert.equal(result.needsReview, false);
@@ -131,6 +132,37 @@ describe("operator identity edit", () => {
     assert.equal(cleared.identity.rut, null);
     assert.equal(cleared.identity.status, "provisional");
     assert.equal(cleared.needsReview, true);
+  });
+
+  it("normaliza el celular a +56 y rechaza uno incompleto", () => {
+    const current = stub({ _id: "a", fullName: "Hno Eleuterio Espinoza" });
+    const saved = applyOperatorIdentityEdit({
+      registration: current,
+      fullName: "Eleuterio Espinoza",
+      rut: "",
+      email: "",
+      phone: "987654321",
+      zoneId: "zona-7",
+      churchName: "IPN SAN CARLOS",
+      existing: [current],
+    });
+    assert.equal(saved.ok, true);
+    if (!saved.ok) return;
+    assert.equal(saved.identity.phone, "+56 9 8765 4321");
+
+    const invalid = applyOperatorIdentityEdit({
+      registration: current,
+      fullName: "Eleuterio Espinoza",
+      rut: "",
+      email: "",
+      phone: "21212121",
+      zoneId: "zona-7",
+      churchName: "IPN SAN CARLOS",
+      existing: [current],
+    });
+    assert.equal(invalid.ok, false);
+    if (invalid.ok) return;
+    assert.equal(invalid.error, "invalid_phone");
   });
 });
 

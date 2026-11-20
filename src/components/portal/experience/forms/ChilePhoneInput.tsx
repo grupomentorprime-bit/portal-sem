@@ -16,6 +16,7 @@ interface ChilePhoneInputProps {
   disabled?: boolean;
   required?: boolean;
   onChange: (value: string) => void;
+  onBlur?: () => void;
 }
 
 export function ChilePhoneInput({
@@ -27,6 +28,7 @@ export function ChilePhoneInput({
   disabled,
   required,
   onChange,
+  onBlur,
 }: ChilePhoneInputProps) {
   const handleChange = (nextValue: string) => {
     onChange(formatChilePhoneInput(nextValue));
@@ -37,6 +39,7 @@ export function ChilePhoneInput({
     if (normalized && normalized !== value) {
       onChange(normalized);
     }
+    onBlur?.();
   };
 
   return (

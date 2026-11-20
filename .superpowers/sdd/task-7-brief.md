@@ -1,44 +1,49 @@
-﻿### Task 7: Verificación final
+### Task 7: Distintivo en la fila
 
-**Files:** none new (solo corridas)
+**Files:**
+- Modify: `src/components/admin/congress/reception/ReceptionView.tsx`
 
-- [ ] **Step 1: Suite focalizada**
+**Interfaces:**
+- Consumes: `deriveReceptionProgress` y `journeyDay` (la vista ya lo recibe). Pagos: pasar `[]`. El texto del listado es `stageLabel`, y un `paid` sin pagos cargados no necesita el candado del líder para decir **Listo** o **En alojamiento**.
 
-Run:
+- [ ] **Step 1: Mostrar la etapa bajo el nombre**
 
-```bash
-npx tsx --test tests/baseline/sem-admision-funnel.test.ts tests/baseline/sem-admision-ventas-vista.test.ts tests/baseline/growth-ventas-board.test.ts tests/baseline/conversion-engine-fase-2.test.ts
+Dentro de `ReceptionView`, un mapa memorizado:
+
+```ts
+const stageLabelById = useMemo(() => {
+  const labels = new Map<string, string>();
+  for (const reg of registrations) {
+    labels.set(
+      reg._id,
+      deriveReceptionProgress({
+        registrationId: reg._id,
+        registration: reg,
+        payments: [],
+        assignments,
+        journeyDay,
+      }).stageLabel
+    );
+  }
+  return labels;
+}, [registrations, assignments, journeyDay]);
 ```
 
-Expected: PASS
+En la celda de escritorio, bajo `registrationDisplayName(reg)` y antes del teléfono:
 
-- [ ] **Step 2: Baseline amplio si el entorno lo permite**
+```tsx
+<p className="text-xs font-extrabold text-primary">{stageLabelById.get(reg._id)}</p>
+```
 
-Run: `npm run test:baseline`  
-Expected: PASS (o solo fallos preexistentes no relacionados; no introducir nuevos)
+En la tarjeta móvil, el mismo `<p>` bajo el nombre y antes del aviso de formulario.
 
-- [ ] **Step 3: Checklist manual SEM**
+- [ ] **Step 2: Verificar dominio y tipos**
 
-1. (Dev/staging) `npm run migrate -- 030-sem-admision-funnel` con autorización.
-2. Embudos SEM: default **Admisión**, 6 etapas, inicial Interés.
-3. `/admin/ventas` abre en **Cola**; Kanban muestra 6 columnas; Lista sigue filtrando.
-4. Oportunidad legacy `open` aparece en Interés; una intermedia vieja en Contactado.
-5. ADL (u otro tenant) sin cambio de copy ni etapas.
+Run: `npx tsx --test tests/baseline/congress-reception-stage.test.ts`
 
-- [ ] **Step 4: Commit** solo si quedó algún ajuste de verificación; si no, no crear commit vacío.
+Expected: PASS.
 
----
+Run: `npx tsc --noEmit --pretty false --incremental false`
 
-## Self-review (plan vs spec)
+Expected: sin error nuevo en `ReceptionView.tsx`.
 
-| Spec | Task |
-| --- | --- |
-| Embudo 6 etapas + rename default Admisión | 1–2 |
-| Migración SEM remap open/otras → interes/contactado | 3 |
-| Cola default + switcher Cola·Kanban·Lista | 5 |
-| Orden por atención / próxima acción | 4 |
-| Copy SEM página Ventas | 6 |
-| Sin segundo CRM / sin nav global / sin otros tenants | Constraints + Task 6/3 |
-| Done when + tests | 7 |
-
-Sin placeholders TBD. Tipos alineados: `GrowthVentasVista`, `mapLegacyStatusToSemAdmision`, `applySemAdmisionDefaultFunnel`, `030-sem-admision-funnel`.

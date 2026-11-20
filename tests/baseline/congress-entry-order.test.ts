@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   compareByRegistrationEntryNumber,
   compareRegistrationsForEntryBackfill,
+  planCompactEntryNumbers,
   registrationEntryNumber,
   type EntryNumberRow,
 } from "../../src/core/congress/entry-order";
@@ -58,5 +59,18 @@ describe("correlativo de ficha", () => {
       rows.map((r) => r._id),
       ["b", "a", "z"]
     );
+  });
+
+  it("al borrar, cierra huecos y conserva el menor número", () => {
+    const next = planCompactEntryNumbers([
+      row("a", "Ana", "2026-11-18T10:00:00.000Z", 99),
+      row("b", "Bruno", "2026-11-18T11:00:00.000Z", 101),
+      row("c", "Carlos", "2026-11-18T12:00:00.000Z", 104),
+    ]);
+    assert.deepEqual(next, [
+      { _id: "a", entryNumber: 99 },
+      { _id: "b", entryNumber: 100 },
+      { _id: "c", entryNumber: 101 },
+    ]);
   });
 });

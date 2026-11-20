@@ -95,6 +95,38 @@ interface CongressSummary {
   lodgingAssignments?: CongressLodgingAssignment[];
 }
 
+function registrationPatchNotice(patch: {
+  expectedDays?: unknown;
+  lodgingNeed?: unknown;
+  fullName?: unknown;
+  rut?: unknown;
+  email?: unknown;
+  phone?: unknown;
+  zoneId?: unknown;
+  churchName?: unknown;
+  ensureHnoPrefix?: unknown;
+  isChurchGroupLeader?: unknown;
+  isZoneLeader?: unknown;
+}): string {
+  if (patch.expectedDays) return "Asistencia confirmada";
+  if (patch.lodgingNeed != null) return "Alojamiento actualizado";
+  if (
+    patch.fullName != null ||
+    patch.rut != null ||
+    patch.email != null ||
+    patch.phone != null ||
+    patch.zoneId != null ||
+    patch.churchName != null ||
+    patch.ensureHnoPrefix
+  ) {
+    return "Datos guardados";
+  }
+  if (patch.isChurchGroupLeader != null || patch.isZoneLeader != null) {
+    return "Rol actualizado";
+  }
+  return "Cambios guardados";
+}
+
 export function CongressOpsPanel() {
   return (
     <ToastProvider>
@@ -132,6 +164,7 @@ function CongressOpsPanelInner() {
   });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sheetEditing, setSheetEditing] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [doorSaving, setDoorSaving] = useState(false);
   const [arrivalSavingId, setArrivalSavingId] = useState<string | null>(null);
@@ -469,7 +502,11 @@ function CongressOpsPanelInner() {
           description:
             data.error === "duplicate"
               ? "Ya existe una ficha coincidente."
-              : data.error ?? "Error del servidor.",
+              : data.error === "invalid_rut"
+                ? "El RUT no es válido."
+                : data.error === "invalid_phone"
+                  ? "El teléfono no es válido. Use +56 9 1234 5678."
+                  : data.error ?? "Error del servidor.",
           tone: "warning",
         });
         return;
@@ -521,6 +558,7 @@ function CongressOpsPanelInner() {
         return;
       }
       if (data.registration) upsertRegistration(data.registration);
+      push({ title: registrationPatchNotice(patch), tone: "success" });
       // Roles con unicidad pueden desmarcar a otros: refrescar listado completo.
       if (
         patch.isChurchGroupLeader != null ||
@@ -531,6 +569,50 @@ function CongressOpsPanelInner() {
         void loadRegistrations();
       }
       void loadSummary();
+    } finally {
+      setSheetBusy(false);
+    }
+  };
+
+  const deleteRegistration = async (id: string): Promise<boolean> => {
+    setSheetBusy(true);
+    try {
+      const res = await fetch(`/api/congress/registrations/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        push({
+          title: "No se pudo eliminar",
+          description: data.error ?? "Error del servidor.",
+          tone: "warning",
+        });
+        return false;
+      }
+      const numbers = new Map<string, number>();
+      if (Array.isArray(data.entryNumbers)) {
+        for (const item of data.entryNumbers as Array<{ _id?: string; entryNumber?: number }>) {
+          if (typeof item?._id === "string" && typeof item.entryNumber === "number") {
+            numbers.set(item._id, item.entryNumber);
+          }
+        }
+      }
+      setRegistrations((prev) =>
+        prev
+          .filter((row) => row._id !== id)
+          .map((row) => {
+            const entryNumber = numbers.get(row._id);
+            return entryNumber == null ? row : { ...row, entryNumber };
+          })
+      );
+      setSelectedId(null);
+      setSheetEditing(false);
+      void loadSummary();
+      push({ title: "Inscrito eliminado", tone: "success" });
+      return true;
+    } catch {
+      push({ title: "Error de red", tone: "error" });
+      return false;
     } finally {
       setSheetBusy(false);
     }
@@ -1177,8 +1259,22 @@ function CongressOpsPanelInner() {
               setQuickFilter("all");
             }}
             onOpenNew={() => setNewOpen(true)}
-            onOpenParticipant={setSelectedId}
+            onOpenParticipant={(id) => {
+              setSheetEditing(false);
+              setSelectedId(id);
+            }}
+            onEditParticipant={(id) => {
+              setSheetEditing(true);
+              setSelectedId(id);
+            }}
+            onDeleteParticipant={deleteRegistration}
+            payments={payments}
             onRegisterArrival={(id, day) => void patchAttendance(id, day, true)}
+            onGuideArrival={(id, day) => {
+              setJourneyDay(day);
+              setSheetEditing(false);
+              setSelectedId(id);
+            }}
             onRevertArrival={(id, day) => void patchAttendance(id, day, null)}
             arrivalSavingId={arrivalSavingId}
           />
@@ -1635,13 +1731,27 @@ function CongressOpsPanelInner() {
         assignments={assignments}
         homes={homes}
         operate={capabilities.operate}
+        journeyDay={journeyDay}
         canPay={capabilities.payments}
         zoneOptions={zoneOptions}
-        onClose={() => setSelectedId(null)}
+        startEditing={sheetEditing}
+        onClose={() => {
+          setSelectedId(null);
+          setSheetEditing(false);
+        }}
         onPatchAttendance={patchAttendance}
         onPatchRegistration={patchRegistration}
         onIndividualPayment={individualPayment}
         payments={payments}
+        registrations={registrations}
+        onOpenRegistration={setSelectedId}
+        onDeleteRegistration={
+          capabilities.operate
+            ? async (id) => {
+                await deleteRegistration(id);
+              }
+            : undefined
+        }
         lastReceiptPayment={lastReceiptPayment}
         onDownloadReceipt={(payment) => void downloadPaymentReceipt(payment)}
         onChargeChange={patchCharge}

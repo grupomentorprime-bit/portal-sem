@@ -242,3 +242,20 @@ Task 5: complete (uncommitted, floating filters draft+Aplicar, 37 related tests 
 Task 6: complete with concerns (company Mis tickets+fixed empresa PASS on SEM; Plataforma/Mentor smoke BLOCKED — session is client CP desk)
 Final review: Ready with fixes (smoke Owner/Plataforma/Mentor blocked by session). Critical none.
 Finish choice: 3 keep as-is (master + uncommitted Atención WIP preserved)
+
+# Congreso ficha guiada SDD
+
+Started: 2026-11-20
+Branch: master (in-place; el arbol ya tiene WIP de congreso en ParticipantSheet, ReceptionView y CongressOpsPanel)
+Plan: docs/superpowers/plans/2026-11-20-congreso-ficha-guiada.md
+Base HEAD: 6e8fc8bce6776eeea8d5a6457e0bd6a5d3eca3bb
+Constraint: sin commit salvo pedido del usuario; no tocar archivos ajenos al task; reviews via diff de los archivos del task
+
+Task 1: complete (uncommitted, congress-reception-stage 16/16, review clean). Minor: test no cubre confirmed=true con status distinto de assigned/confirmed.
+Task 2: complete (uncommitted, header; review clean after operate=false steps are read-only).
+Task 3: complete (uncommitted, sheet wired; review clean after header moved above the form banner).
+Task 4: complete (uncommitted, asistencia order; review Important on Chile inputs adjudicated as existing required controls). Minor: copy extra 'Sin llegada · se espera hoy'.
+Task 5: complete (uncommitted, leader banner; review clean).
+Task 6: complete (uncommitted, lodging buttons; header regression restored: stageLabel + Siguiente; duplicate bottom button removed; review clean).
+Task 7: complete (uncommitted, stage label on desktop and mobile; review clean).
+Final review: Ready with minor nits (dead confirmed branch, lodgingReady redundancy, setState during render, no browser pass, no trailing newline). No Critical/Important.

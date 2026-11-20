@@ -4,6 +4,7 @@ import { useId } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
 import { inputBase } from "@/components/ui/shared";
 import {
   canonicalChileRegion,
@@ -66,25 +67,21 @@ export function ContactForm({
             />
           </div>
 
-          <div>
-            <Label className="mb-2 block" htmlFor={phoneId}>Teléfono</Label>
-            <Input
-              id={phoneId}
-              value={value.phone}
-              onChange={(e) => update("phone", e.target.value)}
-              placeholder="+56 9 0000 0000"
-            />
-          </div>
+          <ChilePhoneInput
+            label="Teléfono"
+            name={phoneId}
+            value={value.phone}
+            onChange={(next) => update("phone", next)}
+            helper="Celular o teléfono chileno, con +56."
+          />
 
-          <div>
-            <Label className="mb-2 block" htmlFor={whatsappId}>WhatsApp</Label>
-            <Input
-              id={whatsappId}
-              value={value.whatsapp}
-              onChange={(e) => update("whatsapp", e.target.value)}
-              placeholder="+56 9 0000 0000"
-            />
-          </div>
+          <ChilePhoneInput
+            label="WhatsApp"
+            name={whatsappId}
+            value={value.whatsapp}
+            onChange={(next) => update("whatsapp", next)}
+            helper="Celular chileno, con +56."
+          />
 
           <div className="sm:col-span-2">
             <Label className="mb-2 block" htmlFor={hoursId}>Horario de atención</Label>

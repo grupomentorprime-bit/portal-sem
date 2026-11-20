@@ -1,77 +1,43 @@
-﻿### Task 6: Copy SEM en página Ventas
+### Task 6: Alojamiento en dos respuestas
 
 **Files:**
-- Modify: `src/lib/growth/labels.ts` — `growthVentasPageCopy(tenantId)`
-- Modify: `src/app/admin/ventas/page.tsx` — pasar copy al client
-- Modify: `src/components/admin/growth/VentasListClient.tsx` — usar props en vez de constantes fijas de título/vacíos
-- Modify: `tests/baseline/sem-admision-ventas-vista.test.ts`
+- Modify: `src/components/admin/congress/participant/ParticipantSheet.tsx` (bloque `viewStep === "alojamiento"`)
 
-**Interfaces:**
-- Consumes: `isSemTenant`
-- Produces:
+- [ ] **Step 1: Botones antes del selector**
 
-```ts
-export function growthVentasPageCopy(tenantId: string): {
-  title: string;
-  description: string;
-  emptyTitle: string;
-  emptyDescription: string;
-  noMatchTitle: string;
-  noMatchDescription: string;
-} {
-  if (isSemTenant(tenantId)) {
-    return {
-      title: "Admisión",
-      description: "Postulantes y próximas acciones del Espacio.",
-      emptyTitle: "Aún no hay postulantes en seguimiento",
-      emptyDescription:
-        "Cuando lleguen consultas o postulaciones, aparecerán aquí para darles seguimiento.",
-      noMatchTitle: "No encontramos postulantes",
-      noMatchDescription: "Prueba con otro nombre o quita los filtros.",
-    };
-  }
-  return {
-    title: GROWTH_VENTAS_PAGE_TITLE,
-    description: GROWTH_VENTAS_PAGE_DESCRIPTION,
-    emptyTitle: GROWTH_VENTAS_EMPTY_TITLE,
-    emptyDescription: GROWTH_VENTAS_EMPTY_DESCRIPTION,
-    noMatchTitle: GROWTH_VENTAS_NO_MATCH_TITLE,
-    noMatchDescription: GROWTH_VENTAS_NO_MATCH_DESCRIPTION,
-  };
-}
+Si `operate` y `(registration.lodgingNeed ?? "unknown") === "unknown"`, encima del `Select` "Necesidad":
+
+```tsx
+<div className="flex flex-wrap gap-2">
+  <Button
+    type="button"
+    disabled={busy}
+    onClick={() =>
+      void onPatchRegistration(registration._id, { lodgingNeed: "none" })
+    }
+  >
+    No requiere
+  </Button>
+  <Button
+    type="button"
+    variant="outline"
+    disabled={busy}
+    onClick={() =>
+      void onPatchRegistration(registration._id, { lodgingNeed: "requested" })
+    }
+  >
+    Necesita cama
+  </Button>
+</div>
 ```
 
-- [ ] **Step 1: Write the failing test**
+El `Select` y el formulario de hogar existentes se mantienen. `Necesita cama` deja `lodgingNeed` en `requested`, y el formulario de asignación que ya exige `!== "none"` aparece solo.
 
-```ts
-import { growthVentasPageCopy } from "../../src/lib/growth/labels";
-import { SEM_TENANT_ID, ADL_TENANT_ID } from "../../src/core/tenant/constants";
+- [ ] **Step 2: Typecheck**
 
-it("copy SEM usa Admisión; otros Espacios conservan Ventas", () => {
-  assert.equal(growthVentasPageCopy(SEM_TENANT_ID).title, "Admisión");
-  assert.equal(growthVentasPageCopy(ADL_TENANT_ID).title, "Ventas");
-});
-```
+Run: `npx tsc --noEmit --pretty false --incremental false`
 
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx tsx --test tests/baseline/sem-admision-ventas-vista.test.ts`  
-Expected: FAIL
-
-- [ ] **Step 3: Implement + wire props**
-
-`VentasListClient` recibe `copy: ReturnType<typeof growthVentasPageCopy>` y lo usa en header, breadcrumbs label final, EmptyState de cola/lista/kanban vacío de board.
-
-- [ ] **Step 4: Run tests**
-
-Run: `npx tsx --test tests/baseline/sem-admision-ventas-vista.test.ts`  
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/lib/growth/labels.ts src/app/admin/ventas/page.tsx src/components/admin/growth/VentasListClient.tsx tests/baseline/sem-admision-ventas-vista.test.ts
-git commit -m "feat(ventas): copy Admisión para Espacio SEM"
-```
+Expected: sin error nuevo en `ParticipantSheet.tsx`.
 
 ---
+

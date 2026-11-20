@@ -1,7 +1,7 @@
 # Congreso de Varones — Recepción y panel operativo (rediseño UX)
 
 **Fecha:** 2026-11-17  
-**Estado:** autorizado para implementación (2026-11-17); enmiendas 2026-11-18: exento de pago + drill-down iglesia → pago grupal  
+**Estado:** autorizado para implementación (2026-11-17); enmiendas 2026-11-18: exento de pago + drill-down iglesia → pago grupal. Enmienda 2026-11-20: la ficha de recepción pasa a tres pasos con distintivo de etapa (`2026-11-20-congreso-ficha-guiada-design.md`); el §3 de esta spec queda sustituido en la navegación de la ficha.  
 **Alcance explícitamente fuera:** importación definitiva (commit Excel), despliegue, commit/PR de git
 
 ## Objetivo

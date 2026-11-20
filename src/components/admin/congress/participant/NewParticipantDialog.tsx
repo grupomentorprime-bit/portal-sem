@@ -9,10 +9,22 @@ import {
   foldPersonSearchText,
   matchesPersonSearch,
 } from "@/lib/experience/forms/person-search";
-import { isValidChileRut } from "@/lib/experience/forms/rut-chile";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
+import { ChileRutInput } from "@/components/portal/experience/forms/ChileRutInput";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  isValidChilePhone,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
+import {
+  CHILE_RUT_INVALID_MESSAGE,
+  isValidChileRut,
+  normalizeChileRut,
+} from "@/lib/experience/forms/rut-chile";
 import { CONGRESS_ZONES } from "@/core/congress/constants";
 import type { CongressRegistration } from "@/core/congress/types";
 import { formatZoneLabel } from "@/components/admin/congress/labels";
+import { findFoldedNameDuplicates } from "@/core/congress/accent-duplicates";
 
 const CREATE_CHURCH = "__create_church__";
 
@@ -62,6 +74,8 @@ export function NewParticipantDialog({
     "unknown"
   );
   const [localError, setLocalError] = useState<string | null>(null);
+  const [rutError, setRutError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const matches = useMemo(() => {
     const q = matchQuery.trim();
@@ -113,6 +127,11 @@ export function NewParticipantDialog({
 
   const creatingChurch = churchSelect === CREATE_CHURCH;
 
+  const nameDuplicates = useMemo(
+    () => findFoldedNameDuplicates(fullName, registrations),
+    [fullName, registrations]
+  );
+
   const reset = () => {
     setMatchQuery("");
     setFullName("");
@@ -125,6 +144,8 @@ export function NewParticipantDialog({
     setExpectedPreset("unconfirmed");
     setLodgingNeed("unknown");
     setLocalError(null);
+    setRutError(null);
+    setPhoneError(null);
   };
 
   const handleClose = () => {
@@ -172,10 +193,16 @@ export function NewParticipantDialog({
       setLocalError("Seleccione una zona. La iglesia siempre se asocia a una zona.");
       return;
     }
-    if (rut.trim() && !isValidChileRut(rut.trim())) {
-      setLocalError("RUT inválido.");
-      return;
-    }
+    const rutValue = rut.trim();
+    const normalizedRut = rutValue ? normalizeChileRut(rutValue) : null;
+    const phoneValue = phone.trim();
+    const normalizedPhone = phoneValue ? normalizeChilePhone(phoneValue) : null;
+    const nextRutError = rutValue && !normalizedRut ? CHILE_RUT_INVALID_MESSAGE : null;
+    const nextPhoneError =
+      phoneValue && !normalizedPhone ? CHILE_PHONE_INVALID_MESSAGE : null;
+    setRutError(nextRutError);
+    setPhoneError(nextPhoneError);
+    if (nextRutError || nextPhoneError) return;
     const churchName = resolveChurchName();
     if (!churchName) {
       setLocalError(
@@ -187,10 +214,10 @@ export function NewParticipantDialog({
     }
     await onSubmit({
       fullName: fullName.trim(),
-      rut: rut.trim() || undefined,
+      rut: normalizedRut || undefined,
       zoneId,
       churchName,
-      phone: phone.trim() || undefined,
+      phone: normalizedPhone || undefined,
       email: email.trim() || undefined,
       expectedDays: expectedDays(),
       lodgingNeed,
@@ -245,11 +272,53 @@ export function NewParticipantDialog({
             onChange={(e) => setFullName(e.target.value)}
             required
           />
-          <Input
+          <ChileRutInput
             label="RUT (opcional)"
+            name="rut"
             value={rut}
-            onChange={(e) => setRut(e.target.value)}
+            error={rutError ?? undefined}
+            helper="Opcional. Ej. 12.345.678-5"
+            onChange={(value) => {
+              setRut(value);
+              if (!value.trim() || isValidChileRut(value)) setRutError(null);
+            }}
+            onBlur={() => {
+              if (!rut.trim() || isValidChileRut(rut)) {
+                setRutError(null);
+                return;
+              }
+              setRutError(CHILE_RUT_INVALID_MESSAGE);
+            }}
           />
+
+          {nameDuplicates.length > 0 ? (
+            <div
+              className="sm:col-span-2 rounded-md border border-[color-mix(in_srgb,var(--color-warning)_35%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-warning)_10%,white)] px-3 py-2 text-sm"
+              role="status"
+            >
+              <p className="font-semibold text-foreground">Posible ingreso duplicado</p>
+              <ul className="mt-1 space-y-1">
+                {nameDuplicates.map((match) => (
+                  <li key={match.row._id}>
+                    <button
+                      type="button"
+                      className="text-left text-primary underline-offset-2 hover:underline"
+                      onClick={() => {
+                        handleClose();
+                        onOpenExisting(match.row._id);
+                      }}
+                    >
+                      {match.row.identity.fullName}
+                      {match.row.churchName ? ` · ${match.row.churchName}` : ""}
+                      {match.accentOnly
+                        ? " — puede ser la misma persona, con o sin acento"
+                        : " — ya hay una ficha con este nombre"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <Select
             label="Zona"
@@ -312,10 +381,23 @@ export function NewParticipantDialog({
             </div>
           ) : null}
 
-          <Input
+          <ChilePhoneInput
             label="Teléfono"
+            name="phone"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            error={phoneError ?? undefined}
+            helper="Celular chileno, con +56. Ej. +56 9 1234 5678"
+            onChange={(value) => {
+              setPhone(value);
+              if (!value.trim() || isValidChilePhone(value)) setPhoneError(null);
+            }}
+            onBlur={() => {
+              if (!phone.trim() || isValidChilePhone(phone)) {
+                setPhoneError(null);
+                return;
+              }
+              setPhoneError(CHILE_PHONE_INVALID_MESSAGE);
+            }}
           />
           <Input
             label="Correo"
@@ -324,7 +406,7 @@ export function NewParticipantDialog({
             onChange={(e) => setEmail(e.target.value)}
           />
           <Select
-            label="Días previstos"
+            label="Confirmar asistencia"
             value={expectedPreset}
             onChange={(e) =>
               setExpectedPreset(e.target.value as typeof expectedPreset)

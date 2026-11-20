@@ -8,6 +8,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  isValidChilePhone,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
 import type { ConfirmOptions } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { StatusBadge } from "@/components/admin/kit";
 import {
@@ -254,6 +260,12 @@ function RosterContactSection({
   const outcomeOptions = getContactOutcomeOptions(channel);
 
   const saveContactFields = async () => {
+    const phoneValue = phone.trim();
+    const normalizedPhone = phoneValue ? normalizeChilePhone(phoneValue) : null;
+    if (!normalizedPhone) {
+      setError(phoneValue ? CHILE_PHONE_INVALID_MESSAGE : "El teléfono es obligatorio.");
+      return;
+    }
     setSavingFields(true);
     setError(null);
     try {
@@ -262,7 +274,7 @@ function RosterContactSection({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim(), phone: phone.trim() }),
+          body: JSON.stringify({ email: email.trim(), phone: normalizedPhone }),
         }
       );
       const data = await res.json();
@@ -379,11 +391,12 @@ function RosterContactSection({
           onChange={(event) => setEmail(event.target.value)}
           placeholder="correo@ejemplo.cl"
         />
-        <Input
+        <ChilePhoneInput
           label="Teléfono"
+          name="rosterContactPhone"
           value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          placeholder="+56 9 …"
+          onChange={setPhone}
+          helper="Celular chileno, con +56."
         />
         <Button
           variant="outline"
@@ -503,12 +516,18 @@ function SubmissionContactInfoSection({
   if (existingEmail && existingPhone) return null;
 
   const save = async () => {
+    const phoneValue = phone.trim();
+    const normalizedPhone = phoneValue ? normalizeChilePhone(phoneValue) : null;
+    if (!existingPhone && phoneValue && !normalizedPhone) {
+      setError(CHILE_PHONE_INVALID_MESSAGE);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const body: { email?: string; phone?: string } = {};
       if (!existingEmail && email.trim()) body.email = email.trim();
-      if (!existingPhone && phone.trim()) body.phone = phone.trim();
+      if (!existingPhone && normalizedPhone) body.phone = normalizedPhone;
 
       const res = await fetch(
         `/api/student-affairs/submissions/${encodeURIComponent(submissionId)}/contact-info`,
@@ -546,11 +565,12 @@ function SubmissionContactInfoSection({
         />
       ) : null}
       {!existingPhone ? (
-        <Input
+        <ChilePhoneInput
           label="Teléfono"
+          name="submissionContactPhone"
           value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          placeholder="+56 9 …"
+          onChange={setPhone}
+          helper="Celular chileno, con +56."
         />
       ) : null}
       <Button

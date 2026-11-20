@@ -14,6 +14,11 @@ import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
 import {
   GROWTH_NO_NEXT_ACTION_LABEL,
   GROWTH_OPPORTUNITY_STATUS_FILTER_OPTIONS,
@@ -121,12 +126,18 @@ export function PersonasListClient({
     e.preventDefault();
     setCreateError(null);
     setCreateInfo(null);
+    const phoneValue = phone.trim();
+    const normalizedPhone = phoneValue ? normalizeChilePhone(phoneValue) : "";
+    if (phoneValue && !normalizedPhone) {
+      setCreateError(CHILE_PHONE_INVALID_MESSAGE);
+      return;
+    }
     setCreating(true);
     try {
       const res = await fetch("/api/growth/personas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName, email, phone }),
+        body: JSON.stringify({ displayName, email, phone: normalizedPhone }),
       });
       const data = (await res.json()) as {
         ok?: boolean;
@@ -388,12 +399,13 @@ export function PersonasListClient({
             onChange={(e) => setEmail(e.target.value)}
             disabled={creating}
           />
-          <Input
+          <ChilePhoneInput
             label="Teléfono"
-            type="tel"
+            name="personaPhone"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={setPhone}
             disabled={creating}
+            helper="Opcional. Celular chileno, con +56."
           />
           {createError ? (
             <p className="text-sm text-primary" role="alert">

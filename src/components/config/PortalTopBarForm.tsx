@@ -2,6 +2,7 @@
 
 import { Input, Label } from "@/components/ui";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
 import type { PortalTopBarConfig } from "@/types/cms";
 
 interface PortalTopBarFormProps {
@@ -54,14 +55,13 @@ export function PortalTopBarForm({ value, onChange }: PortalTopBarFormProps) {
             />
           </div>
 
-          <div>
-            <Label className="mb-2 block">Teléfono</Label>
-            <Input
-              value={value.phone}
-              onChange={(e) => update("phone", e.target.value)}
-              placeholder="+56 9 1234 5678"
-            />
-          </div>
+          <ChilePhoneInput
+            label="Teléfono"
+            name="portalTopBarPhone"
+            value={value.phone}
+            onChange={(next) => update("phone", next)}
+            helper="Teléfono chileno, con +56."
+          />
 
           <div>
             <Label className="mb-2 block">Etiqueta aula virtual</Label>

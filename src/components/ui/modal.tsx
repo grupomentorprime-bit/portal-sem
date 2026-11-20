@@ -11,6 +11,8 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   description?: string;
+  /** Acciones a la izquierda del cierre, en la barra del título. */
+  actions?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
@@ -28,6 +30,7 @@ export function Modal({
   title,
   children,
   description,
+  actions,
   size = "md",
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -71,17 +74,20 @@ export function Modal({
             <p className="mt-1 text-sm text-muted">{description}</p>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Cerrar"
-          className={cn(
-            "rounded-[var(--radius-sm)] p-1 text-muted transition-colors hover:bg-background-muted hover:text-foreground",
-            focusRing
-          )}
-        >
-          <X className="h-5 w-5" strokeWidth={2} />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {actions}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className={cn(
+              "rounded-[var(--radius-sm)] p-1 text-muted transition-colors hover:bg-background-muted hover:text-foreground",
+              focusRing
+            )}
+          >
+            <X className="h-5 w-5" strokeWidth={2} />
+          </button>
+        </div>
       </div>
       <div className="p-6">{children}</div>
     </dialog>

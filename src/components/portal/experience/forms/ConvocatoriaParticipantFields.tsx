@@ -11,6 +11,7 @@ import type { ExperienceFormField } from "@/types/experience-forms";
 import { AbsenceJustificationFields } from "./AbsenceJustificationFields";
 import { AttendanceNoFeedback } from "./AttendanceNoFeedback";
 import { AttendanceYesFeedback } from "./AttendanceYesFeedback";
+import { ChileRutInput } from "./ChileRutInput";
 import { PortalFormFields } from "./PortalFormFields";
 
 interface ConvocatoriaParticipantFieldsProps {
@@ -393,11 +394,11 @@ export function ConvocatoriaParticipantFields({
             required
           />
 
-          <Input
+          <ChileRutInput
             label="RUT (opcional)"
-            placeholder="12.345.678-9"
+            name="rut"
             value={String(values.rut ?? "")}
-            onChange={(event) => onChange("rut", event.target.value)}
+            onChange={(value) => onChange("rut", value)}
             error={errors.rut}
             disabled={disabled}
             helper="Si lo conoces, ayúdanos a identificarte en el control interno."

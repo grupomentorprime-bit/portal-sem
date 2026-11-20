@@ -11,7 +11,12 @@ import {
   AdminModuleStats,
 } from "@/components/admin/AdminModuleCenter";
 import { ADMIN_PANEL_META } from "@/lib/admin/module-panels";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
 import { Button, Input, Label, Select } from "@/components/ui";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
 import { LOCALE_OPTIONS, TIMEZONE_OPTIONS } from "@/lib/admin/institutional";
 import { formatRelativeTime } from "@/lib/admin/audit-labels";
 
@@ -60,12 +65,25 @@ export function ProfileProfessionalClient() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    const phoneValue = phone.trim();
+    const normalizedPhone = phoneValue ? normalizeChilePhone(phoneValue) : "";
+    if (phoneValue && !normalizedPhone) {
+      setStatus("error");
+      setError(CHILE_PHONE_INVALID_MESSAGE);
+      return;
+    }
     setStatus("saving");
     setError("");
     const res = await fetch("/api/identity/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ displayName, jobTitle, phone, timezone, locale }),
+      body: JSON.stringify({
+        displayName,
+        jobTitle,
+        phone: normalizedPhone,
+        timezone,
+        locale,
+      }),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -144,10 +162,13 @@ export function ProfileProfessionalClient() {
               <Label htmlFor="email">Correo</Label>
               <Input id="email" value={email} disabled />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+56 9 …" />
-            </div>
+            <ChilePhoneInput
+              label="Teléfono"
+              name="profilePhone"
+              value={phone}
+              onChange={setPhone}
+              helper="Celular chileno, con +56."
+            />
             <div className="space-y-1.5">
               <Select
                 label="Zona horaria"

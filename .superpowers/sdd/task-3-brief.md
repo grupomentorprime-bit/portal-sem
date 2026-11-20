@@ -1,67 +1,91 @@
-﻿### Task 3: Compose — placeholder, disable y remount
+### Task 3: La ficha usa la etapa
 
 **Files:**
-- Modify: `src/components/desktop/DesktopAttention.tsx`
+- Modify: `src/components/admin/congress/participant/ParticipantSheet.tsx`
+- Modify: `src/components/admin/congress/CongressOpsPanel.tsx` (el único `<ParticipantSheet>`)
 
 **Interfaces:**
-- Consumes: `Compose` actual (`tenantId` inicia en `""`, `companyReady`)
-- Produces: `composeSession` number; `openComposer` incrementa; `key={composeSession}` en ambos mounts de `Compose` (panel y company)
+- Consumes: `deriveReceptionProgress`, `receptionPrimaryAction`, `ReceptionStepId`, `ReceptionStageHeader`
+- Produces: prop nueva `journeyDay: CongressAttendanceDay` en `ParticipantSheet`
 
-- [ ] **Step 1: Add composeSession state and bump on open**
+- [ ] **Step 1: Pasar el día de jornada**
 
-Near other state in `DesktopAttention`:
+En `Props` de `ParticipantSheet`, junto a `operate`:
 
 ```ts
-const [composeSession, setComposeSession] = useState(0);
+journeyDay: CongressAttendanceDay;
 ```
 
-Update `openComposer`:
+Importar el tipo desde `@/core/congress/constants` (el archivo ya importa `CongressAttendanceDay`).
+
+En `CongressOpsPanel.tsx`, dentro de `<ParticipantSheet>`:
+
+```tsx
+journeyDay={journeyDay}
+```
+
+- [ ] **Step 2: Calcular el progreso y el paso visible**
+
+Dentro de `ParticipantSheet`, después de los `useMemo` existentes y cuando `registration` existe, calcular:
 
 ```ts
-function openComposer() {
-  setComposeSession((n) => n + 1);
-  setComposing(true);
-  setReceipt(null);
-  setSelectedId("");
-  setSelectedTenantId("");
+const progress = useMemo(() => {
+  if (!registration) return null;
+  return deriveReceptionProgress({
+    registrationId: registration._id,
+    registration,
+    payments,
+    assignments,
+    journeyDay,
+  });
+}, [registration, payments, assignments, journeyDay]);
+```
+
+Reemplazar el estado `tab` / `setTab` por:
+
+```ts
+const [viewStep, setViewStep] = useState<ReceptionStepId>("asistencia");
+const [viewForId, setViewForId] = useState<string | null>(null);
+if (registration && progress && viewForId !== registration._id) {
+  setViewForId(registration._id);
+  setViewStep(progress.stage === "listo" ? "alojamiento" : progress.stage);
 }
 ```
 
-- [ ] **Step 2: Pass key to Compose instances**
+Ese ajuste corre durante el render solo cuando cambia la persona. Completar un paso no salta el contenido: el distintivo cambia y **Siguiente** pasa a habilitado.
 
-On every `<Compose ... />` in the platform frame and in `CompanySpace`:
-
-```tsx
-<Compose
-  key={composeSession}
-  ...
-/>
-```
-
-In `CompanySpace`, accept `composeSession: number` as prop and pass `key={composeSession}` to its `Compose`.
-
-- [ ] **Step 3: Fix placeholder copy**
-
-In Compose select (platform, not fixed company):
+Borrar el array `tabs` y la fila de botones que hace `setTab`. En su lugar, fuera de `div.max-h-[min(60vh,32rem)]` y antes del banner de formulario, renderizar:
 
 ```tsx
-<option value="">Seleccionar empresa</option>
+{progress ? (
+  <ReceptionStageHeader
+    progress={progress}
+    viewStep={viewStep}
+    operate={operate}
+    busy={busy}
+    onViewStep={setViewStep}
+    onPrimary={() => {
+      const action = receptionPrimaryAction(viewStep, progress.steps);
+      if (!action.enabled || busy) return;
+      if (action.kind === "close") {
+        onClose();
+        return;
+      }
+      setViewStep(viewStep === "asistencia" ? "alimentacion" : "alojamiento");
+    }}
+  />
+) : null}
 ```
 
-Ensure there is no `Elige una empresa` left in the file.
+`onClose` sigue siendo el único efecto de la X del `Dialog`. No escribir etapa al cerrar.
 
-Confirm submit stays:
+Reemplazar cada `tab === "asistencia"`, `tab === "alimentacion"` y `tab === "alojamiento"` por `viewStep === ...`.
 
-```tsx
-disabled={sending || !body.trim() || !areaId || !companyReady}
-```
+- [ ] **Step 3: Typecheck**
 
-with `companyReady = mode !== "panel" || Boolean(lockedTenantId || tenantId)`.
+Run: `npx tsc --noEmit --pretty false --incremental false`
 
-- [ ] **Step 4: Re-run UI test partial**
-
-Run: `npx tsx --test tests/baseline/desktop-attention-ui.test.ts`  
-Expected: PASS on Seleccionar empresa + composeSession; may still FAIL on título/Aplicar until Task 4–5.
+Expected: sin error nuevo en `ParticipantSheet.tsx` ni `CongressOpsPanel.tsx`.
 
 ---
 

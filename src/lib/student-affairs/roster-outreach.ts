@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "crypto";
 import { getConvocatoriaByFormId } from "@/lib/admin/forms-center";
-import { formatChilePhoneDisplay, normalizeChilePhone } from "@/lib/experience/forms/phone-chile";
+import { CHILE_PHONE_INVALID_MESSAGE, normalizeChilePhone } from "@/lib/experience/forms/phone-chile";
 import { getConvocatoriaRoster, saveConvocatoriaRoster } from "@/lib/experience/forms/roster";
 import { isValidEmail } from "@/lib/validation/identity";
 import type { AbsenceContactLogEntry, AbsenceContactOutcome } from "@/types/experience-forms";
@@ -60,11 +60,15 @@ export async function updateRosterStudentContactFields(input: {
 
   if (input.phone !== undefined) {
     const raw = input.phone.trim();
-    patch.phone =
-      formatChilePhoneDisplay(raw) ||
-      normalizeChilePhone(raw) ||
-      raw ||
-      undefined;
+    if (!raw) {
+      patch.phone = undefined;
+    } else {
+      const phone = normalizeChilePhone(raw);
+      if (!phone) {
+        return { ok: false, reason: "invalid-input", error: CHILE_PHONE_INVALID_MESSAGE };
+      }
+      patch.phone = phone;
+    }
   }
 
   if (!Object.keys(patch).length) {

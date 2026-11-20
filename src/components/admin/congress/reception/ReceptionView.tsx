@@ -1,8 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { UserPlus } from "lucide-react";
-import { AlertBanner, EmptyState, LoadingState, SearchBar } from "@/components/admin/kit";
+import {
+  ActionMenu,
+  ActionMenuItem,
+  AlertBanner,
+  ConfirmDialog,
+  EmptyState,
+  LoadingState,
+  SearchBar,
+} from "@/components/admin/kit";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
@@ -20,12 +28,20 @@ import {
   deriveContributionStatus,
 } from "@/core/congress/finance-status";
 import { formSubmissionDisplay } from "@/core/congress/form-engagement";
+import {
+  arrivalMarksImmediately,
+  deriveReceptionProgress,
+} from "@/core/congress/reception-stage";
 import { isLodgingPending } from "@/core/congress/lodging-status";
+import { registrationDeleteBlockReason } from "@/core/congress/registration-delete";
 import type {
   CongressLodgingAssignment,
+  CongressPayment,
   CongressRegistration,
 } from "@/core/congress/types";
+import { normalizeChilePhone } from "@/lib/experience/forms/phone-chile";
 import { matchesPersonSearch } from "@/lib/experience/forms/person-search";
+import { foldCongressPersonName } from "@/core/congress/brother-name";
 import { cn } from "@/lib/utils";
 import {
   attendanceCellText,
@@ -75,7 +91,11 @@ type Props = {
   onClearFilters: () => void;
   onOpenNew: () => void;
   onOpenParticipant: (id: string) => void;
+  onEditParticipant: (id: string) => void;
+  onDeleteParticipant: (id: string) => Promise<boolean | void>;
+  payments: CongressPayment[];
   onRegisterArrival: (id: string, day: CongressAttendanceDay) => void;
+  onGuideArrival: (id: string, day: CongressAttendanceDay) => void;
   onRevertArrival: (id: string, day: CongressAttendanceDay) => void;
   arrivalSavingId: string | null;
 };
@@ -102,10 +122,28 @@ export function ReceptionView({
   onClearFilters,
   onOpenNew,
   onOpenParticipant,
+  onEditParticipant,
+  onDeleteParticipant,
+  payments,
   onRegisterArrival,
+  onGuideArrival,
   onRevertArrival,
   arrivalSavingId,
 }: Props) {
+  const [pendingDelete, setPendingDelete] = useState<CongressRegistration | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  function confirmArrival(reg: CongressRegistration, day: CongressAttendanceDay) {
+    const immediate = arrivalMarksImmediately({
+      registrationId: reg._id,
+      registration: reg,
+      payments,
+      assignments,
+      day,
+    });
+    if (immediate) onRegisterArrival(reg._id, day);
+    else onGuideArrival(reg._id, day);
+  }
   const receptionZones = useMemo(() => {
     const byId = new Map(CONGRESS_ZONES.map((z) => [z.id, z]));
     for (const z of zoneOptions) {
@@ -133,6 +171,40 @@ export function ReceptionView({
     ]).map((o) => o.label);
     return merged;
   }, [churchOptions, registrations, zoneFilter]);
+
+  const duplicateIds = useMemo(() => {
+    const groups = new Map<string, string[]>();
+    for (const reg of registrations) {
+      const key = foldCongressPersonName(reg.identity.fullName);
+      if (!key || key.split(" ").length < 2) continue;
+      const list = groups.get(key) ?? [];
+      list.push(reg._id);
+      groups.set(key, list);
+    }
+    const ids = new Set<string>();
+    for (const list of groups.values()) {
+      if (list.length < 2) continue;
+      for (const id of list) ids.add(id);
+    }
+    return ids;
+  }, [registrations]);
+
+  const stageLabelById = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const reg of registrations) {
+      labels.set(
+        reg._id,
+        deriveReceptionProgress({
+          registrationId: reg._id,
+          registration: reg,
+          payments: [],
+          assignments,
+          journeyDay,
+        }).stageLabel
+      );
+    }
+    return labels;
+  }, [registrations, assignments, journeyDay]);
 
   const filtered = useMemo(() => {
     const q = search.trim();
@@ -338,6 +410,14 @@ export function ReceptionView({
                         <p className="font-semibold text-foreground">
                           {registrationDisplayName(reg)}
                         </p>
+                        <p className="text-xs font-extrabold text-primary">
+                          {stageLabelById.get(reg._id)}
+                        </p>
+                        {duplicateIds.has(reg._id) ? (
+                          <p className="text-xs font-semibold text-[var(--color-warning)]">
+                            Posible duplicado, con o sin acento
+                          </p>
+                        ) : null}
                         <p className="text-xs text-muted">
                           {[reg.identity.phone || "—", ...registrationRoleBadges(reg)].join(
                             " · "
@@ -348,11 +428,21 @@ export function ReceptionView({
                         <p>{reg.churchName}</p>
                         <p className="text-xs text-muted">{formatZoneLabel(reg.zoneId)}</p>
                       </td>
-                      <td className="px-3 py-2.5">
-                        <AttendanceBadge {...sat} />
+                      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                        <ArrivalConfirm
+                          text={sat}
+                          operate={operate}
+                          saving={arrivalSavingId === `${reg._id}:saturday`}
+                          onConfirm={() => confirmArrival(reg, "saturday")}
+                        />
                       </td>
-                      <td className="px-3 py-2.5">
-                        <AttendanceBadge {...sun} />
+                      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                        <ArrivalConfirm
+                          text={sun}
+                          operate={operate}
+                          saving={arrivalSavingId === `${reg._id}:sunday`}
+                          onConfirm={() => confirmArrival(reg, "sunday")}
+                        />
                       </td>
                       <td className="px-3 py-2.5">{contributionLabel(reg)}</td>
                       <td className="px-3 py-2.5">
@@ -371,35 +461,44 @@ export function ReceptionView({
                         )}
                       </td>
                       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                        {arrived ? (
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="text-xs text-muted">
-                              Llegó · {journeyDayShortLabel(journeyDay)}
-                              {arrival.time ? ` · ${arrival.time}` : ""}
-                            </span>
-                            {operate ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
-                                onClick={() => onRevertArrival(reg._id, journeyDay)}
-                              >
-                                Dejar sin marcar
-                              </Button>
-                            ) : null}
-                          </div>
-                        ) : operate ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
-                            onClick={() => onRegisterArrival(reg._id, journeyDay)}
-                          >
-                            Registrar llegada · {journeyDayShortLabel(journeyDay)}
-                          </Button>
-                        ) : (
-                          "—"
-                        )}
+                        <div className="flex items-center justify-end gap-1">
+                          {arrived ? (
+                            <div className="flex flex-col items-start gap-1">
+                              <span className="text-xs text-muted">
+                                Llegó · {journeyDayShortLabel(journeyDay)}
+                                {arrival.time ? ` · ${arrival.time}` : ""}
+                              </span>
+                              {operate ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
+                                  onClick={() => onRevertArrival(reg._id, journeyDay)}
+                                >
+                                  Dejar sin marcar
+                                </Button>
+                              ) : null}
+                            </div>
+                          ) : operate ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
+                              onClick={() => confirmArrival(reg, journeyDay)}
+                            >
+                              Registrar llegada · {journeyDayShortLabel(journeyDay)}
+                            </Button>
+                          ) : (
+                            <span>—</span>
+                          )}
+                          {operate ? (
+                            <ParticipantActionsMenu
+                              registration={reg}
+                              onEdit={() => onEditParticipant(reg._id)}
+                              onDelete={() => setPendingDelete(reg)}
+                            />
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -431,6 +530,14 @@ export function ReceptionView({
                       </span>
                       {registrationDisplayName(reg)}
                     </p>
+                    <p className="text-xs font-extrabold text-primary">
+                      {stageLabelById.get(reg._id)}
+                    </p>
+                    {duplicateIds.has(reg._id) ? (
+                      <p className="text-xs font-semibold text-[var(--color-warning)]">
+                        Posible duplicado, con o sin acento
+                      </p>
+                    ) : null}
                     <p className="mt-1">
                       {form.at && form.label ? (
                         <FormOkNotice at={form.at} />
@@ -446,33 +553,59 @@ export function ReceptionView({
                     </p>
                   </button>
                   {operate ? (
-                    arrivedMobile ? (
-                      <Button
-                        className="mt-2"
-                        size="sm"
-                        variant="outline"
-                        loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
-                        onClick={() => onRevertArrival(reg._id, journeyDay)}
-                      >
-                        Dejar sin marcar
-                      </Button>
-                    ) : (
-                      <Button
-                        className="mt-2"
-                        size="sm"
-                        variant="outline"
-                        loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
-                        onClick={() => onRegisterArrival(reg._id, journeyDay)}
-                      >
-                        Registrar llegada · {journeyDayShortLabel(journeyDay)}
-                      </Button>
-                    )
+                    <div className="mt-2 flex items-center gap-1">
+                      {arrivedMobile ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
+                          onClick={() => onRevertArrival(reg._id, journeyDay)}
+                        >
+                          Dejar sin marcar
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
+                          onClick={() => confirmArrival(reg, journeyDay)}
+                        >
+                          Registrar llegada · {journeyDayShortLabel(journeyDay)}
+                        </Button>
+                      )}
+                      <ParticipantActionsMenu
+                        registration={reg}
+                        onEdit={() => onEditParticipant(reg._id)}
+                        onDelete={() => setPendingDelete(reg)}
+                      />
+                    </div>
                   ) : null}
                 </li>
               );
             })}
           </ul>
         </>
+      ) : null}
+
+      {pendingDelete ? (
+        <DeleteParticipantDialog
+          registration={pendingDelete}
+          assignments={assignments}
+          payments={payments}
+          loading={deleteBusy}
+          onClose={() => {
+            if (deleteBusy) return;
+            setPendingDelete(null);
+          }}
+          onConfirm={() => {
+            const id = pendingDelete._id;
+            setDeleteBusy(true);
+            void onDeleteParticipant(id).then((ok) => {
+              setDeleteBusy(false);
+              if (ok !== false) setPendingDelete(null);
+            });
+          }}
+        />
       ) : null}
     </div>
   );
@@ -486,6 +619,30 @@ function FormOkNotice({ at }: { at: string }) {
       </span>
       <span className="text-xs font-semibold text-foreground">{formatDateTimeSantiago(at)}</span>
     </span>
+  );
+}
+
+function ArrivalConfirm({
+  text,
+  operate,
+  saving,
+  onConfirm,
+}: {
+  text: { text: string; present: boolean; time: string | null };
+  operate: boolean;
+  saving: boolean;
+  onConfirm: () => void;
+}) {
+  if (text.present || !operate) return <AttendanceBadge {...text} />;
+  return (
+    <button
+      type="button"
+      disabled={saving}
+      className="rounded-md text-left hover:bg-background-soft disabled:opacity-60"
+      onClick={onConfirm}
+    >
+      <AttendanceBadge {...text} />
+    </button>
   );
 }
 
@@ -508,5 +665,91 @@ function AttendanceBadge({
       />
       {text}
     </span>
+  );
+}
+
+function whatsappHref(phone: string | null | undefined): string | null {
+  const normalized = normalizeChilePhone(phone ?? "");
+  if (!normalized) return null;
+  const digits = normalized.replace(/\D/g, "");
+  const text = encodeURIComponent(
+    "Hola, te escribimos desde la recepción del Congreso de Varones."
+  );
+  return `https://wa.me/${digits}?text=${text}`;
+}
+
+function ParticipantActionsMenu({
+  registration,
+  onEdit,
+  onDelete,
+}: {
+  registration: CongressRegistration;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const whatsapp = whatsappHref(registration.identity.phone);
+  return (
+    <ActionMenu label={`Acciones de ${registrationDisplayName(registration)}`}>
+      <ActionMenuItem onClick={onEdit}>Editar</ActionMenuItem>
+      {whatsapp ? (
+        <ActionMenuItem href={whatsapp} external>
+          Escribir por WhatsApp
+        </ActionMenuItem>
+      ) : (
+        <ActionMenuItem disabled>Escribir por WhatsApp (sin teléfono)</ActionMenuItem>
+      )}
+      <ActionMenuItem destructive onClick={onDelete}>
+        Eliminar
+      </ActionMenuItem>
+    </ActionMenu>
+  );
+}
+
+function DeleteParticipantDialog({
+  registration,
+  assignments,
+  payments,
+  loading,
+  onClose,
+  onConfirm,
+}: {
+  registration: CongressRegistration;
+  assignments: CongressLodgingAssignment[];
+  payments: CongressPayment[];
+  loading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const block = registrationDeleteBlockReason({
+    registrationId: registration._id,
+    allocatedPaidClp: registration.allocatedPaidClp ?? 0,
+    payments,
+    assignments,
+  });
+  if (block) {
+    return (
+      <ConfirmDialog
+        open
+        title="No se puede eliminar"
+        description={block}
+        confirmLabel="Entendido"
+        hideCancel
+        onClose={onClose}
+        onConfirm={onClose}
+      />
+    );
+  }
+  return (
+    <ConfirmDialog
+      open
+      title="Eliminar inscrito"
+      description={`¿Eliminar a ${registrationDisplayName(registration)}? La ficha se borra y no se puede deshacer.`}
+      confirmLabel="Sí, eliminar"
+      cancelLabel="Cancelar"
+      destructive
+      loading={loading}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    />
   );
 }

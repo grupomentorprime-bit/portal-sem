@@ -62,7 +62,7 @@ export function paymentMethodLabel(
     case "other":
       return "Otro";
     default:
-      return "Sin clasificar";
+      return "Sin medio";
   }
 }
 

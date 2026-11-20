@@ -289,7 +289,7 @@ export function CashBoxView({
                 { value: "cash", label: "Efectivo" },
                 { value: "transfer", label: "Transferencia" },
                 { value: "other", label: "Otro" },
-                { value: "unclassified", label: "Sin clasificar" },
+                { value: "unclassified", label: "Sin medio" },
               ]}
             />
             <Input
@@ -323,7 +323,7 @@ export function CashBoxView({
                 ["Efectivo", totalsClp.cash, false],
                 ["Transferencia", totalsClp.transfer, false],
                 ["Otro", totalsClp.other, false],
-                ["Sin clasificar", totalsClp.unclassified, false],
+                ["Sin medio", totalsClp.unclassified, false],
                 ["Total", totalsClp.total, true],
               ] as const
             ).map(([label, value, emphasize]) => (

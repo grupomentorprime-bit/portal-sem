@@ -9,7 +9,7 @@ import {
 import { emptyAttendance } from "@/core/congress/attendance";
 import { buildChargeAmountClp } from "@/core/congress/charges";
 import { formatCongressChurchLabel } from "@/core/congress/church-name";
-import { compareRegistrationsForEntryBackfill } from "@/core/congress/entry-order";
+import { compareRegistrationsForEntryBackfill, planCompactEntryNumbers } from "@/core/congress/entry-order";
 import { emptyExpectedDays, parseExpectedDayLabel } from "@/core/congress/expected-days";
 import {
   countsAsPendingVerification,
@@ -246,6 +246,49 @@ export async function updateCongressRegistration(
       { returnDocument: "after" }
     );
   return result ? normalizeCongressRegistration(result) : null;
+}
+
+export async function deleteCongressRegistration(
+  tenantId: string,
+  id: string
+): Promise<{ deleted: boolean; entryNumbers: Array<{ _id: string; entryNumber: number }> }> {
+  const db = await getDatabase();
+  const scope = eventFilter(tenantId);
+  const result = await db
+    .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+    .deleteOne({ ...scope, _id: id });
+  if (result.deletedCount !== 1) return { deleted: false, entryNumbers: [] };
+  await db.collection(CONGRESS_COLLECTIONS.assignments).deleteMany({
+    ...scope,
+    registrationId: id,
+  });
+
+  const col = db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations);
+  const remaining = await col.find(scope).toArray();
+  const entryNumbers = planCompactEntryNumbers(remaining);
+  const now = new Date().toISOString();
+  const updates = entryNumbers.filter((next) => {
+    const current = remaining.find((row) => row._id === next._id);
+    return current?.entryNumber !== next.entryNumber;
+  });
+  if (updates.length > 0) {
+    await col.bulkWrite(
+      updates.map((next) => ({
+        updateOne: {
+          filter: { _id: next._id, ...scope },
+          update: {
+            $set: { entryNumber: next.entryNumber, updatedAt: now },
+            $inc: { version: 1 },
+          },
+        },
+      }))
+    );
+  }
+  await setRegistrationEntrySequence(
+    tenantId,
+    entryNumbers.reduce((max, row) => Math.max(max, row.entryNumber), 0)
+  );
+  return { deleted: true, entryNumbers };
 }
 
 export function buildRegistrationDraft(input: {

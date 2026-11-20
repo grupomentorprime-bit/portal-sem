@@ -6,12 +6,19 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
+import { ChileRutInput } from "@/components/portal/experience/forms/ChileRutInput";
 import { CONVOCATORIA_GENERATIONS } from "@/lib/experience/forms/generations";
 import {
   CHILE_PHONE_INVALID_MESSAGE,
   isValidChilePhone,
   normalizeChilePhone,
 } from "@/lib/experience/forms/phone-chile";
+import {
+  CHILE_RUT_INVALID_MESSAGE,
+  isValidChileRut,
+  normalizeChileRut,
+} from "@/lib/experience/forms/rut-chile";
 import { createRosterStudentFromFields } from "@/lib/experience/forms/roster-import";
 import type { ConvocatoriaRosterStudent } from "@/types/convocatoria-roster";
 
@@ -101,6 +108,12 @@ export function ConvocatoriaRosterStudentDialog({
       return;
     }
 
+    const rawRut = form.rut.trim();
+    if (rawRut && !isValidChileRut(rawRut)) {
+      setError(CHILE_RUT_INVALID_MESSAGE);
+      return;
+    }
+
     const rawPhone = form.phone.trim();
     if (rawPhone && !isValidChilePhone(rawPhone)) {
       setError(CHILE_PHONE_INVALID_MESSAGE);
@@ -108,11 +121,11 @@ export function ConvocatoriaRosterStudentDialog({
     }
 
     const created = createRosterStudentFromFields({
-      rut: form.rut,
+      rut: rawRut ? normalizeChileRut(rawRut) ?? undefined : undefined,
       firstName: form.firstName,
       lastName: form.lastName,
       generation: form.generation,
-      phone: rawPhone ? normalizeChilePhone(rawPhone) ?? rawPhone : undefined,
+      phone: rawPhone ? normalizeChilePhone(rawPhone) ?? undefined : undefined,
       index: existingCount,
     });
 
@@ -155,11 +168,11 @@ export function ConvocatoriaRosterStudentDialog({
       size="md"
     >
       <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4 p-6 pt-2">
-        <Input
+        <ChileRutInput
           label="RUT"
-          placeholder="12.345.678-9"
+          name="rosterRut"
           value={form.rut}
-          onChange={(event) => setForm((prev) => ({ ...prev, rut: event.target.value }))}
+          onChange={(value) => setForm((prev) => ({ ...prev, rut: value }))}
           helper="Opcional, pero recomendado para evitar duplicados."
         />
 
@@ -189,12 +202,11 @@ export function ConvocatoriaRosterStudentDialog({
           required
         />
 
-        <Input
+        <ChilePhoneInput
           label="Teléfono"
-          type="tel"
-          placeholder="+56 9 1234 5678"
+          name="rosterPhone"
           value={form.phone}
-          onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+          onChange={(value) => setForm((prev) => ({ ...prev, phone: value }))}
           helper="Opcional. El alumno puede actualizarlo al confirmar asistencia."
         />
 

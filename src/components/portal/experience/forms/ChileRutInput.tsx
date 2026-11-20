@@ -16,6 +16,7 @@ interface ChileRutInputProps {
   disabled?: boolean;
   required?: boolean;
   onChange: (value: string) => void;
+  onBlur?: () => void;
 }
 
 export function ChileRutInput({
@@ -27,6 +28,7 @@ export function ChileRutInput({
   disabled,
   required,
   onChange,
+  onBlur,
 }: ChileRutInputProps) {
   const handleChange = (nextValue: string) => {
     onChange(formatChileRutInput(nextValue));
@@ -37,6 +39,7 @@ export function ChileRutInput({
     if (normalized && normalized !== value) {
       onChange(normalized);
     }
+    onBlur?.();
   };
 
   return (

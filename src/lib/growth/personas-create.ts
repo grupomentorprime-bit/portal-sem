@@ -8,6 +8,10 @@ import {
   type GrowthPersonaStore,
 } from "@/core/growth";
 import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
+import {
   GROWTH_PERSONAS_CONFLICT_MESSAGE,
   GROWTH_PERSONAS_CREATED_MESSAGE,
   GROWTH_PERSONAS_MATCHED_MESSAGE,
@@ -63,7 +67,15 @@ export async function createGrowthPersonaWithStore(
   }
 
   const email = input.email?.trim() || undefined;
-  const phone = input.phone?.trim() || undefined;
+  const phoneRaw = input.phone?.trim() || "";
+  const phone = phoneRaw ? normalizeChilePhone(phoneRaw) ?? undefined : undefined;
+  if (phoneRaw && !phone) {
+    return {
+      ok: false,
+      code: "validation",
+      message: CHILE_PHONE_INVALID_MESSAGE,
+    };
+  }
   if (!email && !phone) {
     return {
       ok: false,

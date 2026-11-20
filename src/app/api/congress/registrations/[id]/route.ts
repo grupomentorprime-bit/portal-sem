@@ -13,11 +13,14 @@ import type { CongressAttendanceDays, CongressLodgingNeed } from "@/core/congres
 import { enforceLeadershipUniqueness } from "@/lib/congress/leadership";
 import {
   appendCongressAudit,
+  deleteCongressRegistration,
   getCongressRegistration,
   listCongressAssignments,
+  listCongressPayments,
   listCongressRegistrations,
   updateCongressRegistration,
 } from "@/lib/congress/repository";
+import { registrationDeleteBlockReason } from "@/core/congress/registration-delete";
 
 function parseExpectedDays(raw: unknown): CongressAttendanceDays | null {
   if (!raw || typeof raw !== "object") return null;
@@ -154,6 +157,61 @@ export async function PATCH(
     });
 
     return NextResponse.json({ ok: true, registration: updated });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ ok: false, error: "Error interno." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const ctx = await requireCongressOperate();
+    if (ctx instanceof NextResponse) return ctx;
+
+    const { id } = await context.params;
+    const current = await getCongressRegistration(ctx.tenantId, id);
+    if (!current) {
+      return NextResponse.json({ ok: false, error: "Inscripción no encontrada." }, { status: 404 });
+    }
+
+    const [payments, assignments] = await Promise.all([
+      listCongressPayments(ctx.tenantId),
+      listCongressAssignments(ctx.tenantId),
+    ]);
+    const blocked = registrationDeleteBlockReason({
+      registrationId: id,
+      allocatedPaidClp: current.allocatedPaidClp ?? 0,
+      payments,
+      assignments,
+    });
+    if (blocked) {
+      return NextResponse.json({ ok: false, error: blocked }, { status: 409 });
+    }
+
+    const deleted = await deleteCongressRegistration(ctx.tenantId, id);
+    if (!deleted.deleted) {
+      return NextResponse.json({ ok: false, error: "Inscripción no encontrada." }, { status: 404 });
+    }
+
+    await appendCongressAudit({
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.user._id,
+      action: "registration.delete",
+      entity: "congress_registration",
+      entityId: id,
+      metadata: {
+        fullName: current.identity.fullName,
+        churchName: current.churchName,
+        zoneId: current.zoneId,
+        entryNumber: current.entryNumber ?? null,
+        reason: "inscripcion_por_error",
+      },
+    });
+
+    return NextResponse.json({ ok: true, entryNumbers: deleted.entryNumbers });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ ok: false, error: "Error interno." }, { status: 500 });

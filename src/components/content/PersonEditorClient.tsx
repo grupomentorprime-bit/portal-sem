@@ -10,8 +10,13 @@ import {
 import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { useConfirmDialog } from "@/components/admin/kit/hooks/useConfirmDialog";
 import { MediaField } from "@/components/media/MediaPicker";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,6 +73,12 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = async () => {
+    const phoneValue = phone.trim();
+    const normalizedPhone = phoneValue ? normalizeChilePhone(phoneValue) : "";
+    if (phoneValue && !normalizedPhone) {
+      setError(CHILE_PHONE_INVALID_MESSAGE);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -88,7 +99,7 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
         featured,
         visible,
         email: email || undefined,
-        phone: phone || undefined,
+        phone: normalizedPhone || undefined,
         linkedin: linkedin || undefined,
         imageMediaId: imageMediaId || undefined,
       };
@@ -246,7 +257,13 @@ export function PersonEditorClient({ tenant, sectionHref, item }: PersonEditorCl
       <FormSection title="Contacto" description="Datos opcionales de contacto público.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Input label="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <ChilePhoneInput
+            label="Teléfono"
+            name="personPhone"
+            value={phone}
+            onChange={setPhone}
+            helper="Opcional. Celular chileno, con +56."
+          />
         </div>
         <Input label="LinkedIn" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
       </FormSection>

@@ -37,3 +37,19 @@ export function compareByRegistrationEntryNumber(
   if (na == null && nb != null) return 1;
   return compareRegistrationsForEntryBackfill(a, b);
 }
+
+/**
+ * Cierra huecos después de borrar una ficha.
+ * El menor correlativo que queda no se mueve; los siguientes quedan seguidos.
+ */
+export function planCompactEntryNumbers<T extends EntryNumberRow>(
+  rows: T[]
+): Array<{ _id: string; entryNumber: number }> {
+  const ordered = [...rows].sort((a, b) => compareByRegistrationEntryNumber(b, a));
+  const first =
+    ordered.map((row) => registrationEntryNumber(row)).find((n) => n != null) ?? 1;
+  return ordered.map((row, index) => ({
+    _id: row._id,
+    entryNumber: first + index,
+  }));
+}

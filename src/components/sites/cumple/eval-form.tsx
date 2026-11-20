@@ -15,7 +15,7 @@ import {
   type MatterId,
   type YesNo,
 } from "@/sites/cumple/diagnostico";
-import { isValidChilePhone } from "@/lib/experience/forms/phone-chile";
+import { formatChilePhoneInput, isValidChilePhone, normalizeChilePhone } from "@/lib/experience/forms/phone-chile";
 
 type Step = "headcount" | "operacion" | "datos" | "materia" | "contacto" | "creando" | "resultado";
 
@@ -166,7 +166,7 @@ export function EvalForm() {
           data: {
             fullName: fullName.trim(),
             email: email.trim(),
-            phone: phone.trim(),
+            phone: normalizeChilePhone(phone) ?? phone.trim(),
             company: company.trim(),
             diagnosticoResumen: diagnostico.resumen,
             headcount,
@@ -486,7 +486,7 @@ export function EvalForm() {
                     name="phone"
                     type="tel"
                     value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
+                    onChange={(event) => setPhone(formatChilePhoneInput(event.target.value))}
                     autoComplete="tel"
                     placeholder="+56 9 1234 5678"
                     className={fieldClass}

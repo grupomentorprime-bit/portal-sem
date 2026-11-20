@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/admin/kit";
+import { ConfirmDialog } from "@/components/admin/kit/dialogs/ConfirmDialog";
 import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
@@ -18,7 +20,6 @@ import type {
 } from "@/core/congress/types";
 import {
   contributionLabel,
-  expectedDaysText,
   formatClp,
   formatClpInput,
   formatDateTimeSantiago,
@@ -31,14 +32,35 @@ import {
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
+import { ChileRutInput } from "@/components/portal/experience/forms/ChileRutInput";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  formatChilePhoneDisplay,
+  isValidChilePhone,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
+import {
+  CHILE_RUT_INVALID_MESSAGE,
+  formatChileRutDisplay,
+  isValidChileRut,
+  normalizeChileRut,
+} from "@/lib/experience/forms/rut-chile";
 import { CHARGE_WAIVE_REASONS, isExplicitlyExempt } from "@/core/congress/charge";
 import { remainingBalanceClp } from "@/core/congress/charges";
 import { formSubmissionDisplay } from "@/core/congress/form-engagement";
 import { todayPaidOnSantiago } from "@/core/congress/payment-dates";
 import { occupiedBedsForNight } from "@/core/congress/lodging";
-import { cn } from "@/lib/utils";
+import { findFoldedNameDuplicates } from "@/core/congress/accent-duplicates";
+import { registrationDeleteBlockReason } from "@/core/congress/registration-delete";
+import {
+  deriveReceptionProgress,
+  receptionPrimaryAction,
+  type ReceptionMissingField,
+  type ReceptionStepId,
+} from "@/core/congress/reception-stage";
+import { ReceptionStageHeader } from "@/components/admin/congress/participant/ReceptionStageHeader";
 
-type SheetTab = "asistencia" | "alimentacion" | "alojamiento";
 const NIGHT_BOTH = "__both__";
 
 type Props = {
@@ -47,6 +69,7 @@ type Props = {
   assignments: CongressLodgingAssignment[];
   homes: CongressLodgingHome[];
   operate: boolean;
+  journeyDay: CongressAttendanceDay;
   canPay: boolean;
   zoneOptions?: { id: string; label: string }[];
   onClose: () => void;
@@ -81,6 +104,9 @@ type Props = {
     receiptRef?: string;
   }) => Promise<void>;
   payments: CongressPayment[];
+  registrations?: CongressRegistration[];
+  onOpenRegistration?: (id: string) => void;
+  onDeleteRegistration?: (id: string) => Promise<void>;
   lastReceiptPayment?: CongressPayment | null;
   onDownloadReceipt: (payment: CongressPayment) => void;
   onChargeChange: (input: {
@@ -99,6 +125,8 @@ type Props = {
     action: "confirm" | "cancel"
   ) => Promise<void>;
   busy: boolean;
+  /** Abre la ficha con los datos personales en edición. */
+  startEditing?: boolean;
 };
 
 function chargeHistoryLabel(entry: {
@@ -148,6 +176,7 @@ export function ParticipantSheet({
   assignments,
   homes,
   operate,
+  journeyDay,
   canPay,
   zoneOptions = [],
   onClose,
@@ -155,14 +184,17 @@ export function ParticipantSheet({
   onPatchRegistration,
   onIndividualPayment,
   payments,
+  registrations = [],
+  onOpenRegistration,
+  onDeleteRegistration,
   lastReceiptPayment,
   onDownloadReceipt,
   onChargeChange,
   onAssignBed,
   onAssignmentAction,
   busy,
+  startEditing = false,
 }: Props) {
-  const [tab, setTab] = useState<SheetTab>("asistencia");
   const [payAmount, setPayAmount] = useState<number | null>(CONGRESS_CONTRIBUTION_CLP);
   const [payerName, setPayerName] = useState("");
   const [payMethod, setPayMethod] = useState<CongressPaymentMethod>("cash");
@@ -184,10 +216,24 @@ export function ParticipantSheet({
   const [editPhone, setEditPhone] = useState("");
   const [editZone, setEditZone] = useState("");
   const [editChurch, setEditChurch] = useState("");
+  const [editRutError, setEditRutError] = useState<string | null>(null);
+  const [editPhoneError, setEditPhoneError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmArmed, setConfirmArmed] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [trackedRegistrationId, setTrackedRegistrationId] = useState<string | null>(null);
+  const seenUpdatedAt = useRef<string | null>(null);
+
+  if (!open && trackedRegistrationId !== null) {
+    setTrackedRegistrationId(null);
+  } else if (registration && open && trackedRegistrationId !== registration._id) {
+    setTrackedRegistrationId(registration._id);
+    setEditing(startEditing);
+    seenUpdatedAt.current = registration.updatedAt ?? null;
+  }
 
   useEffect(() => {
     if (!registration || !open) return;
-    setTab("asistencia");
     setPayerName(registration.identity.fullName);
     setPayMethod("cash");
     setPaidOn(todayPaidOnSantiago());
@@ -201,12 +247,39 @@ export function ParticipantSheet({
     setNight(NIGHT_BOTH);
     setExpectedPreset(expectedPresetFromReg(registration));
     setEditName(registration.identity.fullName);
-    setEditRut(registration.identity.rut ?? "");
+    setEditRut(
+      registration.identity.rut ? formatChileRutDisplay(registration.identity.rut) : ""
+    );
     setEditEmail(registration.identity.email ?? "");
-    setEditPhone(registration.identity.phone ?? "");
+    setEditPhone(
+      registration.identity.phone
+        ? formatChilePhoneDisplay(registration.identity.phone)
+        : ""
+    );
+    setEditRutError(null);
+    setEditPhoneError(null);
+    setConfirmDelete(false);
+    setConfirmArmed(false);
+    if (
+      seenUpdatedAt.current &&
+      registration.updatedAt &&
+      seenUpdatedAt.current !== registration.updatedAt
+    ) {
+      setEditing(false);
+    }
+    seenUpdatedAt.current = registration.updatedAt ?? null;
     setEditZone(registration.zoneId);
     setEditChurch(registration.churchName);
   }, [open, registration?._id, registration?.updatedAt]);
+
+  useEffect(() => {
+    if (!confirmDelete) {
+      setConfirmArmed(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setConfirmArmed(true), 350);
+    return () => window.clearTimeout(timer);
+  }, [confirmDelete]);
 
   useEffect(() => {
     if (!registration || !open) return;
@@ -302,6 +375,24 @@ export function ParticipantSheet({
     [payments, registration]
   );
 
+  const progress = useMemo(() => {
+    if (!registration) return null;
+    return deriveReceptionProgress({
+      registrationId: registration._id,
+      registration,
+      payments,
+      assignments,
+      journeyDay,
+    });
+  }, [registration, payments, assignments, journeyDay]);
+
+  const [viewStep, setViewStep] = useState<ReceptionStepId>("asistencia");
+  const [viewForId, setViewForId] = useState<string | null>(null);
+  if (registration && progress && viewForId !== registration._id) {
+    setViewForId(registration._id);
+    setViewStep(progress.stage === "listo" ? "alojamiento" : progress.stage);
+  }
+
   const lastReceiptBelongsToRegistration =
     Boolean(registration) &&
     Boolean(
@@ -313,6 +404,17 @@ export function ParticipantSheet({
   const title = registration
     ? registrationDisplayName(registration)
     : "Participante";
+  const nameDuplicates = registration
+    ? findFoldedNameDuplicates(editName || registration.identity.fullName, registrations, registration._id)
+    : [];
+  const deleteBlockReason = registration
+    ? registrationDeleteBlockReason({
+        registrationId: registration._id,
+        allocatedPaidClp: registration.allocatedPaidClp ?? 0,
+        payments,
+        assignments,
+      })
+    : null;
   const roleBadges = registration ? registrationRoleBadges(registration) : [];
   const formDisplay = registration ? formSubmissionDisplay(registration) : null;
   const description = registration
@@ -323,123 +425,420 @@ export function ParticipantSheet({
       ].join(" · ")
     : undefined;
 
-  const tabs: { id: SheetTab; label: string }[] = [
-    { id: "asistencia", label: "Asistencia" },
-    { id: "alimentacion", label: "Alimentación" },
-    { id: "alojamiento", label: "Alojamiento" },
-  ];
+  const cancelIdentityEdit = () => {
+    if (!registration) return;
+    setEditName(registration.identity.fullName);
+    setEditRut(
+      registration.identity.rut ? formatChileRutDisplay(registration.identity.rut) : ""
+    );
+    setEditEmail(registration.identity.email ?? "");
+    setEditPhone(
+      registration.identity.phone
+        ? formatChilePhoneDisplay(registration.identity.phone)
+        : ""
+    );
+    setEditZone(registration.zoneId);
+    setEditChurch(registration.churchName);
+    setEditRutError(null);
+    setEditPhoneError(null);
+    setEditing(false);
+  };
+
+  const saveIdentity = () => {
+    if (!registration) return;
+    const rutValue = editRut.trim();
+    const phoneValue = editPhone.trim();
+    const normalizedRut = rutValue ? normalizeChileRut(rutValue) : null;
+    const normalizedPhone = phoneValue ? normalizeChilePhone(phoneValue) : null;
+    const nextRutError = rutValue && !normalizedRut ? CHILE_RUT_INVALID_MESSAGE : null;
+    const nextPhoneError = phoneValue && !normalizedPhone ? CHILE_PHONE_INVALID_MESSAGE : null;
+    setEditRutError(nextRutError);
+    setEditPhoneError(nextPhoneError);
+    if (nextRutError || nextPhoneError) return;
+    void onPatchRegistration(registration._id, {
+      fullName: editName,
+      rut: normalizedRut ?? "",
+      email: editEmail,
+      phone: normalizedPhone ?? "",
+      zoneId: editZone,
+      churchName: editChurch,
+    });
+  };
+
+  const identityControl = (field: ReceptionMissingField) => {
+    switch (field) {
+      case "fullName":
+        return (
+          <Input
+            key={field}
+            label="Nombre"
+            value={editName}
+            disabled={busy}
+            onChange={(e) => setEditName(e.target.value)}
+          />
+        );
+      case "phone":
+        return (
+          <ChilePhoneInput
+            key={field}
+            label="Teléfono"
+            name="editPhone"
+            value={editPhone}
+            disabled={busy}
+            error={editPhoneError ?? undefined}
+            helper="Celular chileno, con +56. Ej. +56 9 1234 5678"
+            onChange={(value) => {
+              setEditPhone(value);
+              if (!value.trim() || isValidChilePhone(value)) setEditPhoneError(null);
+            }}
+            onBlur={() => {
+              if (!editPhone.trim() || isValidChilePhone(editPhone)) {
+                setEditPhoneError(null);
+                return;
+              }
+              setEditPhoneError(CHILE_PHONE_INVALID_MESSAGE);
+            }}
+          />
+        );
+      case "zoneId":
+        return (
+          <Select
+            key={field}
+            label="Zona"
+            value={editZone}
+            disabled={busy}
+            onChange={(e) => setEditZone(e.target.value)}
+            options={sheetZoneOptions(zoneOptions, editZone)}
+          />
+        );
+      case "churchName":
+        return (
+          <Input
+            key={field}
+            label="Iglesia"
+            value={editChurch}
+            disabled={busy}
+            onChange={(e) => setEditChurch(e.target.value)}
+          />
+        );
+    }
+  };
+
+  const missingFields = progress?.missingFields ?? [];
+  const isMissing = (field: ReceptionMissingField) => missingFields.includes(field);
+  const missingFieldLabels: Record<ReceptionMissingField, string> = {
+    fullName: "Nombre",
+    phone: "Teléfono",
+    zoneId: "Zona",
+    churchName: "Iglesia",
+  };
+  const attendanceDays = (
+    journeyDay === "sunday"
+      ? (["sunday", "saturday"] as const)
+      : (["saturday", "sunday"] as const)
+  );
+  const primaryAction = progress
+    ? receptionPrimaryAction(viewStep, progress.steps)
+    : null;
+
+  const identityActions =
+    registration && operate ? (
+      editing ? (
+        <>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={cancelIdentityEdit}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy || !editName.trim() || !editChurch.trim() || !editZone}
+            onClick={saveIdentity}
+          >
+            Guardar
+          </Button>
+        </>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          disabled={busy}
+          onClick={() => {
+            setViewStep("asistencia");
+            setEditing(true);
+          }}
+        >
+          Editar
+        </Button>
+      )
+    ) : null;
 
   return (
+    <>
     <Dialog
       open={open}
       onClose={onClose}
       title={title}
       description={description}
+      actions={identityActions}
       size="xl"
     >
       {!registration ? (
         <p className="text-sm text-muted">Seleccione un participante.</p>
       ) : (
         <div className="space-y-4 text-sm">
-          {formDisplay?.at && formDisplay.label ? (
+          {progress ? (
+            <ReceptionStageHeader
+              progress={progress}
+              viewStep={viewStep}
+              operate={operate}
+              busy={busy}
+              onViewStep={setViewStep}
+              onPrimary={() => {
+                if (!primaryAction || !primaryAction.enabled || busy) return;
+                if (primaryAction.kind === "close") {
+                  onClose();
+                  return;
+                }
+                setViewStep(viewStep === "asistencia" ? "alimentacion" : "alojamiento");
+              }}
+            />
+          ) : null}
+
+          <p className="text-xs text-muted" role="status">
+            {formDisplay?.at && formDisplay.label
+              ? `Formulario recibido · ${formatDateTimeSantiago(formDisplay.at)}`
+              : "Sin formulario"}
+          </p>
+
+          {nameDuplicates.length > 0 ? (
             <div
-              className="rounded-lg border-2 border-[var(--growth-os-success)] bg-[color-mix(in_srgb,var(--growth-os-success)_14%,white)] px-4 py-3"
+              className="rounded-lg border border-[color-mix(in_srgb,var(--color-warning)_35%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-warning)_10%,white)] px-4 py-3"
               role="status"
             >
-              <p className="text-base font-extrabold uppercase tracking-wide text-[var(--growth-os-success)]">
-                Formulario OK
-              </p>
-              <p className="text-sm font-semibold text-foreground">
-                {formDisplay.label} · {formatDateTimeSantiago(formDisplay.at)}
-              </p>
+              <p className="font-semibold text-foreground">Posible ingreso duplicado</p>
+              <ul className="mt-1 space-y-1">
+                {nameDuplicates.map((match) => (
+                  <li key={match.row._id}>
+                    <button
+                      type="button"
+                      className="text-left text-primary underline-offset-2 hover:underline"
+                      onClick={() => onOpenRegistration?.(match.row._id)}
+                    >
+                      {match.row.identity.fullName}
+                      {match.row.churchName ? ` · ${match.row.churchName}` : ""}
+                      {match.accentOnly
+                        ? " — puede ser la misma persona, con o sin acento"
+                        : " — ya hay una ficha con este nombre"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
-          ) : (
-            <p className="text-xs text-muted">Sin formulario</p>
-          )}
+          ) : null}
 
-          <div className="flex flex-wrap gap-1 border-b border-border pb-2">
-            {tabs.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setTab(item.id)}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-sm font-semibold transition",
-                  tab === item.id
-                    ? "bg-primary text-text-inverse"
-                    : "text-muted hover:bg-background-soft hover:text-foreground"
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          {viewStep === "asistencia" ? (
+            <div className="space-y-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {attendanceDays.map((day) => {
+                    const present = registration.attendance[day];
+                    const isJourney = day === journeyDay;
+                    const markedAt =
+                      day === "saturday"
+                        ? registration.attendanceMeta?.saturdayMarkedAt
+                        : registration.attendanceMeta?.sundayMarkedAt;
+                    const status =
+                      present === true
+                        ? `Presente${markedAt ? ` · ${formatMarkedAtSantiago(markedAt)}` : ""}`
+                        : isJourney && progress?.arrivalRequired
+                          ? "Sin llegada · se espera hoy"
+                          : "Sin llegada";
+                    return (
+                      <div
+                        key={day}
+                        className={cn(
+                          "rounded-lg border px-3 py-3",
+                          present === true
+                            ? "border-[var(--growth-os-success)] bg-[color-mix(in_srgb,var(--growth-os-success)_10%,white)]"
+                            : isJourney
+                              ? "border-primary bg-background-soft/50"
+                              : "border-border bg-white"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-base font-semibold text-foreground">
+                            {day === "saturday" ? "Sábado" : "Domingo"}
+                          </p>
+                          {isJourney ? (
+                            <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+                              Hoy
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 text-sm text-muted">{status}</p>
+                        {operate && present !== true ? (
+                          <Button
+                            type="button"
+                            className="mt-3 w-full"
+                            disabled={busy}
+                            onClick={() => void onPatchAttendance(registration._id, day, true)}
+                          >
+                            Llegó
+                          </Button>
+                        ) : null}
+                        {operate && present != null ? (
+                          <div className="mt-2 flex gap-3">
+                            {present !== false ? (
+                              <button
+                                type="button"
+                                className="text-xs text-muted underline-offset-2 hover:underline"
+                                disabled={busy}
+                                onClick={() => void onPatchAttendance(registration._id, day, false)}
+                              >
+                                No vino
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              className="text-xs text-muted underline-offset-2 hover:underline"
+                              disabled={busy}
+                              onClick={() => void onPatchAttendance(registration._id, day, null)}
+                            >
+                              Quitar marca
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
 
-          <div className="max-h-[min(60vh,32rem)] overflow-y-auto pr-1">
-            {tab === "asistencia" ? (
-              <div className="space-y-3">
-                {operate ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted">
+                    {expectedPreset === "unconfirmed"
+                      ? "Falta decir qué días viene."
+                      : expectedPreset === "both"
+                        ? "Viene sábado y domingo."
+                        : expectedPreset === "saturday"
+                          ? "Viene solo el sábado."
+                          : "Viene solo el domingo."}
+                  </p>
+                  {operate ? (
+                    <div className="flex flex-wrap gap-2">
+                      {(
+                        [
+                          ["saturday", "Sábado", { saturday: true, sunday: false }],
+                          ["sunday", "Domingo", { saturday: false, sunday: true }],
+                          ["both", "Ambos", { saturday: true, sunday: true }],
+                        ] as const
+                      ).map(([id, label, expectedDays]) => (
+                        <Button
+                          key={id}
+                          type="button"
+                          size="sm"
+                          variant={expectedPreset === id ? "primary" : "outline"}
+                          disabled={busy || !operate}
+                          onClick={() => {
+                            setExpectedPreset(id);
+                            void onPatchRegistration(registration._id, { expectedDays });
+                          }}
+                        >
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {missingFields.length > 0 ? (
+                  <div
+                    className="space-y-3 rounded-md border border-[color-mix(in_srgb,var(--color-warning)_35%,var(--color-border))] bg-[color-mix(in_srgb,var(--color-warning)_10%,white)] p-3"
+                    role="status"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                      Faltan datos
+                    </p>
+                    {operate ? (
+                      <>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {missingFields.map((field) => identityControl(field))}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={busy || !editName.trim() || !editChurch.trim() || !editZone}
+                          onClick={saveIdentity}
+                        >
+                          Guardar datos
+                        </Button>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted">
+                        {missingFields.map((field) => missingFieldLabels[field]).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                {operate && editing ? (
                   <div className="space-y-3 rounded-md border border-border bg-white p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                       Datos del inscrito
                     </p>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <Input
-                        label="Nombre"
-                        value={editName}
-                        disabled={busy}
-                        onChange={(e) => setEditName(e.target.value)}
-                      />
-                      <Input
-                        label="RUT"
-                        value={editRut}
-                        disabled={busy}
-                        onChange={(e) => setEditRut(e.target.value)}
-                      />
-                      <Input
-                        label="Correo"
-                        type="email"
-                        value={editEmail}
-                        disabled={busy}
-                        onChange={(e) => setEditEmail(e.target.value)}
-                      />
-                      <Input
-                        label="Teléfono"
-                        value={editPhone}
-                        disabled={busy}
-                        onChange={(e) => setEditPhone(e.target.value)}
-                      />
-                      <Select
-                        label="Zona"
-                        value={editZone}
-                        disabled={busy}
-                        onChange={(e) => setEditZone(e.target.value)}
-                        options={sheetZoneOptions(zoneOptions, editZone)}
-                      />
-                      <Input
-                        label="Iglesia"
-                        value={editChurch}
-                        disabled={busy}
-                        onChange={(e) => setEditChurch(e.target.value)}
-                      />
+                        {!isMissing("fullName") ? identityControl("fullName") : null}
+                        <ChileRutInput
+                          label="RUT"
+                          name="editRut"
+                          value={editRut}
+                          disabled={busy}
+                          error={editRutError ?? undefined}
+                          helper="Opcional. Ej. 12.345.678-5"
+                          onChange={(value) => {
+                            setEditRut(value);
+                            if (!value.trim() || isValidChileRut(value)) setEditRutError(null);
+                          }}
+                          onBlur={() => {
+                            if (!editRut.trim() || isValidChileRut(editRut)) {
+                              setEditRutError(null);
+                              return;
+                            }
+                            setEditRutError(CHILE_RUT_INVALID_MESSAGE);
+                          }}
+                        />
+                        <Input
+                          label="Correo"
+                          type="email"
+                          value={editEmail}
+                          disabled={busy}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                        />
+                        {!isMissing("phone") ? identityControl("phone") : null}
+                        {!isMissing("zoneId") ? identityControl("zoneId") : null}
+                        {!isMissing("churchName") ? identityControl("churchName") : null}
+                      </div>
+                    <div className="flex flex-col items-start gap-2">
+                      {onDeleteRegistration ? (
+                        deleteBlockReason ? (
+                          <p className="text-xs text-muted">{deleteBlockReason}</p>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => setConfirmDelete(true)}
+                          >
+                            Eliminar
+                          </Button>
+                        )
+                      ) : null}
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={busy || !editName.trim() || !editChurch.trim() || !editZone}
-                      onClick={() =>
-                        void onPatchRegistration(registration._id, {
-                          fullName: editName,
-                          rut: editRut,
-                          email: editEmail,
-                          phone: editPhone,
-                          zoneId: editZone,
-                          churchName: editChurch,
-                        })
-                      }
-                    >
-                      Guardar datos
-                    </Button>
                     <Checkbox
                       label="Líder del grupo (iglesia)"
                       description="Solo uno por iglesia. Puede ser también jefe zonal."
@@ -467,102 +866,10 @@ export function ParticipantSheet({
                   <p className="text-xs text-muted">{roleBadges.join(" · ")}</p>
                 ) : null}
 
-                <div className="flex flex-wrap items-end gap-3">
-                  <p className="text-muted">
-                    Previsto: {expectedDaysText(registration.expectedDays)}
-                  </p>
-                  {operate ? (
-                    <Select
-                      className="min-w-[10rem]"
-                      label="Días previstos"
-                      value={expectedPreset}
-                      onChange={(e) => {
-                        const value = e.target.value as typeof expectedPreset;
-                        setExpectedPreset(value);
-                        const expectedDays =
-                          value === "both"
-                            ? { saturday: true, sunday: true }
-                            : value === "saturday"
-                              ? { saturday: true, sunday: false }
-                              : value === "sunday"
-                                ? { saturday: false, sunday: true }
-                                : { saturday: null, sunday: null };
-                        void onPatchRegistration(registration._id, { expectedDays });
-                      }}
-                      options={[
-                        { value: "unconfirmed", label: "Por confirmar" },
-                        { value: "saturday", label: "Sábado" },
-                        { value: "sunday", label: "Domingo" },
-                        { value: "both", label: "Ambos" },
-                      ]}
-                    />
-                  ) : null}
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {(["saturday", "sunday"] as CongressAttendanceDay[]).map((day) => {
-                    const present = registration.attendance[day];
-                    const markedAt =
-                      day === "saturday"
-                        ? registration.attendanceMeta?.saturdayMarkedAt
-                        : registration.attendanceMeta?.sundayMarkedAt;
-                    return (
-                      <div
-                        key={day}
-                        className="rounded-md border border-border bg-background-soft/40 px-3 py-2"
-                      >
-                        <p className="font-medium">
-                          {day === "saturday" ? "Sábado" : "Domingo"}
-                        </p>
-                        <p className="text-xs text-muted">
-                          {present === true
-                            ? `Presente${markedAt ? ` · ${formatMarkedAtSantiago(markedAt)}` : ""}`
-                            : "Sin llegada"}
-                        </p>
-                        {operate ? (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {present !== true ? (
-                              <Button
-                                size="sm"
-                                disabled={busy}
-                                onClick={() =>
-                                  void onPatchAttendance(registration._id, day, true)
-                                }
-                              >
-                                Llegada
-                              </Button>
-                            ) : null}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={busy}
-                              onClick={() =>
-                                void onPatchAttendance(registration._id, day, false)
-                              }
-                            >
-                              Ausente
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              disabled={busy}
-                              onClick={() =>
-                                void onPatchAttendance(registration._id, day, null)
-                              }
-                            >
-                              Sin marcar
-                            </Button>
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-
                 {(registration.attendanceHistory ?? []).length > 0 ? (
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase text-muted">Historial</p>
-                    <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-muted">
+                  <details className="text-xs text-muted">
+                    <summary className="cursor-pointer font-semibold uppercase">Historial</summary>
+                    <ul className="mt-1 max-h-24 space-y-1 overflow-y-auto">
                       {[...(registration.attendanceHistory ?? [])]
                         .slice()
                         .reverse()
@@ -575,23 +882,37 @@ export function ParticipantSheet({
                           </li>
                         ))}
                     </ul>
-                  </div>
+                  </details>
                 ) : null}
               </div>
             ) : null}
 
-            {tab === "alimentacion" ? (
+          <div className="max-h-[min(52vh,28rem)] overflow-y-auto pr-1">
+            {viewStep === "alimentacion" ? (
               <div className="space-y-3">
                 <p className="text-xs text-muted">
                   Aporte único de {formatClp(CONGRESS_CONTRIBUTION_CLP)} por ambos días.
                 </p>
                 <p className="text-base font-semibold">{contributionLabel(registration)}</p>
-                {registration.allocatedPaidClp > 0 ? (
+                {progress?.foodLock === "leader" ? (
+                  <div
+                    className="rounded-md border border-border bg-background-soft/40 px-3 py-3"
+                    role="status"
+                  >
+                    <p className="text-base font-extrabold">Pagado por el líder</p>
+                    <p className="text-sm text-muted">
+                      Imputado {formatClp(registration.allocatedPaidClp)}
+                    </p>
+                  </div>
+                ) : registration.allocatedPaidClp > 0 ? (
                   <p className="text-xs text-muted">
                     Imputado {formatClp(registration.allocatedPaidClp)}
                   </p>
                 ) : null}
-                {canPay && operate && registration.chargeAmountClp != null ? (
+                {progress?.foodLock !== "leader" &&
+                canPay &&
+                operate &&
+                registration.chargeAmountClp != null ? (
                   <div className="space-y-3 rounded-md border border-border p-3">
                     <p className="text-xs font-semibold uppercase text-muted">Pago</p>
                     <div className="grid grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)] items-end gap-3">
@@ -862,6 +1183,7 @@ export function ParticipantSheet({
                   </div>
                 ) : null}
                 {operate &&
+                progress?.foodLock !== "leader" &&
                 (isExplicitlyExempt(registration) ||
                   (registration.chargeAmountClp != null &&
                     registration.chargeAmountClp < CONGRESS_CONTRIBUTION_CLP)) ? (
@@ -902,7 +1224,7 @@ export function ParticipantSheet({
               </div>
             ) : null}
 
-            {tab === "alojamiento" ? (
+            {viewStep === "alojamiento" ? (
               <div className="space-y-3">
                 <p className="text-base font-semibold">
                   {lodging ? lodgingLabel(lodging) : "—"}
@@ -910,6 +1232,31 @@ export function ParticipantSheet({
                 <p className="text-xs text-muted">
                   Noches disponibles: Viernes 20, Sábado 21 o <strong>ambos días</strong>.
                 </p>
+                {operate && (registration.lodgingNeed ?? "unknown") === "unknown" ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        void onPatchRegistration(registration._id, { lodgingNeed: "none" })
+                      }
+                    >
+                      No requiere
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() =>
+                        void onPatchRegistration(registration._id, {
+                          lodgingNeed: "requested",
+                        })
+                      }
+                    >
+                      Necesita cama
+                    </Button>
+                  </div>
+                ) : null}
                 {operate ? (
                   <Select
                     label="Necesidad"
@@ -1086,14 +1433,39 @@ export function ParticipantSheet({
               </div>
             ) : null}
           </div>
-
-          <p className="border-t border-border pt-3 text-xs text-muted">
-            RUT {registration.identity.rut || "—"} · Correo{" "}
-            {registration.identity.email || "—"} · Origen {registration.source} · Tel.{" "}
-            {registration.identity.phone || "—"}
-          </p>
         </div>
       )}
     </Dialog>
+    {registration && confirmDelete && onDeleteRegistration ? (
+      <ConfirmDialog
+        open
+        title="Eliminar inscrito"
+        description={`¿Eliminar a ${registrationDisplayName(registration)}? La ficha se borra y no se puede deshacer. Si lo apretó por error, cancele.`}
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        destructive
+        loading={busy}
+        onClose={() => {
+          if (busy) return;
+          setConfirmDelete(false);
+        }}
+        onConfirm={() => {
+          if (!confirmArmed || busy) return;
+          void onDeleteRegistration(registration._id);
+        }}
+      />
+    ) : null}
+    </>
+  );
+}
+
+function LockedField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted">{label}</p>
+      <p className="mt-1 min-h-10 rounded-md border border-border bg-background-soft px-3 py-2 text-foreground">
+        {value.trim() ? value : "—"}
+      </p>
+    </div>
   );
 }

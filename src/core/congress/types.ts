@@ -58,7 +58,8 @@ export interface CongressRegistration {
   attendance: CongressAttendanceDays;
   /**
    * Correlativo de ficha (1, 2, 3…).
-   * Se asigna al crear; no cambia si la persona ya existía.
+   * Se asigna al crear. Al eliminar una ficha, las demás se renumeran
+   * en el mismo orden, sin huecos.
    */
   entryNumber?: number | null;
   /** Primera hora de llegada por día (ISO servidor); no se sobrescribe. */
@@ -120,7 +121,7 @@ export interface CongressPayment {
   payerName: string;
   churchName?: string | null;
   amountClp: number;
-  /** Medio de pago. Ausente = legacy (caja: Sin clasificar). */
+  /** Medio de pago. Ausente = legacy (caja: Sin medio). */
   method?: CongressPaymentMethod;
   /** Día del pago YYYY-MM-DD (America/Santiago). Ausente = legacy. */
   paidOn?: string;

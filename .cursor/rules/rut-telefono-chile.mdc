@@ -1,0 +1,28 @@
+---
+description: RUT y teléfono chileno con +56 en toda la plataforma
+alwaysApply: true
+---
+
+# RUT y teléfono de Chile
+
+Todo RUT y todo teléfono de una persona, alumno, participante, ficha, contacto o pie de página se valida con los helpers de Chile. No crees otro validador ni guardes el número crudo.
+
+## RUT
+
+- Input: `ChileRutInput` (`src/components/portal/experience/forms/ChileRutInput.tsx`).
+- Validar con `isValidChileRut` y guardar con `normalizeChileRut` (`12.345.678-5`).
+- Si el campo es opcional, vacío es válido. Si tiene texto y no es un RUT chileno, no se guarda.
+- Un buscador (nombre, RUT o teléfono) no formatea ni bloquea: solo busca.
+
+## Teléfono
+
+- Input: `ChilePhoneInput`. Si la pantalla tiene estilo propio, formatea con `formatChilePhoneInput` y valida igual.
+- Validar con `isValidChilePhone` y guardar con `normalizeChilePhone`.
+- El valor guardado lleva `+56` (`+56 9 1234 5678`).
+- Vacío solo si el campo es opcional. Un número incompleto o que no es chileno no se guarda.
+- WhatsApp de contacto institucional es un teléfono: misma regla.
+- No apliques esto al `phoneNumberId` de Meta: es un identificador, no un número.
+
+## Excepción
+
+La cuenta del Espacio usa `normalizeAccountPhone`. Un número de Chile queda en `+56`. Otro país solo se acepta si el usuario escribe el código (`+54`, `+1`).

@@ -5,6 +5,10 @@ import { getFormSubmissionById } from "@/lib/experience/forms/repository";
 import { getDatabase } from "@/lib/mongodb";
 import { isValidEmail } from "@/lib/validation/identity";
 import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
+import {
   assertSubmissionInStudentAffairsScope,
   canAccessStudentAffairsPanel,
 } from "@/lib/student-affairs/scope";
@@ -57,7 +61,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     }
 
     if (body.phone !== undefined) {
-      update["data.phone"] = body.phone.trim();
+      const raw = body.phone.trim();
+      const phone = raw ? normalizeChilePhone(raw) : null;
+      if (!phone) {
+        return NextResponse.json(
+          { ok: false, error: raw ? CHILE_PHONE_INVALID_MESSAGE : "El teléfono es obligatorio." },
+          { status: 400 }
+        );
+      }
+      update["data.phone"] = phone;
     }
 
     if (!Object.keys(update).length) {
