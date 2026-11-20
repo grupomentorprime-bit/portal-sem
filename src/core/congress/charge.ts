@@ -198,6 +198,38 @@ export function isExplicitlyExempt(reg: {
   );
 }
 
+/**
+ * Pago menor autorizado: lo que se cobra ahora y el aporte que queda.
+ * Si el monto es menor al saldo, el resto no queda como deuda.
+ */
+export function planAuthorizedLesserPayment(input: {
+  chargeAmountClp: number | null;
+  allocatedPaidClp: number;
+  payNowClp: number;
+}):
+  | {
+      ok: true;
+      nextChargeClp: number;
+      paymentClp: number;
+      reduce: boolean;
+    }
+  | { ok: false; error: "no_charge" | "pay_invalid" | "above_balance" } {
+  if (input.chargeAmountClp == null) return { ok: false, error: "no_charge" };
+  const payNow = Math.trunc(Number(input.payNowClp));
+  if (!Number.isFinite(payNow) || payNow <= 0) return { ok: false, error: "pay_invalid" };
+  const paid = Math.max(0, Math.trunc(input.allocatedPaidClp));
+  const charge = Math.trunc(input.chargeAmountClp);
+  const balance = Math.max(0, charge - paid);
+  if (payNow > balance) return { ok: false, error: "above_balance" };
+  const nextChargeClp = paid + payNow;
+  return {
+    ok: true,
+    nextChargeClp,
+    paymentClp: payNow,
+    reduce: nextChargeClp < charge,
+  };
+}
+
 /** Lo que hoy no cobra esta ficha, con el motivo vigente. */
 export function activeChargeConsideration(reg: {
   chargeAmountClp: number | null;

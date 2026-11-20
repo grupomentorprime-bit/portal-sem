@@ -54,7 +54,11 @@ import {
   registrationDisplayName,
 } from "@/components/admin/congress/labels";
 import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
-import { activeChargeConsideration, GROUP_EXEMPT_AUTHORIZERS } from "@/core/congress/charge";
+import {
+  activeChargeConsideration,
+  GROUP_EXEMPT_AUTHORIZERS,
+  planAuthorizedLesserPayment,
+} from "@/core/congress/charge";
 import { remainingBalanceClp } from "@/core/congress/charges";
 import { canExemptGroupMember, isGroupPaymentSelectable } from "@/core/congress/finance-status";
 import { distributeSplitLegs } from "@/core/congress/payment-distribute";
@@ -228,6 +232,8 @@ function CongressOpsPanelInner() {
   const [groupCashClp, setGroupCashClp] = useState<number | null>(null);
   const [groupTransferClp, setGroupTransferClp] = useState<number | null>(null);
   const [groupExemptBy, setGroupExemptBy] = useState("");
+  const [lesserPayFor, setLesserPayFor] = useState<string | null>(null);
+  const [lesserPayClp, setLesserPayClp] = useState<number | null>(null);
   const [groupExempting, setGroupExempting] = useState(false);
   const [paymentSaving, setPaymentSaving] = useState(false);
   const paymentInFlight = useRef(false);
@@ -901,6 +907,26 @@ function CongressOpsPanelInner() {
     [groupPreview]
   );
 
+  const singleSelectedReg = useMemo(() => {
+    if (!singleSelectedId) return null;
+    return registrations.find((row) => row._id === singleSelectedId) ?? null;
+  }, [registrations, singleSelectedId]);
+
+  const singleBalance = singleSelectedReg ? remainingBalanceClp(singleSelectedReg) : 0;
+  const singlePayClp =
+    singleSelectedReg &&
+    lesserPayFor === singleSelectedReg._id &&
+    lesserPayClp != null
+      ? lesserPayClp
+      : singleBalance;
+  const singlePayPlan = singleSelectedReg
+    ? planAuthorizedLesserPayment({
+        chargeAmountClp: singleSelectedReg.chargeAmountClp,
+        allocatedPaidClp: singleSelectedReg.allocatedPaidClp,
+        payNowClp: singlePayClp,
+      })
+    : null;
+
   const groupBalanceRows = useMemo(() => {
     const byId = new Map(registrations.map((r) => [r._id, r]));
     return groupSelectedActive
@@ -1173,20 +1199,30 @@ function CongressOpsPanelInner() {
       return;
     }
 
-    const singleId = groupSelectedActive.length === 1 ? groupSelectedActive[0] : null;
-    const singleReg = singleId
-      ? registrations.find((row) => row._id === singleId) ?? null
-      : null;
-    const singleBalance = singleReg ? remainingBalanceClp(singleReg) : 0;
-    const amount = singleReg ? singleBalance : groupAmount;
+    const singleReg = singleSelectedReg;
+    const payPlan = singleReg ? singlePayPlan : null;
+    if (singleReg && (!payPlan || !payPlan.ok)) {
+      push({
+        title: "El monto tiene que ser mayor a cero y no pasar el saldo",
+        tone: "warning",
+      });
+      return;
+    }
+    if (singleReg && payPlan?.ok && payPlan.reduce && !groupExemptBy) {
+      push({
+        title: "Elija quién autoriza el pago menor",
+        description: "El resto del aporte no queda como saldo.",
+        tone: "warning",
+      });
+      return;
+    }
+    const amount = singleReg && payPlan?.ok ? payPlan.paymentClp : groupAmount;
     const allocations = singleReg
       ? [{ registrationId: singleReg._id, amountClp: amount }]
       : groupPreview;
-    if (!amount || allocations.length === 0 || (singleReg && amount > singleBalance)) {
+    if (!amount || allocations.length === 0) {
       push({
-        title: singleReg
-          ? "El monto tiene que ser mayor a cero y no pasar el saldo"
-          : "Complete pagador y seleccione al menos un participante",
+        title: "Complete pagador y seleccione al menos un participante",
         tone: "warning",
       });
       return;
@@ -1197,6 +1233,30 @@ function CongressOpsPanelInner() {
     }
     setPaymentSaving(true);
     try {
+      if (singleReg && payPlan?.ok && payPlan.reduce) {
+        const chargeRes = await fetch(
+          `/api/congress/registrations/${encodeURIComponent(singleReg._id)}/charge`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "reduce",
+              reason: groupExemptBy,
+              chargeClp: payPlan.nextChargeClp,
+            }),
+          }
+        );
+        const chargeData = await chargeRes.json().catch(() => ({}));
+        if (!chargeRes.ok || !chargeData.ok || !chargeData.registration) {
+          push({
+            title: "No se pudo autorizar el pago menor",
+            description: chargeData.error ?? "Error del servidor.",
+            tone: "warning",
+          });
+          return;
+        }
+        upsertRegistration(chargeData.registration as CongressRegistration);
+      }
       const payerType = singleReg ? "individual" : "church";
       const result = await postGroupPayment({
         payerType,
@@ -1209,7 +1269,10 @@ function CongressOpsPanelInner() {
       if (!result.ok) {
         push({
           title: "Pago grupal no registrado",
-          description: result.error ?? "Error del servidor.",
+          description:
+            singleReg && payPlan?.ok && payPlan.reduce
+              ? `El aporte ya quedó en ${formatClp(payPlan.nextChargeClp)}. ${result.error ?? "No se registró el pago."}`
+              : (result.error ?? "Error del servidor."),
           tone: "warning",
         });
         return;
@@ -1218,11 +1281,21 @@ function CongressOpsPanelInner() {
         setLastReceiptPayment(result.payment);
         upsertPayment(result.payment);
       }
+      const lesser = Boolean(singleReg && payPlan?.ok && payPlan.reduce);
       push({
-        title: singleReg ? "Pago registrado" : "Pago grupal registrado",
+        title: lesser
+          ? "Pago menor registrado"
+          : singleReg
+            ? "Pago registrado"
+            : "Pago grupal registrado",
+        description: lesser
+          ? `Autoriza ${groupExemptBy}. El resto no queda como saldo.`
+          : undefined,
         tone: "success",
       });
       setGroupSelected([]);
+      setLesserPayFor(null);
+      setLesserPayClp(null);
       setGroupBank("");
       setGroupDetail("");
       void loadPayments();
@@ -1767,20 +1840,38 @@ function CongressOpsPanelInner() {
                 value={groupPayer}
                 onChange={(e) => setGroupPayer(e.target.value)}
               />
-              <p className="flex h-9 items-center gap-2 rounded-md border border-border bg-background-soft px-3 text-sm text-foreground">
+              <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background-soft px-3 text-sm text-foreground">
                 {groupPreview.length === 0 ? (
-                  "Monto · marque a quien paga"
+                  <span>Monto · marque a quien paga</span>
+                ) : singleSelectedReg ? (
+                  <>
+                    <span className="text-muted">1</span>
+                    <ClpAmountInput
+                      aria-label="Monto que paga"
+                      value={singlePayClp}
+                      onValueChange={(value) => {
+                        setLesserPayFor(singleSelectedReg._id);
+                        setLesserPayClp(value);
+                      }}
+                      className="h-8 border-0 bg-transparent px-0 text-right text-2xl font-extrabold leading-none text-foreground shadow-none"
+                    />
+                  </>
                 ) : (
                   <>
                     <span className="text-muted">
                       {groupPreview.length}
                     </span>
-                    <span className="text-2xl font-extrabold leading-none tabular-nums text-black">
+                    <span className="text-2xl font-extrabold leading-none tabular-nums text-foreground">
                       {formatClp(groupAmount)}
                     </span>
                   </>
                 )}
-              </p>
+              </div>
+              {singleSelectedReg && singlePayPlan?.ok && singlePayPlan.reduce ? (
+                <p className="text-xs text-muted">
+                  Pago menor. Elija quién autoriza: el resto no queda como saldo.
+                </p>
+              ) : null}
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -1929,7 +2020,7 @@ function CongressOpsPanelInner() {
                   value={groupExemptBy}
                   onChange={(event) => setGroupExemptBy(event.target.value)}
                   options={[
-                    { value: "", label: "Si es exento, quién autoriza…" },
+                    { value: "", label: "Quién autoriza…" },
                     ...GROUP_EXEMPT_AUTHORIZERS.map((name) => ({
                       value: name,
                       label: name,

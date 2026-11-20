@@ -4,6 +4,7 @@ import {
   activeChargeConsideration,
   applyChargeChange,
   isExplicitlyExempt,
+  planAuthorizedLesserPayment,
 } from "../../src/core/congress/charge";
 import { CONGRESS_CONTRIBUTION_CLP } from "../../src/core/congress/constants";
 import { contributionStatusLabel } from "../../src/components/admin/congress/labels";
@@ -170,6 +171,65 @@ describe("applyChargeChange", () => {
     assert.equal(r.ok, false);
     if (r.ok) return;
     assert.equal(r.error, "reason_required");
+  });
+});
+
+describe("planAuthorizedLesserPayment", () => {
+  it("cobra el monto menor y no deja el resto como saldo", () => {
+    const plan = planAuthorizedLesserPayment({
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      payNowClp: 7_000,
+    });
+    assert.equal(plan.ok, true);
+    if (!plan.ok) return;
+    assert.equal(plan.reduce, true);
+    assert.equal(plan.nextChargeClp, 7_000);
+    assert.equal(plan.paymentClp, 7_000);
+
+    const applied = applyChargeChange({
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      chargeHistory: [],
+      action: "reduce",
+      reason: "Tesorero",
+      chargeClp: plan.nextChargeClp,
+      nowIso: "2026-11-21T12:00:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(applied.ok, true);
+    if (!applied.ok) return;
+    assert.equal(applied.chargeAmountClp, 7_000);
+    assert.equal(
+      remainingBalanceClp({
+        chargeAmountClp: applied.chargeAmountClp,
+        allocatedPaidClp: plan.paymentClp,
+      }),
+      0
+    );
+  });
+
+  it("si el aporte ya es menor, el pago cubre ese saldo", () => {
+    const plan = planAuthorizedLesserPayment({
+      chargeAmountClp: 7_000,
+      allocatedPaidClp: 0,
+      payNowClp: 7_000,
+    });
+    assert.equal(plan.ok, true);
+    if (!plan.ok) return;
+    assert.equal(plan.reduce, false);
+    assert.equal(plan.paymentClp, 7_000);
+  });
+
+  it("rechaza un monto sobre el saldo", () => {
+    const plan = planAuthorizedLesserPayment({
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      payNowClp: 20_000,
+    });
+    assert.equal(plan.ok, false);
+    if (plan.ok) return;
+    assert.equal(plan.error, "above_balance");
   });
 });
 
