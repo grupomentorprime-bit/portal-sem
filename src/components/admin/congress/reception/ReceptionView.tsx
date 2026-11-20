@@ -28,10 +28,7 @@ import {
   deriveContributionStatus,
 } from "@/core/congress/finance-status";
 import { formSubmissionDisplay } from "@/core/congress/form-engagement";
-import {
-  arrivalMarksImmediately,
-  deriveReceptionProgress,
-} from "@/core/congress/reception-stage";
+import { arrivalMarksImmediately } from "@/core/congress/reception-stage";
 import { isLodgingPending } from "@/core/congress/lodging-status";
 import { registrationDeleteBlockReason } from "@/core/congress/registration-delete";
 import type {
@@ -45,7 +42,7 @@ import { foldCongressPersonName } from "@/core/congress/brother-name";
 import { cn } from "@/lib/utils";
 import {
   attendanceCellText,
-  contributionLabel,
+  contributionDeskStatus,
   formatDateTimeSantiago,
   formatZoneLabel,
   journeyDayLabel,
@@ -61,7 +58,8 @@ export type ReceptionQuickFilter =
   | "all"
   | "no_arrival"
   | "with_balance"
-  | "lodging_pending";
+  | "lodging_pending"
+  | "duplicates";
 
 export type ReceptionDayKpis = {
   expected: number;
@@ -97,7 +95,10 @@ type Props = {
   onRegisterArrival: (id: string, day: CongressAttendanceDay) => void;
   onGuideArrival: (id: string, day: CongressAttendanceDay) => void;
   onRevertArrival: (id: string, day: CongressAttendanceDay) => void;
+  onClearArrivals: (id: string) => void;
   arrivalSavingId: string | null;
+  canPay?: boolean;
+  onPayParticipant?: (id: string) => void;
 };
 
 export function ReceptionView({
@@ -128,7 +129,10 @@ export function ReceptionView({
   onRegisterArrival,
   onGuideArrival,
   onRevertArrival,
+  onClearArrivals,
   arrivalSavingId,
+  canPay = false,
+  onPayParticipant,
 }: Props) {
   const [pendingDelete, setPendingDelete] = useState<CongressRegistration | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -189,23 +193,6 @@ export function ReceptionView({
     return ids;
   }, [registrations]);
 
-  const stageLabelById = useMemo(() => {
-    const labels = new Map<string, string>();
-    for (const reg of registrations) {
-      labels.set(
-        reg._id,
-        deriveReceptionProgress({
-          registrationId: reg._id,
-          registration: reg,
-          payments: [],
-          assignments,
-          journeyDay,
-        }).stageLabel
-      );
-    }
-    return labels;
-  }, [registrations, assignments, journeyDay]);
-
   const filtered = useMemo(() => {
     const q = search.trim();
     const rows = registrations.filter((reg) => {
@@ -236,6 +223,7 @@ export function ReceptionView({
         const state = resolveRegistrationLodging(reg, assignments);
         if (!isLodgingPending(state)) return false;
       }
+      if (quickFilter === "duplicates" && !duplicateIds.has(reg._id)) return false;
       return true;
     });
     rows.sort(compareByRegistrationEntryNumber);
@@ -243,6 +231,7 @@ export function ReceptionView({
   }, [
     assignments,
     churchFilter,
+    duplicateIds,
     search,
     journeyDay,
     quickFilter,
@@ -255,6 +244,7 @@ export function ReceptionView({
     { id: "no_arrival", label: "Sin llegada hoy" },
     { id: "with_balance", label: "Con saldo" },
     { id: "lodging_pending", label: "Alojamiento pendiente" },
+    { id: "duplicates", label: "Duplicados" },
   ];
 
   return (
@@ -380,8 +370,8 @@ export function ReceptionView({
                   <th className="px-3 py-2 font-semibold">Iglesia / zona</th>
                   <th className="px-3 py-2 font-semibold">Sábado</th>
                   <th className="px-3 py-2 font-semibold">Domingo</th>
-                  <th className="px-3 py-2 font-semibold" title="Aporte único $17.000 por ambos días">
-                    Alimentación
+                  <th className="px-3 py-2 font-semibold" title="El cobro se hace en Recaudación aportes">
+                    Aporte
                   </th>
                   <th className="px-3 py-2 font-semibold">Alojamiento</th>
                   <th className="px-3 py-2 font-semibold">Formulario</th>
@@ -393,8 +383,10 @@ export function ReceptionView({
                   const sat = attendanceCellText(reg, "saturday");
                   const sun = attendanceCellText(reg, "sunday");
                   const lodging = resolveRegistrationLodging(reg, assignments);
-                  const arrived = reg.attendance[journeyDay] === true;
-                  const arrival = attendanceCellText(reg, journeyDay);
+                  const arrived =
+                    reg.attendance.saturday === true || reg.attendance.sunday === true;
+                  const arrivalCaption = markedArrivalCaption(reg);
+                  const arrivalBusy = arrivalSavingId?.startsWith(`${reg._id}:`) ?? false;
                   const entryNumber = registrationEntryNumber(reg);
                   const form = formSubmissionDisplay(reg);
                   return (
@@ -409,9 +401,6 @@ export function ReceptionView({
                       <td className="px-3 py-2.5">
                         <p className="font-semibold text-foreground">
                           {registrationDisplayName(reg)}
-                        </p>
-                        <p className="text-xs font-extrabold text-primary">
-                          {stageLabelById.get(reg._id)}
                         </p>
                         {duplicateIds.has(reg._id) ? (
                           <p className="text-xs font-semibold text-[var(--color-warning)]">
@@ -434,6 +423,7 @@ export function ReceptionView({
                           operate={operate}
                           saving={arrivalSavingId === `${reg._id}:saturday`}
                           onConfirm={() => confirmArrival(reg, "saturday")}
+                          onClear={() => onRevertArrival(reg._id, "saturday")}
                         />
                       </td>
                       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
@@ -442,9 +432,12 @@ export function ReceptionView({
                           operate={operate}
                           saving={arrivalSavingId === `${reg._id}:sunday`}
                           onConfirm={() => confirmArrival(reg, "sunday")}
+                          onClear={() => onRevertArrival(reg._id, "sunday")}
                         />
                       </td>
-                      <td className="px-3 py-2.5">{contributionLabel(reg)}</td>
+                      <td className="px-3 py-2.5">
+                        <ContributionDesk reg={reg} />
+                      </td>
                       <td className="px-3 py-2.5">
                         <p>{lodgingLabel(lodging)}</p>
                         {lodging.pendingReason ? (
@@ -462,18 +455,24 @@ export function ReceptionView({
                       </td>
                       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
+                          {canPay && onPayParticipant ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onPayParticipant(reg._id)}
+                            >
+                              Cobrar
+                            </Button>
+                          ) : null}
                           {arrived ? (
                             <div className="flex flex-col items-start gap-1">
-                              <span className="text-xs text-muted">
-                                Llegó · {journeyDayShortLabel(journeyDay)}
-                                {arrival.time ? ` · ${arrival.time}` : ""}
-                              </span>
+                              <span className="text-xs text-muted">{arrivalCaption}</span>
                               {operate ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
-                                  onClick={() => onRevertArrival(reg._id, journeyDay)}
+                                  loading={arrivalBusy}
+                                  onClick={() => onClearArrivals(reg._id)}
                                 >
                                   Dejar sin marcar
                                 </Button>
@@ -511,7 +510,9 @@ export function ReceptionView({
             {filtered.map((reg) => {
               const lodging = resolveRegistrationLodging(reg, assignments);
               const arrival = attendanceCellText(reg, journeyDay);
-              const arrivedMobile = reg.attendance[journeyDay] === true;
+              const arrivedMobile =
+                reg.attendance.saturday === true || reg.attendance.sunday === true;
+              const arrivalBusy = arrivalSavingId?.startsWith(`${reg._id}:`) ?? false;
               const entryNumber = registrationEntryNumber(reg);
               const form = formSubmissionDisplay(reg);
               return (
@@ -530,9 +531,6 @@ export function ReceptionView({
                       </span>
                       {registrationDisplayName(reg)}
                     </p>
-                    <p className="text-xs font-extrabold text-primary">
-                      {stageLabelById.get(reg._id)}
-                    </p>
                     {duplicateIds.has(reg._id) ? (
                       <p className="text-xs font-semibold text-[var(--color-warning)]">
                         Posible duplicado, con o sin acento
@@ -546,7 +544,8 @@ export function ReceptionView({
                       )}
                     </p>
                     <p className="mt-1 text-xs text-muted">
-                      {arrival.text} · {contributionLabel(reg)} · {lodgingLabel(lodging)}
+                      {arrivedMobile ? markedArrivalCaption(reg) : arrival.text} ·{" "}
+                      {contributionDeskStatus(reg).label} · {lodgingLabel(lodging)}
                       {registrationRoleBadges(reg).length
                         ? ` · ${registrationRoleBadges(reg).join(" · ")}`
                         : ""}
@@ -554,12 +553,21 @@ export function ReceptionView({
                   </button>
                   {operate ? (
                     <div className="mt-2 flex items-center gap-1">
+                      {canPay && onPayParticipant ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onPayParticipant(reg._id)}
+                        >
+                          Cobrar
+                        </Button>
+                      ) : null}
                       {arrivedMobile ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          loading={arrivalSavingId === `${reg._id}:${journeyDay}`}
-                          onClick={() => onRevertArrival(reg._id, journeyDay)}
+                          loading={arrivalBusy}
+                          onClick={() => onClearArrivals(reg._id)}
                         >
                           Dejar sin marcar
                         </Button>
@@ -611,9 +619,21 @@ export function ReceptionView({
   );
 }
 
+function ContributionDesk({ reg }: { reg: CongressRegistration }) {
+  const status = contributionDeskStatus(reg);
+  return (
+    <div>
+      <p className="font-semibold text-foreground">{status.label}</p>
+      {status.amount ? (
+        <p className="text-xs tabular-nums text-muted">{status.amount}</p>
+      ) : null}
+    </div>
+  );
+}
+
 function FormOkNotice({ at }: { at: string }) {
   return (
-    <span className="inline-flex flex-col rounded-md border-2 border-[var(--growth-os-success)] bg-[color-mix(in_srgb,var(--growth-os-success)_16%,white)] px-2 py-1 leading-tight">
+    <span className="inline-flex flex-col whitespace-nowrap rounded-md border-2 border-[var(--growth-os-success)] bg-[color-mix(in_srgb,var(--growth-os-success)_16%,white)] px-3 py-1.5 leading-tight">
       <span className="text-xs font-extrabold uppercase tracking-wide text-[var(--growth-os-success)]">
         Formulario OK
       </span>
@@ -622,24 +642,35 @@ function FormOkNotice({ at }: { at: string }) {
   );
 }
 
+function markedArrivalCaption(reg: CongressRegistration): string {
+  const parts: string[] = [];
+  if (reg.attendance.saturday === true) parts.push("Sáb");
+  if (reg.attendance.sunday === true) parts.push("Dom");
+  return `Llegó · ${parts.join(" y ")}`;
+}
+
 function ArrivalConfirm({
   text,
   operate,
   saving,
   onConfirm,
+  onClear,
 }: {
-  text: { text: string; present: boolean; time: string | null };
+  text: { text: string; present: boolean; absent: boolean; time: string | null };
   operate: boolean;
   saving: boolean;
   onConfirm: () => void;
+  onClear: () => void;
 }) {
-  if (text.present || !operate) return <AttendanceBadge {...text} />;
+  if (!operate) return <AttendanceBadge {...text} />;
   return (
     <button
       type="button"
       disabled={saving}
+      aria-pressed={text.present}
+      title={text.present ? "Quitar marca" : "Marcar llegada"}
       className="rounded-md text-left hover:bg-background-soft disabled:opacity-60"
-      onClick={onConfirm}
+      onClick={text.present ? onClear : onConfirm}
     >
       <AttendanceBadge {...text} />
     </button>
@@ -649,17 +680,32 @@ function ArrivalConfirm({
 function AttendanceBadge({
   text,
   present,
+  absent,
 }: {
   text: string;
   present: boolean;
+  absent: boolean;
   time: string | null;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm">
+    <span
+      className={cn(
+        "inline-flex items-center gap-2 text-sm",
+        present
+          ? "font-semibold text-[var(--growth-os-success)]"
+          : absent
+            ? "font-semibold text-foreground"
+            : "text-muted"
+      )}
+    >
       <span
         className={cn(
-          "inline-block h-2 w-2 rounded-full",
-          present ? "bg-[var(--growth-os-success)]" : "bg-border"
+          "inline-block shrink-0 rounded-full",
+          present
+            ? "h-3 w-3 bg-[var(--growth-os-success)]"
+            : absent
+              ? "h-3 w-3 bg-foreground"
+              : "h-2 w-2 bg-border"
         )}
         aria-hidden
       />

@@ -1,6 +1,5 @@
 import type { CongressAttendanceDay } from "@/core/congress/constants";
 import { labelExpectedDays } from "@/core/congress/expected-days";
-import { deriveContributionStatus } from "@/core/congress/finance-status";
 import type {
   CongressLodgingAssignment,
   CongressPayment,
@@ -8,11 +7,10 @@ import type {
 } from "@/core/congress/types";
 import { isValidChilePhone } from "@/lib/experience/forms/phone-chile";
 
-export type ReceptionStageId = "asistencia" | "alimentacion" | "alojamiento" | "listo";
-export type ReceptionStepId = "asistencia" | "alimentacion" | "alojamiento";
+export type ReceptionStageId = "asistencia" | "alojamiento" | "listo";
+export type ReceptionStepId = "asistencia" | "alojamiento";
 export type ReceptionStepState = "ahora" | "pendiente" | "listo" | "bloqueado";
 export type ReceptionMissingField = "fullName" | "phone" | "zoneId" | "churchName";
-export type ReceptionFoodLock = "leader" | "paid" | "exempt" | null;
 
 export type ReceptionStageRegistration = Pick<
   CongressRegistration,
@@ -31,18 +29,16 @@ export type ReceptionStageRegistration = Pick<
 
 export type ReceptionProgress = {
   stage: ReceptionStageId;
-  stageLabel: "En asistencia" | "En alimentación" | "En alojamiento" | "Listo";
+  stageLabel: "En asistencia" | "En alojamiento" | "Listo";
   steps: Record<ReceptionStepId, ReceptionStepState>;
   missingFields: ReceptionMissingField[];
   arrivalRequired: boolean;
-  foodLock: ReceptionFoodLock;
 };
 
-const STEP_ORDER: ReceptionStepId[] = ["asistencia", "alimentacion", "alojamiento"];
+const STEP_ORDER: ReceptionStepId[] = ["asistencia", "alojamiento"];
 
 const STAGE_LABEL: Record<ReceptionStageId, ReceptionProgress["stageLabel"]> = {
   asistencia: "En asistencia",
-  alimentacion: "En alimentación",
   alojamiento: "En alojamiento",
   listo: "Listo",
 };
@@ -71,21 +67,7 @@ function activeAssignment(
   );
 }
 
-function leaderPaid(
-  registrationId: string,
-  payments: Array<Pick<CongressPayment, "status" | "payerType" | "allocations">>
-): boolean {
-  return payments.some(
-    (payment) =>
-      payment.status === "posted" &&
-      payment.payerType === "church" &&
-      payment.allocations.some(
-        (allocation) =>
-          allocation.registrationId === registrationId && allocation.amountClp > 0
-      )
-  );
-}
-
+/** El aporte no abre ni cierra la recepción. `payments` se conserva para los llamados actuales. */
 export function deriveReceptionProgress(input: {
   registrationId: string;
   registration: ReceptionStageRegistration;
@@ -100,27 +82,15 @@ export function deriveReceptionProgress(input: {
   const missing = missingFields(input.registration);
   const attendanceReady = caseClear && missing.length === 0 && (!arrivalRequired || arrived);
 
-  const contribution = deriveContributionStatus(input.registration);
-  const foodReady = contribution === "paid" || contribution === "no_charge";
-  const foodLock: ReceptionFoodLock = !foodReady
-    ? null
-    : contribution === "no_charge"
-      ? "exempt"
-      : leaderPaid(input.registrationId, input.payments)
-        ? "leader"
-        : "paid";
-
   const hasBed = activeAssignment(input.registrationId, input.assignments);
   const lodgingNeed = input.registration.lodgingNeed ?? "unknown";
   const lodgingReady = hasBed || (lodgingNeed === "none" && !hasBed);
 
   const stage: ReceptionStageId = !attendanceReady
     ? "asistencia"
-    : !foodReady
-      ? "alimentacion"
-      : !lodgingReady
-        ? "alojamiento"
-        : "listo";
+    : !lodgingReady
+      ? "alojamiento"
+      : "listo";
 
   const stageIndex = stage === "listo" ? STEP_ORDER.length : STEP_ORDER.indexOf(stage);
   const steps = {} as ReceptionProgress["steps"];
@@ -131,7 +101,7 @@ export function deriveReceptionProgress(input: {
       continue;
     }
     if (stepIndex < stageIndex || stage === "listo") {
-      steps[step] = step === "alimentacion" && foodLock === "leader" ? "bloqueado" : "listo";
+      steps[step] = "listo";
       continue;
     }
     steps[step] = "ahora";
@@ -143,7 +113,6 @@ export function deriveReceptionProgress(input: {
     steps,
     missingFields: missing,
     arrivalRequired,
-    foodLock,
   };
 }
 
@@ -181,10 +150,9 @@ export function receptionPrimaryAction(
       kind: "close",
     };
   }
-  const state = steps[viewStep];
   return {
     label: "Siguiente",
-    enabled: state === "listo" || state === "bloqueado",
+    enabled: true,
     kind: "advance",
   };
 }

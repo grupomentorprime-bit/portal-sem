@@ -123,6 +123,8 @@ export type CashMovement = {
   payerName: string;
   churchLabel: string;
   method: CashMethodKey;
+  bank: string;
+  note: string;
   amountClp: number;
   unallocatedClp: number;
   allocations: number;
@@ -420,6 +422,8 @@ function toMovement(payment: CongressPayment): CashMovement {
     payerName: payment.payerName?.trim() || "Sin nombre",
     churchLabel: churchName ? formatCongressChurchLabel(churchName) : "—",
     method: normalizePaymentMethod(payment.method),
+    bank: payment.bank?.trim() || "",
+    note: payment.note?.trim() || "",
     amountClp: Math.trunc(payment.amountClp),
     unallocatedClp: Math.max(0, Math.trunc(payment.unallocatedClp || 0)),
     allocations: payment.allocations?.length ?? 0,

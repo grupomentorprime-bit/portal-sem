@@ -20,6 +20,7 @@ export async function PATCH(
       action?: string;
       reason?: string;
       waiveClp?: number;
+      chargeClp?: number;
     } | null;
 
     if (body?.action !== "exempt" && body?.action !== "restore" && body?.action !== "reduce") {
@@ -38,6 +39,7 @@ export async function PATCH(
       action: body.action,
       reason: body.reason,
       waiveClp: body.waiveClp,
+      chargeClp: body.chargeClp,
       nowIso: new Date().toISOString(),
       actorUserId: ctx.user._id,
     });
@@ -48,8 +50,8 @@ export async function PATCH(
         has_allocations: "Anule los pagos imputados antes de no cobrar el total.",
         not_exempt: "Solo se puede restaurar un aporte que ya fue ajustado.",
         already_charged: "La inscripción ya tiene el aporte completo.",
-        waive_invalid: "Indique la parte que no se cobra.",
-        waive_too_high: "La parte que no se cobra supera el aporte.",
+        waive_invalid: "Indique el monto que se cobra.",
+        waive_too_high: "El monto supera el aporte.",
         below_paid: "El aporte que queda no puede ser menor a lo ya pagado.",
         no_charge: "Esta ficha no tiene aporte que ajustar.",
       } as const;
@@ -97,6 +99,7 @@ export async function PATCH(
       metadata: {
         reason: String(body.reason ?? "").trim(),
         waiveClp: body.waiveClp ?? null,
+        chargeClp: body.chargeClp ?? null,
       },
     });
 

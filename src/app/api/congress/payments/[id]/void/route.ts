@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireCongressFinanceCorrect } from "@/app/api/congress/guard";
+import { congressPaymentActionMessage } from "@/core/congress/payments";
 import { voidCongressPayment } from "@/lib/congress/repository";
 
 export async function POST(
@@ -34,7 +35,10 @@ export async function POST(
           : result.error === "already_voided"
             ? 409
             : 400;
-      return NextResponse.json({ ok: false, error: result.error }, { status });
+      return NextResponse.json(
+        { ok: false, error: congressPaymentActionMessage(result.error) },
+        { status }
+      );
     }
 
     return NextResponse.json({

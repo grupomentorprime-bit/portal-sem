@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertBanner, Dialog, EmptyState, Section } from "@/components/admin/kit";
+import { ConfirmDialog } from "@/components/admin/kit/dialogs/ConfirmDialog";
 import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -109,8 +110,39 @@ type Props = {
   homeSaving: boolean;
   onCreateHome: (input: HomeFormInput) => Promise<boolean>;
   onUpdateHome: (homeId: string, input: HomeFormInput) => Promise<boolean>;
+  onDeleteHome: (homeId: string) => Promise<boolean>;
   onOpenParticipant: (id: string) => void;
 };
+
+function HomeDeleteButton({
+  assigned,
+  disabled,
+  onDelete,
+}: {
+  assigned: boolean;
+  disabled?: boolean;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={assigned || disabled}
+        title={assigned ? "Este hogar ya tiene hermanos asignados" : undefined}
+        onClick={onDelete}
+      >
+        Eliminar
+      </Button>
+      {assigned ? (
+        <p className="max-w-56 text-right text-xs text-muted">
+          No se puede eliminar: ya tiene hermanos asignados.
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 function occupiedFor(homeId: string, night: string, assignments: CongressLodgingAssignment[]) {
   return assignments.filter(
@@ -270,6 +302,7 @@ export function LodgingOpsView({
   homeSaving,
   onCreateHome,
   onUpdateHome,
+  onDeleteHome,
   onOpenParticipant,
 }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
@@ -298,6 +331,7 @@ export function LodgingOpsView({
     null
   );
   const [editCapacityError, setEditCapacityError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CongressLodgingHome | null>(null);
 
   const peopleNeeding = useMemo(() => {
     return registrations
@@ -430,6 +464,16 @@ export function LodgingOpsView({
     setEditCapacityError(null);
   };
 
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    const homeId = pendingDelete._id;
+    void onDeleteHome(homeId).then((ok) => {
+      if (!ok) return;
+      if (editingId === homeId) cancelEdit();
+      setPendingDelete(null);
+    });
+  };
+
   const submitCreate = () => {
     setCreateNameError(null);
     setCreateContactPhoneError(null);
@@ -454,8 +498,12 @@ export function LodgingOpsView({
     }
     const caps = resolveCapacityValues(capFri, capSat, createDifferentByNight);
     const normalizedPhone = contactPhone.trim()
-      ? normalizeChilePhone(contactPhone) ?? contactPhone.trim()
+      ? normalizeChilePhone(contactPhone) ?? undefined
       : undefined;
+    if (contactPhone.trim() && !normalizedPhone) {
+      setCreateContactPhoneError(validateContactPhone(contactPhone) ?? "Teléfono inválido.");
+      return;
+    }
     void onCreateHome({
       name: name.trim(),
       contactPhone: normalizedPhone,
@@ -499,8 +547,12 @@ export function LodgingOpsView({
       editDifferentByNight
     );
     const normalizedPhone = editContactPhone.trim()
-      ? normalizeChilePhone(editContactPhone) ?? editContactPhone.trim()
+      ? normalizeChilePhone(editContactPhone) ?? undefined
       : undefined;
+    if (editContactPhone.trim() && !normalizedPhone) {
+      setEditContactPhoneError(validateContactPhone(editContactPhone) ?? "Teléfono inválido.");
+      return;
+    }
     const existing = homes.find((h) => h._id === homeId);
     const legacyName = existing?.contactName?.trim();
     const contactNameToKeep =
@@ -752,19 +804,26 @@ export function LodgingOpsView({
                               contactPhoneError={editContactPhoneError}
                               capacityError={editCapacityError}
                             />
-                            <div className="flex flex-wrap gap-2 sm:col-span-2">
-                              <Button type="submit" size="sm" loading={homeSaving}>
-                                Guardar cupos
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
+                            <div className="flex flex-wrap items-start justify-between gap-2 sm:col-span-2">
+                              <HomeDeleteButton
+                                assigned={row.friUsed + row.satUsed > 0}
                                 disabled={homeSaving}
-                                onClick={cancelEdit}
-                              >
-                                Cancelar
-                              </Button>
+                                onDelete={() => setPendingDelete(home)}
+                              />
+                              <div className="flex flex-wrap gap-2">
+                                <Button type="submit" size="sm" loading={homeSaving}>
+                                  Guardar
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={homeSaving}
+                                  onClick={cancelEdit}
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
                             </div>
                           </form>
                         ) : (
@@ -812,14 +871,21 @@ export function LodgingOpsView({
                                   </p>
                                 </div>
                                 {operate ? (
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => startEdit(home)}
-                                  >
-                                    Editar cupos
-                                  </Button>
+                                  <div className="flex flex-wrap items-start justify-end gap-2">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => startEdit(home)}
+                                    >
+                                      Editar
+                                    </Button>
+                                    <HomeDeleteButton
+                                      assigned={row.friUsed + row.satUsed > 0}
+                                      disabled={homeSaving}
+                                      onDelete={() => setPendingDelete(home)}
+                                    />
+                                  </div>
                                 ) : null}
                               </div>
                             </div>
@@ -902,19 +968,26 @@ export function LodgingOpsView({
                               contactPhoneError={editContactPhoneError}
                               capacityError={editCapacityError}
                             />
-                            <div className="flex flex-wrap gap-2 sm:col-span-2">
-                              <Button type="submit" size="sm" loading={homeSaving}>
-                                Guardar cupos
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
+                            <div className="flex flex-wrap items-start justify-between gap-2 sm:col-span-2">
+                              <HomeDeleteButton
+                                assigned={row.friUsed + row.satUsed > 0}
                                 disabled={homeSaving}
-                                onClick={cancelEdit}
-                              >
-                                Cancelar
-                              </Button>
+                                onDelete={() => setPendingDelete(home)}
+                              />
+                              <div className="flex flex-wrap gap-2">
+                                <Button type="submit" size="sm" loading={homeSaving}>
+                                  Guardar
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={homeSaving}
+                                  onClick={cancelEdit}
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
                             </div>
                           </form>
                         ) : (
@@ -931,14 +1004,21 @@ export function LodgingOpsView({
                                 Completo
                               </span>
                               {operate ? (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => startEdit(home)}
-                                >
-                                  Editar cupos
-                                </Button>
+                                <div className="flex flex-wrap items-start justify-end gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => startEdit(home)}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <HomeDeleteButton
+                                    assigned={row.friUsed + row.satUsed > 0}
+                                    disabled={homeSaving}
+                                    onDelete={() => setPendingDelete(home)}
+                                  />
+                                </div>
                               ) : null}
                             </div>
                           </div>
@@ -1018,6 +1098,24 @@ export function LodgingOpsView({
           </div>
         </form>
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingDelete != null}
+        onClose={() => {
+          if (homeSaving) return;
+          setPendingDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Eliminar hogar"
+        description={
+          pendingDelete
+            ? `¿Eliminar el hogar de ${pendingDelete.name}? Se borran sus cupos. No se puede deshacer.`
+            : undefined
+        }
+        confirmLabel="Eliminar"
+        destructive
+        loading={homeSaving}
+      />
 
       <Section
         title="Falta asignar"

@@ -3,7 +3,11 @@ import {
   requireCongressOperate,
   requireCongressView,
 } from "@/app/api/congress/guard";
-import { listLodgingHomes, upsertLodgingHome } from "@/lib/congress/lodging";
+import {
+  listLodgingHomes,
+  lodgingContactPhoneForSave,
+  upsertLodgingHome,
+} from "@/lib/congress/lodging";
 import type { CongressNight } from "@/core/congress/constants";
 
 export async function GET() {
@@ -46,12 +50,16 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    const phone = lodgingContactPhoneForSave(body.contactPhone);
+    if (!phone.ok) {
+      return NextResponse.json({ ok: false, error: phone.error }, { status: 400 });
+    }
     const home = await upsertLodgingHome({
       tenantId: ctx.tenantId,
       actorUserId: ctx.user._id,
       name: body.name,
       contactName: body.contactName,
-      contactPhone: body.contactPhone,
+      contactPhone: phone.phone,
       address: body.address,
       notes: body.notes,
       capacityByNight,

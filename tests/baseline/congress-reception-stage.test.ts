@@ -50,7 +50,7 @@ describe("deriveReceptionProgress", () => {
     assert.equal(progress.stage, "asistencia");
     assert.equal(progress.stageLabel, "En asistencia");
     assert.equal(progress.steps.asistencia, "ahora");
-    assert.equal(progress.steps.alimentacion, "pendiente");
+    assert.equal(progress.steps.alojamiento, "pendiente");
   });
 
   it("caso que incluye hoy sin llegada queda en asistencia", () => {
@@ -81,8 +81,8 @@ describe("deriveReceptionProgress", () => {
       journeyDay: "sunday",
     });
     assert.equal(progress.arrivalRequired, false);
-    assert.equal(progress.stage, "alimentacion");
-    assert.equal(progress.stageLabel, "En alimentación");
+    assert.equal(progress.stage, "alojamiento");
+    assert.equal(progress.stageLabel, "En alojamiento");
   });
 
   it("falta teléfono, zona o iglesia aunque ya llegó", () => {
@@ -119,7 +119,7 @@ describe("deriveReceptionProgress", () => {
     assert.equal(progress.stage, "listo");
   });
 
-  it("pending, partial y needs_verification quedan en alimentación", () => {
+  it("el aporte no frena la recepción", () => {
     const pending = deriveReceptionProgress({
       registrationId: ID,
       registration: registration({
@@ -130,131 +130,67 @@ describe("deriveReceptionProgress", () => {
       assignments: [],
       journeyDay: "saturday",
     });
-    assert.equal(pending.stage, "alimentacion");
+    assert.equal(pending.stage, "listo");
 
     const partial = deriveReceptionProgress({
       registrationId: ID,
       registration: registration({
         attendance: { saturday: true, sunday: false },
         allocatedPaidClp: 1_000,
+        lodgingNeed: "unknown",
       }),
       payments: [],
       assignments: [],
       journeyDay: "saturday",
     });
-    assert.equal(partial.stage, "alimentacion");
-    assert.equal(partial.foodLock, null);
+    assert.equal(partial.stage, "alojamiento");
 
     const review = deriveReceptionProgress({
       registrationId: ID,
       registration: registration({
         attendance: { saturday: true, sunday: false },
         needsReview: true,
-      }),
-      payments: [],
-      assignments: [],
-      journeyDay: "saturday",
-    });
-    assert.equal(review.stage, "alimentacion");
-  });
-
-  it("paid individual no bloquea como líder", () => {
-    const progress = deriveReceptionProgress({
-      registrationId: ID,
-      registration: registration({
-        attendance: { saturday: true, sunday: false },
-        lodgingNeed: "unknown",
-      }),
-      payments: [
-        {
-          status: "posted",
-          payerType: "individual",
-          allocations: [{ registrationId: ID, amountClp: CONGRESS_CONTRIBUTION_CLP }],
-        },
-      ],
-      assignments: [],
-      journeyDay: "saturday",
-    });
-    assert.equal(progress.foodLock, "paid");
-    assert.equal(progress.steps.alimentacion, "listo");
-    assert.equal(progress.stage, "alojamiento");
-  });
-
-  it("paid con pago church posted queda bloqueado", () => {
-    const progress = deriveReceptionProgress({
-      registrationId: ID,
-      registration: registration({
-        attendance: { saturday: true, sunday: false },
-        lodgingNeed: "unknown",
-      }),
-      payments: [
-        {
-          status: "posted",
-          payerType: "church",
-          allocations: [{ registrationId: ID, amountClp: CONGRESS_CONTRIBUTION_CLP }],
-        },
-      ],
-      assignments: [],
-      journeyDay: "saturday",
-    });
-    assert.equal(progress.foodLock, "leader");
-    assert.equal(progress.steps.alimentacion, "bloqueado");
-    assert.equal(progress.stage, "alojamiento");
-    assert.equal(progress.stageLabel, "En alojamiento");
-  });
-
-  it("pago church con saldo restante no cierra alimentación", () => {
-    const progress = deriveReceptionProgress({
-      registrationId: ID,
-      registration: registration({
-        attendance: { saturday: true, sunday: false },
-        allocatedPaidClp: 5_000,
-      }),
-      payments: [
-        {
-          status: "posted",
-          payerType: "church",
-          allocations: [{ registrationId: ID, amountClp: 5_000 }],
-        },
-      ],
-      assignments: [],
-      journeyDay: "saturday",
-    });
-    assert.equal(progress.stage, "alimentacion");
-    assert.equal(progress.foodLock, null);
-    assert.equal(progress.steps.alimentacion, "ahora");
-  });
-
-  it("sin lista de pagos un paid no se marca como líder", () => {
-    const progress = deriveReceptionProgress({
-      registrationId: ID,
-      registration: registration({
-        attendance: { saturday: true, sunday: false },
-        lodgingNeed: "unknown",
-      }),
-      payments: [],
-      assignments: [],
-      journeyDay: "saturday",
-    });
-    assert.equal(progress.foodLock, "paid");
-    assert.equal(progress.steps.alimentacion, "listo");
-  });
-
-  it("exento deja alimentación lista", () => {
-    const progress = deriveReceptionProgress({
-      registrationId: ID,
-      registration: registration({
-        attendance: { saturday: true, sunday: false },
-        chargeAmountClp: null,
         allocatedPaidClp: 0,
-        lodgingNeed: "unknown",
       }),
       payments: [],
       assignments: [],
       journeyDay: "saturday",
     });
-    assert.equal(progress.foodLock, "exempt");
-    assert.equal(progress.stage, "alojamiento");
+    assert.equal(review.stage, "listo");
+  });
+
+  it("un pago, esté o no, deja el paso en alojamiento si falta la cama", () => {
+    for (const payments of [
+      [],
+      [
+        {
+          status: "posted" as const,
+          payerType: "individual" as const,
+          allocations: [{ registrationId: ID, amountClp: CONGRESS_CONTRIBUTION_CLP }],
+        },
+      ],
+      [
+        {
+          status: "posted" as const,
+          payerType: "church" as const,
+          allocations: [{ registrationId: ID, amountClp: CONGRESS_CONTRIBUTION_CLP }],
+        },
+      ],
+    ]) {
+      const progress = deriveReceptionProgress({
+        registrationId: ID,
+        registration: registration({
+          attendance: { saturday: true, sunday: false },
+          lodgingNeed: "unknown",
+          allocatedPaidClp: payments.length === 0 ? CONGRESS_CONTRIBUTION_CLP : 0,
+        }),
+        payments,
+        assignments: [],
+        journeyDay: "saturday",
+      });
+      assert.equal(progress.stage, "alojamiento");
+      assert.equal(progress.stageLabel, "En alojamiento");
+    }
   });
 
   it("unknown y requested sin cama quedan en alojamiento", () => {
@@ -287,7 +223,7 @@ describe("deriveReceptionProgress", () => {
     });
     assert.equal(none.stage, "listo");
     assert.equal(none.steps.alojamiento, "listo");
-    assert.equal(none.steps.alimentacion, "listo");
+    assert.equal(none.steps.asistencia, "listo");
 
     const bed = deriveReceptionProgress({
       registrationId: ID,
@@ -304,53 +240,37 @@ describe("deriveReceptionProgress", () => {
     assert.equal(bed.stage, "listo");
   });
 
-  it("los tres listos con pago del líder marcan alimentación bloqueada", () => {
+  it("llegada y cama dejan la ficha lista aunque el aporte siga pendiente", () => {
     const progress = deriveReceptionProgress({
       registrationId: ID,
       registration: registration({
         attendance: { saturday: true, sunday: false },
+        allocatedPaidClp: 0,
       }),
-      payments: [
-        {
-          status: "posted",
-          payerType: "church",
-          allocations: [{ registrationId: ID, amountClp: CONGRESS_CONTRIBUTION_CLP }],
-        },
-      ],
+      payments: [],
       assignments: [],
       journeyDay: "saturday",
     });
     assert.equal(progress.stage, "listo");
     assert.equal(progress.stageLabel, "Listo");
     assert.equal(progress.steps.asistencia, "listo");
-    assert.equal(progress.steps.alimentacion, "bloqueado");
     assert.equal(progress.steps.alojamiento, "listo");
   });
 });
 
 describe("receptionPrimaryAction", () => {
-  it("siguiente espera a que el paso visible esté listo", () => {
+  it("siguiente avanza desde asistencia", () => {
     assert.deepEqual(
       receptionPrimaryAction("asistencia", {
         asistencia: "ahora",
-        alimentacion: "pendiente",
-        alojamiento: "pendiente",
-      }),
-      { label: "Siguiente", enabled: false, kind: "advance" }
-    );
-    assert.deepEqual(
-      receptionPrimaryAction("asistencia", {
-        asistencia: "listo",
-        alimentacion: "ahora",
         alojamiento: "pendiente",
       }),
       { label: "Siguiente", enabled: true, kind: "advance" }
     );
     assert.deepEqual(
-      receptionPrimaryAction("alimentacion", {
+      receptionPrimaryAction("asistencia", {
         asistencia: "listo",
-        alimentacion: "bloqueado",
-        alojamiento: "ahora",
+        alojamiento: "pendiente",
       }),
       { label: "Siguiente", enabled: true, kind: "advance" }
     );
@@ -360,7 +280,6 @@ describe("receptionPrimaryAction", () => {
     assert.deepEqual(
       receptionPrimaryAction("alojamiento", {
         asistencia: "listo",
-        alimentacion: "listo",
         alojamiento: "ahora",
       }),
       { label: "Listo, siguiente de la fila", enabled: false, kind: "close" }
@@ -368,7 +287,6 @@ describe("receptionPrimaryAction", () => {
     assert.deepEqual(
       receptionPrimaryAction("alojamiento", {
         asistencia: "listo",
-        alimentacion: "bloqueado",
         alojamiento: "listo",
       }),
       { label: "Listo, siguiente de la fila", enabled: true, kind: "close" }
@@ -391,7 +309,7 @@ describe("arrivalMarksImmediately", () => {
     assert.equal(arrivalMarksImmediately(ready), true);
   });
 
-  it("abre la guía si falta el pago", () => {
+  it("marca en la fila aunque falte el pago", () => {
     assert.equal(
       arrivalMarksImmediately({
         ...ready,
@@ -400,7 +318,7 @@ describe("arrivalMarksImmediately", () => {
           allocatedPaidClp: 0,
         }),
       }),
-      false
+      true
     );
   });
 

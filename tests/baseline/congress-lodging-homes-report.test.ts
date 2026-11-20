@@ -156,7 +156,7 @@ describe("buildLodgingHomesReport", () => {
     assert.equal(report.homes[0]?.hostPhone, "+56 9 1111 1111");
     assert.equal(report.homes[0]?.notes, "Sin 2° piso");
     assert.equal(report.homes[0]?.guests.length, 1);
-    assert.equal(report.homes[0]?.guests[0]?.fullName, "Hno Ana Pérez");
+    assert.equal(report.homes[0]?.guests[0]?.fullName, "Ana Pérez");
     assert.equal(report.homes[0]?.guests[0]?.phone, "+56911111111");
     assert.equal(report.homes[0]?.guests[0]?.nightsLabel, "Ambos (vie 20 y sáb 21)");
     assert.equal(report.homes[0]?.guestCount, 1);
@@ -166,7 +166,7 @@ describe("buildLodgingHomesReport", () => {
     assert.equal(report.homes[1]?.homeNumber, 2);
     assert.equal(report.homes[1]?.name, "Casa Beta");
     assert.equal(report.homes[1]?.hostPhone, "+56 9 2222 2222");
-    assert.equal(report.homes[1]?.guests[0]?.fullName, "Hno Bruno Díaz");
+    assert.equal(report.homes[1]?.guests[0]?.fullName, "Bruno Díaz");
     assert.equal(report.homes[1]?.guests[0]?.phone, "—");
     assert.equal(report.homes[1]?.guests[0]?.nightsLabel, "Sábado 21");
     assert.equal(report.homes[1]?.bedsFriday, 0);

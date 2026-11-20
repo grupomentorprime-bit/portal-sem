@@ -10,6 +10,13 @@ export const CHARGE_WAIVE_REASONS = [
   "Otro",
 ] as const;
 
+/** Quién autoriza eximir en el pago grupal. */
+export const GROUP_EXEMPT_AUTHORIZERS = [
+  "Líder nacional",
+  "Secretario",
+  "Tesorero",
+] as const;
+
 export type ApplyChargeChangeInput = {
   chargeAmountClp: number | null;
   allocatedPaidClp: number;
@@ -18,6 +25,8 @@ export type ApplyChargeChangeInput = {
   reason?: string;
   /** Monto que no se cobra, cuando la acción es una parte. */
   waiveClp?: number;
+  /** Monto que sí se cobra. El resto del aporte no queda como saldo. */
+  chargeClp?: number;
   nowIso: string;
   actorUserId: string;
 };
@@ -79,15 +88,50 @@ export function applyChargeChange(
   }
 
   if (input.action === "reduce") {
-    const waive = Math.trunc(Number(input.waiveClp));
-    if (!Number.isFinite(waive) || waive <= 0) {
-      return { ok: false, error: "waive_invalid" };
-    }
     if (input.chargeAmountClp == null) return { ok: false, error: "no_charge" };
-    const next = input.chargeAmountClp - waive;
-    if (next < 0) return { ok: false, error: "waive_too_high" };
     const paid = Math.max(0, Math.trunc(input.allocatedPaidClp));
+    const stated = input.chargeClp;
+    let next: number;
+    if (stated != null) {
+      next = Math.trunc(Number(stated));
+      if (!Number.isFinite(next) || next <= 0) {
+        return { ok: false, error: "waive_invalid" };
+      }
+      if (next > CONGRESS_CONTRIBUTION_CLP) {
+        return { ok: false, error: "waive_too_high" };
+      }
+    } else {
+      const waive = Math.trunc(Number(input.waiveClp));
+      if (!Number.isFinite(waive) || waive <= 0) {
+        return { ok: false, error: "waive_invalid" };
+      }
+      next = input.chargeAmountClp - waive;
+      if (next < 0) return { ok: false, error: "waive_too_high" };
+    }
     if (next < paid) return { ok: false, error: "below_paid" };
+    if (next === input.chargeAmountClp) {
+      return {
+        ok: true,
+        chargeAmountClp: input.chargeAmountClp,
+        chargeHistory: history,
+        idempotent: true,
+      };
+    }
+    if (next === CONGRESS_CONTRIBUTION_CLP) {
+      const entry: CongressChargeHistoryEntry = {
+        action: "restore",
+        previousChargeAmountClp: input.chargeAmountClp,
+        nextChargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        reason,
+        at: input.nowIso,
+        actorUserId: input.actorUserId,
+      };
+      return {
+        ok: true,
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        chargeHistory: [...history, entry],
+      };
+    }
     if (next === 0) {
       if (paid > 0) return { ok: false, error: "has_allocations" };
       const entry: CongressChargeHistoryEntry = {

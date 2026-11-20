@@ -1,5 +1,9 @@
 import type { CongressNight } from "@/core/congress/constants";
 import { CONGRESS_NIGHTS } from "@/core/congress/constants";
+import {
+  CHILE_PHONE_INVALID_MESSAGE,
+  normalizeChilePhone,
+} from "@/lib/experience/forms/phone-chile";
 
 export function isCongressNight(value: string): value is CongressNight {
   return (CONGRESS_NIGHTS as readonly string[]).includes(value);
@@ -87,4 +91,15 @@ export function isActiveLodgingAssignment(assignment: {
 
 export function activeAssignmentStatuses(): CongressLodgingAssignmentStatus[] {
   return ["assigned", "confirmed"];
+}
+
+/** Vacío queda vacío. Con texto, solo se guarda un teléfono de Chile. */
+export function lodgingContactPhoneForSave(
+  value: string | null | undefined
+): { ok: true; phone: string | null } | { ok: false; error: string } {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) return { ok: true, phone: null };
+  const phone = normalizeChilePhone(trimmed);
+  if (!phone) return { ok: false, error: CHILE_PHONE_INVALID_MESSAGE };
+  return { ok: true, phone };
 }

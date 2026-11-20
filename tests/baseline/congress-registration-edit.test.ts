@@ -65,7 +65,7 @@ describe("operator identity edit", () => {
     });
     assert.equal(result.ok, true);
     if (!result.ok) return;
-    assert.equal(result.identity.fullName, "Hno eleuterio espinoza");
+    assert.equal(result.identity.fullName, "eleuterio espinoza");
     assert.equal(result.identity.rut, "15.676.490-6");
     assert.equal(result.identity.email, "eleuterio@iglesia.cl");
     assert.equal(result.identity.phone, "+56 9 1111 2222");

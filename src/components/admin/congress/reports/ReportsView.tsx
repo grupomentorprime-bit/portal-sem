@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Section } from "@/components/admin/kit";
-import { formatZoneLabel } from "@/components/admin/congress/labels";
+import { formatZoneLabel, registrationDisplayName } from "@/components/admin/congress/labels";
 import { CorporatePrintReport } from "@/components/admin/congress/reports/CorporatePrintReport";
 import { LodgingPrintReport } from "@/components/admin/congress/reports/LodgingPrintReport";
 import { Button } from "@/components/ui/button";
@@ -170,7 +170,7 @@ export function ReportsView({
       ),
       ...registrations.map((r) =>
         [
-          r.identity.fullName,
+          registrationDisplayName(r),
           formatZoneLabel(r.zoneId),
           r.churchName,
           r.identity.rut ?? "",

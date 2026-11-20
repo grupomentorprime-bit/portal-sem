@@ -123,6 +123,8 @@ export interface CongressPayment {
   amountClp: number;
   /** Medio de pago. Ausente = legacy (caja: Sin medio). */
   method?: CongressPaymentMethod;
+  /** Banco de la transferencia. Solo cuando method es transfer. */
+  bank?: string | null;
   /** Día del pago YYYY-MM-DD (America/Santiago). Ausente = legacy. */
   paidOn?: string;
   receiptRef?: string | null;

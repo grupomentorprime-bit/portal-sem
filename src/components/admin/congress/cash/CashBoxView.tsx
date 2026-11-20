@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import {
+  ActionMenu,
+  ActionMenuItem,
   AlertBanner,
+  Dialog,
   EmptyState,
   LoadingState,
   Section,
@@ -13,6 +16,10 @@ import {
   paymentMethodLabel,
 } from "@/components/admin/congress/labels";
 import { Button } from "@/components/ui/button";
+import {
+  PaymentCorrectionFields,
+  type PaymentCorrectionPatch,
+} from "@/components/admin/congress/cash/PaymentCorrectionFields";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
@@ -26,7 +33,10 @@ import {
   type CashMethodKey,
   type ContributionGroupRow,
 } from "@/core/congress/cash-box";
-import { foldCongressChurchBase } from "@/core/congress/church-name";
+import {
+  foldCongressChurchBase,
+  formatCongressChurchLabel,
+} from "@/core/congress/church-name";
 import { effectivePaidOn } from "@/core/congress/payment-dates";
 import type {
   CongressPayment,
@@ -98,6 +108,28 @@ function AmountInline({
   );
 }
 
+function paymentPlace(
+  payment: CongressPayment,
+  registrations: CongressRegistration[]
+): { zone: string; church: string } {
+  const byId = new Map(registrations.map((row) => [row._id, row]));
+  const zones = new Set<string>();
+  const churches = new Set<string>();
+  for (const allocation of payment.allocations) {
+    const reg = byId.get(allocation.registrationId);
+    if (!reg) continue;
+    if (reg.zoneId.trim()) zones.add(formatZoneLabel(reg.zoneId));
+    if (reg.churchName?.trim()) churches.add(formatCongressChurchLabel(reg.churchName));
+  }
+  if (churches.size === 0 && payment.churchName?.trim()) {
+    churches.add(formatCongressChurchLabel(payment.churchName));
+  }
+  return {
+    zone: zones.size > 0 ? [...zones].join(", ") : "Sin zona",
+    church: churches.size > 0 ? [...churches].join(", ") : "Sin iglesia",
+  };
+}
+
 function sortZonesNumeric(rows: ContributionGroupRow[]): ContributionGroupRow[] {
   return [...rows].sort((a, b) => {
     const na = Number(a.key.match(/(\d+)/)?.[1] ?? Number.NaN);
@@ -116,7 +148,9 @@ type Props = {
   voidReason: string;
   onVoidReasonChange: (value: string) => void;
   voidingId: string | null;
-  onVoid: (paymentId: string) => void | Promise<void>;
+  onVoid: (paymentId: string, reason: string) => void | Promise<boolean | void>;
+  onRevisePayment?: (paymentId: string, patch: PaymentCorrectionPatch) => Promise<boolean>;
+  onRestorePayment?: (paymentId: string) => Promise<boolean>;
   methodFilter: CashMethodKey | "all";
   onMethodFilterChange: (v: CashMethodKey | "all") => void;
   fromPaidOn: string;
@@ -130,6 +164,7 @@ type Props = {
     churchBaseKey: string;
   }) => void;
   onDownloadReceipt?: (payment: CongressPayment) => void;
+  view: "close" | "movements";
 };
 
 export function CashBoxView({
@@ -138,10 +173,12 @@ export function CashBoxView({
   loading,
   error,
   canVoid,
-  voidReason,
-  onVoidReasonChange,
+  voidReason: _voidReason,
+  onVoidReasonChange: _onVoidReasonChange,
   voidingId,
   onVoid,
+  onRevisePayment,
+  onRestorePayment,
   methodFilter,
   onMethodFilterChange,
   fromPaidOn,
@@ -152,8 +189,13 @@ export function CashBoxView({
   onStatusFilterChange,
   onOpenGroupPayment,
   onDownloadReceipt,
+  view,
 }: Props) {
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const [voidTarget, setVoidTarget] = useState<CongressPayment | null>(null);
+  const [confirmReason, setConfirmReason] = useState("");
+  const [restoreTargetId, setRestoreTargetId] = useState<string | null>(null);
 
   const filters = useMemo(
     () => ({
@@ -208,6 +250,7 @@ export function CashBoxView({
 
   return (
     <div className="space-y-6">
+      {view === "close" ? (
       <Section
         title="Cierre operativo"
         description="Universo completo de inscripciones (no usa filtros de movimientos)."
@@ -271,7 +314,10 @@ export function CashBoxView({
           </div>
         </div>
       </Section>
+      ) : null}
 
+      {view === "movements" ? (
+      <>
       <Section
         title="Recaudado por medio"
         description="Según filtros · totales solo vigentes (posted)."
@@ -368,7 +414,10 @@ export function CashBoxView({
           </div>
         </Section>
       ) : null}
+      </>
+      ) : null}
 
+      {view === "close" ? (
       <div className="grid gap-4 lg:grid-cols-2">
         <Section
           title="Por zona"
@@ -484,39 +533,48 @@ export function CashBoxView({
           )}
         </Section>
       </div>
+      ) : null}
 
+      {view === "movements" ? (
       <Section title="Movimientos">
-        {canVoid ? (
-          <Input
-            className="mb-3 max-w-md"
-            label="Motivo de anulación"
-            value={voidReason}
-            onChange={(e) => onVoidReasonChange(e.target.value)}
-          />
-        ) : null}
         {cashBox.rows.length === 0 ? (
           <EmptyState title="Sin pagos" />
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-white">
-            {cashBox.rows.map((p) => (
-              <li
-                key={p._id}
-                className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 text-sm"
-              >
-                <div className="grid min-w-0 flex-1 gap-1 sm:grid-cols-5 sm:items-center sm:gap-3">
+            {cashBox.rows.map((p) => {
+              const place = paymentPlace(p, registrations);
+              const canEdit = canVoid && Boolean(onRevisePayment);
+              const canCancel = p.status === "posted" && canVoid;
+              const canRestore = p.status === "voided" && canVoid && Boolean(onRestorePayment);
+              return (
+              <li key={p._id} className="space-y-2 px-3 py-2.5 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="grid min-w-0 flex-1 gap-1 sm:grid-cols-6 sm:items-center sm:gap-3">
                   <span className="tabular-nums text-muted">
                     {effectivePaidOn(p)}
                   </span>
-                  <span>
-                    {paymentMethodLabel(normalizePaymentMethod(p.method))}
+                  <span className="min-w-0">
+                    <span className="block">
+                      {paymentMethodLabel(normalizePaymentMethod(p.method))}
+                      {p.bank?.trim() ? ` · ${p.bank.trim()}` : ""}
+                    </span>
+                    {p.note?.trim() ? (
+                      <span className="block truncate text-xs text-muted">{p.note.trim()}</span>
+                    ) : null}
                   </span>
                   <span className="truncate font-medium">{p.payerName}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate">{place.zone}</span>
+                    <span className="block truncate text-xs text-muted">{place.church}</span>
+                  </span>
                   <span className="tabular-nums font-semibold">
                     {formatClp(p.amountClp)}
                   </span>
-                  <span className="text-muted">{p.status}</span>
+                  <span className="text-muted">
+                    {p.status === "voided" ? "Anulado" : "Vigente"}
+                  </span>
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap items-center gap-1">
                   {onDownloadReceipt ? (
                     <Button
                       size="sm"
@@ -526,22 +584,125 @@ export function CashBoxView({
                       Comprobante
                     </Button>
                   ) : null}
-                  {p.status === "posted" && canVoid ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      loading={voidingId === p._id}
-                      onClick={() => void onVoid(p._id)}
-                    >
-                      Anular
-                    </Button>
+                  {canEdit || canCancel || canRestore ? (
+                    <ActionMenu label={`Acciones de ${p.payerName}`}>
+                      {canEdit ? (
+                        <ActionMenuItem
+                          onClick={() =>
+                            setEditingPaymentId((current) => (current === p._id ? null : p._id))
+                          }
+                        >
+                          Modificar
+                        </ActionMenuItem>
+                      ) : null}
+                      {canRestore ? (
+                        <ActionMenuItem onClick={() => setRestoreTargetId(p._id)}>
+                          Dejar vigente
+                        </ActionMenuItem>
+                      ) : null}
+                      {canCancel ? (
+                        <ActionMenuItem
+                          destructive
+                          onClick={() => {
+                            setConfirmReason("");
+                            setVoidTarget(p);
+                          }}
+                        >
+                          Anular
+                        </ActionMenuItem>
+                      ) : null}
+                    </ActionMenu>
                   ) : null}
                 </div>
+                </div>
+                {editingPaymentId === p._id && onRevisePayment ? (
+                  <PaymentCorrectionFields
+                    payment={p}
+                    busy={voidingId === p._id}
+                    onCancel={() => setEditingPaymentId(null)}
+                    onSave={async (patch) => {
+                      const ok = await onRevisePayment(p._id, patch);
+                      if (ok) setEditingPaymentId(null);
+                      return ok;
+                    }}
+                  />
+                ) : null}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
+        <Dialog
+          open={voidTarget != null}
+          onClose={() => setVoidTarget(null)}
+          title="Anular pago"
+          description={
+            voidTarget
+              ? `${voidTarget.payerName} · ${formatClp(voidTarget.amountClp)}. El monto vuelve al saldo de quien estaba imputado.`
+              : undefined
+          }
+          size="sm"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Motivo"
+              value={confirmReason}
+              onChange={(event) => setConfirmReason(event.target.value)}
+              helper="Mínimo 5 caracteres."
+            />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setVoidTarget(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                loading={voidTarget != null && voidingId === voidTarget._id}
+                disabled={confirmReason.trim().length < 5}
+                onClick={() => {
+                  if (!voidTarget) return;
+                  const reason = confirmReason.trim();
+                  const paymentId = voidTarget._id;
+                  void Promise.resolve(onVoid(paymentId, reason)).then((ok) => {
+                    if (ok === false) return;
+                    setVoidTarget(null);
+                    setConfirmReason("");
+                  });
+                }}
+              >
+                Anular
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+        <Dialog
+          open={restoreTargetId != null}
+          onClose={() => setRestoreTargetId(null)}
+          title="Dejar el pago vigente"
+          description="El comprobante vuelve a contar en la caja y en los saldos."
+          size="sm"
+        >
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setRestoreTargetId(null)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              loading={restoreTargetId != null && voidingId === restoreTargetId}
+              onClick={() => {
+                if (!restoreTargetId || !onRestorePayment) return;
+                const paymentId = restoreTargetId;
+                void onRestorePayment(paymentId).then((ok) => {
+                  if (ok) setRestoreTargetId(null);
+                });
+              }}
+            >
+              Confirmar
+            </Button>
+          </div>
+        </Dialog>
       </Section>
+      ) : null}
     </div>
   );
 }

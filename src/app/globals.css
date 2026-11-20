@@ -135,6 +135,42 @@
   to { transform: scale(1); }
 }
 
+@keyframes pay-aporte-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 50%, transparent);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-primary) 0%, transparent);
+    transform: scale(1.045);
+  }
+}
+
+.pay-aporte-alert {
+  animation: pay-aporte-pulse 1.6s ease-in-out infinite;
+}
+
+.exempt-marked-btn,
+.exempt-marked-btn:hover,
+.exempt-marked-btn:active,
+.exempt-marked-btn:disabled {
+  background-color: #f5c400 !important;
+  color: #1c1400 !important;
+  border-color: #d9a800 !important;
+  opacity: 1 !important;
+}
+
+.exempt-marked-btn:hover:not(:disabled) {
+  background-color: #e6b400 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pay-aporte-alert {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+}
+
 /* ─── Base ─── */
 html {
   font-family: var(--font-sans);

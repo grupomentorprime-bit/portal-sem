@@ -29,16 +29,22 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(request.url);
-    const items = await listCongressRegistrations(ctx.tenantId, {
-      q: url.searchParams.get("q") ?? undefined,
-      zoneId: url.searchParams.get("zone") ?? undefined,
-      churchName: url.searchParams.get("church") ?? undefined,
-    });
-
-    const [all, catalog] = await Promise.all([
-      listCongressRegistrations(ctx.tenantId),
+    const q = url.searchParams.get("q")?.trim() ?? "";
+    const zoneId = url.searchParams.get("zone")?.trim() ?? "";
+    const churchName = url.searchParams.get("church")?.trim() ?? "";
+    const [listed, catalog] = await Promise.all([
+      listCongressRegistrations(ctx.tenantId, {
+        q: q || undefined,
+        zoneId: zoneId || undefined,
+        churchName: churchName || undefined,
+      }),
       listCongressChurches(ctx.tenantId),
     ]);
+    const all =
+      q || zoneId || churchName
+        ? await listCongressRegistrations(ctx.tenantId)
+        : listed;
+    const items = listed;
 
     const zoneIds = new Set<string>([
       ...CONGRESS_ZONES.map((z) => z.id),

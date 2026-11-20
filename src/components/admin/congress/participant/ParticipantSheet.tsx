@@ -1,27 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CreditCard } from "lucide-react";
 import { Dialog } from "@/components/admin/kit";
 import { ConfirmDialog } from "@/components/admin/kit/dialogs/ConfirmDialog";
-import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { CongressAttendanceDay } from "@/core/congress/constants";
-import { CONGRESS_CONTRIBUTION_CLP, CONGRESS_NIGHTS, CONGRESS_ZONES } from "@/core/congress/constants";
+import { CONGRESS_NIGHTS, CONGRESS_ZONES } from "@/core/congress/constants";
 import type {
   CongressLodgingAssignment,
   CongressLodgingHome,
   CongressLodgingNeed,
   CongressPayment,
-  CongressPaymentMethod,
   CongressRegistration,
 } from "@/core/congress/types";
 import {
-  contributionLabel,
-  formatClp,
-  formatClpInput,
   formatDateTimeSantiago,
   formatLodgingNightLabel,
   formatMarkedAtSantiago,
@@ -31,6 +27,10 @@ import {
   registrationRoleBadges,
   resolveRegistrationLodging,
 } from "@/components/admin/congress/labels";
+import {
+  contributionStatusHasBalance,
+  deriveContributionStatus,
+} from "@/core/congress/finance-status";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChilePhoneInput } from "@/components/portal/experience/forms/ChilePhoneInput";
 import { ChileRutInput } from "@/components/portal/experience/forms/ChileRutInput";
@@ -46,10 +46,7 @@ import {
   isValidChileRut,
   normalizeChileRut,
 } from "@/lib/experience/forms/rut-chile";
-import { CHARGE_WAIVE_REASONS, isExplicitlyExempt } from "@/core/congress/charge";
-import { remainingBalanceClp } from "@/core/congress/charges";
 import { formSubmissionDisplay } from "@/core/congress/form-engagement";
-import { todayPaidOnSantiago } from "@/core/congress/payment-dates";
 import { occupiedBedsForNight } from "@/core/congress/lodging";
 import { findFoldedNameDuplicates } from "@/core/congress/accent-duplicates";
 import { registrationDeleteBlockReason } from "@/core/congress/registration-delete";
@@ -70,8 +67,8 @@ type Props = {
   homes: CongressLodgingHome[];
   operate: boolean;
   journeyDay: CongressAttendanceDay;
-  canPay: boolean;
   zoneOptions?: { id: string; label: string }[];
+  onGoToPay?: (registrationId: string) => void;
   onClose: () => void;
   onPatchAttendance: (
     id: string,
@@ -94,27 +91,11 @@ type Props = {
       zoneId?: string;
       churchName?: string;
     }
-  ) => Promise<void>;
-  onIndividualPayment: (input: {
-    registrationId: string;
-    amountClp: number;
-    payerName: string;
-    method: CongressPaymentMethod;
-    paidOn: string;
-    receiptRef?: string;
-  }) => Promise<void>;
+  ) => Promise<boolean>;
   payments: CongressPayment[];
   registrations?: CongressRegistration[];
   onOpenRegistration?: (id: string) => void;
   onDeleteRegistration?: (id: string) => Promise<void>;
-  lastReceiptPayment?: CongressPayment | null;
-  onDownloadReceipt: (payment: CongressPayment) => void;
-  onChargeChange: (input: {
-    registrationId: string;
-    action: "exempt" | "restore" | "reduce";
-    reason: string;
-    waiveClp?: number;
-  }) => Promise<void>;
   onAssignBed: (input: {
     registrationId: string;
     homeId: string;
@@ -128,22 +109,6 @@ type Props = {
   /** Abre la ficha con los datos personales en edición. */
   startEditing?: boolean;
 };
-
-function chargeHistoryLabel(entry: {
-  action: string;
-  previousChargeAmountClp: number | null;
-  nextChargeAmountClp: number | null;
-}): string {
-  if (entry.action === "exempt") return "No paga el total";
-  if (entry.action === "reduce") {
-    const unpaid = Math.max(
-      0,
-      (entry.previousChargeAmountClp ?? 0) - (entry.nextChargeAmountClp ?? 0)
-    );
-    return `No paga ${formatClp(unpaid)}`;
-  }
-  return "Aporte restaurado";
-}
 
 function sheetZoneOptions(
   zoneOptions: { id: string; label: string }[],
@@ -160,16 +125,6 @@ function sheetZoneOptions(
   return rows.map((zone) => ({ value: zone.id, label: zone.label }));
 }
 
-function expectedPresetFromReg(
-  registration: CongressRegistration
-): "unconfirmed" | "saturday" | "sunday" | "both" {
-  const d = registration.expectedDays;
-  if (d?.saturday && d?.sunday) return "both";
-  if (d?.saturday) return "saturday";
-  if (d?.sunday) return "sunday";
-  return "unconfirmed";
-}
-
 export function ParticipantSheet({
   open,
   registration,
@@ -177,39 +132,22 @@ export function ParticipantSheet({
   homes,
   operate,
   journeyDay,
-  canPay,
   zoneOptions = [],
+  onGoToPay,
   onClose,
   onPatchAttendance,
   onPatchRegistration,
-  onIndividualPayment,
   payments,
   registrations = [],
   onOpenRegistration,
   onDeleteRegistration,
-  lastReceiptPayment,
-  onDownloadReceipt,
-  onChargeChange,
   onAssignBed,
   onAssignmentAction,
   busy,
   startEditing = false,
 }: Props) {
-  const [payAmount, setPayAmount] = useState<number | null>(CONGRESS_CONTRIBUTION_CLP);
-  const [payerName, setPayerName] = useState("");
-  const [payMethod, setPayMethod] = useState<CongressPaymentMethod>("cash");
-  const [paidOn, setPaidOn] = useState(todayPaidOnSantiago());
-  const [receiptRef, setReceiptRef] = useState("");
-  const [chargeReason, setChargeReason] = useState("");
-  const [adjustCharge, setAdjustCharge] = useState(false);
-  const [waiveScope, setWaiveScope] = useState<"total" | "part">("total");
-  const [waiveAmount, setWaiveAmount] = useState<number | null>(null);
-  const [reasonOther, setReasonOther] = useState("");
   const [homeId, setHomeId] = useState("");
   const [night, setNight] = useState<string>(NIGHT_BOTH);
-  const [expectedPreset, setExpectedPreset] = useState<
-    "unconfirmed" | "saturday" | "sunday" | "both"
-  >("unconfirmed");
   const [editName, setEditName] = useState("");
   const [editRut, setEditRut] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -234,19 +172,9 @@ export function ParticipantSheet({
 
   useEffect(() => {
     if (!registration || !open) return;
-    setPayerName(registration.identity.fullName);
-    setPayMethod("cash");
-    setPaidOn(todayPaidOnSantiago());
-    setReceiptRef("");
-    setChargeReason("");
-    setAdjustCharge(false);
-    setWaiveScope("total");
-    setWaiveAmount(null);
-    setReasonOther("");
     setHomeId("");
     setNight(NIGHT_BOTH);
-    setExpectedPreset(expectedPresetFromReg(registration));
-    setEditName(registration.identity.fullName);
+    setEditName(registrationDisplayName(registration));
     setEditRut(
       registration.identity.rut ? formatChileRutDisplay(registration.identity.rut) : ""
     );
@@ -280,21 +208,6 @@ export function ParticipantSheet({
     const timer = window.setTimeout(() => setConfirmArmed(true), 350);
     return () => window.clearTimeout(timer);
   }, [confirmDelete]);
-
-  useEffect(() => {
-    if (!registration || !open) return;
-    const balance = remainingBalanceClp(registration);
-    setPayAmount(
-      balance > 0
-        ? balance
-        : registration.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP
-    );
-  }, [
-    open,
-    registration?._id,
-    registration?.allocatedPaidClp,
-    registration?.chargeAmountClp,
-  ]);
 
   const lodging = useMemo(
     () =>
@@ -363,18 +276,6 @@ export function ParticipantSheet({
     [homeAvailability, homeId]
   );
 
-  const relatedPayments = useMemo(
-    () =>
-      registration
-        ? payments.filter((payment) =>
-            payment.allocations.some(
-              (allocation) => allocation.registrationId === registration._id
-            )
-          )
-        : [],
-    [payments, registration]
-  );
-
   const progress = useMemo(() => {
     if (!registration) return null;
     return deriveReceptionProgress({
@@ -392,14 +293,6 @@ export function ParticipantSheet({
     setViewForId(registration._id);
     setViewStep(progress.stage === "listo" ? "alojamiento" : progress.stage);
   }
-
-  const lastReceiptBelongsToRegistration =
-    Boolean(registration) &&
-    Boolean(
-      lastReceiptPayment?.allocations.some(
-        (allocation) => allocation.registrationId === registration?._id
-      )
-    );
 
   const title = registration
     ? registrationDisplayName(registration)
@@ -427,7 +320,7 @@ export function ParticipantSheet({
 
   const cancelIdentityEdit = () => {
     if (!registration) return;
-    setEditName(registration.identity.fullName);
+    setEditName(registrationDisplayName(registration));
     setEditRut(
       registration.identity.rut ? formatChileRutDisplay(registration.identity.rut) : ""
     );
@@ -532,11 +425,7 @@ export function ParticipantSheet({
     zoneId: "Zona",
     churchName: "Iglesia",
   };
-  const attendanceDays = (
-    journeyDay === "sunday"
-      ? (["sunday", "saturday"] as const)
-      : (["saturday", "sunday"] as const)
-  );
+  const attendanceDays = ["saturday", "sunday"] as const;
   const primaryAction = progress
     ? receptionPrimaryAction(viewStep, progress.steps)
     : null;
@@ -564,17 +453,36 @@ export function ParticipantSheet({
           </Button>
         </>
       ) : (
-        <Button
-          type="button"
-          size="sm"
-          disabled={busy}
-          onClick={() => {
-            setViewStep("asistencia");
-            setEditing(true);
-          }}
-        >
-          Editar
-        </Button>
+        <>
+          {onGoToPay ? (
+            <Button
+              type="button"
+              size="md"
+              disabled={busy}
+              className={
+                contributionStatusHasBalance(deriveContributionStatus(registration))
+                  ? "pay-aporte-alert"
+                  : undefined
+              }
+              onClick={() => onGoToPay(registration._id)}
+            >
+              <CreditCard className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Pagar aporte
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setViewStep("asistencia");
+              setEditing(true);
+            }}
+          >
+            Editar
+          </Button>
+        </>
       )
     ) : null;
 
@@ -605,7 +513,7 @@ export function ParticipantSheet({
                   onClose();
                   return;
                 }
-                setViewStep(viewStep === "asistencia" ? "alimentacion" : "alojamiento");
+                setViewStep("alojamiento");
               }}
             />
           ) : null}
@@ -630,7 +538,7 @@ export function ParticipantSheet({
                       className="text-left text-primary underline-offset-2 hover:underline"
                       onClick={() => onOpenRegistration?.(match.row._id)}
                     >
-                      {match.row.identity.fullName}
+                      {registrationDisplayName(match.row)}
                       {match.row.churchName ? ` · ${match.row.churchName}` : ""}
                       {match.accentOnly
                         ? " — puede ser la misma persona, con o sin acento"
@@ -655,18 +563,20 @@ export function ParticipantSheet({
                     const status =
                       present === true
                         ? `Presente${markedAt ? ` · ${formatMarkedAtSantiago(markedAt)}` : ""}`
-                        : isJourney && progress?.arrivalRequired
-                          ? "Sin llegada · se espera hoy"
-                          : "Sin llegada";
+                        : present === false
+                          ? "No vino"
+                          : isJourney && progress?.arrivalRequired
+                            ? "Sin llegada · se espera hoy"
+                            : "Sin llegada";
                     return (
                       <div
                         key={day}
                         className={cn(
                           "rounded-lg border px-3 py-3",
                           present === true
-                            ? "border-[var(--growth-os-success)] bg-[color-mix(in_srgb,var(--growth-os-success)_10%,white)]"
+                            ? "border-[color-mix(in_srgb,var(--growth-os-success)_55%,white)] bg-[color-mix(in_srgb,var(--growth-os-success)_12%,white)]"
                             : isJourney
-                              ? "border-primary bg-background-soft/50"
+                              ? "border-primary bg-[color-mix(in_srgb,var(--color-primary)_7%,white)]"
                               : "border-border bg-white"
                         )}
                       >
@@ -675,15 +585,25 @@ export function ParticipantSheet({
                             {day === "saturday" ? "Sábado" : "Domingo"}
                           </p>
                           {isJourney ? (
-                            <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+                            <span className="rounded-full bg-[color-mix(in_srgb,var(--color-primary)_14%,white)] px-2 py-0.5 text-xs font-semibold text-primary">
                               Hoy
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-1 text-sm text-muted">{status}</p>
+                        <p
+                          className={cn(
+                            "mt-1 text-sm",
+                            present === true
+                              ? "font-semibold text-[var(--growth-os-success)]"
+                              : "text-muted"
+                          )}
+                        >
+                          {status}
+                        </p>
                         {operate && present !== true ? (
                           <Button
                             type="button"
+                            variant="primary"
                             className="mt-3 w-full"
                             disabled={busy}
                             onClick={() => void onPatchAttendance(registration._id, day, true)}
@@ -716,43 +636,6 @@ export function ParticipantSheet({
                       </div>
                     );
                   })}
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-xs text-muted">
-                    {expectedPreset === "unconfirmed"
-                      ? "Falta decir qué días viene."
-                      : expectedPreset === "both"
-                        ? "Viene sábado y domingo."
-                        : expectedPreset === "saturday"
-                          ? "Viene solo el sábado."
-                          : "Viene solo el domingo."}
-                  </p>
-                  {operate ? (
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          ["saturday", "Sábado", { saturday: true, sunday: false }],
-                          ["sunday", "Domingo", { saturday: false, sunday: true }],
-                          ["both", "Ambos", { saturday: true, sunday: true }],
-                        ] as const
-                      ).map(([id, label, expectedDays]) => (
-                        <Button
-                          key={id}
-                          type="button"
-                          size="sm"
-                          variant={expectedPreset === id ? "primary" : "outline"}
-                          disabled={busy || !operate}
-                          onClick={() => {
-                            setExpectedPreset(id);
-                            void onPatchRegistration(registration._id, { expectedDays });
-                          }}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
 
                 {missingFields.length > 0 ? (
@@ -877,7 +760,11 @@ export function ParticipantSheet({
                           <li key={`${h.at}-${idx}`}>
                             {formatDateTimeSantiago(h.at)} ·{" "}
                             {h.day === "saturday" ? "Sáb" : "Dom"} →{" "}
-                            {h.nextPresent === true ? "Presente" : "Sin llegada"}
+                            {h.nextPresent === true
+                              ? "Presente"
+                              : h.nextPresent === false
+                                ? "No vino"
+                                : "Sin marca"}
                             {h.reason ? ` · ${h.reason}` : ""}
                           </li>
                         ))}
@@ -888,342 +775,6 @@ export function ParticipantSheet({
             ) : null}
 
           <div className="max-h-[min(52vh,28rem)] overflow-y-auto pr-1">
-            {viewStep === "alimentacion" ? (
-              <div className="space-y-3">
-                <p className="text-xs text-muted">
-                  Aporte único de {formatClp(CONGRESS_CONTRIBUTION_CLP)} por ambos días.
-                </p>
-                <p className="text-base font-semibold">{contributionLabel(registration)}</p>
-                {progress?.foodLock === "leader" ? (
-                  <div
-                    className="rounded-md border border-border bg-background-soft/40 px-3 py-3"
-                    role="status"
-                  >
-                    <p className="text-base font-extrabold">Pagado por el líder</p>
-                    <p className="text-sm text-muted">
-                      Imputado {formatClp(registration.allocatedPaidClp)}
-                    </p>
-                  </div>
-                ) : registration.allocatedPaidClp > 0 ? (
-                  <p className="text-xs text-muted">
-                    Imputado {formatClp(registration.allocatedPaidClp)}
-                  </p>
-                ) : null}
-                {progress?.foodLock !== "leader" &&
-                canPay &&
-                operate &&
-                registration.chargeAmountClp != null ? (
-                  <div className="space-y-3 rounded-md border border-border p-3">
-                    <p className="text-xs font-semibold uppercase text-muted">Pago</p>
-                    <div className="grid grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)] items-end gap-3">
-                      <div>
-                        {!adjustCharge ? (
-                          <ClpAmountInput
-                            label="Monto"
-                            value={payAmount}
-                            disabled={busy}
-                            onValueChange={setPayAmount}
-                            onFocus={(event) => {
-                              if (payAmount == null || payAmount <= 0) {
-                                setPayAmount(CONGRESS_CONTRIBUTION_CLP);
-                              }
-                              event.currentTarget.select();
-                            }}
-                            onBlur={() => {
-                              if (payAmount != null && payAmount > 0) return;
-                              setPayAmount(CONGRESS_CONTRIBUTION_CLP);
-                            }}
-                          />
-                        ) : waiveScope === "part" ? (
-                          <ClpAmountInput
-                            label="No se cobra"
-                            value={waiveAmount}
-                            disabled={busy}
-                            placeholder=""
-                            onValueChange={setWaiveAmount}
-                          />
-                        ) : (
-                          <div className="h-10" />
-                        )}
-                      </div>
-                      <div className="col-span-2 flex items-center gap-3">
-                        {(
-                          [
-                            ["total", "Exento de pago"],
-                            ["part", "Parcial"],
-                          ] as const
-                        ).map(([scope, label]) => {
-                          const selected = adjustCharge && waiveScope === scope;
-                          return (
-                            <button
-                              key={scope}
-                              type="button"
-                              disabled={busy}
-                              className={
-                                selected
-                                  ? "h-10 flex-1 rounded-md border border-primary bg-primary/10 px-4 text-sm font-semibold text-primary"
-                                  : "h-10 flex-1 rounded-md border border-border bg-background px-4 text-sm font-semibold text-foreground"
-                              }
-                              onClick={() => {
-                                if (selected) {
-                                  setAdjustCharge(false);
-                                  setChargeReason("");
-                                  setReasonOther("");
-                                  setWaiveAmount(null);
-                                  return;
-                                }
-                                setAdjustCharge(true);
-                                setWaiveScope(scope);
-                                setChargeReason("");
-                                setReasonOther("");
-                                setWaiveAmount(null);
-                              }}
-                            >
-                              {label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {adjustCharge ? (
-                      <div className="grid grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)] items-end gap-3">
-                        <div className="col-span-3">
-                        <Select
-                          label="Motivo"
-                          value={chargeReason}
-                          disabled={busy}
-                          onChange={(event) => setChargeReason(event.target.value)}
-                          options={[
-                            { value: "", label: "Elija el motivo…" },
-                            ...CHARGE_WAIVE_REASONS.map((reason) => ({
-                              value: reason,
-                              label: reason,
-                            })),
-                          ]}
-                        />
-                        </div>
-                        {chargeReason === "Otro" ? (
-                          <div className="col-span-3">
-                            <Input
-                              label="Cuál"
-                              value={reasonOther}
-                              disabled={busy}
-                              onChange={(event) => setReasonOther(event.target.value)}
-                            />
-                          </div>
-                        ) : null}
-                        <div className="col-start-2 col-span-2 flex gap-3">
-                        <Button
-                          size="md"
-                          variant="outline"
-                          className="h-10 flex-1"
-                          disabled={busy}
-                          onClick={() => {
-                            setAdjustCharge(false);
-                            setChargeReason("");
-                            setReasonOther("");
-                            setWaiveAmount(null);
-                            setPayAmount(CONGRESS_CONTRIBUTION_CLP);
-                          }}
-                        >
-                          Volver
-                        </Button>
-                        <Button
-                          size="md"
-                          className="h-10 flex-1"
-                          disabled={
-                            busy ||
-                            !chargeReason ||
-                            (chargeReason === "Otro" && !reasonOther.trim()) ||
-                            (waiveScope === "part" &&
-                              !(
-                                waiveAmount != null &&
-                                waiveAmount > 0 &&
-                                waiveAmount < remainingBalanceClp(registration)
-                              ))
-                          }
-                          onClick={() => {
-                            const reason =
-                              chargeReason === "Otro"
-                                ? `Otro: ${reasonOther.trim()}`
-                                : chargeReason;
-                            const clearsAll =
-                              waiveScope === "total" && registration.allocatedPaidClp <= 0;
-                            void onChargeChange({
-                              registrationId: registration._id,
-                              action: clearsAll ? "exempt" : "reduce",
-                              reason,
-                              waiveClp: clearsAll
-                                ? undefined
-                                : waiveScope === "total"
-                                  ? remainingBalanceClp(registration)
-                                  : waiveAmount ?? undefined,
-                            }).then(() => {
-                              setChargeReason("");
-                              setReasonOther("");
-                              setWaiveAmount(null);
-                              setAdjustCharge(false);
-                            });
-                          }}
-                        >
-                          Guardar
-                        </Button>
-                        </div>
-                      </div>
-                    ) : null}
-                    {!adjustCharge ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="col-span-2">
-                          <Input
-                            label="Pagador"
-                            value={payerName}
-                            onChange={(e) => setPayerName(e.target.value)}
-                            placeholder={registration.identity.fullName}
-                          />
-                        </div>
-                        <Select
-                          label="Tipo"
-                          value={payMethod}
-                          onChange={(e) =>
-                            setPayMethod(e.target.value as CongressPaymentMethod)
-                          }
-                          options={[
-                            { value: "cash", label: "Efectivo" },
-                            { value: "transfer", label: "Transferencia" },
-                            { value: "other", label: "Otro" },
-                          ]}
-                        />
-                        <Input
-                          label="Fecha de pago"
-                          type="date"
-                          value={paidOn}
-                          onChange={(e) => setPaidOn(e.target.value)}
-                        />
-                        <div className="col-span-2">
-                          <Input
-                            label="Referencia"
-                            value={receiptRef}
-                            onChange={(e) => setReceiptRef(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Button
-                            size="sm"
-                            disabled={busy || adjustCharge}
-                            onClick={() => {
-                              const amount = payAmount ?? 0;
-                              if (!amount) return;
-                              void onIndividualPayment({
-                                registrationId: registration._id,
-                                amountClp: amount,
-                                payerName:
-                                  payerName.trim() || registration.identity.fullName,
-                                method: payMethod,
-                                paidOn,
-                                receiptRef: receiptRef.trim() || undefined,
-                              }).then(() => {
-                                setReceiptRef("");
-                              });
-                            }}
-                          >
-                            Registrar pago
-                          </Button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                {lastReceiptPayment && lastReceiptBelongsToRegistration ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onDownloadReceipt(lastReceiptPayment)}
-                  >
-                    Descargar comprobante
-                  </Button>
-                ) : null}
-                {relatedPayments.length > 0 ? (
-                  <div className="space-y-2 rounded-md border border-border p-3">
-                    <p className="text-xs font-semibold uppercase text-muted">
-                      Comprobantes
-                    </p>
-                    <ul className="space-y-2">
-                      {relatedPayments.map((payment) => {
-                        const allocation = payment.allocations.find(
-                          (row) => row.registrationId === registration._id
-                        );
-                        return (
-                          <li
-                            key={payment._id}
-                            className="flex flex-wrap items-center justify-between gap-2"
-                          >
-                            <div>
-                              <p className="font-medium">
-                                {payment.folio ?? "Sin folio"} ·{" "}
-                                {formatClp(allocation?.amountClp ?? payment.amountClp)}
-                              </p>
-                              <p className="text-xs text-muted">
-                                {payment.paidOn ?? payment.createdAt.slice(0, 10)} ·{" "}
-                                {payment.status}
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => onDownloadReceipt(payment)}
-                            >
-                              Comprobante
-                            </Button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                ) : null}
-                {operate &&
-                progress?.foodLock !== "leader" &&
-                (isExplicitlyExempt(registration) ||
-                  (registration.chargeAmountClp != null &&
-                    registration.chargeAmountClp < CONGRESS_CONTRIBUTION_CLP)) ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-fit"
-                    disabled={busy}
-                    onClick={() => {
-                      void onChargeChange({
-                        registrationId: registration._id,
-                        action: "restore",
-                        reason: "Vuelve a cobrar",
-                      });
-                    }}
-                  >
-                    Restaurar aporte {formatClp(CONGRESS_CONTRIBUTION_CLP)}
-                  </Button>
-                ) : null}
-                {(registration.chargeHistory ?? []).length > 0 ? (
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase text-muted">
-                      Historial de cargo
-                    </p>
-                    <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-muted">
-                      {[...(registration.chargeHistory ?? [])]
-                        .slice()
-                        .reverse()
-                        .map((h, idx) => (
-                          <li key={`${h.at}-${idx}`}>
-                            {formatDateTimeSantiago(h.at)} · {chargeHistoryLabel(h)}
-                            {h.reason ? ` · ${h.reason}` : ""}
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
             {viewStep === "alojamiento" ? (
               <div className="space-y-3">
                 <p className="text-base font-semibold">
@@ -1253,7 +804,7 @@ export function ParticipantSheet({
                         })
                       }
                     >
-                      Necesita cama
+                      Necesita alojamiento
                     </Button>
                   </div>
                 ) : null}
@@ -1456,16 +1007,5 @@ export function ParticipantSheet({
       />
     ) : null}
     </>
-  );
-}
-
-function LockedField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs font-medium text-muted">{label}</p>
-      <p className="mt-1 min-h-10 rounded-md border border-border bg-background-soft px-3 py-2 text-foreground">
-        {value.trim() ? value : "—"}
-      </p>
-    </div>
   );
 }

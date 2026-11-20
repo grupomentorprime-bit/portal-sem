@@ -6,6 +6,11 @@ export const CONGRESS_EVENT_ID = "ipn-congreso-varones-2026";
 /** Año fijo del folio de comprobantes del Congreso 2026. */
 export const CONGRESS_PAYMENT_FOLIO_YEAR = 2026;
 
+/** Firma de los comprobantes y de los informes de plata. */
+export const CONGRESS_TREASURER_NAME = "Hno Claudio Ayala";
+export const CONGRESS_TREASURER_ROLE = "Tesorero nacional";
+export const CONGRESS_TREASURER_OFFICE = "Departamento Nacional de Varones";
+
 export const CONGRESS_FORM_ID = CONGRESS_VARONES_FORM_ID;
 
 /**

@@ -6,10 +6,12 @@ import {
   CONGRESS_EVENT_ID,
   type CongressNight,
 } from "@/core/congress/constants";
+import { homeDeleteBlockReason } from "@/core/congress/home-delete";
 import {
   canAssignBed,
   emptyCapacityByNight,
   isCongressNight,
+  lodgingContactPhoneForSave,
   occupiedBedsForNight,
 } from "@/core/congress/lodging";
 import type {
@@ -23,6 +25,8 @@ import { getDatabase } from "@/lib/mongodb";
 function eventFilter(tenantId: string) {
   return { tenantId, eventId: CONGRESS_EVENT_ID };
 }
+
+export { lodgingContactPhoneForSave };
 
 const ACTIVE_STATUSES = ["assigned", "confirmed"] as const;
 
@@ -70,6 +74,9 @@ export async function upsertLodgingHome(input: {
   notes?: string | null;
   capacityByNight: Partial<Record<CongressNight, number>>;
 }): Promise<CongressLodgingHome> {
+  const phone = lodgingContactPhoneForSave(input.contactPhone);
+  if (!phone.ok) throw new Error("invalid_phone");
+
   const db = await getDatabase();
   const now = new Date().toISOString();
   const capacity = emptyCapacityByNight();
@@ -86,7 +93,7 @@ export async function upsertLodgingHome(input: {
           $set: {
             name: input.name.trim(),
             contactName: input.contactName ?? null,
-            contactPhone: input.contactPhone ?? null,
+            contactPhone: phone.phone,
             address: input.address ?? null,
             notes: input.notes ?? null,
             capacityByNight: capacity,
@@ -113,7 +120,7 @@ export async function upsertLodgingHome(input: {
     eventId: CONGRESS_EVENT_ID,
     name: input.name.trim(),
     contactName: input.contactName ?? null,
-    contactPhone: input.contactPhone ?? null,
+    contactPhone: phone.phone,
     address: input.address ?? null,
     notes: input.notes ?? null,
     capacityByNight: capacity,
@@ -130,6 +137,68 @@ export async function upsertLodgingHome(input: {
     entityId: home._id,
   });
   return home;
+}
+
+export type DeleteLodgingHomeResult =
+  | { ok: true }
+  | { ok: false; status: 404 | 409; error: string };
+
+export async function deleteLodgingHome(input: {
+  tenantId: string;
+  actorUserId: string;
+  homeId: string;
+}): Promise<DeleteLodgingHomeResult> {
+  const db = await getDatabase();
+  const homes = db.collection<CongressLodgingHome>(CONGRESS_COLLECTIONS.homes);
+  const assignmentCol = db.collection<CongressLodgingAssignment>(
+    CONGRESS_COLLECTIONS.assignments
+  );
+  const home = await homes.findOne({ ...eventFilter(input.tenantId), _id: input.homeId });
+  if (!home) {
+    return { ok: false, status: 404, error: "Hogar no encontrado." };
+  }
+
+  const assignments = await assignmentCol
+    .find({ ...eventFilter(input.tenantId), homeId: input.homeId })
+    .toArray();
+  const blocked = homeDeleteBlockReason({ homeId: input.homeId, assignments });
+  if (blocked) return { ok: false, status: 409, error: blocked };
+
+  const stillActive = await assignmentCol.countDocuments({
+    ...eventFilter(input.tenantId),
+    homeId: input.homeId,
+    status: { $in: [...ACTIVE_STATUSES] },
+  });
+  if (stillActive > 0) {
+    return {
+      ok: false,
+      status: 409,
+      error: "No se puede eliminar: este hogar ya tiene hermanos asignados.",
+    };
+  }
+
+  await assignmentCol.deleteMany({
+    ...eventFilter(input.tenantId),
+    homeId: input.homeId,
+    status: "cancelled",
+  });
+  const removed = await homes.deleteOne({
+    ...eventFilter(input.tenantId),
+    _id: input.homeId,
+  });
+  if (removed.deletedCount === 0) {
+    return { ok: false, status: 404, error: "Hogar no encontrado." };
+  }
+
+  await appendCongressAudit({
+    tenantId: input.tenantId,
+    actorUserId: input.actorUserId,
+    action: "lodging.home_delete",
+    entity: "congress_lodging_home",
+    entityId: input.homeId,
+    metadata: { name: home.name },
+  });
+  return { ok: true };
 }
 
 export type AssignBedResult =

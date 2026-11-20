@@ -1,3 +1,4 @@
+import { displayBrotherName } from "@/core/congress/brother-name";
 import {
   collectPersonSearchSuggestions,
   matchesPersonSearch,
@@ -79,7 +80,7 @@ export function shouldCreateFormRegistrationFromSubmission(
 export function toPublicCongressRosterHit(reg: CongressRegistration) {
   return {
     registrationId: reg._id,
-    fullName: reg.identity.fullName,
+    fullName: displayBrotherName(reg.identity.fullName),
     churchName: reg.churchName,
     zoneId: reg.zoneId,
   };

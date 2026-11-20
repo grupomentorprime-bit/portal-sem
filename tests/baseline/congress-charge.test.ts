@@ -127,6 +127,36 @@ describe("applyChargeChange", () => {
     assert.equal(tooMuch.error, "below_paid");
   });
 
+  it("se cobra 10000 y el resto del aporte no queda como saldo", () => {
+    const stated = applyChargeChange({
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 10_000,
+      chargeHistory: [],
+      action: "reduce",
+      reason: "Acuerdo de la iglesia",
+      chargeClp: 10_000,
+      nowIso: "2026-11-21T12:00:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(stated.ok, true);
+    if (!stated.ok) return;
+    assert.equal(stated.chargeAmountClp, 10_000);
+
+    const corrected = applyChargeChange({
+      chargeAmountClp: 7_000,
+      allocatedPaidClp: 0,
+      chargeHistory: stated.chargeHistory,
+      action: "reduce",
+      reason: "Acuerdo de la iglesia",
+      chargeClp: 10_000,
+      nowIso: "2026-11-21T12:05:00.000Z",
+      actorUserId: "u1",
+    });
+    assert.equal(corrected.ok, true);
+    if (!corrected.ok) return;
+    assert.equal(corrected.chargeAmountClp, 10_000);
+  });
+
   it("exige motivo no vacío", () => {
     const r = applyChargeChange({
       chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,

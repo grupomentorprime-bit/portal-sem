@@ -8,6 +8,10 @@ import {
 } from "@/core/congress/constants";
 import { emptyAttendance } from "@/core/congress/attendance";
 import { buildChargeAmountClp } from "@/core/congress/charges";
+import {
+  reconcilePostedAllocationsWithCollected,
+  summarizeCashBox,
+} from "@/core/congress/cash-box";
 import { formatCongressChurchLabel } from "@/core/congress/church-name";
 import { compareRegistrationsForEntryBackfill, planCompactEntryNumbers } from "@/core/congress/entry-order";
 import { emptyExpectedDays, parseExpectedDayLabel } from "@/core/congress/expected-days";
@@ -16,7 +20,13 @@ import {
   registrationOriginBucket,
 } from "@/core/congress/form-engagement";
 import { formatPaymentFolio } from "@/core/congress/payment-folio";
-import { allocatePayment, voidPayment } from "@/core/congress/payments";
+import {
+  allocatePayment,
+  restorePayment,
+  revisePayment,
+  voidPayment,
+  type PaymentRevision,
+} from "@/core/congress/payments";
 import type {
   CongressAttendanceDays,
   CongressAuditEntry,
@@ -100,6 +110,39 @@ async function setRegistrationEntrySequence(
   );
 }
 
+/** Sube el correlativo hasta `atLeast` sin bajar un valor que otra carga ya avanzó. */
+async function raiseRegistrationEntrySequence(
+  tenantId: string,
+  atLeast: number
+): Promise<void> {
+  if (!Number.isInteger(atLeast) || atLeast < 0) {
+    throw new Error("entry_number_sequence_invalid");
+  }
+  const db = await getDatabase();
+  await db.collection<{ _id: string; seq: number }>(CONGRESS_COLLECTIONS.sequences).updateOne(
+    { _id: registrationEntrySequenceId(tenantId) },
+    [
+      {
+        $set: {
+          seq: { $max: [{ $ifNull: ["$seq", 0] }, atLeast] },
+        },
+      },
+    ],
+    { upsert: true }
+  );
+}
+
+function unnumberedEntryFilter(): Record<string, unknown> {
+  return {
+    $or: [
+      { entryNumber: { $exists: false } },
+      { entryNumber: null },
+      { entryNumber: { $not: { $type: "number" } } },
+      { entryNumber: { $lte: 0 } },
+    ],
+  };
+}
+
 /**
  * Asigna correlativo a fichas que aún no lo tienen.
  * No renumera las que ya tienen. Solo altas nuevas piden el siguiente.
@@ -109,6 +152,12 @@ export async function backfillRegistrationEntryNumbers(
 ): Promise<{ assigned: number; maxEntryNumber: number }> {
   const db = await getDatabase();
   const col = db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations);
+  const unnumbered = await col.findOne(
+    { ...eventFilter(tenantId), ...unnumberedEntryFilter() },
+    { projection: { _id: 1 } }
+  );
+  if (!unnumbered) return { assigned: 0, maxEntryNumber: 0 };
+
   const rows = await col.find(eventFilter(tenantId)).toArray();
 
   let maxEntryNumber = 0;
@@ -123,13 +172,21 @@ export async function backfillRegistrationEntryNumbers(
   }
 
   missing.sort(compareRegistrationsForEntryBackfill);
+  if (missing.length === 0) return { assigned: 0, maxEntryNumber };
+
+  await raiseRegistrationEntrySequence(tenantId, maxEntryNumber);
 
   let assigned = 0;
-  let next = maxEntryNumber;
+  let highest = maxEntryNumber;
   for (const row of missing) {
-    next += 1;
-    await col.updateOne(
-      { _id: row._id, tenantId, eventId: CONGRESS_EVENT_ID },
+    const next = await allocateNextRegistrationEntryNumber(tenantId);
+    const claim = await col.updateOne(
+      {
+        _id: row._id,
+        tenantId,
+        eventId: CONGRESS_EVENT_ID,
+        ...unnumberedEntryFilter(),
+      },
       {
         $set: {
           entryNumber: next,
@@ -138,14 +195,12 @@ export async function backfillRegistrationEntryNumbers(
         $inc: { version: 1 },
       }
     );
+    if (claim.matchedCount !== 1) continue;
     assigned += 1;
+    if (next > highest) highest = next;
   }
 
-  if (next > maxEntryNumber) {
-    maxEntryNumber = next;
-  }
-  await setRegistrationEntrySequence(tenantId, maxEntryNumber);
-  return { assigned, maxEntryNumber };
+  return { assigned, maxEntryNumber: highest };
 }
 
 export async function allocateNextPaymentFolio(tenantId: string): Promise<string> {
@@ -357,6 +412,7 @@ export async function recordCongressPayment(input: {
   churchName?: string | null;
   amountClp: number;
   method: CongressPaymentMethod;
+  bank?: string | null;
   paidOn: string;
   receiptRef?: string | null;
   note?: string | null;
@@ -383,6 +439,7 @@ export async function recordCongressPayment(input: {
     churchName: input.churchName,
     amountClp: input.amountClp,
     method: input.method,
+    bank: input.bank,
     paidOn: input.paidOn,
     receiptRef: input.receiptRef,
     note: input.note,
@@ -542,19 +599,31 @@ export async function voidCongressPayment(input: {
   );
   if (claim.matchedCount !== 1) return { ok: false, error: "already_voided" };
 
-  for (const updated of result.updatedRegistrations) {
-    const original = registrations.find((r) => r._id === updated._id);
-    await db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations).updateOne(
+  const wrote = await writeRegistrationPaid({
+    tenantId: input.tenantId,
+    now,
+    originals: registrations,
+    updated: result.updatedRegistrations,
+  });
+  if (!wrote.ok) {
+    await db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments).updateOne(
       {
-        _id: updated._id,
+        _id: payment._id,
         tenantId: input.tenantId,
-        version: original?.version,
+        eventId: CONGRESS_EVENT_ID,
+        status: "voided",
       },
       {
-        $set: { allocatedPaidClp: updated.allocatedPaidClp, updatedAt: now },
-        $inc: { version: 1 },
+        $set: {
+          status: "posted",
+          voidedAt: null,
+          voidedByUserId: null,
+          voidReason: null,
+          voidedAllocations: payment.voidedAllocations ?? null,
+        },
       }
     );
+    return { ok: false, error: wrote.error };
   }
 
   await appendCongressAudit({
@@ -564,6 +633,254 @@ export async function voidCongressPayment(input: {
     entity: "congress_payment",
     entityId: payment._id,
     metadata: { reason: input.reason, allocations: payment.allocations },
+  });
+
+  return { ok: true, payment: result.payment, updated: result.updatedRegistrations };
+}
+
+async function writeRegistrationPaid(input: {
+  tenantId: string;
+  now: string;
+  originals: CongressRegistration[];
+  updated: CongressRegistration[];
+}): Promise<{ ok: true } | { ok: false; error: "concurrent_payment" | "unknown_registration" }> {
+  const db = await getDatabase();
+  const applied: Array<{ id: string; previousPaid: number; previousVersion: number }> = [];
+  for (const next of input.updated) {
+    const original = input.originals.find((row) => row._id === next._id);
+    if (!original) return { ok: false, error: "unknown_registration" };
+    const write = await db
+      .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+      .updateOne(
+        {
+          _id: next._id,
+          tenantId: input.tenantId,
+          eventId: CONGRESS_EVENT_ID,
+          version: original.version,
+          allocatedPaidClp: original.allocatedPaidClp,
+        },
+        {
+          $set: { allocatedPaidClp: next.allocatedPaidClp, updatedAt: input.now },
+          $inc: { version: 1 },
+        }
+      );
+    if (write.matchedCount !== 1) {
+      for (const prev of applied) {
+        await db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations).updateOne(
+          { _id: prev.id, tenantId: input.tenantId, eventId: CONGRESS_EVENT_ID },
+          {
+            $set: {
+              allocatedPaidClp: prev.previousPaid,
+              version: prev.previousVersion,
+              updatedAt: input.now,
+            },
+          }
+        );
+      }
+      return { ok: false, error: "concurrent_payment" };
+    }
+    applied.push({
+      id: next._id,
+      previousPaid: original.allocatedPaidClp,
+      previousVersion: original.version,
+    });
+  }
+  return { ok: true };
+}
+
+export async function reviseCongressPayment(input: {
+  tenantId: string;
+  paymentId: string;
+  revision: PaymentRevision;
+  actorUserId: string;
+}): Promise<
+  | { ok: true; payment: CongressPayment; updated: CongressRegistration[] }
+  | { ok: false; error: string }
+> {
+  const db = await getDatabase();
+  const payments = db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments);
+  const payment = await payments.findOne({
+    ...eventFilter(input.tenantId),
+    _id: input.paymentId,
+  });
+  if (!payment) return { ok: false, error: "not_found" };
+
+  const ids = [
+    ...new Set([
+      ...payment.allocations.map((row) => row.registrationId),
+      ...(payment.voidedAllocations ?? []).map((row) => row.registrationId),
+    ]),
+  ];
+  const registrations =
+    ids.length === 0
+      ? []
+      : await db
+          .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+          .find({ ...eventFilter(input.tenantId), _id: { $in: ids } })
+          .toArray();
+
+  const now = new Date().toISOString();
+  const result = revisePayment({
+    payment,
+    registrations,
+    ...input.revision,
+    revisedAt: now,
+  });
+  if (!result.ok) return { ok: false, error: result.error };
+
+  const wrote = await writeRegistrationPaid({
+    tenantId: input.tenantId,
+    now,
+    originals: registrations,
+    updated: result.updatedRegistrations,
+  });
+  if (!wrote.ok) return { ok: false, error: wrote.error };
+
+  const claim = await payments.updateOne(
+    {
+      _id: payment._id,
+      tenantId: input.tenantId,
+      eventId: CONGRESS_EVENT_ID,
+      status: payment.status,
+      amountClp: payment.amountClp,
+    },
+    {
+      $set: {
+        payerName: result.payment.payerName,
+        method: result.payment.method,
+        bank: result.payment.bank ?? null,
+        paidOn: result.payment.paidOn,
+        receiptRef: result.payment.receiptRef ?? null,
+        note: result.payment.note ?? null,
+        amountClp: result.payment.amountClp,
+        allocations: result.payment.allocations,
+        unallocatedClp: result.payment.unallocatedClp,
+        voidedAllocations: result.payment.voidedAllocations ?? null,
+      },
+    }
+  );
+  if (claim.matchedCount !== 1) {
+    for (const next of result.updatedRegistrations) {
+      const original = registrations.find((row) => row._id === next._id);
+      if (!original) continue;
+      await db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations).updateOne(
+        { _id: next._id, tenantId: input.tenantId, eventId: CONGRESS_EVENT_ID },
+        {
+          $set: {
+            allocatedPaidClp: original.allocatedPaidClp,
+            version: original.version,
+            updatedAt: now,
+          },
+        }
+      );
+    }
+    return { ok: false, error: "concurrent_payment" };
+  }
+
+  await appendCongressAudit({
+    tenantId: input.tenantId,
+    actorUserId: input.actorUserId,
+    action: "payment.revise",
+    entity: "congress_payment",
+    entityId: payment._id,
+    metadata: {
+      folio: payment.folio ?? null,
+      previousAmountClp: payment.amountClp,
+      amountClp: result.payment.amountClp,
+      status: payment.status,
+    },
+  });
+
+  return { ok: true, payment: result.payment, updated: result.updatedRegistrations };
+}
+
+export async function restoreCongressPayment(input: {
+  tenantId: string;
+  paymentId: string;
+  actorUserId: string;
+}): Promise<
+  | { ok: true; payment: CongressPayment; updated: CongressRegistration[] }
+  | { ok: false; error: string }
+> {
+  const db = await getDatabase();
+  const payments = db.collection<CongressPayment>(CONGRESS_COLLECTIONS.payments);
+  const payment = await payments.findOne({
+    ...eventFilter(input.tenantId),
+    _id: input.paymentId,
+  });
+  if (!payment) return { ok: false, error: "not_found" };
+
+  const sourceAllocations =
+    payment.allocations.length > 0 ? payment.allocations : (payment.voidedAllocations ?? []);
+  const ids = [...new Set(sourceAllocations.map((row) => row.registrationId))];
+  const registrations =
+    ids.length === 0
+      ? []
+      : await db
+          .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+          .find({ ...eventFilter(input.tenantId), _id: { $in: ids } })
+          .toArray();
+
+  const now = new Date().toISOString();
+  const result = restorePayment({
+    payment,
+    registrations,
+    restoredAt: now,
+  });
+  if (!result.ok) return { ok: false, error: result.error };
+
+  const claim = await payments.updateOne(
+    {
+      _id: payment._id,
+      tenantId: input.tenantId,
+      eventId: CONGRESS_EVENT_ID,
+      status: "voided",
+    },
+    {
+      $set: {
+        status: "posted",
+        voidedAt: null,
+        voidedByUserId: null,
+        voidReason: null,
+        allocations: result.payment.allocations,
+      },
+    }
+  );
+  if (claim.matchedCount !== 1) return { ok: false, error: "not_voided" };
+
+  const wrote = await writeRegistrationPaid({
+    tenantId: input.tenantId,
+    now,
+    originals: registrations,
+    updated: result.updatedRegistrations,
+  });
+  if (!wrote.ok) {
+    await payments.updateOne(
+      { _id: payment._id, tenantId: input.tenantId, eventId: CONGRESS_EVENT_ID },
+      {
+        $set: {
+          status: "voided",
+          voidedAt: payment.voidedAt ?? null,
+          voidedByUserId: payment.voidedByUserId ?? null,
+          voidReason: payment.voidReason ?? null,
+          allocations: payment.allocations,
+        },
+      }
+    );
+    return { ok: false, error: wrote.error };
+  }
+
+  await appendCongressAudit({
+    tenantId: input.tenantId,
+    actorUserId: input.actorUserId,
+    action: "payment.restore",
+    entity: "congress_payment",
+    entityId: payment._id,
+    metadata: {
+      folio: payment.folio ?? null,
+      amountClp: result.payment.amountClp,
+      allocations: result.payment.allocations,
+    },
   });
 
   return { ok: true, payment: result.payment, updated: result.updatedRegistrations };
@@ -634,11 +951,12 @@ export async function listCongressAudit(
 }
 
 export async function buildCongressSummary(tenantId: string) {
-  const [registrations, assignments, homes, churchRequests] = await Promise.all([
+  const [registrations, assignments, homes, churchRequests, payments] = await Promise.all([
     listCongressRegistrations(tenantId),
     listCongressAssignments(tenantId),
     listCongressHomes(tenantId),
     listChurchLodgingRequests(tenantId),
+    listCongressPayments(tenantId),
   ]);
   const activeAssignments = assignments.filter(
     (a) => a.status === "assigned" || a.status === "confirmed" || (a.status == null && a.confirmed !== false)
@@ -679,6 +997,14 @@ export async function buildCongressSummary(tenantId: string) {
     if (countsAsPendingVerification(reg)) needsReviewCount += 1;
   }
 
+  const voidedPayments = payments.filter((payment) => payment.status === "voided");
+  const voidedClp = voidedPayments.reduce(
+    (sum, payment) => sum + Math.trunc(payment.amountClp || 0),
+    0
+  );
+  const ledger = reconcilePostedAllocationsWithCollected(payments, registrations);
+  const postedCollectedClp = summarizeCashBox(payments, { status: "posted" }).totalsClp.total;
+
   return {
     registrationsTotal: registrations.length,
     registrationsBySource: bySource,
@@ -691,6 +1017,10 @@ export async function buildCongressSummary(tenantId: string) {
       totalPaidClp,
       totalOutstandingClp: Math.max(0, totalChargeClp - totalPaidClp),
       needsReviewCount,
+      voidedCount: voidedPayments.length,
+      voidedClp,
+      postedCollectedClp,
+      ledgerDeltaClp: ledger.deltaClp,
     },
     lodging: {
       requestedBeds: churchRequests.reduce((sum, r) => sum + r.requestedBeds, 0),

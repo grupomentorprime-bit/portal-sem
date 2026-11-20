@@ -1,6 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  CONGRESS_TREASURER_NAME,
+  CONGRESS_TREASURER_OFFICE,
+  CONGRESS_TREASURER_ROLE,
+} from "@/core/congress/constants";
 import { paymentMethodLabel, formatClp, formatDateTimeSantiago } from "@/components/admin/congress/labels";
 import { ReportVendorCredit } from "@/components/admin/congress/reports/ReportVendorCredit";
 import type {
@@ -65,6 +70,8 @@ type Props = {
 export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
   const meta = COPY[report.kind];
   const generated = formatDateTimeSantiago(report.generatedAtIso);
+  const moneyReport =
+    report.kind === "finance" || report.kind === "cash" || report.kind === "debtors";
   const breakZones = report.kind === "roster" || report.kind === "church-leaders";
 
   return (
@@ -148,6 +155,19 @@ export function CorporatePrintReport({ report, onBack, onRefresh }: Props) {
           <ChurchLeadersBody zones={report.zones} breakZones={breakZones} />
         ) : null}
       </div>
+
+      {moneyReport ? (
+        <div className="flex justify-end px-6 pb-6">
+          <div className="w-64 text-center text-sm text-gray-800">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500">Firma</p>
+            <div className="mt-10 border-t border-gray-800 pt-2">
+              <p className="font-semibold">{CONGRESS_TREASURER_NAME}</p>
+              <p>{CONGRESS_TREASURER_ROLE}</p>
+              <p className="text-gray-600">{CONGRESS_TREASURER_OFFICE}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <footer className="space-y-1 border-t border-gray-200 px-6 py-3 text-[11px] text-gray-500">
         <p>{meta.code} · {meta.title} · datos vigentes al momento de emisión · {generated}</p>
@@ -344,7 +364,11 @@ function MovementTable({
                 <td>{formatDay(row.paidOn)}</td>
                 <td>{row.payerName}</td>
                 <td>{row.churchLabel}</td>
-                <td>{paymentMethodLabel(row.method)}</td>
+                <td>
+                  {paymentMethodLabel(row.method)}
+                  {row.bank ? ` · ${row.bank}` : ""}
+                  {row.note ? ` · ${row.note}` : ""}
+                </td>
                 <td className="num">{formatClp(row.amountClp)}</td>
                 <td className="num">{formatClp(row.unallocatedClp)}</td>
                 {showReason ? <td>{row.voidReason || "—"}</td> : null}

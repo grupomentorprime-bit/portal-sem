@@ -1,6 +1,9 @@
 const TITLE_PREFIX_RE =
   /^(?:hno\.?|hermano|pastor(?:a)?|pte\.?|presidente|di[aá]cono)\.?\s+/i;
 
+/** Solo el trato de hermano. Pastor y otros títulos no se tocan. */
+const HNO_PREFIX_RE = /^(?:hno\.?|hermano)\.?\s+/i;
+
 /** True si el nombre ya empieza con Hno / Hermano / Pastor / etc. */
 export function hasBrotherOrTitlePrefix(fullName: string): boolean {
   return TITLE_PREFIX_RE.test(fullName.trim());
@@ -24,19 +27,16 @@ export function foldCongressPersonName(fullName: string): string {
 }
 
 /**
- * Asegura prefijo "Hno " para visualización operativa.
- * Si ya trae Hno/Hermano/Pastor, no duplica: normaliza a "Hno " + resto.
- * Pastor también se muestra como Hno (regla del evento).
+ * Nombre para mostrar y guardar, sin el prefijo Hno/Hermano.
+ * Pastor, diácono y presidente se conservan: no todos son hermanos.
  */
 export function displayBrotherName(fullName: string): string {
   const trimmed = fullName.trim().replace(/\s+/g, " ");
   if (!trimmed) return "";
-  const without = trimmed.replace(TITLE_PREFIX_RE, "").trim();
-  const base = without || trimmed;
-  return `Hno ${base}`;
+  return trimmed.replace(HNO_PREFIX_RE, "").trim();
 }
 
-/** Persiste el prefijo Hno si faltaba (acción del operador). */
+/** Quita el prefijo Hno al guardar. El nombre de la función se conserva por la API. */
 export function ensureHnoPrefix(fullName: string): string {
   return displayBrotherName(fullName);
 }

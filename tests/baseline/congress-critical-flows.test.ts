@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { emptyAttendance, setAttendanceDay } from "../../src/core/congress/attendance";
+import {
+  reconcilePostedAllocationsWithCollected,
+  summarizeCashBox,
+  summarizeContributionClose,
+} from "../../src/core/congress/cash-box";
 import { CONGRESS_CONTRIBUTION_CLP, CONGRESS_EVENT_ID } from "../../src/core/congress/constants";
 import { attachRutToRegistration } from "../../src/core/congress/identity-attach";
 import { planCongressImportCommit } from "../../src/core/congress/import-commit";
@@ -11,7 +16,12 @@ import {
   resolveLastBedRace,
   summarizeLodgingDemand,
 } from "../../src/core/congress/lodging";
-import { allocatePayment, voidPayment } from "../../src/core/congress/payments";
+import {
+  allocatePayment,
+  restorePayment,
+  revisePayment,
+  voidPayment,
+} from "../../src/core/congress/payments";
 import type { CongressRegistration } from "../../src/core/congress/types";
 
 function reg(
@@ -182,6 +192,65 @@ describe("congress critical flows", () => {
       voidedAt: "2026-11-17T14:00:00.000Z",
     });
     assert.equal(again.ok, false);
+    if (again.ok) return;
+
+    const revised = revisePayment({
+      payment: { ...voided.payment, folio: "CV-2026-00002" },
+      registrations: voided.updatedRegistrations,
+      payerName: "Hno Marcelo Osorio",
+      method: "cash",
+      paidOn: "2026-11-20",
+      amountClp: 10_000,
+      revisedAt: "2026-11-20T15:00:00.000Z",
+    });
+    assert.equal(revised.ok, true);
+    if (!revised.ok) return;
+    assert.equal(revised.payment.folio, "CV-2026-00002");
+    assert.equal(revised.payment.status, "voided");
+    assert.equal(revised.payment.amountClp, 10_000);
+    assert.equal(revised.updatedRegistrations.length, 0);
+    assert.equal(voided.updatedRegistrations[0]?.allocatedPaidClp, 0);
+
+    const restored = restorePayment({
+      payment: revised.payment,
+      registrations: voided.updatedRegistrations,
+      restoredAt: "2026-11-20T16:00:00.000Z",
+    });
+    assert.equal(restored.ok, true);
+    if (!restored.ok) return;
+    assert.equal(restored.payment.status, "posted");
+    assert.equal(restored.payment.voidReason, null);
+    assert.equal(restored.updatedRegistrations[0]?.allocatedPaidClp, 10_000);
+
+    const voidedAgain = voidPayment({
+      payment: restored.payment,
+      registrations: restored.updatedRegistrations,
+      reason: "Se anula otra vez",
+      voidedByUserId: "admin",
+      voidedAt: "2026-11-20T17:00:00.000Z",
+    });
+    assert.equal(voidedAgain.ok, true);
+    if (!voidedAgain.ok) return;
+    assert.equal(voidedAgain.payment.status, "voided");
+    assert.equal(voidedAgain.updatedRegistrations[0]?.allocatedPaidClp, 0);
+
+    const afterVoid = summarizeContributionClose(voided.updatedRegistrations);
+    assert.equal(afterVoid.collectedClp, 0);
+    const voidedBox = summarizeCashBox(
+      [{ ...voided.payment, folio: "CV-2026-00002" }],
+      { status: "posted" }
+    );
+    assert.equal(voidedBox.totalsClp.total, 0);
+
+    const afterRestore = summarizeContributionClose(restored.updatedRegistrations);
+    assert.equal(afterRestore.collectedClp, 10_000);
+    assert.equal(afterRestore.remainingClp, 7_000);
+    const restoredBox = reconcilePostedAllocationsWithCollected(
+      [restored.payment],
+      restored.updatedRegistrations
+    );
+    assert.equal(restoredBox.deltaClp, 0);
+    assert.equal(restoredBox.movementsAllocatedClp, 10_000);
   });
 
   it("anulación de pago grupal restaura pendientes sin borrar cargos", () => {

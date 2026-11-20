@@ -32,19 +32,30 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
 
   let linked = 0;
   let skipped = 0;
+  if (submissions.length === 0) return { linked, skipped };
+
+  const regs = db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations);
+  const known = await regs
+    .find(
+      { tenantId, eventId: CONGRESS_EVENT_ID },
+      { projection: { _id: 1, submissionId: 1, identity: 1 } }
+    )
+    .toArray();
+
+  const submissionIds = new Set<string>();
+  const byRut = new Map<string, { _id: string; submissionId?: string | null }>();
+  for (const row of known) {
+    if (row.submissionId != null && String(row.submissionId).trim()) {
+      submissionIds.add(String(row.submissionId));
+    }
+    const rut = row.identity?.rut?.trim();
+    if (rut) byRut.set(rut, { _id: row._id, submissionId: row.submissionId ?? null });
+  }
 
   for (const submission of submissions) {
     // En runtime _id es ObjectId; guardamos siempre string.
     const submissionIdStr = String(submission._id);
-    const existingBySubmission = await db
-      .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
-      .findOne({
-        tenantId,
-        eventId: CONGRESS_EVENT_ID,
-        // Incluye filas antiguas que guardaron el ObjectId crudo.
-        submissionId: { $in: [submissionIdStr, submission._id] as string[] },
-      });
-    if (existingBySubmission) {
+    if (submissionIds.has(submissionIdStr)) {
       skipped += 1;
       continue;
     }
@@ -67,16 +78,10 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
 
     // Misma persona ya inscrita (otra fuente / sync previo): enlazar sin duplicar.
     if (identity.rut) {
-      const existingByRut = await db
-        .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
-        .findOne({
-          tenantId,
-          eventId: CONGRESS_EVENT_ID,
-          "identity.rut": identity.rut,
-        });
+      const existingByRut = byRut.get(identity.rut);
       if (existingByRut) {
         if (!existingByRut.submissionId) {
-          await db.collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations).updateOne(
+          await regs.updateOne(
             { _id: existingByRut._id },
             {
               $set: {
@@ -86,6 +91,8 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
               $inc: { version: 1 },
             }
           );
+          existingByRut.submissionId = submissionIdStr;
+          submissionIds.add(submissionIdStr);
         }
         skipped += 1;
         continue;
@@ -107,8 +114,12 @@ export async function syncCongressFormSubmissions(tenantId: string): Promise<{
     });
 
     try {
-      await insertCongressRegistration(reg);
+      const saved = await insertCongressRegistration(reg);
       linked += 1;
+      submissionIds.add(submissionIdStr);
+      if (identity.rut) {
+        byRut.set(identity.rut, { _id: saved._id, submissionId: submissionIdStr });
+      }
     } catch (error) {
       // Carrera o índice único: no tumbar summary/listados.
       const code =

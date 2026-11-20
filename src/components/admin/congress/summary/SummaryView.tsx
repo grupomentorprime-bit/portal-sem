@@ -33,6 +33,10 @@ type Props = {
     totalPaidClp: number;
     totalOutstandingClp: number;
     needsReviewCount: number;
+    voidedCount?: number;
+    voidedClp?: number;
+    postedCollectedClp?: number;
+    ledgerDeltaClp?: number;
   };
   registrations: CongressRegistration[];
   assignments: CongressLodgingAssignment[];
@@ -132,6 +136,14 @@ export function SummaryView({
             <p className="text-2xl font-semibold tabular-nums text-foreground">
               {formatClp(balances.totalPaidClp)}
             </p>
+            {(balances.voidedCount ?? 0) > 0 ? (
+              <p className="mt-1 text-xs text-muted">
+                No incluye {formatClp(balances.voidedClp ?? 0)} de{" "}
+                {balances.voidedCount === 1
+                  ? "1 comprobante anulado"
+                  : `${balances.voidedCount} comprobantes anulados`}
+              </p>
+            ) : null}
           </div>
           <div>
             <p className="text-xs text-muted">Saldo pendiente</p>
@@ -193,8 +205,8 @@ export function SummaryView({
         </Section>
 
         <Section
-          title="Alimentación y aportes"
-          description="Detalle completo en Control de caja."
+          title="Aportes"
+          description="El cobro está en Recaudación aportes."
         >
           <div className="rounded-md border border-border bg-white px-3">
             <StatRow
@@ -205,19 +217,37 @@ export function SummaryView({
               label="Cobrado imputado"
               value={formatClp(balances.totalPaidClp)}
             />
+            {(balances.voidedCount ?? 0) > 0 ? (
+              <StatRow
+                label="Anulados"
+                value={formatClp(balances.voidedClp ?? 0)}
+                hint={
+                  balances.voidedCount === 1
+                    ? "1 comprobante. No suma al recaudado."
+                    : `${balances.voidedCount} comprobantes. No suman al recaudado.`
+                }
+              />
+            ) : null}
             <StatRow
               label="Saldo pendiente"
               value={formatClp(balances.totalOutstandingClp)}
               emphasize
             />
           </div>
+          {(balances.ledgerDeltaClp ?? 0) !== 0 ? (
+            <p className="mt-3 text-xs text-warning">
+              Caja y fichas no cuadran: la diferencia es{" "}
+              {formatClp(balances.ledgerDeltaClp ?? 0)}. Recaudado en movimientos{" "}
+              {formatClp(balances.postedCollectedClp ?? 0)}.
+            </p>
+          ) : null}
           <Button
             type="button"
             size="sm"
             className="mt-3"
             onClick={onOpenCashBox}
           >
-            Ver control de caja
+            Ver recaudación de aportes
           </Button>
         </Section>
 

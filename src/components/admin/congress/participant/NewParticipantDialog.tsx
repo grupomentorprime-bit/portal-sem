@@ -23,6 +23,7 @@ import {
 } from "@/lib/experience/forms/rut-chile";
 import { CONGRESS_ZONES } from "@/core/congress/constants";
 import type { CongressRegistration } from "@/core/congress/types";
+import { displayBrotherName } from "@/core/congress/brother-name";
 import { formatZoneLabel } from "@/components/admin/congress/labels";
 import { findFoldedNameDuplicates } from "@/core/congress/accent-duplicates";
 
@@ -253,7 +254,7 @@ export function NewParticipantDialog({
                   }}
                 >
                   <span>
-                    {m.identity.fullName}
+                    {displayBrotherName(m.identity.fullName)}
                     <span className="ml-2 text-xs text-muted">
                       {m.churchName} · {formatZoneLabel(m.zoneId)}
                     </span>
@@ -308,7 +309,7 @@ export function NewParticipantDialog({
                         onOpenExisting(match.row._id);
                       }}
                     >
-                      {match.row.identity.fullName}
+                      {displayBrotherName(match.row.identity.fullName)}
                       {match.row.churchName ? ` · ${match.row.churchName}` : ""}
                       {match.accentOnly
                         ? " — puede ser la misma persona, con o sin acento"

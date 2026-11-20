@@ -1,5 +1,6 @@
 import "server-only";
 
+import { displayBrotherName } from "@/core/congress/brother-name";
 import { IPN_CHILE_VARONES } from "@/core/units/ipn-chile";
 import { resolvePublicUrl } from "@/lib/app-url";
 import { QUILICURA_NAZARETH_VENUE } from "@/lib/experience/forms/quilicura-nazareth-venue";
@@ -30,7 +31,8 @@ export function renderCongressConfirmationEmail(input: {
   programUrl?: string;
   hasAttachment: boolean;
 }): { subject: string; html: string; previewText: string } {
-  const firstName = input.participantName.trim().split(/\s+/)[0] || "hermano";
+  const shownName = displayBrotherName(input.participantName);
+  const firstName = shownName.split(/\s+/)[0] || "hermano";
   const subject = "Tu programa del 3° Congreso de Varones";
   const previewText = `${firstName}, el programa del congreso va en este correo.`;
   const when = "Sábado 21 y domingo 22 de noviembre de 2026, desde las 08:00.";

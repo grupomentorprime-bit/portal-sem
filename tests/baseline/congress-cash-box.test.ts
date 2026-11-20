@@ -277,6 +277,7 @@ describe("recaudación partida vs caja", () => {
       churchName: "IPN TEST",
       amountClp: 42_500,
       method: "transfer",
+      bank: "BancoEstado",
       paidOn: "2026-11-18",
       allocations: transferAlloc,
       createdByUserId: "u1",
@@ -325,6 +326,8 @@ describe("allocatePayment method/paidOn", () => {
       payerName: "Juan",
       amountClp: 17_000,
       method: "transfer",
+      bank: "Banco de Chile",
+      note: "  depósito del sábado  ",
       paidOn: "2026-11-20",
       allocations: [{ registrationId: "reg-1", amountClp: 17_000 }],
       createdByUserId: "u1",
@@ -334,7 +337,26 @@ describe("allocatePayment method/paidOn", () => {
     assert.equal(ok.ok, true);
     if (!ok.ok) return;
     assert.equal(ok.payment.method, "transfer");
+    assert.equal(ok.payment.bank, "Banco de Chile");
+    assert.equal(ok.payment.note, "depósito del sábado");
     assert.equal(ok.payment.paidOn, "2026-11-20");
+
+    const missingBank = allocatePayment({
+      paymentId: "pay-m1b",
+      tenantId: "ipn-chile",
+      eventId: CONGRESS_EVENT_ID,
+      payerType: "individual",
+      payerName: "Juan",
+      amountClp: 17_000,
+      method: "transfer",
+      paidOn: "2026-11-20",
+      allocations: [{ registrationId: "reg-1", amountClp: 17_000 }],
+      createdByUserId: "u1",
+      createdAt: "2026-11-21T12:00:00.000Z",
+      registrations: [baseReg()],
+    });
+    assert.equal(missingBank.ok, false);
+    if (!missingBank.ok) assert.equal(missingBank.error, "invalid_bank");
 
     const badMethod = allocatePayment({
       paymentId: "pay-m2",

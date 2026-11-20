@@ -5,6 +5,10 @@ import {
   listCongressPayments,
   recordCongressPayment,
 } from "@/lib/congress/repository";
+import {
+  normalizeCongressPaymentNote,
+  normalizeCongressTransferBank,
+} from "@/core/congress/banks";
 import { isValidPaidOn, todayPaidOnSantiago } from "@/core/congress/payment-dates";
 import type {
   CongressPaymentAllocation,
@@ -36,6 +40,7 @@ export async function POST(request: Request) {
       churchName?: string | null;
       amountClp?: number;
       method?: CongressPaymentMethod;
+      bank?: string | null;
       paidOn?: string;
       receiptRef?: string | null;
       note?: string | null;
@@ -67,6 +72,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const bank =
+      body.method === "transfer"
+        ? normalizeCongressTransferBank(typeof body.bank === "string" ? body.bank : "")
+        : null;
+    if (body.method === "transfer" && !bank) {
+      return NextResponse.json(
+        { ok: false, error: "Indique el banco de la transferencia." },
+        { status: 400 }
+      );
+    }
+
     const result = await recordCongressPayment({
       tenantId: ctx.tenantId,
       payerType: body.payerType,
@@ -74,9 +90,10 @@ export async function POST(request: Request) {
       churchName: body.churchName,
       amountClp: Number(body.amountClp),
       method: body.method,
+      bank,
       paidOn,
       receiptRef: body.receiptRef,
-      note: body.note,
+      note: normalizeCongressPaymentNote(body.note),
       allocations: Array.isArray(body.allocations) ? body.allocations : [],
       createdByUserId: ctx.user._id,
     });
@@ -96,6 +113,7 @@ export async function POST(request: Request) {
         amountClp: result.payment.amountClp,
         unallocatedClp: result.payment.unallocatedClp,
         method: result.payment.method,
+        bank: result.payment.bank,
         paidOn: result.payment.paidOn,
         folio: result.payment.folio,
         allocations: result.payment.allocations,

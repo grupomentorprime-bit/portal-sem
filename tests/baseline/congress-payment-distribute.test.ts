@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { distributeProportional } from "../../src/core/congress/payment-distribute";
+import {
+  distributeProportional,
+  distributeSplitLegs,
+} from "../../src/core/congress/payment-distribute";
 
 describe("distributeProportional", () => {
   it("reparte en partes iguales cuando los saldos son iguales", () => {
@@ -50,6 +53,28 @@ describe("distributeProportional", () => {
         distributeProportional([{ registrationId: "a", balanceClp: 100 }], 101),
       /amount_exceeds_balances/
     );
+  });
+
+  it("el efectivo y la transferencia juntos no superan el saldo de cada ficha", () => {
+    const rows = [
+      { registrationId: "a", balanceClp: 10000 },
+      { registrationId: "b", balanceClp: 7000 },
+    ];
+    const { cash, transfer } = distributeSplitLegs(rows, 10000, 7000);
+    const byId = new Map<string, number>();
+    for (const row of [...cash, ...transfer]) {
+      byId.set(row.registrationId, (byId.get(row.registrationId) ?? 0) + row.amountClp);
+    }
+    assert.equal(
+      cash.reduce((sum, row) => sum + row.amountClp, 0),
+      10000
+    );
+    assert.equal(
+      transfer.reduce((sum, row) => sum + row.amountClp, 0),
+      7000
+    );
+    assert.equal(byId.get("a"), 10000);
+    assert.equal(byId.get("b"), 7000);
   });
 
   it("reparte proporcional con saldos desiguales", () => {

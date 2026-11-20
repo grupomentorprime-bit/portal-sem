@@ -3,9 +3,14 @@ import { describe, it } from "node:test";
 import { CONGRESS_CONTRIBUTION_CLP } from "../../src/core/congress/constants";
 import { labelExpectedDays } from "../../src/core/congress/expected-days";
 import {
+  canExemptGroupMember,
   deriveContributionStatus,
   isGroupPaymentSelectable,
 } from "../../src/core/congress/finance-status";
+import {
+  formatClp,
+  groupRosterStatusText,
+} from "../../src/components/admin/congress/labels";
 import {
   countsAsPendingVerification,
   registrationOriginBucket,
@@ -156,6 +161,63 @@ describe("group payment selectable", () => {
         needsReview: false,
       }),
       false
+    );
+  });
+
+  it("la nómina muestra pagado, exento y abono, y solo exime sin pago", () => {
+    const pending = {
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      chargeHistory: [],
+    };
+    assert.equal(canExemptGroupMember(pending), true);
+    assert.equal(
+      groupRosterStatusText(pending),
+      `Pendiente · ${formatClp(CONGRESS_CONTRIBUTION_CLP)}`
+    );
+    assert.equal(
+      canExemptGroupMember({
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        allocatedPaidClp: 5000,
+      }),
+      false
+    );
+    assert.equal(
+      groupRosterStatusText({
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        allocatedPaidClp: 5000,
+        chargeHistory: [],
+      }),
+      `Abono · saldo ${formatClp(CONGRESS_CONTRIBUTION_CLP - 5000)}`
+    );
+    assert.equal(
+      groupRosterStatusText({
+        chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+        allocatedPaidClp: CONGRESS_CONTRIBUTION_CLP,
+        chargeHistory: [],
+      }),
+      "Ya pagó"
+    );
+    assert.equal(
+      canExemptGroupMember({ chargeAmountClp: null, allocatedPaidClp: 0 }),
+      false
+    );
+    assert.equal(
+      groupRosterStatusText({
+        chargeAmountClp: null,
+        allocatedPaidClp: 0,
+        chargeHistory: [
+          {
+            action: "exempt",
+            previousChargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+            nextChargeAmountClp: null,
+            reason: "Líder nacional",
+            at: "2026-11-20T00:00:00.000Z",
+            actorUserId: "u1",
+          },
+        ],
+      }),
+      "Exento · Líder nacional"
     );
   });
 });

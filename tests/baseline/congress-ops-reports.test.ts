@@ -84,9 +84,9 @@ describe("reportes operativos del congreso", () => {
     assert.equal(zona2.churches[0].label, "IPN LA VID");
     assert.deepEqual(
       zona2.churches[0].people.map((p) => p.name),
-      ["Hno Ana Díaz", "Hno Luis Mora"]
+      ["Ana Díaz", "Luis Mora"]
     );
-    assert.equal(zona2.churches[0].leaders[0]?.name, "Hno Luis Mora");
+    assert.equal(zona2.churches[0].leaders[0]?.name, "Luis Mora");
     assert.equal(report.zones[0].churches.length, 0);
   });
 
@@ -119,7 +119,7 @@ describe("reportes operativos del congreso", () => {
     if (leaders.kind !== "zone-leaders") return;
     assert.equal(leaders.zones.length, 11);
     const zona3 = leaders.zones[2];
-    assert.equal(zona3.zoneLeaders[0]?.name, "Hno Mario Ruiz");
+    assert.equal(zona3.zoneLeaders[0]?.name, "Mario Ruiz");
     assert.equal(zona3.memberCount, 3);
     const zona4 = leaders.zones[3];
     assert.equal(zona4.zoneLeaders.length, 0);
@@ -134,8 +134,8 @@ describe("reportes operativos del congreso", () => {
     assert.equal(detail.kind, "church-leaders");
     if (detail.kind !== "church-leaders") return;
     const centro = detail.zones[2].churches.find((c) => c.label === "IPN CENTRO");
-    assert.equal(centro?.leaders[0]?.name, "Hno Mario Ruiz");
-    assert.deepEqual(centro?.people.map((p) => p.name), ["Hno Bruno Gil", "Hno Mario Ruiz"]);
+    assert.equal(centro?.leaders[0]?.name, "Mario Ruiz");
+    assert.deepEqual(centro?.people.map((p) => p.name), ["Bruno Gil", "Mario Ruiz"]);
   });
 
   it("cuadra finanzas, deja fuera al pagado y no suma caja anulada", () => {
@@ -188,10 +188,10 @@ describe("reportes operativos del congreso", () => {
     assert.equal(debtors.balanceClp, 29000);
     assert.deepEqual(
       debtors.zones[0].churches[0].people.map((p) => p.name),
-      ["Hno Omar Sol"]
+      ["Omar Sol"]
     );
     const zona2 = debtors.zones.find((z) => z.zoneId === "zona-2");
-    assert.equal(zona2?.people[0]?.name, "Hno Ivo Lea");
+    assert.equal(zona2?.people[0]?.name, "Ivo Lea");
 
     const cash = buildOpsReport("cash", {
       generatedAtIso: at,

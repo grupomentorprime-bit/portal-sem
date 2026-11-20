@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireCongressOperate } from "@/app/api/congress/guard";
-import { upsertLodgingHome } from "@/lib/congress/lodging";
+import {
+  deleteLodgingHome,
+  lodgingContactPhoneForSave,
+  upsertLodgingHome,
+} from "@/lib/congress/lodging";
 import type { CongressNight } from "@/core/congress/constants";
 
 export async function PATCH(
@@ -35,18 +39,48 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    const phone = lodgingContactPhoneForSave(body.contactPhone);
+    if (!phone.ok) {
+      return NextResponse.json({ ok: false, error: phone.error }, { status: 400 });
+    }
     const home = await upsertLodgingHome({
       tenantId: ctx.tenantId,
       actorUserId: ctx.user._id,
       homeId: id,
       name: body.name,
       contactName: body.contactName,
-      contactPhone: body.contactPhone,
+      contactPhone: phone.phone,
       address: body.address,
       notes: body.notes,
       capacityByNight,
     });
     return NextResponse.json({ ok: true, home });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ ok: false, error: "Error interno." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const ctx = await requireCongressOperate();
+    if (ctx instanceof NextResponse) return ctx;
+    const { id } = await context.params;
+    const result = await deleteLodgingHome({
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.user._id,
+      homeId: id,
+    });
+    if (!result.ok) {
+      return NextResponse.json(
+        { ok: false, error: result.error },
+        { status: result.status }
+      );
+    }
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ ok: false, error: "Error interno." }, { status: 500 });

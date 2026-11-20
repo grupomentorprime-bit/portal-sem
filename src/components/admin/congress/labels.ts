@@ -137,12 +137,53 @@ export function contributionLabel(reg: CongressRegistration): string {
   return contributionStatusLabel(status, reg);
 }
 
+/** Estado corto en la fila de recepción. El monto se cobra en Caja. */
+export function contributionDeskStatus(
+  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp" | "chargeHistory" | "needsReview" | "source" | "submissionId">
+): { label: string; amount: string | null } {
+  const status = deriveContributionStatus(reg);
+  const balance = remainingBalanceClp(reg);
+  switch (status) {
+    case "paid":
+      return { label: "Al día", amount: null };
+    case "partial":
+      return { label: "Abono", amount: formatClp(balance) };
+    case "pending":
+      return { label: "Falta pagar", amount: formatClp(reg.chargeAmountClp ?? CONGRESS_CONTRIBUTION_CLP) };
+    case "no_charge":
+      return { label: isExplicitlyExempt(reg) ? "Exento" : "Sin cargo", amount: null };
+    case "needs_verification":
+      return { label: "Verificar", amount: null };
+    default:
+      return { label: "—", amount: null };
+  }
+}
+
 function considerationSuffix(
   reg: Pick<CongressRegistration, "chargeAmountClp" | "chargeHistory">
 ): string {
   const note = activeChargeConsideration(reg);
   if (!note) return "";
   return ` · no paga ${formatClp(note.unpaidClp)} · ${note.reason}`;
+}
+
+/** Estado corto de la nómina de pago grupal: pagado, exento, abono o pendiente. */
+export function groupRosterStatusText(
+  reg: Pick<
+    CongressRegistration,
+    "chargeAmountClp" | "allocatedPaidClp" | "chargeHistory"
+  >
+): string {
+  const paid = Math.max(0, Math.trunc(reg.allocatedPaidClp));
+  if (reg.chargeAmountClp == null) {
+    if (!isExplicitlyExempt(reg)) return "Sin cargo";
+    const reason = activeChargeConsideration(reg)?.reason;
+    return reason ? `Exento · ${reason}` : "Exento";
+  }
+  const balance = remainingBalanceClp(reg);
+  if (paid > 0 && balance <= 0) return "Ya pagó";
+  if (paid > 0) return `Abono · saldo ${formatClp(balance)}`;
+  return `Pendiente · ${formatClp(balance)}`;
 }
 
 export function contributionStatusLabel(
@@ -218,7 +259,7 @@ export function resolveRegistrationLodging(
 export function attendanceCellText(
   reg: CongressRegistration,
   day: CongressAttendanceDay
-): { text: string; present: boolean; time: string | null } {
+): { text: string; present: boolean; absent: boolean; time: string | null } {
   const value = reg.attendance[day];
   const markedAt =
     day === "saturday"
@@ -229,10 +270,14 @@ export function attendanceCellText(
     return {
       text: time ? `Presente · ${time}` : "Presente",
       present: true,
+      absent: false,
       time,
     };
   }
-  return { text: "Sin llegada", present: false, time: null };
+  if (value === false) {
+    return { text: "No vino", present: false, absent: true, time: null };
+  }
+  return { text: "Sin llegada", present: false, absent: false, time: null };
 }
 
 export function journeyDayLabel(day: CongressAttendanceDay): string {

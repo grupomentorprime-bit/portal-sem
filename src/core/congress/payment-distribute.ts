@@ -68,3 +68,23 @@ export function distributeProportional(
       amountClp: r.amountClp,
     }));
 }
+
+/**
+ * Reparte efectivo y transferencia sin pasarse del saldo de cada ficha.
+ * La transferencia se calcula sobre lo que queda después del efectivo.
+ */
+export function distributeSplitLegs(
+  rows: DistributeRow[],
+  cashClp: number,
+  transferClp: number
+): { cash: DistributeAllocation[]; transfer: DistributeAllocation[] } {
+  const cash = Math.trunc(cashClp) > 0 ? distributeProportional(rows, cashClp) : [];
+  const cashById = new Map(cash.map((row) => [row.registrationId, row.amountClp]));
+  const residual = rows.map((row) => ({
+    registrationId: row.registrationId,
+    balanceClp: Math.max(0, Math.trunc(row.balanceClp) - (cashById.get(row.registrationId) ?? 0)),
+  }));
+  const transfer =
+    Math.trunc(transferClp) > 0 ? distributeProportional(residual, transferClp) : [];
+  return { cash, transfer };
+}

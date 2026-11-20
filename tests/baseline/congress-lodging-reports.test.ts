@@ -184,18 +184,18 @@ describe("buildLodgingPendingReport", () => {
 
     assert.deepEqual(
       report.people.map((person) => person.fullName),
-      ["Hno Ana Duda", "Hno Cancelado", "Hno Luis Asignado", "Hno Pedro Solicita", "Hno Zoe"]
+      ["Ana Duda", "Cancelado", "Luis Asignado", "Pedro Solicita", "Zoe"]
     );
     const byName = new Map(report.people.map((person) => [person.fullName, person]));
-    assert.equal(byName.get("Hno Pedro Solicita")?.statusLabel, "Sin asignar");
-    assert.equal(byName.get("Hno Pedro Solicita")?.detail, "Pidió cama y aún no tiene hogar");
-    assert.equal(byName.get("Hno Ana Duda")?.statusLabel, "Por confirmar");
+    assert.equal(byName.get("Pedro Solicita")?.statusLabel, "Sin asignar");
+    assert.equal(byName.get("Pedro Solicita")?.detail, "Pidió cama y aún no tiene hogar");
+    assert.equal(byName.get("Ana Duda")?.statusLabel, "Por confirmar");
     assert.equal(
-      byName.get("Hno Luis Asignado")?.detail,
+      byName.get("Luis Asignado")?.detail,
       "Asignado, falta confirmar · Hogar N° 1 · Casa Alfa · Sábado 21"
     );
-    assert.equal(byName.get("Hno Cancelado")?.statusLabel, "Sin asignar");
-    assert.equal(byName.get("Hno Zoe")?.churchZoneLabel, "IPN NORTE · Zona 10");
+    assert.equal(byName.get("Cancelado")?.statusLabel, "Sin asignar");
+    assert.equal(byName.get("Zoe")?.churchZoneLabel, "IPN NORTE · Zona 10");
   });
 });
 
@@ -245,10 +245,10 @@ describe("buildLodgingBriefingReport", () => {
       ]
     );
     assert.equal(report.homes[1]?.notes, "Sin llave");
-    assert.equal(report.homes[0]?.guests[0]?.fullName, "Hno Ana Pérez");
+    assert.equal(report.homes[0]?.guests[0]?.fullName, "Ana Pérez");
     assert.equal(report.guestCount, 2);
     assert.equal(report.pendingCount, 1);
-    assert.equal(report.pending[0]?.fullName, "Hno Sin cama");
+    assert.equal(report.pending[0]?.fullName, "Sin cama");
     assert.equal(report.homes[2]?.homeNumber, 3);
   });
 });

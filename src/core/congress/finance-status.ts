@@ -40,3 +40,11 @@ export function isGroupPaymentSelectable(
 ): boolean {
   return remainingBalanceClp(reg) > 0;
 }
+
+/** Exención grupal: solo quien tiene cargo y todavía no tiene pago imputado. */
+export function canExemptGroupMember(
+  reg: Pick<CongressRegistration, "chargeAmountClp" | "allocatedPaidClp">
+): boolean {
+  if (reg.chargeAmountClp == null) return false;
+  return Math.max(0, Math.trunc(reg.allocatedPaidClp)) === 0;
+}

@@ -11,13 +11,16 @@ import {
 } from "../../src/core/congress/leadership";
 
 describe("brother-name", () => {
-  it("agrega Hno y normaliza Pastor/Hno existentes", () => {
-    assert.equal(displayBrotherName("Marco Sepúlveda"), "Hno Marco Sepúlveda");
-    assert.equal(displayBrotherName("Hno Marco"), "Hno Marco");
-    assert.equal(displayBrotherName("Pastor Juan Pérez"), "Hno Juan Pérez");
+  it("quita Hno y conserva Pastor", () => {
+    assert.equal(displayBrotherName("Marco Sepúlveda"), "Marco Sepúlveda");
+    assert.equal(displayBrotherName("Hno Marco"), "Marco");
+    assert.equal(displayBrotherName("Hermano Pedro Soto"), "Pedro Soto");
+    assert.equal(displayBrotherName("Pastor Juan Pérez"), "Pastor Juan Pérez");
     assert.equal(hasBrotherOrTitlePrefix("Hno Ana"), true);
     assert.equal(hasBrotherOrTitlePrefix("Ana"), false);
-    assert.equal(ensureHnoPrefix("Pedro"), "Hno Pedro");
+    assert.equal(ensureHnoPrefix("Pedro"), "Pedro");
+    assert.equal(ensureHnoPrefix("Hno Pedro"), "Pedro");
+    assert.equal(ensureHnoPrefix("Pastor Juan"), "Pastor Juan");
   });
 });
 
