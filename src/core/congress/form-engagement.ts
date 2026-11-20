@@ -39,6 +39,20 @@ export function formSubmissionDisplay(
   return { label: "Actualización", at };
 }
 
+/** Nómina precargada que todavía no envía la actualización. */
+export function isUnupdatedRoster(
+  reg: Pick<CongressRegistration, "source" | "submissionId">
+): boolean {
+  return registrationOriginBucket(reg) === "import";
+}
+
+/** La columna Formulario queda en blanco: no hay envío recibido. */
+export function isMissingFormSubmission(
+  reg: Pick<CongressRegistration, "source" | "formSubmittedAt">
+): boolean {
+  return formSubmissionDisplay(reg).at == null;
+}
+
 /**
  * Normaliza un submissionId (string u ObjectId en runtime) a string.
  * Devuelve null si es null/undefined/vacío o no se puede representar.

@@ -27,7 +27,11 @@ import {
   contributionStatusHasBalance,
   deriveContributionStatus,
 } from "@/core/congress/finance-status";
-import { formSubmissionDisplay } from "@/core/congress/form-engagement";
+import {
+  countsAsPendingVerification,
+  formSubmissionDisplay,
+  isUnupdatedRoster,
+} from "@/core/congress/form-engagement";
 import { arrivalMarksImmediately } from "@/core/congress/reception-stage";
 import { isLodgingPending } from "@/core/congress/lodging-status";
 import { registrationDeleteBlockReason } from "@/core/congress/registration-delete";
@@ -59,7 +63,9 @@ export type ReceptionQuickFilter =
   | "no_arrival"
   | "with_balance"
   | "lodging_pending"
-  | "duplicates";
+  | "duplicates"
+  | "not_updated"
+  | "needs_review";
 
 export type ReceptionDayKpis = {
   expected: number;
@@ -224,6 +230,8 @@ export function ReceptionView({
         if (!isLodgingPending(state)) return false;
       }
       if (quickFilter === "duplicates" && !duplicateIds.has(reg._id)) return false;
+      if (quickFilter === "not_updated" && !isUnupdatedRoster(reg)) return false;
+      if (quickFilter === "needs_review" && !countsAsPendingVerification(reg)) return false;
       return true;
     });
     rows.sort(compareByRegistrationEntryNumber);
@@ -245,6 +253,8 @@ export function ReceptionView({
     { id: "with_balance", label: "Con saldo" },
     { id: "lodging_pending", label: "Alojamiento pendiente" },
     { id: "duplicates", label: "Duplicados" },
+    { id: "not_updated", label: "Sin actualizar" },
+    { id: "needs_review", label: "Por verificar" },
   ];
 
   return (

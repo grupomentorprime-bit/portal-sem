@@ -43,6 +43,7 @@ type Props = {
   homesCount: number;
   churchRequestedBeds: number;
   onOpenCashBox: () => void;
+  onOpenNeedsReview: () => void;
 };
 
 function StatRow({
@@ -86,6 +87,7 @@ export function SummaryView({
   homesCount,
   churchRequestedBeds,
   onOpenCashBox,
+  onOpenNeedsReview,
 }: Props) {
   const lodging = useMemo(() => {
     const counts = {
@@ -151,12 +153,17 @@ export function SummaryView({
               {formatClp(balances.totalOutstandingClp)}
             </p>
           </div>
-          <div>
+          <button
+            type="button"
+            onClick={onOpenNeedsReview}
+            className="rounded-md text-left hover:bg-background-soft"
+            aria-label={`Ver las ${balances.needsReviewCount} fichas por verificar`}
+          >
             <p className="text-xs text-muted">Por verificar</p>
-            <p className="text-2xl font-semibold tabular-nums text-foreground">
+            <p className="text-2xl font-semibold tabular-nums text-primary underline decoration-primary/40 underline-offset-4">
               {balances.needsReviewCount}
             </p>
-          </div>
+          </button>
         </div>
         <p className="mt-3 text-xs text-muted">
           Aporte {formatClp(CONGRESS_CONTRIBUTION_CLP)} por persona · cubre ambos días · no

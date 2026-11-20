@@ -13,6 +13,8 @@ import {
 } from "../../src/components/admin/congress/labels";
 import {
   countsAsPendingVerification,
+  isMissingFormSubmission,
+  isUnupdatedRoster,
   registrationOriginBucket,
 } from "../../src/core/congress/form-engagement";
 import {
@@ -113,6 +115,39 @@ describe("origen de inscripciones", () => {
     );
     assert.equal(registrationOriginBucket({ source: "import" }), "import");
     assert.equal(registrationOriginBucket({ source: "door" }), "door");
+  });
+
+  it("separa nómina sin actualizar de quien no tiene formulario", () => {
+    assert.equal(isUnupdatedRoster({ source: "import" }), true);
+    assert.equal(
+      isUnupdatedRoster({ source: "import", submissionId: "sub-2" }),
+      false
+    );
+    assert.equal(isUnupdatedRoster({ source: "form", submissionId: "sub-1" }), false);
+    assert.equal(isUnupdatedRoster({ source: "door" }), false);
+
+    assert.equal(
+      isMissingFormSubmission({ source: "import", formSubmittedAt: null }),
+      true
+    );
+    assert.equal(
+      isMissingFormSubmission({ source: "door", formSubmittedAt: null }),
+      true
+    );
+    assert.equal(
+      isMissingFormSubmission({
+        source: "form",
+        formSubmittedAt: "2026-11-20T13:32:00.000Z",
+      }),
+      false
+    );
+    assert.equal(
+      isMissingFormSubmission({
+        source: "import",
+        formSubmittedAt: "2026-11-20T13:32:00.000Z",
+      }),
+      false
+    );
   });
 });
 

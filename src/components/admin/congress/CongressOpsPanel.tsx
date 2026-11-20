@@ -1641,6 +1641,13 @@ function CongressOpsPanelInner() {
             homesCount={summary?.lodging.homesCount ?? homes.length}
             churchRequestedBeds={summary?.lodging.requestedBeds ?? 0}
             onOpenCashBox={() => setActiveTab("caja")}
+            onOpenNeedsReview={() => {
+              setSearch("");
+              setZoneFilter("");
+              setChurchFilter("");
+              setQuickFilter("needs_review");
+              setActiveTab("recepcion");
+            }}
           />
         </TabsContent>
 
@@ -1768,7 +1775,7 @@ function CongressOpsPanelInner() {
                     <span className="text-muted">
                       {groupPreview.length}
                     </span>
-                    <span className="text-xl font-bold tabular-nums text-foreground">
+                    <span className="text-2xl font-extrabold leading-none tabular-nums text-black">
                       {formatClp(groupAmount)}
                     </span>
                   </>
