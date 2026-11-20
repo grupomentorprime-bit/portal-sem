@@ -120,15 +120,16 @@ function chargeHistoryLabel(entry: {
 function sheetZoneOptions(
   zoneOptions: { id: string; label: string }[],
   currentZoneId: string
-) {
+): { value: string; label: string }[] {
   const base =
     zoneOptions.length > 0
       ? zoneOptions
       : CONGRESS_ZONES.map((zone) => ({ id: zone.id, label: zone.label }));
-  if (currentZoneId && !base.some((zone) => zone.id === currentZoneId)) {
-    return [{ id: currentZoneId, label: formatZoneLabel(currentZoneId) }, ...base];
-  }
-  return base;
+  const rows =
+    currentZoneId && !base.some((zone) => zone.id === currentZoneId)
+      ? [{ id: currentZoneId, label: formatZoneLabel(currentZoneId) }, ...base]
+      : base;
+  return rows.map((zone) => ({ value: zone.id, label: zone.label }));
 }
 
 function expectedPresetFromReg(
