@@ -139,4 +139,10 @@
   --admin-funnel-4: #52c3ef;
   --admin-funnel-5: #5fd09c;
   --admin-funnel-result: #3aaa4c;
+
+  /* Congreso — ficha marcada como exenta. Amarillo propio, distinto de --color-warning. */
+  --admin-exempt-bg: #f5c400;
+  --admin-exempt-fg: #1c1400;
+  --admin-exempt-border: #d9a800;
+  --admin-exempt-bg-hover: #e6b400;
 }

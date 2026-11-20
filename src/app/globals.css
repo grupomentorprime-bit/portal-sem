@@ -154,14 +154,14 @@
 .exempt-marked-btn:hover,
 .exempt-marked-btn:active,
 .exempt-marked-btn:disabled {
-  background-color: #f5c400 !important;
-  color: #1c1400 !important;
-  border-color: #d9a800 !important;
+  background-color: var(--admin-exempt-bg) !important;
+  color: var(--admin-exempt-fg) !important;
+  border-color: var(--admin-exempt-border) !important;
   opacity: 1 !important;
 }
 
 .exempt-marked-btn:hover:not(:disabled) {
-  background-color: #e6b400 !important;
+  background-color: var(--admin-exempt-bg-hover) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
