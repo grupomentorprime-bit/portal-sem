@@ -29,10 +29,26 @@ export const DOMAINS_COLLECTION = "domains" as const;
 /** Config de portal por Site (ex cms_config singleton). */
 export const SITE_CONFIG_COLLECTION = "site_config" as const;
 
-/** T001 y T002 no se borran desde Platform. La comparación vive en constantes, no en runtime de producto. */
+/**
+ * Espacios operativos que no se eliminan desde Platform.
+ * Única lista. La comparación es el tenantId exacto, ya recortado.
+ * Los fixtures sintéticos `mentor-cumple` y `mentor-capacitacion` no son
+ * `cumple` ni `mentor-prime-capacitacion`.
+ */
+export const PROTECTED_OPERATIONAL_SPACE_IDS = [
+  SEM_TENANT_ID,
+  "ipn-chile",
+  ADL_TENANT_ID,
+  "fundacion-mueve",
+  "mentor-prime-capacitacion",
+  "cumple",
+] as const;
+
+const PROTECTED_OPERATIONAL_SPACES = new Set<string>(PROTECTED_OPERATIONAL_SPACE_IDS);
+
 export function isProtectedPlatformSpace(tenantId: string): boolean {
   if (typeof tenantId !== "string") return false;
   const id = tenantId.trim();
   if (!id) return false;
-  return id === SEM_TENANT_ID || id === ADL_TENANT_ID;
+  return PROTECTED_OPERATIONAL_SPACES.has(id);
 }
