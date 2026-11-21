@@ -8,9 +8,11 @@ export type {
   AppClass,
   AppIntegration,
   AppManifest,
+  AppPublication,
   DefaultContract,
   OpenDeclaration,
 } from "@/nelzuri/catalog/types";
+export { lifecycleMarks, projectAppLifecycle, type AppLifecycle } from "@/nelzuri/catalog/lifecycle";
 export {
   appsByClass,
   isMentorAppId,
@@ -36,4 +38,4 @@ export {
   resolveAuthorizedApps,
 } from "@/nelzuri/contracts/authorization";
 export { evaluateAppRequest } from "@/nelzuri/contracts/request";
-export { decideOpening, type DesktopClick, type OpeningSignals } from "@/nelzuri/contracts/opening";
+export { decideOpening, hasRealEntry, type DesktopClick, type OpeningSignals } from "@/nelzuri/contracts/opening";

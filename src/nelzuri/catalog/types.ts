@@ -12,6 +12,12 @@ export type AppClass = "transversal" | "specialized";
 export type AppIntegration = "internal" | "connect" | "pending";
 
 /**
+ * Publicación del manifiesto.
+ * `draft` no es un servicio operativo. `retired` deja de ofrecerse.
+ */
+export type AppPublication = "draft" | "published" | "retired";
+
+/**
  * Qué se asume solo cuando un documento antiguo no trae `contractedApps`.
  * Una lista guardada, aunque esté vacía, no usa esta regla.
  */
@@ -31,6 +37,9 @@ export interface AppManifest {
   id: string;
   class: AppClass;
   integration: AppIntegration;
+  /** Revisión del manifiesto en este despliegue. */
+  version: string;
+  publication: AppPublication;
   label: string;
   blurb: string;
   /** Puede persistirse en `contractedApps`. */

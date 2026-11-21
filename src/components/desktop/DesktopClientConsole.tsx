@@ -8,7 +8,7 @@ import {
   type MentorAppId,
 } from "@/lib/desktop/catalog";
 import { DesktopSwitchGroup, DesktopSwitchRow } from "@/components/desktop/DesktopSwitch";
-import { isHttpsEntry } from "@/lib/desktop/contract";
+import { isHttpsEntry, openingSignals } from "@/lib/desktop/contract";
 import {
   CLIENT_STATUSES,
   clientStatusLine,
@@ -17,16 +17,23 @@ import {
   type ClientConsoleModel,
   type ClientStatus,
 } from "@/lib/desktop/client-console";
+import { lifecycleMarks, listManifests, projectAppLifecycle } from "@/nelzuri";
 
 export function DesktopClientConsole({
   tenantId,
   model,
+  aprendeHoyOrigin,
+  cumpleOrigin,
+  rrhhOrigin,
   entering,
   onEnter,
   onChanged,
 }: {
   tenantId: string;
   model: ClientConsoleModel;
+  aprendeHoyOrigin: string | null;
+  cumpleOrigin: string | null;
+  rrhhOrigin: string | null;
   entering?: boolean;
   onEnter: () => void;
   onChanged: (space: unknown) => void;
@@ -55,6 +62,26 @@ export function DesktopClientConsole({
   });
   const domainDirty = domainDraftChanged(model.customHost, customHost);
   const shownHost = model.primaryHost || model.platformHost;
+  const registered = listManifests().filter((item) => !item.contractable);
+
+  function factsFor(appId: string) {
+    const signals = (MENTOR_APPS as readonly string[]).includes(appId)
+      ? openingSignals({
+          appId: appId as MentorAppId,
+          aprendeHoyEntryUrl: entryUrl,
+          aprendeHoyOrigin,
+          cumpleOrigin,
+          rrhhOrigin,
+        })
+      : { productOrigin: false, httpsEntry: null };
+    return projectAppLifecycle({
+      appId,
+      tenantId,
+      contractedApps: apps,
+      requestedApps: model.requestedApps,
+      signals,
+    });
+  }
 
   function toggleApp(appId: MentorAppId) {
     setError("");
@@ -186,16 +213,29 @@ export function DesktopClientConsole({
 
       <section>
         <p className="console-kicker">Plan</p>
-        <DesktopSwitchGroup note="Enciende las que este Espacio puede abrir. Guarda el plan al terminar.">
+        {model.status !== "active" ? (
+          <p className="console-line">Este estado no quita aplicaciones del plan.</p>
+        ) : null}
+        <DesktopSwitchGroup note="Enciende las que este Espacio puede abrir. Guardar el plan no autoriza a las personas. Un pedido no contrata.">
           {MENTOR_APPS.map((appId) => {
             const on = apps.includes(appId);
             const asked = model.requestedApps.includes(appId) && !on;
+            const marks = lifecycleMarks(factsFor(appId));
             return (
               <DesktopSwitchRow
                 key={appId}
                 mark={appId}
                 title={mentorAppLabel(appId)}
-                detail={mentorAppBlurb(appId)}
+                detail={
+                  <>
+                    {mentorAppBlurb(appId)}
+                    <span className="lifecycle-facts">
+                      {marks.map((mark) => (
+                        <span key={mark}>{mark}</span>
+                      ))}
+                    </span>
+                  </>
+                }
                 badge={asked ? "Pedido" : undefined}
                 checked={on}
                 disabled={busy !== null}
@@ -220,6 +260,23 @@ export function DesktopClientConsole({
             {busy === "plan" ? "Guardando…" : "Guardar plan"}
           </button>
         ) : null}
+      </section>
+
+      <section>
+        <p className="console-kicker">Registradas</p>
+        <p className="console-line">Identificadas en el catálogo. No se contratan y no operan en el escritorio.</p>
+        <div className="lifecycle-registered">
+          {registered.map((item) => (
+            <article key={item.id}>
+              <strong>{item.label}</strong>
+              <span className="lifecycle-facts">
+                {lifecycleMarks(factsFor(item.id)).map((mark) => (
+                  <span key={mark}>{mark}</span>
+                ))}
+              </span>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section>

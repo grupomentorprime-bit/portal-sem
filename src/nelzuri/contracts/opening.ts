@@ -16,6 +16,26 @@ export type OpeningSignals = {
   httpsEntry: string | null;
 };
 
+/**
+ * Hay entrada real para este Espacio.
+ * No mira el contrato ni la llave: eso lo decide `decideOpening`.
+ */
+export function hasRealEntry(
+  appId: string,
+  input: { tenantId: string; signals: OpeningSignals }
+): boolean {
+  const open = manifestById(appId).open;
+  if (open.type === "internal") return true;
+  if (open.type === "connect") return input.signals.productOrigin;
+  if (open.type === "connect-or-https") {
+    return Boolean(input.signals.productOrigin || input.signals.httpsEntry);
+  }
+  if (open.type === "connect-in-space") {
+    return input.tenantId === manifestById(appId).requiresSpaceId && input.signals.productOrigin;
+  }
+  return false;
+}
+
 export function decideOpening(input: {
   appId: MentorAppId;
   tenantId: string;

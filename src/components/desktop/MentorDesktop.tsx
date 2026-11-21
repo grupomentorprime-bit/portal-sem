@@ -1413,6 +1413,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
         <DesktopClientes
           spaces={props.spaces}
           entering={entering}
+          aprendeHoyOrigin={props.aprendeHoyOrigin}
+          cumpleOrigin={props.cumpleOrigin}
+          rrhhOrigin={props.rrhhOrigin}
           onClose={() => setClientesOpen(false)}
           onEnter={(tenantId) => void enterClient(tenantId)}
         />

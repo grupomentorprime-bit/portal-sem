@@ -24,6 +24,12 @@ export function validateCatalog(
     if (INDEPENDENT_PRODUCTS.has(id)) {
       throw new Error(`${id} permanece independiente hasta una autorización expresa.`);
     }
+    if (typeof item.version !== "string" || item.version !== item.version.trim() || !item.version) {
+      throw new Error(`${id} necesita una versión.`);
+    }
+    if (item.publication !== "draft" && item.publication !== "published" && item.publication !== "retired") {
+      throw new Error(`${id} no declara una publicación conocida.`);
+    }
     if (item.integration === "pending") {
       if (item.contractable || item.defaultContract.when !== "never" || item.open.type !== "none") {
         throw new Error(`${id} está pendiente y no entra al contrato ni a la mesa.`);
@@ -31,6 +37,12 @@ export function validateCatalog(
       if (item.sectors?.length) {
         throw new Error(`${id} está pendiente y no se recomienda como operativa.`);
       }
+      if (item.publication !== "draft") {
+        throw new Error(`${id} está pendiente y no se publica como servicio operativo.`);
+      }
+    }
+    if (item.contractable && item.publication !== "published") {
+      throw new Error(`${id} se contrata solo cuando está publicada.`);
     }
     if (item.class === "specialized" && item.contractable) {
       throw new Error(`${id} es especializada y no se contrata.`);

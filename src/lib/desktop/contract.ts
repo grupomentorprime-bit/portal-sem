@@ -41,7 +41,7 @@ export function desktopClick(input: {
   });
 }
 
-function openingSignals(input: {
+export function openingSignals(input: {
   appId: MentorAppId;
   aprendeHoyEntryUrl?: string | null;
   aprendeHoyOrigin?: string | null;

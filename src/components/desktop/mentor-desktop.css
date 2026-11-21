@@ -707,7 +707,14 @@
 .desk-switch-copy { min-width: 0; flex: 1; display: grid; gap: 2px; }
 .desk-switch-copy strong { font-size: 13.5px; font-weight: 650; letter-spacing: -.01em; color: #101828; }
 .desk-switch-copy strong em { margin-left: 8px; border-radius: 999px; background: var(--nelzuri-wash); color: var(--nelzuri-azul-digital); padding: 2px 6px; font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: 1px; }
-.desk-switch-copy small { color: #6b6580; font-size: 12.5px; font-weight: 500; line-height: 1.35; }
+.desk-switch-copy small,
+.desk-switch-detail { color: #6b6580; font-size: 12.5px; font-weight: 500; line-height: 1.35; display: grid; gap: 4px; }
+.lifecycle-facts { display: flex; flex-wrap: wrap; gap: 4px; }
+.lifecycle-facts span { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #3d4a63; background: #f3f0e8; border-radius: 999px; padding: 2px 6px; }
+.lifecycle-registered { display: grid; gap: 10px; }
+.lifecycle-registered article { display: grid; gap: 4px; }
+.lifecycle-registered strong { font-size: 13.5px; font-weight: 650; color: #101828; }
+.lifecycle-registered p { margin: 0; color: #6b6580; font-size: 12.5px; line-height: 1.35; }
 .desk-app-mark { width: 30px; height: 30px; border-radius: 8px; flex: none; }
 .desk-app-mark.is-growth-os { background: linear-gradient(160deg, #7dd3fc, #2563eb); }
 .desk-app-mark.is-cumple { background: linear-gradient(160deg, #6ee7b7, #059669); }
