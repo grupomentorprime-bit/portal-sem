@@ -23,6 +23,7 @@ import {
   compareByRegistrationEntryNumber,
   registrationEntryNumber,
 } from "@/core/congress/entry-order";
+import { isExplicitlyExempt } from "@/core/congress/charge";
 import {
   contributionStatusHasBalance,
   deriveContributionStatus,
@@ -65,7 +66,8 @@ export type ReceptionQuickFilter =
   | "lodging_pending"
   | "duplicates"
   | "not_updated"
-  | "needs_review";
+  | "needs_review"
+  | "exempt";
 
 export type ReceptionDayKpis = {
   expected: number;
@@ -232,6 +234,7 @@ export function ReceptionView({
       if (quickFilter === "duplicates" && !duplicateIds.has(reg._id)) return false;
       if (quickFilter === "not_updated" && !isUnupdatedRoster(reg)) return false;
       if (quickFilter === "needs_review" && !countsAsPendingVerification(reg)) return false;
+      if (quickFilter === "exempt" && !isExplicitlyExempt(reg)) return false;
       return true;
     });
     rows.sort(compareByRegistrationEntryNumber);
@@ -255,6 +258,7 @@ export function ReceptionView({
     { id: "duplicates", label: "Duplicados" },
     { id: "not_updated", label: "Sin actualizar" },
     { id: "needs_review", label: "Por verificar" },
+    { id: "exempt", label: "Exentos" },
   ];
 
   return (
