@@ -302,6 +302,7 @@ export async function downloadCongressExemptionReceiptPdf(input: {
     ["Iglesia", input.churchName?.trim() || "—"],
     ["Autoriza", authorizer || "—"],
     ["Personas", String(input.people.length)],
+    ["Pago", formatClp(0)],
     [
       "Total exento",
       formatClp(input.people.reduce((sum, person) => sum + Math.trunc(person.unpaidClp), 0)),
@@ -325,10 +326,14 @@ export async function downloadCongressExemptionReceiptPdf(input: {
     const nameLines = doc.splitTextToSize(person.name, 120);
     doc.setFont("helvetica", "normal");
     doc.text(nameLines, MARGIN, y);
-    doc.text(formatClp(person.unpaidClp), PAGE_WIDTH - MARGIN, y, { align: "right" });
+    doc.text(formatClp(0), PAGE_WIDTH - MARGIN, y, { align: "right" });
     y += Math.max(6, nameLines.length * 5.5);
     doc.setFontSize(9);
-    doc.text(`Autoriza ${person.authorizer.trim() || "—"}`, MARGIN, y);
+    doc.text(
+      `No paga ${formatClp(person.unpaidClp)} · Autoriza ${person.authorizer.trim() || "—"}`,
+      MARGIN,
+      y
+    );
     y += 6;
     doc.setFontSize(10);
   }

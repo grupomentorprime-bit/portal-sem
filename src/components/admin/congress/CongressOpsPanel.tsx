@@ -5,6 +5,7 @@ import { CreditCard, RefreshCw, Wallet } from "lucide-react";
 import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import {
   AlertBanner,
+  Dialog,
   LoadingState,
   Section,
   Timeline,
@@ -56,6 +57,7 @@ import {
 import { ClpAmountInput } from "@/components/admin/congress/ClpAmountInput";
 import {
   activeChargeConsideration,
+  CHARGE_WAIVE_REASONS,
   GROUP_EXEMPT_AUTHORIZERS,
   planAuthorizedLesserPayment,
 } from "@/core/congress/charge";
@@ -232,9 +234,14 @@ function CongressOpsPanelInner() {
   const [groupCashClp, setGroupCashClp] = useState<number | null>(null);
   const [groupTransferClp, setGroupTransferClp] = useState<number | null>(null);
   const [groupExemptBy, setGroupExemptBy] = useState("");
+  const [exemptConfirmOpen, setExemptConfirmOpen] = useState(false);
+  const [exemptMotive, setExemptMotive] = useState("");
+  const [exemptMotiveNote, setExemptMotiveNote] = useState("");
   const [lesserPayFor, setLesserPayFor] = useState<string | null>(null);
   const [lesserPayClp, setLesserPayClp] = useState<number | null>(null);
   const [groupExempting, setGroupExempting] = useState(false);
+  const [restoringExemptionId, setRestoringExemptionId] = useState<string | null>(null);
+  const [lesserAuthorizing, setLesserAuthorizing] = useState(false);
   const [paymentSaving, setPaymentSaving] = useState(false);
   const paymentInFlight = useRef(false);
   const exemptInFlight = useRef(false);
@@ -913,20 +920,20 @@ function CongressOpsPanelInner() {
   }, [registrations, singleSelectedId]);
 
   const singleBalance = singleSelectedReg ? remainingBalanceClp(singleSelectedReg) : 0;
-  const singlePayClp =
-    singleSelectedReg &&
-    lesserPayFor === singleSelectedReg._id &&
-    lesserPayClp != null
-      ? lesserPayClp
-      : singleBalance;
-  const singlePayPlan = singleSelectedReg
-    ? planAuthorizedLesserPayment({
-        chargeAmountClp: singleSelectedReg.chargeAmountClp,
-        allocatedPaidClp: singleSelectedReg.allocatedPaidClp,
-        payNowClp: singlePayClp,
-      })
-    : null;
-
+  const authorizedLesserClp =
+    singleSelectedReg && lesserPayFor === singleSelectedReg._id ? lesserPayClp : null;
+  const lesserPlan =
+    singleSelectedReg && authorizedLesserClp != null
+      ? planAuthorizedLesserPayment({
+          chargeAmountClp: singleSelectedReg.chargeAmountClp,
+          allocatedPaidClp: singleSelectedReg.allocatedPaidClp,
+          payNowClp: authorizedLesserClp,
+        })
+      : null;
+  const lesserLocked = Boolean(lesserPlan?.ok && lesserPlan.reduce);
+  const authorizeReady =
+    Boolean(singleSelectedReg) && Boolean(groupExemptBy) && lesserLocked;
+  const shownAmount = lesserLocked && lesserPlan?.ok ? lesserPlan.paymentClp : groupAmount;
   const groupBalanceRows = useMemo(() => {
     const byId = new Map(registrations.map((r) => [r._id, r]));
     return groupSelectedActive
@@ -1080,6 +1087,15 @@ function CongressOpsPanelInner() {
       });
       return;
     }
+    if (lesserLocked) {
+      push({
+        title: "Hay un monto menor sin autorizar",
+        description:
+          "Autorizar pago cobra ese monto. Emitir pago sigue el saldo hasta que lo quite.",
+        tone: "warning",
+      });
+      return;
+    }
 
     if (groupSplitRecaudacion) {
       const cash = groupCashClp ?? 0;
@@ -1200,29 +1216,15 @@ function CongressOpsPanelInner() {
     }
 
     const singleReg = singleSelectedReg;
-    const payPlan = singleReg ? singlePayPlan : null;
-    if (singleReg && (!payPlan || !payPlan.ok)) {
-      push({
-        title: "El monto tiene que ser mayor a cero y no pasar el saldo",
-        tone: "warning",
-      });
-      return;
-    }
-    if (singleReg && payPlan?.ok && payPlan.reduce && !groupExemptBy) {
-      push({
-        title: "Elija quién autoriza el pago menor",
-        description: "El resto del aporte no queda como saldo.",
-        tone: "warning",
-      });
-      return;
-    }
-    const amount = singleReg && payPlan?.ok ? payPlan.paymentClp : groupAmount;
+    const amount = singleReg ? singleBalance : groupAmount;
     const allocations = singleReg
       ? [{ registrationId: singleReg._id, amountClp: amount }]
       : groupPreview;
-    if (!amount || allocations.length === 0) {
+    if (!amount || allocations.length === 0 || (singleReg && amount !== singleBalance)) {
       push({
-        title: "Complete pagador y seleccione al menos un participante",
+        title: singleReg
+          ? "Solo se cobra el saldo autorizado"
+          : "Complete pagador y seleccione al menos un participante",
         tone: "warning",
       });
       return;
@@ -1233,30 +1235,6 @@ function CongressOpsPanelInner() {
     }
     setPaymentSaving(true);
     try {
-      if (singleReg && payPlan?.ok && payPlan.reduce) {
-        const chargeRes = await fetch(
-          `/api/congress/registrations/${encodeURIComponent(singleReg._id)}/charge`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "reduce",
-              reason: groupExemptBy,
-              chargeClp: payPlan.nextChargeClp,
-            }),
-          }
-        );
-        const chargeData = await chargeRes.json().catch(() => ({}));
-        if (!chargeRes.ok || !chargeData.ok || !chargeData.registration) {
-          push({
-            title: "No se pudo autorizar el pago menor",
-            description: chargeData.error ?? "Error del servidor.",
-            tone: "warning",
-          });
-          return;
-        }
-        upsertRegistration(chargeData.registration as CongressRegistration);
-      }
       const payerType = singleReg ? "individual" : "church";
       const result = await postGroupPayment({
         payerType,
@@ -1269,10 +1247,7 @@ function CongressOpsPanelInner() {
       if (!result.ok) {
         push({
           title: "Pago grupal no registrado",
-          description:
-            singleReg && payPlan?.ok && payPlan.reduce
-              ? `El aporte ya quedó en ${formatClp(payPlan.nextChargeClp)}. ${result.error ?? "No se registró el pago."}`
-              : (result.error ?? "Error del servidor."),
+          description: result.error ?? "Error del servidor.",
           tone: "warning",
         });
         return;
@@ -1281,16 +1256,8 @@ function CongressOpsPanelInner() {
         setLastReceiptPayment(result.payment);
         upsertPayment(result.payment);
       }
-      const lesser = Boolean(singleReg && payPlan?.ok && payPlan.reduce);
       push({
-        title: lesser
-          ? "Pago menor registrado"
-          : singleReg
-            ? "Pago registrado"
-            : "Pago grupal registrado",
-        description: lesser
-          ? `Autoriza ${groupExemptBy}. El resto no queda como saldo.`
-          : undefined,
+        title: singleReg ? "Pago registrado" : "Pago grupal registrado",
         tone: "success",
       });
       setGroupSelected([]);
@@ -1309,12 +1276,118 @@ function CongressOpsPanelInner() {
     }
   };
 
-  const exemptMarked = async () => {
+  const authorizeLesserPayment = async () => {
+    if (paymentInFlight.current) return;
+    if (!singleSelectedReg) {
+      push({ title: "Marque a una persona para el pago menor", tone: "warning" });
+      return;
+    }
+    if (!groupExemptBy) {
+      push({ title: "Elija quién autoriza el pago menor", tone: "warning" });
+      return;
+    }
+    if (!groupPayer.trim()) {
+      push({ title: "Indique el nombre del pagador", tone: "warning" });
+      return;
+    }
+    if (groupMethod === "transfer" && !normalizeCongressTransferBank(groupBank)) {
+      push({ title: "Elija el banco de la transferencia", tone: "warning" });
+      return;
+    }
+    const plan = lesserPlan;
+    if (!plan || !plan.ok) {
+      push({
+        title: "Ese monto no se puede cobrar",
+        description: "Sin autorización no se cobra más ni menos que el saldo.",
+        tone: "warning",
+      });
+      return;
+    }
+    if (!plan.reduce) {
+      push({
+        title: "Ese monto es el saldo",
+        description: "Emitir pago cobra exactamente el saldo. El pago menor tiene que ser más bajo y autorizado.",
+        tone: "warning",
+      });
+      return;
+    }
+    paymentInFlight.current = true;
+    setLesserAuthorizing(true);
+    try {
+      const chargeRes = await fetch(
+        `/api/congress/registrations/${encodeURIComponent(singleSelectedReg._id)}/charge`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reduce",
+            reason: groupExemptBy,
+            chargeClp: plan.nextChargeClp,
+          }),
+        }
+      );
+      const chargeData = await chargeRes.json().catch(() => ({}));
+      if (!chargeRes.ok || !chargeData.ok || !chargeData.registration) {
+        push({
+          title: "No se pudo autorizar el pago menor",
+          description: chargeData.error ?? "Error del servidor.",
+          tone: "warning",
+        });
+        return;
+      }
+      upsertRegistration(chargeData.registration as CongressRegistration);
+      const result = await postGroupPayment({
+        payerType: "individual",
+        amountClp: plan.paymentClp,
+        method: groupMethod,
+        allocations: [{ registrationId: singleSelectedReg._id, amountClp: plan.paymentClp }],
+        bank: groupBank,
+        note: normalizeCongressPaymentNote(groupDetail),
+      });
+      if (!result.ok) {
+        push({
+          title: "El aporte quedó en el monto autorizado y el pago no se registró",
+          description: result.error ?? "Vuelva a emitir exactamente ese saldo.",
+          tone: "warning",
+        });
+        void loadRegistrations();
+        void loadSummary();
+        return;
+      }
+      if (result.payment) {
+        setLastReceiptPayment(result.payment);
+        upsertPayment(result.payment);
+      }
+      push({
+        title: "Pago menor autorizado",
+        description: `Se cobró ${formatClp(plan.paymentClp)}. Autoriza ${groupExemptBy}. No queda otro saldo.`,
+        tone: "success",
+      });
+      setGroupSelected([]);
+      setLesserPayFor(null);
+      setLesserPayClp(null);
+      setGroupBank("");
+      setGroupDetail("");
+      void loadPayments();
+      void loadRegistrations();
+      void loadSummary();
+    } catch {
+      push({ title: "Error de red", tone: "error" });
+      void loadRegistrations();
+      void loadSummary();
+    } finally {
+      setLesserAuthorizing(false);
+      paymentInFlight.current = false;
+    }
+  };
+
+  const exemptMarked = async (reason: string) => {
+    const confirmed = reason.trim();
     if (exemptInFlight.current) return;
     exemptInFlight.current = true;
     try {
-    if (!groupExemptBy) {
-      push({ title: "Elija quién autoriza la exención", tone: "warning" });
+    if (!confirmed) {
+      push({ title: "Confirme quién autoriza y el motivo", tone: "warning" });
       return;
     }
     const byId = new Map(registrations.map((row) => [row._id, row]));
@@ -1339,7 +1412,7 @@ function CongressOpsPanelInner() {
             {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "exempt", reason: groupExemptBy }),
+              body: JSON.stringify({ action: "exempt", reason: confirmed }),
             }
           );
           const data = await res.json().catch(() => ({}));
@@ -1368,7 +1441,7 @@ function CongressOpsPanelInner() {
               ? "1 persona exenta"
               : `${doneIds.size} personas exentas`,
           description: [
-            `Autoriza ${groupExemptBy}.`,
+            confirmed,
             skipped > 0 ? `${skipped} con pago quedaron fuera.` : "",
             failed.length > 0 ? failed[0]?.error ?? "" : "",
           ]
@@ -1377,7 +1450,7 @@ function CongressOpsPanelInner() {
           tone: failed.length > 0 ? "warning" : "success",
         });
         setGroupSelected((prev) => prev.filter((id) => !doneIds.has(id)));
-        void downloadExemptionReceipt(exempted, groupExemptBy);
+        void downloadExemptionReceipt(exempted, confirmed);
       } else {
         push({
           title: "No se pudo eximir",
@@ -1394,6 +1467,45 @@ function CongressOpsPanelInner() {
     }
     } finally {
       exemptInFlight.current = false;
+    }
+  };
+
+  const restoreExemption = async (reg: CongressRegistration) => {
+    if (restoringExemptionId) return;
+    setRestoringExemptionId(reg._id);
+    try {
+      const res = await fetch(
+        `/api/congress/registrations/${encodeURIComponent(reg._id)}/charge`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "restore",
+            reason: "Reversa de exención",
+          }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok || !data.registration) {
+        push({
+          title: "No se pudo revertir la exención",
+          description: data.error ?? "Error del servidor.",
+          tone: "warning",
+        });
+        return;
+      }
+      upsertRegistration(data.registration as CongressRegistration);
+      push({
+        title: "Exención revertida",
+        description: `${registrationDisplayName(reg)} vuelve a deber el aporte.`,
+        tone: "success",
+      });
+      void loadRegistrations();
+      void loadSummary();
+    } catch {
+      push({ title: "Error de red", tone: "error" });
+    } finally {
+      setRestoringExemptionId(null);
     }
   };
 
@@ -1840,46 +1952,32 @@ function CongressOpsPanelInner() {
                 value={groupPayer}
                 onChange={(e) => setGroupPayer(e.target.value)}
               />
-              <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background-soft px-3 text-sm text-foreground">
+              <p className="flex h-9 items-center gap-2 rounded-md border border-border bg-background-soft px-3 text-sm text-foreground">
                 {groupPreview.length === 0 ? (
-                  <span>Monto · marque a quien paga</span>
-                ) : singleSelectedReg ? (
-                  <>
-                    <span className="text-muted">1</span>
-                    <ClpAmountInput
-                      aria-label="Monto que paga"
-                      value={singlePayClp}
-                      onValueChange={(value) => {
-                        setLesserPayFor(singleSelectedReg._id);
-                        setLesserPayClp(value);
-                      }}
-                      className="h-8 border-0 bg-transparent px-0 text-right text-2xl font-extrabold leading-none text-foreground shadow-none"
-                    />
-                  </>
+                  "Monto · marque a quien paga"
                 ) : (
                   <>
                     <span className="text-muted">
                       {groupPreview.length}
                     </span>
                     <span className="text-2xl font-extrabold leading-none tabular-nums text-foreground">
-                      {formatClp(groupAmount)}
+                      {formatClp(shownAmount)}
                     </span>
                   </>
                 )}
-              </div>
-              {singleSelectedReg && singlePayPlan?.ok && singlePayPlan.reduce ? (
-                <p className="text-xs text-muted">
-                  Pago menor. Elija quién autoriza: el resto no queda como saldo.
-                </p>
-              ) : null}
+              </p>
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={groupSplitRecaudacion}
+                  disabled={lesserLocked}
                   onChange={(e) => {
                     setGroupSplitRecaudacion(e.target.checked);
-                    if (!e.target.checked) {
+                    if (e.target.checked) {
+                      setLesserPayFor(null);
+                      setLesserPayClp(null);
+                    } else {
                       setGroupCashClp(null);
                       setGroupTransferClp(null);
                     }
@@ -2006,6 +2104,7 @@ function CongressOpsPanelInner() {
                 loading={paymentSaving}
                 disabled={
                   paymentSaving ||
+                  lesserLocked ||
                   groupPreview.length === 0 ||
                   (groupSplitRecaudacion && !groupSplitCuadra)
                 }
@@ -2013,9 +2112,9 @@ function CongressOpsPanelInner() {
                 <CreditCard className="mr-2 h-4 w-4" />
                 Emitir pago
               </Button>
-              <div className="grid grid-cols-[minmax(0,1fr)_12.5rem] items-end gap-2">
+              <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_8.5rem_9.5rem]">
                 <Select
-                  label="Exención"
+                  label="Autoriza"
                   className="h-9"
                   value={groupExemptBy}
                   onChange={(event) => setGroupExemptBy(event.target.value)}
@@ -2027,18 +2126,137 @@ function CongressOpsPanelInner() {
                     })),
                   ]}
                 />
+                <ClpAmountInput
+                  label="Monto menor"
+                  value={authorizedLesserClp}
+                  disabled={!singleSelectedReg || lesserAuthorizing}
+                  onValueChange={(value) => {
+                    if (!singleSelectedReg) return;
+                    const capped =
+                      value != null && value > singleBalance ? singleBalance : value;
+                    setLesserPayFor(singleSelectedReg._id);
+                    setLesserPayClp(capped);
+                    if (capped != null && capped > 0 && capped < singleBalance) {
+                      setGroupSplitRecaudacion(false);
+                      setGroupCashClp(null);
+                      setGroupTransferClp(null);
+                    }
+                  }}
+                />
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className="exempt-marked-btn h-8 w-full"
-                  loading={groupExempting}
-                  disabled={groupExempting || !groupExemptBy || groupExemptableCount === 0}
-                  onClick={() => void exemptMarked()}
+                  variant={authorizeReady ? "primary" : "outline"}
+                  className={
+                    authorizeReady && !lesserAuthorizing
+                      ? "authorize-pay-ready h-9 w-full"
+                      : "h-9 w-full"
+                  }
+                  loading={lesserAuthorizing}
+                  disabled={lesserAuthorizing || !authorizeReady}
+                  onClick={() => void authorizeLesserPayment()}
                 >
-                  Eximir pagos
+                  Autorizar pago
                 </Button>
               </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="exempt-marked-btn h-8 w-full"
+                loading={groupExempting}
+                disabled={groupExempting || groupExemptableCount === 0}
+                onClick={() => {
+                  setExemptMotive("");
+                  setExemptMotiveNote("");
+                  setExemptConfirmOpen(true);
+                }}
+              >
+                Eximir pagos
+              </Button>
+              <Dialog
+                open={exemptConfirmOpen}
+                onClose={() => {
+                  if (groupExempting) return;
+                  setExemptConfirmOpen(false);
+                }}
+                title="Confirmar exención"
+                description="El pago queda en $0. Indique quién autoriza y el motivo."
+                size="sm"
+              >
+                <div
+                  className="space-y-3"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") event.preventDefault();
+                  }}
+                >
+                  <Select
+                    label="Quién autoriza"
+                    value={groupExemptBy}
+                    onChange={(event) => setGroupExemptBy(event.target.value)}
+                    options={[
+                      { value: "", label: "Seleccionar…" },
+                      ...GROUP_EXEMPT_AUTHORIZERS.map((name) => ({
+                        value: name,
+                        label: name,
+                      })),
+                    ]}
+                  />
+                  <Select
+                    label="Motivo"
+                    value={exemptMotive}
+                    onChange={(event) => setExemptMotive(event.target.value)}
+                    options={[
+                      { value: "", label: "Seleccionar motivo…" },
+                      ...CHARGE_WAIVE_REASONS.map((name) => ({
+                        value: name,
+                        label: name,
+                      })),
+                    ]}
+                  />
+                  {exemptMotive === "Otro" ? (
+                    <Input
+                      label="Cuál es el motivo"
+                      value={exemptMotiveNote}
+                      maxLength={80}
+                      onChange={(event) => setExemptMotiveNote(event.target.value)}
+                    />
+                  ) : null}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={groupExempting}
+                      onClick={() => setExemptConfirmOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      loading={groupExempting}
+                      disabled={
+                        groupExempting ||
+                        !groupExemptBy ||
+                        !(exemptMotive === "Otro" ? exemptMotiveNote.trim() : exemptMotive)
+                      }
+                      onClick={() => {
+                        const motive =
+                          exemptMotive === "Otro" ? exemptMotiveNote.trim() : exemptMotive.trim();
+                        if (!groupExemptBy || !motive) return;
+                        setExemptConfirmOpen(false);
+                        void exemptMarked(`${groupExemptBy} · ${motive}`);
+                      }}
+                    >
+                      Confirmar exención
+                    </Button>
+                  </div>
+                </div>
+              </Dialog>
+              <p className="text-xs text-muted">
+                Emitir pago cobra el saldo exacto. Un monto menor exige autorización y se cobra completo. Exento es pago $0.
+              </p>
               </div>
               {lastReceiptPayment || groupSplitRecaudacion ? (
               <div className="shrink-0 space-y-1.5">
@@ -2070,6 +2288,8 @@ function CongressOpsPanelInner() {
                 churchChosen={Boolean(groupChurch)}
                 highlightId={singleSelectedId}
                 onDownloadExemptions={(people) => void downloadExemptionReceipt(people)}
+                onRestoreExemption={(person) => void restoreExemption(person)}
+                restoringExemptionId={restoringExemptionId}
               />
             </form>
           </section>

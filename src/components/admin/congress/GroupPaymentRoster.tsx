@@ -22,6 +22,8 @@ type Props = {
   churchChosen: boolean;
   highlightId?: string | null;
   onDownloadExemptions?: (people: CongressRegistration[]) => void;
+  onRestoreExemption?: (person: CongressRegistration) => void;
+  restoringExemptionId?: string | null;
 };
 
 function statusTone(text: string): string {
@@ -67,6 +69,8 @@ export function GroupPaymentRoster({
   churchChosen,
   highlightId,
   onDownloadExemptions,
+  onRestoreExemption,
+  restoringExemptionId,
 }: Props) {
   const unique = new Map<string, CongressRegistration>();
   for (const row of candidates) unique.set(row._id, row);
@@ -142,10 +146,10 @@ export function GroupPaymentRoster({
                     const roles = registrationRoleBadges(row);
                     const details = paymentLines(row, payments);
                     return (
-                      <li key={row._id}>
+                      <li key={row._id} className="flex min-w-0 items-start gap-1">
                         <label
                           className={cn(
-                            "flex min-w-0 items-start gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm",
+                            "flex min-w-0 flex-1 items-start gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm",
                             selectable ? "hover:bg-background-soft" : "bg-background-soft/70",
                             highlightId === row._id && "border-primary"
                           )}
@@ -180,6 +184,19 @@ export function GroupPaymentRoster({
                             ))}
                           </span>
                         </label>
+                        {section.id === "exempt" && onRestoreExemption ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="mt-1 shrink-0"
+                            loading={restoringExemptionId === row._id}
+                            disabled={restoringExemptionId != null}
+                            onClick={() => onRestoreExemption(row)}
+                          >
+                            Revertir
+                          </Button>
+                        ) : null}
                       </li>
                     );
                   })}

@@ -8,9 +8,15 @@ import {
 } from "../../src/core/congress/charge";
 import { CONGRESS_CONTRIBUTION_CLP } from "../../src/core/congress/constants";
 import { contributionStatusLabel } from "../../src/components/admin/congress/labels";
+import { deriveContributionStatus } from "../../src/core/congress/finance-status";
 import { remainingBalanceClp } from "../../src/core/congress/charges";
-import { summarizeContributionClose } from "../../src/core/congress/cash-box";
-import { toReportPerson } from "../../src/core/congress/ops-reports";
+import {
+  breakdownContributionsByZone,
+  reconcilePostedAllocationsWithCollected,
+  summarizeContributionClose,
+} from "../../src/core/congress/cash-box";
+import { allocatePayment } from "../../src/core/congress/payments";
+import { buildOpsReport, toReportPerson } from "../../src/core/congress/ops-reports";
 import type { CongressRegistration } from "../../src/core/congress/types";
 
 describe("applyChargeChange", () => {
@@ -474,6 +480,140 @@ describe("exento y parcial cuadran caja, reporte y cuenta", () => {
     assert.equal(restored.cajaExpected, 17_000);
     assert.equal(restored.balance, 17_000);
     assert.equal(restored.reportBalance, 17_000);
+  });
+
+  it("exención con autor y motivo, y pago menor cobrado, cuadran caja, zona e informe", () => {
+    const exemptedChange = applyChargeChange({
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      chargeHistory: [],
+      action: "exempt",
+      reason: "Líder nacional · Acuerdo de la iglesia",
+      nowIso: now,
+      actorUserId: "u1",
+    });
+    assert.equal(exemptedChange.ok, true);
+    if (!exemptedChange.ok) return;
+    const exempted = ficha(exemptedChange.chargeAmountClp, exemptedChange.chargeHistory);
+
+    const plan = planAuthorizedLesserPayment({
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      payNowClp: 10_000,
+    });
+    assert.equal(plan.ok, true);
+    if (!plan.ok) return;
+    assert.equal(plan.reduce, true);
+    const reduced = applyChargeChange({
+      chargeAmountClp: CONGRESS_CONTRIBUTION_CLP,
+      allocatedPaidClp: 0,
+      chargeHistory: [],
+      action: "reduce",
+      reason: "Tesorero · Cortesía",
+      chargeClp: plan.nextChargeClp,
+      nowIso: now,
+      actorUserId: "u1",
+    });
+    assert.equal(reduced.ok, true);
+    if (!reduced.ok) return;
+    const lesser = ficha(reduced.chargeAmountClp, reduced.chargeHistory);
+    lesser._id = "r2";
+    const paid = allocatePayment({
+      paymentId: "pay-menor",
+      tenantId: lesser.tenantId,
+      eventId: lesser.eventId,
+      payerType: "individual",
+      payerName: "Hno Jose",
+      amountClp: plan.paymentClp,
+      method: "cash",
+      paidOn: "2026-11-20",
+      allocations: [{ registrationId: lesser._id, amountClp: plan.paymentClp }],
+      createdByUserId: "u1",
+      createdAt: now,
+      registrations: [lesser],
+    });
+    assert.equal(paid.ok, true);
+    if (!paid.ok) return;
+    const settled = paid.updatedRegistrations[0];
+    assert.equal(remainingBalanceClp(settled), 0);
+    assert.equal(deriveContributionStatus(settled), "paid");
+
+    const pending = ficha(CONGRESS_CONTRIBUTION_CLP, []);
+    pending._id = "r3";
+    const regs = [exempted, settled, pending];
+    const close = summarizeContributionClose(regs);
+    assert.equal(close.expectedClp, 10_000 + 17_000);
+    assert.equal(close.collectedClp, 10_000);
+    assert.equal(close.remainingClp, 17_000);
+    assert.equal(close.countsByStatus.no_charge, 1);
+    assert.equal(close.countsByStatus.paid, 1);
+    assert.equal(close.countsByStatus.pending, 1);
+    assert.equal(close.expectedClp - close.collectedClp, close.remainingClp);
+
+    const ledger = reconcilePostedAllocationsWithCollected([paid.payment], regs);
+    assert.equal(ledger.deltaClp, 0);
+    assert.equal(ledger.collectedClp, 10_000);
+
+    const zone = breakdownContributionsByZone(regs);
+    assert.equal(zone.length, 1);
+    assert.equal(zone[0]?.expectedClp, 27_000);
+    assert.equal(zone[0]?.collectedClp, 10_000);
+    assert.equal(zone[0]?.remainingClp, 17_000);
+    assert.equal(zone[0]?.count, 3);
+
+    const exemptReport = toReportPerson(exempted);
+    const lesserReport = toReportPerson(settled);
+    assert.equal(exemptReport.balanceClp, 0);
+    assert.equal(exemptReport.chargeClp, null);
+    assert.match(exemptReport.financeLabel, /Exento/);
+    assert.match(exemptReport.financeLabel, /Líder nacional/);
+    assert.match(exemptReport.financeLabel, /Acuerdo de la iglesia/);
+    assert.equal(lesserReport.chargeClp, 10_000);
+    assert.equal(lesserReport.paidClp, 10_000);
+    assert.equal(lesserReport.balanceClp, 0);
+    assert.match(lesserReport.financeLabel, /Pagado/);
+    assert.match(lesserReport.financeLabel, /no paga/);
+    assert.equal(
+      exemptReport.balanceClp + lesserReport.balanceClp + toReportPerson(pending).balanceClp,
+      close.remainingClp
+    );
+
+    const totalChargeClp = regs.reduce(
+      (sum, reg) => sum + (reg.chargeAmountClp ?? 0),
+      0
+    );
+    const totalPaidClp = regs.reduce((sum, reg) => sum + reg.allocatedPaidClp, 0);
+    assert.equal(totalChargeClp, close.expectedClp);
+    assert.equal(totalPaidClp, close.collectedClp);
+    assert.equal(Math.max(0, totalChargeClp - totalPaidClp), close.remainingClp);
+
+    const reportInput = {
+      registrations: regs,
+      payments: [paid.payment],
+      generatedAtIso: now,
+    };
+    const finance = buildOpsReport("finance", reportInput);
+    assert.equal(finance.kind, "finance");
+    if (finance.kind !== "finance") return;
+    assert.equal(finance.close.expectedClp, 27_000);
+    assert.equal(finance.close.collectedClp, 10_000);
+    assert.equal(finance.close.remainingClp, 17_000);
+    assert.equal(finance.reconcile.deltaClp, 0);
+    assert.equal(finance.zones[0]?.expectedClp, 27_000);
+    assert.equal(finance.zones[0]?.remainingClp, 17_000);
+
+    const debtors = buildOpsReport("debtors", reportInput);
+    assert.equal(debtors.kind, "debtors");
+    if (debtors.kind !== "debtors") return;
+    assert.equal(debtors.people, 1);
+    assert.equal(debtors.balanceClp, 17_000);
+
+    const cash = buildOpsReport("cash", reportInput);
+    assert.equal(cash.kind, "cash");
+    if (cash.kind !== "cash") return;
+    assert.equal(cash.totalsClp.total, 10_000);
+    assert.equal(cash.posted.length, 1);
+    assert.equal(cash.posted[0]?.amountClp, 10_000);
   });
 });
 
