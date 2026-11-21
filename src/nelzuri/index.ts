@@ -19,6 +19,7 @@ export {
   spaceRequiredBy,
   validateCatalog,
 } from "@/nelzuri/catalog/registry";
+export { desktopBands, relevance, type DesktopBands } from "@/nelzuri/catalog/relevance";
 export {
   isHttpsEntry,
   newlyContracted,

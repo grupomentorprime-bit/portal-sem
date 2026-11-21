@@ -49,7 +49,19 @@
 .desk-ghost.is-lifted { transform: scale(1.08); filter: drop-shadow(0 18px 22px rgba(0,0,0,.38)); transition: transform .16s cubic-bezier(.2,.8,.2,1), filter .16s ease; }
 .desk-ghost.is-settling { transform: scale(1); filter: drop-shadow(0 8px 10px rgba(0,0,0,.28)); transition: left .34s cubic-bezier(.22,.9,.28,1), top .34s cubic-bezier(.22,.9,.28,1), transform .34s cubic-bezier(.22,.9,.28,1), filter .34s ease; }
 .desk-ghost .glyph { --s: 1; width: 64px; height: 64px; border-radius: 18px; }
-.dock-wrap { position: absolute; z-index: 40; left: 0; right: 0; bottom: 28px; display: flex; justify-content: center; }
+.dock-wrap { position: absolute; z-index: 40; left: 0; right: 0; bottom: 28px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.dock-caption { margin: 0; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 650; color: rgba(255,255,255,.86); text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.catalog-shelf { display: flex; gap: 10px; width: min(760px, calc(100% - 32px)); max-height: 168px; }
+.catalog-shelf section { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 18px; background: rgba(11, 30, 93, .78); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(22px); overflow: auto; }
+.catalog-shelf p { margin: 0 0 8px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 650; }
+.catalog-shelf ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.catalog-shelf button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; border-radius: 12px; background: rgba(255,255,255,.08); color: #fff; text-align: left; font: inherit; cursor: pointer; padding: 6px; }
+.catalog-shelf button:hover { background: rgba(255,255,255,.16); }
+.catalog-shelf strong { display: block; font-size: 13px; font-weight: 650; }
+.catalog-shelf small { display: block; color: rgba(255,255,255,.72); font-size: 11px; line-height: 1.3; }
+.shelf-mark { width: 36px; height: 36px; flex: none; border-radius: 10px; display: grid; place-items: center; }
+.shelf-mark svg { width: 18px; height: 18px; }
+.sheet .hint { margin: 8px 0 0; font-size: 13px; color: #6b6580; }
 .notices { position: absolute; z-index: 36; top: 96px; right: 16px; width: min(360px, calc(100% - 32px)); pointer-events: none; }
 .notices ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .notices li { position: relative; pointer-events: auto; touch-action: pan-y; animation: notice-in .32s cubic-bezier(.2,.8,.2,1); }
@@ -750,6 +762,7 @@ input.desk-switch:checked::after { transform: translateX(20px); }
   .dock { gap: 4px; padding: 10px 8px 8px; border-radius: 22px; }
   .app small { font-size: 11px; }
   .dock-wrap { bottom: 12px; }
+  .catalog-shelf { flex-direction: column; max-height: 200px; }
   .notices { top: 124px; }
 }
 .attn-count { position: absolute; z-index: 3; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: #fff; color: var(--nelzuri-azul-profundo); font-style: normal; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }

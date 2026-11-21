@@ -90,7 +90,7 @@ export default async function EscritorioPage() {
     deskTenantId = entered;
   }
   const [contract, openRequests] = onPlatformDesk
-    ? [{ contracted: [], aprendeHoyEntryUrl: null }, []]
+    ? [{ contracted: [], aprendeHoyEntryUrl: null, spaceType: null }, []]
     : await Promise.all([
         readSpaceContract(deskTenantId),
         mongoAppRequestStore().listOpen(deskTenantId),
@@ -214,6 +214,7 @@ export default async function EscritorioPage() {
       }}
       contracted={contract.contracted}
       authorizedApps={authorizedApps}
+      spaceType={contract.spaceType}
       aprendeHoyEntryUrl={contract.aprendeHoyEntryUrl}
       aprendeHoyOrigin={aprendeHoyOriginFromEnv()}
       cumpleOrigin={cumpleOrigin}

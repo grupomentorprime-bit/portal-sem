@@ -35,6 +35,11 @@ export interface AppManifest {
   blurb: string;
   /** Puede persistirse en `contractedApps`. */
   contractable: boolean;
+  /**
+   * Rubros a los que orienta. No restringe el contrato ni la solicitud.
+   * Una aplicación pendiente no declara rubro: no se recomienda como operativa.
+   */
+  sectors?: readonly string[];
   defaultContract: DefaultContract;
   /** La apertura solo procede en este Espacio. */
   requiresSpaceId?: string;

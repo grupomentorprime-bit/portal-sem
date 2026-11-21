@@ -29,7 +29,7 @@ import {
   type WallpaperChoice,
 } from "@/lib/desktop/catalog";
 import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
-import { canManageAppKeys, desktopVisibleApps } from "@/lib/desktop/app-access";
+import { canManageAppKeys, desktopBands } from "@/lib/desktop/app-access";
 import {
   connectLaunchForm,
   createTransactionVerifier,
@@ -84,6 +84,8 @@ export interface MentorDesktopProps {
   contracted: MentorAppId[];
   /** Llaves de la membresía en el Espacio activo. Ausente = legado (todo el techo). */
   authorizedApps?: MentorAppId[] | null;
+  /** `tenants.type`. Orienta recomendaciones. No filtra lo ya habilitado. */
+  spaceType?: string | null;
   aprendeHoyEntryUrl: string | null;
   aprendeHoyOrigin: string | null;
   cumpleOrigin: string | null;
@@ -164,6 +166,32 @@ function toneClass(appId: DockAppId): string {
 
 function glyphClass(appId: DockAppId): string {
   return `glyph ${toneClass(appId)}`;
+}
+
+function CatalogBand(props: {
+  title: string;
+  apps: MentorAppId[];
+  onOpen: (appId: MentorAppId) => void;
+}) {
+  if (props.apps.length === 0) return null;
+  return (
+    <section aria-label={props.title}>
+      <p>{props.title}</p>
+      <ul>
+        {props.apps.map((appId) => (
+          <li key={appId}>
+            <button type="button" onClick={() => props.onOpen(appId)}>
+              <span className={`shelf-mark ${toneClass(appId)}`}>{renderGlyph(appId)}</span>
+              <span>
+                <strong>{dockAppLabel(appId)}</strong>
+                <small>{dockAppBlurb(appId)}</small>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function renderGlyph(appId: DockAppId) {
@@ -298,28 +326,32 @@ export function MentorDesktop(props: MentorDesktopProps) {
     props.spaces.find((space) => space.tenantId === props.activeTenantId)?.name?.trim() ||
     props.spaceName;
   const canRequestPlan = canManageAppKeys(props.permissions ?? []);
-  const dockApps = useMemo<DockAppId[]>(() => {
-    if (owner) return desktopDock(true);
-    return [
-      ...desktopVisibleApps({
+  const bands = useMemo(
+    () =>
+      desktopBands({
+        spaceType: props.spaceType,
         contracted: props.contracted,
         authorizedApps: props.authorizedApps ?? null,
         canRequestPlan,
       }),
-      "mensajes",
-    ];
-  }, [owner, props.contracted, props.authorizedApps, canRequestPlan]);
+    [props.spaceType, props.contracted, props.authorizedApps, canRequestPlan]
+  );
+  const dockApps = useMemo<DockAppId[]>(() => {
+    if (owner) return desktopDock(true);
+    return [...bands.mine, "mensajes"];
+  }, [owner, bands.mine]);
   const [icons, setIcons] = useState<DeskIconSpot[]>(() =>
     completeDeskIcons(
       props.layout,
       owner
         ? desktopDock(true)
         : [
-            ...desktopVisibleApps({
+            ...desktopBands({
+              spaceType: props.spaceType,
               contracted: props.contracted,
               authorizedApps: props.authorizedApps ?? null,
               canRequestPlan: canManageAppKeys(props.permissions ?? []),
-            }),
+            }).mine,
             "mensajes",
           ]
     )
@@ -1290,7 +1322,22 @@ export function MentorDesktop(props: MentorDesktopProps) {
         onPointerLeave={releaseDock}
       >
         <div className="dock-runway" aria-hidden="true" />
-        <div className="dock" ref={dockRef}>
+        {!owner && (bands.recommended.length > 0 || bands.explore.length > 0) ? (
+          <div className="catalog-shelf" aria-label="Catálogo">
+            <CatalogBand
+              title="Recomendadas"
+              apps={bands.recommended}
+              onOpen={(appId) => handleApp(appId)}
+            />
+            <CatalogBand
+              title="Explorar catálogo"
+              apps={bands.explore}
+              onOpen={(appId) => handleApp(appId)}
+            />
+          </div>
+        ) : null}
+        {owner ? null : <p className="dock-caption">Mis aplicaciones</p>}
+        <div className="dock" ref={dockRef} aria-label={owner ? undefined : "Mis aplicaciones"}>
           {dockApps.map((appId) => {
             const action = isMentorAppId(appId)
               ? desktopClick({
@@ -1464,6 +1511,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
             <p className="kicker">{sheetKicker}</p>
             <h2 id="desktop-sheet-title">{mentorAppLabel(sheet.appId)}</h2>
             <p>{mentorAppBlurb(sheet.appId)}</p>
+            {sheet.kind === "request" ? (
+              <p className="hint">La solicitud no contrata, no habilita y no genera un cargo.</p>
+            ) : null}
             <div className="row">
               {sheet.kind === "request" ? (
                 <button

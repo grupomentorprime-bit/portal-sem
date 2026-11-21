@@ -28,6 +28,9 @@ export function validateCatalog(
       if (item.contractable || item.defaultContract.when !== "never" || item.open.type !== "none") {
         throw new Error(`${id} está pendiente y no entra al contrato ni a la mesa.`);
       }
+      if (item.sectors?.length) {
+        throw new Error(`${id} está pendiente y no se recomienda como operativa.`);
+      }
     }
     if (item.class === "specialized" && item.contractable) {
       throw new Error(`${id} es especializada y no se contrata.`);

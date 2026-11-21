@@ -17,6 +17,7 @@ const growthOs = manifest({
   label: PLATFORM_DISPLAY_NAME,
   blurb: "Captación y conversión del Espacio.",
   contractable: true,
+  sectors: ["business"],
   defaultContract: { when: "field-missing" },
   open: { type: "internal", href: "/admin" },
 });
@@ -40,6 +41,7 @@ const aprendeHoy = manifest({
   label: "Aprende Hoy",
   blurb: "Vida académica: admisión, clases, evaluación y campus.",
   contractable: true,
+  sectors: ["education"],
   defaultContract: { when: "never" },
   open: { type: "connect-or-https", channel: "aprende-hoy" },
 });
@@ -51,6 +53,7 @@ const rrhh = manifest({
   label: "RR.HH.",
   blurb: "Personas empleadas, contratos y jornada.",
   contractable: true,
+  sectors: ["business"],
   defaultContract: { when: "never" },
   open: { type: "connect", channel: "rrhh", missing: "later" },
 });
