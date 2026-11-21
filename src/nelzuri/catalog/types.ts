@@ -1,14 +1,20 @@
-/** Clase de una aplicación del escritorio. */
-export type AppClass = "essential" | "transversal" | "specialized";
+/**
+ * Clase de una aplicación del escritorio.
+ * Las capacidades esenciales de NELZURI no son aplicaciones y no usan este tipo.
+ */
+export type AppClass = "transversal" | "specialized";
 
 /**
  * Dónde vive la aplicación.
- * `internal` corre en este proceso. `connect` sale por el protocolo ya existente.
- * `unassigned` está registrada y todavía no se abre desde la mesa.
+ * `internal` y `connect` ya están integradas.
+ * `pending` está identificada y todavía no se integra.
  */
-export type AppIntegration = "internal" | "connect" | "unassigned";
+export type AppIntegration = "internal" | "connect" | "pending";
 
-/** Qué pasa con el contrato cuando el Espacio no trae el campo. */
+/**
+ * Qué se asume solo cuando un documento antiguo no trae `contractedApps`.
+ * Una lista guardada, aunque esté vacía, no usa esta regla.
+ */
 export type DefaultContract =
   | { when: "never" }
   | { when: "field-missing"; spaceId?: string };

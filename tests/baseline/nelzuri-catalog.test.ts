@@ -2,9 +2,15 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { describe, it } from "node:test";
+import { filterSpaceSettingGroups } from "../../src/lib/desktop/space-settings";
+import { desktopDock } from "../../src/lib/desktop/catalog";
 import {
   MENTOR_APPS,
+  NELZURI_CAPABILITIES,
   appsByClass,
+  availableCoreCapabilities,
+  decideOpening,
+  desktopVisibleApps,
   evaluateAppRequest,
   isMentorAppId,
   listManifests,
@@ -12,6 +18,7 @@ import {
   parseContractPatch,
   resolveContractedApps,
   validateCatalog,
+  type AppClass,
   type AppManifest,
 } from "../../src/nelzuri";
 
@@ -53,9 +60,10 @@ describe("catálogo y contratos de NELZURI", () => {
     );
   });
 
-  it("separa esenciales, transversales y especializadas", () => {
-    assert.deepEqual(appsByClass("essential").map((item) => item.id), ["growth-os"]);
+  it("Growth OS es transversal; ninguna aplicación es capacidad esencial", () => {
+    assert.equal(listManifests().some((item) => (item.class as string) === "essential"), false);
     assert.deepEqual(appsByClass("transversal").map((item) => item.id), [
+      "growth-os",
       "cumple",
       "aprende-hoy",
       "rrhh",
@@ -68,15 +76,80 @@ describe("catálogo y contratos de NELZURI", () => {
       "congreso",
     ]);
     const growth = manifestById("growth-os");
+    assert.equal(growth.class, "transversal");
+    assert.equal(growth.contractable, true);
     assert.equal(growth.integration, "internal");
     assert.deepEqual(growth.open, { type: "internal", href: "/admin" });
     for (const id of ["cumple", "aprende-hoy", "rrhh"] as const) {
       assert.equal(manifestById(id).integration, "connect");
+      assert.equal(manifestById(id).class, "transversal");
     }
     for (const item of [...appsByClass("specialized"), manifestById("store"), manifestById("connect")]) {
       assert.equal(item.contractable, false);
       assert.equal(isMentorAppId(item.id), false);
     }
+  });
+
+  it("separa lo ya integrado de lo pendiente, y deja Factura fuera", () => {
+    assert.deepEqual(
+      listManifests()
+        .filter((item) => item.integration === "internal" || item.integration === "connect")
+        .map((item) => item.id),
+      ["growth-os", "cumple", "aprende-hoy", "rrhh"]
+    );
+    assert.deepEqual(
+      listManifests()
+        .filter((item) => item.integration === "pending")
+        .map((item) => item.id),
+      ["store", "connect", "admision", "asuntos-estudiantiles", "congreso"]
+    );
+    for (const id of ["factura", "nelzuri-factura"]) {
+      assert.equal(listManifests().some((item) => item.id === id), false);
+      assert.equal(isMentorAppId(id), false);
+    }
+  });
+
+  it("el núcleo opera sin Growth OS; la omisión del campo sigue siendo solo compatibilidad", () => {
+    assert.deepEqual([...NELZURI_CAPABILITIES], [
+      "escritorio",
+      "identidad",
+      "clientes",
+      "espacios",
+      "usuarios",
+      "membresias",
+      "permisos",
+      "catalogo",
+      "administracion",
+    ]);
+    assert.deepEqual([...availableCoreCapabilities()], [...NELZURI_CAPABILITIES]);
+    for (const capability of NELZURI_CAPABILITIES) {
+      assert.equal(isMentorAppId(capability), false);
+    }
+
+    assert.deepEqual(resolveContractedApps({ tenantId: "espacio-nuevo", contractedApps: [] }), []);
+    assert.deepEqual(resolveContractedApps({ tenantId: "espacio-nuevo" }), ["growth-os"]);
+    assert.deepEqual(
+      desktopVisibleApps({ contracted: [], authorizedApps: null, canRequestPlan: false }),
+      []
+    );
+    assert.deepEqual(
+      decideOpening({
+        appId: "growth-os",
+        tenantId: "espacio-nuevo",
+        contracted: [],
+        signals: { productOrigin: false, httpsEntry: null },
+      }),
+      { kind: "request" }
+    );
+    assert.deepEqual(desktopDock(false), ["growth-os", "cumple", "aprende-hoy", "rrhh", "mensajes"]);
+    assert.deepEqual(
+      filterSpaceSettingGroups(
+        ["settings.update", "settings.team", "identity.roles.manage", "settings.integrations"],
+        undefined,
+        []
+      ).flatMap((group) => group.items.map((item) => item.id)),
+      ["empresa", "marca", "equipo", "roles", "canales", "integraciones"]
+    );
   });
 
   it("la omisión de Growth OS y el Espacio de Cumple viven en el manifiesto", () => {
@@ -121,6 +194,20 @@ describe("catálogo y contratos de NELZURI", () => {
     };
     assert.throws(() => validateCatalog([specialized], []));
     assert.throws(() => validateCatalog([...listManifests(), manifestById("growth-os")], MENTOR_APPS));
+    const markedEssential: AppManifest = {
+      ...manifestById("growth-os"),
+      class: "essential" as unknown as AppClass,
+    };
+    assert.throws(() => validateCatalog([markedEssential], ["growth-os"]), /esencial/);
+    const factura: AppManifest = {
+      ...manifestById("store"),
+      id: "nelzuri-factura",
+      label: "NELZURI Factura",
+    };
+    assert.throws(
+      () => validateCatalog([manifestById("growth-os"), factura], ["growth-os"]),
+      /independiente/
+    );
   });
 
   it("el núcleo no importa Growth OS, Connect ni una funcionalidad de cliente", () => {

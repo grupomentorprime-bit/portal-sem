@@ -16,8 +16,8 @@ function includedWhenFieldMissing(appId: MentorAppId, tenantId: string): boolean
 
 /**
  * Techo del Espacio.
- * Lista guardada: se respeta, en el orden histórico.
- * Campo ausente: lo dice el manifiesto de cada aplicación.
+ * Lista guardada, incluso vacía: se respeta, en el orden histórico.
+ * Campo ausente: compatibilidad con datos viejos. No obliga a contratar una aplicación.
  */
 export function resolveContractedApps(input: {
   tenantId: string;

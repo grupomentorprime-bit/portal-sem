@@ -1,4 +1,9 @@
 export { MENTOR_APPS, type MentorAppId } from "@/nelzuri/catalog/manifests";
+export {
+  NELZURI_CAPABILITIES,
+  availableCoreCapabilities,
+  type NelzuriCapability,
+} from "@/nelzuri/catalog/capabilities";
 export type {
   AppClass,
   AppIntegration,

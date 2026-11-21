@@ -5,10 +5,14 @@ function manifest<const T extends AppManifest>(value: T): T {
   return value;
 }
 
-/** Aplicación interna. El núcleo no importa su código: solo esta ficha. */
+/**
+ * Aplicación transversal. Se contrata y se autoriza en el escritorio.
+ * El núcleo no importa su código: solo esta ficha.
+ * `field-missing` cubre documentos que no traen el campo. No obliga a un Espacio nuevo.
+ */
 const growthOs = manifest({
   id: "growth-os",
-  class: "essential",
+  class: "transversal",
   integration: "internal",
   label: PLATFORM_DISPLAY_NAME,
   blurb: "Captación y conversión del Espacio.",
@@ -55,7 +59,7 @@ const rrhh = manifest({
 const store = manifest({
   id: "store",
   class: "transversal",
-  integration: "unassigned",
+  integration: "pending",
   label: "Store",
   blurb: "Aplicación registrada. Todavía no entra al contrato del Espacio.",
   contractable: false,
@@ -66,7 +70,7 @@ const store = manifest({
 const connect = manifest({
   id: "connect",
   class: "transversal",
-  integration: "unassigned",
+  integration: "pending",
   label: "Connect",
   blurb: "Protocolo de apertura de Cumple, Aprende Hoy y RR.HH.",
   contractable: false,
@@ -78,7 +82,7 @@ const connect = manifest({
 const admision = manifest({
   id: "admision",
   class: "specialized",
-  integration: "unassigned",
+  integration: "pending",
   label: "Admisión",
   blurb: "Capacidad de un Espacio. No se contrata desde el escritorio.",
   contractable: false,
@@ -89,7 +93,7 @@ const admision = manifest({
 const asuntosEstudiantiles = manifest({
   id: "asuntos-estudiantiles",
   class: "specialized",
-  integration: "unassigned",
+  integration: "pending",
   label: "Asuntos estudiantiles",
   blurb: "Capacidad de un Espacio. No se contrata desde el escritorio.",
   contractable: false,
@@ -100,7 +104,7 @@ const asuntosEstudiantiles = manifest({
 const congreso = manifest({
   id: "congreso",
   class: "specialized",
-  integration: "unassigned",
+  integration: "pending",
   label: "Congreso",
   blurb: "Capacidad de un Espacio. No se contrata desde el escritorio.",
   contractable: false,

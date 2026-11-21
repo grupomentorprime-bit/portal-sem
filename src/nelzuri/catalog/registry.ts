@@ -1,6 +1,9 @@
 import { APP_MANIFESTS, MENTOR_APPS, type MentorAppId } from "@/nelzuri/catalog/manifests";
 import type { AppClass, AppManifest } from "@/nelzuri/catalog/types";
 
+/** Siguen aparte hasta que se autorice su incorporación al catálogo. */
+const INDEPENDENT_PRODUCTS = new Set(["factura", "nelzuri-factura"]);
+
 export function validateCatalog(
   manifests: readonly AppManifest[],
   contractableOrder: readonly string[]
@@ -15,6 +18,17 @@ export function validateCatalog(
     }
     seen.add(id);
 
+    if ((item.class as string) === "essential") {
+      throw new Error(`${id} no es una capacidad esencial. Las capacidades esenciales no son aplicaciones.`);
+    }
+    if (INDEPENDENT_PRODUCTS.has(id)) {
+      throw new Error(`${id} permanece independiente hasta una autorización expresa.`);
+    }
+    if (item.integration === "pending") {
+      if (item.contractable || item.defaultContract.when !== "never" || item.open.type !== "none") {
+        throw new Error(`${id} está pendiente y no entra al contrato ni a la mesa.`);
+      }
+    }
     if (item.class === "specialized" && item.contractable) {
       throw new Error(`${id} es especializada y no se contrata.`);
     }
@@ -55,7 +69,7 @@ export function validateCatalog(
   }
 
   if (unconditionalDefaults !== 1) {
-    throw new Error("Debe haber una sola aplicación cuando el Espacio no trae el campo.");
+    throw new Error("Debe haber una sola aplicación de compatibilidad cuando el Espacio no trae el campo.");
   }
 
   const contractable = manifests.filter((item) => item.contractable).map((item) => item.id);
