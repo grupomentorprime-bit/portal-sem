@@ -2,6 +2,7 @@ import "server-only";
 
 import { MongoClient } from "mongodb";
 import { logServerError } from "@/core/security/redact";
+import { assertIsolatedDev } from "@/lib/mongo/local-boundary";
 
 declare global {
   var mongo: Promise<MongoClient> | undefined;
@@ -15,6 +16,10 @@ function requireMongoEnv(): { uri: string; dbName: string } {
 
   if (!uri || !dbName) {
     throw new Error("La base de datos no está configurada.");
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    assertIsolatedDev(process.env);
   }
 
   return { uri, dbName };

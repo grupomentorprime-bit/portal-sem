@@ -1,10 +1,11 @@
 /**
  * OT-GROWTH-MESSAGING-003 — responder WhatsApp (Cloud API outbound).
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient } from "mongodb";
 import {
@@ -22,28 +23,12 @@ import {
   upsertGrowthWhatsAppConnection,
   type WhatsAppCloudApiPort,
 } from "../../src/core/growth";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import { migration020GrowthWhatsAppOutbound } from "../../src/core/migrations/020-growth-whatsapp-outbound";
 import { MIGRATIONS } from "../../src/core/migrations/registry";
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 function readSrc(rel: string): string {
@@ -465,16 +450,15 @@ describe("OT-GROWTH-MESSAGING-003 — seguridad / frontera", () => {
   it("ensureGrowthMessagingIndexes incluye clientRequestId (si hay Mongo)", async () => {
     loadTestMongoEnv();
     const uri = process.env.MONGODB_URI;
-    if (!uri) {
+    const dbName = uri ? isolatedDatabaseName(import.meta.url) : undefined;
+    if (!uri || !dbName) {
       assert.ok(true);
       return;
     }
     const client = new MongoClient(uri);
     await client.connect();
     try {
-      const db = client.db(
-        process.env.MONGODB_DB || `portal_sem_test_wa_out_${Date.now()}`
-      );
+      const db = client.db(dbName);
       const first = await ensureGrowthMessagingIndexes(db);
       assert.ok(
         first.results.some((r) => r.name === "tenantId_clientRequestId_unique")

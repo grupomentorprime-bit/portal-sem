@@ -2,9 +2,10 @@
  * Subdominio automático por Espacio sobre el wildcard de la plataforma.
  * Crear un Espacio registra `{slug}.{apex}` y ese host resuelve solo ese Espacio.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import {
@@ -28,7 +29,6 @@ import {
   resolveSpaceBaseDomain,
 } from "../../src/core/tenant/hosts";
 import { resolvePublicTenantByHost } from "../../src/core/tenant/resolve";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import { createDefaultSiteConfig } from "../../src/lib/cms/defaults";
 import type {
   DomainDocument,
@@ -45,24 +45,9 @@ const PLATFORM_ENV = {
   SPACE_BASE_DOMAIN: SPACE_BASE,
 };
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(
@@ -71,7 +56,7 @@ async function withDb(
 ): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     t.skip("Sin MONGODB_URI/MONGODB_DB");
     return;

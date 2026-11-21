@@ -1,6 +1,7 @@
 /**
  * OT-GROWTH-PLATFORM-ADMIN-004 — Entrar a Espacio (Platform Admin V1 cierre).
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -18,13 +19,14 @@ import {
   ADL_TENANT_ID,
   SEM_TENANT_ID,
 } from "../../src/core/tenant/constants";
+import { ensureSemTenantFoundation } from "../../src/core/tenant/migrate-sem";
+import type { DomainDocument } from "../../src/core/tenant/types";
 import { SPACE_ACCESS_REQUIRED_MESSAGE } from "../../src/core/identity/platform/enter-messages";
 import {
   grantOperatorSpaceAccess,
   operatorHasActiveSpaceAccess,
   PlatformEnterSpaceError,
 } from "../../src/core/identity/platform/grant-space-access";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 
 const ROOT = process.cwd();
 
@@ -46,30 +48,15 @@ function walkTsFiles(dir: string, files: string[] = []): string[] {
   return files;
 }
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(ROOT, filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;
@@ -184,6 +171,8 @@ describe("OT-GROWTH-PLATFORM-ADMIN-004 — membresía acotada Mongo", () => {
       const stamp = Date.now().toString(36);
       const userId = `usr-pa4-${stamp}`;
       const tenantId = SEM_TENANT_ID;
+      const host = `pa4-${stamp}.example.test`;
+      await ensureSemTenantFoundation(db, { hosts: [host] });
 
       // Asegurar rol support del Espacio SEM.
       const supportId = roleIdForTenant(tenantId, ROLE_CODES.SUPPORT);
@@ -288,6 +277,7 @@ describe("OT-GROWTH-PLATFORM-ADMIN-004 — membresía acotada Mongo", () => {
           userId,
           action: "platform.space.access.grant",
         });
+        await db.collection<DomainDocument>("domains").deleteOne({ _id: host });
       }
     });
   });

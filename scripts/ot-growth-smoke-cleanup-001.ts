@@ -9,6 +9,7 @@
  * inventory escribe por defecto inventory-before.json; pasar un outfile
  * (p.ej. inventory-after.json) para no sobrescribir el inventario previo.
  */
+import "./_mongo-guard";
 import { mkdirSync, writeFileSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { MongoClient, ObjectId, type Db, type Document } from "mongodb";

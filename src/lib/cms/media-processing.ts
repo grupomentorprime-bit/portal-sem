@@ -5,6 +5,7 @@ import {
   THUMBNAIL_WIDTH,
 } from "@/lib/cms/media-defaults";
 import { sanitizeSvgMarkup } from "@/lib/cms/sanitize";
+import type { MediaDistribution } from "@/core/security/media-access";
 import { putMediaFile, buildStorageKey } from "@/lib/cms/media-storage";
 import type { MediaResponsiveUrls } from "@/types/media";
 
@@ -43,7 +44,8 @@ async function generateWebpVariants(
   mediaId: string,
   baseName: string,
   widths: readonly number[],
-  responsive: MediaResponsiveUrls
+  responsive: MediaResponsiveUrls,
+  distribution: MediaDistribution
 ): Promise<void> {
   for (const width of widths) {
     const variantKey = buildStorageKey(tenant, mediaId, `${baseName}-w${width}.webp`);
@@ -52,7 +54,7 @@ async function generateWebpVariants(
       .resize({ width, withoutEnlargement: true })
       .webp({ quality: 82 })
       .toBuffer();
-    const stored = await putMediaFile(variantKey, variantBuf, "image/webp");
+    const stored = await putMediaFile(variantKey, variantBuf, "image/webp", tenant, distribution);
     const urlKey = `w${width}` as keyof MediaResponsiveUrls;
     responsive[urlKey] = stored.publicUrl;
   }
@@ -64,12 +66,13 @@ export async function processUploadedImage(
   tenant: string,
   mediaId: string,
   baseName: string,
-  variantProfile: ImageVariantProfile = "default"
+  variantProfile: ImageVariantProfile = "default",
+  distribution: MediaDistribution = "private"
 ): Promise<ProcessedImageResult> {
   if (mimeType === "image/svg+xml") {
     const safe = sanitizeSvg(buffer);
     const key = buildStorageKey(tenant, mediaId, `${baseName}.svg`);
-    const stored = await putMediaFile(key, safe, mimeType);
+    const stored = await putMediaFile(key, safe, mimeType, tenant, distribution);
     return {
       metadata: {},
       responsive: {},
@@ -89,7 +92,7 @@ export async function processUploadedImage(
   const responsive: MediaResponsiveUrls = {};
   const originalKey = buildStorageKey(tenant, mediaId, `${baseName}.webp`);
   const originalWebp = await image.clone().webp({ quality: 85 }).toBuffer();
-  const originalStored = await putMediaFile(originalKey, originalWebp, "image/webp");
+  const originalStored = await putMediaFile(originalKey, originalWebp, "image/webp", tenant, distribution);
   responsive.webp = originalStored.publicUrl;
 
   const thumbKey = buildStorageKey(tenant, mediaId, `${baseName}-thumb.webp`);
@@ -98,13 +101,13 @@ export async function processUploadedImage(
     .resize({ width: THUMBNAIL_WIDTH, withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
-  const thumbStored = await putMediaFile(thumbKey, thumbBuf, "image/webp");
+  const thumbStored = await putMediaFile(thumbKey, thumbBuf, "image/webp", tenant, distribution);
   responsive.thumbnail = thumbStored.publicUrl;
 
   if (variantProfile === "hero") {
-    await generateWebpVariants(image, tenant, mediaId, baseName, HERO_WEBP_WIDTHS, responsive);
+    await generateWebpVariants(image, tenant, mediaId, baseName, HERO_WEBP_WIDTHS, responsive, distribution);
   } else {
-    await generateWebpVariants(image, tenant, mediaId, baseName, RESPONSIVE_WIDTHS, responsive);
+    await generateWebpVariants(image, tenant, mediaId, baseName, RESPONSIVE_WIDTHS, responsive, distribution);
   }
 
   return {

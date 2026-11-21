@@ -2,6 +2,7 @@
  * OT-GROWTH-SAAS-009 — T002 Academia ADL + coexistencia multi-tenant.
  * Reutiliza SAAS-001→008. Sin ramas `if (tenant === "adl")`.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -30,6 +31,8 @@ import {
 } from "../../src/core/tenant/adl-site-identity";
 import { SEM_SITE_IDENTITY } from "../../src/core/tenant/sem-site-identity";
 import { ensureAdlTenantFoundation } from "../../src/core/tenant/migrate-adl";
+import { ensureSemTenantFoundation } from "../../src/core/tenant/migrate-sem";
+import { materializeSemTenantContent } from "../../src/core/tenant/sem-content";
 import { migration012SaasAdlTenant } from "../../src/core/migrations/012-saas-adl-tenant";
 import {
   isHostResolutionPortalActive,
@@ -58,7 +61,6 @@ import {
 import { createEmptyAdmissionConfig } from "../../src/lib/portal/empty-admission";
 import { resolveFooterContent } from "../../src/lib/portal/footer-content";
 import { shouldUseHomeDemoContent } from "../../src/lib/portal/institutional-demo";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import type { PortalFooterPremiumViewModel } from "../../src/types/footer-premium";
 import type {
   SiteConfigDocument,
@@ -104,30 +106,15 @@ const ADL_RUNTIME_ALLOWLIST = new Set([
   "src/core/migrations/registry.ts",
 ]);
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;
@@ -305,6 +292,7 @@ describe("OT-GROWTH-SAAS-009 — contrato T002 y anti-rama ADL", () => {
 describe("OT-GROWTH-SAAS-009 — coexistencia Mongo T001 + T002", () => {
   it("bootstrap T002 es idempotente y no contamina SEM", async () => {
     await withDb(async (db) => {
+      await ensureSemTenantFoundation(db, { hosts: [SEM_DEV_HOST_DEFAULT] });
       const first = await ensureAdlTenantFoundation(db);
       const second = await ensureAdlTenantFoundation(db);
 
@@ -352,6 +340,7 @@ describe("OT-GROWTH-SAAS-009 — coexistencia Mongo T001 + T002", () => {
 
   it("hosts: SEM→T001, ADL→T002, desconocido no cae a ninguno", async () => {
     await withDb(async (db) => {
+      await ensureSemTenantFoundation(db, { hosts: [SEM_DEV_HOST_DEFAULT] });
       await ensureAdlTenantFoundation(db);
 
       const adl = await resolvePublicTenantByHost(ADL_DEV_HOST_DEFAULT, { db });
@@ -385,6 +374,8 @@ describe("OT-GROWTH-SAAS-009 — coexistencia Mongo T001 + T002", () => {
 
   it("aislamiento: datos, IDs lógicos, storage y desactivar T002 no toca T001", async () => {
     await withDb(async (db) => {
+      await ensureSemTenantFoundation(db, { hosts: [SEM_DEV_HOST_DEFAULT] });
+      await materializeSemTenantContent(db);
       await ensureAdlTenantFoundation(db);
 
       const formsAdl = await db

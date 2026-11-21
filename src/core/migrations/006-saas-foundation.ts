@@ -9,7 +9,7 @@ import type { MigrationDefinition } from "@/core/migrations/types";
 export const migration006SaasFoundation: MigrationDefinition = {
   id: "006-saas-foundation",
   description:
-    "SEM T001/S001/Domain + site_config desde cms_config; backfill menús sin tenant",
+    "SEM T001/S001/Domain + site_config propio; cms_config solo si ya existe",
   modules: [],
 
   async run({ db, log }) {

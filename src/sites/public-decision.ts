@@ -4,8 +4,27 @@ export type PublicSiteDecision =
   | { kind: "platform" }
   | { kind: "coming-soon" }
   | { kind: "passthrough" }
+  | { kind: "portal" }
   | { kind: "page"; path: string }
   | { kind: "not-found" };
+
+/**
+ * El módulo de sitio no es el registro de carpetas en código.
+ * Un sitio codificado de este repositorio cuenta como módulo de ese Espacio.
+ * `siteEnabled: false` niega el portal aunque alguien publique.
+ * Sin el campo, un sitio ya publicado conserva el portal (compatibilidad).
+ * Un cliente nuevo nace con `siteEnabled: false` y no recibe sitio por defecto.
+ */
+export function isContractedSiteModule(input: {
+  hasCodedSite: boolean;
+  siteEnabled: boolean | undefined;
+  sitePublished: boolean;
+}): boolean {
+  if (input.hasCodedSite) return true;
+  if (input.siteEnabled === true) return true;
+  if (input.siteEnabled === false) return false;
+  return input.sitePublished === true;
+}
 
 function normalizePublicPath(pathname: string): string {
   const path = pathname.split("?")[0]?.split("#")[0] ?? "/";
@@ -28,10 +47,13 @@ export function decidePublicSite(input: {
   hasSiteModule: boolean;
   pathname: string;
   registeredPaths: string[];
+  /** false: el módulo habilitado se sirve por el portal, no por una carpeta de código. */
+  hasCodedSite?: boolean;
 }): PublicSiteDecision {
   if (!input.hasTenant) return { kind: "platform" };
   if (isDirectFormPath(input.pathname) || isHelpPath(input.pathname)) return { kind: "passthrough" };
   if (!input.sitePublished || !input.hasSiteModule) return { kind: "coming-soon" };
+  if (input.hasCodedSite === false) return { kind: "portal" };
 
   const path = normalizePublicPath(input.pathname);
   const registered = new Set(input.registeredPaths.map(normalizePublicPath));

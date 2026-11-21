@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { assertNonProductionClient } from "../../lib/mongo/local-boundary";
 
 export function loadEnvLocal(): void {
   const envPath = resolve(process.cwd(), ".env.local");
@@ -28,6 +29,10 @@ export function requireMongoEnv(): { uri: string; dbName: string } {
   }
   if (!dbName) {
     throw new Error("MONGODB_DB no está definida en .env.local");
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    assertNonProductionClient(uri, process.env);
   }
 
   return { uri, dbName };

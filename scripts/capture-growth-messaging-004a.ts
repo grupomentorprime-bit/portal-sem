@@ -6,6 +6,7 @@
  * Entrega: desktop bandeja · desktop escribiendo · móvil lista · móvil conversación.
  * No declara APTO VISUAL.
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

@@ -3,6 +3,7 @@
  * Actual /admin · maqueta con datos · maqueta vacía · comparativa.
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-admin-master-001.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

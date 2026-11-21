@@ -1,12 +1,21 @@
-import { SEM_TENANT_ID } from "@/core/tenant/constants";
 import type { MigrationDefinition } from "@/core/migrations/types";
 
 async function ensureIndex(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collection: { createIndex: (keys: Record<string, 1 | -1>, options?: any) => Promise<string> },
+  collection: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createIndex: (keys: Record<string, 1 | -1>, options?: any) => Promise<string>;
+    indexes: () => Promise<Array<{ name?: string }>>;
+  },
   keys: Record<string, 1 | -1>,
   options: { name: string; unique?: boolean }
 ): Promise<"created" | "exists"> {
+  let current: Array<{ name?: string }> = [];
+  try {
+    current = await collection.indexes();
+  } catch (error) {
+    if ((error as { code?: number }).code !== 26) throw error;
+  }
+  if (current.some((index) => index.name === options.name)) return "exists";
   try {
     const indexOptions: { name: string; background: boolean; unique?: boolean } = {
       name: options.name,
@@ -29,36 +38,14 @@ async function ensureIndex(
  */
 export const migration007SaasIsolation: MigrationDefinition = {
   id: "007-saas-isolation",
-  description:
-    "Índices tenantizados (pages/menus/media/workflows/invitations/forms) + backfill workflow_definitions.tenantId",
+    description:
+    "Índices tenantizados (pages/menus/media/workflows/invitations/forms). No asigna documentos huérfanos a SEM.",
   modules: [],
 
   async run({ db, log }) {
     let documentsAffected = 0;
     let skipped = 0;
     const details: string[] = [];
-
-    const wfBackfill = await db.collection("workflow_definitions").updateMany(
-      {
-        $or: [
-          { tenantId: { $exists: false } },
-          { tenantId: null },
-          { tenantId: "" },
-        ],
-      },
-      { $set: { tenantId: SEM_TENANT_ID } }
-    );
-    documentsAffected += wfBackfill.modifiedCount;
-    details.push(`workflow_definitions tenantId backfill=${wfBackfill.modifiedCount}`);
-
-    const menuBackfill = await db.collection("cms_menus").updateMany(
-      {
-        $or: [{ tenant: { $exists: false } }, { tenant: null }, { tenant: "" }],
-      },
-      { $set: { tenant: SEM_TENANT_ID } }
-    );
-    documentsAffected += menuBackfill.modifiedCount;
-    details.push(`cms_menus tenant backfill=${menuBackfill.modifiedCount}`);
 
     const indexSpecs: Array<{
       collection: string;

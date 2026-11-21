@@ -2,6 +2,7 @@
  * Corrige 1 alumno G-2025 mal clasificado en Otros.
  * npx tsx --env-file=.env scripts/fix-g2025-roster-misclassified.ts
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { normalizeGenerationValue } from "../src/lib/experience/forms/generations";
 

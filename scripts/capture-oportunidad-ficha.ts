@@ -2,6 +2,7 @@
  * Captura comparativa de la ficha de oportunidad (escritorio y móvil).
  * Uso: npx tsx --env-file=.env scripts/capture-oportunidad-ficha.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

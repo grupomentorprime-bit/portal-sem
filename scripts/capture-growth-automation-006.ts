@@ -5,6 +5,7 @@
  *
  * Entrega: crear con WAIT · resumen · activa · responsive.
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

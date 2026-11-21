@@ -1,14 +1,15 @@
 import { unlink, rm, readFile } from "fs/promises";
-import path from "path";
-import { resolveContainedMediaPath } from "@/core/security/media-access";
+import {
+  anonymousReadWouldExposePrivate,
+  authorizedDeliveryUrl,
+  mediaDiskRoot,
+  resolveContainedMediaPath,
+  resolveContainedMediaPrefix,
+  type MediaDistribution,
+} from "@/core/security/media-access";
 import { deleteS3Object, getS3ObjectBuffer, putS3Object } from "@/lib/cms/storage-s3";
 import { assertS3StorageForUpload, resolveStorageSettings } from "@/lib/cms/storage-config";
-import {
-  buildMediaProxyUrl,
-  isValidMediaStorageKey,
-  MEDIA_STREAM_PATH,
-  usesPrivateMediaProxy,
-} from "@/lib/cms/storage-normalize";
+import { isValidMediaStorageKey, MEDIA_STREAM_PATH } from "@/lib/cms/storage-normalize";
 import type { ResolvedStorageSettings } from "@/types/integrations";
 
 export interface StoragePutResult {
@@ -17,34 +18,20 @@ export interface StoragePutResult {
 }
 
 function localMediaRoot(): string {
-  const configured = process.env.MEDIA_LOCAL_ROOT?.trim();
-  if (configured) return configured;
-
-  // En Docker/producción public/ suele ser de solo lectura para el usuario de la app.
-  if (process.env.NODE_ENV === "production") {
-    return path.join(process.cwd(), "data", "media");
-  }
-
-  return path.join(process.cwd(), "public", "media");
+  return mediaDiskRoot();
 }
 
-function buildPublicUrl(settings: ResolvedStorageSettings, key: string): string {
-  if (settings.mode === "s3" && settings.s3) {
-    if (usesPrivateMediaProxy(settings)) {
-      return buildMediaProxyUrl(key);
-    }
-    if (settings.s3.publicUrl) {
-      return `${settings.s3.publicUrl}/media/${key}`;
-    }
-  }
-
-  const base = process.env.S3_PUBLIC_URL?.replace(/\/$/, "")
-    ?? process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "")
-    ?? process.env.APP_URL?.replace(/\/$/, "")
-    ?? "";
-
-  if (base && settings.mode === "s3") return `${base}/media/${key}`;
-  return `/media/${key}`;
+function buildPublicUrl(
+  settings: ResolvedStorageSettings,
+  key: string,
+  distribution: MediaDistribution
+): string {
+  return authorizedDeliveryUrl({
+    distribution,
+    key,
+    publicBase: settings.mode === "s3" ? settings.s3?.publicUrl : null,
+    accessMode: settings.s3?.accessMode ?? "private",
+  });
 }
 
 function stripMediaVersionQuery(url: string): string {
@@ -89,10 +76,11 @@ async function resolveTenantId(explicit?: string): Promise<string> {
 /** Reconstruye la URL pública actual de un archivo según la configuración de almacenamiento activa. */
 export async function resolveMediaStoragePublicUrl(
   storageKey: string,
-  tenantId?: string
+  tenantId?: string,
+  distribution: MediaDistribution = "private"
 ): Promise<string> {
   const settings = await resolveStorageSettings(await resolveTenantId(tenantId));
-  return buildPublicUrl(settings, storageKey);
+  return buildPublicUrl(settings, storageKey, distribution);
 }
 
 export async function readMediaFile(
@@ -138,14 +126,23 @@ export async function putMediaFile(
   key: string,
   buffer: Buffer,
   mimeType: string,
-  tenantId?: string
+  tenantId?: string,
+  distribution: MediaDistribution = "private"
 ): Promise<StoragePutResult> {
   const resolvedTenant = await resolveTenantId(tenantId);
   const s3 = await assertS3StorageForUpload(resolvedTenant);
+  if (
+    anonymousReadWouldExposePrivate(
+      { mode: "s3", accessMode: s3.accessMode, publicUrl: s3.publicUrl },
+      distribution
+    )
+  ) {
+    throw new Error("No se guarda un archivo privado en un almacenamiento de lectura anónima.");
+  }
   await putS3Object(s3, key, buffer, mimeType);
 
   const settings = await resolveStorageSettings(resolvedTenant);
-  return { key, publicUrl: buildPublicUrl(settings, key) };
+  return { key, publicUrl: buildPublicUrl(settings, key, distribution) };
 }
 
 export async function deleteMediaFile(key: string, tenantId?: string): Promise<void> {
@@ -156,7 +153,8 @@ export async function deleteMediaFile(key: string, tenantId?: string): Promise<v
     return;
   }
 
-  const filePath = path.join(localMediaRoot(), key);
+  const filePath = resolveContainedMediaPath(localMediaRoot(), key);
+  if (!filePath) return;
   try {
     await unlink(filePath);
   } catch {
@@ -169,7 +167,8 @@ export async function deleteMediaPrefix(prefix: string, tenantId?: string): Prom
   if (settings.mode === "s3") {
     return;
   }
-  const dirPath = path.join(localMediaRoot(), prefix);
+  const dirPath = resolveContainedMediaPrefix(localMediaRoot(), prefix);
+  if (!dirPath) return;
   try {
     await rm(dirPath, { recursive: true, force: true });
   } catch {

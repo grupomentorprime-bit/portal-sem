@@ -2,6 +2,7 @@
  * Compara nómina G-2024 pegada vs BD.
  * npx tsx --env-file=.env scripts/compare-g2024-roster.ts
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { parseConvocatoriaRosterRowsFromSheet } from "../src/lib/experience/forms/roster-import";
 import { formatGenerationDisplay, normalizeGenerationValue } from "../src/lib/experience/forms/generations";

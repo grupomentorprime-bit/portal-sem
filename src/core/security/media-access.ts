@@ -1,21 +1,22 @@
 import path from "path";
 
 /**
- * Revisión de enlaces, hecha en código antes de cambiar la puerta de la app.
- * El objeto en un bucket con URL pública sigue fuera de esta ruta: no se toca
- * la política del bucket ni Dokploy.
+ * Puerta de lectura. Un archivo es público solo con clasificación explícita
+ * (`distribution: "public"` o carpeta de exhibición del portal). El resto
+ * exige empresa, usuario y recurso. Ocultar la URL no alcanza: el disco del
+ * CMS no vive bajo `public/` y un bucket de lectura anónima rechaza la subida
+ * privada.
  */
 export const MEDIA_LINK_REVIEW = {
   reviewedOn: "2026-11-19",
-  baseCommit: "5388492",
+  baseCommit: "547f99c",
   appDoors: ["/api/cms/media/stream", "/media/[...path]"],
   directStorage:
-    "Con S3 en accessMode public, buildPublicUrl puede armar {publicUrl}/media/{key}. La app ya no entrega esa URL si el archivo es privado. El objeto sigue accesible para quien la conozca mientras el bucket no cambie.",
-  localDev:
-    "En desarrollo el disco puede quedar bajo public/media y Next lo sirve como estático.",
+    "Un archivo privado no recibe URL de bucket ni de CDN. Si accessMode no es private y hay publicUrl, la subida privada se rechaza.",
+  localDev: "El disco del CMS queda en data/media, fuera de public/media.",
   institutionalStatic:
-    "public/documentos y public/media institucionales no son el stream del CMS.",
-  unchanged: "No se modifica el bucket, el accessMode ni los archivos estáticos.",
+    "public/documentos y el catálogo institucional de public/media siguen públicos. No son objetos del CMS.",
+  unchanged: "No se llama a la API del bucket ni se reescriben los estáticos institucionales.",
 } as const;
 
 export type MediaDistribution = "public" | "private";
@@ -79,10 +80,37 @@ export function isSafeMediaStorageKey(key: string): boolean {
 
 export function resolveContainedMediaPath(root: string, key: string): string | null {
   if (!isSafeMediaStorageKey(key)) return null;
+  return containedStoragePath(root, key);
+}
+
+/** Prefijo de un asset (`tenant/media-id`), sin exigir el nombre del archivo. */
+export function resolveContainedMediaPrefix(root: string, prefix: string): string | null {
+  if (!prefix || prefix.length > 512) return null;
+  if (prefix.includes("\\") || prefix.includes("\0") || prefix.includes("%")) return null;
+  const parts = prefix.split("/");
+  if (parts.some((part) => part === "" || part === "." || part === "..")) return null;
+  if (!/^[a-z0-9-]+\/media-[a-z0-9-]+$/i.test(prefix)) return null;
+  return containedStoragePath(root, prefix);
+}
+
+function containedStoragePath(root: string, relative: string): string | null {
   const base = path.resolve(root);
-  const filePath = path.resolve(base, key);
+  const filePath = path.resolve(base, relative);
   if (filePath !== base && !filePath.startsWith(base + path.sep)) return null;
   return filePath;
+}
+
+/** Disco de objetos del CMS. Nunca el directorio estático de Next. */
+export function mediaDiskRoot(env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string {
+  const configured = env.MEDIA_LOCAL_ROOT?.trim();
+  if (configured) return configured;
+  return path.join(cwd, "data", "media");
+}
+
+export function mediaDiskIsPublicWebRoot(root: string, cwd = process.cwd()): boolean {
+  const publicMedia = path.resolve(cwd, "public", "media");
+  const resolved = path.resolve(root);
+  return resolved === publicMedia || resolved.startsWith(publicMedia + path.sep);
 }
 
 export function keyFromPublicObjectUrl(url: string): string | null {
@@ -100,13 +128,42 @@ export function keyFromPublicObjectUrl(url: string): string | null {
   }
 }
 
-/** Un documento privado no se entrega con la URL del bucket. La imagen pública conserva la suya. */
+/** Un documento privado no se entrega con la URL del bucket ni con `/media/…`. */
 export function presentMediaUrl(input: { distribution: MediaDistribution; url: string }): string {
   if (input.distribution !== "private") return input.url;
-  if (!/^https?:\/\//i.test(input.url)) return input.url;
   const key = keyFromPublicObjectUrl(input.url);
   if (!key) return input.url;
   return `/api/cms/media/stream?key=${encodeURIComponent(key)}`;
+}
+
+/**
+ * URL que ve el navegador. El CDN solo entra si el archivo es público y el
+ * almacenamiento está clasificado como público. Un privado siempre vuelve al proxy.
+ */
+export function authorizedDeliveryUrl(input: {
+  distribution: MediaDistribution;
+  key: string;
+  publicBase?: string | null;
+  accessMode?: string | null;
+}): string {
+  const base = input.publicBase?.replace(/\/$/, "") ?? "";
+  if (input.distribution === "public" && input.accessMode === "public" && base) {
+    return `${base}/media/${input.key}`;
+  }
+  return `/api/cms/media/stream?key=${encodeURIComponent(input.key)}`;
+}
+
+/** True cuando guardar ese privado lo dejaría legible sin credenciales. */
+export function anonymousReadWouldExposePrivate(
+  settings: {
+    mode: string;
+    accessMode?: string | null;
+    publicUrl?: string | null;
+  },
+  distribution: MediaDistribution
+): boolean {
+  if (distribution === "public") return false;
+  return settings.mode === "s3" && settings.accessMode !== "private" && Boolean(settings.publicUrl);
 }
 
 export function directStorageBypassesApp(settings: {
@@ -114,7 +171,7 @@ export function directStorageBypassesApp(settings: {
   accessMode?: string | null;
   publicUrl?: string | null;
 }): boolean {
-  return settings.mode === "s3" && settings.accessMode !== "private" && Boolean(settings.publicUrl);
+  return anonymousReadWouldExposePrivate(settings, "private");
 }
 
 export interface MediaReadAsset {
@@ -131,6 +188,7 @@ export function decideMediaRead(input: {
   operationalTenantId: string;
   asset: MediaReadAsset | null;
   memberTenantId: string | null;
+  memberUserId: string | null;
 }):
   | { allow: true; distribution: MediaDistribution; cacheControl: string }
   | { allow: false; status: 404 } {
@@ -148,7 +206,7 @@ export function decideMediaRead(input: {
   if (distribution === "public") {
     return { allow: true, distribution, cacheControl: "public, max-age=3600" };
   }
-  if (!input.memberTenantId || input.memberTenantId !== asset.tenant) {
+  if (!input.memberUserId || !input.memberTenantId || input.memberTenantId !== asset.tenant) {
     return { allow: false, status: 404 };
   }
   return { allow: true, distribution, cacheControl: "private, no-store" };

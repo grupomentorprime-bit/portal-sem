@@ -5,6 +5,7 @@
  * Idempotente: no sobrescribe *MediaId existentes.
  */
 
+import "./_mongo-guard";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient } from "mongodb";

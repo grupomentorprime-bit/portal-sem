@@ -5,6 +5,7 @@
  * Uso: npx tsx --env-file=.env scripts/migrate-local-cms-media-to-s3.ts
  *      npx tsx --env-file=.env scripts/migrate-local-cms-media-to-s3.ts --dry-run
  */
+import "./_mongo-guard";
 import { createDecipheriv, scryptSync } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";

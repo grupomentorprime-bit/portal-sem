@@ -2,6 +2,7 @@
  * Captura visual de la ficha de Persona (escritorio y móvil).
  * Uso: npx tsx --env-file=.env scripts/capture-persona-ficha.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

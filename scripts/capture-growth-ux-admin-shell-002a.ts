@@ -2,6 +2,7 @@
  * Captura OT-GROWTH-UX-ADMIN-SHELL-002A — /admin/personas (origen humanizado).
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-admin-shell-002a.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

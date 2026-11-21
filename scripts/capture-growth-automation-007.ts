@@ -5,6 +5,7 @@
  *
  * Entrega: terminada · esperando · problema · móvil.
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient, ObjectId } from "mongodb";

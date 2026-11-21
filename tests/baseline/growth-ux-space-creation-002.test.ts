@@ -3,9 +3,10 @@
  * Agente 2: persistencia de categorías, siteName default, host PLATFORM_BASE_DOMAIN,
  * normalización/colisiones, aislamiento SEM/ADL. Sin packs por rubro.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import {
@@ -23,7 +24,6 @@ import {
 } from "../../src/core/tenant/create-platform-space";
 import { buildPlatformSubdomainHost } from "../../src/core/tenant/hosts";
 import { listTenants } from "../../src/core/tenant/repositories";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import { proposeInitialSpaceHost } from "../../src/lib/platform/propose-space-host";
 import {
   SPACE_ORGANIZATION_TYPES,
@@ -38,30 +38,15 @@ function readSrc(relativePath: string): string {
   return readFileSync(resolve(ROOT, relativePath), "utf8");
 }
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(ROOT, filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;

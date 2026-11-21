@@ -4,6 +4,7 @@
  *
  * Uso: npx tsx --env-file=.env scripts/validate-home-saas-multisector.ts
  */
+import "./_mongo-guard";
 import { MongoClient, type Db } from "mongodb";
 import { createRequire } from "node:module";
 

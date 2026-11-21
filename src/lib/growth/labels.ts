@@ -12,7 +12,9 @@ import {
   type GrowthOrigin,
   type GrowthOriginKind,
 } from "@/core/growth/types";
-import { isSemTenant } from "@/core/tenant/is-sem";
+function isSemSpace(spaceId: string): boolean {
+  return spaceId.trim() === "seminario-ipn";
+}
 
 const ORIGIN_KIND_LABELS: Record<GrowthOriginKind, string> = {
   admission: "Admisión",
@@ -233,7 +235,7 @@ export function growthVentasPageCopy(tenantId: string): {
   noMatchDescription: string;
   columnEmptyLabel: string;
 } {
-  if (isSemTenant(tenantId)) {
+  if (isSemSpace(tenantId)) {
     return {
       title: "Admisión",
       description: "Postulantes y próximas acciones del Espacio.",

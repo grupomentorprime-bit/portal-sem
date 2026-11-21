@@ -2,9 +2,10 @@
  * Dominio propio de un Espacio desde Platform Admin.
  * El subdominio se conserva; el dominio del cliente pasa a ser la dirección principal.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import {
@@ -27,8 +28,6 @@ import {
   SetSpaceCustomDomainError,
 } from "../../src/core/tenant/space-custom-domain";
 import type { DomainDocument, SiteDocument, TenantDocument } from "../../src/core/tenant/types";
-import { loadEnvLocal } from "../../src/core/migrations/env";
-
 const ROOT = process.cwd();
 const ENV = {
   APP_URL: "https://growthos.mentorprime.cl",
@@ -44,18 +43,7 @@ function readSrc(relativePath: string): string {
 }
 
 function loadDotEnv(): void {
-  loadEnvLocal();
-  const envPath = resolve(ROOT, ".env");
-  if (!existsSync(envPath)) return;
-  for (const line of readFileSync(envPath, "utf8").split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
+  loadTestProcessEnv(ROOT);
 }
 
 describe("dominio propio del Espacio", () => {
@@ -225,7 +213,7 @@ describe("dominio propio del Espacio", () => {
   it("al guardar un dominio propio deja el subdominio y lo marca principal", async () => {
     loadDotEnv();
     const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB;
+    const dbName = isolatedDatabaseName(import.meta.url);
     if (!uri || !dbName) return;
 
     const previous = {

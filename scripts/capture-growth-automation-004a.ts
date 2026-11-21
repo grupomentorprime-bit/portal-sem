@@ -6,6 +6,7 @@
  * Entrega: creación desktop · detalle activo · listado · responsive.
  * El nombre en UI es humano (sin tags); cleanup usa prefijo interno solo en DB si hiciera falta.
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

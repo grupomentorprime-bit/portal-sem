@@ -1,6 +1,7 @@
 import { VentasListClient } from "@/components/admin/growth/VentasListClient";
 import { can } from "@/core/identity/policies/engine";
 import { readGrowthVentasBoard } from "@/lib/growth/ventas-read";
+import { parseGrowthVentasVista } from "@/lib/growth/ventas-vista";
 import { listGrowthSpaceMembers } from "@/lib/growth/space-members";
 import { ensureCumpleGrowthAssessmentPort } from "@/sites/cumple/growth-assessment";
 import { loadSessionContext } from "@/lib/identity/sessions";
@@ -62,9 +63,7 @@ export default async function AdminVentasPage({ searchParams }: PageProps) {
   const funnel = params.funnel?.trim() ?? "";
   const band = params.banda?.trim() ?? "";
   const mine = params.mias === "1" || params.mias === "true";
-  const rawVista = params.vista?.trim() ?? "";
-  const vista =
-    rawVista === "lista" ? "lista" : rawVista === "kanban" ? "kanban" : "cola";
+  const vista = parseGrowthVentasVista(params.vista);
   const userId = session.user._id;
   ensureCumpleGrowthAssessmentPort();
 

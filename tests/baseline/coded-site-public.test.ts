@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { comingSoonModel, decidePublicSite } from "../../src/sites/public-decision";
+import {
+  comingSoonModel,
+  decidePublicSite,
+  isContractedSiteModule,
+} from "../../src/sites/public-decision";
 import type { ContactInfo, SocialLinks } from "../../src/types/cms";
 
 const emptyContact: ContactInfo = {
@@ -82,7 +86,32 @@ describe("decidePublicSite", () => {
     );
   });
 
-  it("publicado sin carpeta sigue en por comenzar", () => {
+  it("publicado y habilitado sin carpeta abre el portal", () => {
+    assert.equal(
+      decidePublicSite({
+        hasTenant: true,
+        sitePublished: true,
+        hasSiteModule: true,
+        hasCodedSite: false,
+        pathname: "/",
+        registeredPaths: [],
+      }).kind,
+      "portal"
+    );
+    assert.equal(
+      decidePublicSite({
+        hasTenant: true,
+        sitePublished: true,
+        hasSiteModule: true,
+        hasCodedSite: false,
+        pathname: "/programas",
+        registeredPaths: [],
+      }).kind,
+      "portal"
+    );
+  });
+
+  it("publicado sin módulo sigue en por comenzar", () => {
     assert.equal(
       decidePublicSite({
         hasTenant: true,
@@ -125,6 +154,57 @@ describe("decidePublicSite", () => {
         registeredPaths: ["/", "/contacto"],
       }).kind,
       "not-found"
+    );
+  });
+});
+
+describe("isContractedSiteModule", () => {
+  it("un cliente nuevo con el módulo apagado no recibe sitio aunque publique", () => {
+    assert.equal(
+      isContractedSiteModule({
+        hasCodedSite: false,
+        siteEnabled: false,
+        sitePublished: true,
+      }),
+      false
+    );
+  });
+
+  it("un sitio ya publicado sin el campo conserva el portal", () => {
+    assert.equal(
+      isContractedSiteModule({
+        hasCodedSite: false,
+        siteEnabled: undefined,
+        sitePublished: true,
+      }),
+      true
+    );
+    assert.equal(
+      isContractedSiteModule({
+        hasCodedSite: false,
+        siteEnabled: undefined,
+        sitePublished: false,
+      }),
+      false
+    );
+  });
+
+  it("la carpeta de código no habilita a otro cliente", () => {
+    assert.equal(
+      isContractedSiteModule({
+        hasCodedSite: true,
+        siteEnabled: false,
+        sitePublished: false,
+      }),
+      true
+    );
+    assert.equal(
+      isContractedSiteModule({
+        hasCodedSite: false,
+        siteEnabled: true,
+        sitePublished: false,
+      }),
+      true
     );
   });
 });

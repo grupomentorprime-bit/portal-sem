@@ -100,7 +100,7 @@ type RateCollection = {
     filter: { _id: string },
     update: { $inc: { count: number }; $setOnInsert: { expiresAt: Date } },
     options: { upsert: true; returnDocument: "after" }
-  ): Promise<{ count?: number } | null>;
+  ): Promise<{ count?: number; value?: { count?: number } } | null>;
 };
 
 /** Adaptador del contador sobre una colección ya existente. No abre la base por su cuenta. */
@@ -115,31 +115,49 @@ export function createCollectionRateLimitStore(collection: RateCollection): Dist
         },
         { upsert: true, returnDocument: "after" }
       );
-      const count = doc?.count ?? 0;
-      return count > 0 ? count : 1;
+      const count = doc?.count ?? doc?.value?.count;
+      if (typeof count !== "number" || count < 1) {
+        throw new Error("El almacén de límite no devolvió un contador.");
+      }
+      return count;
     },
   };
 }
 
 let mongoStorePromise: Promise<DistributedRateLimitStore> | null = null;
 
+export const RATE_LIMIT_FAILURE_RETRY_SEC = 60;
+
+/** Producción siempre comparte Mongo. En otras ejecuciones, solo si RATE_LIMIT_BACKEND=mongo. */
+export function sharedRateLimitBackend(env: NodeJS.ProcessEnv = process.env): "mongo" | "memory" {
+  if (env.NODE_ENV === "production") return "mongo";
+  if (env.RATE_LIMIT_BACKEND === "mongo") return "mongo";
+  return "memory";
+}
+
+export function resetSharedRateLimitBackendForTests(): void {
+  mongoStorePromise = null;
+}
+
 async function mongoRateLimitStore(): Promise<DistributedRateLimitStore> {
   if (!mongoStorePromise) {
     mongoStorePromise = (async () => {
       const { getDatabase } = await import("@/lib/mongodb");
       const db = await getDatabase();
-      return createCollectionRateLimitStore(
-        db.collection("security_rate_limits") as unknown as RateCollection
-      );
-    })();
+      const collection = db.collection("security_rate_limits");
+      await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+      return createCollectionRateLimitStore(collection as unknown as RateCollection);
+    })().catch((error: unknown) => {
+      mongoStorePromise = null;
+      throw error;
+    });
   }
   return mongoStorePromise;
 }
 
 /**
- * Memoria del proceso, salvo RATE_LIMIT_BACKEND=mongo.
- * Esa variable no está activa en esta rama: el límite distribuido queda listo
- * y no se declara como control de borde hasta usarlo en cada instancia.
+ * Tope compartido entre procesos cuando el backend es Mongo.
+ * Si el almacén falla, la ruta queda cerrada: no se cae a la memoria del proceso.
  */
 export async function consumeSharedRateLimit(input: {
   key: string;
@@ -147,17 +165,23 @@ export async function consumeSharedRateLimit(input: {
   windowMs: number;
   nowMs?: number;
   store?: DistributedRateLimitStore;
+  env?: NodeJS.ProcessEnv;
 }): Promise<{ ok: true } | { ok: false; retryAfterSec: number }> {
-  const store =
-    input.store ??
-    (process.env.RATE_LIMIT_BACKEND === "mongo"
-      ? await mongoRateLimitStore()
-      : sharedMemoryRateLimitStore);
-  return consumeDistributedRateLimit({
-    store,
-    key: input.key,
-    limit: input.limit,
-    windowMs: input.windowMs,
-    nowMs: input.nowMs ?? Date.now(),
-  });
+  try {
+    const store =
+      input.store ??
+      (sharedRateLimitBackend(input.env) === "mongo"
+        ? await mongoRateLimitStore()
+        : sharedMemoryRateLimitStore);
+    return await consumeDistributedRateLimit({
+      store,
+      key: input.key,
+      limit: input.limit,
+      windowMs: input.windowMs,
+      nowMs: input.nowMs ?? Date.now(),
+    });
+  } catch {
+    console.error("[rate-limit] backend unavailable");
+    return { ok: false, retryAfterSec: RATE_LIMIT_FAILURE_RETRY_SEC };
+  }
 }

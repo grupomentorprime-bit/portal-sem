@@ -2,6 +2,7 @@
  * Comprobación visual del Kanban de Ventas con oportunidades temporales.
  * Uso: npx tsx --env-file=.env scripts/verify-kanban-ui.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient } from "mongodb";

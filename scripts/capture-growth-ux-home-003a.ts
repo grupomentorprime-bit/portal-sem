@@ -3,6 +3,7 @@
  * Desktop + mobile.
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-home-003a.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

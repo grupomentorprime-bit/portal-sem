@@ -3,6 +3,7 @@
  * Inicio datos · Inicio vacío · Personas · Ventas · Sidebar · Responsive.
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-admin-shell-002.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

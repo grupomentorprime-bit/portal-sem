@@ -1,10 +1,11 @@
 /**
  * OT-GROWTH-CORE-003 — Oportunidad + Workflow growth.opportunity + nextAction.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient } from "mongodb";
 import {
@@ -21,28 +22,12 @@ import {
   transitionGrowthOpportunity,
   upsertGrowthPersona,
 } from "../../src/core/growth";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import { migration014GrowthOportunidades } from "../../src/core/migrations/014-growth-oportunidades";
 import { SYSTEM_WORKFLOW_TEMPLATES } from "../../src/core/workflow/definitions/defaults";
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function seedPersona(tenantId: string, email: string, sourceId: string) {
@@ -467,7 +452,7 @@ describe("OT-GROWTH-CORE-003 — índices", () => {
   it("ensureGrowthOpportunityIndexes idempotente (si hay Mongo)", async (t) => {
     loadTestMongoEnv();
     const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB;
+    const dbName = isolatedDatabaseName(import.meta.url);
     if (!uri || !dbName) {
       t.skip("Sin MONGODB_URI/MONGODB_DB");
       return;

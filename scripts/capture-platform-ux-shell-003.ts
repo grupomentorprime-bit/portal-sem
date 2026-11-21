@@ -2,6 +2,7 @@
  * Capturas OT-GROWTH-UX-SHELL-003 (corrección final visual).
  * Uso (dev en :3000): npx tsx --env-file=.env scripts/capture-platform-ux-shell-003.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

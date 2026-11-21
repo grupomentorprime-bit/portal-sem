@@ -3,6 +3,7 @@
  * Espacio: adl (host adl.localhost:3000).
  * Uso: npm run dev → npx tsx --env-file=.env scripts/smoke-growth-capture-001.ts
  */
+import "./_mongo-guard";
 import { mkdirSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { MongoClient, type Db } from "mongodb";

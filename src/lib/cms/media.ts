@@ -247,8 +247,9 @@ async function repairMissingMediaStorage(
   const existing = await readMediaFile(storageKey);
   if (existing) return normalizeAsset(asset);
 
-  await putMediaFile(storageKey, buffer, mimeType);
-  const url = await resolveMediaStoragePublicUrl(storageKey);
+  const distribution = resolveMediaDistribution(asset);
+  await putMediaFile(storageKey, buffer, mimeType, asset.tenant, distribution);
+  const url = await resolveMediaStoragePublicUrl(storageKey, asset.tenant, distribution);
   const thumbnail = mimeType.startsWith("video/") ? asset.thumbnail : url;
 
   if (url === asset.url && thumbnail === asset.thumbnail) {
@@ -298,6 +299,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
   const mediaId = `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const category = inferCategory(input.mimeType);
   const folder = input.folder ?? DEFAULT_MEDIA_FOLDER;
+  const distribution = distributionFromPurpose(purposeFromFolder(folder));
 
   let url = "";
   let thumbnail = "";
@@ -313,7 +315,8 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
       input.tenant,
       mediaId,
       baseName || "image",
-      folder === "Hero" ? "hero" : "default"
+      folder === "Hero" ? "hero" : "default",
+      distribution
     );
     url = processed.primaryUrl;
     thumbnail = processed.thumbnail;
@@ -322,7 +325,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     height = processed.metadata.height;
   } else {
     const key = buildStorageKey(input.tenant, mediaId, `${mediaId}.${ext}`);
-    const stored = await putMediaFile(key, input.buffer, input.mimeType);
+    const stored = await putMediaFile(key, input.buffer, input.mimeType, input.tenant, distribution);
     url = stored.publicUrl;
     thumbnail = input.mimeType.startsWith("video/") ? "" : url;
 
@@ -356,7 +359,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     status: "active",
     version: 1,
     visibility: "active",
-    distribution: distributionFromPurpose(purposeFromFolder(folder)),
+    distribution,
     url,
     thumbnail: thumbnail || url,
     responsive,
@@ -485,6 +488,7 @@ export async function replaceMediaFile(
   if (!existing) return null;
 
   await deleteMediaPrefix(`${existing.tenant}/${id}`);
+  const distribution = resolveMediaDistribution(existing);
 
   let url = existing.url;
   let thumbnail = existing.thumbnail;
@@ -500,7 +504,8 @@ export async function replaceMediaFile(
       input.tenant,
       id,
       baseName || "image",
-      existing.folder === "Hero" ? "hero" : "default"
+      existing.folder === "Hero" ? "hero" : "default",
+      distribution
     );
     url = processed.primaryUrl;
     thumbnail = processed.thumbnail;
@@ -510,7 +515,7 @@ export async function replaceMediaFile(
   } else {
     const ext = input.originalName.split(".").pop()?.toLowerCase() ?? "bin";
     const key = buildStorageKey(input.tenant, id, `${id}.${ext}`);
-    const stored = await putMediaFile(key, input.buffer, input.mimeType);
+    const stored = await putMediaFile(key, input.buffer, input.mimeType, input.tenant, distribution);
     url = stored.publicUrl;
     thumbnail = url;
     responsive = {};

@@ -3,6 +3,7 @@
  * OT-GROWTH-IAM-SYNC-FIX-001 — misma regla evolutiva que ensureTenantRoles.
  * Uso: npx tsx --env-file=.env scripts/sync-tenant-roles.ts [tenantId]
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import {
   PORTAL_TENANT_ROLES,

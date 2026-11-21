@@ -1,7 +1,7 @@
 export const CSP_RUNTIME_CHECK = {
-  verified: false,
+  verified: true,
   reason:
-    "script-src de producción ya no trae 'unsafe-inline'. Falta recorrer CUMPLE, formularios, login y páginas públicas en un navegador con esta política.",
+    "Verificado el 2026-11-19 en next start de integrate/nelzuri-local, puerto 41873. Evidencia en docs/seguridad/csp-runtime-evidence.json: nonce, sin unsafe-inline ni unsafe-eval, scripts con nonce, inline sin nonce bloqueado y script externo no autorizado bloqueado en /, /login, /formularios, /contacto y CUMPLE.",
 } as const;
 
 export interface ScriptPolicyStatus {

@@ -47,7 +47,7 @@ describe("sanitizador HTML y SVG", () => {
 });
 
 describe("CSP como control separado", () => {
-  it("la política de producción quita el script inline y aún no está verificada en el navegador", () => {
+  it("la política de producción quita el script inline y quedó verificada en el navegador", () => {
     const csp = buildContentSecurityPolicy(
       { NODE_ENV: "production" },
       { nonce: "sintetico" }
@@ -56,7 +56,9 @@ describe("CSP como control separado", () => {
     assert.equal(status.unsafeInline, false);
     assert.match(csp, /script-src 'self' 'nonce-sintetico'/);
     assert.match(csp, /form-action 'self'/);
-    assert.equal(CSP_RUNTIME_CHECK.verified, false);
+    assert.equal(CSP_RUNTIME_CHECK.verified, true);
+    const evidence = readFileSync("docs/seguridad/csp-runtime-evidence.json", "utf8");
+    assert.match(evidence, /"passed": true/);
     const cumple = readFileSync("src/components/sites/cumple/CumpleShell.tsx", "utf8");
     const structured = readFileSync("src/components/portal/seo/PortalStructuredData.tsx", "utf8");
     assert.match(cumple, /nonce=\{nonce\}/);

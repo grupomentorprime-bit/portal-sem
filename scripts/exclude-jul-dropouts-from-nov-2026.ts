@@ -4,6 +4,7 @@
  *
  * Uso: npx tsx --env-file=.env scripts/exclude-jul-dropouts-from-nov-2026.ts
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import {
   findExcludedStudentByIdentity,

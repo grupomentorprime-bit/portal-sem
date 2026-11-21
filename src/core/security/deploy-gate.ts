@@ -1,27 +1,42 @@
 /**
- * El workflow puede ponerse rojo. Eso no es, por sí solo, un freno de despliegue:
- * Dokploy no está definido en este repositorio y esta rama no cambia su política.
+ * El despliegue de esta rama arranca solo con la verificación aprobada.
+ * La API de Dokploy no se llama y el proyecto remoto no se modifica.
  */
 export const DEPLOY_GATE = {
   workflow: ".github/workflows/branding.yml",
   dokployDefinedInRepo: false,
-  failedCiBlocksDeploy: false,
+  failedCiBlocksDeploy: true,
   branchProtectionChanged: false,
   integrationPrepared: true,
   dokployApiCalled: false,
   productionConfigChanged: false,
   releaseGateJob: "release-gate",
+  imageStart: "scripts/start-if-released.mjs",
+  mandatoryChecks: "scripts/run-mandatory-checks.ts",
   reason:
-    "El job release-gate deja por escrito el resultado de branding. No llama a Dokploy ni cambia su proyecto. El despliegue sigue por su cuenta hasta que operaciones use ese resultado.",
+    "release-gate termina en error si branding no está en success. La imagen solo arranca con ese resultado. No se llama a Dokploy ni se cambia su proyecto.",
 } as const;
 
 export function releaseGateRecord(conclusion: string) {
+  const approved = conclusion === "success";
   return {
-    job: "branding",
+    job: "branding" as const,
     conclusion,
-    deployAllowedByThisRepo: conclusion === "success",
+    deployAllowedByThisRepo: approved,
     dokployCalled: false,
-    enforced: false,
+    enforced: true,
     productionConfigChanged: false,
   };
+}
+
+export function deployRecordAllowsStart(record: {
+  conclusion?: string;
+  deployAllowedByThisRepo?: boolean;
+  enforced?: boolean;
+}): boolean {
+  return (
+    record.conclusion === "success" &&
+    record.deployAllowedByThisRepo === true &&
+    record.enforced === true
+  );
 }

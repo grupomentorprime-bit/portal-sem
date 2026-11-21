@@ -3,9 +3,12 @@ import { describe, it } from "node:test";
 import path from "node:path";
 import {
   MEDIA_LINK_REVIEW,
+  anonymousReadWouldExposePrivate,
+  authorizedDeliveryUrl,
   decideMediaRead,
-  directStorageBypassesApp,
   isSafeMediaStorageKey,
+  mediaDiskIsPublicWebRoot,
+  mediaDiskRoot,
   presentMediaUrl,
   resolveContainedMediaPath,
   resolveMediaDistribution,
@@ -38,6 +41,7 @@ describe("medios por propósito", () => {
       operationalTenantId: "sem",
       asset,
       memberTenantId: null,
+      memberUserId: null,
     });
     assert.equal(decision.allow, true);
     if (!decision.allow) return;
@@ -50,13 +54,23 @@ describe("medios por propósito", () => {
       operationalTenantId: "sem",
       asset: { ...asset, folder: "Documentos" },
       memberTenantId: null,
+      memberUserId: null,
     });
     assert.deepEqual(denied, { allow: false, status: 404 });
+    const allowedWithoutUser = decideMediaRead({
+      key: "sem/media-sintetica/ficha.pdf",
+      operationalTenantId: "sem",
+      asset: { ...asset, folder: "Documentos" },
+      memberTenantId: "sem",
+      memberUserId: null,
+    });
+    assert.equal(allowedWithoutUser.allow, false);
     const allowed = decideMediaRead({
       key: "sem/media-sintetica/ficha.pdf",
       operationalTenantId: "sem",
       asset: { ...asset, folder: "Documentos" },
       memberTenantId: "sem",
+      memberUserId: "usr-sintetico",
     });
     assert.equal(allowed.allow, true);
     if (!allowed.allow) return;
@@ -71,6 +85,7 @@ describe("medios por propósito", () => {
         operationalTenantId: "sem",
         asset: { ...asset, tenant: "otro" },
         memberTenantId: "sem",
+        memberUserId: "usr-sintetico",
       }).allow,
       false
     );
@@ -80,6 +95,7 @@ describe("medios por propósito", () => {
         operationalTenantId: "sem",
         asset: { ...asset, visibility: "trash" },
         memberTenantId: "sem",
+        memberUserId: "usr-sintetico",
       }).allow,
       false
     );
@@ -99,19 +115,44 @@ describe("medios por propósito", () => {
     assert.equal(presentMediaUrl({ distribution: "public", url: cover }), cover);
     assert.equal(
       presentMediaUrl({ distribution: "private", url: "/media/sem/media-sintetica/ficha.pdf" }),
-      "/media/sem/media-sintetica/ficha.pdf"
+      "/api/cms/media/stream?key=sem%2Fmedia-sintetica%2Fficha.pdf"
     );
   });
 
-  it("el enlace directo del bucket queda fuera de esta puerta", () => {
+  it("un privado no sale por CDN y el disco del CMS no es público", () => {
     assert.equal(
-      directStorageBypassesApp({
-        mode: "s3",
-        accessMode: "public",
-        publicUrl: "https://cdn.ejemplo.test",
-      }),
+      anonymousReadWouldExposePrivate(
+        { mode: "s3", accessMode: "public", publicUrl: "https://cdn.ejemplo.test" },
+        "private"
+      ),
       true
     );
-    assert.equal(MEDIA_LINK_REVIEW.unchanged.includes("accessMode"), true);
+    assert.equal(
+      anonymousReadWouldExposePrivate(
+        { mode: "s3", accessMode: "private", publicUrl: "https://cdn.ejemplo.test" },
+        "private"
+      ),
+      false
+    );
+    assert.equal(
+      authorizedDeliveryUrl({
+        distribution: "private",
+        key: "sem/media-sintetica/ficha.pdf",
+        publicBase: "https://cdn.ejemplo.test",
+        accessMode: "public",
+      }),
+      "/api/cms/media/stream?key=sem%2Fmedia-sintetica%2Fficha.pdf"
+    );
+    assert.equal(
+      authorizedDeliveryUrl({
+        distribution: "public",
+        key: "sem/media-sintetica/portada.webp",
+        publicBase: "https://cdn.ejemplo.test",
+        accessMode: "public",
+      }),
+      "https://cdn.ejemplo.test/media/sem/media-sintetica/portada.webp"
+    );
+    assert.equal(mediaDiskIsPublicWebRoot(mediaDiskRoot()), false);
+    assert.equal(MEDIA_LINK_REVIEW.localDev.includes("data/media"), true);
   });
 });

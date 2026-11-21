@@ -25,12 +25,14 @@ export async function GET(
     session?.membership && session.session.tenantId?.trim()
       ? session.session.tenantId.trim()
       : null;
+  const memberUserId = session?.user?._id?.trim() || null;
   const asset = await findMediaAssetByObjectKey(tenant, key);
   const decision = decideMediaRead({
     key,
     operationalTenantId: tenant,
     asset,
     memberTenantId,
+    memberUserId,
   });
   if (!decision.allow) {
     const limited = await consumeSharedRateLimit({
@@ -53,6 +55,7 @@ export async function GET(
   const headers: Record<string, string> = {
     "Content-Type": file.mimeType,
     "Cache-Control": decision.cacheControl,
+    "X-Content-Type-Options": "nosniff",
   };
   if (decision.distribution === "private") {
     const filename = key.split("/").pop() || "archivo";

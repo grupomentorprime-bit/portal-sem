@@ -65,10 +65,14 @@ describe("cola ventas por prioridad comercial", () => {
     );
 
     assert.match(pageSource, /parseGrowthVentasVista\(params\.vista\)/);
-    assert.match(listSource, /aria-pressed=\{vista === "cola"\}/);
-    assert.match(listSource, /pushFilters\(\{ vista: "cola" \}\)/);
-    assert.match(listSource, /vista === "cola" \? filterVentasColaItems\(items\) : items/);
-    assert.match(listSource, /Cola/);
+    assert.match(listSource, /onSelect=\{\(next\) => pushFilters\(\{ vista: next \}\)\}/);
+    assert.match(listSource, /vista === "cola" \? filterVentasColaItems\(liveItems\) : liveItems/);
+    const switchSource = readFileSync(
+      resolve(process.cwd(), "src/components/admin/growth/OpportunityViewSwitch.tsx"),
+      "utf8"
+    );
+    assert.match(switchSource, /aria-pressed=\{active\}/);
+    assert.match(switchSource, /label: "Cola"/);
   });
 
   it("usa copy SEM en la página de ventas y evita 'Sin oportunidades' en kanban", () => {

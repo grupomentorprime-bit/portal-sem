@@ -3,6 +3,7 @@
  * Datos reales del Espacio; sin miembros/invitaciones inventadas.
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-team-004.ts
  */
+import "./_mongo-guard";
 import { mkdirSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

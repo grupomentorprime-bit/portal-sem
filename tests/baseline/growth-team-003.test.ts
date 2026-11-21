@@ -2,6 +2,7 @@
  * OT-GROWTH-TEAM-IMPLEMENT-003 — Equipo V1 (Identity).
  * Casos A–T del contrato + regresiones de frontera Keycloak / unicidad / último admin.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -227,29 +228,10 @@ describe("OT-GROWTH-TEAM-IMPLEMENT-003 — D4 cableado en API", () => {
 
 describe("OT-GROWTH-TEAM-IMPLEMENT-003 — fixtures Mongo (unicidad + multi-tenant)", () => {
   it("A/H/I/J/K · miembro por tenant; unicidad; quitar acceso solo A", async () => {
-    const { existsSync } = await import("node:fs");
     const { MongoClient } = await import("mongodb");
-    const { loadEnvLocal } = await import("../../src/core/migrations/env");
-
-    function loadEnvFile(filename: string): void {
-      const envPath = resolve(process.cwd(), filename);
-      if (!existsSync(envPath)) return;
-      const content = readFileSync(envPath, "utf8");
-      for (const line of content.split("\n")) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith("#")) continue;
-        const eq = trimmed.indexOf("=");
-        if (eq === -1) continue;
-        const key = trimmed.slice(0, eq).trim();
-        const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-        if (!process.env[key]) process.env[key] = value;
-      }
-    }
-
-    loadEnvLocal();
-    loadEnvFile(".env");
+    loadTestProcessEnv();
     const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB;
+    const dbName = isolatedDatabaseName(import.meta.url);
     if (!uri || !dbName) {
       console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
       return;

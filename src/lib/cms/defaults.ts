@@ -78,9 +78,10 @@ export function createDefaultSiteConfig(): SiteConfig {
       library: false,
       forms: false,
       applications: false,
-      onlinePayments: false,
-    },
-    sitePublished: false,
+    onlinePayments: false,
+  },
+  siteEnabled: false,
+  sitePublished: false,
     portalCopy: {
       footerProgramsTitle: "Oferta Académica",
       footerResourcesTitle: "Recursos",

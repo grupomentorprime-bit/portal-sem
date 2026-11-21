@@ -70,12 +70,14 @@ export async function GET(request: Request) {
     session?.membership && session.session.tenantId?.trim()
       ? session.session.tenantId.trim()
       : null;
+  const memberUserId = session?.user?._id?.trim() || null;
   const asset = key ? await findMediaAssetByObjectKey(tenant, key) : null;
   const decision = decideMediaRead({
     key,
     operationalTenantId: tenant,
     asset,
     memberTenantId,
+    memberUserId,
   });
   if (!decision.allow) {
     const limited = await probeLimited(request);
@@ -89,6 +91,7 @@ export async function GET(request: Request) {
   const headers: Record<string, string> = {
     "Content-Type": file.mimeType,
     "Cache-Control": decision.cacheControl,
+    "X-Content-Type-Options": "nosniff",
   };
   if (decision.distribution === "private") {
     const safeName = filenameFromKey(key).replace(/[^\w.\-() ]+/g, "_");
