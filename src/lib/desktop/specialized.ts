@@ -1,4 +1,4 @@
-import { isAdmissionsOperator, isUnitScopedAdminPathAllowed } from "@/lib/admin/nav-access";
+import { isUnitScopedAdminPathAllowed } from "@/lib/admin/nav-access";
 import { canManageAppKeys, desktopBands } from "@/lib/desktop/app-access";
 import { desktopDock, type DockAppId } from "@/lib/desktop/catalog";
 import type { MentorAppId } from "@/nelzuri";
@@ -17,11 +17,6 @@ export interface DeskSpecializedInput {
   unitIds: readonly string[] | null;
   enabledUnitAppIds: readonly string[] | null;
   roleCodes?: readonly string[];
-  /**
-   * false: no hay llave de Growth OS.
-   * El rol de Admisión queda solo en su capacidad. Ausente: no recorta.
-   */
-  growthOs?: boolean;
 }
 
 function personFor(appId: SpecializedAppId, input: DeskSpecializedInput): SpecializedPerson {
@@ -40,12 +35,9 @@ function personFor(appId: SpecializedAppId, input: DeskSpecializedInput): Specia
   };
 }
 
-/** Capacidades del Espacio activo que esta persona ya puede abrir. */
+/** Capacidades del Espacio activo que esta persona ya puede abrir. La llave de Growth OS no entra. */
 export function specializedForDesk(input: DeskSpecializedInput): SpecializedAppId[] {
-  const opened = SPECIALIZED_APPS.filter((appId) => canSeeSpecialized(personFor(appId, input)));
-  if (input.growthOs !== false) return opened;
-  if (!isAdmissionsOperator(input.roleCodes ?? [])) return opened;
-  return opened.filter((appId) => appId === "admision");
+  return SPECIALIZED_APPS.filter((appId) => canSeeSpecialized(personFor(appId, input)));
 }
 
 export function openSpecializedFromDesk(

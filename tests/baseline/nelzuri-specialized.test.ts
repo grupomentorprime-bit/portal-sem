@@ -174,7 +174,17 @@ describe("capacidades especializadas del escritorio", () => {
           enabledUnitAppIds: ["institucion"],
         })
       ),
-      ["admision"]
+      []
+    );
+    assert.deepEqual(
+      specializedForDesk(person({ tenantId: SEM_TENANT_ID, permissions: ["experience.forms.read"] })),
+      []
+    );
+    assert.deepEqual(
+      specializedForDesk(
+        person({ tenantId: SEM_TENANT_ID, permissions: ["experience.forms.manage"] })
+      ),
+      ["asuntos-estudiantiles"]
     );
   });
 

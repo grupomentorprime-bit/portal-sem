@@ -74,19 +74,6 @@ export function isStudentAffairsOperator(roleCodes: string[]): boolean {
   );
 }
 
-/**
- * Rol de Admisión, sin Asuntos Estudiantiles, Congreso ni admin elevado.
- * La plantilla también trae permisos de formularios; sin la llave de Growth OS no abren la otra capacidad.
- */
-export function isAdmissionsOperator(roleCodes: readonly string[]): boolean {
-  return (
-    roleCodes.includes(ROLE_CODES.ADMISSIONS) &&
-    !roleCodes.some((code) => ELEVATED_ADMIN_ROLE_CODES.has(code as RoleCode)) &&
-    !roleCodes.includes(ROLE_CODES.STUDENT_AFFAIRS) &&
-    !roleCodes.includes(ROLE_CODES.CONGRESS_OPERATOR)
-  );
-}
-
 /** Operador del Congreso de Varones — sin AE, Growth ni admin global. */
 export function isCongressOperator(roleCodes: string[]): boolean {
   return (

@@ -1,11 +1,16 @@
 import { FormsPanelClient } from "@/components/admin/forms/FormsPanelClient";
-import { getSessionActiveTenantId } from "@/core/identity";
+import { getSessionActiveTenantId, isAuthContext, requirePermission } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { countSubmissionsByForm, listExperienceForms } from "@/lib/experience/forms/repository";
 
 export const dynamic = "force-dynamic";
 
 export default async function FormsPanelPage() {
+  const auth = await requirePermission("experience.forms.read");
+  if (!isAuthContext(auth)) {
+    return <p className="p-6 text-sm text-muted">No autorizado.</p>;
+  }
+
   const [sessionTenantId, config] = await Promise.all([
     getSessionActiveTenantId(),
     getOperationalSiteConfig(),

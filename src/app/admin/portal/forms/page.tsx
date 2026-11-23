@@ -1,11 +1,16 @@
 import { FormsCenterClient } from "@/components/admin/forms/FormsCenterClient";
-import { getSessionActiveTenantId } from "@/core/identity";
+import { getSessionActiveTenantId, isAuthContext, requirePermission } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { listExperienceForms } from "@/lib/experience/forms/repository";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminFormsCenterPage() {
+  const auth = await requirePermission("experience.forms.read");
+  if (!isAuthContext(auth)) {
+    return <p className="p-6 text-sm text-muted">No autorizado.</p>;
+  }
+
   // SSOT admin: Espacio activo de sesión (como Menús / layout). No Host público.
   const [sessionTenantId, config] = await Promise.all([
     getSessionActiveTenantId(),

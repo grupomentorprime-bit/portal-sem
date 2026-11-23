@@ -5,6 +5,12 @@
  */
 
 import type { AdminNavItem } from "@/lib/admin/institutional";
+import {
+  ADMISSION_DOOR,
+  CONGRESS_DOOR,
+  FORMS_DOOR,
+  STUDENT_AFFAIRS_DOOR,
+} from "@/nelzuri/catalog/doors";
 import { isNavActive } from "@/lib/admin/institutional";
 import {
   getNavItemConfigSection,
@@ -294,11 +300,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "/admin/portal/forms",
           "/admin/portal/convocatorias/configuracion",
         ],
-        requiredAnyPermission: [
-          "cms.pages.read",
-          "experience.forms.read",
-          "experience.forms.manage",
-        ],
+        requiredAnyPermission: [...FORMS_DOOR.anyPermission],
         children: [
           {
             id: "forms-create",
@@ -306,11 +308,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
             label: "Creación",
             icon: "admission",
             matchPrefixes: ["/admin/portal/forms"],
-            requiredAnyPermission: [
-              "cms.pages.read",
-              "experience.forms.read",
-              "experience.forms.manage",
-            ],
+            requiredAnyPermission: [...FORMS_DOOR.anyPermission],
           },
           {
             id: "forms-edit",
@@ -319,11 +317,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
             icon: "admission",
             matchPrefixes: ["/admin/portal/forms"],
             excludePrefixes: ["/admin/portal/forms/panel", "/admin/portal/forms/convocatorias"],
-            requiredAnyPermission: [
-              "cms.pages.read",
-              "experience.forms.read",
-              "experience.forms.manage",
-            ],
+            requiredAnyPermission: [...FORMS_DOOR.anyPermission],
           },
           {
             id: "forms-operation",
@@ -331,12 +325,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
             label: "Operación",
             icon: "admission",
             matchPrefixes: ["/admin/portal/forms/panel"],
-            requiredAnyPermission: [
-              "experience.forms.read",
-              "experience.forms.manage",
-              "congress.view",
-              "congress.operate",
-            ],
+            requiredAnyPermission: [...FORMS_DOOR.anyPermission],
           },
         ],
       },
@@ -349,7 +338,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "/admin/portal/congreso-varones",
           "/admin/portal/forms/panel/ipn-asistencia-congreso-varones-2026",
         ],
-        requiredAnyPermission: ["congress.view", "congress.operate"],
+        requiredAnyPermission: [...CONGRESS_DOOR.anyPermission],
       },
     ],
   },
@@ -373,12 +362,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         label: "Centro de admisión",
         icon: "admission",
         matchPrefixes: ["/admin/portal/admission"],
-        requiredAnyPermission: [
-          "cms.pages.read",
-          "experience.forms.read",
-          "experience.forms.manage",
-          "students.read",
-        ],
+        requiredAnyPermission: [...ADMISSION_DOOR.anyPermission],
       },
       {
         id: "convocatorias-resultados",
@@ -386,13 +370,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         label: "Operación de formularios",
         icon: "students",
         matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
-        requiredAnyPermission: [
-          "student-affairs.read",
-          "student-affairs.checkin",
-          "student-affairs.manage",
-          "experience.forms.read",
-          "experience.forms.manage",
-        ],
+        requiredAnyPermission: [...STUDENT_AFFAIRS_DOOR.anyPermission],
       },
     ],
   },

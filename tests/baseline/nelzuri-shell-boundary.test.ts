@@ -11,8 +11,11 @@ import { membershipUnitScope } from "../../src/core/units/access";
 import { listOrgUnits } from "../../src/core/units/repository";
 import { ORG_UNITS_COLLECTION } from "../../src/core/units/types";
 import { decideAdminEntry, type AdminEntryInput } from "../../src/lib/admin/capability-boundary";
+import { ADMIN_PRIMARY_NAV } from "../../src/lib/admin/institutional";
+import { getAllNavTreeItems } from "../../src/lib/admin/nav-domains";
 import { CONGRESS_VARONES_FORMS_ALIAS_PATH } from "../../src/lib/admin/nav-access";
 import { filterAdminNavGroups } from "../../src/lib/admin/nav-access";
+import { manifestById } from "../../src/nelzuri";
 import { hasAppKey } from "../../src/lib/desktop/app-access";
 import { clientDeskApps, specializedForDesk } from "../../src/lib/desktop/specialized";
 import { createOwnedDatabase, dropOwnedDatabase } from "../../src/lib/mongo/destructive-guard";
@@ -46,6 +49,22 @@ function gate(input: Partial<AdminEntryInput> & Pick<AdminEntryInput, "pathname"
     enabledUnitAppIds: null,
     ...input,
   });
+}
+
+function navById(id: string) {
+  const item = getAllNavTreeItems().find((entry) => entry.id === id);
+  assert.ok(item, id);
+  return item;
+}
+
+function primary(href: string) {
+  const item = ADMIN_PRIMARY_NAV.find((entry) => entry.href === href);
+  assert.ok(item, href);
+  return item;
+}
+
+function source(rel: string): string {
+  return readFileSync(resolve(ROOT, rel), "utf8");
 }
 
 function hrefs(permissions: string[], scope: { growthOs: boolean; opened: readonly string[] }): string[] {
@@ -87,7 +106,6 @@ describe("independencia del shell institucional", () => {
         unitIds: null,
         enabledUnitAppIds: null,
         roleCodes,
-        growthOs: false,
       }),
       ["admision"]
     );
@@ -209,7 +227,6 @@ describe("independencia del shell institucional", () => {
         permissions: [],
         unitIds: null,
         enabledUnitAppIds: null,
-        growthOs: false,
       }),
       ["mensajes"]
     );
@@ -224,7 +241,6 @@ describe("independencia del shell institucional", () => {
         roleCodes: [ROLE_CODES.ADMISSIONS],
         unitIds: null,
         enabledUnitAppIds: null,
-        growthOs: false,
       }),
       ["admision", "mensajes"]
     );
@@ -310,5 +326,267 @@ describe("independencia del shell institucional", () => {
         await client.close();
       }
     }
+  });
+
+  it("las puertas coinciden con el permiso que ya usa cada capacidad", () => {
+    const admission = ["cms.pages.read"];
+    const affairs = [
+      "student-affairs.read",
+      "student-affairs.checkin",
+      "student-affairs.manage",
+      "experience.forms.manage",
+    ];
+    const forms = ["experience.forms.read", "experience.forms.manage"];
+    const congress = ["congress.view", "congress.operate"];
+
+    assert.deepEqual(manifestById("admision").door?.anyPermission, admission);
+    assert.deepEqual(navById("portal-admission").requiredAnyPermission, admission);
+    assert.deepEqual(primary(ADMISSION).requiredAnyPermission, admission);
+
+    assert.deepEqual(manifestById("asuntos-estudiantiles").door?.anyPermission, affairs);
+    assert.equal(affairs.includes("experience.forms.read"), false);
+    assert.deepEqual(navById("convocatorias-resultados").requiredAnyPermission, affairs);
+    assert.deepEqual(primary(AFFAIRS).requiredAnyPermission, affairs);
+
+    for (const id of ["convocatorias-config", "forms-create", "forms-edit", "forms-operation"]) {
+      assert.deepEqual(navById(id).requiredAnyPermission, forms, id);
+    }
+    assert.deepEqual(primary("/admin/portal/forms").requiredAnyPermission, forms);
+    assert.equal(forms.includes("cms.pages.read"), false);
+    assert.equal(forms.includes("congress.view"), false);
+
+    assert.deepEqual(manifestById("congreso").door?.anyPermission, congress);
+    assert.equal(manifestById("congreso").door?.unitId, VARONES);
+    assert.deepEqual(navById("congreso-varones").requiredAnyPermission, congress);
+    assert.deepEqual([...manifestById("congreso").door?.anyPermission ?? []].includes("experience.forms.read"), false);
+
+    for (const file of [
+      "src/nelzuri/catalog/manifests.ts",
+      "src/lib/admin/nav-domains.ts",
+      "src/lib/admin/institutional.ts",
+    ]) {
+      assert.match(source(file), /@\/nelzuri\/catalog\/doors/);
+    }
+    const desk = source("src/lib/desktop/specialized.ts");
+    assert.equal(desk.includes("growthOs"), false);
+    assert.equal(desk.includes("isAdmissionsOperator"), false);
+
+    const admissions = rolePermissions(ROLE_CODES.ADMISSIONS);
+    assert.equal(admissions.includes("experience.forms.read"), true);
+    assert.equal(admissions.includes("cms.pages.read"), true);
+    const affairsRole = rolePermissions(ROLE_CODES.STUDENT_AFFAIRS);
+    assert.deepEqual(
+      affairsRole.filter((permission) => permission.startsWith("student-affairs.")),
+      ["student-affairs.read", "student-affairs.checkin"]
+    );
+    const scope = source("src/lib/student-affairs/scope.ts");
+    assert.match(scope, /function canDeleteStudentAffairsSubmission[\s\S]*experience\.forms\.manage/);
+    assert.match(scope, /function canReopenStudentAffairsJornada[\s\S]*experience\.forms\.manage/);
+    assert.match(source("src/app/api/cms/admission-config/route.ts"), /authorizeApiRead\("cms\.pages\.read"\)/);
+    assert.match(source("src/app/api/experience/forms/route.ts"), /requirePermission\("experience\.forms\.read"\)/);
+    assert.equal(source("src/app/api/cms/admission-config/route.ts").includes("catalog/doors"), false);
+    assert.equal(source("src/app/api/experience/forms/route.ts").includes("catalog/doors"), false);
+  });
+
+  it("Admisión queda sola con llave y sin ella; Formularios no se abre sin Growth OS", () => {
+    const permissions = rolePermissions(ROLE_CODES.ADMISSIONS);
+    const roleCodes = [ROLE_CODES.ADMISSIONS];
+    const desk = {
+      tenantId: SEM_TENANT_ID,
+      permissions,
+      unitIds: null,
+      enabledUnitAppIds: null,
+      roleCodes,
+    };
+    assert.deepEqual(specializedForDesk(desk), ["admision"]);
+    assert.deepEqual(
+      specializedForDesk({
+        tenantId: SEM_TENANT_ID,
+        permissions: ["experience.forms.read"],
+        unitIds: null,
+        enabledUnitAppIds: null,
+      }),
+      []
+    );
+
+    for (const growthOs of [false, true]) {
+      const opened = specializedForDesk(desk);
+      assert.deepEqual(opened, ["admision"], String(growthOs));
+      assert.equal(
+        gate({ pathname: ADMISSION, tenantId: SEM_TENANT_ID, permissions, roleCodes, growthOs }).kind,
+        "allow"
+      );
+      const affairs = gate({
+        pathname: AFFAIRS,
+        tenantId: SEM_TENANT_ID,
+        permissions,
+        roleCodes,
+        growthOs,
+      });
+      assert.equal(affairs.kind, "redirect");
+      if (affairs.kind === "redirect") {
+        assert.equal(affairs.href, growthOs ? "/admin" : ADMISSION);
+      }
+      const forms = gate({
+        pathname: "/admin/portal/forms",
+        tenantId: SEM_TENANT_ID,
+        permissions,
+        roleCodes,
+        growthOs,
+      });
+      assert.equal(forms.kind, growthOs ? "allow" : "redirect");
+      if (forms.kind === "redirect") assert.equal(forms.href, ADMISSION);
+      const nav = hrefs(permissions, { growthOs, opened });
+      assert.equal(nav.includes(ADMISSION), true);
+      assert.equal(nav.includes(AFFAIRS), false);
+      assert.equal(nav.includes("/admin/portal/forms"), growthOs);
+    }
+
+    const cmsNav = hrefs(["cms.pages.read"], { growthOs: true, opened: ["admision"] });
+    assert.equal(cmsNav.includes("/admin/portal/forms"), false);
+    assert.equal(cmsNav.includes(ADMISSION), true);
+    const formsNav = hrefs(["experience.forms.read"], { growthOs: true, opened: [] });
+    assert.equal(formsNav.includes("/admin/portal/forms"), true);
+    assert.equal(formsNav.includes(ADMISSION), false);
+    assert.equal(formsNav.includes(AFFAIRS), false);
+    const formsWithoutKey = hrefs(["experience.forms.read"], { growthOs: false, opened: [] });
+    assert.equal(formsWithoutKey.includes("/admin/portal/forms"), false);
+  });
+
+  it("Asuntos Estudiantiles usa su panel y no experience.forms.read", () => {
+    const openAffairs = (permissions: string[]) =>
+      specializedForDesk({
+        tenantId: SEM_TENANT_ID,
+        permissions,
+        unitIds: null,
+        enabledUnitAppIds: null,
+      });
+    assert.deepEqual(openAffairs(["student-affairs.read"]), ["asuntos-estudiantiles"]);
+    assert.deepEqual(openAffairs(["student-affairs.checkin"]), ["asuntos-estudiantiles"]);
+    assert.deepEqual(openAffairs(["student-affairs.manage"]), ["asuntos-estudiantiles"]);
+    assert.deepEqual(openAffairs(["experience.forms.manage"]), ["asuntos-estudiantiles"]);
+    assert.deepEqual(openAffairs(["experience.forms.read"]), []);
+    assert.equal(
+      gate({
+        pathname: AFFAIRS,
+        tenantId: SEM_TENANT_ID,
+        permissions: ["experience.forms.read"],
+        growthOs: true,
+      }).kind,
+      "redirect"
+    );
+    assert.equal(
+      gate({
+        pathname: AFFAIRS,
+        tenantId: SEM_TENANT_ID,
+        permissions: ["experience.forms.manage"],
+        growthOs: false,
+      }).kind,
+      "allow"
+    );
+  });
+
+  it("el Congreso sigue en IPN Chile y Varones; la llave no abre las tres capacidades", () => {
+    const congress = rolePermissions(ROLE_CODES.CONGRESS_OPERATOR);
+    const roleCodes = [ROLE_CODES.CONGRESS_OPERATOR];
+    assert.deepEqual(
+      specializedForDesk({
+        tenantId: IPN_CHILE_TENANT_ID,
+        permissions: congress,
+        unitIds: null,
+        enabledUnitAppIds: null,
+        roleCodes,
+      }),
+      ["congreso"]
+    );
+    assert.deepEqual(
+      specializedForDesk({
+        tenantId: SEM_TENANT_ID,
+        permissions: congress,
+        unitIds: null,
+        enabledUnitAppIds: null,
+        roleCodes,
+      }),
+      []
+    );
+    for (const tenantId of [SEM_TENANT_ID, ...OTHER_SPACES]) {
+      for (const growthOs of [false, true]) {
+        const decision = gate({
+          pathname: CONGRESS,
+          tenantId,
+          permissions: congress,
+          roleCodes,
+          growthOs,
+        });
+        assert.equal(decision.kind, "redirect", `${tenantId} ${growthOs}`);
+        if (decision.kind === "redirect") {
+          assert.equal(decision.href, growthOs ? "/admin" : "/escritorio");
+        }
+      }
+    }
+    const growthOnly = ["growth.sales.read", "growth.campaigns.view"];
+    for (const growthOs of [false, true]) {
+      assert.deepEqual(
+        specializedForDesk({
+          tenantId: SEM_TENANT_ID,
+          permissions: growthOnly,
+          unitIds: null,
+          enabledUnitAppIds: null,
+        }),
+        []
+      );
+      for (const pathname of [ADMISSION, AFFAIRS, CONGRESS]) {
+        const decision = gate({
+          pathname,
+          tenantId: SEM_TENANT_ID,
+          permissions: growthOnly,
+          growthOs,
+        });
+        assert.equal(decision.kind, "redirect");
+        if (decision.kind === "redirect") {
+          assert.equal(decision.href, growthOs ? "/admin" : "/escritorio");
+        }
+      }
+    }
+    for (const code of [ROLE_CODES.GUEST, ROLE_CODES.REVIEWER]) {
+      assert.deepEqual(
+        specializedForDesk({
+          tenantId: SEM_TENANT_ID,
+          permissions: rolePermissions(code),
+          unitIds: null,
+          enabledUnitAppIds: null,
+          roleCodes: [code],
+        }),
+        ["admision"]
+      );
+    }
+  });
+
+  it("las páginas autorizan antes de leer y el alias del Congreso no carga el formulario", () => {
+    const admission = source("src/app/admin/portal/admission/page.tsx");
+    const admissionGate = admission.indexOf('await requirePermission("cms.pages.read")');
+    const admissionLoad = admission.indexOf("await getAdmissionConfigUncached");
+    assert.ok(admissionGate >= 0 && admissionGate < admissionLoad);
+
+    for (const rel of [
+      "src/app/admin/portal/forms/page.tsx",
+      "src/app/admin/portal/forms/panel/page.tsx",
+    ]) {
+      const page = source(rel);
+      const gate = page.indexOf('await requirePermission("experience.forms.read")');
+      const load = page.indexOf("listExperienceForms(");
+      assert.ok(gate >= 0 && gate < load, rel);
+    }
+
+    const detail = source("src/app/admin/portal/forms/[id]/page.tsx");
+    const detailGate = detail.indexOf('await requirePermission("experience.forms.read")');
+    const detailLoad = detail.indexOf("await getExperienceFormById");
+    assert.ok(detailGate >= 0 && detailGate < detailLoad);
+
+    const panel = source("src/app/admin/portal/forms/panel/[id]/page.tsx");
+    const known = panel.indexOf("id === CONGRESS_VARONES_FORM_ID");
+    const panelGate = panel.indexOf('await requirePermission("experience.forms.read")');
+    const panelLoad = panel.indexOf("await getExperienceFormById");
+    assert.ok(known >= 0 && known < panelGate && panelGate < panelLoad);
   });
 });

@@ -1,3 +1,4 @@
+import { ADMISSION_DOOR, CONGRESS_DOOR, STUDENT_AFFAIRS_DOOR } from "@/nelzuri/catalog/doors";
 import type { AppManifest } from "@/nelzuri/catalog/types";
 
 function manifest<const T extends AppManifest>(value: T): T {
@@ -107,14 +108,7 @@ const admision = manifest({
   contractable: false,
   defaultContract: { when: "never" },
   requiresSpaceId: "seminario-ipn",
-  door: {
-    anyPermission: [
-      "cms.pages.read",
-      "experience.forms.read",
-      "experience.forms.manage",
-      "students.read",
-    ],
-  },
+  door: ADMISSION_DOOR,
   open: { type: "internal", href: "/admin/portal/admission" },
 });
 
@@ -129,15 +123,7 @@ const asuntosEstudiantiles = manifest({
   contractable: false,
   defaultContract: { when: "never" },
   requiresSpaceId: "seminario-ipn",
-  door: {
-    anyPermission: [
-      "student-affairs.read",
-      "student-affairs.checkin",
-      "student-affairs.manage",
-      "experience.forms.read",
-      "experience.forms.manage",
-    ],
-  },
+  door: STUDENT_AFFAIRS_DOOR,
   open: { type: "internal", href: "/admin/portal/asuntos-estudiantiles" },
 });
 
@@ -152,10 +138,7 @@ const congreso = manifest({
   contractable: false,
   defaultContract: { when: "never" },
   requiresSpaceId: "ipn-chile",
-  door: {
-    anyPermission: ["congress.view", "congress.operate"],
-    unitId: "departamento-nacional-de-varones",
-  },
+  door: CONGRESS_DOOR,
   open: { type: "internal", href: "/admin/portal/congreso-varones" },
 });
 

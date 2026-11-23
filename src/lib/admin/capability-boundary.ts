@@ -56,7 +56,6 @@ export function decideAdminEntry(
     unitIds: input.unitIds,
     enabledUnitAppIds: input.enabledUnitAppIds,
     roleCodes,
-    growthOs: input.growthOs,
   });
   const zone = specializedAppForAdminPath(pathname);
 
