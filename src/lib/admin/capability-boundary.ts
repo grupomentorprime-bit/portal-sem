@@ -1,30 +1,19 @@
-import {
-  CONGRESS_VARONES_FORMS_ALIAS_PATH,
-  CONGRESS_VARONES_HOME_PATH,
-  isCongressAllowedAdminPath,
-  isStudentAffairsAllowedAdminPath,
-  STUDENT_AFFAIRS_HOME_PATH,
-  usesCongressFocusedShell,
-  usesStudentAffairsFocusedShell,
-} from "@/lib/admin/nav-access";
 import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
 import { specializedForDesk } from "@/lib/desktop/specialized";
 import {
+  focusedShells,
   manifestById,
+  routeRulesFor,
+  specializedAppForAlias,
   specializedAppForInternalPath,
   type SpecializedAppId,
 } from "@/nelzuri";
 
 const SESSION_PATHS = new Set(["/admin/login", "/admin/sin-espacio"]);
 
-function pathWithin(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-/** Ruta de una capacidad, incluido el alias que el Congreso ya usa. */
+/** Ruta de una capacidad, incluido un alias registrado por su dueño. */
 export function specializedAppForAdminPath(pathname: string): SpecializedAppId | null {
-  if (pathWithin(pathname, CONGRESS_VARONES_FORMS_ALIAS_PATH)) return "congreso";
-  return specializedAppForInternalPath(pathname);
+  return specializedAppForAlias(pathname) ?? specializedAppForInternalPath(pathname);
 }
 
 export interface AdminEntryInput {
@@ -62,24 +51,18 @@ export function decideAdminEntry(
   const zone = specializedAppForAdminPath(pathname);
 
   if (zone && opened.includes(zone)) {
-    if (zone === "asuntos-estudiantiles" && !isStudentAffairsAllowedAdminPath(pathname, roleCodes)) {
-      return redirectTo(STUDENT_AFFAIRS_HOME_PATH, pathname);
-    }
-    if (zone === "congreso" && !isCongressAllowedAdminPath(pathname)) {
-      return redirectTo(CONGRESS_VARONES_HOME_PATH, pathname);
+    const rules = routeRulesFor(zone);
+    if (!rules || rules.allowsPath(pathname, roleCodes) !== true) {
+      return redirectTo(homeOf([zone]), pathname);
     }
     return { kind: "allow" };
   }
 
   if (input.growthOs) {
-    if (usesCongressFocusedShell(permissions, roleCodes) && !isCongressAllowedAdminPath(pathname)) {
-      return redirectTo(CONGRESS_VARONES_HOME_PATH, pathname);
-    }
-    if (
-      usesStudentAffairsFocusedShell(permissions, false, roleCodes) &&
-      !isStudentAffairsAllowedAdminPath(pathname, roleCodes)
-    ) {
-      return redirectTo(STUDENT_AFFAIRS_HOME_PATH, pathname);
+    for (const shell of focusedShells(permissions, roleCodes)) {
+      if (shell.rules.allowsPath(pathname, roleCodes) !== true) {
+        return redirectTo(shell.home, pathname);
+      }
     }
     if (zone) return redirectTo("/admin", pathname);
     return { kind: "allow" };
@@ -94,10 +77,7 @@ function homeOf(opened: readonly SpecializedAppId[]): string {
   return open.type === "internal" ? open.href : "/escritorio";
 }
 
-function redirectTo(
-  href: string,
-  pathname: string
-): { kind: "redirect"; href: string } {
+function redirectTo(href: string, pathname: string): { kind: "redirect"; href: string } {
   if (href === pathname) return { kind: "redirect", href: "/escritorio" };
   return { kind: "redirect", href };
 }

@@ -1,5 +1,8 @@
 import { registerCongressFormEffect } from "@/core/congress/form-effect";
 import { registerCongressPublicForm } from "@/core/congress/public-form";
+import { registerCongressRouteRules } from "@/core/congress/shell";
+import { registerAdmissionRouteRules } from "@/lib/portal/admission/shell";
+import { registerStudentAffairsRouteRules } from "@/lib/student-affairs/shell";
 import { ensureSpecializedCapabilities as sealSpecializedCapabilities, registerSpecializedManifest } from "@/nelzuri/contracts/capabilities";
 import { SPECIALIZED_MANIFEST_REGISTRATIONS } from "@/nelzuri/catalog/manifests";
 import { registerSemFormCatalog } from "@/lib/portal/sem-forms";
@@ -16,6 +19,9 @@ setSpecializedCapabilityInstaller(() => {
   for (const entry of SPECIALIZED_MANIFEST_REGISTRATIONS) {
     registerSpecializedManifest(entry);
   }
+  registerAdmissionRouteRules();
+  registerStudentAffairsRouteRules();
+  registerCongressRouteRules();
   registerSemFormCatalog();
   registerSemFormEffect();
   registerCongressFormEffect();

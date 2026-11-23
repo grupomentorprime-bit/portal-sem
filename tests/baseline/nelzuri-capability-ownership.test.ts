@@ -229,6 +229,22 @@ describe("registro de capacidades especializadas", () => {
     assert.doesNotMatch(cumple, /deleteOne|updateOne/);
   });
 
+  it("el shell no nombra las rutas institucionales", () => {
+    const source = readFileSync(resolve(ROOT, "src/lib/admin/capability-boundary.ts"), "utf8");
+    for (const forbidden of [
+      "/admin/portal/admission",
+      "/admin/portal/asuntos-estudiantiles",
+      "/admin/portal/congreso-varones",
+    ]) {
+      assert.equal(source.includes(forbidden), false, forbidden);
+    }
+    const nav = readFileSync(resolve(ROOT, "src/lib/admin/nav-domains.ts"), "utf8");
+    assert.equal(nav.includes("id: \"portal-admission\""), false);
+    assert.equal(nav.includes("id: \"convocatorias-resultados\""), false);
+    assert.equal(nav.includes("id: \"congreso-varones\""), false);
+    assert.equal(nav.includes("ipn-asistencia-congreso-varones-2026"), false);
+  });
+
   it("el contrato no importa módulos de cliente", () => {
     const source = readFileSync(resolve(ROOT, "src/nelzuri/contracts/capabilities.ts"), "utf8");
     for (const forbidden of [
