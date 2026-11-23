@@ -88,7 +88,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 /**
- * Eliminar Espacio (irreversible). No aplica a SEM ni ADL.
+ * Eliminar Espacio (irreversible). No aplica a los seis Espacios operativos.
  * Deny-by-default vía requirePlatformOperator.
  */
 export async function DELETE(request: Request, context: RouteContext) {

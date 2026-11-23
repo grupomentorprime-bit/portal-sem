@@ -97,6 +97,7 @@ const CATEGORY_STYLE: Record<
 };
 
 const ACTOR_SKIP = new Set([
+  "NELZURI",
   "Growth OS",
   "Formulario web",
   "Admisión",

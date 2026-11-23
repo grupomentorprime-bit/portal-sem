@@ -74,7 +74,7 @@ describe("correo de confirmación de convocatoria", () => {
 
   it("el envío usa la fecha y el horario del formulario", () => {
     const route = readFileSync(
-      resolve(process.cwd(), "src/app/api/experience/forms/[id]/submit/route.ts"),
+      resolve(process.cwd(), "src/lib/student-affairs/form-effect.ts"),
       "utf8"
     );
     assert.match(route, /eventWhen/);

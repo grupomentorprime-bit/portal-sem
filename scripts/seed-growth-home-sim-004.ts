@@ -9,6 +9,7 @@
  *   CAPTURE_TENANT_ID=cumple npx tsx --env-file=.env scripts/seed-growth-home-sim-004.ts
  *   CAPTURE_TENANT_ID=cumple npx tsx --env-file=.env scripts/seed-growth-home-sim-004.ts cleanup
  */
+import "./_mongo-guard";
 import { MongoClient, type Db } from "mongodb";
 
 const TAG = "home-sim-004";

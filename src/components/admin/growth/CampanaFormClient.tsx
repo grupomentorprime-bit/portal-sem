@@ -585,7 +585,7 @@ export function CampanaFormClient({
                 <SourceChoice
                   selected={sourceKind === "none"}
                   title={CAMPAIGN_SOURCE_NONE_LABEL}
-                  description="Acompaña personas que ya están en Growth OS."
+                  description={CAMPAIGN_SOURCE_NONE_DETAIL}
                   disabled={!canManage || pending}
                   onSelect={() => setSourceKind("none")}
                 />

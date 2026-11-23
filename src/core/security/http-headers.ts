@@ -122,7 +122,10 @@ function uniqueOrigins(values: Array<string | null | undefined>): string[] {
  * app propia, Next.js, next/font self-hosted, medios S3, embeds de sitio, Keycloak (navegación/form).
  * Sin `unsafe-eval` en producción ni comodines de host abiertos.
  */
-export function buildContentSecurityPolicy(env: NodeJS.ProcessEnv = process.env): string {
+export function buildContentSecurityPolicy(
+  env: NodeJS.ProcessEnv = process.env,
+  options?: { nonce?: string }
+): string {
   const keycloakOrigin = originFromEnvUrl(env.KEYCLOAK_URL);
   const s3Origin = originFromEnvUrl(env.S3_PUBLIC_URL);
   const isDev = env.NODE_ENV === "development";
@@ -161,11 +164,12 @@ export function buildContentSecurityPolicy(env: NodeJS.ProcessEnv = process.env)
     "https://staticxx.facebook.com",
   ];
 
+  const nonce = options?.nonce?.trim();
   const scriptSrc = [
     "'self'",
-    "'unsafe-inline'",
+    ...(nonce ? [`'nonce-${nonce}'`] : []),
     "https://connect.facebook.net",
-    ...(isDev ? ["'unsafe-eval'"] : []),
+    ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
   ];
 
   const directives: Array<[string, string[]]> = [
@@ -208,6 +212,16 @@ export function buildAppSecurityHeaders(env: NodeJS.ProcessEnv = process.env): A
       value: buildContentSecurityPolicy(env),
     },
   ];
+}
+
+/** Cabeceras estáticas. La CSP va en el proxy, con nonce por respuesta. */
+export function buildStaticSecurityHeaders(env: NodeJS.ProcessEnv = process.env): Array<{
+  key: string;
+  value: string;
+}> {
+  return buildAppSecurityHeaders(env).filter(
+    (header) => header.key !== SECURITY_HEADER_NAMES.contentSecurityPolicy
+  );
 }
 
 export function shouldApplyPrivateNoStore(pathname: string): boolean {

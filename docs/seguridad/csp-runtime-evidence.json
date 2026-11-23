@@ -1,0 +1,82 @@
+{
+  "base": "http://seminario-ipn.localhost:41873",
+  "checkedAt": "2026-11-19T20:53:01.604Z",
+  "passed": true,
+  "pages": [
+    {
+      "path": "/",
+      "finalUrl": "http://seminario-ipn.localhost:41873/",
+      "sameOrigin": true,
+      "status": 200,
+      "nonce": true,
+      "unsafeInline": false,
+      "unsafeEval": false,
+      "executableScripts": 19,
+      "scriptsMissingNonce": 0,
+      "blockedProbe": false,
+      "nonceRan": true,
+      "externalBlocked": true,
+      "ok": true
+    },
+    {
+      "path": "/login",
+      "finalUrl": "http://seminario-ipn.localhost:41873/login",
+      "sameOrigin": true,
+      "status": 200,
+      "nonce": true,
+      "unsafeInline": false,
+      "unsafeEval": false,
+      "executableScripts": 13,
+      "scriptsMissingNonce": 0,
+      "blockedProbe": false,
+      "nonceRan": true,
+      "externalBlocked": true,
+      "ok": true
+    },
+    {
+      "path": "/formularios",
+      "finalUrl": "http://seminario-ipn.localhost:41873/formularios",
+      "sameOrigin": true,
+      "status": 200,
+      "nonce": true,
+      "unsafeInline": false,
+      "unsafeEval": false,
+      "executableScripts": 19,
+      "scriptsMissingNonce": 0,
+      "blockedProbe": false,
+      "nonceRan": true,
+      "externalBlocked": true,
+      "ok": true
+    },
+    {
+      "path": "/contacto",
+      "finalUrl": "http://seminario-ipn.localhost:41873/contacto",
+      "sameOrigin": true,
+      "status": 200,
+      "nonce": true,
+      "unsafeInline": false,
+      "unsafeEval": false,
+      "executableScripts": 16,
+      "scriptsMissingNonce": 0,
+      "blockedProbe": false,
+      "nonceRan": true,
+      "externalBlocked": true,
+      "ok": true
+    },
+    {
+      "path": "cumple:cumple.localhost:3000",
+      "finalUrl": "http://127.0.0.1:41873/",
+      "sameOrigin": true,
+      "status": 200,
+      "nonce": true,
+      "unsafeInline": false,
+      "unsafeEval": false,
+      "executableScripts": 13,
+      "scriptsMissingNonce": 0,
+      "blockedProbe": false,
+      "nonceRan": true,
+      "externalBlocked": true,
+      "ok": true
+    }
+  ]
+}

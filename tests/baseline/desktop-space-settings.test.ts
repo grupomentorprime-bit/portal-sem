@@ -152,6 +152,8 @@ describe("ajustes de empresa y mi cuenta", () => {
     assert.match(presence, /\/admin\/settings\/channels/);
     assert.match(presence, /NetworkTile/);
     assert.match(presence, /Conectar las redes/);
+    assert.match(presence, /space-site-kicker">\{PLATFORM_DISPLAY_NAME\}/);
+    assert.doesNotMatch(presence, />Growth OS</);
     assert.doesNotMatch(presence, /withSeoFallbacks/);
     assert.doesNotMatch(presence, /seo: config\.seo/);
     assert.doesNotMatch(presence, /\/admin\/config/);

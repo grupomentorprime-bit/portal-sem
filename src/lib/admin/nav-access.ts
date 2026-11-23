@@ -1,7 +1,25 @@
 import type { AdminNavItem } from "@/lib/admin/institutional";
 import { ADMIN_PRIMARY_NAV } from "@/lib/admin/institutional";
-import { ROLE_CODES, type RoleCode } from "@/core/identity/roles/codes";
-import { CONGRESS_VARONES_FORM_ID } from "@/lib/experience/forms/already-enrolled";
+import {
+  CONGRESS_VARONES_FORMS_ALIAS_PATH,
+  CONGRESS_VARONES_HOME_PATH,
+  CONGRESS_VARONES_LEGACY_PATH,
+  isCongressAllowedAdminPath,
+  isCongressAllowedNavItem,
+  isCongressOnlyUser,
+  isCongressOperator,
+  usesCongressFocusedShell,
+} from "@/core/congress/shell";
+import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
+import {
+  isStudentAffairsAdminOnlyNavItem,
+  isStudentAffairsAllowedAdminPath,
+  isStudentAffairsAllowedNavItem,
+  isStudentAffairsOnlyUser,
+  isStudentAffairsOperator,
+  STUDENT_AFFAIRS_HOME_PATH,
+  usesStudentAffairsFocusedShell,
+} from "@/lib/student-affairs/shell";
 import {
   ADMIN_SIDEBAR_SUPPLEMENTAL,
   adminPathMatchesNavGroups,
@@ -9,32 +27,24 @@ import {
   getAllNavTreeItems,
   type AdminNavGroup,
 } from "@/lib/admin/nav-domains";
+import { specializedNavPlacements } from "@/nelzuri";
 
-export const STUDENT_AFFAIRS_HOME_PATH = "/admin/portal/asuntos-estudiantiles";
-/** Home operativa del Congreso de Varones. */
-export const CONGRESS_VARONES_HOME_PATH = "/admin/portal/congreso-varones";
-/** Alias desde Formularios → Operación (mismo panel). */
-export const CONGRESS_VARONES_FORMS_ALIAS_PATH = `/admin/portal/forms/panel/${CONGRESS_VARONES_FORM_ID}`;
-/** @deprecated Usar CONGRESS_VARONES_FORMS_ALIAS_PATH */
-export const CONGRESS_VARONES_LEGACY_PATH = CONGRESS_VARONES_FORMS_ALIAS_PATH;
-
-const STUDENT_AFFAIRS_OPERATOR_BLOCKED_PATH_PREFIXES = [
-  "/admin/portal/forms",
-  "/admin/portal/asuntos-estudiantiles/equipo",
-] as const;
-
-function isStudentAffairsAdminOnlyNavItem(item: AdminNavItem): boolean {
-  if (item.id === "convocatorias-config") return true;
-  const href = item.href ?? "";
-  return STUDENT_AFFAIRS_OPERATOR_BLOCKED_PATH_PREFIXES.some((prefix) => href.startsWith(prefix));
-}
-
-const ELEVATED_ADMIN_ROLE_CODES = new Set<RoleCode>([
-  ROLE_CODES.SUPER_ADMIN,
-  ROLE_CODES.INSTITUTION_ADMIN,
-  ROLE_CODES.SUPPORT,
-  ROLE_CODES.COMMUNICATIONS,
-]);
+export {
+  CONGRESS_VARONES_FORMS_ALIAS_PATH,
+  CONGRESS_VARONES_HOME_PATH,
+  CONGRESS_VARONES_LEGACY_PATH,
+  isCongressAllowedAdminPath,
+  isCongressOnlyUser,
+  isCongressOperator,
+  usesCongressFocusedShell,
+};
+export {
+  isStudentAffairsAllowedAdminPath,
+  isStudentAffairsOnlyUser,
+  isStudentAffairsOperator,
+  STUDENT_AFFAIRS_HOME_PATH,
+  usesStudentAffairsFocusedShell,
+};
 
 function itemMatchesPermissions(item: AdminNavItem, permissions: string[]): boolean {
   /** Placeholders del patrón maestro: visibles en shell completo (sin IAM propia). */
@@ -49,137 +59,34 @@ function itemMatchesPermissions(item: AdminNavItem, permissions: string[]): bool
   return false;
 }
 
-export function isStudentAffairsOnlyUser(permissions: string[], _compatMode: boolean): boolean {
-  const hasStudentAffairs = permissions.some((permission) =>
-    permission.startsWith("student-affairs.")
-  );
-  const hasBroaderAccess = permissions.some(
-    (permission) =>
-      permission.startsWith("cms.") ||
-      permission === "experience.forms.manage" ||
-      permission === "settings.team" ||
-      permission.startsWith("programs.") ||
-      permission.startsWith("news.") ||
-      permission.startsWith("content.")
-  );
-
-  return hasStudentAffairs && !hasBroaderAccess;
+/** Lo que el shell puede mostrar además de la llave de Growth OS. */
+export interface AdminShellScope {
+  /** Techo ∩ llave de Growth OS. */
+  growthOs: boolean;
+  /** Capacidades especializadas que esta persona ya puede abrir. */
+  opened: readonly string[];
 }
 
-/** Operador con rol Asuntos Estudiantiles (cualquier usuario del tenant, no por persona). */
-export function isStudentAffairsOperator(roleCodes: string[]): boolean {
-  return (
-    roleCodes.includes(ROLE_CODES.STUDENT_AFFAIRS) &&
-    !roleCodes.some((code) => ELEVATED_ADMIN_ROLE_CODES.has(code as RoleCode))
-  );
-}
-
-/** Operador del Congreso de Varones — sin AE, Growth ni admin global. */
-export function isCongressOperator(roleCodes: string[]): boolean {
-  return (
-    roleCodes.includes(ROLE_CODES.CONGRESS_OPERATOR) &&
-    !roleCodes.some((code) => ELEVATED_ADMIN_ROLE_CODES.has(code as RoleCode)) &&
-    !roleCodes.includes(ROLE_CODES.STUDENT_AFFAIRS)
-  );
-}
-
-export function isCongressOnlyUser(permissions: string[]): boolean {
-  const hasCongress = permissions.some((permission) => permission.startsWith("congress."));
-  const hasBroaderAccess = permissions.some(
-    (permission) =>
-      permission.startsWith("cms.") ||
-      permission === "experience.forms.manage" ||
-      permission === "settings.team" ||
-      permission.startsWith("student-affairs.") ||
-      permission.startsWith("growth.")
-  );
-  return hasCongress && !hasBroaderAccess;
-}
-
-/** Rutas admin permitidas para operadores de Asuntos Estudiantiles. */
-export function isStudentAffairsAllowedAdminPath(
-  pathname: string,
-  roleCodes: string[] = []
-): boolean {
-  if (!pathname || pathname === "/admin/login") return true;
-  if (pathname === "/admin") return true;
-  if (pathname.startsWith(STUDENT_AFFAIRS_HOME_PATH)) {
-    if (
-      isStudentAffairsOperator(roleCodes) &&
-      STUDENT_AFFAIRS_OPERATOR_BLOCKED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
-    ) {
-      return false;
+/** Ítem de una capacidad institucional. El resto del árbol es Growth OS. */
+export function navItemSpecializedId(item: AdminNavItem): string | null {
+  ensureSpecializedCapabilities();
+  const href = item.href ?? "";
+  for (const placement of specializedNavPlacements()) {
+    if (item.id && item.id === placement.navItem.id) return placement.appId;
+    const home = placement.navItem.href;
+    if (href && (href === home || href.startsWith(`${home}/`))) return placement.appId;
+    for (const alias of placement.aliases) {
+      if (href === alias || href.startsWith(`${alias}/`)) return placement.appId;
     }
-    return true;
   }
-  if (pathname.startsWith("/admin/settings/help")) return true;
-  if (pathname.startsWith("/admin/settings/profile")) return true;
-  if (pathname.startsWith("/admin/settings/notifications")) return true;
-  return false;
+  return null;
 }
 
-/** Rutas admin permitidas para operadores del congreso. */
-export function isCongressAllowedAdminPath(pathname: string): boolean {
-  if (!pathname || pathname === "/admin/login") return true;
-  if (pathname === "/admin") return true;
-  if (pathname === CONGRESS_VARONES_HOME_PATH || pathname.startsWith(`${CONGRESS_VARONES_HOME_PATH}/`)) {
-    return true;
-  }
-  if (
-    pathname === CONGRESS_VARONES_FORMS_ALIAS_PATH ||
-    pathname.startsWith(`${CONGRESS_VARONES_FORMS_ALIAS_PATH}/`)
-  ) {
-    return true;
-  }
-  if (pathname.startsWith("/admin/settings/help")) return true;
-  if (pathname.startsWith("/admin/settings/profile")) return true;
-  if (pathname.startsWith("/admin/settings/notifications")) return true;
-  return false;
-}
-
-/** Shell restringido: inicio y navegación centrados en operación de convocatorias. */
-export function usesStudentAffairsFocusedShell(
-  permissions: string[],
-  compatMode: boolean,
-  roleCodes: string[] = []
-): boolean {
-  if (isCongressOperator(roleCodes) || isCongressOnlyUser(permissions)) return false;
-  if (isStudentAffairsOperator(roleCodes)) return true;
-  return isStudentAffairsOnlyUser(permissions, compatMode);
-}
-
-export function usesCongressFocusedShell(
-  permissions: string[],
-  roleCodes: string[] = []
-): boolean {
-  if (isCongressOperator(roleCodes)) return true;
-  return isCongressOnlyUser(permissions);
-}
-
-const STUDENT_AFFAIRS_ALLOWED_IDS = new Set([
-  "dashboard-home",
-  "convocatorias-resultados",
-  "support-help",
-]);
-
-const CONGRESS_ALLOWED_IDS = new Set(["dashboard-home", "congreso-varones", "support-help"]);
-
-function isStudentAffairsAllowedItem(item: AdminNavItem): boolean {
-  if (item.href == null) return false;
-  if (item.id && STUDENT_AFFAIRS_ALLOWED_IDS.has(item.id)) return true;
-  return item.href === "/admin" || item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH);
-}
-
-function isCongressAllowedItem(item: AdminNavItem): boolean {
-  if (item.href == null) return false;
-  if (item.id && CONGRESS_ALLOWED_IDS.has(item.id)) return true;
-  return (
-    item.href === "/admin" ||
-    item.href === CONGRESS_VARONES_HOME_PATH ||
-    item.href.startsWith(`${CONGRESS_VARONES_HOME_PATH}/`) ||
-    item.href === CONGRESS_VARONES_FORMS_ALIAS_PATH ||
-    item.href.startsWith(`${CONGRESS_VARONES_FORMS_ALIAS_PATH}/`)
-  );
+function itemVisibleInShell(item: AdminNavItem, scope?: AdminShellScope | null): boolean {
+  if (!scope) return true;
+  const owner = navItemSpecializedId(item);
+  if (owner) return scope.opened.includes(owner);
+  return scope.growthOs;
 }
 
 function isCongressNavItem(item: AdminNavItem): boolean {
@@ -201,7 +108,7 @@ export function filterNavItem(
   if (isCongressNavItem(item) && !showCongressVarones) return false;
 
   if (usesCongressFocusedShell(permissions, roleCodes)) {
-    return isCongressAllowedItem(item);
+    return isCongressAllowedNavItem(item);
   }
 
   if (isStudentAffairsOperator(roleCodes) && isStudentAffairsAdminOnlyNavItem(item)) {
@@ -209,7 +116,7 @@ export function filterNavItem(
   }
 
   if (usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes)) {
-    return isStudentAffairsAllowedItem(item);
+    return isStudentAffairsAllowedNavItem(item);
   }
 
   if (item.requiredRole?.length) {
@@ -226,11 +133,11 @@ export function filterSupplementalNav(
   roleCodes: string[] = []
 ): AdminNavItem[] {
   if (usesCongressFocusedShell(permissions, roleCodes)) {
-    return ADMIN_SIDEBAR_SUPPLEMENTAL.filter((item) => isCongressAllowedItem(item));
+    return ADMIN_SIDEBAR_SUPPLEMENTAL.filter((item) => isCongressAllowedNavItem(item));
   }
 
   if (usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes)) {
-    return ADMIN_SIDEBAR_SUPPLEMENTAL.filter((item) => isStudentAffairsAllowedItem(item));
+    return ADMIN_SIDEBAR_SUPPLEMENTAL.filter((item) => isStudentAffairsAllowedNavItem(item));
   }
 
   return ADMIN_SIDEBAR_SUPPLEMENTAL.filter((item) =>
@@ -241,25 +148,31 @@ export function filterSupplementalNav(
 export function filterAdminNav(
   permissions: string[],
   compatMode: boolean,
-  roleCodes: string[] = []
+  roleCodes: string[] = [],
+  scope?: AdminShellScope | null
 ): AdminNavItem[] {
+  const visible = (item: AdminNavItem) => itemVisibleInShell(item, scope);
+
   if (usesCongressFocusedShell(permissions, roleCodes)) {
     return ADMIN_PRIMARY_NAV.filter(
       (item) =>
-        item.href === "/admin" ||
-        (item.href != null && item.href.startsWith(CONGRESS_VARONES_HOME_PATH))
+        visible(item) &&
+        (item.href === "/admin" ||
+          (item.href != null && item.href.startsWith(CONGRESS_VARONES_HOME_PATH)))
     );
   }
 
   if (usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes)) {
     return ADMIN_PRIMARY_NAV.filter(
       (item) =>
-        item.href === "/admin" ||
-        (item.href != null && item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH))
+        visible(item) &&
+        (item.href === "/admin" ||
+          (item.href != null && item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH)))
     );
   }
 
   return ADMIN_PRIMARY_NAV.filter((item) => {
+    if (!visible(item)) return false;
     if (item.href == null) return false;
     if (item.requiredRole?.length) {
       const hasRole = item.requiredRole.some((r) => roleCodes.includes(r));
@@ -317,6 +230,7 @@ export function filterAdminNavGroups(
   roleCodes: string[] = [],
   navBadges?: Record<string, number>,
   enabledAppIds?: readonly string[] | null,
+  scope?: AdminShellScope | null,
   showCongressVarones = true
 ): AdminNavGroup[] {
   const focusedShell =
@@ -328,6 +242,7 @@ export function filterAdminNavGroups(
       return false;
     }
     if (focusedShell && item.id === "dashboard-home") return false;
+    if (!itemVisibleInShell(item, scope)) return false;
     return true;
   });
 

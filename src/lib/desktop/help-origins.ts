@@ -1,3 +1,5 @@
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
+
 export const HELP_LOCATION_TTL_MS = 45_000;
 
 export interface HelpOriginRecord {
@@ -41,13 +43,13 @@ export interface HelpLocation {
 /**
  * Orígenes que Pedir ayuda puede congelar.
  * Otra aplicación se incorpora agregando aquí su canal, módulo, pantalla y acción,
- * y llamando a `useHelpAsk().ask(id)` dentro del escritorio de Growth OS.
+ * y llamando a `useHelpAsk().ask(id)` dentro del escritorio de NELZURI.
  */
 export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "growth-os.admision.editar-formulario",
     channel: "aplicacion",
-    siteOrApp: "Growth OS",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
     module: "Admisión",
     screen: "Editar formulario",
     action: null,
@@ -55,7 +57,7 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "growth-os.admision.editar-formulario.publicar",
     channel: "aplicacion",
-    siteOrApp: "Growth OS",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
     module: "Admisión",
     screen: "Editar formulario",
     action: "Publicar formulario",
@@ -63,7 +65,7 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "growth-os.admision.editar-formulario.guardar",
     channel: "aplicacion",
-    siteOrApp: "Growth OS",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
     module: "Admisión",
     screen: "Editar formulario",
     action: "Guardar",
@@ -71,7 +73,7 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "growth-os.admision.formularios",
     channel: "aplicacion",
-    siteOrApp: "Growth OS",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
     module: "Admisión",
     screen: "Formularios",
     action: null,
@@ -79,7 +81,7 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "growth-os.inicio",
     channel: "aplicacion",
-    siteOrApp: "Growth OS",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
     module: "Inicio",
     screen: "Inicio",
     action: null,
@@ -87,7 +89,7 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "escritorio.atencion.nuevo-ticket",
     channel: "escritorio",
-    siteOrApp: "Escritorio Empresarial",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
     module: "Atención al Cliente",
     screen: "Nuevo ticket",
     action: null,
@@ -96,7 +98,7 @@ export const HELP_ORIGINS: readonly HelpOriginRecord[] = [
   {
     id: "escritorio.chat-en-vivo",
     channel: "escritorio",
-    siteOrApp: "Escritorio Empresarial",
+    siteOrApp: PLATFORM_DISPLAY_NAME,
     module: "Chat en vivo",
     screen: "Chat en vivo",
     action: null,
@@ -150,7 +152,7 @@ export function helpPlace(parts: {
 
 export function helpChannelLabel(channel: string): string {
   if (channel === "aplicacion") return "Aplicación";
-  if (channel === "escritorio") return "Escritorio Empresarial";
+  if (channel === "escritorio") return PLATFORM_DISPLAY_NAME;
   if (channel === "web") return "Web";
   return channel.trim();
 }

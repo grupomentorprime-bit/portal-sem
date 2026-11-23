@@ -20,6 +20,7 @@ export async function CumpleShell({
 }: Pick<CodedPageViewProps, "contact"> & { children: ReactNode; motion?: boolean }) {
   const headerList = await headers();
   const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+  const nonce = headerList.get("x-nonce") ?? undefined;
   const deskOrigin = deskOriginFromEnv();
   const href = escritorioReturnHref(publicOriginFromHost(host) ?? "", deskOrigin);
   return (
@@ -30,7 +31,7 @@ export async function CumpleShell({
       suppressHydrationWarning
     >
       <EscritorioReturn href={href} deskOrigin={deskOrigin} />
-      <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
       <SiteHeader />
       {children}
       <CumpleFooter contact={contact} />

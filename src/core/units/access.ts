@@ -1,4 +1,4 @@
-import type { UnitAccess } from "@/core/units/types";
+import type { OrgUnit, UnitAccess } from "@/core/units/types";
 
 function uniqueIds(ids: readonly string[]): string[] {
   const seen = new Set<string>();
@@ -74,6 +74,30 @@ export function invitationVisibleTo(
 
 export function isCentralUnitAdmin(access: UnitAccess | null | undefined): boolean {
   return !access || access.mode === "tenant";
+}
+
+/**
+ * Recorte que ya usa el admin.
+ * null: administración central. La lista solo junta aplicaciones de unidades activas.
+ */
+export function membershipUnitScope(input: {
+  unitAccess: UnitAccess | null | undefined;
+  units: readonly Pick<OrgUnit, "unitId" | "status" | "enabledAppIds">[];
+}): { unitIds: string[] | null; enabledUnitAppIds: string[] | null } {
+  if (!input.unitAccess || input.unitAccess.mode === "tenant") {
+    return { unitIds: null, enabledUnitAppIds: null };
+  }
+  const allowed = new Set(input.unitAccess.unitIds);
+  return {
+    unitIds: [...input.unitAccess.unitIds],
+    enabledUnitAppIds: [
+      ...new Set(
+        input.units
+          .filter((unit) => unit.status === "active" && allowed.has(unit.unitId))
+          .flatMap((unit) => unit.enabledAppIds)
+      ),
+    ],
+  };
 }
 
 export function resolveUploadUnitId(

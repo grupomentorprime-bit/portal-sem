@@ -2,6 +2,7 @@
  * Copy humano Campañas V1 — diseño final OT-GROWTH-UX-CAMPAIGNS-004.
  */
 
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import type {
   GrowthCampaignAudienceFilter,
   GrowthCampaignSource,
@@ -39,7 +40,7 @@ export const CAMPAIGN_STEP_4_TITLE = "Revisar y activar";
 export const CAMPAIGN_SOURCE_FORM_LABEL = "Formulario";
 export const CAMPAIGN_SOURCE_NONE_LABEL = "Solo seguimiento";
 export const CAMPAIGN_SOURCE_NONE_DETAIL =
-  "Esta campaña acompaña personas que ya están en Growth OS.";
+  `Esta campaña acompaña personas que ya están en ${PLATFORM_DISPLAY_NAME}.`;
 export const CAMPAIGN_AUTOMATION_NONE =
   "No hay seguimiento automático.";
 export const CAMPAIGN_AUDIENCE_ALL_PREFIX =

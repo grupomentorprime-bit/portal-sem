@@ -1,7 +1,7 @@
 import { FormDetailClient } from "@/components/admin/forms/FormDetailClient";
 import { getConvocatoriaByFormId, publicFormUrl } from "@/lib/admin/forms-center";
 import { publicUrlForPath } from "@/core/tenant/hosts";
-import { getSessionActiveTenantId } from "@/core/identity";
+import { getSessionActiveTenantId, isAuthContext, requirePermission } from "@/core/identity";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { getExperienceFormById } from "@/lib/experience/forms/repository";
 import { resolvePublishedOriginForTenant } from "@/lib/portal/public-origin";
@@ -19,6 +19,10 @@ export default async function AdminFormDetailPage({ params, searchParams }: Form
   const { tab } = await searchParams;
   if (tab === "respuestas") {
     redirect(`/admin/portal/forms/panel/${encodeURIComponent(id)}`);
+  }
+  const auth = await requirePermission("experience.forms.read");
+  if (!isAuthContext(auth)) {
+    return <p className="p-6 text-sm text-muted">No autorizado.</p>;
   }
   const [sessionTenantId, config] = await Promise.all([
     getSessionActiveTenantId(),

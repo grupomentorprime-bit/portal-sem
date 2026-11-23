@@ -37,7 +37,7 @@ describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
     assert.match(login, /PLATFORM_DISPLAY_NAME/);
     assert.match(login, /title:/);
     assert.doesNotMatch(login, /getSiteMetadata|getSiteConfig|seo\.title/);
-    assert.equal(PLATFORM_DISPLAY_NAME, "Growth OS");
+    assert.equal(PLATFORM_DISPLAY_NAME, "NELZURI");
   });
 
   it("E. updateSiteConfig exige tenantId; sin fallback silencioso a SEM", () => {
@@ -68,7 +68,8 @@ describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
     assert.doesNotMatch(client, /import\s*\{\s*DEFAULT_MENUS/);
     assert.doesNotMatch(client, /SEM_DEFAULT_MENUS/);
     assert.doesNotMatch(client, /seedMenus\s*=\s*DEFAULT_MENUS/);
-    assert.match(menusPage, /getDefaultMenusForTenant/);
+    assert.match(menusPage, /notFound\s*\(/);
+    assert.doesNotMatch(menusPage, /SEM_DEFAULT_MENUS|PLATFORM_DEFAULT_MENUS|getDefaultMenusForTenant|seedMenus/);
     assert.equal(getDefaultMenusForTenant(SEM_TENANT_ID), SEM_DEFAULT_MENUS);
     assert.equal(getDefaultMenusForTenant(ADL_TENANT_ID), PLATFORM_DEFAULT_MENUS);
     assert.equal(getDefaultMenusForTenant("otro-espacio"), PLATFORM_DEFAULT_MENUS);
@@ -103,7 +104,7 @@ describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
     );
   });
 
-  it("EMAIL_FROM: display name = Espacio o Growth OS; nunca Portal SEM del env", () => {
+  it("EMAIL_FROM: display name = Espacio o NELZURI; nunca Portal SEM del env", () => {
     assert.equal(
       parseTechnicalMailbox("Portal SEM <noreply@growth.example>"),
       "noreply@growth.example"
@@ -118,7 +119,7 @@ describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
       tenantId: SEM_TENANT_ID,
     });
     assert.match(sem.displayName, /Seminario Eclesiástico Mayor/);
-    assert.doesNotMatch(sem.displayName, /Portal SEM|Growth OS/);
+    assert.doesNotMatch(sem.displayName, /Portal SEM|Growth OS|NELZURI/);
 
     const adlConfig = applyAdlSiteIdentity(createDefaultSiteConfig());
     const adl = resolveEmailIdentity({
@@ -126,10 +127,10 @@ describe("OT-GROWTH-SEM-LEGACY-FIX-001 — defaults globales SEM", () => {
       tenantId: ADL_TENANT_ID,
     });
     assert.match(adl.displayName, /Academia ADL/);
-    assert.doesNotMatch(adl.displayName, /Portal SEM|Seminario/);
+    assert.doesNotMatch(adl.displayName, /Portal SEM|Seminario|NELZURI/);
 
     const from = formatFromHeader(platform.displayName, "noreply@growth.example");
-    assert.match(from, /Growth OS/);
+    assert.match(from, /NELZURI/);
     assert.doesNotMatch(from, /Portal SEM/);
 
     const identitySrc = readSrc("src/lib/notifications/identity.ts");

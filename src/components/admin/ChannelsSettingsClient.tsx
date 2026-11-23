@@ -6,6 +6,7 @@ import { NetworkTile, type NetworkId } from "@/components/brand/NetworkMark";
 import { MetaPagesChannels } from "@/components/admin/MetaPagesChannels";
 import { useDeferredEffect } from "@/hooks/use-deferred-effect";
 import { Button, Input, Label, Modal } from "@/components/ui";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { aek } from "@/components/admin/kit/utils/tokens";
 import type {
   GrowthWhatsAppConnectionPublic,
@@ -692,7 +693,7 @@ export function ChannelsSettingsClient() {
           ) : (
             <p className="max-w-xl text-sm leading-relaxed text-muted">
               Conectá WhatsApp Business con Meta. Autorizás el negocio y el
-              número; Growth OS guarda la conexión de este Espacio.
+              número; {PLATFORM_DISPLAY_NAME} guarda la conexión de este Espacio.
             </p>
           )}
 

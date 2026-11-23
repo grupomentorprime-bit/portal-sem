@@ -2,6 +2,7 @@
  * Capturas UX-SHELL-003B (hero + métricas vs referencia).
  * Uso: npx tsx --env-file=.env scripts/capture-platform-ux-shell-003b.ts
  */
+import "./_mongo-guard";
 import { copyFileSync, mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

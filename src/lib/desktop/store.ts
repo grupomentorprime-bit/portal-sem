@@ -66,15 +66,18 @@ export function mongoAppRequestStore(): AppRequestStore {
 export async function readSpaceContract(tenantId: string): Promise<{
   contracted: MentorAppId[];
   aprendeHoyEntryUrl: string | null;
+  spaceType: string | null;
 }> {
   const db = await getDatabase();
   const tenant = await findTenantById(db, tenantId);
+  const rawType = tenant?.type;
   return {
     contracted: resolveContractedApps({
       tenantId,
       contractedApps: tenant?.contractedApps,
     }),
     aprendeHoyEntryUrl: tenant?.aprendeHoyEntryUrl ?? null,
+    spaceType: typeof rawType === "string" && rawType.trim() ? rawType.trim() : null,
   };
 }
 

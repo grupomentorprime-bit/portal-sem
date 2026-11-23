@@ -1,4 +1,5 @@
 import type { Db } from "mongodb";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import type { IdentityAuditEntry, IdentitySession } from "@/types/identity";
 import { generateId } from "@/core/identity/auth/crypto";
 import {
@@ -57,6 +58,16 @@ export interface DeletePlatformSpaceResult {
 }
 
 export { isProtectedPlatformSpace };
+
+/** Rechaza la baja antes de abrir colecciones o borrar documentos. */
+export function rejectProtectedPlatformSpace(tenantId: string): void {
+  if (!isProtectedPlatformSpace(tenantId)) return;
+  throw new DeletePlatformSpaceError(
+    "protected_space",
+    `Este Espacio operativo no se puede eliminar desde ${PLATFORM_DISPLAY_NAME}.`,
+    403
+  );
+}
 
 type TenantScopedCollection = {
   name: string;
@@ -152,7 +163,8 @@ async function writeDeleteAudit(
 
 /**
  * Baja irreversible de un Espacio desde Platform Admin.
- * No borra SEM ni ADL. Requiere confirmación con el identificador exacto.
+ * Los seis Espacios operativos se rechazan antes de cualquier lectura o borrado.
+ * El resto requiere confirmación con el identificador exacto.
  */
 export async function deletePlatformSpace(
   db: Db,
@@ -162,6 +174,8 @@ export async function deletePlatformSpace(
     actorUserId: string;
   }
 ): Promise<DeletePlatformSpaceResult> {
+  rejectProtectedPlatformSpace(input.tenantId);
+
   const tenantId = input.tenantId?.trim() ?? "";
   const confirmSlug = input.confirmSlug?.trim() ?? "";
 
@@ -169,14 +183,6 @@ export async function deletePlatformSpace(
     throw new DeletePlatformSpaceError(
       "invalid_tenant",
       "El identificador del Espacio no es válido."
-    );
-  }
-
-  if (isProtectedPlatformSpace(tenantId)) {
-    throw new DeletePlatformSpaceError(
-      "protected_space",
-      "Este Espacio de fundación no se puede eliminar desde Growth OS.",
-      403
     );
   }
 

@@ -232,6 +232,7 @@ function SidebarNav({
     ctx.roleCodes,
     ctx.navBadges,
     ctx.enabledAppIds,
+    ctx.shellScope,
     ctx.showCongressVarones === true
   );
   const groupsById = new Map(groups.map((group) => [group.id, group]));

@@ -2,6 +2,7 @@
  * OT-GROWTH-UX-SPACE-CREATION-001 — capturas Crear Espacio (Platform Admin).
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-space-creation-001.ts
  */
+import "./_mongo-guard";
 import { mkdirSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

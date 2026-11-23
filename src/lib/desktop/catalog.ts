@@ -1,8 +1,27 @@
-export const MENTOR_APPS = ["growth-os", "cumple", "aprende-hoy", "rrhh"] as const;
-export type MentorAppId = (typeof MENTOR_APPS)[number];
+import {
+  isSpecializedAppId,
+  MENTOR_APPS,
+  manifestById,
+  spaceRequiredBy,
+  type MentorAppId,
+  type SpecializedAppId,
+} from "@/nelzuri";
 
-/** Utilidades del escritorio. No se contratan. */
-export type DockAppId = MentorAppId | "mensajes" | "envivo" | "clientes" | "ajustes";
+export { MENTOR_APPS, type MentorAppId };
+
+const cumpleSpaceId = spaceRequiredBy("cumple");
+if (cumpleSpaceId !== "cumple") {
+  throw new Error("Cumple sigue exigiendo el Espacio cumple.");
+}
+
+/** Utilidades del escritorio. No se contratan. Las especializadas tampoco. */
+export type DockAppId =
+  | MentorAppId
+  | SpecializedAppId
+  | "mensajes"
+  | "envivo"
+  | "clientes"
+  | "ajustes";
 
 /**
  * Catálogo de la mesa.
@@ -88,7 +107,7 @@ export function dockUtilityHref(appId: "clientes" | "ajustes", owner: boolean): 
   return owner ? "/platform/usuarios" : "/admin/config";
 }
 
-export const CUMPLE_SPACE_ID = "cumple";
+export const CUMPLE_SPACE_ID = cumpleSpaceId;
 
 export const WALLPAPERS = ["mar", "valle", "volcan", "kepler", "noche"] as const;
 export type DesktopWallpaper = (typeof WALLPAPERS)[number];
@@ -97,41 +116,27 @@ export type WallpaperChoice = DesktopWallpaper | "custom";
 
 export const DESKTOP_FALLBACK = "#102033";
 
-const LABELS: Record<MentorAppId, string> = {
-  "growth-os": "Growth OS",
-  cumple: "Cumple",
-  "aprende-hoy": "Aprende Hoy",
-  rrhh: "RR.HH.",
-};
-
-const BLURBS: Record<MentorAppId, string> = {
-  "growth-os": "Captación y conversión del Espacio.",
-  cumple: "Cumplimiento de la empresa: obligaciones, brechas y evidencia.",
-  "aprende-hoy": "Vida académica: admisión, clases, evaluación y campus.",
-  rrhh: "Personas empleadas, contratos y jornada.",
-};
-
-export function isMentorAppId(value: string): value is MentorAppId {
-  return (MENTOR_APPS as readonly string[]).includes(value);
-}
+export { isMentorAppId, isSpecializedAppId } from "@/nelzuri";
 
 export function mentorAppLabel(appId: MentorAppId): string {
-  return LABELS[appId];
+  return manifestById(appId).label;
 }
 
 export function mentorAppBlurb(appId: MentorAppId): string {
-  return BLURBS[appId];
+  return manifestById(appId).blurb;
 }
 
 export function dockAppLabel(appId: DockAppId): string {
+  if (isSpecializedAppId(appId)) return manifestById(appId).label;
   if (appId === "ajustes") return "Ajustes";
   if (appId === "mensajes") return "Atención";
   if (appId === "envivo") return "Chat en vivo";
   if (appId === "clientes") return "Clientes";
-  return LABELS[appId];
+  return mentorAppLabel(appId);
 }
 
 export function dockAppBlurb(appId: DockAppId, owner = false): string {
+  if (isSpecializedAppId(appId)) return manifestById(appId).blurb;
   if (appId === "mensajes") {
     return owner
       ? "Casos de cada empresa. Se responden cuando entres."
@@ -148,7 +153,7 @@ export function dockAppBlurb(appId: DockAppId, owner = false): string {
       ? "La plataforma, sus productos y quién la administra."
       : "Ajustes de este cliente: sitio, equipo y accesos.";
   }
-  return BLURBS[appId];
+  return mentorAppBlurb(appId);
 }
 
 export function parseWallpaper(value: unknown): DesktopWallpaper {

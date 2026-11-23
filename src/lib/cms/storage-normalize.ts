@@ -40,7 +40,7 @@ export function normalizePublicUrl(value: string): string {
 
 export function normalizeS3Fields(s3: S3Fields): S3Fields {
   const endpoint = normalizeS3Endpoint(s3.endpoint);
-  const accessMode: StorageAccessMode = s3.accessMode ?? (s3.publicUrl ? "public" : "private");
+  const accessMode: StorageAccessMode = s3.accessMode === "public" ? "public" : "private";
   return {
     ...s3,
     endpoint,

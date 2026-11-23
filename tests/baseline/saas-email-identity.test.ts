@@ -2,9 +2,10 @@
  * OT-GROWTH-PROD-002 — correo con identidad del Espacio.
  * Transporte (Resend / EMAIL_FROM) ≠ identidad (site_config + Domain).
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import {
@@ -31,7 +32,6 @@ import {
   parseTechnicalMailbox,
   resolveSendingMailbox,
 } from "../../src/lib/notifications/transport";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import type { DomainDocument, SiteConfigDocument } from "../../src/core/tenant/types";
 import type { SiteConfig } from "../../src/types/cms";
 
@@ -58,30 +58,15 @@ const NOTIFICATION_FILES = [
   "scripts/test-resend.ts",
 ];
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;
@@ -165,7 +150,7 @@ describe("OT-GROWTH-PROD-002 — transporte vs identidad", () => {
 });
 
 describe("OT-GROWTH-PROD-002 — identidad del Espacio", () => {
-  it("SEM originado usa nombre y reply-to SEM; ADL usa ADL; vacío → Growth OS", () => {
+  it("SEM originado usa nombre y reply-to SEM; ADL usa ADL; vacío → NELZURI", () => {
     const semConfig = applySemSiteIdentity(createDefaultSiteConfig());
     const adlConfig = applyAdlSiteIdentity(createDefaultSiteConfig());
     const empty = createDefaultSiteConfig();
@@ -191,19 +176,21 @@ describe("OT-GROWTH-PROD-002 — identidad del Espacio", () => {
     const none = resolveEmailIdentity({ config: empty, tenantId: "acme", siteId: "acme" });
 
     assert.equal(sem.displayName, SEM_SITE_IDENTITY.institution.name);
+    assert.doesNotMatch(sem.displayName, /NELZURI|Academia ADL/);
     assert.equal(sem.replyTo, SEM_SITE_IDENTITY.contact.email);
     assert.equal(sem.origin, "https://seminarioipn.cl");
     assert.doesNotMatch(sem.origin, /adl/);
     assert.doesNotMatch(JSON.stringify(sem), /Academia ADL/);
 
     assert.equal(adl.displayName, ADL_SITE_IDENTITY.institution.name);
+    assert.doesNotMatch(adl.displayName, /NELZURI/);
     assert.notEqual(adl.displayName, sem.displayName);
     assert.equal(adl.origin, "http://adl.localhost:3000");
     assert.doesNotMatch(adl.origin, /seminarioipn/);
     assert.doesNotMatch(JSON.stringify(adl), /Seminario Eclesiástico Mayor/);
     assert.doesNotMatch(JSON.stringify(adl), /seminarioipn/);
 
-    assert.equal(none.displayName, "Growth OS");
+    assert.equal(none.displayName, "NELZURI");
     assert.equal(none.replyTo, undefined);
     assert.doesNotMatch(none.displayName, /SEM/);
     assert.doesNotMatch(none.displayName, /Seminario/);
@@ -444,7 +431,7 @@ describe("OT-GROWTH-PROD-002 — copy de motor sin cliente hardcodeado", () => {
 });
 
 describe("OT-GROWTH-PROD-002 — fixture Mongo aislado", () => {
-  it("SEM y ADL en DB no se cruzan; Site sin nombre → Growth OS", async () => {
+  it("SEM y ADL en DB no se cruzan; Site sin nombre → NELZURI", async () => {
     await withDb(async (db) => {
       const siteConfig = db.collection<SiteConfigDocument>(SITE_CONFIG_COLLECTION);
       const domains = db.collection<DomainDocument>(DOMAINS_COLLECTION);
@@ -548,7 +535,7 @@ describe("OT-GROWTH-PROD-002 — fixture Mongo aislado", () => {
         configFromSiteDoc(fixtureDoc),
         fixtureDomains
       );
-      assert.equal(fixture.displayName, "Growth OS");
+      assert.equal(fixture.displayName, "NELZURI");
       assert.equal(fixture.origin, `http://${FIX_HOST}`);
       assert.doesNotMatch(fixture.displayName, /Seminario/);
       assert.doesNotMatch(JSON.stringify(fixture), /seminarioipn/);

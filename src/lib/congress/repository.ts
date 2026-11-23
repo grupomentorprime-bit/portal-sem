@@ -247,6 +247,23 @@ export async function listCongressRegistrations(
   return rows.map(normalizeCongressRegistration);
 }
 
+export async function listCongressChurchLabels(
+  tenantId: string,
+  opts: { zoneId?: string } = {}
+): Promise<Array<{ zoneId: string; churchName: string }>> {
+  const db = await getDatabase();
+  const filter: Record<string, unknown> = eventFilter(tenantId);
+  if (opts.zoneId?.trim()) filter.zoneId = opts.zoneId.trim();
+  const rows = await db
+    .collection<CongressRegistration>(CONGRESS_COLLECTIONS.registrations)
+    .find(filter, { projection: { zoneId: 1, churchName: 1, _id: 0 } })
+    .toArray();
+  return rows.map((row) => ({
+    zoneId: String(row.zoneId ?? ""),
+    churchName: String(row.churchName ?? ""),
+  }));
+}
+
 export async function getCongressRegistration(
   tenantId: string,
   id: string

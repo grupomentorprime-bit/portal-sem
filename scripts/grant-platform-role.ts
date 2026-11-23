@@ -7,6 +7,7 @@
  *   npx tsx --env-file=.env scripts/grant-platform-role.ts --email user@example.com --role platform_owner
  *   npx tsx --env-file=.env scripts/grant-platform-role.ts --user-id USER_ID --revoke
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import {
   isPlatformRoleCode,

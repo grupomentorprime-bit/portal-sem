@@ -46,7 +46,7 @@ const LINKS = [
   {
     href: PLATFORM_LEGAL_ROUTES.dataDeletion,
     title: "Eliminación de datos",
-    body: "Proceso simple para solicitar la eliminación de datos en Growth OS.",
+    body: `Proceso simple para solicitar la eliminación de datos en ${PLATFORM_DISPLAY_NAME}.`,
   },
 ] as const;
 
@@ -56,7 +56,7 @@ export default function PlatformLegalIndexPage() {
       <div className="space-y-6">
         <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--growth-os-secondary)]">
-            Growth OS
+            {PLATFORM_DISPLAY_NAME}
           </p>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Legales de plataforma

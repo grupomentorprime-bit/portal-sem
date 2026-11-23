@@ -3,6 +3,7 @@
  * Maqueta con datos · maqueta vacía.
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-admin-master-001a.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

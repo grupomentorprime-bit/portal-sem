@@ -4,6 +4,12 @@
 - Create: `src/core/congress/reception-stage.ts`
 - Test: `tests/baseline/congress-reception-stage.test.ts`
 
+﻿### Task 1: Helpers de filtros de mesa
+
+**Files:**
+- Modify: `src/lib/desktop/help-origins.ts` (tras `filterDeskCases`)
+- Create or Modify: `tests/baseline/desktop-attention-filters.test.ts`
+
 **Interfaces:**
 - Consumes: `labelExpectedDays` (`src/core/congress/expected-days.ts`), `deriveContributionStatus` (`src/core/congress/finance-status.ts`), `isValidChilePhone` (`src/lib/experience/forms/phone-chile.ts`), `CongressAttendanceDay` (`src/core/congress/constants.ts`)
 - Produces:
@@ -54,6 +60,14 @@ export function deriveReceptionProgress(input: {
 - [ ] **Step 1: Write the failing test**
 
 Crear `tests/baseline/congress-reception-stage.test.ts` con este contenido:
+
+  - `export type DeskFilterFields = { tenantId: string; originId: string; status: string; priority: string; assigneeUserId: string }`
+  - `export function emptyDeskFilters(): DeskFilterFields`
+  - `export function countAppliedDeskFilters(fields: DeskFilterFields): number`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `tests/baseline/desktop-attention-filters.test.ts`:
 
 ```ts
 import assert from "node:assert/strict";
@@ -611,6 +625,77 @@ export function receptionPrimaryAction(
     enabled: state === "listo" || state === "bloqueado",
     kind: "advance",
   };
+
+  countAppliedDeskFilters,
+  emptyDeskFilters,
+} from "../../src/lib/desktop/help-origins";
+
+describe("filtros de bandeja Atención (mesa)", () => {
+  it("vacío cuenta 0", () => {
+    assert.equal(countAppliedDeskFilters(emptyDeskFilters()), 0);
+  });
+
+  it("cuenta solo campos con valor", () => {
+    assert.equal(
+      countAppliedDeskFilters({
+        tenantId: "mentor-prime-capacitacion",
+        originId: "",
+        status: "pendiente",
+        priority: "",
+        assigneeUserId: "u1",
+      }),
+      3
+    );
+  });
+
+  it("emptyDeskFilters deja todos los campos en cadena vacía", () => {
+    assert.deepEqual(emptyDeskFilters(), {
+      tenantId: "",
+      originId: "",
+      status: "",
+      priority: "",
+      assigneeUserId: "",
+    });
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx tsx --test tests/baseline/desktop-attention-filters.test.ts`  
+Expected: FAIL (exports missing)
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `src/lib/desktop/help-origins.ts`, after `filterDeskCases`:
+
+```ts
+export type DeskFilterFields = {
+  tenantId: string;
+  originId: string;
+  status: string;
+  priority: string;
+  assigneeUserId: string;
+};
+
+export function emptyDeskFilters(): DeskFilterFields {
+  return {
+    tenantId: "",
+    originId: "",
+    status: "",
+    priority: "",
+    assigneeUserId: "",
+  };
+}
+
+export function countAppliedDeskFilters(fields: DeskFilterFields): number {
+  return [
+    fields.tenantId,
+    fields.originId,
+    fields.status,
+    fields.priority,
+    fields.assigneeUserId,
+  ].filter(Boolean).length;
 }
 ```
 
@@ -620,5 +705,7 @@ Run: `npx tsx --test tests/baseline/congress-reception-stage.test.ts`
 
 Expected: PASS. Todos los `it` de ese archivo en verde.
 
+Run: `npx tsx --test tests/baseline/desktop-attention-filters.test.ts`  
+Expected: PASS
 ---
 

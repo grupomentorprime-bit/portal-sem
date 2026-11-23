@@ -11,6 +11,7 @@
  * porque el cableado de Workflow/Event Bus usa el marcador server-only de Next.
  */
 
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import {
   createMongoGrowthBackfillSource,

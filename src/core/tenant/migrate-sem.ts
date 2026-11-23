@@ -173,6 +173,7 @@ export function buildSiteConfigDocument(
     contact: config.contact,
     social: config.social,
     features: config.features,
+    ...(typeof config.siteEnabled === "boolean" ? { siteEnabled: config.siteEnabled } : {}),
     sitePublished: config.sitePublished === true,
     portalCopy: config.portalCopy,
     topBar: config.topBar,
@@ -220,6 +221,12 @@ export async function ensureSemTenantFoundation(
     .collection<SiteConfig>("cms_config")
     .findOne({ _id: SITE_CONFIG_ID });
   const legacyConfig = normalizeSiteConfig(legacyRaw);
+  const seeded = createDefaultSiteConfig();
+  const source = legacyConfig ?? {
+    ...seeded,
+    institution: { ...seeded.institution, tenant: SEM_TENANT_ID },
+  };
+  const configForSite = applySemSiteIdentity(source);
 
   const tenantCol = db.collection<TenantDocument>(TENANTS_COLLECTION);
   const siteCol = db.collection<SiteDocument>(SITES_COLLECTION);
@@ -276,24 +283,15 @@ export async function ensureSemTenantFoundation(
 
   let siteConfigCreated = false;
   let siteConfigUpdated = false;
-  const configForSite = legacyConfig
-    ? applySemSiteIdentity(legacyConfig)
-    : null;
-  if (configForSite) {
-    const existingSiteConfig = await siteConfigCol.findOne({ _id: SEM_SITE_ID });
-    const siteConfigDoc = buildSiteConfigDocument(
-      configForSite,
-      existingSiteConfig,
-      at
-    );
-    const write = await siteConfigCol.replaceOne(
-      { _id: SEM_SITE_ID },
-      siteConfigDoc,
-      { upsert: true }
-    );
-    siteConfigCreated = write.upsertedCount > 0;
-    siteConfigUpdated = write.modifiedCount > 0;
-  }
+  const existingSiteConfig = await siteConfigCol.findOne({ _id: SEM_SITE_ID });
+  const siteConfigDoc = buildSiteConfigDocument(configForSite, existingSiteConfig, at);
+  const siteConfigWrite = await siteConfigCol.replaceOne(
+    { _id: SEM_SITE_ID },
+    siteConfigDoc,
+    { upsert: true }
+  );
+  siteConfigCreated = siteConfigWrite.upsertedCount > 0;
+  siteConfigUpdated = siteConfigWrite.modifiedCount > 0;
 
   let legacyCmsConfigUpdated = false;
   if (legacyRaw) {
@@ -311,17 +309,6 @@ export async function ensureSemTenantFoundation(
     legacyCmsConfigUpdated = patch.modifiedCount > 0;
   }
 
-  const menusResult = await db.collection("cms_menus").updateMany(
-    {
-      $or: [
-        { tenant: { $exists: false } },
-        { tenant: null },
-        { tenant: "" },
-      ],
-    } as Record<string, unknown>,
-    { $set: { tenant: SEM_TENANT_ID, updatedAt: at } }
-  );
-
   return {
     tenantId: SEM_TENANT_ID,
     siteId: SEM_SITE_ID,
@@ -338,7 +325,7 @@ export async function ensureSemTenantFoundation(
       domains: domainsUpdated,
       siteConfig: siteConfigUpdated,
       legacyCmsConfig: legacyCmsConfigUpdated,
-      menusBackfilled: menusResult.modifiedCount,
+      menusBackfilled: 0,
     },
     preserved: {
       legacyCmsConfig: Boolean(legacyRaw),
@@ -385,15 +372,7 @@ export async function materializeSemSiteIdentity(db: Db): Promise<{
 
   const cmsCol = db.collection<SiteConfig>("cms_config");
   let legacyUpdated = false;
-  if (!legacyRaw) {
-    const insert = await cmsCol.insertOne({
-      ...filled,
-      tenantId: SEM_TENANT_ID,
-      siteId: SEM_SITE_ID,
-      updatedAt: at,
-    } as SiteConfig & { tenantId: string; siteId: string });
-    legacyUpdated = Boolean(insert.insertedId);
-  } else {
+  if (legacyRaw) {
     const cmsWrite = await cmsCol.updateOne(
       { _id: SITE_CONFIG_ID },
       {

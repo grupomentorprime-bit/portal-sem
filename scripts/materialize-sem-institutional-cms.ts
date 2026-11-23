@@ -4,6 +4,7 @@
  *
  *   node --require ./scripts/_stub-server-only.cjs ./node_modules/tsx/dist/cli.mjs --env-file=.env scripts/materialize-sem-institutional-cms.ts
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { applySemInstitutionalCms } from "../src/core/tenant/sem-institutional-cms";
 

@@ -2,6 +2,7 @@
  * Compara nómina G-2023 pegada por el usuario vs BD e importador.
  * npx tsx --env-file=.env scripts/compare-g2023-roster.ts
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { parseConvocatoriaRosterRowsFromSheet } from "../src/lib/experience/forms/roster-import";
 import { normalizeGenerationValue } from "../src/lib/experience/forms/generations";

@@ -1,11 +1,12 @@
 import type { AuditTimelineEntry } from "@/components/admin/AuditTimeline";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import type { AdminTenantBranding } from "@/components/admin/shell-v2/types";
 import type { AdminUserSummary } from "@/components/admin/AdminUserMenuPanel";
 
 export const MOCK_BRANDING: AdminTenantBranding = {
   institutionName: "Espacio de ejemplo",
   institutionShortName: "Ejemplo",
-  centerLabel: "Growth OS",
+  centerLabel: PLATFORM_DISPLAY_NAME,
 };
 
 export const MOCK_USER: AdminUserSummary = {

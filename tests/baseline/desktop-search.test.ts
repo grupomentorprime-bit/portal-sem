@@ -42,6 +42,13 @@ describe("buscador del escritorio", () => {
     assert.equal(byName[0]?.kind, "app");
     assert.equal(byName[0]?.id, "cumple");
 
+    const growth = desktopSearch({ query: "growth", owner: false, spaces });
+    assert.deepEqual(growth.map((hit) => hit.id), ["growth-os"]);
+    assert.equal(
+      desktopSearch({ query: "nelzuri", owner: false, spaces }).some((hit) => hit.id === "growth-os"),
+      false
+    );
+
     const byPhrase = desktopSearch({ query: "vida academica", owner: false, spaces });
     assert.deepEqual(
       byPhrase.map((hit) => hit.id),

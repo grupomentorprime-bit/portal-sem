@@ -23,6 +23,12 @@ import {
   storageKeyFromMediaUrl,
 } from "@/lib/cms/media-storage";
 import { invalidateMediaCache } from "@/core/media/cache";
+import {
+  distributionFromPurpose,
+  presentMediaUrl,
+  purposeFromFolder,
+  resolveMediaDistribution,
+} from "@/core/security/media-access";
 import { mediaHasUsage } from "@/lib/cms/media-usage-helpers";
 import type {
   CmsMediaAsset,
@@ -31,13 +37,42 @@ import type {
   MediaFolder,
   MediaListQuery,
   MediaListResult,
+  MediaResponsiveUrls,
   MediaSearchQuery,
 } from "@/types/media";
 
 const CMS_MEDIA_TAG = "cms-media";
 
-function normalizeAsset(asset: CmsMediaAsset): CmsMediaAsset {
+function sealDeliveryUrl(url: string, distribution: ReturnType<typeof resolveMediaDistribution>): string {
+  return presentMediaUrl({ distribution, url });
+}
+
+function sealResponsive(
+  responsive: MediaResponsiveUrls | undefined,
+  distribution: ReturnType<typeof resolveMediaDistribution>
+): MediaResponsiveUrls {
+  const next: MediaResponsiveUrls = {};
+  for (const [key, value] of Object.entries(responsive ?? {})) {
+    if (typeof value === "string") {
+      next[key as keyof MediaResponsiveUrls] = sealDeliveryUrl(value, distribution);
+    }
+  }
+  return next;
+}
+
+/** Quita la URL del bucket en archivos privados, también en registros ya guardados. */
+function sealPrivateDelivery(asset: CmsMediaAsset): CmsMediaAsset {
+  const distribution = resolveMediaDistribution(asset);
   return {
+    ...asset,
+    url: sealDeliveryUrl(asset.url, distribution),
+    thumbnail: asset.thumbnail ? sealDeliveryUrl(asset.thumbnail, distribution) : asset.thumbnail,
+    responsive: sealResponsive(asset.responsive, distribution),
+  };
+}
+
+function normalizeAsset(asset: CmsMediaAsset): CmsMediaAsset {
+  return sealPrivateDelivery({
     ...asset,
     tags: asset.tags ?? [],
     usage: asset.usage ?? [],
@@ -47,7 +82,7 @@ function normalizeAsset(asset: CmsMediaAsset): CmsMediaAsset {
     status: asset.status ?? "active",
     favorite: asset.favorite ?? false,
     version: asset.version ?? 1,
-  };
+  });
 }
 
 function buildSort(query: MediaListQuery): Record<string, 1 | -1> {
@@ -212,8 +247,9 @@ async function repairMissingMediaStorage(
   const existing = await readMediaFile(storageKey);
   if (existing) return normalizeAsset(asset);
 
-  await putMediaFile(storageKey, buffer, mimeType);
-  const url = await resolveMediaStoragePublicUrl(storageKey);
+  const distribution = resolveMediaDistribution(asset);
+  await putMediaFile(storageKey, buffer, mimeType, asset.tenant, distribution);
+  const url = await resolveMediaStoragePublicUrl(storageKey, asset.tenant, distribution);
   const thumbnail = mimeType.startsWith("video/") ? asset.thumbnail : url;
 
   if (url === asset.url && thumbnail === asset.thumbnail) {
@@ -222,12 +258,12 @@ async function repairMissingMediaStorage(
 
   const db = await getDatabase();
   const now = new Date().toISOString();
-  const updated: CmsMediaAsset = {
+  const updated: CmsMediaAsset = sealPrivateDelivery({
     ...asset,
     url,
     thumbnail,
     updatedAt: now,
-  };
+  });
 
   await db
     .collection<CmsMediaAsset>("cms_media")
@@ -263,6 +299,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
   const mediaId = `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const category = inferCategory(input.mimeType);
   const folder = input.folder ?? DEFAULT_MEDIA_FOLDER;
+  const distribution = distributionFromPurpose(purposeFromFolder(folder));
 
   let url = "";
   let thumbnail = "";
@@ -278,7 +315,8 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
       input.tenant,
       mediaId,
       baseName || "image",
-      folder === "Hero" ? "hero" : "default"
+      folder === "Hero" ? "hero" : "default",
+      distribution
     );
     url = processed.primaryUrl;
     thumbnail = processed.thumbnail;
@@ -287,7 +325,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     height = processed.metadata.height;
   } else {
     const key = buildStorageKey(input.tenant, mediaId, `${mediaId}.${ext}`);
-    const stored = await putMediaFile(key, input.buffer, input.mimeType);
+    const stored = await putMediaFile(key, input.buffer, input.mimeType, input.tenant, distribution);
     url = stored.publicUrl;
     thumbnail = input.mimeType.startsWith("video/") ? "" : url;
 
@@ -300,7 +338,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
 
   const storageKey = buildStorageKey(input.tenant, mediaId, "");
 
-  const document: CmsMediaAsset = {
+  const document: CmsMediaAsset = sealPrivateDelivery({
     _id: mediaId,
     tenant: input.tenant,
     ...(input.unitId ? { unitId: input.unitId } : {}),
@@ -321,6 +359,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     status: "active",
     version: 1,
     visibility: "active",
+    distribution,
     url,
     thumbnail: thumbnail || url,
     responsive,
@@ -330,7 +369,7 @@ export async function uploadMedia(input: UploadMediaInput): Promise<CmsMediaAsse
     createdBy: input.createdBy ?? "admin",
     createdAt: now,
     updatedAt: now,
-  };
+  });
 
   await db.collection<CmsMediaAsset>("cms_media").insertOne(document);
   revalidateMediaTags(input.tenant);
@@ -354,7 +393,21 @@ export async function moveMedia(
   tenant: string,
   folder: MediaFolder
 ): Promise<CmsMediaAsset | null> {
-  return updateMedia(id, tenant, { folder });
+  return updateMedia(id, tenant, {
+    folder,
+    distribution: distributionFromPurpose(purposeFromFolder(folder)),
+  });
+}
+
+export async function findMediaAssetByObjectKey(
+  tenant: string,
+  key: string
+): Promise<CmsMediaAsset | null> {
+  const mediaId = key.split("/")[1];
+  if (!mediaId) return null;
+  const db = await getDatabase();
+  const asset = await db.collection<CmsMediaAsset>("cms_media").findOne({ _id: mediaId, tenant });
+  return asset ? normalizeAsset(asset) : null;
 }
 
 async function readAssetBuffer(asset: CmsMediaAsset): Promise<Buffer | null> {
@@ -435,6 +488,7 @@ export async function replaceMediaFile(
   if (!existing) return null;
 
   await deleteMediaPrefix(`${existing.tenant}/${id}`);
+  const distribution = resolveMediaDistribution(existing);
 
   let url = existing.url;
   let thumbnail = existing.thumbnail;
@@ -450,7 +504,8 @@ export async function replaceMediaFile(
       input.tenant,
       id,
       baseName || "image",
-      existing.folder === "Hero" ? "hero" : "default"
+      existing.folder === "Hero" ? "hero" : "default",
+      distribution
     );
     url = processed.primaryUrl;
     thumbnail = processed.thumbnail;
@@ -460,7 +515,7 @@ export async function replaceMediaFile(
   } else {
     const ext = input.originalName.split(".").pop()?.toLowerCase() ?? "bin";
     const key = buildStorageKey(input.tenant, id, `${id}.${ext}`);
-    const stored = await putMediaFile(key, input.buffer, input.mimeType);
+    const stored = await putMediaFile(key, input.buffer, input.mimeType, input.tenant, distribution);
     url = stored.publicUrl;
     thumbnail = url;
     responsive = {};
@@ -470,7 +525,7 @@ export async function replaceMediaFile(
   const db = await getDatabase();
   const now = new Date().toISOString();
 
-  const updated: CmsMediaAsset = {
+  const updated: CmsMediaAsset = sealPrivateDelivery({
     ...existing,
     originalName: input.originalName,
     filename: input.originalName,
@@ -484,7 +539,7 @@ export async function replaceMediaFile(
     hash,
     version: (existing.version ?? 1) + 1,
     updatedAt: now,
-  };
+  });
 
   await db
     .collection<CmsMediaAsset>("cms_media")

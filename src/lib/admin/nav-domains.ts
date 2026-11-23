@@ -5,6 +5,9 @@
  */
 
 import type { AdminNavItem } from "@/lib/admin/institutional";
+import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
+import { FORMS_DOOR } from "@/nelzuri/catalog/doors";
+import { specializedNavPlacements } from "@/nelzuri";
 import { isNavActive } from "@/lib/admin/institutional";
 import {
   getNavItemConfigSection,
@@ -294,11 +297,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
           "/admin/portal/forms",
           "/admin/portal/convocatorias/configuracion",
         ],
-        requiredAnyPermission: [
-          "cms.pages.read",
-          "experience.forms.read",
-          "experience.forms.manage",
-        ],
+        requiredAnyPermission: [...FORMS_DOOR.anyPermission],
         children: [
           {
             id: "forms-create",
@@ -306,11 +305,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
             label: "Creación",
             icon: "admission",
             matchPrefixes: ["/admin/portal/forms"],
-            requiredAnyPermission: [
-              "cms.pages.read",
-              "experience.forms.read",
-              "experience.forms.manage",
-            ],
+            requiredAnyPermission: [...FORMS_DOOR.anyPermission],
           },
           {
             id: "forms-edit",
@@ -319,11 +314,7 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
             icon: "admission",
             matchPrefixes: ["/admin/portal/forms"],
             excludePrefixes: ["/admin/portal/forms/panel", "/admin/portal/forms/convocatorias"],
-            requiredAnyPermission: [
-              "cms.pages.read",
-              "experience.forms.read",
-              "experience.forms.manage",
-            ],
+            requiredAnyPermission: [...FORMS_DOOR.anyPermission],
           },
           {
             id: "forms-operation",
@@ -331,25 +322,9 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
             label: "Operación",
             icon: "admission",
             matchPrefixes: ["/admin/portal/forms/panel"],
-            requiredAnyPermission: [
-              "experience.forms.read",
-              "experience.forms.manage",
-              "congress.view",
-              "congress.operate",
-            ],
+            requiredAnyPermission: [...FORMS_DOOR.anyPermission],
           },
         ],
-      },
-      {
-        id: "congreso-varones",
-        href: "/admin/portal/congreso-varones",
-        label: "Congreso de Varones",
-        icon: "students",
-        matchPrefixes: [
-          "/admin/portal/congreso-varones",
-          "/admin/portal/forms/panel/ipn-asistencia-congreso-varones-2026",
-        ],
-        requiredAnyPermission: ["congress.view", "congress.operate"],
       },
     ],
   },
@@ -366,33 +341,6 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
         icon: "institution",
         matchPrefixes: ["/admin/config"],
         requiredAnyPermission: ["settings.update"],
-      },
-      {
-        id: "portal-admission",
-        href: "/admin/portal/admission",
-        label: "Centro de admisión",
-        icon: "admission",
-        matchPrefixes: ["/admin/portal/admission"],
-        requiredAnyPermission: [
-          "cms.pages.read",
-          "experience.forms.read",
-          "experience.forms.manage",
-          "students.read",
-        ],
-      },
-      {
-        id: "convocatorias-resultados",
-        href: "/admin/portal/asuntos-estudiantiles",
-        label: "Operación de formularios",
-        icon: "students",
-        matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
-        requiredAnyPermission: [
-          "student-affairs.read",
-          "student-affairs.checkin",
-          "student-affairs.manage",
-          "experience.forms.read",
-          "experience.forms.manage",
-        ],
       },
     ],
   },
@@ -502,8 +450,40 @@ const ADMIN_NAV_GROUPS: AdminNavGroupDef[] = [
   },
 ];
 
+function assembledNavGroups(): AdminNavGroupDef[] {
+  ensureSpecializedCapabilities();
+  const groups = ADMIN_NAV_GROUPS.map((group) => ({ ...group, items: [...group.items] }));
+  const byAnchor = new Map<string, ReturnType<typeof specializedNavPlacements>[number][]>();
+  for (const placement of specializedNavPlacements()) {
+    const key = `${placement.navGroupId}\0${placement.insertNavAfter}`;
+    const list = byAnchor.get(key) ?? [];
+    list.push(placement);
+    byAnchor.set(key, list);
+  }
+  for (const [key, list] of byAnchor) {
+    const [groupId, anchorId] = key.split("\0");
+    const group = groups.find((item) => item.id === groupId);
+    if (!group) continue;
+    const incoming = list
+      .sort((left, right) => left.navSequence - right.navSequence || left.appId.localeCompare(right.appId))
+      .filter((placement) => !group.items.some((item) => item.id === placement.navItem.id))
+      .map((placement): AdminNavItem => ({
+        id: placement.navItem.id,
+        href: placement.navItem.href,
+        label: placement.navItem.label,
+        icon: placement.navItem.icon,
+        matchPrefixes: [...placement.navItem.matchPrefixes],
+        requiredAnyPermission: [...placement.navItem.requiredAnyPermission],
+      }));
+    const anchor = group.items.findIndex((item) => item.id === anchorId);
+    const index = anchor >= 0 ? anchor + 1 : group.items.length;
+    group.items.splice(index, 0, ...incoming);
+  }
+  return groups;
+}
+
 export function getAllNavTreeItems(): AdminNavItem[] {
-  return ADMIN_NAV_GROUPS.flatMap((group) =>
+  return assembledNavGroups().flatMap((group) =>
     group.items.flatMap((item) => [item, ...(item.children ?? [])])
   );
 }
@@ -514,7 +494,7 @@ export function adminPathMatchesNavGroups(
   groupIds: readonly string[]
 ): boolean {
   const allowed = new Set(groupIds);
-  return ADMIN_NAV_GROUPS.some((group) => {
+  return assembledNavGroups().some((group) => {
     if (!allowed.has(group.id)) return false;
     return group.items.some((item) => isNavActive(pathname, item));
   });
@@ -530,7 +510,7 @@ export function buildAdminNavGroups(
     return visibleKeys.has(item.id ?? item.href ?? item.label);
   }
 
-  return ADMIN_NAV_GROUPS.map((group) => {
+  return assembledNavGroups().map((group) => {
     const items = group.items.filter(itemVisible).map((item) => ({
       ...item,
       badge: navBadges?.[item.id ?? item.href ?? item.label] ?? item.badge,

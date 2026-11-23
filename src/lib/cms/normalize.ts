@@ -98,6 +98,7 @@ export function normalizeSiteConfig(raw: RawSiteConfig | null): SiteConfig | nul
     contact: normalizeContact(raw, defaults.contact),
     social: { ...defaults.social, ...raw.social },
     features: normalizeFeatures(raw.features, defaults.features),
+    ...(typeof raw.siteEnabled === "boolean" ? { siteEnabled: raw.siteEnabled } : {}),
     sitePublished: raw.sitePublished === true,
     portalCopy: (() => {
       const portalCopy = { ...defaults.portalCopy, ...raw.portalCopy };

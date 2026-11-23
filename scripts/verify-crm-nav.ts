@@ -2,6 +2,7 @@
  * Verificación del menú CRM · Conversión en el shell productivo.
  * Uso: npx tsx --env-file=.env scripts/verify-crm-nav.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient } from "mongodb";

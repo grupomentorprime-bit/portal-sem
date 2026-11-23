@@ -1,5 +1,5 @@
 import {
-  FORM_CONVOCATORIAS,
+  listFormConvocatorias,
   FORM_LANDINGS,
   type FormLandingHighlight,
 } from "@/lib/admin/forms-center";
@@ -202,9 +202,7 @@ export function buildDefaultFormExperience(
   const staticLanding = semPack
     ? FORM_LANDINGS.find((item) => item.formId === formId)
     : undefined;
-  const convocatoria = semPack
-    ? FORM_CONVOCATORIAS.find((item) => item.formId === formId)
-    : undefined;
+  const convocatoria = listFormConvocatorias(tenant).find((item) => item.formId === formId);
 
   if (convocatoria?.landing) {
     const experience = buildFromLanding(tenant, formId, convocatoria.landing);

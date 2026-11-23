@@ -3,6 +3,7 @@
  * Sin I/O. Contrato humano común para growth_actividades + proyección de mensajes.
  */
 
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { GROWTH_AUTOMATION_SYSTEM_ACTOR } from "@/core/growth/automations/types";
 import type { GrowthActivity, GrowthActivityKind } from "@/core/growth/types";
 import type {
@@ -98,7 +99,7 @@ export function isGrowthAutomationActor(actorUserId: string | undefined): boolea
 }
 
 export function growthActividadActorSystemLabel(): string {
-  return "Growth OS";
+  return PLATFORM_DISPLAY_NAME;
 }
 
 export function growthActividadCaptureActorLabel(

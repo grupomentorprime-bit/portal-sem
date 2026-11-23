@@ -327,7 +327,7 @@ export function DesignSystemShowcase({ variant = "internal" }: DesignSystemShowc
               </Tabs>
               <Accordion>
                 <AccordionItem title="¿Qué es un Espacio?" defaultOpen>
-                  Un Espacio es la organización que opera su sitio y su equipo en Growth OS.
+                  Un Espacio es la organización que opera su sitio y su equipo en NELZURI.
                 </AccordionItem>
                 <AccordionItem title="¿Cómo me inscribo?">
                   Consulta la sección de admisiones en el portal institucional.

@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { getAllNavTreeItems } from "../../src/lib/admin/nav-domains";
 
 function readSrc(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
@@ -41,8 +42,6 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
       "/admin/experience-studio",
       "/admin/config",
       "/admin/portal/forms",
-      "/admin/portal/asuntos-estudiantiles",
-      "/admin/portal/admission",
       "/admin/site/domain",
       "/admin/settings/users",
       "/admin/settings/team",
@@ -65,6 +64,9 @@ describe("OT-GROWTH-UX-ADMIN-SHELL-002 — shell productivo", () => {
     ]) {
       assert.equal(nav.includes(retired), false, `retirado aún en nav: ${retired}`);
     }
+    const hrefs = new Set(getAllNavTreeItems().map((item) => item.href));
+    assert.equal(hrefs.has("/admin/portal/admission"), true);
+    assert.equal(hrefs.has("/admin/portal/asuntos-estudiantiles"), true);
   });
 
   it("nav sin hardcode de tenant (oferta académica CMS ya retirada)", () => {

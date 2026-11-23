@@ -21,6 +21,8 @@ describe("OT-GROWTH-UX-FORMS-HUMAN-001 — lenguaje visible humano", () => {
     assert.match(src, /Crear con IA/);
     assert.match(src, /Usar una plantilla/);
     assert.match(src, /Crear desde cero/);
+    assert.match(src, /PLATFORM_DISPLAY_NAME/);
+    assert.doesNotMatch(src, /Growth OS/);
     assert.match(src, /Dirección del enlace/);
     assert.match(templates, /Pedir información/);
     assert.match(templates, /Recibir contactos/);

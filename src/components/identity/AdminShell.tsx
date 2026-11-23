@@ -20,6 +20,7 @@ interface AdminShellProps {
   navBadges?: Record<string, number>;
   enabledAppIds?: string[] | null;
   showCongressVarones?: boolean;
+  shellScope?: { growthOs: boolean; opened: readonly string[] } | null;
 }
 
 export function AdminShell({
@@ -33,6 +34,7 @@ export function AdminShell({
   navBadges,
   enabledAppIds = null,
   showCongressVarones = false,
+  shellScope = null,
 }: AdminShellProps) {
   const pathname = usePathname();
   const hideChrome = pathname === "/admin/login";
@@ -53,6 +55,7 @@ export function AdminShell({
         navBadges={navBadges}
         enabledAppIds={enabledAppIds}
         showCongressVarones={showCongressVarones}
+        shellScope={shellScope}
       >
         {children}
       </AdminShellV2>
@@ -66,6 +69,7 @@ export function AdminShell({
           compatMode={compatMode}
           permissions={permissions}
           roleCodes={roleCodes}
+          shellScope={shellScope}
         />
         {children}
       </div>

@@ -2,9 +2,10 @@
  * OT-GROWTH-SAAS-007 — contenido SEM fuera del runtime genérico.
  * T001 conserva pack SEM; Espacio vacío no hereda SEM/IPN/Talca/generaciones.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import { SEM_TENANT_ID } from "../../src/core/tenant/constants";
@@ -26,7 +27,6 @@ import { createEmptyAdmissionConfig } from "../../src/lib/portal/empty-admission
 import { resolveFooterContent, SEM_FOOTER_INSTITUTION } from "../../src/lib/portal/footer-content";
 import { shouldUseHomeDemoContent } from "../../src/lib/portal/institutional-demo";
 import { createDefaultSiteConfig } from "../../src/lib/cms/defaults";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import type { PortalFooterPremiumViewModel } from "../../src/types/footer-premium";
 
 const FIX_TENANT = "tenant-saas007";
@@ -40,30 +40,15 @@ const SEM_MARKERS = [
   "IGLESIA PENTECOSTAL NAZARETH",
 ];
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;
@@ -205,8 +190,10 @@ describe("OT-GROWTH-SAAS-007 — extracción SEM del core", () => {
       resolve(process.cwd(), "src/lib/experience/forms/repository.ts"),
       "utf8"
     );
-    assert.match(repo, /isSemTenant\(tenant\)/);
-    assert.match(repo, /if \(!isSemTenant\(tenant\)\) return/);
+    assert.match(repo, /if \(!catalog\) return listExperienceForms\(tenant\)/);
+    assert.match(repo, /if \(!catalog\) return/);
+    assert.doesNotMatch(repo, /isSemTenant/);
+    assert.doesNotMatch(repo, /createSemDefaultForms/);
 
     const seed = readFileSync(
       resolve(process.cwd(), "src/lib/content/seed.ts"),

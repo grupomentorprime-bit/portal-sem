@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import {
   DOMAINS_COLLECTION,
@@ -23,7 +22,6 @@ import {
 } from "../../src/core/tenant/resolve";
 import { ensureSemTenantFoundation } from "../../src/core/tenant/migrate-sem";
 import { createDefaultSiteConfig } from "../../src/lib/cms/defaults";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import type {
   DomainDocument,
   SiteConfigDocument,
@@ -31,24 +29,9 @@ import type {
   TenantDocument,
 } from "../../src/core/tenant/types";
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 describe("OT-GROWTH-SAAS-002 — normalización de host", () => {
@@ -116,7 +99,7 @@ describe("OT-GROWTH-SAAS-002 — resolución Host → Tenant", () => {
   it("host desconocido no cae a SEM ni a otro tenant", async (t) => {
     loadTestMongoEnv();
     const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB;
+    const dbName = isolatedDatabaseName(import.meta.url);
     if (!uri || !dbName) {
       t.skip("Sin MONGODB_URI/MONGODB_DB");
       return;
@@ -159,7 +142,7 @@ describe("OT-GROWTH-SAAS-002 — resolución Host → Tenant", () => {
   it("host SEM en domains → seminario-ipn; APP_URL público no otorga SEM", async (t) => {
     loadTestMongoEnv();
     const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB;
+    const dbName = isolatedDatabaseName(import.meta.url);
     if (!uri || !dbName) {
       t.skip("Sin MONGODB_URI/MONGODB_DB");
       return;
@@ -248,7 +231,7 @@ describe("OT-GROWTH-SAAS-002 — resolución Host → Tenant", () => {
   it("tenant/site inactivo no entrega portal de otro tenant", async (t) => {
     loadTestMongoEnv();
     const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB;
+    const dbName = isolatedDatabaseName(import.meta.url);
     if (!uri || !dbName) {
       t.skip("Sin MONGODB_URI/MONGODB_DB");
       return;

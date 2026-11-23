@@ -1,4 +1,4 @@
-# Glosario — Growth OS
+# Glosario — NELZURI
 
 Vocabulario vigente para docs de entrada, chrome de plataforma y conversación de producto. Contratos: [ADR-009](./architecture/ADR-009.md) · [ADR-010](./architecture/ADR-010.md).
 
@@ -8,12 +8,13 @@ Vocabulario vigente para docs de entrada, chrome de plataforma y conversación d
 
 | Término | Definición |
 | --- | --- |
-| **Growth OS** | Producto de **este** repositorio. Plataforma para operar Espacios (identidad, CMS, media, formularios, flujos, eventos, portal público). |
+| **NELZURI** | Nombre visible del producto de **este** repositorio. Plataforma para operar Espacios (identidad, CMS, media, formularios, flujos, eventos, portal público). Lo opera Mentor Prime. |
+| **Growth OS** | Es el nombre anterior del producto. Permanece en el id `growth-os`, el tema Keycloak, las variables CSS y como actor de sistema en historial ya escrito. |
 | **Brújula de producto** | Ayuda a atraer personas, no perder oportunidades y convertirlas en clientes, alumnos o participantes. |
 | **Principio** | Simple por fuera. Potente por dentro. |
 | **Vertical educación** | Dominio de capacidades (sitio institucional, programas editoriales, formularios, jornadas). No es el nombre del producto. |
 | **Platform Core** | Capas ya disponibles: Identity, Tenant/Site/Domain, CMS, Media, Workflow, Events, Portal Engine. |
-| **Productization** | Frente cerrado en V1: que Growth OS se nombre y se opere como producto (chrome, correo, créditos, docs). |
+| **Productization** | Frente cerrado en V1: que el producto se nombre y se opere como tal (chrome, correo, créditos, docs). El nombre visible actual es NELZURI. |
 | **Growth Core** | Núcleo comercial: Persona → Origen → Oportunidad → Actividad → Próxima acción. **V1 cerrada · APTO** ([CLOSE-001](./validation/OT-GROWTH-CORE-CLOSE-001/README.md)). Contrato: [ADR-010](./architecture/ADR-010.md). CORE-001→006 **APTO**; [CORE-007](./validation/OT-GROWTH-CORE-007/README.md) **APTO VISUAL** (`/admin/personas`). Auditoría: [CORE-AUDIT-001](./validation/OT-GROWTH-CORE-AUDIT-001/README.md). |
 | **Ventas** | Superficie operativa sobre Growth Core (`/admin/ventas`). No es un CRM aparte. [SALES-001](./validation/OT-GROWTH-SALES-001/README.md) · **APTO TÉCNICO**. |
 | **Automatización** | Reacción a eventos Growth* (Trigger → Condición → Acción). **No** es el Workflow de estados de Oportunidad. Contrato: [ADR-011](./architecture/ADR-011.md) · persistencia: [AUTOMATION-002](./validation/OT-GROWTH-AUTOMATION-002/README.md) · runtime: [AUTOMATION-003](./validation/OT-GROWTH-AUTOMATION-003/README.md). Sin WAIT ni editor. |
@@ -33,8 +34,8 @@ Vocabulario vigente para docs de entrada, chrome de plataforma y conversación d
 | **Sitio** | `Site` / `siteId` | Superficie pública (portal) del Espacio |
 | **Cuenta** | `identity_users` | Persona global; membresías por Espacio |
 | **Invitación** | `identity_invitations` | Alta a un Espacio |
-| **Owner del Espacio** | rol `super_admin` (membresía) | Administra **su** Espacio; no es operador de Growth OS |
-| **Operador de Growth OS** | `identity_users.platformRoles` (`platform_owner` / `platform_operator`) | Administra la plataforma; no implica membresía en clientes |
+| **Owner del Espacio** | rol `super_admin` (membresía) | Administra **su** Espacio; no es operador de NELZURI |
+| **Operador de NELZURI** | `identity_users.platformRoles` (`platform_owner` / `platform_operator`) | Administra la plataforma; no implica membresía en clientes |
 | **Tenant** | — | Solo lenguaje técnico interno; no chrome de producto |
 | **T001 / T002** | Códigos de fundación | Internos / docs técnicos; no UI de producto |
 
@@ -53,7 +54,7 @@ SEM, ADL, Mentor Capacitación y Fundación Mueve son Espacios equivalentes. Nin
 
 Prohibido tratar un Espacio como nombre del producto o como lógica de plataforma (`if (tenant === "adl")` como identidad de producto).
 
-El realm Keycloak `seminario-ipn` es el id técnico de la plataforma, no un realm del Espacio SEM. Su Display Name es **Growth OS**. El cliente `seminario-ipn-web` conserva la marca SEM; `growth-os-web` y `growth-os-dev` muestran Growth OS.
+El realm Keycloak `seminario-ipn` es el id técnico de la plataforma, no un realm del Espacio SEM. Su Display Name preparado es **NELZURI**. El cliente `seminario-ipn-web` conserva la marca SEM; `growth-os-web` y `growth-os-dev` muestran NELZURI cuando el tema `growth-os` está publicado. El id técnico de la aplicación del Espacio SEM sigue siendo `growth-os`.
 
 ---
 
@@ -74,9 +75,10 @@ Este repo **no** administra alumnos, matrículas, pagos, contratos, expedientes 
 
 | Evitar | Usar |
 | --- | --- |
-| Portal SEM (como nombre del producto) | Growth OS |
-| AprendeHoy Learning OS / Learning OS (como este repo) | Growth OS; Aprende Hoy solo para el sistema académico |
-| CMS del SEM (chrome de plataforma) | Admin / Espacio / Growth OS |
+| Portal SEM (como nombre del producto) | NELZURI |
+| Growth OS (como nombre visible actual) | NELZURI. Growth OS queda como nombre anterior y como id técnico |
+| AprendeHoy Learning OS / Learning OS (como este repo) | NELZURI; Aprende Hoy solo para el sistema académico |
+| CMS del SEM (chrome de plataforma) | Admin / Espacio / NELZURI |
 | tenant / tenantId / T001 en UI | Espacio, Sitio, cuenta |
 
 El nombre de paquete/repo `portal-sem` es histórico; no implica que el producto sea el seminario.

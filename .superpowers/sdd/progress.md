@@ -122,9 +122,9 @@ Plan: docs/superpowers/plans/2026-11-18-congreso-varones-control-caja-ux.md
 Constraint: sin git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"/PR salvo pedido del usuario; reviews via uncommitted diffs
 
 
-Task 1: complete (uncommitted, helpers + cierre hero; inline — subagents unavailable)
+Task 1: complete (uncommitted, helpers + cierre hero; inline ï¿½ subagents unavailable)
 Task 2: complete (uncommitted, recaudado alineado)
-Task 3: complete (uncommitted, día condicional + zona|iglesia 2 cols)
+Task 3: complete (uncommitted, dï¿½a condicional + zona|iglesia 2 cols)
 Task 4: complete (uncommitted, movimientos columnas; domain tests 8/8; browser blocked on login)
 Final review (inline): Spec UX covered in CashBoxView.tsx. Tokens warning/success/primary (no hardcoded amber/violet) to match kit. Minors: browser smoke pendiente usuario.
 

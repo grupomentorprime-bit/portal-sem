@@ -6,6 +6,7 @@
  * Entrega: canales desktop · WhatsApp conectado · incompleto/pausado · móvil.
  * No declara APTO VISUAL.
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { createCipheriv, randomBytes, scryptSync } from "node:crypto";

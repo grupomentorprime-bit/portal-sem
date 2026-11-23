@@ -1,6 +1,7 @@
 /**
  * OT-GROWTH-PLATFORM-ADMIN-002 — catálogo y ficha de Espacios (Platform Admin).
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -19,7 +20,6 @@ import {
 } from "../../src/core/tenant/constants";
 import { listTenants } from "../../src/core/tenant/repositories";
 import { labelSpaceRole } from "../../src/lib/platform/space-labels";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 
 const ROOT = process.cwd();
 
@@ -41,30 +41,15 @@ function walkTsFiles(dir: string, files: string[] = []): string[] {
   return files;
 }
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(ROOT, filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;

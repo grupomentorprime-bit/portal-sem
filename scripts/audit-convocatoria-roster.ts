@@ -2,6 +2,7 @@
  * Audita nómina de convocatoria vs respuestas.
  * Ejecutar: npx tsx --env-file=.env scripts/audit-convocatoria-roster.ts [slug]
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { formatGenerationDisplay, normalizeGenerationValue } from "../src/lib/experience/forms/generations";
 

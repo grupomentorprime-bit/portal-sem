@@ -17,6 +17,7 @@ import {
   humanBlockLabel,
 } from "../../src/lib/cms/growth-block-palette";
 import { DEFAULT_TEMPLATES } from "../../src/lib/cms/page-defaults";
+import { getAllNavTreeItems } from "../../src/lib/admin/nav-domains";
 
 function readSrc(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
@@ -47,12 +48,9 @@ describe("OT-GROWTH-WEB-LANDING-IMPLEMENT-001 — Sitio web V1", () => {
   it("Institución conserva admisión y operación, sin el editor de la web vieja", () => {
     const nav = readSrc("src/lib/admin/nav-domains.ts");
     assert.match(nav, /id: "institucion"/);
-    for (const href of [
-      "/admin/portal/admission",
-      "/admin/portal/asuntos-estudiantiles",
-    ]) {
-      assert.match(nav, new RegExp(href.replace(/\//g, "\\/")));
-    }
+    const hrefs = new Set(getAllNavTreeItems().map((item) => item.href));
+    assert.equal(hrefs.has("/admin/portal/admission"), true);
+    assert.equal(hrefs.has("/admin/portal/asuntos-estudiantiles"), true);
     assert.doesNotMatch(nav, /id: "communications-hub"/);
     assert.doesNotMatch(nav, /id: "portal-pages"/);
   });

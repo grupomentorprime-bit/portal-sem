@@ -1,5 +1,5 @@
 import { FormsPanelDetailClient } from "@/components/admin/forms/FormsPanelClient";
-import { getSessionActiveTenantId } from "@/core/identity";
+import { getSessionActiveTenantId, isAuthContext, requirePermission } from "@/core/identity";
 import { CONGRESS_VARONES_FORM_ID } from "@/lib/experience/forms/already-enrolled";
 import { CONGRESS_VARONES_HOME_PATH } from "@/lib/admin/nav-access";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
@@ -14,6 +14,15 @@ interface FormsPanelDetailPageProps {
 
 export default async function FormsPanelDetailPage({ params }: FormsPanelDetailPageProps) {
   const { id } = await params;
+  if (id === CONGRESS_VARONES_FORM_ID) {
+    redirect(CONGRESS_VARONES_HOME_PATH);
+  }
+
+  const auth = await requirePermission("experience.forms.read");
+  if (!isAuthContext(auth)) {
+    return <p className="p-6 text-sm text-muted">No autorizado.</p>;
+  }
+
   const [sessionTenantId, config] = await Promise.all([
     getSessionActiveTenantId(),
     getOperationalSiteConfig(),
@@ -25,10 +34,6 @@ export default async function FormsPanelDetailPage({ params }: FormsPanelDetailP
 
   const form = await getExperienceFormById(tenantId, id);
   if (!form) notFound();
-
-  if (form._id === CONGRESS_VARONES_FORM_ID) {
-    redirect(CONGRESS_VARONES_HOME_PATH);
-  }
 
   return (
     <FormsPanelDetailClient formId={form._id} formName={form.name} fields={form.fields} />

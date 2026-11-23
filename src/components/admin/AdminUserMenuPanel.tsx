@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { PLATFORM_ADMIN_HOME } from "@/core/identity/platform/codes";
+import { spaceSwitchLanding, syncEnteredClientCookie } from "@/lib/desktop/catalog";
 import { spaceEntryDestination } from "@/lib/identity/space-entry";
 import { cn } from "@/lib/utils";
 import { AdminUserAvatar } from "@/components/admin/AdminUserAvatar";
@@ -74,11 +75,11 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
     }
     setOpen(false);
     const spaceChanges = tenantId !== user?.activeTenantId;
-    const destination = spaceEntryDestination({
-      pathname: window.location.pathname,
-      spaceChanges,
-    });
     if (!spaceChanges) {
+      const destination = spaceEntryDestination({
+        pathname: window.location.pathname,
+        spaceChanges,
+      });
       if (destination) window.location.assign(destination);
       return;
     }
@@ -89,7 +90,8 @@ export function AdminUserMenuPanel({ user, compatMode }: AdminUserMenuPanelProps
     });
     const data = await res.json().catch(() => ({ ok: false }));
     if (!data.ok) return;
-    if (destination) window.location.assign(destination);
+    syncEnteredClientCookie(tenantId);
+    window.location.assign(spaceSwitchLanding(window.location.pathname));
   }
 
   if (!user) {

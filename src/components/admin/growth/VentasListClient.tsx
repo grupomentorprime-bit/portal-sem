@@ -40,6 +40,7 @@ import type {
 } from "@/lib/growth/ventas-view";
 import type { VentasAttentionCounts } from "@/lib/growth/ventas-attention";
 import { kanbanColumnWidth } from "@/lib/growth/kanban-column-width";
+import { filterVentasColaItems } from "@/lib/growth/ventas-board";
 import { cn } from "@/lib/utils";
 import { OpportunityQueueDesk } from "./OpportunityQueueDesk";
 import { OpportunityViewSwitch } from "./OpportunityViewSwitch";
@@ -308,7 +309,8 @@ export function VentasListClient({
   );
 
   const hasFilters = Boolean(q || status || type || nextAction || funnel || band || mine);
-  const isEmpty = items.length === 0;
+  const queueItems = vista === "cola" ? filterVentasColaItems(liveItems) : liveItems;
+  const isEmpty = (vista === "cola" ? queueItems : items).length === 0;
   const isTrueEmpty = isEmpty && !hasFilters;
   const attentionChips = [
     {
@@ -515,7 +517,7 @@ export function VentasListClient({
       ) : null}
       {vista === "cola" && !isEmpty ? (
         <OpportunityQueueDesk
-          items={liveItems}
+          items={queueItems}
           canOperate={canOperate}
           members={members}
           pending={pending || moving}

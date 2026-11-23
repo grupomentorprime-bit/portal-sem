@@ -26,6 +26,7 @@ describe("ajustes del dueño", () => {
         "Plataforma",
         "Dirección",
         "Productos",
+        "Atención al Cliente",
         "Seguridad",
         "Legales",
         "Actividad",
@@ -35,6 +36,10 @@ describe("ajustes del dueño", () => {
 
   it("muestra la marca y los documentos de la plataforma", () => {
     assert.equal(OWNER_PLATFORM.name, "NELZURI");
+    assert.equal(
+      OWNER_SECTIONS.find((section) => section.id === "plataforma")?.subtitle,
+      "El nombre y quién opera NELZURI."
+    );
     assert.equal(OWNER_PLATFORM.operator, "Mentor Prime");
     assert.deepEqual(
       OWNER_LEGAL.map((item) => item.href),
@@ -51,6 +56,7 @@ describe("ajustes del dueño", () => {
 
   it("deja Growth OS en un cliente nuevo y el resto en la ficha", () => {
     const products = ownerProducts();
+    assert.equal(products[0]?.id, "growth-os");
     assert.equal(products[0]?.label, "Growth OS");
     assert.match(products[0]?.text ?? "", /cliente nuevo/);
     assert.match(products.find((item) => item.id === "cumple")?.text ?? "", /Cumple/);

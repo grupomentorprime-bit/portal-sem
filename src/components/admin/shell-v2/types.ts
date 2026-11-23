@@ -20,6 +20,8 @@ export interface AdminShellV2Context {
   navBadges?: Record<string, number>;
   enabledAppIds?: string[] | null;
   showCongressVarones?: boolean;
+  /** Llave de Growth OS y capacidades institucionales ya abiertas. */
+  shellScope?: { growthOs: boolean; opened: readonly string[] } | null;
 }
 
 export interface ModuleHeaderProps {

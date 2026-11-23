@@ -90,7 +90,7 @@ export default async function EscritorioPage() {
     deskTenantId = entered;
   }
   const [contract, openRequests] = onPlatformDesk
-    ? [{ contracted: [], aprendeHoyEntryUrl: null }, []]
+    ? [{ contracted: [], aprendeHoyEntryUrl: null, spaceType: null }, []]
     : await Promise.all([
         readSpaceContract(deskTenantId),
         mongoAppRequestStore().listOpen(deskTenantId),
@@ -116,6 +116,11 @@ export default async function EscritorioPage() {
       }
     }
     authorizedApps = deskMembership?.authorizedApps ?? null;
+  }
+  let deskRoleCodes = roleCodes;
+  if (deskMembership && deskTenantId && deskMembership.tenantId !== tenantId) {
+    const roles = await findRolesByIds(deskTenantId, deskMembership.roleIds);
+    deskRoleCodes = roles.map((role) => getRoleCode(role)).filter(Boolean) as string[];
   }
 
   let attentionCount = 0;
@@ -171,16 +176,24 @@ export default async function EscritorioPage() {
 
   let departmentName = "";
   if (!onPlatformDesk && deskTenantId) {
-    let placeRoleCodes = roleCodes;
-    if (deskMembership && deskMembership.tenantId !== tenantId) {
-      const roles = await findRolesByIds(deskTenantId, deskMembership.roleIds);
-      placeRoleCodes = roles.map((role) => getRoleCode(role)).filter(Boolean) as string[];
-    }
     departmentName = await activeDepartmentName({
       tenantId: deskTenantId,
-      roleCodes: placeRoleCodes,
+      roleCodes: deskRoleCodes,
       unitAccess: deskMembership?.unitAccess,
     });
+  }
+
+  let unitIds: string[] | null = null;
+  let enabledUnitAppIds: string[] | null = null;
+  if (!onPlatformDesk && deskTenantId && deskMembership?.unitAccess?.mode === "units") {
+    const { listOrgUnits } = await import("@/core/units/repository");
+    const { membershipUnitScope } = await import("@/core/units/access");
+    const scope = membershipUnitScope({
+      unitAccess: deskMembership.unitAccess,
+      units: await listOrgUnits(await getDatabase(), deskTenantId),
+    });
+    unitIds = scope.unitIds;
+    enabledUnitAppIds = scope.enabledUnitAppIds;
   }
 
   const dayLines = onPlatformDesk
@@ -214,6 +227,7 @@ export default async function EscritorioPage() {
       }}
       contracted={contract.contracted}
       authorizedApps={authorizedApps}
+      spaceType={contract.spaceType}
       aprendeHoyEntryUrl={contract.aprendeHoyEntryUrl}
       aprendeHoyOrigin={aprendeHoyOriginFromEnv()}
       cumpleOrigin={cumpleOrigin}
@@ -240,6 +254,9 @@ export default async function EscritorioPage() {
       attentionUnreadCount={attentionUnreadCount}
       canReturnToPlatform={platformOwner && Boolean(entered)}
       permissions={onPlatformDesk ? [] : deskPermissions}
+      roleCodes={onPlatformDesk ? [] : deskRoleCodes}
+      unitIds={onPlatformDesk ? null : unitIds}
+      enabledUnitAppIds={onPlatformDesk ? null : enabledUnitAppIds}
     />
   );
 }

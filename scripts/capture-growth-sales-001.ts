@@ -3,6 +3,7 @@
  * Preferencia: Espacio ADL (`adl`).
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-sales-001.ts
  */
+import "./_mongo-guard";
 import { mkdirSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

@@ -11,7 +11,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npm run build:docker \
+RUN npm run build:institutional-media \
+  && npx tsx scripts/run-mandatory-checks.ts \
+  && GATE_CONCLUSION=success npx tsx scripts/write-release-gate.ts \
+  && npx next build \
   && npm prune --omit=dev
 
 FROM base AS runner
@@ -33,7 +36,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/package-lock.json ./package-lock.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/release-gate.json ./release-gate.json
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/start-if-released.mjs ./scripts/start-if-released.mjs
 
 USER nextjs
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "scripts/start-if-released.mjs"]

@@ -58,7 +58,7 @@ function resolveFromEnv(): ResolvedStorageSettings | null {
       secretAccessKey,
       publicUrl: process.env.S3_PUBLIC_URL ?? "",
       forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
-      accessMode: process.env.S3_PUBLIC_URL?.trim() ? "public" : "private",
+      accessMode: process.env.S3_ACCESS_MODE === "public" ? "public" : "private",
     }),
   };
 }

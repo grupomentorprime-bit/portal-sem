@@ -14,9 +14,9 @@ import {
   DESKTOP_FALLBACK,
   desktopCanSwitchSpace,
   desktopContextLabel,
-  desktopDock,
   writeEnteredClientCookie,
   isMentorAppId,
+  isSpecializedAppId,
   dockAppBlurb,
   dockAppLabel,
   mentorAppBlurb,
@@ -29,7 +29,8 @@ import {
   type WallpaperChoice,
 } from "@/lib/desktop/catalog";
 import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
-import { canManageAppKeys, desktopVisibleApps } from "@/lib/desktop/app-access";
+import { canManageAppKeys, desktopBands } from "@/lib/desktop/app-access";
+import { clientDeskApps, openSpecializedFromDesk, specializedForDesk } from "@/lib/desktop/specialized";
 import {
   connectLaunchForm,
   createTransactionVerifier,
@@ -84,6 +85,8 @@ export interface MentorDesktopProps {
   contracted: MentorAppId[];
   /** Llaves de la membresía en el Espacio activo. Ausente = legado (todo el techo). */
   authorizedApps?: MentorAppId[] | null;
+  /** `tenants.type`. Orienta recomendaciones. No filtra lo ya habilitado. */
+  spaceType?: string | null;
   aprendeHoyEntryUrl: string | null;
   aprendeHoyOrigin: string | null;
   cumpleOrigin: string | null;
@@ -112,8 +115,14 @@ export interface MentorDesktopProps {
   attentionUnreadCount?: number;
   /** El dueño abrió el escritorio de un cliente y puede volver a la plataforma. */
   canReturnToPlatform?: boolean;
-  /** Permisos del Espacio activo. Filtran Ajustes de empresa. */
+  /** Permisos del Espacio activo. Filtran Ajustes de empresa y las capacidades. */
   permissions?: string[];
+  /** null: administración central. Lista: unidades de la membresía. */
+  unitIds?: readonly string[] | null;
+  /** null: sin recorte. Lista: aplicaciones habilitadas en esas unidades. */
+  enabledUnitAppIds?: readonly string[] | null;
+  /** Roles del Espacio activo. Recortan Admisión cuando no hay llave de Growth OS. */
+  roleCodes?: readonly string[];
 }
 
 type SheetState = {
@@ -159,11 +168,40 @@ function toneClass(appId: DockAppId): string {
   if (appId === "envivo") return "g-envivo";
   if (appId === "clientes") return "g-clientes";
   if (appId === "ajustes") return "g-ajustes";
+  if (appId === "admision") return "g-admision";
+  if (appId === "asuntos-estudiantiles") return "g-asuntos";
+  if (appId === "congreso") return "g-congreso";
   return "g-rrhh";
 }
 
 function glyphClass(appId: DockAppId): string {
   return `glyph ${toneClass(appId)}`;
+}
+
+function CatalogBand(props: {
+  title: string;
+  apps: MentorAppId[];
+  onOpen: (appId: MentorAppId) => void;
+}) {
+  if (props.apps.length === 0) return null;
+  return (
+    <section aria-label={props.title}>
+      <p>{props.title}</p>
+      <ul>
+        {props.apps.map((appId) => (
+          <li key={appId}>
+            <button type="button" onClick={() => props.onOpen(appId)}>
+              <span className={`shelf-mark ${toneClass(appId)}`}>{renderGlyph(appId)}</span>
+              <span>
+                <strong>{dockAppLabel(appId)}</strong>
+                <small>{dockAppBlurb(appId)}</small>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function renderGlyph(appId: DockAppId) {
@@ -233,6 +271,30 @@ function renderGlyph(appId: DockAppId) {
       </svg>
     );
   }
+  if (appId === "admision") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
+        <path d="M4 19V6.5A1.5 1.5 0 0 1 5.5 5H12v14H5.5A1.5 1.5 0 0 0 4 20.5" />
+        <path d="M12 5h6.5A1.5 1.5 0 0 1 20 6.5V19a1.5 1.5 0 0 0-1.5-1.5H12" />
+      </svg>
+    );
+  }
+  if (appId === "asuntos-estudiantiles") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
+        <path d="M8 7h8M8 11h8M8 15h5" />
+        <path d="M6 4h12a1 1 0 0 1 1 1v14l-3-2H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+      </svg>
+    );
+  }
+  if (appId === "congreso") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
+        <path d="M5 19V9l7-4 7 4v10" />
+        <path d="M9 19v-5h6v5" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
       <circle cx="9" cy="9" r="3" />
@@ -298,31 +360,67 @@ export function MentorDesktop(props: MentorDesktopProps) {
     props.spaces.find((space) => space.tenantId === props.activeTenantId)?.name?.trim() ||
     props.spaceName;
   const canRequestPlan = canManageAppKeys(props.permissions ?? []);
-  const dockApps = useMemo<DockAppId[]>(() => {
-    if (owner) return desktopDock(true);
-    return [
-      ...desktopVisibleApps({
+  const specializedInput = {
+    tenantId: props.activeTenantId,
+    permissions: props.permissions ?? [],
+    unitIds: props.unitIds ?? null,
+    enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+    roleCodes: props.roleCodes ?? [],
+  };
+  const bands = useMemo(
+    () =>
+      desktopBands({
+        spaceType: props.spaceType,
         contracted: props.contracted,
         authorizedApps: props.authorizedApps ?? null,
         canRequestPlan,
       }),
-      "mensajes",
-    ];
-  }, [owner, props.contracted, props.authorizedApps, canRequestPlan]);
+    [props.spaceType, props.contracted, props.authorizedApps, canRequestPlan]
+  );
+  const specialized = useMemo(
+    () =>
+      specializedForDesk({
+        tenantId: props.activeTenantId,
+        permissions: props.permissions ?? [],
+        unitIds: props.unitIds ?? null,
+        enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+        roleCodes: props.roleCodes ?? [],
+      }),
+    [
+      props.activeTenantId,
+      props.permissions,
+      props.unitIds,
+      props.enabledUnitAppIds,
+      props.roleCodes,
+    ]
+  );
+  const dockApps = useMemo<DockAppId[]>(
+    () =>
+      clientDeskApps({
+        owner,
+        spaceType: props.spaceType,
+        contracted: props.contracted,
+        authorizedApps: props.authorizedApps ?? null,
+        tenantId: props.activeTenantId,
+        permissions: props.permissions ?? [],
+        unitIds: props.unitIds ?? null,
+        enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+        roleCodes: props.roleCodes ?? [],
+      }),
+    [
+      owner,
+      props.spaceType,
+      props.contracted,
+      props.authorizedApps,
+      props.activeTenantId,
+      props.permissions,
+      props.unitIds,
+      props.enabledUnitAppIds,
+      props.roleCodes,
+    ]
+  );
   const [icons, setIcons] = useState<DeskIconSpot[]>(() =>
-    completeDeskIcons(
-      props.layout,
-      owner
-        ? desktopDock(true)
-        : [
-            ...desktopVisibleApps({
-              contracted: props.contracted,
-              authorizedApps: props.authorizedApps ?? null,
-              canRequestPlan: canManageAppKeys(props.permissions ?? []),
-            }),
-            "mensajes",
-          ]
-    )
+    completeDeskIcons(props.layout, dockApps)
   );
   const [ghost, setGhost] = useState<{ appId: DockAppId } | null>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
@@ -928,6 +1026,14 @@ export function MentorDesktop(props: MentorDesktopProps) {
       return;
     }
     if (appId === "clientes") return;
+    if (isSpecializedAppId(appId)) {
+      closeWindows();
+      const action = openSpecializedFromDesk(appId, specializedInput);
+      if (action.kind !== "open") return;
+      if (event) beginOpen(appId, action.href, event);
+      else window.location.assign(action.href);
+      return;
+    }
     closeWindows();
     const action = desktopClick({
       appId,
@@ -1157,6 +1263,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
           owner={owner}
           spaces={props.spaces}
           companySettings={companySettings}
+          specialized={owner ? [] : specialized}
           onOpenApp={(appId) => handleApp(appId)}
           onOpenSpace={(tenantId) => {
             if (owner || props.canReturnToPlatform) void enterClient(tenantId);
@@ -1290,7 +1397,22 @@ export function MentorDesktop(props: MentorDesktopProps) {
         onPointerLeave={releaseDock}
       >
         <div className="dock-runway" aria-hidden="true" />
-        <div className="dock" ref={dockRef}>
+        {!owner && (bands.recommended.length > 0 || bands.explore.length > 0) ? (
+          <div className="catalog-shelf" aria-label="Catálogo">
+            <CatalogBand
+              title="Recomendadas"
+              apps={bands.recommended}
+              onOpen={(appId) => handleApp(appId)}
+            />
+            <CatalogBand
+              title="Explorar catálogo"
+              apps={bands.explore}
+              onOpen={(appId) => handleApp(appId)}
+            />
+          </div>
+        ) : null}
+        {owner ? null : <p className="dock-caption">Mis aplicaciones</p>}
+        <div className="dock" ref={dockRef} aria-label={owner ? undefined : "Mis aplicaciones"}>
           {dockApps.map((appId) => {
             const action = isMentorAppId(appId)
               ? desktopClick({
@@ -1366,6 +1488,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
         <DesktopClientes
           spaces={props.spaces}
           entering={entering}
+          aprendeHoyOrigin={props.aprendeHoyOrigin}
+          cumpleOrigin={props.cumpleOrigin}
+          rrhhOrigin={props.rrhhOrigin}
           onClose={() => setClientesOpen(false)}
           onEnter={(tenantId) => void enterClient(tenantId)}
         />
@@ -1464,6 +1589,9 @@ export function MentorDesktop(props: MentorDesktopProps) {
             <p className="kicker">{sheetKicker}</p>
             <h2 id="desktop-sheet-title">{mentorAppLabel(sheet.appId)}</h2>
             <p>{mentorAppBlurb(sheet.appId)}</p>
+            {sheet.kind === "request" ? (
+              <p className="hint">La solicitud no contrata, no habilita y no genera un cargo.</p>
+            ) : null}
             <div className="row">
               {sheet.kind === "request" ? (
                 <button

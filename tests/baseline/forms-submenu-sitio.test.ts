@@ -8,7 +8,7 @@ import { filterAdminNavGroups } from "@/lib/admin/nav-access";
 import { isSidebarItemActive } from "@/lib/admin/nav-domains";
 
 const SITE = ["cms.pages.read", "settings.update"];
-const FORMS = ["cms.pages.read", "experience.forms.read", "settings.update"];
+const FORMS = ["experience.forms.read", "settings.update"];
 
 describe("Formularios · submenú propio", () => {
   it("Sitio web agrupa Dominio y Ajustes; Formularios queda aparte", () => {
@@ -17,19 +17,29 @@ describe("Formularios · submenú propio", () => {
     assert.ok(sitio);
     assert.deepEqual(
       sitio.items.map((item) => item.label),
-      ["Sitio web", "Formularios"]
+      ["Sitio web"]
     );
     assert.equal(sitio.items[0]?.href, "/admin/site/pages");
     assert.deepEqual(
       sitio.items[0]?.children?.map((child) => child.label),
       ["Dominio", "Ajustes del sitio"]
     );
-    assert.equal(sitio.items[1]?.href, "/admin/portal/forms");
+    assert.equal(
+      sitio.items.some((item) => item.href === "/admin/portal/forms"),
+      false
+    );
   });
 
   it("Formularios abre creación, edición y operación", () => {
-    const withoutRead = filterAdminNavGroups(SITE, false, []);
-    const forms = withoutRead
+    const withoutForms = filterAdminNavGroups(SITE, false, []);
+    assert.equal(
+      withoutForms
+        .find((group) => group.id === "sitio-web")
+        ?.items.some((item) => item.id === "convocatorias-config"),
+      false
+    );
+
+    const forms = filterAdminNavGroups(FORMS, false, [])
       .find((group) => group.id === "sitio-web")
       ?.items.find((item) => item.id === "convocatorias-config");
     assert.equal(forms?.href, "/admin/portal/forms");
@@ -41,24 +51,19 @@ describe("Formularios · submenú propio", () => {
       forms?.children?.find((child) => child.id === "forms-operation")?.href,
       "/admin/portal/forms/panel"
     );
-
-    const hiddenOperation = forms?.children?.filter((child) =>
-      child.requiredAnyPermission?.some((permission) => SITE.includes(permission))
-    );
-    assert.deepEqual(
-      hiddenOperation?.map((child) => child.label),
-      ["Creación", "Edición"]
-    );
-
-    const canRead = filterAdminNavGroups(FORMS, false, [])
-      .find((group) => group.id === "sitio-web")
-      ?.items.find((item) => item.id === "convocatorias-config");
-    const visible = canRead?.children?.filter((child) =>
+    const visible = forms?.children?.filter((child) =>
       child.requiredAnyPermission?.some((permission) => FORMS.includes(permission))
     );
     assert.deepEqual(
       visible?.map((child) => child.label),
       ["Creación", "Edición", "Operación"]
+    );
+    assert.equal(
+      forms?.children?.some((child) =>
+        child.requiredAnyPermission?.includes("cms.pages.read") ||
+        child.requiredAnyPermission?.includes("congress.view")
+      ),
+      false
     );
   });
 
@@ -133,6 +138,13 @@ describe("Formularios · submenú propio", () => {
     const sitio = groups.find((group) => group.id === "sitio-web");
     assert.equal(
       sitio?.items.some((item) => item.href === "/admin/portal/asuntos-estudiantiles"),
+      false
+    );
+    const formsOnly = filterAdminNavGroups(["experience.forms.read"], false, []);
+    assert.equal(
+      formsOnly
+        .find((group) => group.id === "institucion")
+        ?.items.some((item) => item.href === "/admin/portal/asuntos-estudiantiles") ?? false,
       false
     );
   });

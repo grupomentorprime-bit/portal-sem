@@ -168,6 +168,11 @@ export interface SiteConfig {
   contact: ContactInfo;
   social: SocialLinks;
   features: FeatureFlags;
+  /**
+   * Módulo de sitio del portal (no el registro de sitios en código).
+   * false: publicar no abre el portal. Ausente: compatibilidad con un sitio ya publicado.
+   */
+  siteEnabled?: boolean;
   /** false o ausente: el dominio muestra «Este sitio está por comenzar». */
   sitePublished: boolean;
   portalCopy: PortalCopy;

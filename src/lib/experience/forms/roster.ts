@@ -6,7 +6,12 @@ import {
   upsertRosterStudent,
 } from "@/lib/experience/forms/roster-import";
 import { normalizeGenerationValue } from "@/lib/experience/forms/generations";
-import { collectPersonSearchSuggestions } from "@/lib/experience/forms/person-search";
+import { collectPersonSearchSuggestions, foldPersonSearchText, matchesPersonSearch } from "@/lib/experience/forms/person-search";
+import {
+  PUBLIC_ROSTER_LIMIT,
+  PUBLIC_ROSTER_MIN_QUERY,
+  publicRosterMatchFields,
+} from "@/core/experience/public-roster";
 import type {
   ConvocatoriaExcludedStudent,
   ConvocatoriaRoster,
@@ -140,25 +145,41 @@ export async function searchConvocatoriaRoster(
   tenant: string,
   convocatoriaSlug: string,
   query: string,
-  limit = 40
+  options: { audience?: "public" | "internal"; limit?: number } = {}
 ): Promise<{
   students: ConvocatoriaRosterStudent[];
   suggestions: ConvocatoriaRosterStudent[];
   hasMore: boolean;
   suggestionsHasMore: boolean;
 }> {
+  const audience = options.audience ?? "internal";
+  const limit = options.limit ?? (audience === "public" ? PUBLIC_ROSTER_LIMIT : 40);
   const empty = { students: [], suggestions: [], hasMore: false, suggestionsHasMore: false };
+  if (audience === "public" && foldPersonSearchText(query).length < PUBLIC_ROSTER_MIN_QUERY) {
+    return empty;
+  }
   const roster = await getConvocatoriaRoster(tenant, convocatoriaSlug);
   if (!roster?.students.length) return empty;
 
-  const matches = roster.students.filter((student) => rosterStudentMatchesQuery(student, query));
-  const suggestions = collectPersonSearchSuggestions(query, roster.students, (student) => [
-    student.fullName,
-    student.rut,
-  ]);
+  const matches = roster.students.filter((student) =>
+    audience === "public"
+      ? matchesPersonSearch(query, publicRosterMatchFields(student))
+      : rosterStudentMatchesQuery(student, query)
+  );
+  const matchIds = new Set(matches.map((student) => student.id));
+  const suggestionFields =
+    audience === "public"
+      ? publicRosterMatchFields
+      : (student: ConvocatoriaRosterStudent) => [student.fullName, student.rut];
+  const suggestions = collectPersonSearchSuggestions(
+    query,
+    roster.students.filter((student) => !matchIds.has(student.id)),
+    suggestionFields,
+    audience === "public" ? 3 : 8
+  );
   return {
     students: matches.slice(0, limit),
-    suggestions: suggestions.items.slice(0, 8),
+    suggestions: suggestions.items,
     hasMore: matches.length > limit,
     suggestionsHasMore: suggestions.hasMore,
   };

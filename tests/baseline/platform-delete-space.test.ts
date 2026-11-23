@@ -1,15 +1,15 @@
 /**
  * Eliminar Espacio desde Platform Admin.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import {
-  ADL_TENANT_ID,
   DOMAINS_COLLECTION,
-  SEM_TENANT_ID,
+  PROTECTED_OPERATIONAL_SPACE_IDS,
   SITE_CONFIG_COLLECTION,
   SITES_COLLECTION,
   TENANTS_COLLECTION,
@@ -23,7 +23,18 @@ import {
   isProtectedPlatformSpace,
 } from "../../src/core/tenant/delete-platform-space";
 import { setPlatformSpaceStatus } from "../../src/core/tenant/space-status";
-import { loadEnvLocal } from "../../src/core/migrations/env";
+
+const OPERATIONAL_SPACES = [
+  "seminario-ipn",
+  "ipn-chile",
+  "adl",
+  "fundacion-mueve",
+  "mentor-prime-capacitacion",
+  "cumple",
+] as const;
+
+/** Slugs de fixtures. No son los clientes `cumple` ni `mentor-prime-capacitacion`. */
+const SYNTHETIC_ALIASES = ["mentor-cumple", "mentor-capacitacion"] as const;
 
 const ROOT = process.cwd();
 
@@ -31,30 +42,15 @@ function readSrc(relativePath: string): string {
   return readFileSync(resolve(ROOT, relativePath), "utf8");
 }
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(ROOT, filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;
@@ -68,11 +64,27 @@ async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   }
 }
 
+function databaseThatMustNotBeUsed(): Db {
+  return new Proxy({} as Db, {
+    get() {
+      throw new Error("la base no debe recibir operaciones");
+    },
+  });
+}
+
 describe("eliminar Espacio — contrato", () => {
-  it("protege SEM y ADL; API DELETE y UI de confirmación", () => {
-    assert.equal(isProtectedPlatformSpace(SEM_TENANT_ID), true);
-    assert.equal(isProtectedPlatformSpace(ADL_TENANT_ID), true);
-    assert.equal(isProtectedPlatformSpace("fundacion-mueve"), false);
+  it("protege los seis Espacios operativos y no los alias sintéticos", () => {
+    assert.deepEqual([...PROTECTED_OPERATIONAL_SPACE_IDS], [...OPERATIONAL_SPACES]);
+    for (const tenantId of OPERATIONAL_SPACES) {
+      assert.equal(isProtectedPlatformSpace(tenantId), true);
+      assert.equal(isProtectedPlatformSpace(` ${tenantId} `), true);
+    }
+    for (const tenantId of SYNTHETIC_ALIASES) {
+      assert.equal(isProtectedPlatformSpace(tenantId), false);
+    }
+    assert.equal(isProtectedPlatformSpace("cumple-local"), false);
+    assert.equal(isProtectedPlatformSpace("Cumple"), false);
+    assert.equal(isProtectedPlatformSpace("ipn-chile-dev"), false);
     assert.equal(isProtectedPlatformSpace(""), false);
     assert.equal(isProtectedPlatformSpace(undefined as unknown as string), false);
 
@@ -94,6 +106,54 @@ describe("eliminar Espacio — contrato", () => {
     assert.match(menu, /Suspender/);
     assert.match(menu, /Archivar/);
     assert.match(menu, /Eliminar/);
+    assert.match(menu, /disabled=\{submitting \|\| protectedSpace\}/);
+    assert.match(menu, /disabled=\{submitting\}\s*\r?\n\s*onClick/);
+
+    const status = readSrc("src/core/tenant/space-status.ts");
+    assert.doesNotMatch(status, /isProtectedPlatformSpace/);
+    const wrapper = readSrc("src/lib/platform/delete-space.ts");
+    const guardAt = wrapper.indexOf("rejectProtectedPlatformSpace(");
+    const dbAt = wrapper.indexOf("getDatabase(");
+    assert.ok(guardAt >= 0 && dbAt > guardAt);
+
+    const core = readSrc("src/core/tenant/delete-platform-space.ts");
+    const rejectAt = core.indexOf("rejectProtectedPlatformSpace(input.tenantId)");
+    const findAt = core.indexOf("findTenantById(");
+    assert.ok(rejectAt >= 0 && findAt > rejectAt);
+  });
+
+  it("rechaza los seis Espacios antes de operar en la base", async () => {
+    const db = databaseThatMustNotBeUsed();
+    for (const tenantId of OPERATIONAL_SPACES) {
+      let protectedErr: unknown;
+      try {
+        await deletePlatformSpace(db, {
+          tenantId,
+          confirmSlug: tenantId,
+          actorUserId: "actor-protegido",
+        });
+      } catch (error) {
+        protectedErr = error;
+      }
+      assert.ok(protectedErr instanceof DeletePlatformSpaceError);
+      assert.equal(
+        (protectedErr as DeletePlatformSpaceError).code,
+        "protected_space"
+      );
+    }
+
+    let aliasErr: unknown;
+    try {
+      await deletePlatformSpace(db, {
+        tenantId: "mentor-cumple",
+        confirmSlug: "mentor-cumple",
+        actorUserId: "actor-sintetico",
+      });
+    } catch (error) {
+      aliasErr = error;
+    }
+    assert.ok(!(aliasErr instanceof DeletePlatformSpaceError));
+    assert.match(String(aliasErr), /la base no debe recibir operaciones/);
   });
 });
 
@@ -116,20 +176,49 @@ describe("eliminar Espacio — Mongo", () => {
           actor
         );
 
-        let protectedErr: unknown;
-        try {
-          await deletePlatformSpace(db, {
-            tenantId: SEM_TENANT_ID,
-            confirmSlug: SEM_TENANT_ID,
-            actorUserId: actor,
+        for (const tenantId of OPERATIONAL_SPACES) {
+          await db.collection<{
+            _id: string;
+            tenantId: string;
+            name: string;
+            status: string;
+          }>(TENANTS_COLLECTION).insertOne({
+            _id: tenantId,
+            tenantId,
+            name: tenantId,
+            status: "active",
           });
-        } catch (error) {
-          protectedErr = error;
+          let protectedErr: unknown;
+          try {
+            await deletePlatformSpace(db, {
+              tenantId,
+              confirmSlug: tenantId,
+              actorUserId: actor,
+            });
+          } catch (error) {
+            protectedErr = error;
+          }
+          assert.ok(protectedErr instanceof DeletePlatformSpaceError);
+          assert.equal(
+            (protectedErr as DeletePlatformSpaceError).code,
+            "protected_space"
+          );
+          assert.equal(
+            await db.collection(TENANTS_COLLECTION).countDocuments({ tenantId }),
+            1
+          );
         }
-        assert.ok(protectedErr instanceof DeletePlatformSpaceError);
+
+        const suspended = await setPlatformSpaceStatus(db, {
+          tenantId: "cumple",
+          status: "suspended",
+          actorUserId: actor,
+        });
+        assert.equal(suspended.status, "suspended");
+        assert.equal(suspended.changed, true);
         assert.equal(
-          (protectedErr as DeletePlatformSpaceError).code,
-          "protected_space"
+          (await db.collection(TENANTS_COLLECTION).findOne({ tenantId: "cumple" }))?.status,
+          "suspended"
         );
 
         let confirmErr: unknown;

@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { isEmailAuthEnabled } from "@/core/identity/auth/config";
 import { getActiveTenantId, registerWithEmail } from "@/core/identity";
 import { getDatabase } from "@/lib/mongodb";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { publicInternalError } from "@/core/security/public-error";
 
 export async function POST(request: Request) {
   try {
     if (!isEmailAuthEnabled()) {
       return NextResponse.json(
-        { ok: false, error: "El registro local está deshabilitado. Usa tu cuenta de Growth OS." },
+        { ok: false, error: `El registro local está deshabilitado. Usa tu cuenta de ${PLATFORM_DISPLAY_NAME}.` },
         { status: 403 }
       );
     }

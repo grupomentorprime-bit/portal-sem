@@ -1,10 +1,10 @@
-# Documentación Oficial — Growth OS
+# Documentación Oficial — NELZURI
 
 Índice central de gobierno documental.
 
 **Comienza aquí:** [HANDBOOK.md](./HANDBOOK.md) · [GLOSSARY.md](./GLOSSARY.md)
 
-Este repositorio es **Growth OS**. SEM (T001) y ADL (T002) son clientes. Aprende Hoy es un sistema académico separado. Contratos: [ADR-008](./architecture/ADR-008.md) · [ADR-009](./architecture/ADR-009.md).
+Este repositorio es **NELZURI**, operado por Mentor Prime. SEM (T001, Espacio `seminario-ipn`) y ADL (T002) son clientes. Aprende Hoy es un sistema académico separado. Growth OS es el nombre anterior del producto. Contratos: [ADR-008](./architecture/ADR-008.md) · [ADR-009](./architecture/ADR-009.md).
 
 ---
 

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import { describe, it } from "node:test";
 import { MongoClient, type Db } from "mongodb";
 import {
@@ -31,28 +32,10 @@ import type {
 import { migration006SaasFoundation } from "../../src/core/migrations/006-saas-foundation";
 import { SITE_CONFIG_ID, type SiteConfig } from "../../src/types/cms";
 import { createDefaultSiteConfig } from "../../src/lib/cms/defaults";
-import { loadEnvLocal } from "../../src/core/migrations/env";
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 function sampleSemConfig(): SiteConfig {
@@ -137,7 +120,7 @@ describe("OT-GROWTH-SAAS-001 — migración idempotente SEM", () => {
   it("sobre estado SEM: crea T001/S001/Domain, conserva cms_config, no duplica al re-ejecutar", async (t) => {
     loadTestMongoEnv();
     const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB;
+    const dbName = isolatedDatabaseName(import.meta.url);
     if (!uri || !dbName) {
       t.skip("Sin MONGODB_URI/MONGODB_DB — se omiten pruebas de integración");
       return;
@@ -242,11 +225,8 @@ describe("OT-GROWTH-SAAS-001 — migración idempotente SEM", () => {
         );
       }
 
-      const markerScoped = `${SEM_TENANT_ID}:${markerMenuId}`;
-      const marker = await menus.findOne({
-        _id: { $in: [markerMenuId, markerScoped] },
-      });
-      assert.equal(marker?.tenant, SEM_TENANT_ID);
+      const marker = await menus.findOne({ _id: markerMenuId });
+      assert.equal(marker?.tenant, undefined);
 
       const migrationPass = await migration006SaasFoundation.run({
         db,
@@ -255,16 +235,10 @@ describe("OT-GROWTH-SAAS-001 — migración idempotente SEM", () => {
       assert.ok(migrationPass.documentsAffected >= 0);
       assert.equal(await tenants.countDocuments({ tenantId: SEM_TENANT_ID }), 1);
     } finally {
-      await menus.deleteMany({
-        _id: { $in: [markerMenuId, `${SEM_TENANT_ID}:${markerMenuId}`] },
-      });
+      await menus.deleteOne({ _id: markerMenuId });
       await domains.deleteOne({ _id: testHost });
       if (!hadLegacy) {
         await cmsConfig.deleteOne({ _id: SITE_CONFIG_ID });
-        await tenants.deleteOne({ _id: SEM_TENANT_ID });
-        await sites.deleteOne({ _id: SEM_SITE_ID });
-        await siteConfigCol.deleteOne({ _id: SEM_SITE_ID });
-        await domains.deleteMany({ tenantId: SEM_TENANT_ID });
       }
       await client.close();
     }

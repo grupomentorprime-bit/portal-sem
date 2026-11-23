@@ -2,10 +2,9 @@
  * OT-GROWTH-SAAS-008 — dominios por Site.
  * Primary / alias, unicidad global, mutaciones seguras, sin hardcode de cliente.
  */
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import {
   DOMAINS_COLLECTION,
@@ -38,7 +37,6 @@ import {
   resolvePublicTenantByHost,
 } from "../../src/core/tenant/resolve";
 import { createDefaultSiteConfig } from "../../src/lib/cms/defaults";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 import type {
   DomainDocument,
   SiteConfigDocument,
@@ -48,24 +46,9 @@ import type {
 
 const FIX_PREFIX = "tenant-saas008";
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(
@@ -74,7 +57,7 @@ async function withDb(
 ): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     t.skip("Sin MONGODB_URI/MONGODB_DB");
     return;

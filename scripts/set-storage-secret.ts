@@ -2,6 +2,7 @@
  * Actualiza la clave S3 cifrada en MongoDB (sin pasar por el admin).
  * Uso: npx tsx --env-file=.env scripts/set-storage-secret.ts <applicationKey> [tenantId]
  */
+import "./_mongo-guard";
 import { createCipheriv, randomBytes, scryptSync } from "node:crypto";
 import { MongoClient } from "mongodb";
 import { SEM_TENANT_ID } from "../src/core/tenant/constants";

@@ -4,6 +4,7 @@
  *
  * Uso: npx tsx --env-file=.env scripts/seed-convocatoria-talca-aurora-nov-2026.ts
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { createSemDefaultForms } from "../src/core/experience/forms/defaults";
 import { SEM_TENANT_ID } from "../src/core/tenant/constants";

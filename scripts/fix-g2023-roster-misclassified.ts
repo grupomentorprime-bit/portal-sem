@@ -2,6 +2,7 @@
  * Corrige 4 alumnos G-2023 mal clasificados en Otros/Equipo.
  * npx tsx --env-file=.env scripts/fix-g2023-roster-misclassified.ts
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { normalizeGenerationValue } from "../src/lib/experience/forms/generations";
 

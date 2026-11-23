@@ -17,7 +17,7 @@ async function ensureBase(): Promise<void> {
 function skipIfOffline(t: { skip: (msg?: string) => void }): boolean {
   if (baseUrl) return false;
   t.skip(
-    "Sin app viva (SMOKE_BASE_URL / localhost:3000|3001). Contrato congelado en tests/baseline."
+    "Sin SMOKE_BASE_URL del servidor aislado. No se usa :3000 ni otra app ya abierta."
   );
   return true;
 }
@@ -29,9 +29,18 @@ describe("OT-GROWTH-TEST-002 — portal público + CMS render", () => {
     if (skipIfOffline(t)) return;
     const res = await smokeFetch("/");
     assert.equal(res.status, 200);
+    assert.doesNotMatch(res.text, /Este sitio está por comenzar/);
     assert.match(res.text, /Seminario Eclesi/i);
     assert.match(res.text, /--brand-primary/);
     assert.match(res.text, /portal-header-premium/);
+  });
+
+  it("la ruta heredada /institucion redirige al canónico /el-sem", async (t) => {
+    if (skipIfOffline(t)) return;
+    const res = await smokeFetch("/institucion");
+    assert.equal(res.status, 308);
+    const loc = new URL(res.headers.get("location") ?? "", "http://localhost");
+    assert.equal(loc.pathname, "/el-sem");
   });
 
   it("rutas de producto SEM responden 200", async (t) => {
@@ -46,11 +55,10 @@ describe("OT-GROWTH-TEST-002 — portal público + CMS render", () => {
     if (skipIfOffline(t)) return;
     const res = await smokeFetch("/");
     assert.equal(res.status, 200);
-    // Contrato actual del menú CMS (no inventar links ausentes).
-    for (const href of ["/", "/programas", "/equipo", "/contacto"]) {
+    assert.doesNotMatch(res.text, /Este sitio está por comenzar/);
+    for (const href of ["/", "/el-sem", "/admision", "/ingresar"]) {
       assert.match(res.text, new RegExp(`href="${href}"`), `faltanav ${href}`);
     }
-    assert.match(res.text, /href="\/ingresar"/);
   });
 
   it("contenido CMS catch-all: 200 si publicado, 404 si ausente (sin mutar)", async (t) => {
@@ -82,8 +90,9 @@ describe("OT-GROWTH-TEST-002 — admin anónimo + login Growth OS (inicio)", () 
     const res = await smokeFetch("/login");
     assert.equal(res.status, 200);
     assert.match(res.text, /Ingresar/);
-    assert.match(res.text, /Usuario/);
+    assert.match(res.text, /Nombre de usuario/);
     assert.match(res.text, /Contraseña/);
+    assert.match(res.text, /Iniciar sesión/);
     assert.match(res.text, /type="password"/);
     assert.doesNotMatch(res.text, /\/api\/identity\/auth\/keycloak\/login/);
     assert.doesNotMatch(res.text, /CMS del SEM/i);

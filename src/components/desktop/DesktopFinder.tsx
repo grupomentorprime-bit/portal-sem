@@ -3,12 +3,16 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { DockAppId } from "@/lib/desktop/catalog";
 import { desktopSearch, type DesktopSearchHit } from "@/lib/desktop/search";
+import type { SpecializedAppId } from "@/nelzuri";
 
 const TONE: Record<DockAppId, string> = {
   "growth-os": "g-growth",
   cumple: "g-cumple",
   "aprende-hoy": "g-aprende",
   rrhh: "g-rrhh",
+  admision: "g-admision",
+  "asuntos-estudiantiles": "g-asuntos",
+  congreso: "g-congreso",
   ajustes: "g-ajustes",
   mensajes: "g-mensajes",
   envivo: "g-envivo",
@@ -25,6 +29,7 @@ export function DesktopFinder(props: {
   owner: boolean;
   spaces: { tenantId: string; name: string }[];
   companySettings?: boolean;
+  specialized?: readonly SpecializedAppId[];
   onOpenApp: (appId: DockAppId) => void;
   onOpenSpace: (tenantId: string) => void;
 }) {
@@ -40,8 +45,9 @@ export function DesktopFinder(props: {
         owner: props.owner,
         spaces: props.spaces,
         companySettings: props.companySettings,
+        specialized: props.specialized,
       }),
-    [query, props.owner, props.spaces, props.companySettings]
+    [query, props.owner, props.spaces, props.companySettings, props.specialized]
   );
   const active = hits.length === 0 ? 0 : Math.min(index, hits.length - 1);
 

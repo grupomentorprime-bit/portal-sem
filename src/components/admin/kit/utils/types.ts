@@ -14,6 +14,8 @@ export interface AdminShellContext {
   enabledAppIds?: string[] | null;
   /** El Congreso de Varones solo se muestra en IPN Chile, Departamento de Varones. */
   showCongressVarones?: boolean;
+  /** Llave de Growth OS y capacidades institucionales ya abiertas. */
+  shellScope?: { growthOs: boolean; opened: readonly string[] } | null;
 }
 
 export type SortDirection = "asc" | "desc";

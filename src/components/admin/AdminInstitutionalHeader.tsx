@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Clock3 } from "lucide-react";
 import { isNavActive } from "@/lib/admin/institutional";
 import { NotificationBell } from "@/components/admin/notifications/NotificationBell";
-import { filterAdminNav } from "@/lib/admin/nav-access";
+import { filterAdminNav, type AdminShellScope } from "@/lib/admin/nav-access";
 import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 import { AdminNavDrawer } from "@/components/admin/AdminNavDrawer";
 import { AdminStatusBadges } from "@/components/admin/AdminStatusBadges";
@@ -21,6 +21,7 @@ interface AdminInstitutionalHeaderProps {
   compatMode: boolean;
   permissions: string[];
   roleCodes?: string[];
+  shellScope?: AdminShellScope | null;
 }
 
 /**
@@ -32,14 +33,20 @@ export function AdminInstitutionalHeader({
   compatMode,
   permissions,
   roleCodes = [],
+  shellScope = null,
 }: AdminInstitutionalHeaderProps) {
   const pathname = usePathname();
-  const navItems = filterAdminNav(permissions, compatMode, roleCodes);
+  const navItems = filterAdminNav(permissions, compatMode, roleCodes, shellScope);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-2 sm:px-6">
-        <AdminNavDrawer compatMode={compatMode} permissions={permissions} roleCodes={roleCodes} />
+        <AdminNavDrawer
+          compatMode={compatMode}
+          permissions={permissions}
+          roleCodes={roleCodes}
+          shellScope={shellScope}
+        />
 
         <ProductMark href="/admin" size="sm" />
 

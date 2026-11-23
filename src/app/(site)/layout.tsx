@@ -1,3 +1,4 @@
+import { PortalShell } from "@/components/portal/PortalShell";
 import { PublicSurface } from "@/components/portal/PublicSurface";
 import { ComingSoonPage } from "@/components/sites/ComingSoonPage";
 import { CodedSiteView } from "@/components/sites/CodedSiteView";
@@ -5,7 +6,7 @@ import { getPortalContext } from "@/lib/portal/site";
 import { getCodedPageView } from "@/sites/page-views";
 import { ensureProductionCodedSites } from "@/sites/production";
 import { resolvePageContent } from "@/sites/content/overlay";
-import { comingSoonModel, decidePublicSite } from "@/sites/public-decision";
+import { comingSoonModel, decidePublicSite, isContractedSiteModule } from "@/sites/public-decision";
 import { getCodedSite } from "@/sites/registry";
 import {
   resolveRequestHost,
@@ -41,6 +42,7 @@ export default async function SiteLayout({
 
   ensureProductionCodedSites();
   const site = getCodedSite(ctx.tenant);
+  const hasCodedSite = Boolean(site);
   if (site) {
     try {
       const { syncCodedSiteForms } = await import("@/sites/sync-forms");
@@ -70,16 +72,30 @@ export default async function SiteLayout({
     }
   }
 
+  const sitePublished = ctx.config.sitePublished === true;
   const decision = decidePublicSite({
     hasTenant: true,
-    sitePublished: ctx.config.sitePublished === true,
-    hasSiteModule: Boolean(site),
+    sitePublished,
+    hasSiteModule: isContractedSiteModule({
+      hasCodedSite,
+      siteEnabled: ctx.config.siteEnabled,
+      sitePublished,
+    }),
+    hasCodedSite,
     pathname,
     registeredPaths: site?.pages.map((page) => page.path) ?? [],
   });
 
   if (decision.kind === "passthrough") {
     return <PublicSurface>{children}</PublicSurface>;
+  }
+
+  if (decision.kind === "portal") {
+    return (
+      <PublicSurface>
+        <PortalShell>{children}</PortalShell>
+      </PublicSurface>
+    );
   }
 
   if (decision.kind === "coming-soon") {

@@ -2,6 +2,7 @@
  * Bootstrap del Super Admin reservado (soporte@mentorprime.cl).
  * Uso: npx tsx --env-file=.env scripts/bootstrap-super-admin.ts [tenantId] [email]
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 import { ROLE_CODES } from "../src/core/identity/roles/codes";
 import { roleIdForTenant } from "../src/core/identity/roles/defaults";

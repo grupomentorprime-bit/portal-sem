@@ -3,6 +3,7 @@
  * Solo datos reales del Espacio; sin actividad simulada.
  * Uso: npm run dev → npx tsx --env-file=.env scripts/capture-growth-ux-activity-002.ts
  */
+import "./_mongo-guard";
 import { mkdirSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";

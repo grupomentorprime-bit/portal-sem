@@ -18,6 +18,7 @@ interface AdminModuleSubnavProps {
   navBadges?: AdminShellContext["navBadges"];
   enabledAppIds?: AdminShellContext["enabledAppIds"];
   showCongressVarones?: AdminShellContext["showCongressVarones"];
+  shellScope?: AdminShellContext["shellScope"];
 }
 
 /**
@@ -31,6 +32,7 @@ export function AdminModuleSubnav({
   navBadges,
   enabledAppIds = null,
   showCongressVarones = false,
+  shellScope = null,
 }: AdminModuleSubnavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -40,6 +42,7 @@ export function AdminModuleSubnav({
     roleCodes,
     navBadges,
     enabledAppIds,
+    shellScope,
     showCongressVarones === true
   );
   const activeGroupId = findActiveNavGroupId(pathname, groups, searchParams);

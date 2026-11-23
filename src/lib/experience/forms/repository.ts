@@ -1,8 +1,7 @@
 import { ObjectId } from "mongodb";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getDatabase } from "@/lib/mongodb";
-import { createSemDefaultForms, SEM_DEFAULT_FORM_IDS } from "@/core/experience/forms/defaults";
-import { isSemTenant } from "@/core/tenant/is-sem";
+import { formCatalogFor } from "@/nelzuri";
 import { resolveFormId } from "@/core/experience/forms/engine";
 import { isExperienceFormPublished, isExperienceFormDirectAccessible } from "@/lib/experience/forms/status";
 import type {
@@ -609,17 +608,24 @@ export async function deleteFormSubmission(
   return result.deletedCount === 1;
 }
 
+async function catalogForSeed(tenant: string) {
+  const { ensureSpecializedCapabilities } = await import("@/lib/desktop/register-specialized");
+  ensureSpecializedCapabilities();
+  return formCatalogFor(tenant);
+}
+
 export async function seedExperienceForms(tenant: string): Promise<ExperienceFormDefinition[]> {
-  if (!isSemTenant(tenant)) {
-    return listExperienceForms(tenant);
-  }
+  const catalog = await catalogForSeed(tenant);
+  if (!catalog) return listExperienceForms(tenant);
 
   const db = await getDatabase();
   const purged = await getPurgedFormIds(tenant);
   const existing = await db.collection(COLLECTION).countDocuments(tenantFilter(tenant));
 
   if (existing === 0) {
-    const defaults = createSemDefaultForms(tenant).filter((form) => !purged.has(form._id));
+    const defaults = (catalog.createForms(tenant) as ExperienceFormDefinition[]).filter(
+      (form) => !purged.has(form._id)
+    );
     if (defaults.length > 0) {
       await db.collection<ExperienceFormDefinition>(COLLECTION).insertMany(defaults);
     }
@@ -635,10 +641,11 @@ export async function seedExperienceForms(tenant: string): Promise<ExperienceFor
  * Respeta eliminaciones definitivas del admin. Otros Espacios: no-op.
  */
 export async function ensureDefaultExperienceForms(tenant: string): Promise<void> {
-  if (!isSemTenant(tenant)) return;
+  const catalog = await catalogForSeed(tenant);
+  if (!catalog) return;
 
   const db = await getDatabase();
-  const defaults = createSemDefaultForms(tenant);
+  const defaults = catalog.createForms(tenant) as ExperienceFormDefinition[];
   const purged = await getPurgedFormIds(tenant);
 
   for (const form of defaults) {
@@ -672,10 +679,11 @@ export async function restoreDefaultExperienceForm(
   tenant: string,
   formId: string
 ): Promise<ExperienceFormDefinition | null> {
-  if (!isSemTenant(tenant)) return null;
+  const catalog = await catalogForSeed(tenant);
+  if (!catalog) return null;
 
   const resolvedId = resolveFormId(formId);
-  if (!(SEM_DEFAULT_FORM_IDS as readonly string[]).includes(resolvedId)) {
+  if (!catalog.defaultFormIds.includes(resolvedId)) {
     return null;
   }
 
@@ -684,7 +692,9 @@ export async function restoreDefaultExperienceForm(
 
   await clearPurgedForm(tenant, resolvedId);
 
-  const template = createSemDefaultForms(tenant).find((form) => form._id === resolvedId);
+  const template = (catalog.createForms(tenant) as ExperienceFormDefinition[]).find(
+    (form) => form._id === resolvedId
+  );
   if (!template) return null;
 
   const db = await getDatabase();

@@ -45,6 +45,7 @@ export const CONGRESS_COLLECTIONS = {
   churches: "congress_churches",
   importBatches: "congress_import_batches",
   audit: "congress_audit",
+  claimRequests: "congress_claim_requests",
   events: "congress_events",
   sequences: "congress_sequences",
 } as const;

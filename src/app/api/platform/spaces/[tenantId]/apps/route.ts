@@ -4,12 +4,17 @@ import { requirePlatformOperator } from "@/core/identity/middleware/guards";
 import { provisionAprendeHoyCompany } from "@/lib/connect/provision-aprende-hoy";
 import { provisionRrhhCompany } from "@/lib/connect/provision-rrhh";
 import {
+  recoverExternalProvision,
+  type ExternalProvisionApp,
+  type ExternalProvisionRecord,
+} from "@/lib/connect/provision-state";
+import { TENANTS_COLLECTION } from "@/core/tenant/constants";
+import {
   newlyContracted,
   parseContractPatch,
   resolveContractedApps,
 } from "@/lib/desktop/contract";
 import { noteCommercialActivation } from "@/lib/desktop/attention-store";
-import { ensureDeskProduct } from "@/lib/desktop/ensure-client-company";
 import {
   mongoAppRequestStore,
   readSpaceContract,
@@ -20,6 +25,52 @@ import { getDatabase } from "@/lib/mongodb";
 
 interface RouteParams {
   params: Promise<{ tenantId: string }>;
+}
+
+async function rememberExternalProvision(
+  tenantId: string,
+  appId: ExternalProvisionApp,
+  request: () => Promise<ExternalProvisionRecord>
+): Promise<void> {
+  const db = await getDatabase();
+  const tenants = db.collection<{
+    _id: string;
+    tenantId?: string;
+    externalProvision?: Partial<Record<ExternalProvisionApp, ExternalProvisionRecord>>;
+  }>(TENANTS_COLLECTION);
+  const current = await tenants.findOne({ $or: [{ _id: tenantId }, { tenantId }] });
+  if (!current) return;
+  const prior = current.externalProvision?.[appId];
+  const recovery = recoverExternalProvision(prior);
+  if (prior && prior.state !== "not_configured") {
+    console.error(
+      "[escritorio] provisión externa no se repite",
+      tenantId,
+      appId,
+      recovery.state,
+      recovery.reason
+    );
+    return;
+  }
+  const at = new Date().toISOString();
+  const record = await request().catch(() => ({
+    state: "failed" as const,
+    httpStatus: null,
+    at,
+  }));
+  await tenants.updateOne(
+    { _id: current._id },
+    { $set: { externalProvision: { ...current.externalProvision, [appId]: record } } }
+  );
+  if (record.state !== "activated") {
+    console.error(
+      "[escritorio] provisión externa sin activar",
+      tenantId,
+      appId,
+      record.state,
+      record.httpStatus
+    );
+  }
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
@@ -55,45 +106,30 @@ export async function POST(request: Request, { params }: RouteParams) {
       actorUserId: ctx.user._id,
       actorName: ctx.user.displayName,
     }).catch(() => null);
-    if (appId === "rrhh" || appId === "aprende-hoy") {
-      await ensureDeskProduct({
-        tenantId: tenant.tenantId,
-        userId: ctx.user._id,
-        appId,
-      });
-    }
   }
 
   const companyName = tenant.name?.trim() || tenant.tenantId;
   const email = ctx.user.email.trim().toLowerCase();
   const displayName = ctx.user.displayName.trim() || email;
   if (added.includes("rrhh")) {
-    void provisionRrhhCompany({
-      tenantId: tenant.tenantId,
-      companyName,
-      email,
-      displayName,
-    }).catch((error: unknown) => {
-      console.error(
-        "[escritorio] no se pudo crear la empresa de RR.HH.",
-        tenant.tenantId,
-        error instanceof Error ? error.message : error
-      );
-    });
+    await rememberExternalProvision(tenant.tenantId, "rrhh", () =>
+      provisionRrhhCompany({
+        tenantId: tenant.tenantId,
+        companyName,
+        email,
+        displayName,
+      })
+    );
   }
   if (added.includes("aprende-hoy")) {
-    void provisionAprendeHoyCompany({
-      tenantId: tenant.tenantId,
-      companyName,
-      email,
-      displayName,
-    }).catch((error: unknown) => {
-      console.error(
-        "[escritorio] no se pudo crear el perfil de Aprende Hoy.",
-        tenant.tenantId,
-        error instanceof Error ? error.message : error
-      );
-    });
+    await rememberExternalProvision(tenant.tenantId, "aprende-hoy", () =>
+      provisionAprendeHoyCompany({
+        tenantId: tenant.tenantId,
+        companyName,
+        email,
+        displayName,
+      })
+    );
   }
 
   const appsChanged = before.contracted.join(",") !== patch.contractedApps.join(",");

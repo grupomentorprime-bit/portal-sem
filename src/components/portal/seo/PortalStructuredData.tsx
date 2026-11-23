@@ -1,8 +1,9 @@
 interface PortalStructuredDataProps {
   jsonLd: Record<string, unknown>[];
+  nonce?: string;
 }
 
-export function PortalStructuredData({ jsonLd }: PortalStructuredDataProps) {
+export function PortalStructuredData({ jsonLd, nonce }: PortalStructuredDataProps) {
   if (jsonLd.length === 0) return null;
 
   return (
@@ -11,6 +12,7 @@ export function PortalStructuredData({ jsonLd }: PortalStructuredDataProps) {
         <script
           key={index}
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: JSON.stringify(payload) }}
         />
       ))}

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { groupMaintainedUsers, type MaintainedUserRow } from "../../src/lib/platform/user-profiles";
+import { PLATFORM_ROLE_CODES } from "../../src/core/identity/platform/codes";
+import { labelPlatformRole } from "../../src/lib/platform/space-labels";
+import {
+  groupMaintainedUsers,
+  labelOwnerProfile,
+  type MaintainedUserRow,
+} from "../../src/lib/platform/user-profiles";
 
 function row(partial: Partial<MaintainedUserRow> & Pick<MaintainedUserRow, "id" | "displayName">): MaintainedUserRow {
   return {
@@ -12,12 +18,20 @@ function row(partial: Partial<MaintainedUserRow> & Pick<MaintainedUserRow, "id" 
 }
 
 describe("groupMaintainedUsers", () => {
+  it("nombra al dueño y al operador con NELZURI", () => {
+    assert.equal(labelOwnerProfile("platform_owner"), "Dueño de NELZURI");
+    assert.equal(labelOwnerProfile("platform_operator"), "Operador de usuarios");
+    assert.equal(labelPlatformRole([PLATFORM_ROLE_CODES.OWNER]), "Dueño de NELZURI");
+    assert.equal(labelPlatformRole([PLATFORM_ROLE_CODES.OPERATOR]), "Operador de NELZURI");
+    assert.equal(labelPlatformRole([]), "Operador de NELZURI");
+  });
+
   it("keeps each client apart and leaves ecosystem accounts out of every client", () => {
     const groups = groupMaintainedUsers([
       row({
         id: "owner",
         displayName: "Marco Antonio",
-        platformLabel: "Dueño de Growth OS",
+        platformLabel: "Dueño de NELZURI",
         memberships: [
           { tenantId: "sem", spaceName: "Seminario Eclesiástico Mayor", roleLabel: "Dueño del Espacio" },
           { tenantId: "ari", spaceName: "Academia ARI", roleLabel: "Dueño del Espacio" },
@@ -26,7 +40,7 @@ describe("groupMaintainedUsers", () => {
       row({
         id: "operator",
         displayName: "Admin de usuarios",
-        platformLabel: "Operador de Growth OS",
+        platformLabel: "Operador de NELZURI",
       }),
       row({
         id: "alejandra",
@@ -56,7 +70,7 @@ describe("groupMaintainedUsers", () => {
         {
           id: "ecosystem",
           title: "Ecosistema",
-          people: ["Admin de usuarios · Operador de Growth OS", "Marco Antonio · Dueño de Growth OS"],
+          people: ["Admin de usuarios · Operador de NELZURI", "Marco Antonio · Dueño de NELZURI"],
         },
         {
           id: "ari",

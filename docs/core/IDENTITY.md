@@ -109,15 +109,24 @@ SESSION_SECRET=generar-secreto-largo-aleatorio
 
 ## Keycloak
 
-Un solo realm de plataforma. El id técnico sigue siendo `seminario-ipn`. No renombrarlo: usuarios, sesiones y callbacks de producción dependen de ese id. El Display Name y la identidad visual general son **Growth OS**.
+Un solo realm de plataforma. El id técnico sigue siendo `seminario-ipn`. No renombrarlo: usuarios, sesiones y callbacks de producción dependen de ese id. El Display Name y la identidad visual general son **NELZURI**.
 
 | Superficie | Identidad |
 | --- | --- |
-| Realm (`seminario-ipn`) | Display Name **Growth OS**. No es el Espacio SEM. |
-| `growth-os-web`, `growth-os-dev` | Branding Growth OS (tema `growth-os` cuando está montado en el servidor) |
+| Realm (`seminario-ipn`) | Display Name **NELZURI**. No es el Espacio SEM. |
+| `growth-os-web`, `growth-os-dev` | Branding NELZURI (tema `growth-os` cuando está montado en el servidor) |
 | `seminario-ipn-web` | Branding SEM solo en ese cliente (tema `sem`) |
 
 Los temas viven en `infra/keycloak/themes/`. `npx tsx scripts/align-keycloak-identity.ts` escribe el Display Name y asigna temas solo si ya están instalados en Keycloak. No regenera secrets ni cambia redirect URIs.
+
+### Pendiente de publicación
+
+El código ya prepara el Display Name **NELZURI** y los textos del tema `growth-os`. El servidor de Keycloak no cambia con este ajuste.
+
+1. Copiar `infra/keycloak/themes/growth-os` al servidor, sin renombrar la carpeta.
+2. Ejecutar `npx tsx scripts/align-keycloak-identity.ts` en una ventana coordinada. Escribe el Display Name y deja el realm `seminario-ipn` en el tema `growth-os`.
+3. No ejecutar el script ni copiar el tema como parte del cambio de textos.
+4. No tocar el tema `sem` ni el cliente `seminario-ipn-web`.
 
 ## Integración CMS
 

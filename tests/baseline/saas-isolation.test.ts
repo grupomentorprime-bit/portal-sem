@@ -1,38 +1,23 @@
 import assert from "node:assert/strict";
+import { isolatedDatabaseName, loadTestProcessEnv } from "./mongo-isolation";
 import { describe, it } from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import { SEM_TENANT_ID } from "../../src/core/tenant/constants";
 import { migration007SaasIsolation } from "../../src/core/migrations/007-saas-isolation";
-import { loadEnvLocal } from "../../src/core/migrations/env";
 
 const OTHER_TENANT = "tenant-isolation-other";
 
-function loadEnvFile(filename: string): void {
-  const envPath = resolve(process.cwd(), filename);
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 function loadTestMongoEnv(): void {
-  loadEnvLocal();
-  loadEnvFile(".env");
+  loadTestProcessEnv();
 }
 
 async function withDb(run: (db: Db) => Promise<void>): Promise<void> {
   loadTestMongoEnv();
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = isolatedDatabaseName(import.meta.url);
   if (!uri || !dbName) {
     console.warn("skip: MONGODB_URI/MONGODB_DB no configurados");
     return;

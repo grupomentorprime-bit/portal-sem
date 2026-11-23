@@ -5,6 +5,7 @@ import {
   deletePlatformSpace as deletePlatformSpaceCore,
   DeletePlatformSpaceError,
   isProtectedPlatformSpace,
+  rejectProtectedPlatformSpace,
   type DeletePlatformSpaceResult,
 } from "@/core/tenant/delete-platform-space";
 
@@ -22,6 +23,7 @@ export async function deletePlatformSpace(
   confirmSlug: string,
   actorUserId: string
 ): Promise<DeletePlatformSpaceResult> {
+  rejectProtectedPlatformSpace(tenantId);
   const db = await getDatabase();
   return deletePlatformSpaceCore(db, {
     tenantId,

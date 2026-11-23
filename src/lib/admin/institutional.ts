@@ -3,6 +3,9 @@
  */
 
 import { ROLE_CODES } from "@/core/identity/roles/codes";
+import { ADMISSION_DOOR } from "@/lib/portal/admission/manifest";
+import { STUDENT_AFFAIRS_DOOR } from "@/lib/student-affairs/manifest";
+import { FORMS_DOOR } from "@/nelzuri/catalog/doors";
 
 export interface AdminNavItem {
   /** Identificador estable para sub-ítems que comparten href. */
@@ -57,36 +60,21 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
     matchPrefixes: [
       "/admin/portal/forms",
     ],
-    requiredAnyPermission: [
-      "cms.pages.read",
-      "cms.pages.update",
-      "cms.menus.read",
-      "experience.forms.read",
-      "experience.forms.manage",
-    ],
+    requiredAnyPermission: [...FORMS_DOOR.anyPermission],
   },
   {
     href: "/admin/portal/admission",
     label: "Centro de admisión",
     icon: "admission",
     matchPrefixes: ["/admin/portal/admission"],
-    requiredAnyPermission: [
-      "cms.pages.read",
-      "experience.forms.read",
-      "experience.forms.manage",
-      "students.read",
-    ],
+    requiredAnyPermission: [...ADMISSION_DOOR.anyPermission],
   },
   {
     href: "/admin/portal/asuntos-estudiantiles",
     label: "Operación de formularios",
     icon: "students",
     matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
-    requiredAnyPermission: [
-      "student-affairs.read",
-      "student-affairs.checkin",
-      "student-affairs.manage",
-    ],
+    requiredAnyPermission: [...STUDENT_AFFAIRS_DOOR.anyPermission],
   },
   {
     href: "/admin/content",

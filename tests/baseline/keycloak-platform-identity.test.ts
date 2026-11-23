@@ -20,23 +20,26 @@ function read(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
 }
 
-describe("identidad Keycloak — Growth OS es la plataforma", () => {
-  it("el id técnico del realm se conserva y el nombre visible es Growth OS", () => {
+describe("identidad Keycloak — NELZURI es la plataforma", () => {
+  it("el id técnico del realm se conserva y el nombre visible es NELZURI", () => {
     assert.equal(KEYCLOAK_REALM_TECHNICAL_ID, "seminario-ipn");
-    assert.equal(KEYCLOAK_REALM_DISPLAY_NAME, "Growth OS");
+    assert.equal(KEYCLOAK_REALM_DISPLAY_NAME, "NELZURI");
     assert.equal(KEYCLOAK_GROWTH_OS_LOGIN_THEME, "growth-os");
     assert.equal(KEYCLOAK_SEM_SPACE_LOGIN_THEME, "sem");
     assert.equal(SEM_SPACE_KEYCLOAK_CLIENT_ID, "seminario-ipn-web");
     assert.deepEqual([...GROWTH_OS_KEYCLOAK_CLIENT_IDS], ["growth-os-web", "growth-os-dev"]);
   });
 
-  it("el tema de plataforma nombra Growth OS y el tema SEM no", () => {
-    const growth = read("infra/keycloak/themes/growth-os/login/messages/messages.properties");
+  it("el tema de plataforma nombra NELZURI y el tema SEM no", () => {
     const sem = read("infra/keycloak/themes/sem/login/messages/messages.properties");
-    assert.match(growth, /loginTitleHtml=Growth OS/);
-    assert.doesNotMatch(growth, /Seminario|seminario-ipn/);
-    assert.match(sem, /loginTitleHtml=Seminario Eclesiástico Mayor/);
-    assert.doesNotMatch(sem, /Growth OS/);
+    for (const file of ["messages.properties", "messages_es.properties", "messages_en.properties"]) {
+      const growth = read(`infra/keycloak/themes/growth-os/login/messages/${file}`);
+      assert.match(growth, /loginTitleHtml=NELZURI/);
+      assert.match(growth, /loginTitle=Ingresar a NELZURI/);
+      assert.doesNotMatch(growth, /Growth OS|Seminario|seminario-ipn/);
+    }
+    assert.match(sem, /loginTitleHtml=Seminario Eclesi/);
+    assert.doesNotMatch(sem, /Growth OS|NELZURI/);
     assert.match(read("infra/keycloak/themes/growth-os/login/theme.properties"), /parent=keycloak/);
     assert.match(read("infra/keycloak/themes/sem/login/theme.properties"), /parent=keycloak/);
   });
@@ -51,7 +54,7 @@ describe("identidad Keycloak — Growth OS es la plataforma", () => {
     assert.doesNotMatch(script, /realm:\s*"growth-os"/);
     const envExample = read(".env.example");
     assert.match(envExample, /KEYCLOAK_REALM=seminario-ipn/);
-    assert.match(envExample, /Display Name\) es Growth OS/);
+    assert.match(envExample, /Display Name\) es NELZURI/);
     assert.match(envExample, /seminario-ipn-web es el cliente del Espacio SEM/);
   });
 
@@ -60,7 +63,9 @@ describe("identidad Keycloak — Growth OS es la plataforma", () => {
     const admin = read("src/lib/identity/keycloak-admin.ts");
     assert.doesNotMatch(keycloak, /institucional/);
     assert.doesNotMatch(admin, /institucional/);
-    assert.match(read("docs/core/IDENTITY.md"), /Display Name y la identidad visual general son \*\*Growth OS\*\*/);
+    assert.match(read("docs/core/IDENTITY.md"), /Display Name y la identidad visual general son \*\*NELZURI\*\*/);
+    assert.match(read("docs/core/IDENTITY.md"), /Pendiente de publicación/);
+    assert.match(read("docs/GLOSSARY.md"), /nombre anterior/);
     assert.match(read("docs/GLOSSARY.md"), /Espacios equivalentes/);
     assert.match(read("docs/GLOSSARY.md"), /Mentor Capacitación/);
     assert.match(read("docs/GLOSSARY.md"), /Fundación Mueve/);

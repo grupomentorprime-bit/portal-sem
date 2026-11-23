@@ -1,6 +1,7 @@
 import { FormFocusedShell } from "@/components/portal/FormFocusedShell";
-
-const VARONES_ATTENDANCE_FORM_ID = "ipn-asistencia-congreso-varones-2026";
+import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
+import { getActivePortal } from "@/lib/portal/site";
+import { resolvePublicForm } from "@/nelzuri";
 
 /** Experiencia enfocada para cada formulario público (sin menú del portal). */
 export default async function FormularioDetailLayout({
@@ -10,14 +11,15 @@ export default async function FormularioDetailLayout({
   children: React.ReactNode;
   params: Promise<{ id: string }>;
 }) {
+  ensureSpecializedCapabilities();
   const { id } = await params;
-  const isVaronesAttendance = id === VARONES_ATTENDANCE_FORM_ID;
+  const portal = await getActivePortal();
+  const publication = portal ? resolvePublicForm(id, portal.tenant) : null;
+  const tone = publication && !publication.ambiguous ? publication.tone : "default";
+  const showBrandHeader = publication && !publication.ambiguous ? publication.showBrandHeader : true;
 
   return (
-    <FormFocusedShell
-      tone={isVaronesAttendance ? "corporate" : "default"}
-      showBrandHeader={!isVaronesAttendance}
-    >
+    <FormFocusedShell tone={tone} showBrandHeader={showBrandHeader}>
       {children}
     </FormFocusedShell>
   );

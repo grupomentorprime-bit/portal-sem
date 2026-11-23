@@ -1,4 +1,5 @@
-import { isMentorAppId, type MentorAppId } from "@/lib/desktop/catalog";
+import type { MentorAppId } from "@/lib/desktop/catalog";
+import { evaluateAppRequest } from "@/nelzuri";
 
 export interface AppRequest {
   tenantId: string;
@@ -51,13 +52,13 @@ export async function recordAppRequest(
     now?: string;
   }
 ): Promise<{ ok: true; already: boolean } | { ok: false; reason: "unknown" | "contracted" }> {
-  if (!isMentorAppId(input.appId)) return { ok: false, reason: "unknown" };
-  if (input.contracted.includes(input.appId)) return { ok: false, reason: "contracted" };
-  const existing = await store.findOpen(input.tenantId, input.appId);
+  const decision = evaluateAppRequest({ appId: input.appId, contracted: input.contracted });
+  if (!decision.ok) return decision;
+  const existing = await store.findOpen(input.tenantId, decision.appId);
   if (existing) return { ok: true, already: true };
   await store.insertOpen({
     tenantId: input.tenantId,
-    appId: input.appId,
+    appId: decision.appId,
     requestedBy: input.requestedBy,
     createdAt: input.now ?? new Date().toISOString(),
     status: "open",

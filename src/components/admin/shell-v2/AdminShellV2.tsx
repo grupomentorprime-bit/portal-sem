@@ -54,6 +54,7 @@ export function AdminShellV2({ children, ...ctx }: AdminShellV2Props) {
               navBadges: ctx.navBadges,
               enabledAppIds: ctx.enabledAppIds,
               showCongressVarones: ctx.showCongressVarones,
+              shellScope: ctx.shellScope,
             }}
           >
             {children}

@@ -2,8 +2,13 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import {
   PRIVATE_CACHE_CONTROL,
-  buildAppSecurityHeaders,
+  buildStaticSecurityHeaders,
 } from "./src/core/security/http-headers";
+import { assertIsolatedDev } from "./src/lib/mongo/local-boundary";
+
+if (process.env.NODE_ENV === "development") {
+  assertIsolatedDev(process.env);
+}
 
 function buildRemotePatterns(): NonNullable<NextConfig["images"]>["remotePatterns"] {
   const patterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [];
@@ -55,7 +60,13 @@ const nextConfig: NextConfig = {
     root: path.join(process.cwd()),
   },
   // Windows: Playwright/scripts suelen usar 127.0.0.1; sin esto Next bloquea /_next/* en dev.
-  allowedDevOrigins: ["127.0.0.1", "localhost", "cumple.localhost"],
+  allowedDevOrigins: [
+    "127.0.0.1",
+    "localhost",
+    "cumple.localhost",
+    "seminario-ipn.localhost",
+    "adl.localhost",
+  ],
   poweredByHeader: false,
   images: {
     localPatterns: [
@@ -79,7 +90,7 @@ const nextConfig: NextConfig = {
     remotePatterns: buildRemotePatterns(),
   },
   async headers() {
-    const security = buildAppSecurityHeaders(process.env);
+    const security = buildStaticSecurityHeaders(process.env);
 
     return [
       {

@@ -269,4 +269,26 @@ describe("registro del diagnóstico CUMPLE", () => {
     assert.equal(saved, 0);
     assert.match(result.errors?.answers ?? result.errors?.headcount ?? "", /respuesta|dotación|aplica/i);
   });
+
+  it("entrega la ruta del informe ya guardado y no crea otro", async () => {
+    const store = createMemoryCumpleDiagnosticoStore();
+    const saved = await recordCumpleDiagnostico(store, {
+      tenantId: "cumple",
+      submissionId: "sub-informe",
+      formId: CUMPLE_FORM_ID,
+      data: payload(),
+      capturedAt: "2026-10-16T12:00:00.000Z",
+      now: "2026-10-16T12:00:00.000Z",
+      createReportToken: () => "token-informe",
+    });
+    assert.equal(saved.ok, true);
+    const { reportPathForStoredSubmission } = await import("../../src/lib/cumple/informe");
+    const first = await reportPathForStoredSubmission(store, "cumple", "sub-informe");
+    const second = await reportPathForStoredSubmission(store, "cumple", "sub-informe");
+    assert.equal(first, "/informe/token-informe");
+    assert.equal(second, first);
+    assert.equal(store.all().length, 1);
+    assert.equal(await reportPathForStoredSubmission(store, "adl", "sub-informe"), null);
+    assert.equal(await reportPathForStoredSubmission(store, "cumple", "no-existe"), null);
+  });
 });

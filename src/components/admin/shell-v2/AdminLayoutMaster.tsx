@@ -18,6 +18,7 @@ interface AdminLayoutMasterProps {
     | "navBadges"
     | "enabledAppIds"
     | "showCongressVarones"
+    | "shellScope"
   >;
 }
 
@@ -45,6 +46,7 @@ export function AdminLayoutMaster({
             navBadges={shell.navBadges}
             enabledAppIds={shell.enabledAppIds}
             showCongressVarones={shell.showCongressVarones}
+            shellScope={shell.shellScope}
           />
         </Suspense>
         {children}

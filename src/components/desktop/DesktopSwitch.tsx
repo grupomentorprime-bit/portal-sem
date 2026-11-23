@@ -38,7 +38,7 @@ export function DesktopSwitchRow({
   checked: boolean;
   disabled?: boolean;
   title: string;
-  detail?: string;
+  detail?: ReactNode;
   mark?: string;
   badge?: string;
   onChange: (checked: boolean) => void;
@@ -51,7 +51,7 @@ export function DesktopSwitchRow({
           {title}
           {badge ? <em>{badge}</em> : null}
         </strong>
-        {detail ? <small>{detail}</small> : null}
+        {detail ? <span className="desk-switch-detail">{detail}</span> : null}
       </span>
       <DesktopSwitch checked={checked} disabled={disabled} label={title} onChange={onChange} />
     </label>

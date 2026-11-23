@@ -4,6 +4,7 @@
  *
  * No importa módulos server-only; replica la lógica de lookup/resolve en línea.
  */
+import "./_mongo-guard";
 import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI!;

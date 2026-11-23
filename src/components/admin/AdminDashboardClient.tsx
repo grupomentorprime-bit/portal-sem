@@ -29,6 +29,7 @@ import { AdminModulePage } from "@/components/admin/kit/layout/AdminModulePage";
 import { formatAuditMessage, formatRelativeTime } from "@/lib/admin/audit-labels";
 import type { AuditTimelineEntry } from "@/components/admin/AuditTimeline";
 import { Button } from "@/components/ui/button";
+import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { cn } from "@/lib/utils";
 
 interface AdminDashboardClientProps {
@@ -273,7 +274,7 @@ function DashboardWelcomeHero({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-            Growth OS
+            {PLATFORM_DISPLAY_NAME}
           </p>
           <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Bienvenido, {firstName}

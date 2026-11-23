@@ -1,4 +1,4 @@
-import { isMentorAppId, type DockAppId } from "@/lib/desktop/catalog";
+import { isMentorAppId, isSpecializedAppId, type DockAppId } from "@/lib/desktop/catalog";
 
 export type DeskIconSpot = {
   appId: DockAppId;
@@ -14,7 +14,8 @@ export function isDockAppId(value: string): value is DockAppId {
     value === "envivo" ||
     value === "clientes" ||
     value === "ajustes" ||
-    isMentorAppId(value)
+    isMentorAppId(value) ||
+    isSpecializedAppId(value)
   );
 }
 
