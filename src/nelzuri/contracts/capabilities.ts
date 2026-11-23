@@ -242,6 +242,8 @@ function assertPublicForm(variant: PublicFormRegistration): void {
 export interface CapabilityRegistry {
   specializedIds: string[];
   setInstaller: (install: () => void) => void;
+  /** Fichas que se publican al leer, aunque ningún instalador haya corrido. */
+  addManifestSeed: (entries: readonly SpecializedManifestRegistration[]) => void;
   ensure: () => void;
   registerSpecializedManifest: (input: SpecializedManifestRegistration) => void;
   registerRouteRules: (appId: string, rules: SpecializedRouteRules) => void;
@@ -269,6 +271,8 @@ export function createCapabilityRegistry(options: {
   let phase: Phase = "open";
   let failure: unknown = null;
   let installer: (() => void) | null = null;
+  let behaviorInstalled = false;
+  const manifestSeed: SpecializedManifestRegistration[] = [];
   const pendingManifests = new Map<string, SpecializedManifestRegistration>();
   const publishedManifests = new Map<string, SpecializedManifestRegistration>();
   const routeRules = new Map<string, SpecializedRouteRules>();
@@ -320,20 +324,56 @@ export function createCapabilityRegistry(options: {
 
     setInstaller(install) {
       if (phase === "failed") throw failure;
-      if (phase !== "open") throw new Error("Registro cerrado: el instalador ya no puede cambiar.");
       if (typeof install !== "function") throw new Error("El instalador de capacidades está incompleto.");
+      if (phase === "ready") {
+        if (behaviorInstalled) {
+          installer = install;
+          return;
+        }
+        phase = "sealing";
+        let caught: unknown;
+        try {
+          install();
+          for (const appId of routeRules.keys()) {
+            if (!pendingManifests.has(appId) && !publishedManifests.has(appId)) {
+              throw new Error(`${appId} tiene reglas de ruta sin una capacidad publicada.`);
+            }
+          }
+          behaviorInstalled = true;
+          installer = install;
+          phase = "ready";
+        } catch (error) {
+          caught = error;
+        }
+        if (caught) {
+          closeFailed(caught);
+          throw caught;
+        }
+        return;
+      }
+      if (phase !== "open") throw new Error("Registro cerrado: el instalador ya no puede cambiar.");
       installer = install;
+    },
+
+    addManifestSeed(entries) {
+      if (phase === "failed") throw failure;
+      if (phase !== "open") throw new Error("Registro cerrado: las fichas ya no se agregan.");
+      manifestSeed.push(...entries);
     },
 
     ensure() {
       if (phase === "ready") return;
       if (phase === "failed") throw failure;
-      if (!installer) return;
+      if (!installer && manifestSeed.length === 0) return;
       if (phase === "sealing") throw new Error("El registro de capacidades se reentró.");
       phase = "sealing";
       let caught: unknown;
       try {
-        installer();
+        for (const entry of manifestSeed) registry.registerSpecializedManifest(entry);
+        if (installer) {
+          installer();
+          behaviorInstalled = true;
+        }
         for (const appId of routeRules.keys()) {
           if (!pendingManifests.has(appId)) {
             throw new Error(`${appId} tiene reglas de ruta sin una capacidad publicada.`);
@@ -570,6 +610,13 @@ export const SPECIALIZED_APPS = platform.specializedIds;
 
 export function setSpecializedCapabilityInstaller(install: () => void): void {
   platform.setInstaller(install);
+}
+
+/** Las mismas fichas que declara cada capacidad. No es otro catálogo. */
+export function installPlatformManifests(
+  entries: readonly SpecializedManifestRegistration[]
+): void {
+  platform.addManifestSeed(entries);
 }
 
 export function ensureSpecializedCapabilities(): void {

@@ -1,9 +1,13 @@
+import { SPECIALIZED_MANIFEST_REGISTRATIONS } from "@/lib/nelzuri/specialized-manifests";
 import {
   ensureSpecializedCapabilities,
+  installPlatformManifests,
   SPECIALIZED_APPS,
   specializedManifests,
   type SpecializedAppId,
 } from "@/nelzuri/contracts/capabilities";
+
+installPlatformManifests(SPECIALIZED_MANIFEST_REGISTRATIONS);
 import { APP_MANIFESTS, MENTOR_APPS, type MentorAppId } from "@/nelzuri/catalog/manifests";
 import type { AppClass, AppManifest } from "@/nelzuri/catalog/types";
 import { validateCatalog } from "@/nelzuri/catalog/validate";
