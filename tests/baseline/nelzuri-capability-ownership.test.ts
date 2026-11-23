@@ -10,7 +10,9 @@ import {
   type SpecializedManifestRegistration,
 } from "../../src/nelzuri/contracts/capabilities";
 import { ensureSpecializedCapabilities } from "../../src/lib/desktop/register-specialized";
-import { manifestById } from "../../src/nelzuri";
+import { listFormConvocatorias } from "../../src/lib/admin/forms-center";
+import { getConvocatoriaGenerations } from "../../src/lib/experience/forms/generations";
+import { formCatalogFor, manifestById, resolveFormEffect, resolvePublicForm } from "../../src/nelzuri";
 
 const ROOT = process.cwd();
 
@@ -128,6 +130,103 @@ describe("registro de capacidades especializadas", () => {
     assert.deepEqual([...SPECIALIZED_APPS], ["admision", "asuntos-estudiantiles", "congreso"]);
     assert.equal(manifestById("admision").requiresSpaceId, "seminario-ipn");
     assert.equal(manifestById("congreso").open.type, "internal");
+  });
+
+  it("el catálogo de SEM no se siembra en otro Espacio", () => {
+    ensureSpecializedCapabilities();
+    const sem = formCatalogFor("seminario-ipn");
+    assert.ok(sem);
+    assert.ok(sem.convocatorias.some((item) => item.formId.includes("talca-aurora")));
+    for (const year of ["G-2023", "G-2024", "G-2025", "G-2026"]) {
+      assert.ok(sem.generations.some((item) => item.value === year));
+    }
+    assert.deepEqual(listFormConvocatorias("seminario-ipn").map((item) => item.formId), [
+      "convocatoria-talca-aurora-jul-2026",
+      "convocatoria-talca-aurora-nov-2026",
+    ]);
+    assert.ok(getConvocatoriaGenerations("seminario-ipn").some((item) => item.value === "G-2026"));
+    for (const spaceId of ["adl", "ipn-chile", "fundacion-mueve", "mentor-prime-capacitacion", "cumple"]) {
+      assert.equal(formCatalogFor(spaceId), null, spaceId);
+      assert.deepEqual(listFormConvocatorias(spaceId), []);
+      assert.equal(
+        getConvocatoriaGenerations(spaceId).some((item) => item.value.startsWith("G-20")),
+        false,
+        spaceId
+      );
+    }
+  });
+
+  it("un efecto no corre en el Espacio de otro cliente", async () => {
+    ensureSpecializedCapabilities();
+    assert.equal(
+      resolveFormEffect({ _id: "ipn-asistencia-congreso-varones-2026" }, "ipn-chile").status,
+      "one"
+    );
+    assert.equal(
+      resolveFormEffect({ _id: "ipn-asistencia-congreso-varones-2026" }, "seminario-ipn").status,
+      "none"
+    );
+    assert.equal(resolveFormEffect({ _id: "cumple-diagnostico" }, "cumple").status, "one");
+    assert.equal(resolveFormEffect({ _id: "cumple-diagnostico" }, "adl").status, "none");
+    assert.equal(
+      resolveFormEffect({ _id: "convocatoria-talca-aurora-nov-2026" }, "seminario-ipn").status,
+      "one"
+    );
+    assert.equal(
+      resolveFormEffect({ _id: "convocatoria-talca-aurora-nov-2026" }, "ipn-chile").status,
+      "none"
+    );
+    assert.equal(resolveFormEffect({ _id: "information-request" }, "seminario-ipn").status, "none");
+
+    const congress = resolvePublicForm("ipn-asistencia-congreso-varones-2026", "ipn-chile");
+    assert.equal(congress.kind, "congress");
+    assert.equal(congress.tone, "corporate");
+    assert.equal(congress.showBrandHeader, false);
+    assert.equal(congress.ambiguous, false);
+    const crossed = resolvePublicForm("ipn-asistencia-congreso-varones-2026", "adl");
+    assert.equal(crossed.kind, "generic");
+    assert.equal(crossed.tone, "default");
+    assert.equal(crossed.ambiguous, false);
+    const convocatoria = resolvePublicForm("convocatoria-talca-aurora-nov-2026", "seminario-ipn");
+    assert.equal(convocatoria.kind, "convocatoria");
+    assert.equal(convocatoria.ambiguous, false);
+
+    const cumple = resolveFormEffect({ _id: "cumple-diagnostico" }, "cumple");
+    assert.equal(cumple.status, "one");
+    if (cumple.status !== "one") return;
+    const after = await cumple.effect.afterSave?.({
+      tenant: "cumple",
+      form: { _id: "cumple-diagnostico", name: "Diagnóstico", errorMessage: "" },
+      formId: "cumple-diagnostico",
+      data: {},
+      submissionId: "envio-inexistente",
+    });
+    assert.equal(after?.body, undefined);
+    assert.equal(after?.extras?.reportPath, undefined);
+  });
+
+  it("el servicio transversal ya no contiene los efectos de cada cliente", () => {
+    const submit = readFileSync(resolve(ROOT, "src/app/api/experience/forms/[id]/submit/route.ts"), "utf8");
+    for (const forbidden of [
+      "@/core/congress",
+      "@/sites/cumple",
+      "@/lib/cumple",
+      "getConvocatoriaByFormId",
+      "CONGRESS_VARONES",
+    ]) {
+      assert.equal(submit.includes(forbidden), false, forbidden);
+    }
+    for (const file of [
+      "src/lib/experience/forms/repository.ts",
+      "src/lib/admin/forms-center.ts",
+    ]) {
+      const source = readFileSync(resolve(ROOT, file), "utf8");
+      assert.equal(source.includes("isSemTenant"), false, file);
+      assert.equal(source.includes("createSemDefaultForms"), false, file);
+    }
+    const cumple = readFileSync(resolve(ROOT, "src/sites/cumple/form-effect.ts"), "utf8");
+    assert.match(cumple, /catch/);
+    assert.doesNotMatch(cumple, /deleteOne|updateOne/);
   });
 
   it("el contrato no importa módulos de cliente", () => {

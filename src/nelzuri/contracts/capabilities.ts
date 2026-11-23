@@ -77,6 +77,7 @@ export interface FormEffectBeforeResult {
 
 export interface FormEffectAfterInput extends FormEffectInput {
   submissionId?: string;
+  message?: string;
 }
 
 export interface FormEffectAfterResult {

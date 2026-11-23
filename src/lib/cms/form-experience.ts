@@ -7,8 +7,7 @@ import {
   formatConvocatoriaHorarioLabel,
   normalizeChileEventTime,
 } from "@/lib/experience/forms/convocatoria-event-datetime";
-import { isSemTenant } from "@/core/tenant/is-sem";
-import { FORM_CONVOCATORIAS } from "@/lib/admin/forms-center";
+import { listFormConvocatorias } from "@/lib/admin/forms-center";
 import {
   applyFormExperienceTemplate,
   buildDefaultFormExperience,
@@ -64,8 +63,7 @@ function enhanceConvocatoriaExperience(
   experience: ExperienceFormExperience,
   formId: string
 ): ExperienceFormExperience {
-  if (!isSemTenant(experience.tenant)) return experience;
-  const convocatoria = FORM_CONVOCATORIAS.find((item) => item.formId === formId);
+  const convocatoria = listFormConvocatorias(experience.tenant).find((item) => item.formId === formId);
   if (!convocatoria) return experience;
 
   const eventDate =

@@ -1,37 +1,13 @@
-import { isSemTenant } from "@/core/tenant/is-sem";
+import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
+import { formCatalogFor, generationOverlay } from "@/nelzuri";
+import { SEM_CONVOCATORIA_GENERATIONS } from "@/lib/portal/sem-forms";
 
 export interface ConvocatoriaGenerationOption {
   value: string;
   label: string;
 }
 
-/** Generaciones SEM (T001) — Diploma Teología Bíblica G-2023… */
-export const SEM_CONVOCATORIA_GENERATIONS: ConvocatoriaGenerationOption[] = [
-  {
-    value: "G-2023",
-    label: "Diploma Teología Bíblica — G-2023 (Pastores(as))",
-  },
-  {
-    value: "G-2024",
-    label: "Diploma Teología Bíblica — G-2024",
-  },
-  {
-    value: "G-2025",
-    label: "Diploma Teología Bíblica — G-2025",
-  },
-  {
-    value: "G-2026",
-    label: "Diploma Teología Bíblica — G-2026",
-  },
-  {
-    value: "staff",
-    label: "Equipo docente / administrativo",
-  },
-  {
-    value: "other",
-    label: "Otros",
-  },
-];
+export { SEM_CONVOCATORIA_GENERATIONS };
 
 /** Catálogo de plataforma — sin cohortes de cliente. */
 export const PLATFORM_CONVOCATORIA_GENERATIONS: ConvocatoriaGenerationOption[] = [
@@ -51,47 +27,34 @@ export const CONVOCATORIA_GENERATIONS = SEM_CONVOCATORIA_GENERATIONS;
 export function getConvocatoriaGenerations(
   tenantId: string
 ): ConvocatoriaGenerationOption[] {
-  return isSemTenant(tenantId)
-    ? SEM_CONVOCATORIA_GENERATIONS
-    : PLATFORM_CONVOCATORIA_GENERATIONS;
+  ensureSpecializedCapabilities();
+  const catalog = formCatalogFor(tenantId);
+  if (!catalog) return PLATFORM_CONVOCATORIA_GENERATIONS.map((item) => ({ ...item }));
+  return catalog.generations.map((item) => ({ ...item }));
 }
 
-const GENERATION_ALIASES: Record<string, string> = {
-  g2023: "G-2023",
-  "g-2023": "G-2023",
-  "g2023-pastoral": "G-2023",
-  "diploma-teologia-biblica-pastoral-g2023": "G-2023",
-  g2024: "G-2024",
-  "g-2024": "G-2024",
-  "diploma-teologia-biblica-pastores-g2024": "G-2024",
-  g2025: "G-2025",
-  "g-2025": "G-2025",
-  "diploma-teologia-biblica-hermanos-g2025": "G-2025",
-  g2026: "G-2026",
-  "g-2026": "G-2026",
-  "diploma-teologia-biblica-hermanos-g2026": "G-2026",
-  staff: "staff",
-  "equipo docente / administrativo": "staff",
-  "equipo docente": "staff",
-  other: "other",
-  otro: "other",
-};
-
-const GENERATION_LABELS = Object.fromEntries(
-  SEM_CONVOCATORIA_GENERATIONS.map((option) => [option.value, option.label])
-) as Record<string, string>;
+function generationMaps(): { aliases: Record<string, string>; labels: Record<string, string> } {
+  ensureSpecializedCapabilities();
+  const overlay = generationOverlay();
+  const labels = { ...overlay.labels };
+  for (const option of PLATFORM_CONVOCATORIA_GENERATIONS) {
+    if (!labels[option.value]) labels[option.value] = option.label;
+  }
+  return { aliases: overlay.aliases, labels };
+}
 
 export function normalizeGenerationValue(value: unknown): string {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
 
-  const byAlias = GENERATION_ALIASES[raw.toLowerCase()];
+  const { aliases } = generationMaps();
+  const byAlias = aliases[raw.toLowerCase()];
   if (byAlias) return byAlias;
 
   const yearMatch = raw.match(/\bG[-\s]?(\d{4})\b/i);
   if (yearMatch) return `G-${yearMatch[1]}`;
 
-  if (GENERATION_LABELS[raw]) return raw;
+  if (generationMaps().labels[raw]) return raw;
 
   return raw;
 }
@@ -101,7 +64,7 @@ export function formatGenerationDisplay(value: unknown): string {
   if (!raw) return "—";
 
   const canonical = normalizeGenerationValue(raw);
-  return GENERATION_LABELS[canonical] ?? raw;
+  return generationMaps().labels[canonical] ?? raw;
 }
 
 /** Código corto de generación para informes y tablas (p. ej. G-2023). */
@@ -110,9 +73,10 @@ export function formatGenerationCode(value: unknown): string {
   if (!raw) return "—";
 
   const canonical = normalizeGenerationValue(raw);
+  const labels = generationMaps().labels;
   if (canonical === "staff") return "Equipo";
   if (canonical === "other") return "Otros";
-  if (canonical && GENERATION_LABELS[canonical]) return canonical;
+  if (canonical && labels[canonical]) return canonical;
 
   const codeInRaw = raw.match(/\bG-(\d{4})\b/i);
   if (codeInRaw) return `G-${codeInRaw[1]}`;
@@ -120,7 +84,7 @@ export function formatGenerationCode(value: unknown): string {
   const yearOnly = raw.match(/\b(20\d{2})\b/);
   if (yearOnly) return `G-${yearOnly[1]}`;
 
-  for (const [code, label] of Object.entries(GENERATION_LABELS)) {
+  for (const [code, label] of Object.entries(labels)) {
     if (raw.toLowerCase() === label.toLowerCase()) return code;
     const codeInLabel = label.match(/\bG-(\d{4})\b/);
     if (codeInLabel && label.toLowerCase().includes(raw.toLowerCase()) && raw.length >= 6) {
@@ -139,5 +103,5 @@ export function formatGenerationCode(value: unknown): string {
 
 export function isKnownGeneration(value: unknown): boolean {
   const canonical = normalizeGenerationValue(value);
-  return Boolean(canonical && GENERATION_LABELS[canonical]);
+  return Boolean(canonical && generationMaps().labels[canonical]);
 }

@@ -24,7 +24,7 @@ describe("el programa del congreso llega al inscrito", () => {
       "utf8"
     );
     const page = readFileSync(
-      resolve(process.cwd(), "src/app/(site)/formularios/[id]/page.tsx"),
+      resolve(process.cwd(), "src/core/congress/public-form.ts"),
       "utf8"
     );
     assert.match(program, new RegExp(`CONGRESS_VARONES_PROGRAM_PATH = "${PROGRAM_PATH}"`));
@@ -55,7 +55,7 @@ describe("el programa del congreso llega al inscrito", () => {
 
   it("una inscripción nueva del congreso envía ese correo", () => {
     const route = readFileSync(
-      resolve(process.cwd(), "src/app/api/experience/forms/[id]/submit/route.ts"),
+      resolve(process.cwd(), "src/core/congress/form-effect.ts"),
       "utf8"
     );
     assert.match(route, /sendCongressConfirmationEmail/);

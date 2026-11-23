@@ -190,8 +190,10 @@ describe("OT-GROWTH-SAAS-007 — extracción SEM del core", () => {
       resolve(process.cwd(), "src/lib/experience/forms/repository.ts"),
       "utf8"
     );
-    assert.match(repo, /isSemTenant\(tenant\)/);
-    assert.match(repo, /if \(!isSemTenant\(tenant\)\) return/);
+    assert.match(repo, /if \(!catalog\) return listExperienceForms\(tenant\)/);
+    assert.match(repo, /if \(!catalog\) return/);
+    assert.doesNotMatch(repo, /isSemTenant/);
+    assert.doesNotMatch(repo, /createSemDefaultForms/);
 
     const seed = readFileSync(
       resolve(process.cwd(), "src/lib/content/seed.ts"),

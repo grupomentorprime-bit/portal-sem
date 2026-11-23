@@ -5,26 +5,20 @@ import { PortalConvocatoriaExperienceForm } from "@/components/portal/experience
 import { FormPublicExperience, FormUnavailableState } from "@/components/portal/forms";
 import { CongressAttendanceSuccess } from "@/components/portal/forms/CongressAttendanceSuccess";
 import {
-  getConvocatoriaByFormId,
   getActiveConvocatoria,
   getSupersededFormIds,
   isExperienceFormPrivate,
   publicFormUrl,
 } from "@/lib/admin/forms-center";
 import { getFormExperience, toFormLandingConfig } from "@/lib/cms/form-experience";
-import { isSemTenant } from "@/core/tenant/is-sem";
-import { ipnDepartmentColors } from "@/design/tokens/colors";
-import { SEM_CONTACT_PUBLISHED } from "@/lib/portal/sem-identity-v7";
+import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
 import { getActivePortal } from "@/lib/portal/site";
+import { resolvePublicForm } from "@/nelzuri";
 import type { ExperienceFormExperience } from "@/types/experience-form-experience";
 import {
   getDirectAccessibleExperienceForm,
   getExperienceFormById,
 } from "@/lib/experience/forms/repository";
-import {
-  CONGRESS_VARONES_PROGRAM_LABEL,
-  CONGRESS_VARONES_PROGRAM_PATH,
-} from "@/lib/experience/forms/already-enrolled";
 import { getExperienceFormUnavailabilityReason } from "@/lib/experience/forms/status";
 import type { FormExperienceStateKey } from "@/types/experience-form-experience";
 import type { Metadata } from "next";
@@ -85,27 +79,6 @@ export async function generateMetadata({ params }: FormularioPageProps): Promise
   };
 }
 
-function withholdUnvalidatedFormContact(
-  experience: ExperienceFormExperience,
-  tenantId: string
-): ExperienceFormExperience {
-  if (!isSemTenant(tenantId) || SEM_CONTACT_PUBLISHED) return experience;
-  return {
-    ...experience,
-    footer: {
-      ...experience.footer,
-      contactEmail: "",
-      contactPhone: "",
-      whatsapp: "",
-    },
-    contact: {
-      ...experience.contact,
-      email: "",
-      phone: "",
-    },
-  };
-}
-
 function formUnavailabilityDescription(
   reason: NonNullable<ReturnType<typeof getExperienceFormUnavailabilityReason>>
 ): string {
@@ -121,102 +94,12 @@ function formUnavailabilityDescription(
   }
 }
 
-const VARONES_ATTENDANCE_FORM_ID = "ipn-asistencia-congreso-varones-2026";
-const VARONES_CONGRESS_BANNER = "/branding/ipn-chile/congreso-varones-2026.jpg";
-
-/** Portada del congreso: el banner lleva título, cita y fecha. */
-function withDepartmentBrand(
-  id: string,
-  experience: ExperienceFormExperience
-): ExperienceFormExperience {
-  if (id !== VARONES_ATTENDANCE_FORM_ID) return experience;
-  return {
-    ...experience,
-    hero: {
-      ...experience.hero,
-      eyebrow: "Confirmación de asistencia",
-      headline: "3° Congreso de Varones",
-      subheadline:
-        "Celebramos juntos el 3.º Congreso de Varones. Confirma tu asistencia para preparar el encuentro.",
-      motivational: "¡Nos encantará verte! Tu presencia fortalece este congreso.",
-      mediaUrl: VARONES_CONGRESS_BANNER,
-      mediaPresentation: "banner",
-      overlayOpacity: 0,
-      height: "compact",
-      showBreadcrumb: false,
-      secondaryCtas: [],
-    },
-    formShell: {
-      ...experience.formShell,
-      overline: "Tu respuesta",
-      title: "Confirma tu asistencia",
-      description: "Zona, iglesia y contacto. El correo es opcional.",
-      submitLabel: "Confirmar asistencia",
-      successMessage:
-        "Gracias por confirmar tu asistencia. Te esperamos el 21 y 22 de noviembre.",
-      confirmationEmailCtaUrl: CONGRESS_VARONES_PROGRAM_PATH,
-      confirmationEmailCtaLabel: CONGRESS_VARONES_PROGRAM_LABEL,
-    },
-    counter: {
-      ...experience.counter,
-      enabled: true,
-      mode: "days_until",
-      targetDate: "2026-11-21",
-      targetTime: "08:00",
-      label: "Faltan",
-    },
-    appearance: {
-      ...experience.appearance,
-      primaryColor: ipnDepartmentColors.navy,
-      borderRadius: "soft",
-      shadow: "soft",
-    },
-    infoCards: [
-      {
-        id: "fecha",
-        icon: "calendar",
-        label: "Fecha",
-        value: "Sábado 21 y domingo 22 de noviembre",
-        description: "2026",
-        order: 0,
-        visible: true,
-      },
-      {
-        id: "horario",
-        icon: "clock",
-        label: "Horario",
-        value: "Desde las 8:00 a. m.",
-        description: "Sábado 21 de noviembre",
-        order: 1,
-        visible: true,
-      },
-      {
-        id: "traer",
-        icon: "clipboard-check",
-        label: "Traer",
-        value: "Gorro, instrumentos, protector solar, agua, equipo de sonido y saco de dormir",
-        order: 2,
-        visible: true,
-      },
-      {
-        id: "para-quien",
-        icon: "users",
-        label: "Para quién",
-        value: "Varones de IPN Chile",
-        order: 3,
-        visible: true,
-      },
-    ],
-    blocks: experience.blocks.map((block) =>
-      block.type === "counter" ? { ...block, enabled: false } : block
-    ),
-  };
-}
-
 export default async function FormularioPublicPage({ params }: FormularioPageProps) {
   const { id } = await params;
+  ensureSpecializedCapabilities();
   const ctx = await getActivePortal();
   if (!ctx) notFound();
+  const publication = resolvePublicForm(id, ctx.tenant);
 
   if (getSupersededFormIds(ctx.tenant).has(id)) {
     const convocatoria = getActiveConvocatoria(ctx.tenant);
@@ -224,13 +107,12 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
   }
 
   const storedForm = await getExperienceFormById(ctx.tenant, id);
-  const experience = withDepartmentBrand(
-    id,
-    withholdUnvalidatedFormContact(
-      await getFormExperience(ctx.tenant, id, storedForm?.name),
-      ctx.tenant
-    )
-  );
+  const loaded = await getFormExperience(ctx.tenant, id, storedForm?.name);
+  const decorate =
+    publication.ambiguous || !publication.decorate
+      ? null
+      : (publication.decorate as (experience: ExperienceFormExperience) => ExperienceFormExperience);
+  const experience = decorate ? decorate(loaded) : loaded;
   const landing = toFormLandingConfig(experience);
   const unavailability = getExperienceFormUnavailabilityReason(storedForm);
   const isPrivate = Boolean(storedForm && isExperienceFormPrivate(storedForm));
@@ -278,14 +160,12 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
     );
   }
 
-  const convocatoria = getConvocatoriaByFormId(id, ctx.tenant);
   const shell = experience.formShell;
-
-  const isVaronesAttendance = id === VARONES_ATTENDANCE_FORM_ID;
+  const kind = publication.ambiguous ? "generic" : publication.kind;
 
   return (
     <FormPublicExperience experience={experience} breadcrumb={breadcrumb}>
-      {isVaronesAttendance ? (
+      {kind === "congress" ? (
         <PortalCongressExperienceForm
           form={form}
           overline={shell.overline}
@@ -304,10 +184,10 @@ export default async function FormularioPublicPage({ params }: FormularioPagePro
             />
           }
         />
-      ) : convocatoria ? (
+      ) : kind === "convocatoria" && publication.convocatoriaSlug ? (
         <PortalConvocatoriaExperienceForm
           form={form}
-          convocatoriaSlug={convocatoria.slug}
+          convocatoriaSlug={publication.convocatoriaSlug}
           overline={shell.overline}
           title={shell.title}
           description={shell.description}
