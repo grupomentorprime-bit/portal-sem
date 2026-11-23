@@ -96,7 +96,7 @@ function sameSecret(left: string, right: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-function operationalTarget(env: NodeJS.ProcessEnv): boolean {
+function operationalTarget(env: Partial<NodeJS.ProcessEnv>): boolean {
   const target = (env.MONGODB_TARGET ?? "").trim().toLowerCase();
   return target === "production" || target === "operational" || target === "operativa";
 }
@@ -110,7 +110,7 @@ export function isMintedDatabaseName(name: string): boolean {
   return /^nz[0-9a-f]{28}$/.test(name);
 }
 
-export function isDestructiveEnvironmentAuthorized(env: NodeJS.ProcessEnv): boolean {
+export function isDestructiveEnvironmentAuthorized(env: Partial<NodeJS.ProcessEnv>): boolean {
   if (env.NODE_ENV === "production") return false;
   if (operationalTarget(env)) return false;
   if ((env.MONGODB_DESTRUCTIVE_SCOPE ?? "").trim() !== "isolated-test") return false;
@@ -121,7 +121,7 @@ export function isDestructiveEnvironmentAuthorized(env: NodeJS.ProcessEnv): bool
 
 export function classifyMongoConnection(
   uri: string,
-  env: NodeJS.ProcessEnv = process.env
+  env: Partial<NodeJS.ProcessEnv> = process.env
 ): MongoConnectionClass {
   if (env.NODE_ENV === "production" || operationalTarget(env)) return "operational";
 

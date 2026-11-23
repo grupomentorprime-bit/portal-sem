@@ -103,21 +103,29 @@ export type ResolvedFormEffect =
 
 export type PublicFormKind = "congress" | "convocatoria" | "generic";
 
-export interface PublicFormResolution<T = unknown> {
+/**
+ * El registro no inspecciona la ficha.
+ * La variante conserva su tipo y la página lo vuelve a aplicar.
+ */
+type PublicFormDecorator = {
+  apply(experience: unknown): unknown;
+}["apply"];
+
+export interface PublicFormResolution {
   kind: PublicFormKind;
   tone: "default" | "corporate";
   showBrandHeader: boolean;
   convocatoriaSlug?: string;
-  decorate?: (experience: T) => T;
+  decorate?: PublicFormDecorator;
   /** Dos extensiones reclamaron el mismo formulario. No se aplica ninguna. */
   ambiguous: boolean;
 }
 
-export interface PublicFormRegistration<T = unknown> {
+export interface PublicFormRegistration {
   id: string;
   spaceId: string;
   matches: (formId: string, tenantId: string) => boolean;
-  resolve: (formId: string, tenantId: string) => Omit<PublicFormResolution<T>, "ambiguous">;
+  resolve: (formId: string, tenantId: string) => Omit<PublicFormResolution, "ambiguous">;
 }
 
 export interface SpecializedNavPlacement {

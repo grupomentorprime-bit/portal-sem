@@ -27,11 +27,11 @@ export function parseEnvFile(text: string): Record<string, string> {
   return out;
 }
 
-export function mergeNextDevEnv(
-  cwd: string,
-  base: NodeJS.ProcessEnv = {}
-): NodeJS.ProcessEnv {
-  const merged: NodeJS.ProcessEnv = { ...base };
+/** Un objeto de entorno puede no traer NODE_ENV. El proceso real sí lo trae. */
+export type EnvValues = Partial<NodeJS.ProcessEnv>;
+
+export function mergeNextDevEnv(cwd: string, base: EnvValues = {}): EnvValues {
+  const merged: EnvValues = { ...base };
   const locked = new Set(
     Object.entries(base)
       .filter(([, value]) => value != null && value !== "")
@@ -51,8 +51,8 @@ export function mergeNextDevEnv(
 
 export function applyNextDevEnv(
   cwd = process.cwd(),
-  env: NodeJS.ProcessEnv = process.env
-): NodeJS.ProcessEnv {
+  env: EnvValues = process.env
+): EnvValues {
   const merged = mergeNextDevEnv(cwd, env);
   for (const [key, value] of Object.entries(merged)) {
     if (value != null && env[key] == null) env[key] = value;

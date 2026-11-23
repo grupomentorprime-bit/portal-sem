@@ -177,7 +177,12 @@ describe("eliminar Espacio — Mongo", () => {
         );
 
         for (const tenantId of OPERATIONAL_SPACES) {
-          await db.collection(TENANTS_COLLECTION).insertOne({
+          await db.collection<{
+            _id: string;
+            tenantId: string;
+            name: string;
+            status: string;
+          }>(TENANTS_COLLECTION).insertOne({
             _id: tenantId,
             tenantId,
             name: tenantId,

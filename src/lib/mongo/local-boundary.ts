@@ -106,7 +106,7 @@ function assertNotBlocked(name: string): void {
   }
 }
 
-function isIsolatedDev(uri: string, env: NodeJS.ProcessEnv): boolean {
+function isIsolatedDev(uri: string, env: Partial<NodeJS.ProcessEnv>): boolean {
   if (env.NODE_ENV === "production") return false;
   if ((env.MONGODB_TARGET ?? "").trim() !== "isolated-dev") return false;
   if ((env.MONGODB_DESTRUCTIVE_SCOPE ?? "").trim()) return false;
@@ -125,7 +125,7 @@ function isIsolatedDev(uri: string, env: NodeJS.ProcessEnv): boolean {
 
 export function classifyLocalMongo(
   uri: string,
-  env: NodeJS.ProcessEnv = process.env
+  env: Partial<NodeJS.ProcessEnv> = process.env
 ): LocalMongoClass {
   if (!uri.trim()) return "unknown";
   if (isIsolatedDev(uri, env)) return "isolated-dev";
@@ -143,7 +143,7 @@ export function classifyLocalMongo(
   return "operational";
 }
 
-function productionPassthrough(env: NodeJS.ProcessEnv): boolean {
+function productionPassthrough(env: Partial<NodeJS.ProcessEnv>): boolean {
   if (env.NODE_ENV !== "production") return false;
   const target = (env.MONGODB_TARGET ?? "").trim();
   return target !== "isolated-dev" && target !== "isolated-test";
@@ -154,7 +154,7 @@ function productionPassthrough(env: NodeJS.ProcessEnv): boolean {
  */
 export function assertNonProductionClient(
   uri: string,
-  env: NodeJS.ProcessEnv = process.env
+  env: Partial<NodeJS.ProcessEnv> = process.env
 ): void {
   if (productionPassthrough(env)) return;
   if (!uri.trim()) {
@@ -178,7 +178,7 @@ export function assertNonProductionClient(
 }
 
 /** npm run dev y el proceso de Next en desarrollo. */
-export function assertIsolatedDev(env: NodeJS.ProcessEnv = process.env): void {
+export function assertIsolatedDev(env: Partial<NodeJS.ProcessEnv> = process.env): void {
   if (env.NODE_ENV === "production") {
     refusal("target", "El entorno de desarrollo no corre con NODE_ENV=production.");
   }

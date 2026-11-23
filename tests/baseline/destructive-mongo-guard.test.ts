@@ -325,14 +325,14 @@ describe("barrera de borrado Mongo", () => {
         ].join("\n")
       );
       writeFileSync(join(dir, ".env.local"), `MONGODB_URI=${PORTAL_URI}\n`);
-      const env: NodeJS.ProcessEnv = {};
+      const env: Partial<NodeJS.ProcessEnv> = {};
       loadTestProcessEnv(dir, env);
       assert.equal(env.MONGODB_URI, undefined);
       assert.equal(env.MONGODB_DB, undefined);
       assert.equal(env.MONGODB_TARGET, undefined);
       assert.equal(env.APP_URL, "http://127.0.0.1:3000");
 
-      const isolated: NodeJS.ProcessEnv = { MONGODB_URI: ISOLATED_URI };
+      const isolated: Partial<NodeJS.ProcessEnv> = { MONGODB_URI: ISOLATED_URI };
       loadTestProcessEnv(dir, isolated);
       assert.equal(isolated.MONGODB_URI, ISOLATED_URI);
     } finally {

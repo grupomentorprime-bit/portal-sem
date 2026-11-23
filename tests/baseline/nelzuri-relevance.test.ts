@@ -28,7 +28,7 @@ describe("mesa por perfil empresarial", () => {
     assert.deepEqual(relevance(null), []);
     assert.deepEqual(relevance(undefined), []);
 
-    const contracted = ["growth-os"];
+    const contracted = ["growth-os"] as const;
     const bands = desktopBands({
       spaceType: "education",
       contracted,
@@ -135,7 +135,7 @@ describe("mesa por perfil empresarial", () => {
         canRequestPlan: true,
       });
       const shown = [...bands.mine, ...bands.recommended, ...bands.explore];
-      for (const id of pending) assert.equal(shown.includes(id), false);
+      for (const id of pending) assert.equal(shown.some((item) => item === id), false);
     }
 
     const pendingWithSector: AppManifest = {

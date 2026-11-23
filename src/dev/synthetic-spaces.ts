@@ -2,7 +2,7 @@
  * Espacios sintéticos para el Mongo local.
  * Usa la fundación del producto. No lee ni copia el servidor operativo.
  */
-import type { Db } from "mongodb";
+import type { Db, WithoutId } from "mongodb";
 import { materializeSemTenantContent } from "@/core/tenant/sem-content";
 import { ensureAdlTenantFoundation } from "@/core/tenant/migrate-adl";
 import { ensureSemTenantFoundation } from "@/core/tenant/migrate-sem";
@@ -145,15 +145,16 @@ export async function seedSyntheticSpaces(db: Db): Promise<SyntheticSpaceSeed[]>
     { tenantId: "adl", code: "T002" },
     ...OTHER_SPACES.map((space) => ({ tenantId: space.tenantId, code: space.code })),
   ];
-  await db.collection("dev_fixture_manifest").replaceOne(
+  const manifest = {
+    _id: SYNTHETIC_FIXTURE_ID,
+    synthetic: true,
+    copiedFromOperational: false,
+    version: SYNTHETIC_FIXTURE_VERSION,
+    spaces: spaces.map((space) => space.code),
+  };
+  await db.collection<typeof manifest>("dev_fixture_manifest").replaceOne(
     { _id: SYNTHETIC_FIXTURE_ID },
-    {
-      _id: SYNTHETIC_FIXTURE_ID,
-      synthetic: true,
-      copiedFromOperational: false,
-      version: SYNTHETIC_FIXTURE_VERSION,
-      spaces: spaces.map((space) => space.code),
-    },
+    manifest as WithoutId<typeof manifest>,
     { upsert: true }
   );
 

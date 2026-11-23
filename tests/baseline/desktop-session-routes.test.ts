@@ -68,9 +68,9 @@ describe("presencia y atención con sesión de pruebas", () => {
     globalThis.__nelzuriTestSession = "";
     if (!client) return;
     const db = client.db(endpoint.db);
-    await db.collection("identity_users").deleteMany({ _id: { $in: IDS } });
-    await db.collection("identity_sessions").deleteMany({ _id: { $in: SESSION_IDS } });
-    await db.collection("attention_presence").deleteMany({ _id: { $in: IDS } });
+    await db.collection<{ _id: string }>("identity_users").deleteMany({ _id: { $in: IDS } });
+    await db.collection<{ _id: string }>("identity_sessions").deleteMany({ _id: { $in: SESSION_IDS } });
+    await db.collection<{ _id: string }>("attention_presence").deleteMany({ _id: { $in: IDS } });
     await client.close();
     const shared = await import("../../src/lib/mongodb")
       .then((mod) => mod.getMongoClient())
@@ -93,14 +93,14 @@ describe("presencia y atención con sesión de pruebas", () => {
     client = new MongoClient(endpoint.uri);
     await client.connect();
     const db = client.db(endpoint.db);
-    await db.collection("identity_users").deleteMany({ _id: { $in: IDS } });
-    await db.collection("identity_sessions").deleteMany({ _id: { $in: SESSION_IDS } });
-    await db.collection("attention_presence").deleteMany({ _id: { $in: IDS } });
-    await db.collection("identity_users").insertMany([
+    await db.collection<{ _id: string }>("identity_users").deleteMany({ _id: { $in: IDS } });
+    await db.collection<{ _id: string }>("identity_sessions").deleteMany({ _id: { $in: SESSION_IDS } });
+    await db.collection<{ _id: string }>("attention_presence").deleteMany({ _id: { $in: IDS } });
+    await db.collection<ReturnType<typeof user>>("identity_users").insertMany([
       user(OPERATOR, ["platform_operator"]),
       user(STRANGER, []),
     ]);
-    await db.collection("identity_sessions").insertMany([
+    await db.collection<ReturnType<typeof session>>("identity_sessions").insertMany([
       session(OPERATOR_SESSION, OPERATOR),
       session(STRANGER_SESSION, STRANGER),
     ]);
@@ -137,7 +137,9 @@ describe("presencia y atención con sesión de pruebas", () => {
     assert.equal(deskBody.ok, true);
     assert.equal(deskBody.mode, "panel");
 
-    const stored = await db.collection("attention_presence").findOne({ _id: OPERATOR });
+    const stored = await db.collection<{ _id: string; kind?: string }>("attention_presence").findOne({
+      _id: OPERATOR,
+    });
     assert.equal(stored?.kind, "staff");
   });
 });

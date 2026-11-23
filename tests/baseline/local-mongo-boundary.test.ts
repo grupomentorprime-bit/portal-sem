@@ -177,7 +177,7 @@ describe("frontera del Mongo local", () => {
       MONGODB_ISOLATED_PORT: process.env.MONGODB_ISOLATED_PORT,
       MONGODB_DESTRUCTIVE_SCOPE: process.env.MONGODB_DESTRUCTIVE_SCOPE,
     };
-    process.env.NODE_ENV = "development";
+    Object.assign(process.env, { NODE_ENV: "development" });
     process.env.MONGODB_TARGET = "isolated-dev";
     process.env.MONGODB_DB = "nelzuri_dev";
     process.env.MONGODB_ISOLATED_PORT = "27019";

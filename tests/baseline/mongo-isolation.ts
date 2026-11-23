@@ -21,14 +21,18 @@ import {
 
 const pending = new Set<OwnedDatabaseHandle>();
 
-export function assignTestFileEnv(key: string, value: string, env: NodeJS.ProcessEnv): void {
+export function assignTestFileEnv(
+  key: string,
+  value: string,
+  env: Partial<NodeJS.ProcessEnv>
+): void {
   if (key.startsWith("MONGODB_")) return;
   if (!env[key]) env[key] = value;
 }
 
 export function loadTestProcessEnv(
   cwd = process.cwd(),
-  env: NodeJS.ProcessEnv = process.env
+  env: Partial<NodeJS.ProcessEnv> = process.env
 ): void {
   for (const filename of [".env.local", ".env"]) {
     const envPath = resolve(cwd, filename);

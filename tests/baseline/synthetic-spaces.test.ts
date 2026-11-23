@@ -53,9 +53,13 @@ describe("fixtures sintéticos de Espacios", () => {
       );
       assert.equal(await db.collection("tenants").countDocuments(), 6);
       assert.equal(await db.collection("identity_users").countDocuments(), 0);
-      const manifest = await db.collection("dev_fixture_manifest").findOne({
-        _id: "synthetic-spaces-v1",
-      });
+      const manifest = await db
+        .collection<{ _id: string; synthetic?: boolean; copiedFromOperational?: boolean }>(
+          "dev_fixture_manifest"
+        )
+        .findOne({
+          _id: "synthetic-spaces-v1",
+        });
       assert.equal(manifest?.synthetic, true);
       assert.equal(manifest?.copiedFromOperational, false);
       const personal = await db
