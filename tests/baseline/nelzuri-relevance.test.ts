@@ -142,7 +142,7 @@ describe("mesa por perfil empresarial", () => {
       ...listManifests().find((item) => item.id === "admision")!,
       sectors: ["education"],
     };
-    assert.throws(() => validateCatalog([pendingWithSector], []), /pendiente/);
+    assert.throws(() => validateCatalog([pendingWithSector], []), /rubro/);
   });
 
   it("la mesa lee el perfil y no escribe el contrato", () => {

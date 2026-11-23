@@ -183,6 +183,19 @@ export default async function EscritorioPage() {
     });
   }
 
+  let unitIds: string[] | null = null;
+  let enabledUnitAppIds: string[] | null = null;
+  if (!onPlatformDesk && deskTenantId && deskMembership?.unitAccess?.mode === "units") {
+    const { listOrgUnits } = await import("@/core/units/repository");
+    const { membershipUnitScope } = await import("@/core/units/access");
+    const scope = membershipUnitScope({
+      unitAccess: deskMembership.unitAccess,
+      units: await listOrgUnits(await getDatabase(), deskTenantId),
+    });
+    unitIds = scope.unitIds;
+    enabledUnitAppIds = scope.enabledUnitAppIds;
+  }
+
   const dayLines = onPlatformDesk
     ? []
     : await Promise.race([
@@ -241,6 +254,8 @@ export default async function EscritorioPage() {
       attentionUnreadCount={attentionUnreadCount}
       canReturnToPlatform={platformOwner && Boolean(entered)}
       permissions={onPlatformDesk ? [] : deskPermissions}
+      unitIds={onPlatformDesk ? null : unitIds}
+      enabledUnitAppIds={onPlatformDesk ? null : enabledUnitAppIds}
     />
   );
 }

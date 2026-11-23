@@ -1,8 +1,10 @@
 import {
+  isSpecializedAppId,
   MENTOR_APPS,
   manifestById,
   spaceRequiredBy,
   type MentorAppId,
+  type SpecializedAppId,
 } from "@/nelzuri";
 
 export { MENTOR_APPS, type MentorAppId };
@@ -12,8 +14,14 @@ if (cumpleSpaceId !== "cumple") {
   throw new Error("Cumple sigue exigiendo el Espacio cumple.");
 }
 
-/** Utilidades del escritorio. No se contratan. */
-export type DockAppId = MentorAppId | "mensajes" | "envivo" | "clientes" | "ajustes";
+/** Utilidades del escritorio. No se contratan. Las especializadas tampoco. */
+export type DockAppId =
+  | MentorAppId
+  | SpecializedAppId
+  | "mensajes"
+  | "envivo"
+  | "clientes"
+  | "ajustes";
 
 /**
  * Catálogo de la mesa.
@@ -108,7 +116,7 @@ export type WallpaperChoice = DesktopWallpaper | "custom";
 
 export const DESKTOP_FALLBACK = "#102033";
 
-export { isMentorAppId } from "@/nelzuri";
+export { isMentorAppId, isSpecializedAppId } from "@/nelzuri";
 
 export function mentorAppLabel(appId: MentorAppId): string {
   return manifestById(appId).label;
@@ -119,6 +127,7 @@ export function mentorAppBlurb(appId: MentorAppId): string {
 }
 
 export function dockAppLabel(appId: DockAppId): string {
+  if (isSpecializedAppId(appId)) return manifestById(appId).label;
   if (appId === "ajustes") return "Ajustes";
   if (appId === "mensajes") return "Atención";
   if (appId === "envivo") return "Chat en vivo";
@@ -127,6 +136,7 @@ export function dockAppLabel(appId: DockAppId): string {
 }
 
 export function dockAppBlurb(appId: DockAppId, owner = false): string {
+  if (isSpecializedAppId(appId)) return manifestById(appId).blurb;
   if (appId === "mensajes") {
     return owner
       ? "Casos de cada empresa. Se responden cuando entres."

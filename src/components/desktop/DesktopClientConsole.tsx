@@ -62,7 +62,8 @@ export function DesktopClientConsole({
   });
   const domainDirty = domainDraftChanged(model.customHost, customHost);
   const shownHost = model.primaryHost || model.platformHost;
-  const registered = listManifests().filter((item) => !item.contractable);
+  const specialized = listManifests().filter((item) => item.class === "specialized");
+  const registered = listManifests().filter((item) => item.integration === "pending");
 
   function factsFor(appId: string) {
     const signals = (MENTOR_APPS as readonly string[]).includes(appId)
@@ -260,6 +261,23 @@ export function DesktopClientConsole({
             {busy === "plan" ? "Guardando…" : "Guardar plan"}
           </button>
         ) : null}
+      </section>
+
+      <section>
+        <p className="console-kicker">Capacidades especializadas</p>
+        <p className="console-line">Pertenecen a su Espacio. No se contratan y no entran al plan.</p>
+        <div className="lifecycle-registered">
+          {specialized.map((item) => (
+            <article key={item.id}>
+              <strong>{item.label}</strong>
+              <span className="lifecycle-facts">
+                {lifecycleMarks(factsFor(item.id)).map((mark) => (
+                  <span key={mark}>{mark}</span>
+                ))}
+              </span>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section>

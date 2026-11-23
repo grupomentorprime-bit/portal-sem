@@ -112,6 +112,9 @@
 .g-cumple { background: linear-gradient(160deg, #6ee7b7, #047857 60%, #022c22); }
 .g-aprende { background: linear-gradient(160deg, #e9d5ff, #7c3aed 45%, #1e1b4b); }
 .g-rrhh { background: linear-gradient(160deg, #fde68a, #d97706 55%, #7c2d12); }
+.g-admision { background: linear-gradient(160deg, #bae6fd, #0369a1 55%, #082f49); }
+.g-asuntos { background: linear-gradient(160deg, #ddd6fe, #6d28d9 55%, #2e1065); }
+.g-congreso { background: linear-gradient(160deg, #fecdd3, #be123c 55%, #4c0519); }
 .g-ajustes { background: var(--nelzuri-azul-digital); }
 .g-atencion, .g-mensajes { background: var(--nelzuri-azul-profundo); }
 .g-envivo { background: #0f766e; }

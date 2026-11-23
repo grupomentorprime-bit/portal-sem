@@ -1,4 +1,9 @@
-export { MENTOR_APPS, type MentorAppId } from "@/nelzuri/catalog/manifests";
+export {
+  MENTOR_APPS,
+  SPECIALIZED_APPS,
+  type MentorAppId,
+  type SpecializedAppId,
+} from "@/nelzuri/catalog/manifests";
 export {
   NELZURI_CAPABILITIES,
   availableCoreCapabilities,
@@ -11,11 +16,13 @@ export type {
   AppPublication,
   DefaultContract,
   OpenDeclaration,
+  SpecializedDoor,
 } from "@/nelzuri/catalog/types";
 export { lifecycleMarks, projectAppLifecycle, type AppLifecycle } from "@/nelzuri/catalog/lifecycle";
 export {
   appsByClass,
   isMentorAppId,
+  isSpecializedAppId,
   listManifests,
   manifestById,
   spaceRequiredBy,
@@ -39,3 +46,9 @@ export {
 } from "@/nelzuri/contracts/authorization";
 export { evaluateAppRequest } from "@/nelzuri/contracts/request";
 export { decideOpening, hasRealEntry, type DesktopClick, type OpeningSignals } from "@/nelzuri/contracts/opening";
+export {
+  canSeeSpecialized,
+  openSpecialized,
+  visibleSpecializedIds,
+  type SpecializedPerson,
+} from "@/nelzuri/contracts/specialized";

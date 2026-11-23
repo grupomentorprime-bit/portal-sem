@@ -25,6 +25,20 @@ export type DefaultContract =
   | { when: "never" }
   | { when: "field-missing"; spaceId?: string };
 
+/**
+ * Puerta que ya existe para una capacidad especializada.
+ * No contrata, no crea un permiso y no abre otra ruta.
+ */
+export interface SpecializedDoor {
+  /** Alcanza cualquiera de estos permisos. */
+  anyPermission: readonly string[];
+  /**
+   * Unidad dueña.
+   * Solo se exige cuando la membresía está recortada a unidades.
+   */
+  unitId?: string;
+}
+
 /** Cómo se abre. Los datos viven aquí; la lógica de cada aplicación, no. */
 export type OpenDeclaration =
   | { type: "none" }
@@ -52,5 +66,7 @@ export interface AppManifest {
   defaultContract: DefaultContract;
   /** La apertura solo procede en este Espacio. */
   requiresSpaceId?: string;
+  /** Capacidad especializada. Ausente en una aplicación transversal. */
+  door?: SpecializedDoor;
   open: OpenDeclaration;
 }

@@ -24,8 +24,11 @@ export function hasRealEntry(
   appId: string,
   input: { tenantId: string; signals: OpeningSignals }
 ): boolean {
-  const open = manifestById(appId).open;
-  if (open.type === "internal") return true;
+  const manifest = manifestById(appId);
+  const open = manifest.open;
+  if (open.type === "internal") {
+    return manifest.requiresSpaceId == null || input.tenantId === manifest.requiresSpaceId;
+  }
   if (open.type === "connect") return input.signals.productOrigin;
   if (open.type === "connect-or-https") {
     return Boolean(input.signals.productOrigin || input.signals.httpsEntry);

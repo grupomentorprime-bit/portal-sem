@@ -1,4 +1,10 @@
-import { APP_MANIFESTS, MENTOR_APPS, type MentorAppId } from "@/nelzuri/catalog/manifests";
+import {
+  APP_MANIFESTS,
+  MENTOR_APPS,
+  SPECIALIZED_APPS,
+  type MentorAppId,
+  type SpecializedAppId,
+} from "@/nelzuri/catalog/manifests";
 import type { AppClass, AppManifest } from "@/nelzuri/catalog/types";
 
 /** Siguen aparte hasta que se autorice su incorporación al catálogo. */
@@ -49,6 +55,32 @@ export function validateCatalog(
     }
     if (item.class === "specialized" && item.defaultContract.when !== "never") {
       throw new Error(`${id} no puede ser el contrato por omisión.`);
+    }
+    if (item.class === "specialized" && item.sectors?.length) {
+      throw new Error(`${id} es especializada y no se recomienda por rubro.`);
+    }
+    if (item.class === "specialized" && item.integration !== "pending") {
+      if (item.publication !== "published" || item.integration !== "internal") {
+        throw new Error(`${id} se publica en su Espacio o sigue pendiente.`);
+      }
+      if (item.open.type !== "internal" || !item.open.href.startsWith("/")) {
+        throw new Error(`${id} abre por la ruta que ya tiene.`);
+      }
+      if (!item.requiresSpaceId) {
+        throw new Error(`${id} exige el Espacio al que pertenece.`);
+      }
+      const door = item.door;
+      const permissions = door?.anyPermission ?? [];
+      if (
+        permissions.length === 0 ||
+        permissions.some((code) => !code || code.trim() !== code) ||
+        new Set(permissions).size !== permissions.length
+      ) {
+        throw new Error(`${id} exige la puerta de permisos existente.`);
+      }
+      if (door?.unitId != null && (!door.unitId || door.unitId.trim() !== door.unitId)) {
+        throw new Error(`${id} declara una unidad vacía.`);
+      }
     }
     if (item.contractable && item.open.type === "none") {
       throw new Error(`${id} se contrata y no declara cómo se abre.`);
@@ -116,6 +148,10 @@ export function appsByClass(appClass: AppClass): readonly AppManifest[] {
 
 export function isMentorAppId(value: string): value is MentorAppId {
   return (MENTOR_APPS as readonly string[]).includes(value);
+}
+
+export function isSpecializedAppId(value: string): value is SpecializedAppId {
+  return (SPECIALIZED_APPS as readonly string[]).includes(value);
 }
 
 export function spaceRequiredBy(appId: MentorAppId): string | null {

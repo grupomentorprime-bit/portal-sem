@@ -96,13 +96,13 @@ describe("catálogo y contratos de NELZURI", () => {
       listManifests()
         .filter((item) => item.integration === "internal" || item.integration === "connect")
         .map((item) => item.id),
-      ["growth-os", "cumple", "aprende-hoy", "rrhh"]
+      ["growth-os", "cumple", "aprende-hoy", "rrhh", "admision", "asuntos-estudiantiles", "congreso"]
     );
     assert.deepEqual(
       listManifests()
         .filter((item) => item.integration === "pending")
         .map((item) => item.id),
-      ["store", "connect", "admision", "asuntos-estudiantiles", "congreso"]
+      ["store", "connect"]
     );
     for (const id of ["factura", "nelzuri-factura"]) {
       assert.equal(listManifests().some((item) => item.id === id), false);

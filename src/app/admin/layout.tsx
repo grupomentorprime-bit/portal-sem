@@ -153,16 +153,13 @@ export default async function AdminLayout({
   if (session?.membership?.unitAccess?.mode === "units" && hasSpace) {
     const { getDatabase } = await import("@/lib/mongodb");
     const { listOrgUnits } = await import("@/core/units/repository");
+    const { membershipUnitScope } = await import("@/core/units/access");
     const db = await getDatabase();
-    const allowed = new Set(session.membership.unitAccess.unitIds);
     const units = await listOrgUnits(db, session.session.tenantId);
-    enabledAppIds = [
-      ...new Set(
-        units
-          .filter((unit) => unit.status === "active" && allowed.has(unit.unitId))
-          .flatMap((unit) => unit.enabledAppIds)
-      ),
-    ];
+    enabledAppIds = membershipUnitScope({
+      unitAccess: session.membership.unitAccess,
+      units,
+    }).enabledUnitAppIds;
   }
 
   if (

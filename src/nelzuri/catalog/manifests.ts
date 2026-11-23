@@ -92,44 +92,71 @@ const connect = manifest({
   open: { type: "none" },
 });
 
-/** Identificadas. La puerta de cada Espacio llega en una etapa posterior. */
+/**
+ * Capacidades que ya operan en su Espacio.
+ * La puerta repite los permisos de la navegación actual. No se contratan.
+ */
 const admision = manifest({
   id: "admision",
   class: "specialized",
-  integration: "pending",
+  integration: "internal",
   version: "1",
-  publication: "draft",
+  publication: "published",
   label: "Admisión",
-  blurb: "Capacidad de un Espacio. No se contrata desde el escritorio.",
+  blurb: "Centro de admisión del Seminario. No se contrata.",
   contractable: false,
   defaultContract: { when: "never" },
-  open: { type: "none" },
+  requiresSpaceId: "seminario-ipn",
+  door: {
+    anyPermission: [
+      "cms.pages.read",
+      "experience.forms.read",
+      "experience.forms.manage",
+      "students.read",
+    ],
+  },
+  open: { type: "internal", href: "/admin/portal/admission" },
 });
 
 const asuntosEstudiantiles = manifest({
   id: "asuntos-estudiantiles",
   class: "specialized",
-  integration: "pending",
+  integration: "internal",
   version: "1",
-  publication: "draft",
-  label: "Asuntos estudiantiles",
-  blurb: "Capacidad de un Espacio. No se contrata desde el escritorio.",
+  publication: "published",
+  label: "Asuntos Estudiantiles",
+  blurb: "Operación de formularios del Seminario. No se contrata.",
   contractable: false,
   defaultContract: { when: "never" },
-  open: { type: "none" },
+  requiresSpaceId: "seminario-ipn",
+  door: {
+    anyPermission: [
+      "student-affairs.read",
+      "student-affairs.checkin",
+      "student-affairs.manage",
+      "experience.forms.read",
+      "experience.forms.manage",
+    ],
+  },
+  open: { type: "internal", href: "/admin/portal/asuntos-estudiantiles" },
 });
 
 const congreso = manifest({
   id: "congreso",
   class: "specialized",
-  integration: "pending",
+  integration: "internal",
   version: "1",
-  publication: "draft",
-  label: "Congreso",
-  blurb: "Capacidad de un Espacio. No se contrata desde el escritorio.",
+  publication: "published",
+  label: "Congreso de Varones",
+  blurb: "Congreso de Varones de IPN Chile. No se contrata.",
   contractable: false,
   defaultContract: { when: "never" },
-  open: { type: "none" },
+  requiresSpaceId: "ipn-chile",
+  door: {
+    anyPermission: ["congress.view", "congress.operate"],
+    unitId: "departamento-nacional-de-varones",
+  },
+  open: { type: "internal", href: "/admin/portal/congreso-varones" },
 });
 
 /**
@@ -138,6 +165,10 @@ const congreso = manifest({
  */
 export const MENTOR_APPS = [growthOs.id, cumple.id, aprendeHoy.id, rrhh.id] as const;
 export type MentorAppId = (typeof MENTOR_APPS)[number];
+
+/** Capacidades especializadas. No entran a `contractedApps`. */
+export const SPECIALIZED_APPS = [admision.id, asuntosEstudiantiles.id, congreso.id] as const;
+export type SpecializedAppId = (typeof SPECIALIZED_APPS)[number];
 
 export const APP_MANIFESTS = [
   growthOs,

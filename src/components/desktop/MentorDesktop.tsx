@@ -14,9 +14,9 @@ import {
   DESKTOP_FALLBACK,
   desktopCanSwitchSpace,
   desktopContextLabel,
-  desktopDock,
   writeEnteredClientCookie,
   isMentorAppId,
+  isSpecializedAppId,
   dockAppBlurb,
   dockAppLabel,
   mentorAppBlurb,
@@ -30,6 +30,7 @@ import {
 } from "@/lib/desktop/catalog";
 import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
 import { canManageAppKeys, desktopBands } from "@/lib/desktop/app-access";
+import { clientDeskApps, openSpecializedFromDesk, specializedForDesk } from "@/lib/desktop/specialized";
 import {
   connectLaunchForm,
   createTransactionVerifier,
@@ -114,8 +115,12 @@ export interface MentorDesktopProps {
   attentionUnreadCount?: number;
   /** El dueño abrió el escritorio de un cliente y puede volver a la plataforma. */
   canReturnToPlatform?: boolean;
-  /** Permisos del Espacio activo. Filtran Ajustes de empresa. */
+  /** Permisos del Espacio activo. Filtran Ajustes de empresa y las capacidades. */
   permissions?: string[];
+  /** null: administración central. Lista: unidades de la membresía. */
+  unitIds?: readonly string[] | null;
+  /** null: sin recorte. Lista: aplicaciones habilitadas en esas unidades. */
+  enabledUnitAppIds?: readonly string[] | null;
 }
 
 type SheetState = {
@@ -161,6 +166,9 @@ function toneClass(appId: DockAppId): string {
   if (appId === "envivo") return "g-envivo";
   if (appId === "clientes") return "g-clientes";
   if (appId === "ajustes") return "g-ajustes";
+  if (appId === "admision") return "g-admision";
+  if (appId === "asuntos-estudiantiles") return "g-asuntos";
+  if (appId === "congreso") return "g-congreso";
   return "g-rrhh";
 }
 
@@ -261,6 +269,30 @@ function renderGlyph(appId: DockAppId) {
       </svg>
     );
   }
+  if (appId === "admision") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
+        <path d="M4 19V6.5A1.5 1.5 0 0 1 5.5 5H12v14H5.5A1.5 1.5 0 0 0 4 20.5" />
+        <path d="M12 5h6.5A1.5 1.5 0 0 1 20 6.5V19a1.5 1.5 0 0 0-1.5-1.5H12" />
+      </svg>
+    );
+  }
+  if (appId === "asuntos-estudiantiles") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
+        <path d="M8 7h8M8 11h8M8 15h5" />
+        <path d="M6 4h12a1 1 0 0 1 1 1v14l-3-2H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+      </svg>
+    );
+  }
+  if (appId === "congreso") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
+        <path d="M5 19V9l7-4 7 4v10" />
+        <path d="M9 19v-5h6v5" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" aria-hidden="true">
       <circle cx="9" cy="9" r="3" />
@@ -336,25 +368,41 @@ export function MentorDesktop(props: MentorDesktopProps) {
       }),
     [props.spaceType, props.contracted, props.authorizedApps, canRequestPlan]
   );
-  const dockApps = useMemo<DockAppId[]>(() => {
-    if (owner) return desktopDock(true);
-    return [...bands.mine, "mensajes"];
-  }, [owner, bands.mine]);
+  const specialized = useMemo(
+    () =>
+      specializedForDesk({
+        tenantId: props.activeTenantId,
+        permissions: props.permissions ?? [],
+        unitIds: props.unitIds ?? null,
+        enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+      }),
+    [props.activeTenantId, props.permissions, props.unitIds, props.enabledUnitAppIds]
+  );
+  const dockApps = useMemo<DockAppId[]>(
+    () =>
+      clientDeskApps({
+        owner,
+        spaceType: props.spaceType,
+        contracted: props.contracted,
+        authorizedApps: props.authorizedApps ?? null,
+        tenantId: props.activeTenantId,
+        permissions: props.permissions ?? [],
+        unitIds: props.unitIds ?? null,
+        enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+      }),
+    [
+      owner,
+      props.spaceType,
+      props.contracted,
+      props.authorizedApps,
+      props.activeTenantId,
+      props.permissions,
+      props.unitIds,
+      props.enabledUnitAppIds,
+    ]
+  );
   const [icons, setIcons] = useState<DeskIconSpot[]>(() =>
-    completeDeskIcons(
-      props.layout,
-      owner
-        ? desktopDock(true)
-        : [
-            ...desktopBands({
-              spaceType: props.spaceType,
-              contracted: props.contracted,
-              authorizedApps: props.authorizedApps ?? null,
-              canRequestPlan: canManageAppKeys(props.permissions ?? []),
-            }).mine,
-            "mensajes",
-          ]
-    )
+    completeDeskIcons(props.layout, dockApps)
   );
   const [ghost, setGhost] = useState<{ appId: DockAppId } | null>(null);
   const ghostRef = useRef<HTMLDivElement>(null);
@@ -960,6 +1008,19 @@ export function MentorDesktop(props: MentorDesktopProps) {
       return;
     }
     if (appId === "clientes") return;
+    if (isSpecializedAppId(appId)) {
+      closeWindows();
+      const action = openSpecializedFromDesk(appId, {
+        tenantId: props.activeTenantId,
+        permissions: props.permissions ?? [],
+        unitIds: props.unitIds ?? null,
+        enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+      });
+      if (action.kind !== "open") return;
+      if (event) beginOpen(appId, action.href, event);
+      else window.location.assign(action.href);
+      return;
+    }
     closeWindows();
     const action = desktopClick({
       appId,
@@ -1189,6 +1250,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
           owner={owner}
           spaces={props.spaces}
           companySettings={companySettings}
+          specialized={owner ? [] : specialized}
           onOpenApp={(appId) => handleApp(appId)}
           onOpenSpace={(tenantId) => {
             if (owner || props.canReturnToPlatform) void enterClient(tenantId);

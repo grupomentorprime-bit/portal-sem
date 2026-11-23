@@ -100,6 +100,15 @@ export function lifecycleMarks(view: AppLifecycle): string[] {
     view.integrationLabel,
     view.publicationLabel,
   ];
+  if (view.category === "specialized") {
+    if (!view.operational) {
+      marks.push("No operativa");
+      return marks;
+    }
+    marks.push(view.available ? "De este Espacio" : "De otro Espacio");
+    marks.push("No se contrata");
+    return marks;
+  }
   if (!view.operational && !view.contracted) {
     marks.push("No operativa");
     return marks;

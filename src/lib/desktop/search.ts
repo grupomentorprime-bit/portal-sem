@@ -5,6 +5,7 @@ import {
   dockAppLabel,
   type DockAppId,
 } from "@/lib/desktop/catalog";
+import type { SpecializedAppId } from "@/nelzuri";
 
 export type DesktopSearchHit =
   | { kind: "app"; id: DockAppId; title: string; detail: string }
@@ -39,8 +40,13 @@ export function desktopSearch(input: {
   spaces: readonly { tenantId: string; name: string }[];
   /** Sin ajustes de empresa, no aparece Ajustes en la búsqueda. */
   companySettings?: boolean;
+  /** Capacidades que esta persona ya puede ver. No se buscan si no están. */
+  specialized?: readonly SpecializedAppId[];
 }): DesktopSearchHit[] {
-  const apps = desktopDock(input.owner).map((appId) => appHit(appId, input.owner));
+  const apps = [
+    ...desktopDock(input.owner),
+    ...(input.specialized ?? []),
+  ].map((appId) => appHit(appId, input.owner));
   const query = input.query.trim();
   if (!query) return apps;
 
