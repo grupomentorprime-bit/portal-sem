@@ -1,6 +1,7 @@
 import { isUnitScopedAdminPathAllowed } from "@/lib/admin/nav-access";
 import { canManageAppKeys, desktopBands } from "@/lib/desktop/app-access";
 import { desktopDock, type DockAppId } from "@/lib/desktop/catalog";
+import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
 import type { MentorAppId } from "@/nelzuri";
 import {
   canSeeSpecialized,
@@ -37,6 +38,7 @@ function personFor(appId: SpecializedAppId, input: DeskSpecializedInput): Specia
 
 /** Capacidades del Espacio activo que esta persona ya puede abrir. La llave de Growth OS no entra. */
 export function specializedForDesk(input: DeskSpecializedInput): SpecializedAppId[] {
+  ensureSpecializedCapabilities();
   return SPECIALIZED_APPS.filter((appId) => canSeeSpecialized(personFor(appId, input)));
 }
 

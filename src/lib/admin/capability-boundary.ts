@@ -7,6 +7,7 @@ import {
   usesCongressFocusedShell,
   usesStudentAffairsFocusedShell,
 } from "@/lib/admin/nav-access";
+import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
 import { specializedForDesk } from "@/lib/desktop/specialized";
 import {
   manifestById,
@@ -45,6 +46,7 @@ export interface AdminEntryInput {
 export function decideAdminEntry(
   input: AdminEntryInput
 ): { kind: "allow" } | { kind: "redirect"; href: string } {
+  ensureSpecializedCapabilities();
   const pathname = input.pathname || "";
   if (SESSION_PATHS.has(pathname)) return { kind: "allow" };
 

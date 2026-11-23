@@ -149,18 +149,57 @@ const congreso = manifest({
 export const MENTOR_APPS = [growthOs.id, cumple.id, aprendeHoy.id, rrhh.id] as const;
 export type MentorAppId = (typeof MENTOR_APPS)[number];
 
-/** Capacidades especializadas. No entran a `contractedApps`. */
-export const SPECIALIZED_APPS = [admision.id, asuntosEstudiantiles.id, congreso.id] as const;
-export type SpecializedAppId = (typeof SPECIALIZED_APPS)[number];
+/** Catálogo transversal. Las capacidades especializadas se publican al registrarse. */
+export const APP_MANIFESTS = [growthOs, cumple, aprendeHoy, rrhh, store, connect] as const;
 
-export const APP_MANIFESTS = [
-  growthOs,
-  cumple,
-  aprendeHoy,
-  rrhh,
-  store,
-  connect,
-  admision,
-  asuntosEstudiantiles,
-  congreso,
+const CONGRESS_FORMS_ALIAS = "/admin/portal/forms/panel/ipn-asistencia-congreso-varones-2026";
+
+/**
+ * Las tres fichas siguen definidas aquí y se inscriben juntas.
+ * El orden de este arreglo no decide el catálogo: el registro lo ordena por id.
+ */
+export const SPECIALIZED_MANIFEST_REGISTRATIONS = [
+  {
+    manifest: admision,
+    insertNavAfter: "institution-branding",
+    navGroupId: "institucion",
+    navSequence: 0,
+    navItem: {
+      id: "portal-admission",
+      href: "/admin/portal/admission",
+      label: "Centro de admisión",
+      icon: "admission",
+      matchPrefixes: ["/admin/portal/admission"],
+      requiredAnyPermission: [...ADMISSION_DOOR.anyPermission],
+    },
+  },
+  {
+    manifest: asuntosEstudiantiles,
+    insertNavAfter: "institution-branding",
+    navGroupId: "institucion",
+    navSequence: 1,
+    navItem: {
+      id: "convocatorias-resultados",
+      href: "/admin/portal/asuntos-estudiantiles",
+      label: "Operación de formularios",
+      icon: "students",
+      matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
+      requiredAnyPermission: [...STUDENT_AFFAIRS_DOOR.anyPermission],
+    },
+  },
+  {
+    manifest: congreso,
+    aliases: [CONGRESS_FORMS_ALIAS],
+    insertNavAfter: "convocatorias-config",
+    navGroupId: "sitio-web",
+    navSequence: 0,
+    navItem: {
+      id: "congreso-varones",
+      href: "/admin/portal/congreso-varones",
+      label: "Congreso de Varones",
+      icon: "students",
+      matchPrefixes: ["/admin/portal/congreso-varones", CONGRESS_FORMS_ALIAS],
+      requiredAnyPermission: [...CONGRESS_DOOR.anyPermission],
+    },
+  },
 ] as const;

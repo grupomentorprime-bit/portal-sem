@@ -14,7 +14,7 @@
     "lint": "eslint",
     "test:baseline": "node --require ./scripts/refuse-operational-mongo.cjs ./node_modules/tsx/dist/cli.mjs --test tests/baseline/**/*.test.ts tests/smoke/**/*.test.ts",
     "test:smoke": "node --require ./scripts/refuse-operational-mongo.cjs ./node_modules/tsx/dist/cli.mjs --test tests/smoke/**/*.test.ts",
-    "test:isolated": "node --require ./scripts/refuse-operational-mongo.cjs --env-file=.env.mongo-aislado ./node_modules/tsx/dist/cli.mjs --test tests/baseline/local-mongo-boundary.test.ts tests/baseline/destructive-mongo-guard.test.ts tests/baseline/synthetic-spaces.test.ts tests/baseline/universal-foundation.test.ts tests/baseline/saas-foundation.test.ts tests/baseline/saas-adl-tenant.test.ts tests/baseline/platform-delete-space.test.ts tests/baseline/desktop-session-routes.test.ts tests/baseline/nelzuri-specialized.test.ts tests/baseline/nelzuri-shell-boundary.test.ts",
+    "test:isolated": "node --require ./scripts/refuse-operational-mongo.cjs --env-file=.env.mongo-aislado ./node_modules/tsx/dist/cli.mjs --test tests/baseline/local-mongo-boundary.test.ts tests/baseline/destructive-mongo-guard.test.ts tests/baseline/synthetic-spaces.test.ts tests/baseline/universal-foundation.test.ts tests/baseline/saas-foundation.test.ts tests/baseline/saas-adl-tenant.test.ts tests/baseline/platform-delete-space.test.ts tests/baseline/desktop-session-routes.test.ts tests/baseline/nelzuri-specialized.test.ts tests/baseline/nelzuri-shell-boundary.test.ts tests/baseline/nelzuri-capability-ownership.test.ts",
     "fixtures:dev": "tsx scripts/seed-synthetic-spaces.ts",
     "check:branding": "tsx scripts/check-branding.ts",
     "generate:editorial": "tsx scripts/generate-editorial-assets.ts",

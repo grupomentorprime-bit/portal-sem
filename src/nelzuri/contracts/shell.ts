@@ -1,4 +1,8 @@
-import { SPECIALIZED_APPS, type SpecializedAppId } from "@/nelzuri/catalog/manifests";
+import {
+  ensureSpecializedCapabilities,
+  SPECIALIZED_APPS,
+  type SpecializedAppId,
+} from "@/nelzuri/contracts/capabilities";
 import { manifestById } from "@/nelzuri/catalog/registry";
 
 function pathWithin(pathname: string, href: string): boolean {
@@ -10,6 +14,7 @@ function pathWithin(pathname: string, href: string): boolean {
  * Solo lee el catálogo. No conoce el shell ni los permisos de Growth OS.
  */
 export function specializedAppForInternalPath(pathname: string): SpecializedAppId | null {
+  ensureSpecializedCapabilities();
   const path = pathname.trim();
   if (!path) return null;
   let found: { id: SpecializedAppId; length: number } | null = null;

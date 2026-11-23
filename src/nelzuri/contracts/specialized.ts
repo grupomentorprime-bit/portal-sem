@@ -1,4 +1,8 @@
-import { SPECIALIZED_APPS, type SpecializedAppId } from "@/nelzuri/catalog/manifests";
+import {
+  ensureSpecializedCapabilities,
+  SPECIALIZED_APPS,
+  type SpecializedAppId,
+} from "@/nelzuri/contracts/capabilities";
 import { isSpecializedAppId, manifestById } from "@/nelzuri/catalog/registry";
 
 /**
@@ -34,6 +38,7 @@ export function canSeeSpecialized(input: SpecializedPerson): boolean {
 export function visibleSpecializedIds(
   people: readonly SpecializedPerson[]
 ): SpecializedAppId[] {
+  ensureSpecializedCapabilities();
   const seen = new Set(people.filter(canSeeSpecialized).map((person) => person.appId));
   return SPECIALIZED_APPS.filter((id) => seen.has(id));
 }
