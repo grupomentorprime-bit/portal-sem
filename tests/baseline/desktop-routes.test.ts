@@ -23,14 +23,36 @@ describe("rutas del escritorio", () => {
     assert.match(src, /setDesktopWallpaper/);
   });
 
-  it("al entrar o al activar Aprende Hoy se crea el perfil master", () => {
+  it("entrar, abrir el escritorio o lanzar no contrata, no reparte llaves ni provisiona", () => {
+    const passive = [
+      "src/app/api/platform/spaces/[tenantId]/access/route.ts",
+      "src/app/api/connect/launch/route.ts",
+      "src/app/escritorio/page.tsx",
+      "src/lib/desktop/ensure-client-company.ts",
+    ];
+    const forbidden = [
+      "ensureClientCompany",
+      "ensureDeskProduct",
+      "writeSpaceContract",
+      "provisionRrhhCompany",
+      "provisionAprendeHoyCompany",
+    ];
+    for (const file of passive) {
+      const src = read(file);
+      for (const token of forbidden) {
+        assert.equal(src.includes(token), false, `${file} no puede usar ${token}`);
+      }
+    }
     const company = read("src/lib/desktop/ensure-client-company.ts");
-    assert.match(company, /provisionAprendeHoyCompany/);
-    assert.match(company, /provisionRrhhCompany/);
-    const provision = read("src/lib/connect/provision-aprende-hoy.ts");
-    assert.match(provision, /\/api\/connect\/provision/);
+    assert.equal(company.includes("authorizedApps"), false);
+    assert.match(company, /export async function isDeskMaster/);
     const access = read("src/app/api/platform/spaces/[tenantId]/access/route.ts");
-    assert.match(access, /ensureClientCompany/);
+    assert.match(access, /grantOwnerSpaceAccess/);
+    assert.match(access, /grantOperatorSpaceAccess/);
+    assert.match(read("src/lib/connect/provision-aprende-hoy.ts"), /\/api\/connect\/provision/);
+    assert.match(read("src/lib/connect/provision-rrhh.ts"), /\/api\/connect\/provision/);
+    const keys = read("src/app/api/identity/members/[membershipId]/apps/route.ts");
+    assert.match(keys, /updateMembershipAuthorizedApps/);
   });
 
   it("el operador escribe el contrato y cierra las solicitudes nuevas", () => {
@@ -47,7 +69,10 @@ describe("rutas del escritorio", () => {
     assert.match(src, /fulfillOpen\(tenant\.tenantId,\s*appId\)/);
     assert.match(src, /provisionAprendeHoyCompany/);
     assert.match(src, /provisionRrhhCompany/);
-    assert.match(src, /ensureDeskProduct/);
+    assert.match(src, /added\.includes\("rrhh"\)/);
+    assert.match(src, /added\.includes\("aprende-hoy"\)/);
+    assert.equal(src.includes("ensureDeskProduct"), false);
+    assert.equal(src.includes("authorizedApps"), false);
   });
 
   it("la store ignora el duplicado abierto concurrente", () => {

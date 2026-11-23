@@ -9,7 +9,6 @@ import {
   resolveContractedApps,
 } from "@/lib/desktop/contract";
 import { noteCommercialActivation } from "@/lib/desktop/attention-store";
-import { ensureDeskProduct } from "@/lib/desktop/ensure-client-company";
 import {
   mongoAppRequestStore,
   readSpaceContract,
@@ -55,13 +54,6 @@ export async function POST(request: Request, { params }: RouteParams) {
       actorUserId: ctx.user._id,
       actorName: ctx.user.displayName,
     }).catch(() => null);
-    if (appId === "rrhh" || appId === "aprende-hoy") {
-      await ensureDeskProduct({
-        tenantId: tenant.tenantId,
-        userId: ctx.user._id,
-        appId,
-      });
-    }
   }
 
   const companyName = tenant.name?.trim() || tenant.tenantId;
