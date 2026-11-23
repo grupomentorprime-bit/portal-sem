@@ -17,6 +17,7 @@ interface AdminModuleSubnavProps {
   roleCodes: AdminShellContext["roleCodes"];
   navBadges?: AdminShellContext["navBadges"];
   enabledAppIds?: AdminShellContext["enabledAppIds"];
+  shellScope?: AdminShellContext["shellScope"];
 }
 
 /**
@@ -29,6 +30,7 @@ export function AdminModuleSubnav({
   roleCodes,
   navBadges,
   enabledAppIds = null,
+  shellScope = null,
 }: AdminModuleSubnavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -37,7 +39,8 @@ export function AdminModuleSubnav({
     compatMode,
     roleCodes,
     navBadges,
-    enabledAppIds
+    enabledAppIds,
+    shellScope
   );
   const activeGroupId = findActiveNavGroupId(pathname, groups, searchParams);
   const activeGroup = activeGroupId

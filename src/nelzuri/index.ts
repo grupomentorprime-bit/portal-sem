@@ -46,6 +46,7 @@ export {
 } from "@/nelzuri/contracts/authorization";
 export { evaluateAppRequest } from "@/nelzuri/contracts/request";
 export { decideOpening, hasRealEntry, type DesktopClick, type OpeningSignals } from "@/nelzuri/contracts/opening";
+export { specializedAppForInternalPath } from "@/nelzuri/contracts/shell";
 export {
   canSeeSpecialized,
   openSpecialized,

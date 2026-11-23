@@ -2,22 +2,16 @@ import { SpacePublicOriginProvider } from "@/components/admin/SpacePublicOrigin"
 import { AdminShell } from "@/components/identity/AdminShell";
 import { isAdminShellV2Enabled } from "@/lib/admin/feature-flags";
 import { getInstitutionalRoleLabel } from "@/lib/admin/institutional";
-import {
-  CONGRESS_VARONES_HOME_PATH,
-  isCongressAllowedAdminPath,
-  isStudentAffairsAllowedAdminPath,
-  isUnitScopedAdminPathAllowed,
-  STUDENT_AFFAIRS_HOME_PATH,
-  usesCongressFocusedShell,
-  usesStudentAffairsFocusedShell,
-} from "@/lib/admin/nav-access";
+import { isUnitScopedAdminPathAllowed } from "@/lib/admin/nav-access";
 import { resolveAdminNavBadges } from "@/lib/admin/nav-badges";
 import { buildAdminTenantBranding } from "@/lib/admin/tenant-branding";
 import { getOperationalSiteConfig } from "@/lib/cms/config";
 import { resolveRequestHost } from "@/core/tenant";
 import { resolvePublicOriginForTenant } from "@/lib/portal/public-origin";
 import { hasPlatformOperatorCapability } from "@/core/identity/platform/capability";
+import { decideAdminEntry } from "@/lib/admin/capability-boundary";
 import { hasAppKey } from "@/lib/desktop/app-access";
+import { specializedForDesk } from "@/lib/desktop/specialized";
 import { readSpaceContract } from "@/lib/desktop/store";
 import { listAvailableSpacesForUser } from "@/lib/identity/active-space";
 import { activeDepartmentName } from "@/lib/identity/place-context";
@@ -60,19 +54,6 @@ export default async function AdminLayout({
 
   if (session && hasSpace && isNoSpaceRoute) {
     redirect("/admin");
-  }
-
-  // Growth OS exige llave en el Espacio activo (no basta ocultar el icono).
-  if (session?.membership && hasSpace && !isLoginRoute && !isNoSpaceRoute) {
-    const activeTenantId = session.session.tenantId.trim();
-    const contract = await readSpaceContract(activeTenantId);
-    const allowed = hasAppKey("growth-os", {
-      contracted: contract.contracted,
-      authorizedApps: session.membership.authorizedApps ?? null,
-    });
-    if (!allowed) {
-      redirect("/escritorio");
-    }
   }
 
   let roleLabel = "Colaborador";
@@ -131,35 +112,45 @@ export default async function AdminLayout({
       })()
     : [];
 
-  if (
-    pathname &&
-    hasSpace &&
-    usesCongressFocusedShell(permissions, roleCodes) &&
-    !isCongressAllowedAdminPath(pathname)
-  ) {
-    redirect(CONGRESS_VARONES_HOME_PATH);
-  }
-
-  if (
-    pathname &&
-    hasSpace &&
-    usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes) &&
-    !isStudentAffairsAllowedAdminPath(pathname, roleCodes)
-  ) {
-    redirect(STUDENT_AFFAIRS_HOME_PATH);
-  }
-
   let enabledAppIds: string[] | null = null;
+  let unitIds: string[] | null = null;
   if (session?.membership?.unitAccess?.mode === "units" && hasSpace) {
     const { getDatabase } = await import("@/lib/mongodb");
     const { listOrgUnits } = await import("@/core/units/repository");
     const { membershipUnitScope } = await import("@/core/units/access");
     const db = await getDatabase();
     const units = await listOrgUnits(db, session.session.tenantId);
-    enabledAppIds = membershipUnitScope({
+    const scope = membershipUnitScope({
       unitAccess: session.membership.unitAccess,
       units,
-    }).enabledUnitAppIds;
+    });
+    unitIds = scope.unitIds;
+    enabledAppIds = scope.enabledUnitAppIds;
+  }
+
+  let growthOs = false;
+  let openedSpecialized: string[] = [];
+  if (session?.membership && hasSpace && !isLoginRoute && !isNoSpaceRoute) {
+    const activeTenantId = session.session.tenantId.trim();
+    const contract = await readSpaceContract(activeTenantId);
+    growthOs = hasAppKey("growth-os", {
+      contracted: contract.contracted,
+      authorizedApps: session.membership.authorizedApps ?? null,
+    });
+    const desk = {
+      tenantId: activeTenantId,
+      permissions,
+      unitIds,
+      enabledUnitAppIds: enabledAppIds,
+      roleCodes,
+      growthOs,
+    };
+    openedSpecialized = specializedForDesk(desk);
+    const decision = decideAdminEntry({
+      pathname,
+      ...desk,
+    });
+    if (decision.kind === "redirect") redirect(decision.href);
   }
 
   if (
@@ -169,7 +160,7 @@ export default async function AdminLayout({
     !isNoSpaceRoute &&
     !isUnitScopedAdminPathAllowed(pathname, enabledAppIds)
   ) {
-    redirect("/admin");
+    redirect(growthOs ? "/admin" : "/escritorio");
   }
 
   const publicOrigin = hasSpace
@@ -220,6 +211,7 @@ export default async function AdminLayout({
         branding={branding}
         navBadges={navBadges}
         enabledAppIds={enabledAppIds}
+        shellScope={{ growthOs, opened: openedSpecialized }}
       >
         {children}
       </AdminShell>

@@ -53,6 +53,7 @@ export function AdminShellV2({ children, ...ctx }: AdminShellV2Props) {
               roleCodes: ctx.roleCodes,
               navBadges: ctx.navBadges,
               enabledAppIds: ctx.enabledAppIds,
+              shellScope: ctx.shellScope,
             }}
           >
             {children}

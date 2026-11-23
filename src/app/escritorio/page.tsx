@@ -117,6 +117,11 @@ export default async function EscritorioPage() {
     }
     authorizedApps = deskMembership?.authorizedApps ?? null;
   }
+  let deskRoleCodes = roleCodes;
+  if (deskMembership && deskTenantId && deskMembership.tenantId !== tenantId) {
+    const roles = await findRolesByIds(deskTenantId, deskMembership.roleIds);
+    deskRoleCodes = roles.map((role) => getRoleCode(role)).filter(Boolean) as string[];
+  }
 
   let attentionCount = 0;
   let attentionUnread = false;
@@ -171,14 +176,9 @@ export default async function EscritorioPage() {
 
   let departmentName = "";
   if (!onPlatformDesk && deskTenantId) {
-    let placeRoleCodes = roleCodes;
-    if (deskMembership && deskMembership.tenantId !== tenantId) {
-      const roles = await findRolesByIds(deskTenantId, deskMembership.roleIds);
-      placeRoleCodes = roles.map((role) => getRoleCode(role)).filter(Boolean) as string[];
-    }
     departmentName = await activeDepartmentName({
       tenantId: deskTenantId,
-      roleCodes: placeRoleCodes,
+      roleCodes: deskRoleCodes,
       unitAccess: deskMembership?.unitAccess,
     });
   }
@@ -254,6 +254,7 @@ export default async function EscritorioPage() {
       attentionUnreadCount={attentionUnreadCount}
       canReturnToPlatform={platformOwner && Boolean(entered)}
       permissions={onPlatformDesk ? [] : deskPermissions}
+      roleCodes={onPlatformDesk ? [] : deskRoleCodes}
       unitIds={onPlatformDesk ? null : unitIds}
       enabledUnitAppIds={onPlatformDesk ? null : enabledUnitAppIds}
     />

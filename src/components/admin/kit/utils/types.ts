@@ -12,6 +12,8 @@ export interface AdminShellContext {
   navBadges?: Record<string, number>;
   /** null = todo el Espacio. Arreglo = aplicaciones habilitadas en las unidades del miembro. */
   enabledAppIds?: string[] | null;
+  /** Llave de Growth OS y capacidades institucionales ya abiertas. */
+  shellScope?: { growthOs: boolean; opened: readonly string[] } | null;
 }
 
 export type SortDirection = "asc" | "desc";

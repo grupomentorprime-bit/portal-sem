@@ -74,6 +74,19 @@ export function isStudentAffairsOperator(roleCodes: string[]): boolean {
   );
 }
 
+/**
+ * Rol de Admisión, sin Asuntos Estudiantiles, Congreso ni admin elevado.
+ * La plantilla también trae permisos de formularios; sin la llave de Growth OS no abren la otra capacidad.
+ */
+export function isAdmissionsOperator(roleCodes: readonly string[]): boolean {
+  return (
+    roleCodes.includes(ROLE_CODES.ADMISSIONS) &&
+    !roleCodes.some((code) => ELEVATED_ADMIN_ROLE_CODES.has(code as RoleCode)) &&
+    !roleCodes.includes(ROLE_CODES.STUDENT_AFFAIRS) &&
+    !roleCodes.includes(ROLE_CODES.CONGRESS_OPERATOR)
+  );
+}
+
 /** Operador del Congreso de Varones — sin AE, Growth ni admin global. */
 export function isCongressOperator(roleCodes: string[]): boolean {
   return (
@@ -164,6 +177,48 @@ const STUDENT_AFFAIRS_ALLOWED_IDS = new Set([
 
 const CONGRESS_ALLOWED_IDS = new Set(["dashboard-home", "congreso-varones", "support-help"]);
 
+/** Lo que el shell puede mostrar además de la llave de Growth OS. */
+export interface AdminShellScope {
+  /** Techo ∩ llave de Growth OS. */
+  growthOs: boolean;
+  /** Capacidades especializadas que esta persona ya puede abrir. */
+  opened: readonly string[];
+}
+
+const SPECIALIZED_NAV = [
+  { id: "admision", href: "/admin/portal/admission" },
+  { id: "asuntos-estudiantiles", href: STUDENT_AFFAIRS_HOME_PATH },
+  { id: "congreso", href: CONGRESS_VARONES_HOME_PATH },
+] as const;
+
+/** Ítem de una capacidad institucional. El resto del árbol es Growth OS. */
+export function navItemSpecializedId(
+  item: AdminNavItem
+): (typeof SPECIALIZED_NAV)[number]["id"] | null {
+  if (item.id === "portal-admission") return "admision";
+  if (item.id === "convocatorias-resultados") return "asuntos-estudiantiles";
+  if (item.id === "congreso-varones") return "congreso";
+  const href = item.href ?? "";
+  if (!href) return null;
+  for (const entry of SPECIALIZED_NAV) {
+    if (href === entry.href || href.startsWith(`${entry.href}/`)) return entry.id;
+  }
+  if (
+    href === CONGRESS_VARONES_FORMS_ALIAS_PATH ||
+    href.startsWith(`${CONGRESS_VARONES_FORMS_ALIAS_PATH}/`)
+  ) {
+    return "congreso";
+  }
+  return null;
+}
+
+function itemVisibleInShell(item: AdminNavItem, scope?: AdminShellScope | null): boolean {
+  if (!scope) return true;
+  const owner = navItemSpecializedId(item);
+  if (owner) return scope.opened.includes(owner);
+  return scope.growthOs;
+}
+
 function isStudentAffairsAllowedItem(item: AdminNavItem): boolean {
   if (item.href == null) return false;
   if (item.id && STUDENT_AFFAIRS_ALLOWED_IDS.has(item.id)) return true;
@@ -229,25 +284,31 @@ export function filterSupplementalNav(
 export function filterAdminNav(
   permissions: string[],
   compatMode: boolean,
-  roleCodes: string[] = []
+  roleCodes: string[] = [],
+  scope?: AdminShellScope | null
 ): AdminNavItem[] {
+  const visible = (item: AdminNavItem) => itemVisibleInShell(item, scope);
+
   if (usesCongressFocusedShell(permissions, roleCodes)) {
     return ADMIN_PRIMARY_NAV.filter(
       (item) =>
-        item.href === "/admin" ||
-        (item.href != null && item.href.startsWith(CONGRESS_VARONES_HOME_PATH))
+        visible(item) &&
+        (item.href === "/admin" ||
+          (item.href != null && item.href.startsWith(CONGRESS_VARONES_HOME_PATH)))
     );
   }
 
   if (usesStudentAffairsFocusedShell(permissions, compatMode, roleCodes)) {
     return ADMIN_PRIMARY_NAV.filter(
       (item) =>
-        item.href === "/admin" ||
-        (item.href != null && item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH))
+        visible(item) &&
+        (item.href === "/admin" ||
+          (item.href != null && item.href.startsWith(STUDENT_AFFAIRS_HOME_PATH)))
     );
   }
 
   return ADMIN_PRIMARY_NAV.filter((item) => {
+    if (!visible(item)) return false;
     if (item.href == null) return false;
     if (item.requiredRole?.length) {
       const hasRole = item.requiredRole.some((r) => roleCodes.includes(r));
@@ -304,7 +365,8 @@ export function filterAdminNavGroups(
   compatMode: boolean,
   roleCodes: string[] = [],
   navBadges?: Record<string, number>,
-  enabledAppIds?: readonly string[] | null
+  enabledAppIds?: readonly string[] | null,
+  scope?: AdminShellScope | null
 ): AdminNavGroup[] {
   const focusedShell =
     usesCongressFocusedShell(permissions, roleCodes) ||
@@ -313,6 +375,7 @@ export function filterAdminNavGroups(
   const visibleItems = getAllNavTreeItems().filter((item) => {
     if (!filterNavItem(item, permissions, compatMode, roleCodes)) return false;
     if (focusedShell && item.id === "dashboard-home") return false;
+    if (!itemVisibleInShell(item, scope)) return false;
     return true;
   });
 

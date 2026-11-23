@@ -7,19 +7,25 @@ import { useState } from "react";
 import { Drawer } from "@/components/ui/drawer";
 import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import { isNavActive } from "@/lib/admin/institutional";
-import { filterAdminNav } from "@/lib/admin/nav-access";
+import { filterAdminNav, type AdminShellScope } from "@/lib/admin/nav-access";
 import { cn } from "@/lib/utils";
 
 interface AdminNavDrawerProps {
   compatMode: boolean;
   permissions: string[];
   roleCodes?: string[];
+  shellScope?: AdminShellScope | null;
 }
 
-export function AdminNavDrawer({ compatMode, permissions, roleCodes = [] }: AdminNavDrawerProps) {
+export function AdminNavDrawer({
+  compatMode,
+  permissions,
+  roleCodes = [],
+  shellScope = null,
+}: AdminNavDrawerProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const navItems = filterAdminNav(permissions, compatMode, roleCodes);
+  const navItems = filterAdminNav(permissions, compatMode, roleCodes, shellScope);
 
   return (
     <>

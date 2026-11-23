@@ -29,7 +29,7 @@ import {
   type WallpaperChoice,
 } from "@/lib/desktop/catalog";
 import { firstNameFromDisplayName } from "@/lib/platform/space-labels";
-import { canManageAppKeys, desktopBands } from "@/lib/desktop/app-access";
+import { canManageAppKeys, desktopBands, hasAppKey } from "@/lib/desktop/app-access";
 import { clientDeskApps, openSpecializedFromDesk, specializedForDesk } from "@/lib/desktop/specialized";
 import {
   connectLaunchForm,
@@ -121,6 +121,8 @@ export interface MentorDesktopProps {
   unitIds?: readonly string[] | null;
   /** null: sin recorte. Lista: aplicaciones habilitadas en esas unidades. */
   enabledUnitAppIds?: readonly string[] | null;
+  /** Roles del Espacio activo. Recortan Admisión cuando no hay llave de Growth OS. */
+  roleCodes?: readonly string[];
 }
 
 type SheetState = {
@@ -358,6 +360,18 @@ export function MentorDesktop(props: MentorDesktopProps) {
     props.spaces.find((space) => space.tenantId === props.activeTenantId)?.name?.trim() ||
     props.spaceName;
   const canRequestPlan = canManageAppKeys(props.permissions ?? []);
+  const growthOs = hasAppKey("growth-os", {
+    contracted: props.contracted,
+    authorizedApps: props.authorizedApps ?? null,
+  });
+  const specializedInput = {
+    tenantId: props.activeTenantId,
+    permissions: props.permissions ?? [],
+    unitIds: props.unitIds ?? null,
+    enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+    roleCodes: props.roleCodes ?? [],
+    growthOs,
+  };
   const bands = useMemo(
     () =>
       desktopBands({
@@ -375,8 +389,17 @@ export function MentorDesktop(props: MentorDesktopProps) {
         permissions: props.permissions ?? [],
         unitIds: props.unitIds ?? null,
         enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+        roleCodes: props.roleCodes ?? [],
+        growthOs,
       }),
-    [props.activeTenantId, props.permissions, props.unitIds, props.enabledUnitAppIds]
+    [
+      props.activeTenantId,
+      props.permissions,
+      props.unitIds,
+      props.enabledUnitAppIds,
+      props.roleCodes,
+      growthOs,
+    ]
   );
   const dockApps = useMemo<DockAppId[]>(
     () =>
@@ -389,6 +412,8 @@ export function MentorDesktop(props: MentorDesktopProps) {
         permissions: props.permissions ?? [],
         unitIds: props.unitIds ?? null,
         enabledUnitAppIds: props.enabledUnitAppIds ?? null,
+        roleCodes: props.roleCodes ?? [],
+        growthOs,
       }),
     [
       owner,
@@ -399,6 +424,8 @@ export function MentorDesktop(props: MentorDesktopProps) {
       props.permissions,
       props.unitIds,
       props.enabledUnitAppIds,
+      props.roleCodes,
+      growthOs,
     ]
   );
   const [icons, setIcons] = useState<DeskIconSpot[]>(() =>
@@ -1010,12 +1037,7 @@ export function MentorDesktop(props: MentorDesktopProps) {
     if (appId === "clientes") return;
     if (isSpecializedAppId(appId)) {
       closeWindows();
-      const action = openSpecializedFromDesk(appId, {
-        tenantId: props.activeTenantId,
-        permissions: props.permissions ?? [],
-        unitIds: props.unitIds ?? null,
-        enabledUnitAppIds: props.enabledUnitAppIds ?? null,
-      });
+      const action = openSpecializedFromDesk(appId, specializedInput);
       if (action.kind !== "open") return;
       if (event) beginOpen(appId, action.href, event);
       else window.location.assign(action.href);
