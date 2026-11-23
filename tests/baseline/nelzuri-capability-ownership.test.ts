@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { APP_MANIFESTS, MENTOR_APPS } from "../../src/nelzuri/catalog/manifests";
@@ -243,6 +243,34 @@ describe("registro de capacidades especializadas", () => {
     assert.equal(nav.includes("id: \"convocatorias-resultados\""), false);
     assert.equal(nav.includes("id: \"congreso-varones\""), false);
     assert.equal(nav.includes("ipn-asistencia-congreso-varones-2026"), false);
+  });
+
+  it("el núcleo no contiene reglas de SEM, IPN Chile ni Cumple", () => {
+    const dir = resolve(ROOT, "src/nelzuri");
+    const files = readdirSync(dir, { recursive: true })
+      .map(String)
+      .filter((name) => name.endsWith(".ts"));
+    const forbiddenImports = [
+      "@/lib/portal",
+      "@/lib/student-affairs",
+      "@/core/congress",
+      "@/core/units/ipn-chile",
+      "@/sites/cumple",
+      "@/lib/cumple",
+      "@/core/tenant/is-sem",
+    ];
+    const forbiddenText = [
+      "seminario-ipn",
+      "ipn-chile",
+      "departamento-nacional-de-varones",
+      "ipn-asistencia-congreso-varones-2026",
+    ];
+    for (const name of files) {
+      const source = readFileSync(resolve(dir, name), "utf8");
+      for (const token of [...forbiddenImports, ...forbiddenText]) {
+        assert.equal(source.includes(token), false, `${name} ${token}`);
+      }
+    }
   });
 
   it("el contrato no importa módulos de cliente", () => {

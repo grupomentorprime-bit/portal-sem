@@ -1,4 +1,3 @@
-import { ADMISSION_DOOR, CONGRESS_DOOR, STUDENT_AFFAIRS_DOOR } from "@/nelzuri/catalog/doors";
 import type { AppManifest } from "@/nelzuri/catalog/types";
 
 function manifest<const T extends AppManifest>(value: T): T {
@@ -94,55 +93,6 @@ const connect = manifest({
 });
 
 /**
- * Capacidades que ya operan en su Espacio.
- * La puerta repite los permisos de la navegación actual. No se contratan.
- */
-const admision = manifest({
-  id: "admision",
-  class: "specialized",
-  integration: "internal",
-  version: "1",
-  publication: "published",
-  label: "Admisión",
-  blurb: "Centro de admisión del Seminario. No se contrata.",
-  contractable: false,
-  defaultContract: { when: "never" },
-  requiresSpaceId: "seminario-ipn",
-  door: ADMISSION_DOOR,
-  open: { type: "internal", href: "/admin/portal/admission" },
-});
-
-const asuntosEstudiantiles = manifest({
-  id: "asuntos-estudiantiles",
-  class: "specialized",
-  integration: "internal",
-  version: "1",
-  publication: "published",
-  label: "Asuntos Estudiantiles",
-  blurb: "Operación de formularios del Seminario. No se contrata.",
-  contractable: false,
-  defaultContract: { when: "never" },
-  requiresSpaceId: "seminario-ipn",
-  door: STUDENT_AFFAIRS_DOOR,
-  open: { type: "internal", href: "/admin/portal/asuntos-estudiantiles" },
-});
-
-const congreso = manifest({
-  id: "congreso",
-  class: "specialized",
-  integration: "internal",
-  version: "1",
-  publication: "published",
-  label: "Congreso de Varones",
-  blurb: "Congreso de Varones de IPN Chile. No se contrata.",
-  contractable: false,
-  defaultContract: { when: "never" },
-  requiresSpaceId: "ipn-chile",
-  door: CONGRESS_DOOR,
-  open: { type: "internal", href: "/admin/portal/congreso-varones" },
-});
-
-/**
  * Ids que ya persisten en `contractedApps`.
  * Una aplicación contratable nueva se agrega aquí y en su manifiesto, en el mismo cambio.
  */
@@ -151,55 +101,3 @@ export type MentorAppId = (typeof MENTOR_APPS)[number];
 
 /** Catálogo transversal. Las capacidades especializadas se publican al registrarse. */
 export const APP_MANIFESTS = [growthOs, cumple, aprendeHoy, rrhh, store, connect] as const;
-
-const CONGRESS_FORMS_ALIAS = "/admin/portal/forms/panel/ipn-asistencia-congreso-varones-2026";
-
-/**
- * Las tres fichas siguen definidas aquí y se inscriben juntas.
- * El orden de este arreglo no decide el catálogo: el registro lo ordena por id.
- */
-export const SPECIALIZED_MANIFEST_REGISTRATIONS = [
-  {
-    manifest: admision,
-    insertNavAfter: "institution-branding",
-    navGroupId: "institucion",
-    navSequence: 0,
-    navItem: {
-      id: "portal-admission",
-      href: "/admin/portal/admission",
-      label: "Centro de admisión",
-      icon: "admission",
-      matchPrefixes: ["/admin/portal/admission"],
-      requiredAnyPermission: [...ADMISSION_DOOR.anyPermission],
-    },
-  },
-  {
-    manifest: asuntosEstudiantiles,
-    insertNavAfter: "institution-branding",
-    navGroupId: "institucion",
-    navSequence: 1,
-    navItem: {
-      id: "convocatorias-resultados",
-      href: "/admin/portal/asuntos-estudiantiles",
-      label: "Operación de formularios",
-      icon: "students",
-      matchPrefixes: ["/admin/portal/asuntos-estudiantiles"],
-      requiredAnyPermission: [...STUDENT_AFFAIRS_DOOR.anyPermission],
-    },
-  },
-  {
-    manifest: congreso,
-    aliases: [CONGRESS_FORMS_ALIAS],
-    insertNavAfter: "convocatorias-config",
-    navGroupId: "sitio-web",
-    navSequence: 0,
-    navItem: {
-      id: "congreso-varones",
-      href: "/admin/portal/congreso-varones",
-      label: "Congreso de Varones",
-      icon: "students",
-      matchPrefixes: ["/admin/portal/congreso-varones", CONGRESS_FORMS_ALIAS],
-      requiredAnyPermission: [...CONGRESS_DOOR.anyPermission],
-    },
-  },
-] as const;

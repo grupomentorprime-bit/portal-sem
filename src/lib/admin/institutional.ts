@@ -3,7 +3,9 @@
  */
 
 import { ROLE_CODES } from "@/core/identity/roles/codes";
-import { ADMISSION_DOOR, FORMS_DOOR, STUDENT_AFFAIRS_DOOR } from "@/nelzuri/catalog/doors";
+import { ADMISSION_DOOR } from "@/lib/portal/admission/manifest";
+import { STUDENT_AFFAIRS_DOOR } from "@/lib/student-affairs/manifest";
+import { FORMS_DOOR } from "@/nelzuri/catalog/doors";
 
 export interface AdminNavItem {
   /** Identificador estable para sub-ítems que comparten href. */

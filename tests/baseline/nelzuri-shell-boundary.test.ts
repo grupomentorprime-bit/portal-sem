@@ -360,13 +360,13 @@ describe("independencia del shell institucional", () => {
     assert.deepEqual(navById("congreso-varones").requiredAnyPermission, congress);
     assert.deepEqual([...manifestById("congreso").door?.anyPermission ?? []].includes("experience.forms.read"), false);
 
-    for (const file of [
-      "src/nelzuri/catalog/manifests.ts",
-      "src/lib/admin/nav-domains.ts",
-      "src/lib/admin/institutional.ts",
-    ]) {
+    for (const file of ["src/lib/admin/nav-domains.ts", "src/lib/admin/institutional.ts"]) {
       assert.match(source(file), /@\/nelzuri\/catalog\/doors/);
     }
+    assert.doesNotMatch(source("src/nelzuri/catalog/manifests.ts"), /ADMISSION_DOOR|STUDENT_AFFAIRS_DOOR|CONGRESS_DOOR/);
+    assert.match(source("src/lib/portal/admission/manifest.ts"), /cms\.pages\.read/);
+    assert.match(source("src/lib/student-affairs/manifest.ts"), /experience\.forms\.manage/);
+    assert.match(source("src/core/congress/manifest.ts"), /congress\.operate/);
     const desk = source("src/lib/desktop/specialized.ts");
     assert.equal(desk.includes("growthOs"), false);
     assert.equal(desk.includes("isAdmissionsOperator"), false);
