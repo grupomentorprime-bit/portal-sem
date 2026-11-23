@@ -469,7 +469,10 @@ export function createCapabilityRegistry(options: {
         }
         throw new Error(`${effect.id} ya está registrado con otro efecto.`);
       }
-      requireOpen("registrar el efecto");
+      if (phase === "failed") throw failure;
+      if (phase !== "open" && phase !== "sealing" && phase !== "ready") {
+        throw new Error("Registro cerrado: no se puede registrar el efecto.");
+      }
       formEffects.push(effect);
     },
 

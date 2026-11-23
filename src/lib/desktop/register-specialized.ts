@@ -1,4 +1,3 @@
-import { registerCongressFormEffect } from "@/core/congress/form-effect";
 import { registerCongressPublicForm } from "@/core/congress/public-form";
 import { registerCongressRouteRules } from "@/core/congress/shell";
 import { registerAdmissionRouteRules } from "@/lib/portal/admission/shell";
@@ -9,8 +8,6 @@ import { CONGRESS_REGISTRATION } from "@/core/congress/manifest";
 import { STUDENT_AFFAIRS_REGISTRATION } from "@/lib/student-affairs/manifest";
 import { registerSemFormCatalog } from "@/lib/portal/sem-forms";
 import { registerSemPublicForm } from "@/lib/portal/sem-public-form";
-import { registerSemFormEffect } from "@/lib/student-affairs/form-effect";
-import { registerCumpleFormEffect } from "@/sites/cumple/form-effect";
 import { setSpecializedCapabilityInstaller } from "@/nelzuri/contracts/capabilities";
 
 /**
@@ -25,9 +22,6 @@ setSpecializedCapabilityInstaller(() => {
   registerStudentAffairsRouteRules();
   registerCongressRouteRules();
   registerSemFormCatalog();
-  registerSemFormEffect();
-  registerCongressFormEffect();
-  registerCumpleFormEffect();
   registerSemPublicForm();
   registerCongressPublicForm();
 });

@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
+
+const require = createRequire(import.meta.url);
+require("../../scripts/_stub-server-only.cjs");
 import { APP_MANIFESTS, MENTOR_APPS } from "../../src/nelzuri/catalog/manifests";
 import {
   createCapabilityRegistry,
@@ -157,6 +161,7 @@ describe("registro de capacidades especializadas", () => {
   });
 
   it("un efecto no corre en el Espacio de otro cliente", async () => {
+    await import("../../src/lib/desktop/register-form-effects");
     ensureSpecializedCapabilities();
     assert.equal(
       resolveFormEffect({ _id: "ipn-asistencia-congreso-varones-2026" }, "ipn-chile").status,
@@ -194,15 +199,31 @@ describe("registro de capacidades especializadas", () => {
     const cumple = resolveFormEffect({ _id: "cumple-diagnostico" }, "cumple");
     assert.equal(cumple.status, "one");
     if (cumple.status !== "one") return;
-    const after = await cumple.effect.afterSave?.({
-      tenant: "cumple",
-      form: { _id: "cumple-diagnostico", name: "Diagnóstico", errorMessage: "" },
-      formId: "cumple-diagnostico",
-      data: {},
-      submissionId: "envio-inexistente",
-    });
-    assert.equal(after?.body, undefined);
-    assert.equal(after?.extras?.reportPath, undefined);
+    const notes: string[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => {
+      notes.push(args.map((item) => String(item)).join(" "));
+    };
+    try {
+      const after = await cumple.effect.afterSave?.({
+        tenant: "cumple",
+        form: { _id: "cumple-diagnostico", name: "Diagnóstico", errorMessage: "" },
+        formId: "cumple-diagnostico",
+        data: {},
+        submissionId: "envio-inexistente",
+      });
+      assert.equal(after?.body, undefined);
+      assert.equal(after?.extras?.reportPath, undefined);
+    } finally {
+      console.error = original;
+      try {
+        const { getMongoClient } = await import("../../src/lib/mongodb");
+        await (await getMongoClient()).close();
+      } catch {
+        // Sin base configurada no queda un cliente abierto.
+      }
+    }
+    assert.equal(notes.some((line) => line.includes("Client Component")), false);
   });
 
   it("el servicio transversal ya no contiene los efectos de cada cliente", () => {

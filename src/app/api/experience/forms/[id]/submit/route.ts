@@ -3,6 +3,7 @@ import { getActiveTenantId } from "@/core/identity";
 import { submitExperienceForm } from "@/core/experience/forms";
 import { normalizeFormSubmissionData } from "@/core/experience/forms/validation";
 import { publicInternalError } from "@/core/security/public-error";
+import { ensureFormEffects } from "@/lib/desktop/register-form-effects";
 import { ensureSpecializedCapabilities } from "@/lib/desktop/register-specialized";
 import { getDirectAccessibleExperienceForm, saveFormSubmission } from "@/lib/experience/forms/repository";
 import { resolveFormEffect, type FormEffectBeforeResult } from "@/nelzuri";
@@ -14,6 +15,7 @@ interface RouteParams {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     ensureSpecializedCapabilities();
+    ensureFormEffects();
     const { id } = await params;
     const tenant = await getActiveTenantId();
 
