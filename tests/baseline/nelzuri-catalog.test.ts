@@ -76,6 +76,7 @@ describe("catálogo y contratos de NELZURI", () => {
       "congreso",
     ]);
     const growth = manifestById("growth-os");
+    assert.equal(growth.label, "Growth OS");
     assert.equal(growth.class, "transversal");
     assert.equal(growth.contractable, true);
     assert.equal(growth.integration, "internal");
@@ -124,7 +125,12 @@ describe("catálogo y contratos de NELZURI", () => {
     assert.deepEqual([...availableCoreCapabilities()], [...NELZURI_CAPABILITIES]);
     for (const capability of NELZURI_CAPABILITIES) {
       assert.equal(isMentorAppId(capability), false);
+      assert.equal(listManifests().some((item) => item.id === capability), false);
     }
+    assert.equal(
+      listManifests().some((item) => item.id === "nelzuri" || item.label === "NELZURI"),
+      false
+    );
 
     assert.deepEqual(resolveContractedApps({ tenantId: "espacio-nuevo", contractedApps: [] }), []);
     assert.deepEqual(resolveContractedApps({ tenantId: "espacio-nuevo" }), ["growth-os"]);

@@ -2,7 +2,7 @@ import "server-only";
 
 import { MongoClient } from "mongodb";
 import { logServerError } from "@/core/security/redact";
-import { assertIsolatedDev } from "@/lib/mongo/local-boundary";
+import { assertIsolatedDev, assertNonProductionClient } from "@/lib/mongo/local-boundary";
 
 declare global {
   var mongo: Promise<MongoClient> | undefined;
@@ -19,7 +19,12 @@ function requireMongoEnv(): { uri: string; dbName: string } {
   }
 
   if (process.env.NODE_ENV !== "production") {
-    assertIsolatedDev(process.env);
+    const target = (process.env.MONGODB_TARGET ?? "").trim();
+    if (target === "isolated-test") {
+      assertNonProductionClient(uri, process.env);
+    } else {
+      assertIsolatedDev(process.env);
+    }
   }
 
   return { uri, dbName };

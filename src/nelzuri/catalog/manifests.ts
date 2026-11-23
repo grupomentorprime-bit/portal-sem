@@ -1,4 +1,3 @@
-import { PLATFORM_DISPLAY_NAME } from "@/core/branding/display";
 import type { AppManifest } from "@/nelzuri/catalog/types";
 
 function manifest<const T extends AppManifest>(value: T): T {
@@ -16,7 +15,7 @@ const growthOs = manifest({
   integration: "internal",
   version: "1",
   publication: "published",
-  label: PLATFORM_DISPLAY_NAME,
+  label: "Growth OS",
   blurb: "Captación y conversión del Espacio.",
   contractable: true,
   sectors: ["business"],

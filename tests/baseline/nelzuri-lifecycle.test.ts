@@ -97,6 +97,16 @@ describe("ciclo de vida visible en Clientes", () => {
     assert.equal(asked.requested, true);
     assert.equal(asked.available, true);
 
+    const unnamed = projectAppLifecycle({
+      appId: "growth-os",
+      tenantId: "saas-val-ciclo",
+      contractedApps: [],
+      signals: none,
+    });
+    assert.equal(unnamed.label, "Growth OS");
+    assert.equal(unnamed.contracted, false);
+    assert.equal(unnamed.enabled, false);
+
     const bare = projectAppLifecycle({
       appId: "rrhh",
       tenantId: "saas-val-ciclo",

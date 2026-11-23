@@ -11,7 +11,7 @@ describe("buscador del escritorio", () => {
   it("sin texto muestra las aplicaciones de esa mesa y ninguna organización", () => {
     assert.deepEqual(
       desktopSearch({ query: "", owner: false, spaces }).map((hit) => hit.title),
-      ["NELZURI", "Cumple", "Aprende Hoy", "RR.HH.", "Atención"]
+      ["Growth OS", "Cumple", "Aprende Hoy", "RR.HH.", "Atención"]
     );
     assert.deepEqual(
       desktopSearch({ query: "   ", owner: true, spaces }).map((hit) => hit.id),
@@ -41,6 +41,13 @@ describe("buscador del escritorio", () => {
     const byName = desktopSearch({ query: "cumple", owner: false, spaces });
     assert.equal(byName[0]?.kind, "app");
     assert.equal(byName[0]?.id, "cumple");
+
+    const growth = desktopSearch({ query: "growth", owner: false, spaces });
+    assert.deepEqual(growth.map((hit) => hit.id), ["growth-os"]);
+    assert.equal(
+      desktopSearch({ query: "nelzuri", owner: false, spaces }).some((hit) => hit.id === "growth-os"),
+      false
+    );
 
     const byPhrase = desktopSearch({ query: "vida academica", owner: false, spaces });
     assert.deepEqual(
