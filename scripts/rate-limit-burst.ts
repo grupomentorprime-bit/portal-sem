@@ -5,25 +5,28 @@ import {
   createCollectionRateLimitStore,
 } from "../src/core/security/public-rate-limit";
 import {
-  classifyMongoConnection,
-  isDestructiveEnvironmentAuthorized,
   isMintedDatabaseName,
   isProtectedDatabaseName,
 } from "../src/lib/mongo/destructive-guard";
+import { TEST_DATABASE, classifyLocalMongo } from "../src/lib/mongo/local-boundary";
 
 async function main(): Promise<void> {
   const uri = process.env.MONGODB_URI?.trim() ?? "";
-  const dbName = process.env.MONGODB_DB?.trim() ?? "";
+  const connectionDb = process.env.MONGODB_DB?.trim() ?? "";
+  const rateDb = process.env.RATE_DATABASE?.trim() ?? "";
   const key = process.env.RATE_KEY?.trim() ?? "";
   const hits = Number(process.env.RATE_HITS ?? "0");
   const limit = Number(process.env.RATE_LIMIT ?? "0");
   const nowMs = Number(process.env.RATE_NOW_MS ?? "0");
 
+  // La conexión sigue siendo isolated-test (nelzuri_fixture). El contador
+  // vive en la base emitida, que la frontera no acepta como MONGODB_DB.
   const isolated =
-    isDestructiveEnvironmentAuthorized(process.env) &&
-    classifyMongoConnection(uri, process.env) === "isolated-test" &&
-    isMintedDatabaseName(dbName) &&
-    !isProtectedDatabaseName(dbName);
+    connectionDb === TEST_DATABASE &&
+    classifyLocalMongo(uri, process.env) === "isolated-test" &&
+    isMintedDatabaseName(rateDb) &&
+    !isProtectedDatabaseName(rateDb) &&
+    rateDb !== connectionDb;
   if (!isolated || !key || hits < 1 || limit < 1 || !nowMs) {
     console.error("burst: argumentos de base aislada incompletos");
     process.exit(2);
@@ -33,7 +36,7 @@ async function main(): Promise<void> {
   await client.connect();
   try {
     const store = createCollectionRateLimitStore(
-      client.db(dbName).collection("security_rate_limits") as never
+      client.db(rateDb).collection("security_rate_limits") as never
     );
     let allowed = 0;
     let blocked = 0;

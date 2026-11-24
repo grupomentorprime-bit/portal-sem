@@ -66,7 +66,12 @@ describe("límite compartido", () => {
               env: {
                 ...process.env,
                 MONGODB_URI: uri,
-                MONGODB_DB: dbName,
+                MONGODB_DB: process.env.MONGODB_DB,
+                MONGODB_TARGET: process.env.MONGODB_TARGET,
+                MONGODB_DESTRUCTIVE_SCOPE: process.env.MONGODB_DESTRUCTIVE_SCOPE,
+                MONGODB_ISOLATED_HOST: process.env.MONGODB_ISOLATED_HOST,
+                MONGODB_ISOLATED_PORT: process.env.MONGODB_ISOLATED_PORT,
+                RATE_DATABASE: dbName,
                 RATE_KEY: key,
                 RATE_HITS: String(hits),
                 RATE_LIMIT: String(limit),
@@ -95,6 +100,11 @@ describe("límite compartido", () => {
       const [first, second] = await Promise.all([run(), run()]);
       assert.equal(first.allowed + second.allowed, limit);
       assert.equal(first.blocked + second.blocked, hits * 2 - limit);
+      const bucket = Math.floor(nowMs / 60_000);
+      const stored = await db
+        .collection<{ _id: string; count: number }>("security_rate_limits")
+        .findOne({ _id: `${key}|${bucket}` });
+      assert.equal(stored?.count, hits * 2);
     } finally {
       await client.close();
     }
