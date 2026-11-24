@@ -130,6 +130,11 @@ export function humanizeHomeActivityStory(input: HumanizeHomeActivityInput): {
           : "Se recibió una postulación.",
         tone: "form",
       };
+    case "persona_registered":
+      return {
+        story: name ? `Se registró a ${name}.` : "Se registró una persona.",
+        tone: "other",
+      };
     case "opportunity_opened": {
       if (feed && (input.captureOrigin === "form" || !input.captureOrigin)) {
         return {

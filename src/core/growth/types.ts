@@ -66,6 +66,7 @@ export type GrowthOriginInput = Omit<GrowthOrigin, "capturedAt"> & {
 export type GrowthActivityKind =
   | "form_submitted"
   | "application_received"
+  | "persona_registered"
   | "opportunity_opened"
   | "opportunity_transitioned"
   | "next_action_set"

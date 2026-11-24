@@ -38,6 +38,7 @@ export type GrowthActividadFeedCategory =
 export const GROWTH_ACTIVIDAD_PERSONAS_KINDS = [
   "form_submitted",
   "application_received",
+  "persona_registered",
   "opportunity_opened",
 ] as const satisfies readonly GrowthActivityKind[];
 

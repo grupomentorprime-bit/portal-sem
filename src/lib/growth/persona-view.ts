@@ -114,6 +114,20 @@ export interface GrowthPersonaDetailView {
   workspace: GrowthPersonaWorkspaceView;
 }
 
+/**
+ * El listado vacío de verdad no se muestra junto al aviso de un alta recién hecha:
+ * las filas llegan con la recarga del servidor, no con un segundo estado local.
+ */
+export function shouldShowGrowthPersonasEmpty(input: {
+  itemCount: number;
+  hasFilters: boolean;
+  successMessage: string | null;
+}): boolean {
+  if (input.itemCount > 0) return false;
+  if (input.successMessage && !input.hasFilters) return false;
+  return true;
+}
+
 /** Actividades internas de identidad no se muestran en la UI V1. */
 export function activitiesVisibleInUi(
   activities: GrowthActivity[]

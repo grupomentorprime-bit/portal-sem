@@ -25,6 +25,8 @@ import {
 import { GROWTH_AUTOMATION_SYSTEM_ACTOR } from "@/core/growth/automations/types";
 import { getDatabase } from "@/lib/mongodb";
 import {
+  GROWTH_ACTIVIDAD_PERSONAS_KINDS,
+  GROWTH_ACTIVIDAD_VENTAS_KINDS,
   captureOriginFromActivity,
   decodeActividadFeedCursor,
   dedupeHandoffTransitions,
@@ -207,20 +209,9 @@ async function loadActivitiesForFeed(
   };
 
   if (category === "personas") {
-    filter.kind = {
-      $in: ["form_submitted", "application_received", "opportunity_opened"],
-    };
+    filter.kind = { $in: [...GROWTH_ACTIVIDAD_PERSONAS_KINDS] };
   } else if (category === "ventas") {
-    filter.kind = {
-      $in: [
-        "opportunity_transitioned",
-        "note",
-        "contact",
-        "next_action_set",
-        "handoff",
-        "opportunity_assigned",
-      ],
-    };
+    filter.kind = { $in: [...GROWTH_ACTIVIDAD_VENTAS_KINDS] };
     filter.actorUserId = { $ne: GROWTH_AUTOMATION_SYSTEM_ACTOR };
   } else if (category === "automatizaciones") {
     filter.actorUserId = GROWTH_AUTOMATION_SYSTEM_ACTOR;

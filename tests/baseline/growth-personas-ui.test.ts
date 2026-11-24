@@ -30,6 +30,7 @@ import {
   escapeGrowthSearchRegex,
   personaMatchesSearch,
   pickPrimaryNextAction,
+  shouldShowGrowthPersonasEmpty,
   sortActivitiesNewestFirst,
   toOportunidadDetailView,
   toPersonaDetailView,
@@ -337,6 +338,52 @@ describe("OT-GROWTH-CORE-007 — superficie /admin", () => {
     assert.doesNotMatch(
       nav,
       /id: "formularios"[\s\S]*?id: "growth-personas"/
+    );
+  });
+
+  it("tras crear, el vacío no convive con el aviso hasta que la lista llega", () => {
+    assert.equal(
+      shouldShowGrowthPersonasEmpty({
+        itemCount: 0,
+        hasFilters: false,
+        successMessage: null,
+      }),
+      true
+    );
+    assert.equal(
+      shouldShowGrowthPersonasEmpty({
+        itemCount: 0,
+        hasFilters: false,
+        successMessage: "Persona creada.",
+      }),
+      false
+    );
+    assert.equal(
+      shouldShowGrowthPersonasEmpty({
+        itemCount: 1,
+        hasFilters: false,
+        successMessage: "Persona creada.",
+      }),
+      false
+    );
+    assert.equal(
+      shouldShowGrowthPersonasEmpty({
+        itemCount: 0,
+        hasFilters: true,
+        successMessage: null,
+      }),
+      true
+    );
+
+    const list = readFileSync(
+      resolve(process.cwd(), "src/components/admin/growth/PersonasListClient.tsx"),
+      "utf8"
+    );
+    assert.match(list, /shouldShowGrowthPersonasEmpty/);
+    assert.match(list, /router\.refresh\(\)/);
+    assert.doesNotMatch(
+      list,
+      /router\.push\(`\/admin\/personas\/\$\{encodeURIComponent\(data\.personaId/
     );
   });
 

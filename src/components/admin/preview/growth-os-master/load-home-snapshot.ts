@@ -55,6 +55,7 @@ const ACTIVITY_FEED_LIMIT = 5;
 const HOME_ACTIVITY_KINDS = new Set([
   "form_submitted",
   "application_received",
+  "persona_registered",
   "opportunity_opened",
   "opportunity_transitioned",
   "opportunity_assigned",

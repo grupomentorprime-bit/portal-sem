@@ -8,6 +8,7 @@ import { describe, it } from "node:test";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  createMemoryGrowthEventBus,
   createMemoryGrowthPersonaStore,
   upsertGrowthPersona,
 } from "../../src/core/growth";
@@ -36,6 +37,7 @@ import {
 } from "../../src/lib/growth/humanize-origin-display";
 import {
   pickPrimaryNextAction,
+  shouldShowGrowthPersonasEmpty,
   toPersonaDetailView,
 } from "../../src/lib/growth/persona-view";
 import type {
@@ -421,6 +423,83 @@ describe("OT-GROWTH-PERSONAS-IMPLEMENT-003 — crear V–AB", () => {
 
     assert.equal(await store.findById("sem", adl.personaId), null);
     assert.equal(await store.findById("adl", sem.personaId), null);
+  });
+
+  it("alta manual deja un solo hecho en su Espacio y el reintento no lo duplica", async () => {
+    const store = createMemoryGrowthPersonaStore();
+    const bus = createMemoryGrowthEventBus();
+    const created = await createGrowthPersonaWithStore(store, {
+      tenantId: "tenant-a",
+      displayName: "Prospecto Ensayo",
+      email: "prospecto.ensayo@example.test",
+      actorUserId: "user-1",
+      now: "2026-09-12T12:00:00.000Z",
+      eventBus: bus,
+    });
+    assert.equal(created.ok, true);
+    if (!created.ok) return;
+    assert.equal(created.outcome, "created");
+
+    const own = [...store.activities.values()].filter(
+      (row) => row.tenantId === "tenant-a" && row.kind === "persona_registered"
+    );
+    assert.equal(own.length, 1);
+    assert.equal(own[0]?.personaId, created.personaId);
+    assert.equal(own[0]?.actorUserId, "user-1");
+    assert.equal(own[0]?.ingestKey?.includes(created.personaId), true);
+    assert.equal(bus.events.length, 1);
+    assert.equal(bus.events[0]?.tenantId, "tenant-a");
+    assert.equal(bus.events[0]?.type, "GrowthActivityRecorded");
+
+    const retry = await createGrowthPersonaWithStore(store, {
+      tenantId: "tenant-a",
+      displayName: "Prospecto Ensayo",
+      email: "prospecto.ensayo@example.test",
+      actorUserId: "user-1",
+      now: "2026-09-12T12:01:00.000Z",
+      eventBus: bus,
+    });
+    assert.equal(retry.ok, true);
+    if (!retry.ok) return;
+    assert.equal(retry.outcome, "matched");
+    assert.equal(
+      [...store.activities.values()].filter(
+        (row) => row.tenantId === "tenant-a" && row.kind === "persona_registered"
+      ).length,
+      1
+    );
+    assert.equal(bus.events.length, 1);
+
+    const replay = await createGrowthPersonaWithStore(store, {
+      tenantId: "tenant-a",
+      displayName: "Prospecto Ensayo",
+      email: "prospecto.ensayo@example.test",
+      actorUserId: "user-1",
+      now: "2026-09-12T12:00:00.000Z",
+      eventBus: bus,
+    });
+    assert.equal(replay.ok, true);
+    assert.equal(bus.events.length, 1);
+
+    const other = await createGrowthPersonaWithStore(store, {
+      tenantId: "tenant-b",
+      displayName: "Prospecto B",
+      email: "prospecto.ensayo@example.test",
+      actorUserId: "user-b",
+      now: "2026-09-12T12:02:00.000Z",
+    });
+    assert.equal(other.ok, true);
+    if (!other.ok) return;
+    const foreign = [...store.activities.values()].filter(
+      (row) => row.tenantId === "tenant-b"
+    );
+    assert.equal(foreign.length, 1);
+    assert.equal(foreign[0]?.personaId, other.personaId);
+    assert.equal(
+      [...store.activities.values()].filter((row) => row.tenantId === "tenant-a")
+        .length,
+      1
+    );
   });
 });
 

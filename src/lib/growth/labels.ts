@@ -27,6 +27,7 @@ const ORIGIN_KIND_LABELS: Record<GrowthOriginKind, string> = {
 const ACTIVITY_KIND_LABELS: Record<GrowthActivityKind, string> = {
   form_submitted: "Formulario enviado",
   application_received: "Postulación recibida",
+  persona_registered: "Registro manual",
   opportunity_opened: "Oportunidad abierta",
   opportunity_transitioned: "Cambio de estado",
   next_action_set: "Próxima acción definida",

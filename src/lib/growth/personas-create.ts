@@ -4,7 +4,10 @@
  */
 
 import {
+  buildGrowthIngestKey,
+  recordGrowthActivity,
   upsertGrowthPersona,
+  type GrowthEventBusPort,
   type GrowthPersonaStore,
 } from "@/core/growth";
 import {
@@ -39,6 +42,7 @@ export interface CreateGrowthPersonaAdminInput {
   phone?: string;
   actorUserId: string;
   now?: string;
+  eventBus?: GrowthEventBusPort;
 }
 
 /**
@@ -104,6 +108,28 @@ export async function createGrowthPersonaWithStore(
   });
 
   if (result.ok) {
+    if (result.outcome === "created") {
+      await recordGrowthActivity(
+        store,
+        {
+          tenantId,
+          personaId: result.persona._id,
+          kind: "persona_registered",
+          summary: "Registro manual.",
+          ingestKey: buildGrowthIngestKey(
+            "admin_personas",
+            result.persona._id,
+            "persona_registered"
+          ),
+          sourceCollection: "admin_personas",
+          sourceId,
+          actorUserId,
+          occurredAt: now,
+          payload: { originKind: "manual" },
+        },
+        input.eventBus ? { eventBus: input.eventBus } : undefined
+      );
+    }
     return {
       ok: true,
       outcome: result.outcome,
@@ -139,7 +165,11 @@ export async function createGrowthPersonaAdmin(
 ): Promise<CreateGrowthPersonaAdminResult> {
   const { getDatabase } = await import("@/lib/mongodb");
   const { createMongoGrowthPersonaStore } = await import("@/core/growth");
+  const { createGrowthEventBusAdapter } = await import("./event-bus");
   const db = await getDatabase();
   const store = createMongoGrowthPersonaStore(db);
-  return createGrowthPersonaWithStore(store, input);
+  return createGrowthPersonaWithStore(store, {
+    ...input,
+    eventBus: input.eventBus ?? createGrowthEventBusAdapter(),
+  });
 }

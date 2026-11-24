@@ -9,6 +9,9 @@ import { humanizeHomeActivityStory } from "../../src/components/admin/preview/gr
 import { GROWTH_AUTOMATION_SYSTEM_ACTOR } from "../../src/core/growth/automations/types";
 import type { GrowthActivity } from "../../src/core/growth/types";
 import {
+  GROWTH_ACTIVIDAD_FEED_CATEGORIES,
+  GROWTH_ACTIVIDAD_PERSONAS_KINDS,
+  GROWTH_ACTIVIDAD_VENTAS_KINDS,
   dedupeHandoffTransitions,
   encodeActividadFeedCursor,
   decodeActividadFeedCursor,
@@ -240,6 +243,56 @@ describe("OT-GROWTH-ACTIVITY-001 — contrato A–L", () => {
       }).story,
       /\bopen\b|→|active|typeKey|GrowthActivityRecorded/
     );
+  });
+
+  it("el alta manual entra en Personas y un borrador de campaña no abre el feed", () => {
+    assert.equal(
+      resolveGrowthActividadCategory("persona_registered", "user-1"),
+      "personas"
+    );
+    assert.ok(GROWTH_ACTIVIDAD_PERSONAS_KINDS.includes("persona_registered"));
+    const item = projectActivityToFeedItem({
+      activity: activity({
+        _id: "reg-1",
+        kind: "persona_registered",
+        summary: "Registro manual.",
+        actorUserId: "user-1",
+      }),
+      personaLabel: "Prospecto Ensayo",
+      actorLabel: "Comercial",
+    });
+    assert.ok(item);
+    assert.equal(item!.category, "personas");
+    assert.match(item!.story, /Prospecto Ensayo/);
+    assert.doesNotMatch(item!.story, /campaña|borrador/i);
+
+    assert.deepEqual(GROWTH_ACTIVIDAD_FEED_CATEGORIES, [
+      "all",
+      "personas",
+      "ventas",
+      "mensajes",
+      "automatizaciones",
+    ]);
+    assert.deepEqual(GROWTH_ACTIVIDAD_VENTAS_KINDS, [
+      "opportunity_transitioned",
+      "note",
+      "contact",
+      "next_action_set",
+      "handoff",
+      "opportunity_assigned",
+    ]);
+    assert.equal(
+      resolveGrowthActividadCategory("form_submitted", undefined),
+      "personas"
+    );
+    assert.equal(resolveGrowthActividadCategory("note", "user-1"), "ventas");
+    assert.equal(resolveGrowthActividadCategory("identity_updated", undefined), null);
+
+    const read = readSrc("src/lib/growth/actividad-read.ts");
+    assert.match(read, /GROWTH_ACTIVIDAD_PERSONAS_KINDS/);
+    assert.doesNotMatch(read, /growth_campaigns|GROWTH_CAMPAIGNS/);
+    const campaigns = readSrc("src/core/growth/campaigns/service.ts");
+    assert.doesNotMatch(campaigns, /recordGrowthActivity/);
   });
 
   it("I — identity_conflict queda oculto", () => {

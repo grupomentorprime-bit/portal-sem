@@ -37,7 +37,10 @@ import {
   GROWTH_PERSONA_ORIGIN_FILTER_OPTIONS,
   GROWTH_VIEW_PERSONA_LABEL,
 } from "@/lib/growth/labels";
-import type { GrowthPersonaListItemView } from "@/lib/growth/persona-view";
+import {
+  shouldShowGrowthPersonasEmpty,
+  type GrowthPersonaListItemView,
+} from "@/lib/growth/persona-view";
 import { cn } from "@/lib/utils";
 
 export interface PersonasListClientProps {
@@ -112,7 +115,11 @@ export function PersonasListClient({
   );
 
   const hasFilters = Boolean(q || opportunityType || opportunityStatus || origin);
-  const isEmpty = items.length === 0;
+  const isEmpty = shouldShowGrowthPersonasEmpty({
+    itemCount: items.length,
+    hasFilters,
+    successMessage: createInfo,
+  });
   const isTrueEmpty = isEmpty && !hasFilters;
   const hitLimit = items.length >= listLimit;
   const emptyTitle = hasFilters
@@ -155,13 +162,9 @@ export function PersonasListClient({
       setDisplayName("");
       setEmail("");
       setPhone("");
-      if (data.personaId) {
-        startTransition(() => {
-          router.push(`/admin/personas/${encodeURIComponent(data.personaId!)}`);
-        });
-      } else {
-        startTransition(() => router.refresh());
-      }
+      startTransition(() => {
+        router.refresh();
+      });
     } catch {
       setCreateError("No pudimos crear la persona. Inténtalo de nuevo.");
     } finally {
